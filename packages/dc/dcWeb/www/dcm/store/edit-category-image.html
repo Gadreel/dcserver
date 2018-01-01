@@ -1,0 +1,28 @@
+<dc.Html Badges="Admin,Editor">
+	<dc.Body>
+		<dc.IncludeFragment Path="/dcm/shows/edit-image-mixin" Meta="true">
+			<Param Name="ExtraProps">
+				<dcf.Text 
+					Name="Category"
+					Label="Category" 
+				>
+					<Input />
+					<Button Icon="fa-ellipsis-h" Click="DoSelectCategory" />
+				</dcf.Text>
+			</Param>
+		</dc.IncludeFragment>
+	</dc.Body>
+	<Function Name="DoSelectCategory"><![CDATA[
+			var page = this;
+		
+		    dc.pui.Dialog.loadPage('/dcm/store/category-chooser', { 
+				Callback: function(res) {
+					if (res.Categories && res.Categories.length) {
+						var fh = res.Categories[0];
+						
+						page.form().setValue('Category', fh.Alias);
+					}
+				} 
+			});
+    ]]></Function>
+</dc.Html>

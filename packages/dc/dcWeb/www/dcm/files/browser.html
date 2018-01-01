@@ -1,0 +1,318 @@
+<dc.Html Badges="Editor,Admin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Files Browser" />
+	</Meta>
+
+	<Require Script="/js/dc.transfer.js" />
+	<Require Script="/js/vendor/jquery.fileDownload.js" />
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.FormButtons>
+					<dc.Button Click="DoUpload" Label="Upload File" />
+					<dc.Button Click="DoAddFolder" Label="Add Folder" />
+					<dc.Button Click="DoRefresh" Label="Refresh" />
+				</dcf.FormButtons>
+			</dcf.Form>
+
+			<h4 id="lblDepFbPath" />
+
+			<h3>Folders</h3>
+
+			<div id="lstDepFbFolders" class="dcm-file-list" />
+
+			<h3>Files</h3>
+
+			<div id="lstDepFbFiles" class="dcm-file-list" />
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var entry = this;
+
+			if (! this.Store.Path) {
+				if (this.Params.Path)
+					entry.Store.Path = this.Params.Path;
+				else
+					entry.Store.Path = '/';
+			}
+
+			var npos = entry.Name.lastIndexOf('/');
+			var nname = entry.Name.substr(npos + 1);
+
+			if (this.Params.Vault)
+				entry.Store.Vault = this.Params.Vault;
+			else if (nname != 'browser')
+				entry.Store.Vault = nname;
+			else
+				entry.Store.Vault = 'Files';
+
+			/* TODO add menu for delete and download */
+
+			this.callPageFunc('LoadList');
+	]]></Function>
+	<Function Name="LoadList"><![CDATA[
+			var entry = this;
+
+			$('#lblDepFbPath').text('Path: ' + entry.Store.Path);
+
+			$('#lstDepFbFolders,#lstDepFbFiles').empty();
+
+			dc.comm.sendMessage({
+				Service: 'dcCoreServices',
+				Feature: 'Vaults',
+				Op: 'ListFiles',
+				Body: {
+					Vault: entry.Store.Vault,
+					Path: entry.Store.Path
+				}
+			}, function(resp) {
+				if (resp.Result > 0) {
+					dc.pui.Popup.alert(resp.Message);
+					return;
+				}
+
+				var items = resp.Body;
+				var sfield = entry.Store.SortField ? entry.Store.SortField : 'FileName';
+
+				// sort
+				items.sort(dc.util.List.sortObjects(sfield));
+
+				// ########## FOLDERS ##########
+
+				var flist = $('#lstDepFbFolders');
+
+				// add parent folder
+				if (entry.Store.Path.length > 1) {
+					var litm = $('<a href="#" class="dcm-folder"><div class="dcm-file-title">.. [parent]</div></a>');
+
+					litm.click(item, function(e) {
+						var curr = entry.Store.Path;
+
+						if (curr.length == 1)
+							return;
+
+						var path = curr.substr(0, curr.lastIndexOf('/'));
+
+						if (!path)
+							path = '/';
+
+						entry.Store.Path = path;
+						entry.callPageFunc('LoadList');
+
+						e.preventDefault();
+						return false;
+					});
+
+					flist.append(litm);
+				}
+
+				// display
+				for (var i = 0; i < items.length; i++) {
+					var item = items[i];
+
+					if (entry.Params.Chained || ! item.IsFolder)
+						continue;
+
+					var litm = $('<a href="#" class="dcm-folder"></a>');
+
+					var itmtitle = $('<div class="dcm-file-title"></div>');
+					itmtitle.text(item.FileName);
+
+					litm.append(itmtitle);
+
+					litm.click(item, function(e) {
+						var path = '/' + e.data.FileName;
+
+						if (entry.Store.Path.length > 1)
+							path = entry.Store.Path + '/' + e.data.FileName;
+
+						entry.Store.Path = path;
+						entry.callPageFunc('LoadList');
+
+						e.preventDefault();
+						return false;
+					});
+
+					flist.append(litm);
+				}
+
+				// ########## FILES ##########
+
+				var flist = $('#lstDepFbFiles');
+
+				// display
+				for (var i = 0; i < items.length; i++) {
+					var item = items[i];
+
+					if (item.IsFolder)
+						continue;
+
+					var litm = $('<a href="#" class="dcm-file"></a>');
+
+					var path = '/files/' + item.FileName;
+
+					if (entry.Store.Path.length > 1)
+						path = '/files' + entry.Store.Path + '/' + item.FileName;
+
+					litm.attr('href', path);
+
+					if (item.FileName.indexOf('.') != -1) {
+						var fext = item.FileName.substr(item.FileName.indexOf('.')).toLowerCase();
+						var icon = '/imgs/ext-unk.png';
+
+						if ((fext == '.png') || (fext == '.jpg') || (fext == '.jpeg') || (fext == '.gif')) {
+							icon = path;  // + '.v/thumb.jpg';
+						}
+						else if ((fext == '.doc') || (fext == '.docx')) {
+							icon = '/imgs/ext-doc.png';
+						}
+						else if ((fext == '.xls') || (fext == '.xlsx')) {
+							icon = '/imgs/ext-xls.png';
+						}
+						else if ((fext == '.ppt') || (fext == '.pptx')) {
+							icon = '/imgs/ext-ppt.png';
+						}
+						else if (fext == '.pdf') {
+							icon = '/imgs/ext-pdf.png';
+						}
+						else if (fext == '.zip') {
+							icon = '/imgs/ext-zip.png';
+						}
+
+						if (icon) {
+							var imgel = $('<img />');
+							imgel.attr('src', icon);
+							litm.append(imgel);
+						}
+					}
+
+					litm.click(item, function(e) {
+						var path = '/' + e.data.FileName;
+
+						if (entry.Store.Path.length > 1)
+							path = entry.Store.Path + '/' + e.data.FileName;
+
+						if (entry.Params.Callback) {
+							entry.Layer.back();
+
+							entry.Params.Callback( [ {
+								FileName: e.data.FileName,
+								FullPath: path
+							} ] );
+						}
+						else {
+							entry.Store.PopPath = path;
+
+							// TODO $('#puFileOpts').popup('open', { positionTo: e.currentTarget });
+							entry.callPageFunc('DoDownload');
+						}
+
+						e.preventDefault();
+						return false;
+					});
+
+					var itmtitle = $('<div class="dcm-file-title"></div>');
+					itmtitle.text(item.FileName);
+
+					litm.append(itmtitle);
+
+					/*
+					litm.append('<td>' + dc.transfer.fmtFileSize(item.Size) + '</td>');
+
+					litm.append('<td>' + dc.util.Date.formatZLocalMedium(item.LastModified) + '</td>');
+					*/
+
+					flist.append(litm);
+				}
+
+			});
+	]]></Function>
+	<Function Name="DoDownload"><![CDATA[
+			var entry = this;
+
+			if (dc.util.String.endsWith(entry.Store.PopPath, '.html')) {
+				dc.pui.Dialog.loadPage('/dcm/files/edit-file', {
+					Vault: entry.Store.Vault,
+					Path: entry.Store.PopPath
+				});
+			}
+			else {
+				var transfer = new dc.transfer.Vault({
+					Vault: entry.Store.Vault
+				});
+
+				transfer.download(entry.Store.PopPath);
+			}
+	]]></Function>
+	<Function Name="DoDelete"><![CDATA[
+			var page = this;
+
+			$('#puFileOpts').popup('close');
+
+			console.log('im: ' + page.Store.PopPath);
+
+			dc.pui.Popup.confirm('Are you sure you want to remove this file?', function(confirm) {
+				if (! confirm)
+					return;
+
+				dc.comm.sendMessage({
+					Service: 'dcCoreServices',
+					Feature: 'Vaults',
+					Op: 'DeleteFile',
+					Body: {
+						Vault: entry.Store.Vault,
+						FilePath: page.Store.PopPath
+					}
+				}, function(resp) {
+					if (resp.Result > 0)
+						dc.pui.Popup.alert(resp.Message);
+					else
+						page.callPageFunc('LoadList');
+				});
+			});
+	]]></Function>
+	<Function Name="DoRefresh"><![CDATA[
+			this.callPageFunc('LoadList');
+	]]></Function>
+	<Function Name="DoClose"><![CDATA[
+			var entry = this;
+
+			entry.Layer.back();
+	]]></Function>
+	<Function Name="DoAddFolder"><![CDATA[
+			var entry = this;
+
+			dc.pui.Dialog.loadPage('/dcm/files/add-folder', {
+				Vault: entry.Store.Vault,
+				Path: entry.Store.Path,
+				Callback: function(path) {
+					entry.Store.Path = path;
+
+					entry.callPageFunc('LoadList');
+				}
+			});
+	]]></Function>
+	<Function Name="DoUpload"><![CDATA[
+			var entry = this;
+
+			dc.pui.Dialog.loadPage('/dcm/files/upload-file', {
+				Vault: entry.Store.Vault,
+				Path: this.Store.Path,
+				Callback: function(files) {
+					if (entry.Params.Callback) {
+						entry.Layer.back();
+						entry.Params.Callback(files);
+					}
+					else {
+						$('#lstDepFbFolders,#lstDepFbFiles').empty().dcappend(
+							$('<i>')
+								.attr('class', 'fa fa-spinner fa-pulse fa-lg')
+						);
+
+						entry.callPageFunc('LoadList');
+					}
+				}
+			});
+	]]></Function>
+</dc.Html>

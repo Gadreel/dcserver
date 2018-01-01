@@ -1,0 +1,285 @@
+<dc.Html>
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Step 5: Confirm Order" />
+	</Meta>
+
+	<Require Types="dcmOrderCustomerInfo,dcmOrderShippingInfo,dcmOrderBillingInfo,dcmOrderPaymentInfo" />
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dc.Region Hint="Review Order">
+					<p>Review and submit order.</p>
+					<!--
+					<br />
+					<b>Items in Cart: <span id="lblCount">0</span></b>
+					<br />
+					<b>Cart Total: <span id="lblAmount">$0.00</span></b>
+					<br />
+					<br />
+					-->
+
+					<dc.FullLayout Pad="Large">
+						<p id="sectSpecialInstructions" />
+					</dc.FullLayout>
+
+					<dc.RowLayout Collapse="Medium" Pad="Large">
+						<dc.Column Pad="Large" Size="1-2">
+							<b>Customer</b>
+
+							<p id="sectCustomer" />
+						</dc.Column>
+						<dc.Column Pad="Large" Size="1-2">
+							<b>Delivery</b>
+
+							<p id="sectDelivery" />
+						</dc.Column>
+					</dc.RowLayout>
+
+					<dc.RowLayout Collapse="Medium" Pad="Large">
+						<dc.Column Pad="Large" Size="1-2">
+							<b>Totals</b>
+
+							<p>
+								<table id="sectCalcs179b99fde9f74d4f85f681087266e756" />
+							</p>
+						</dc.Column>
+						<dc.Column Pad="Large" Size="1-2">
+							<b>Billing</b>
+
+							<p id="sectBilling" />
+						</dc.Column>
+					</dc.RowLayout>
+				</dc.Region>
+
+				<dcf.FormButtons Hint="Form options">
+					<dc.Button Label="Previous" Click="DoBack" />
+					<dc.Button Label="Submit Order" Click="DoSubmit" Scope="primary" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			dc.cms.cart.Cart.load();	// make sure it is loaded
+
+			page.Store.Pass = true;
+
+			// Special Instructions
+			var cart = dc.cms.cart.Cart._cart;
+			var foundSpecial = false;
+
+			for (var i = 0; i < cart.Items.length; i++) {
+				var item = cart.Items[i];
+
+				if (item.Instructions) {
+					if (! foundSpecial) {
+						$('#sectSpecialInstructions').dcappend(
+							$('<b>').text('Special Instructions'),
+							$('<br>'),
+							$('<br>')
+						);
+
+						foundSpecial = true;
+					}
+
+					$('#sectSpecialInstructions').dcappend(
+						item.Title + ' - ' + item.Instructions,
+						$('<br>'),
+						$('<br>')
+					);
+				}
+			}
+
+			// Customer
+			// if password added then an account is being created - confirm passwords
+			if (cart.CustomerInfo && cart.CustomerInfo.Password) {
+			 	if (cart.CustomerInfo.Password != cart.CustomerInfo.ConfirmPassword) {
+					page.Store.Pass = false;
+
+					$('#sectCustomer').dcappend(
+						'Confirm password does not match Password.',
+						$('<br>')
+					);
+				}
+
+				delete cart.CustomerInfo.ConfirmPassword;
+			}
+			else {
+				delete cart.CustomerInfo.Password;
+				delete cart.CustomerInfo.ConfirmPassword;
+			}
+
+			if (! cart.CustomerInfo || dc.schema.Manager.validate(cart.CustomerInfo, 'dcmOrderCustomerInfo').Code) {
+				page.Store.Pass = false;
+
+				$('#sectCustomer').dcappend(
+					'Customer information is incomplete.'
+				);
+			}
+			else {
+				$('#sectCustomer').dcappend(
+					cart.CustomerInfo.FirstName + ' ' + cart.CustomerInfo.LastName,
+					$('<br>'),
+					cart.CustomerInfo.Email,
+					$('<br>'),
+					cart.CustomerInfo.Phone
+				);
+			}
+
+			// Totals
+			if (cart.CalcInfo.ProductDiscount) {
+				$('#sectCalcs179b99fde9f74d4f85f681087266e756').dcappend(
+					$('<tr>').dcappend(
+						$('<td>').text('Product Total: '),
+						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ItemCalc))
+					),
+					$('<tr>').dcappend(
+						$('<td>').text('Discount: '),
+						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ProductDiscount))
+					)
+				);
+			}
+
+			$('#sectCalcs179b99fde9f74d4f85f681087266e756').dcappend(
+				$('<tr>').dcappend(
+					$('<td>').text('Cart Total: '),
+					$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ItemTotal))
+				)
+			);
+
+			if (cart.CalcInfo.ShipDiscount) {
+				$('#sectCalcs179b99fde9f74d4f85f681087266e756').dcappend(
+					$('<tr>').dcappend(
+						$('<td>').text('Shipping Total: '),
+						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ShipAmount))
+					),
+					$('<tr>').dcappend(
+						$('<td>').text('Discount: '),
+						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ShipDiscount))
+					)
+				);
+			}
+
+			$('#sectCalcs179b99fde9f74d4f85f681087266e756').dcappend(
+				$('<tr>').dcappend(
+					$('<td>').text('Shipping: '),
+					$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ShipTotal))
+				),
+				$('<tr>').dcappend(
+					$('<td>').text('Taxes: '),
+					$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.TaxTotal))
+				),
+				$('<tr>').dcappend(
+					$('<td>').text('Order Total: '),
+					$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.GrandTotal))
+				)
+			);
+
+			// Delivery
+			if (cart.Delivery == 'Pickup') {
+				$('#sectDelivery').text('All of the items in your cart will be picked up at the store or are items that you will download. Unless instructed otherwise, we will send you and message when the order is ready for pickup.');
+			}
+			else {
+				var ship = 0;
+
+				for (var i = 0; i < cart.Items.length; i++) {
+					var item = cart.Items[i];
+
+					for (var n = 0; n < item.Delivery.length; n++) {
+						if (item.Delivery[n] == 'Ship')
+							ship++;
+					}
+				}
+
+				if (ship == 0) {
+					page.Store.Pass = false;
+
+					$('#sectDelivery').text('None of the items in your cart can be shipped. This cart contains items you pickup at the store or items that you will download. Please correct your delivery options.');
+				}
+				else if (ship == cart.Items.length) {
+					$('#sectDelivery').text('All of the items in your cart will be shipped.');
+				}
+				else {
+					$('#sectDelivery').text('Some of the items in your cart will be shipped. Other items will be picked up at store or downloaded, please look for the special instructions for details.');
+				}
+
+				if (! cart.ShippingInfo || dc.schema.Manager.validate(cart.ShippingInfo, 'dcmOrderShippingInfo').Code) {
+					page.Store.Pass = false;
+
+					$('#sectDelivery').dcappend(
+						$('<br>'),
+						$('<br>'),
+						'Shipping information is incomplete.'
+					);
+				}
+				else {
+					$('#sectDelivery').dcappend(
+						$('<br>'),
+						$('<br>'),
+						'Ship To:',
+						$('<br>'),
+						cart.ShippingInfo.FirstName + ' ' + cart.ShippingInfo.LastName,
+						$('<br>'),
+						cart.ShippingInfo.Address,
+						$('<br>'),
+						cart.ShippingInfo.Address2,
+						$('<br>'),
+						cart.ShippingInfo.City + ', ' + cart.ShippingInfo.State
+							+ ' ' + cart.ShippingInfo.Zip
+					);
+				}
+			}
+
+			// Billing
+			if (! cart.BillingInfo || dc.schema.Manager.validate(cart.BillingInfo, 'dcmOrderBillingInfo').Code) {
+				page.Store.Pass = false;
+
+				$('#sectBilling').dcappend(
+					'Billing information is incomplete.'
+				);
+			}
+			// TODO add additional checks for things like card number, if type is card
+			else if (! cart.PaymentInfo || dc.schema.Manager.validate(cart.PaymentInfo, 'dcmOrderPaymentInfo').Code) {
+				page.Store.Pass = false;
+
+				$('#sectBilling').dcappend(
+					'Payment information is incomplete.'
+				);
+			}
+			else {
+				$('#sectBilling').dcappend(
+					cart.BillingInfo.FirstName + ' ' + cart.BillingInfo.LastName,
+					$('<br>'),
+					cart.BillingInfo.Address,
+					$('<br>'),
+					cart.BillingInfo.Address2,
+					$('<br>'),
+					cart.BillingInfo.City + ', ' + cart.BillingInfo.State
+						+ ' ' + cart.BillingInfo.Zip
+				);
+			}
+	]]></Function>
+	<Function Name="DoSubmit"><![CDATA[
+			var page = this;
+
+			if (! page.Store.Pass) {
+				dc.pui.Popup.alert('Please correct any errors and complete all required fields.');
+				return;
+			}
+
+			dc.cms.cart.Cart.save();
+
+			dc.pui.Dialog.loadPage('/dcm/shop/submit', {
+				Callback: function(id) {
+					if (id)
+						page.Layer.close();
+				}
+			});
+	]]></Function>
+	<Function Name="DoBack"><![CDATA[
+			dc.pui.App.loadTab('Billing');
+	]]></Function>
+</dcui>

@@ -1,0 +1,17 @@
+ { 
+	"Variations":  [ 
+		 { 
+			"ExactWidth": 1200, 
+			"ExactHeight": 400, 
+			"Alias": "full", 
+			"Name": "Full"
+		 } 
+	 ] ,
+	 "Shows": [
+	 	{
+	 		"Title": "Home Page",
+	 		"Alias": "home",
+	 		"Images": [ "rock", "fog" ]
+	 	}
+	 ]
+ } 

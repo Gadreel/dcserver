@@ -1,0 +1,110 @@
+<dc.Html Badges="Editor,Admin">
+	<Require Script="/js/vendor/speakingurl-5.0.1.min.js" />
+	
+	<Meta Name="Title"> 
+		<Tr Locale="en" Value="Add Page" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.FormButtons>
+					<dcf.SubmitButton Label="Add" />
+				</dcf.FormButtons>
+				
+				<dcf.Text Name="Title" Label="Title" DataType="dcmPageTitle" Required="true" />
+				<dcf.Text Name="Path" Label="Slug Name" Required="true" Pattern="[\w-]+" 
+					placeholder="page name, no spaces - use dash instead of space" />
+				<dcf.Text Name="Keywords" Label="Keywords" DataType="dcmPageKeywords" />
+				<dcf.Text 
+					Name="Image"
+					Label="Image" 
+				>
+					<Input />
+					<Button Icon="fa-ellipsis-h" Click="DoSelectImage" />
+				</dcf.Text>
+				<dcf.Text Name="Template" Label="Template" DataType="dcSmallString" Required="true" readonly="readonly" />
+				<dcf.TextArea Name="Description" Label="Description" DataType="dcmPageDescription" />
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load" Params="e"><![CDATA[
+			var page = this;
+			
+			page.form().inputQuery('Title')
+				.focusout(function(e) { 
+					var slug = page.form().getValue('Alias');
+				
+					if (! slug) {
+						slug = getSlug(page.form().getValue('Title'));			
+						page.form().setValue('Path', slug);
+					}
+				})
+				.focus();
+			
+			page.Store.Vault = 'Feeds';
+			
+			console.log('thawing: ' + e.Thaw);		
+	]]></Function>
+	<Function Name="LoadRecord" Params="e">
+			e.AsNew = true;
+			e.Data = {
+				Path: '',
+				Template: 'standard'
+			};
+	</Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+			
+			var savedata = {
+				Vault: page.Store.Vault,
+				Path: page.Params.Path + '/' + e.Data.Path + '.html',
+				Command: 'AddPage',
+				Params: {
+					Template: e.Data.Template,
+					SetFields: []
+				}
+			};
+			
+			delete e.Data.Path;
+			delete e.Data.Template;
+			
+			for (var fldname in e.Data) {
+				if (e.Data.hasOwnProperty(fldname)) {
+					savedata.Params.SetFields.push({
+						Name: fldname,
+						Value: e.Data[fldname]
+					});
+				}
+			}
+			
+			e.Message = { 
+				Service: 'dcCoreServices',
+				Feature: 'Vaults',
+				Op: 'Custom',
+				Body: savedata
+			};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+				
+			page.Layer.back();
+			
+			if (page.Params.Callback)
+				page.Params.Callback( page.Params.Path );
+	]]></Function>
+	<Function Name="DoSelectImage"><![CDATA[
+			var page = this;
+		
+		    dc.pui.Dialog.loadPage('/dcm/galleries/chooser', { 
+				Callback: function(res) {
+					if (res.Images && res.Images.length) {
+						var fh = res.Images[0];
+						
+						page.form().setValue('Image', '/galleries' + fh.FullPath);
+						//page.form().FreezeInfo.Default.Values.Image = '/galleries' + fh.FullPath;
+					}
+				} 
+			});
+    ]]></Function>
+</dc.Html>

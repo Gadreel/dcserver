@@ -1,0 +1,567 @@
+/* ************************************************************************
+#
+#  designCraft.io
+#
+#  http://designcraft.io/
+#
+#  Copyright:
+#    Copyright 2014 eTimeline, LLC. All rights reserved.
+#
+#  License:
+#    See the license.txt file in the project's top-level directory for details.
+#
+#  Authors:
+#    * Andy White
+#
+************************************************************************ */
+package dcraft.web.ui.inst;
+
+import dcraft.hub.ResourceHub;
+import dcraft.hub.app.ApplicationHub;
+import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
+import dcraft.log.Logger;
+import dcraft.script.StackUtil;
+import dcraft.script.inst.Instruction;
+import dcraft.script.work.BlockWork;
+import dcraft.script.work.InstructionWork;
+import dcraft.script.work.MainWork;
+import dcraft.script.work.ReturnOption;
+import dcraft.script.inst.doc.Base;
+import dcraft.struct.RecordStruct;
+import dcraft.struct.scalar.BooleanStruct;
+import dcraft.struct.scalar.StringStruct;
+import dcraft.task.IParentAwareWork;
+import dcraft.tenant.Site;
+import dcraft.util.Memory;
+import dcraft.util.StringUtil;
+import dcraft.util.io.OutputWrapper;
+import dcraft.web.ui.JsonPrinter;
+import dcraft.xml.XElement;
+import dcraft.xml.XNode;
+import dcraft.xml.XRawText;
+
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.List;
+import java.util.Map;
+
+public class Html extends Base {
+	static public Html tag() {
+		Html el = new Html();
+		el.setName("dc.Html");
+		return el;
+	}
+	
+	protected Map<String, String> hiddenattributes = null;
+	protected List<XNode> hiddenchildren = null;
+	protected boolean headdone = false;
+
+	public Map<String, String> getHiddenAttributes() {
+		return this.hiddenattributes;
+	}
+	
+	public List<XNode> getHiddenChildren() {
+		return this.hiddenchildren;
+	}
+	
+	@Override
+	public XElement newNode() {
+		return Html.tag();
+	}
+	
+	@Override
+	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
+		String skeleton = StackUtil.stringFromSource(state, "Skeleton");
+		
+		if (StringUtil.isNotEmpty(skeleton)) {
+			this.with(IncludeFragmentInline.tag()
+				.withAttribute("Path", "/skeletons/" + skeleton));
+		}
+	}
+	
+	@Override
+	public void cleanup(InstructionWork state) throws OperatingContextException {
+		if (this.headdone)
+			return;
+		
+		super.cleanup(state);
+		
+		// add meta variables
+		
+		RecordStruct page = (RecordStruct) StackUtil.queryVariable(state, "Page");
+		
+		String locale = OperationContext.getOrThrow().getLocale();
+		
+		// TODO refine, also check lang
+		
+		for (XNode n : this.getChildren()) {
+			if (!(n instanceof XElement))
+				continue;
+			
+			XElement el = (XElement) n;
+			
+			if (! "Meta".equals(el.getName()))
+				continue;
+			
+			String name = StackUtil.stringFromElement(state, el, "Name");
+			
+			if (StringUtil.isEmpty(name))
+				continue;
+			
+			boolean fnd = false;
+			String bestvalue = null;
+			
+			for (XNode t : el.getChildren()) {
+				if (!(t instanceof XElement))
+					continue;
+				
+				XElement tel = (XElement) t;
+				
+				if (! "Tr".equals(tel.getName()))
+					continue;
+				
+				String value = StackUtil.stringFromElement(state, tel, "Value");
+				
+				String trl = StackUtil.stringFromElement(state, tel, "Locale");
+				
+				if (StringUtil.isEmpty(trl)) {
+					bestvalue = value;
+					continue;
+				}
+				
+				if (! locale.equals(trl))
+					continue;
+				
+				page.with(name, value);
+				
+				fnd = true;
+				break;
+			}
+			
+			if (! fnd && StringUtil.isNotEmpty(bestvalue)) {
+				page.with(name, bestvalue);
+			}
+			else if (! fnd) {
+				String value = StackUtil.stringFromElement(state, el, "Value");
+				
+				page.with(name, value);
+			}
+		}
+		
+		if (page.isFieldEmpty("Title")) {
+			String title = StackUtil.stringFromSource(state, "Title");
+			
+			if (StringUtil.isNotEmpty(title))
+				page.with("Title", title);
+		}
+		
+		// after cleanup the document will be turned in just body by Base
+		// we only want head and body in translated document
+		// set apart the rest for possible use later in dynamic out
+		this.hiddenattributes = this.attributes;
+		this.hiddenchildren = this.children;
+	}
+	
+	@Override
+	public void renderAfterChildren(InstructionWork state) throws OperatingContextException {
+		// don't run twice
+		if (this.headdone)
+			return;
+
+		Base body = (Base) this.find("body");
+		
+		if (body == null) {
+			// TODO have a MissingWidget for these sorts of cases
+			body = new Fragment();
+			
+			body
+					.with(W3.tag("h1")
+							.withText("Missing Body Error!!")
+					);
+			
+			this.with(body);
+		}
+		
+		String pc = StackUtil.stringFromSource(state,"PageClass");
+		
+		// TODO cleanup - not always base
+		if (StringUtil.isNotEmpty(pc))
+			((Base) this.findId("dcuiMain")).withClass(pc);
+		
+		for (XNode rel : this.hiddenchildren) {
+			if (! (rel instanceof XElement))
+				continue;
+			
+			XElement xel = (XElement) rel;
+			
+			if (xel.getName().equals("Require") && xel.hasNotEmptyAttribute("Class"))
+				body.withClass(xel.getAttribute("Class"));
+		}
+		
+		RecordStruct page = (RecordStruct) StackUtil.queryVariable(state, "Page");
+		
+		// TODO add feature for page title pattern
+		
+		// TODO below stringFromSource won't work because of "hidden" concept - review and fix
+		
+		W3 head = W3.tag("head");
+		
+		head
+				.with(W3.tag("meta")
+						.withAttribute("chartset", "utf-8")
+				)
+				.with(W3.tag("meta")
+						.withAttribute("name", "format-detection")
+						.withAttribute("content", "telephone=no")
+				)
+				.with(W3.tag("meta")
+						.withAttribute("name", "viewport")
+						.withAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no")
+				)
+				.with(W3.tag("meta")
+						.withAttribute("name", "robots")
+						.withAttribute("content", ("false".equals(StackUtil.stringFromSource(state,"Public", "true").toLowerCase()))
+								? "noindex,nofollow" : "index,follow")
+				)
+				.with(W3.tag("title").withText("{$Page.Title}"));
+		
+		Site site = OperationContext.getOrThrow().getSite();
+		
+		//XElement domainwebconfig = site.getWebConfig();
+		
+		XElement domainwebconfig = ResourceHub.getResources().getConfig().getTag("Web");
+		
+		String icon = StackUtil.stringFromSource(state,"Icon");
+		
+		if (StringUtil.isEmpty(icon))
+			icon = StackUtil.stringFromSource(state,"Icon16");
+		
+		if (StringUtil.isEmpty(icon) && (domainwebconfig != null))
+			icon = domainwebconfig.getAttribute("Icon");
+		
+		if (StringUtil.isEmpty(icon))
+			icon = "/imgs/logo";
+		
+		if (StringUtil.isNotEmpty(icon)) {
+			// if full name then use as the 16x16 version
+			if (icon.endsWith(".png")) {
+				head
+						.with(W3.tag("link")
+								.withAttribute("type", "image/png")
+								.withAttribute("rel", "shortcut icon")
+								.withAttribute("href", icon)
+						)
+						.with(W3.tag("link")
+								.withAttribute("sizes", "16x16")
+								.withAttribute("rel", "icon")
+								.withAttribute("href", icon)
+						);
+			}
+			else {
+				head
+						.with(W3.tag("link")
+								.withAttribute("type", "image/png")
+								.withAttribute("rel", "shortcut icon")
+								.withAttribute("href", icon + "16.png")
+						)
+						.with(W3.tag("link")
+								.withAttribute("sizes", "16x16")
+								.withAttribute("rel", "icon")
+								.withAttribute("href", icon + "16.png")
+						)
+						.with(W3.tag("link")
+								.withAttribute("sizes", "32x32")
+								.withAttribute("rel", "icon")
+								.withAttribute("href", icon + "32.png")
+						)
+						.with(W3.tag("link")
+								.withAttribute("sizes", "152x152")
+								.withAttribute("rel", "icon")
+								.withAttribute("href", icon + "152.png")
+						);
+			}
+		}
+		
+		icon = StackUtil.stringFromSource(state,"Icon32");
+		
+		if (StringUtil.isNotEmpty(icon)) {
+			head.with(W3.tag("link")
+					.withAttribute("sizes", "32x32")
+					.withAttribute("rel", "icon")
+					.withAttribute("href", icon)
+			);
+		}
+		
+		icon = StackUtil.stringFromSource(state,"Icon152");
+		
+		if (StringUtil.isNotEmpty(icon)) {
+			head.with(W3.tag("link")
+					.withAttribute("sizes", "152x152")
+					.withAttribute("rel", "icon")
+					.withAttribute("href", icon)
+			);
+		}
+		
+		/*
+		 * 	Essential Meta Tags
+		 *
+			https://css-tricks.com/essential-meta-tags-social-media/
+			
+			- images:  Reconciling the guidelines for the image is simple: follow Facebook's
+			recommendation of a minimum dimension of 1200x630 pixels (can go as low as 600 x 315)
+			and an aspect ratio of 1.91:1, but adhere to Twitter's file size requirement of less than 1MB.
+			
+			- Title max 70 chars
+			- Desc max 200 chars
+		 */
+		
+		head
+				.with(W3.tag("meta")
+						.withAttribute("property", "og:title")
+						.withAttribute("content", "{$Page.Title}")
+				);
+		
+		if (page.isNotFieldEmpty("Keywords")) {
+			head
+				.with(W3.tag("meta")
+						.withAttribute("name", "keywords")
+						.withAttribute("content", "{$Page.Keywords}")
+				);
+		}
+		
+		if (page.isNotFieldEmpty("Description")) {
+			head
+				.with(W3.tag("meta")
+						.withAttribute("name", "description")
+						.withAttribute("content", "{$Page.Description}")
+				)
+				.with(W3.tag("meta")
+						.withAttribute("property", "og:description")
+						.withAttribute("content", "{$Page.Description}")
+				);
+		}
+		
+		String indexurl = null;
+		
+		if ((domainwebconfig != null) && domainwebconfig.hasNotEmptyAttribute("IndexUrl"))
+			indexurl = domainwebconfig.getAttribute("IndexUrl");
+		
+		if (StringUtil.isNotEmpty(indexurl)) {
+			StackUtil.addVariable(state, "IndexUrl", StringStruct.of(indexurl.substring(0, indexurl.length() - 1)));
+			
+			if (page.isFieldEmpty("Image"))
+				page.with("Image", domainwebconfig.getAttribute("SiteImage"));
+				
+			head
+					.with(W3.tag("meta")
+							.withAttribute("property", "og:image")
+							.withAttribute("content", "{$IndexUrl}{$Page.Image}")
+					);
+		}
+		
+		/* TODO review
+			.with(W3.tag("meta")
+				.withAttribute("name", "twitter:card")
+				.withAttribute("content", "summary")
+			);
+		*/
+		
+		/* TODO review, generalize so we can override
+		if (domainwebconfig != null) {
+			for (XElement gel : domainwebconfig.selectAll("Meta")) {
+				UIElement m = W3.tag("meta");
+				
+				for (Entry<String, String> mset : gel.getAttributes().entrySet())
+					m.withAttribute(mset.getKey(), mset.getValue());
+				
+				head.with(m);
+			}
+		}
+		*/
+		
+		// TODO research canonical url too
+		
+		boolean cachemode = site.isScriptStyleCached() && StringUtil.isEmpty(OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
+		
+		// --- styles ---
+		
+		List<String> styles = OperationContext.getOrThrow().getSite().webGlobalStyles(true, cachemode);
+		
+		for (String surl : styles)
+			head.with(W3.tag("link")
+					.withAttribute("type", "text/css")
+					.withAttribute("rel", "stylesheet")
+					.withAttribute("href", surl));
+		
+		
+		// add in styles specific for this page so we don't have to wait to see them load
+		// TODO enhance so style doesn't double load
+		for (XNode rel : this.hiddenchildren) {
+			if (! (rel instanceof XElement))
+				continue;
+			
+			XElement xel = (XElement) rel;
+			
+			if (xel.getName().equals("Require") && xel.hasNotEmptyAttribute("Style"))
+				head.with(W3.tag("link")
+						.withAttribute("type", "text/css")
+						.withAttribute("rel", "stylesheet")
+						.withAttribute("href", xel.getAttribute("Style")));
+		}
+		
+		// --- scripts ---
+		
+		List<String> scripts = OperationContext.getOrThrow().getSite().webGlobalScripts(true, cachemode);
+		
+		for (String surl : scripts)
+			head.with(W3.tag("script")
+					.withAttribute("defer", "defer")
+					.withAttribute("src", surl));
+		
+		
+		/*
+$(document).ready(function() {
+	
+	dc.pui.Loader.init();
+});
+		 */
+		
+		this
+				.withAttribute("lang", OperationContext.getOrThrow().getLocaleDefinition().getLanguage())
+				.withAttribute("dir", OperationContext.getOrThrow().getLocaleDefinition().isRightToLeft() ? "rtl" : "ltr");
+
+		// put head at top
+		this.add(0, head);
+
+		// the inline script must be after above so we can pick out the body parts for the layout
+		
+		BooleanStruct isDynamic = (BooleanStruct) StackUtil.queryVariable(state, "_Controller.Request.IsDynamic");
+		
+		// first load, add in a script
+		if ((isDynamic == null) || ! isDynamic.getValue()) {
+			XElement googlesetting = ApplicationHub.getCatalogSettings("Google");
+			XElement facebooksetting = ApplicationHub.getCatalogSettings("Facebook");
+			
+			Memory mem = new Memory();
+			
+			try (OutputWrapper out = new OutputWrapper(mem)) {
+				try (PrintStream ps = new PrintStream(out)) {
+					ps.append("function dcReadyScript() {\n");
+					
+					ps.append("if (! dc.handler)\n\tdc.handler = { };\n\n");
+					
+					ps.append("if (! dc.handler.settings)\n\tdc.handler.settings = { };\n\n");
+					
+					// TODO escape these
+					if ((facebooksetting != null) && facebooksetting.hasNotEmptyAttribute("SignInAppId"))
+						ps.append("dc.handler.settings.fbAppId = '" + facebooksetting.getAttribute("SignInAppId") + "';\n");
+					
+					if ((googlesetting != null) && googlesetting.hasNotEmptyAttribute("TrackingCode"))
+						ps.append("dc.handler.settings.ga = '" + googlesetting.getAttribute("TrackingCode") + "';\n");
+					
+					ps.append("\n");
+					
+					JsonPrinter prt = new JsonPrinter();
+					
+					prt.setFormatted(true);
+					prt.setOut(ps);
+					prt.printPageDef(this, false);
+					
+					ps.append("\n\n");
+					ps.append("\tdc.pui.Loader.init();\n");
+					ps.append("};\n");
+				}
+			}
+			catch (IOException x ) {
+				Logger.error("Bad write inline script: " + x);
+			}
+			
+			// TODO nounce inline script - CSP like this
+			// script-src 'strict-dynamic' 'nonce-abcdefg'
+			// https://www.html5rocks.com/en/tutorials/security/content-security-policy/
+			
+			head.with(W3.tag("script")
+					.with(XRawText.of(mem.toString()))
+			);
+		}
+		
+		super.renderAfterChildren(state);
+		
+		this.setName("html");
+	}
+	
+	@Override
+	public ReturnOption run(InstructionWork state) throws OperatingContextException {
+		ReturnOption ret = super.run(state);
+		
+		if (ret == ReturnOption.DONE) {
+			if (this.headdone) {
+				/* TODO move into a test runner
+				System.out.println("----------------------------------- HTML ----------------------------------");
+				//System.out.println(this.toPrettyString());
+
+				XmlPrinter prt = new HtmlPrinter();
+
+				prt.setFormatted(true);
+				prt.setOut(System.out);
+
+				prt.print(this);
+
+				System.out.println();
+
+				System.out.println("----------------------------------- JSON ----------------------------------");
+
+				prt = new JsonPrinter();
+
+				prt.setFormatted(true);
+				prt.setOut(System.out);
+				prt.print(this);
+
+				System.out.println();
+
+				System.out.println("----------------------------------- END ----------------------------------");
+				*/
+
+				return ret;
+			}
+
+			this.headdone = true;
+
+			if (this.gotoHead(state))
+				return ReturnOption.CONTINUE;
+		}
+		
+		return ret;
+	}
+
+	@Override
+	public boolean gotoNext(InstructionWork state, boolean orTop) {
+		// don't go further if the head is running as that was the last step
+		if (this.headdone)
+			return false;
+
+		return super.gotoNext(state, orTop);
+	}
+
+	public boolean gotoHead(InstructionWork state) {
+		BlockWork blockWork = (BlockWork) state;
+
+		XElement head = this.find("head");
+
+		if ((head == null) || ! (head instanceof Instruction))
+			return false;
+
+		blockWork.setCurrEntry(((Instruction) head).createStack(state));
+		return true;
+	}
+
+	@Override
+	public InstructionWork createStack(IParentAwareWork state) {
+		return MainWork.of(state, this);
+	}
+	
+	public InstructionWork createStack() {
+		return MainWork.of(null, this);
+	}
+}

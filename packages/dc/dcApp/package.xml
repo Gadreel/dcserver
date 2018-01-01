@@ -1,0 +1,242 @@
+<Package
+	ClassRoot="dcraft"
+	Abbrv="dc"
+	Version="0.9.5"
+	MessageCodes="150000-199999"
+>
+	<DependsOn>
+		<Package Name="dc/dcHub" MinVersion="0.9" />
+
+		<Library File="commons-lang3-3.1.jar" />
+	</DependsOn>
+
+	<Config>
+		<Service.Definition Id="dcm-store-simple" Name="dcmStoreServices" RunClass="dcraft.cms.store.Service" />
+
+		<Instructions>
+			<!-- general extended tags -->
+			<Tag Name="dc.Html" Class="dcraft.web.ui.inst.Html" />
+			<Tag Name="dc.Body" Class="dcraft.web.ui.inst.Body" />
+			<Tag Name="dc.Band" Class="dcraft.web.ui.inst.Band" />
+			<Tag Name="dc.CodeWidget" Class="dcraft.web.ui.inst.CodeWidget" />
+			<Tag Name="dc.TextWidget" Class="dcraft.web.ui.inst.TextWidget" />
+			<Tag Name="dc.Button" Class="dcraft.web.ui.inst.Button" />
+			<Tag Name="dc.Callout" Class="dcraft.web.ui.inst.Callout" />
+			<Tag Name="dc.Link" Class="dcraft.web.ui.inst.Link" />
+			<Tag Name="dc.MenuWidget" Class="dcraft.web.ui.inst.MenuWidget" />
+			<Tag Name="dc.PagePanel" Class="dcraft.web.ui.inst.PagePanel" />
+			<Tag Name="dc.Panel" Class="dcraft.web.ui.inst.Panel" />
+			<Tag Name="dc.Region" Class="dcraft.web.ui.inst.Region" />
+			<Tag Name="dc.Header" Class="dcraft.web.ui.inst.Header" />
+			<Tag Name="dc.Main" Class="dcraft.web.ui.inst.Main" />
+			<Tag Name="dc.Footer" Class="dcraft.web.ui.inst.Footer" />
+
+			<!-- special content tags -->
+			<Tag Name="dc.Out" Class="dcraft.script.inst.doc.Out" />
+			<Tag Name="dc.MixIn" Class="dcraft.web.ui.inst.MixIn" />
+			<Tag Name="dc.Fragment" Class="dcraft.web.ui.inst.Fragment" />
+			<Tag Name="dc.IncludeFragment" Class="dcraft.web.ui.inst.IncludeFragment" />
+			<Tag Name="dc.IncludeFragmentInline" Class="dcraft.web.ui.inst.IncludeFragmentInline" />
+			<Tag Name="dc.Param" Class="dcraft.web.ui.inst.Param" />
+			<Tag Name="dc.IncludeParam" Class="dcraft.web.ui.inst.IncludeParam" />
+
+			<!-- layout extended tags -->
+			<Tag Name="dc.FullLayout" Class="dcraft.web.ui.inst.layout.FullLayout" />
+			<Tag Name="dc.RowLayout" Class="dcraft.web.ui.inst.layout.RowLayout" />
+			<Tag Name="dc.Column" Class="dcraft.web.ui.inst.layout.Column" />
+			<Tag Name="dc.GridLayout" Class="dcraft.web.ui.inst.layout.GridLayout" />
+
+			<!-- cms content extended tags -->
+			<Tag Name="dcm.IncludeFeed" Class="dcraft.web.ui.inst.cms.IncludeFeed" />
+			<Tag Name="dcm.IncludeFeedInline" Class="dcraft.web.ui.inst.cms.IncludeFeedInline" />
+
+			<!-- cms media extended tags -->
+			<Tag Name="dcm.CarouselWidget" Class="dcraft.web.ui.inst.cms.CarouselWidget" />
+			<Tag Name="dcm.ImageWidget" Class="dcraft.web.ui.inst.cms.ImageWidget" />
+			<Tag Name="dcm.YouTubeWidget" Class="dcraft.web.ui.inst.cms.YouTubeWidget" />
+			<Tag Name="dcm.GalleryWidget" Class="dcraft.web.ui.inst.cms.GalleryWidget" />
+
+			<!-- TODO
+			<Tag Name="dcm.MediaWidget" Class="dcraft.web.ui.inst.cms.MediaWidget" />
+			<Tag Name="dcm.SlidesWidget" Class="dcraft.web.ui.inst.cms.SlidesWidget" />
+
+			<Tag Name="dcm.MapWidget" Class="dcraft.web.ui.inst.misc.MapWidget" />
+			<Tag Name="dcm.ServerInfoWidget" Class="dcraft.web.ui.inst.misc.ServerInfoWidget" />
+			<Tag Name="dcm.SeparatorWidget" Class="dcraft.web.ui.inst.misc.SeparatorWidget" />
+			<Tag Name="dcm.UnderConstructionWidget" Class="dcraft.web.ui.inst.misc.UnderConstructionWidget" />
+			<Tag Name="dcm.BrokenWidget" Class="dcraft.web.ui.inst.misc.BrokenWidget" />
+
+			<Tag Name="dcm.QotDWidget" Class="dcraft.web.ui.inst.feed.QotD" />
+			-->
+
+			<!-- cms feed tags -->
+			<Tag Name="dcm.FacebookWidget" Class="dcraft.web.ui.inst.feed.Facebook" />
+			<Tag Name="dcm.FacebookEventsWidget" Class="dcraft.web.ui.inst.feed.FacebookEvents" />
+
+			<!-- TODO
+			<Tag Name="dcm.FeedWidget" Class="dcraft.web.ui.inst.feed.Feed" />
+			<Tag Name="dcm.FeedDetailWidget" Class="dcraft.web.ui.inst.feed.FeedDetail" />
+			<Tag Name="dcm.FeedParams" Class="dcraft.web.ui.inst.feed.FeedParams" />
+			<Tag Name="dcm.InstagramWidget" Class="dcraft.web.ui.inst.feed.Instagram" />
+			<Tag Name="dcm.TwitterTimelineWidget" Class="dcraft.web.ui.inst.feed.TwitterTimelineLoader" />
+			-->
+
+			<Tag Name="dcm.SocialMediaIcon" Class="dcraft.web.ui.inst.misc.SocialMediaIcon" />
+			<Tag Name="dcm.SocialMediaWidget" Class="dcraft.web.ui.inst.misc.SocialMediaWidget" />
+
+			<Tag Name="dcm.HoursWidget" Class="dcraft.web.ui.inst.store.HoursWidget" />
+
+			<Tag Name="dcmi.CmsLink" Class="dcraft.web.ui.inst.cms.EditButton" />
+
+			<!-- form extended tags -->
+			<Tag Name="dcf.Aligned" Class="dcraft.web.ui.inst.form.AlignedField" />
+			<Tag Name="dcf.FormButtons" Class="dcraft.web.ui.inst.form.AlignedField" />
+			<Tag Name="dcf.AlignedInstructions" Class="dcraft.web.ui.inst.form.AlignedInstructions" />
+			<Tag Name="dcf.ButtonGroup" Class="dcraft.web.ui.inst.form.ButtonGroup" />
+			<Tag Name="dcf.CheckInput" Class="dcraft.web.ui.inst.form.CheckControl" />
+			<Tag Name="dcf.Checkbox" Class="dcraft.web.ui.inst.form.CheckGroup" />
+			<Tag Name="dcf.CheckGroup" Class="dcraft.web.ui.inst.form.CheckGroup" />
+			<Tag Name="dcf.Custom" Class="dcraft.web.ui.inst.form.Custom" />
+			<Tag Name="dcf.HorizCheckGroup" Class="dcraft.web.ui.inst.form.CheckGroup" />
+			<Tag Name="dcf.Form" Class="dcraft.web.ui.inst.form.Form" />
+			<Tag Name="dcf.Text" Class="dcraft.web.ui.inst.form.InputField" />
+			<Tag Name="dcf.Password" Class="dcraft.web.ui.inst.form.InputField" />
+			<Tag Name="dcf.Hidden" Class="dcraft.web.ui.inst.form.InputField" />
+			<Tag Name="dcf.Label" Class="dcraft.web.ui.inst.form.InputField" />
+			<Tag Name="dcf.InputControl" Class="dcraft.web.ui.inst.form.InputControl" />
+			<Tag Name="dcf.Instructions" Class="dcraft.web.ui.inst.form.Instructions" />
+			<Tag Name="dcf.ManagedForm" Class="dcraft.web.ui.inst.form.ManagedForm" />
+			<Tag Name="dcf.MultiText" Class="dcraft.web.ui.inst.form.MultiInputField" />
+			<Tag Name="dcf.RadioButton" Class="dcraft.web.ui.inst.form.RadioControl" />
+			<Tag Name="dcf.RadioGroup" Class="dcraft.web.ui.inst.form.RadioGroup" />
+			<Tag Name="dcf.HorizRadioGroup" Class="dcraft.web.ui.inst.form.RadioGroup" />
+			<Tag Name="dcf.Select" Class="dcraft.web.ui.inst.form.SelectField" />
+			<Tag Name="dcf.SubmitButton" Class="dcraft.web.ui.inst.form.SubmitButton" />
+			<Tag Name="dcf.TextArea" Class="dcraft.web.ui.inst.form.TextArea" />
+			<Tag Name="dcf.Uploader" Class="dcraft.web.ui.inst.form.Uploader" />
+			<Tag Name="dcf.YesNo" Class="dcraft.web.ui.inst.form.YesNo" />
+
+			<!-- standard w3 tags -->
+			<Tag Name="a" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="abbr" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="address" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="article" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="aside" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="audio" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="b" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="bdi" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="bdo" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="blockquote" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="button" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="caption" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="canvas" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="cite" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="code" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="colgroup" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="content" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="data" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="datalist" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="dd" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="del" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="details" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="dfn" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="dialog" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="div" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="dl" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="dt" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="em" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="fieldset" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="figcaption" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="figure" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="footer" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="form" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="element" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="embed" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="h1" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="h2" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="h3" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="h4" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="h5" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="h6" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="head" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="header" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="hgroup" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="i" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="ins" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="kbd" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="label" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="legend" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="li" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="main" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="mark" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="map" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="menu" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="menuitem" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="meter" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="nav" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="noscript" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="object" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="ol" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="optgroup" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="option" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="output" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="p" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="pre" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="progress" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="q" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="rp" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="rt" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="rtc" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="ruby" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="s" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="samp" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="script" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="section" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="select" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="shadow" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="slot" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="small" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="source" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="span" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="strong" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="style" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="sub" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="summary" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="sup" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="table" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="tbody" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="template" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="textarea" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="td" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="tfoot" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="th" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="thead" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="time" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="title" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="tr" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="track" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="u" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="ul" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="var" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="video" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="wbr" Class="dcraft.web.ui.inst.W3" />
+
+			<!-- self closing tags -->
+			<Tag Name="area" Class="dcraft.web.ui.inst.W3Closed" />
+			<Tag Name="base" Class="dcraft.web.ui.inst.W3Closed" />
+			<Tag Name="br" Class="dcraft.web.ui.inst.W3Closed" />
+			<Tag Name="col" Class="dcraft.web.ui.inst.W3Closed" />
+			<Tag Name="hr" Class="dcraft.web.ui.inst.W3Closed" />
+			<Tag Name="img" Class="dcraft.web.ui.inst.W3Closed" />
+			<Tag Name="input" Class="dcraft.web.ui.inst.W3Closed" />
+			<Tag Name="link" Class="dcraft.web.ui.inst.W3Closed" />
+			<Tag Name="meta" Class="dcraft.web.ui.inst.W3Closed" />
+			<Tag Name="param" Class="dcraft.web.ui.inst.W3Closed" />
+
+			<!-- deprecated
+			<Tag Name="basefont" Class="dcraft.web.ui.inst.ClosedStandard" />
+			<Tag Name="frame" Class="dcraft.web.ui.inst.ClosedStandard" />
+			-->
+		</Instructions>
+	</Config>
+</Package>

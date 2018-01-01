@@ -1,0 +1,155 @@
+<dc.Html>
+	<Meta Name="Title"> 
+		<Tr Locale="en" Value="Test Basic Form Functions" />
+	</Meta>
+	
+	<!-- /examples/simple/simple-form -->
+	<dc.Body style="padding: 16px;">
+		<dc.Panel Title="Simple Form Load and Save">
+			<dcf.Form Name="TestUserEdit">
+				<dcf.Text 
+					Name="FirstName"
+					DataType="nakFirstName"
+					Label="First" 
+					Required="true"
+					Instructions="Please enter your first name"
+					Message="Required, either missing or wrong length. Must be 7 characters."
+				/>
+
+				<dcf.Text 
+					Name="LastName"
+					DataType="nakLastName"
+					Label="Last" 
+					placeholder="only White or Smith allowed"
+				>
+					<Instructions>
+						<Tr>
+Only **White** or _Smith_ allowed!
+						</Tr>
+					</Instructions>
+					<Message>
+						<Tr>
+Default Error Message - **you** only have _two_ options!
+						</Tr>
+					</Message>
+				</dcf.Text>
+				
+				<dcf.Text Name="Phone" Label="Phone" Pattern="\d\d\d\-\d\d\d\d" ValidateButton="true" Instructions="Please enter your Phone" />
+				
+				<dcf.MultiText 
+					Label="Alt Name" 
+				>
+					<Input 
+						Name="AltFirstName"
+						DataType="nakFirstName"
+						Required="true"
+						Size="40" 
+						placeholder="First" 
+					/>
+					<Input 
+						Name="AltMiddleName"
+						DataType="nakMiddleName"
+						Size="10" 
+						placeholder="M" 
+					/>
+					<Input 
+						Name="AltLastName"
+						DataType="nakLastName"
+						Size="40" 
+						placeholder="Last" 
+					/>
+					
+					<Message>
+						<Tr>
+**First:** Required. Must be 7 characters.
+
+**Middle:** Must be 1 character.
+
+**Last:** Default Error Message - only have _two_ options - Smith or White!
+						</Tr>
+					</Message>
+				</dcf.MultiText>
+				
+				<dcf.MultiText Label="New Name">
+					<Input 
+						Name="NewFirstName"
+						DataType="nakFirstName"
+						Required="true"
+						Size="40" 
+						placeholder="First" 
+					/>
+					<Input 
+						Name="NewMiddleName"
+						DataType="nakMiddleName"
+						Size="10" 
+						placeholder="M" 
+					/>
+					<Input 
+						Name="NewLastName"
+						DataType="nakLastName"
+						Size="40" 
+						placeholder="Last" 
+					/>
+				</dcf.MultiText>
+				
+				<dcf.FormButtons>
+					<dc.Button Label="Flag Last" Click="DoFlagLast" />
+					<dc.Button Label="Unflag Last" Click="DoUnflagLast" />
+					<dc.Button Label="Flag Phone" Click="DoFlagPhone" />
+					<dc.Button Label="Unflag Phone" Click="DoUnflagPhone" />
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.Panel>
+	</dc.Body>
+
+	<Function Name="Load">
+				var page = this;
+			
+				console.log('page loaded: ' + page.Name);
+				
+				var x = 5;
+				
+				if (x <= 2)
+					console.log('test 1');
+				
+				if (x < 6)
+					console.log('test 2');
+				
+				if (x > 2)
+					console.log('test 3');
+    </Function>
+	<Function Name="LoadRecord" Params="e">
+				e.Data = {
+					FirstName: 'James',
+					LastName: 'Smith',
+					Phone: '344-2334',
+					AltFirstName: 'Jimmy',
+					AltMiddleName: 'R',
+					AltLastName: 'Cricket'
+				};
+	</Function>
+	<Function Name="SaveRecord" Params="e">
+				console.log('save data: ' + JSON.stringify(e.Data, null, '\t'));
+	</Function>
+	<Function Name="DoFlagLast">
+				var page = this;
+			
+				page.form().input('LastName').flag('test bad');
+    </Function>
+	<Function Name="DoUnflagLast">
+				var page = this;
+			
+				page.form().input('LastName').unflag();
+    </Function>
+	<Function Name="DoFlagPhone">
+				var page = this;
+			
+				page.form().input('Phone').flag('a special message!');
+    </Function>
+	<Function Name="DoUnflagPhone">
+				var page = this;
+			
+				page.form().input('Phone').unflag();
+    </Function>
+</dc.Html>

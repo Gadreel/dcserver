@@ -1,0 +1,37 @@
+<dc.Html>
+	<dc.Body>
+		<dc.Band Width="wide">
+			<div id="pubHeader" data-combo="other">
+				<p>in header</p>
+			</div>
+		</dc.Band>
+		
+		<dcm.IncludeFeed Path="{$Page.Path}" Meta="true">
+			<Param Name="welcome1" Value="welcome Thelina" />
+		</dcm.IncludeFeed>
+
+		<dc.Band id="pubSpecial" Width="wide">
+			<p>begin special area</p>
+			
+			<dcm.IncludeFeed Path="{$Page.Path}.other" />
+			
+			<p>mid special area</p>
+
+			<dcm.IncludeFeed Path="{$Page.Path}.test" />
+
+			<p>end special area</p>
+		</dc.Band>
+
+		<dc.Band Width="wide">
+			<div id="pubFooter" data-combo="other">
+				<p>in footer</p>
+			</div>
+		</dc.Band>
+	</dc.Body>	
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+			
+			dc.pui.Apps.activateCms()
+    ]]></Function>
+</dc.Html>

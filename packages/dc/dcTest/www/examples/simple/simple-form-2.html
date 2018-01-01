@@ -1,0 +1,78 @@
+<dc.Html>
+	<Meta Name="Title"> 
+		<Tr Locale="en" Value="Test Basic Form Functions" />
+	</Meta>
+	
+	<dc.Body style="padding: 16px;">
+		<dc.Panel Title="Simple Form Load and Save">
+			<dcf.Form Name="TestUserEdit2">
+				<dcf.Text Name="Phone" Label="Phone" Pattern="\d\d\d\-\d\d\d\d" ValidateButton="true" Instructions="Please enter your Phone" />
+				
+				<dcf.Password Name="Password" Label="Password" />
+
+				<dcf.Text Name="HomePhone" Label="Home Phone" readonly="readonly" />
+
+				<dcf.Label Name="AreaCode" Label="Area Code" />
+
+				<dcf.Text Name="OldPhone" Label="Old Phone" disabled="disabled" />
+	
+				<dcf.Text 
+					Name="Email1"
+					Label="Email" 
+					placeholder="Email" 
+				>
+					<Info Icon="fa-square" />
+					<Glyph Icon="fa-circle" Flag="true" />
+					<Input />
+					<Glyph Icon="fa-star" />
+					<Info Label="@designcraft.io" />
+					<Button Icon="fa-bell" Flag="true" Click="Test1" />
+				</dcf.Text>
+
+				<dcf.Text 
+					Name="Email2"
+					Label="Email" 
+					placeholder="Email" 
+					Stacked="true"
+				>
+					<Info Icon="fa-square" />
+					<Glyph Icon="fa-circle" Flag="true" />
+					<Input />
+					<Glyph Icon="fa-star" />
+					<Info Label="@designcraft.io" />
+					<Button Icon="fa-bell" Flag="true" Click="Test2" />
+				</dcf.Text>
+				<dcf.FormButtons>
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.Panel>
+	</dc.Body>
+
+	<Function Name="Load">
+				var page = this;
+			
+				console.log('page loaded: ' + page.Name);
+    </Function>
+	<Function Name="LoadRecord" Params="e">
+				e.Data = {
+					Phone: '344-2334',
+					HomePhone: '344-3443',
+					AreaCode: '608',
+					OldPhone: '565-4633',
+					Email1: 'marty',
+					Email2: 'jane'
+				};
+	</Function>
+	<Function Name="SaveRecord" Params="e">
+				console.log('save data: ' + JSON.stringify(e.Data, null, '\t'));
+	</Function>
+	<Function Name="Test1">
+				console.log('test 1');
+    </Function>
+	<Function Name="Test2">
+				console.log('test 2');
+				
+				this.form().input('AreaCode').setValue('609');
+    </Function>
+</dc.Html>

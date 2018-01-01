@@ -1,0 +1,73 @@
+<dc.Html>
+	<Require Style="/examples/styles.css" />
+	
+	<Meta Name="Title"> 
+		<Tr Locale="en" Value="Form Size Examples" />
+	</Meta>
+	
+	<dc.Body class="form-forms">
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<dc.Callout>
+					These form examples show FullLayout with padding with text.
+					Each Band is a different width and has small padding.
+				</dc.Callout>
+		
+				<h3>Medium Band Example</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" Pad="Small" class="content">
+			<dc.FullLayout Pad="Medium">
+				<dc.Panel Title="Simple Form Load and Save">
+					<dcf.Form Name="TestUserEdit9a"
+						RecordOrder="Names,Birth,Contact"
+						RecordType="nakNameInfoTest,nakBirthInfoTest,nakContactInfoTest"
+					>
+						<dcf.Text Name="First" Label="First" Record="Names" />
+						<dcf.Text Name="Last" Label="Last" Record="Names" />
+						<dcf.Text Name="SSN" Label="SSN" Record="Birth" />
+						<dcf.Text Name="Sex" Label="Sex" Record="Birth" />
+						<dcf.Text Name="DOB" Label="DOB" Record="Birth" />
+						<dcf.Text Name="Phone" Label="Phone" Record="Contact" />
+				
+						<dcf.FormButtons>
+							<dcf.SubmitButton Label="Save" />
+						</dcf.FormButtons>
+					</dcf.Form>
+				</dc.Panel>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<h3>Narrow Band Example</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Narrow" Pad="Small" class="content">
+			<dc.FullLayout Pad="Medium">
+				<dc.Panel Title="Simple Form Load and Save">
+					<dcf.Form Name="TestUserEdit9b"
+						RecordOrder="Names,Birth,Contact"
+						RecordType="nakNameInfoTest,nakBirthInfoTest,nakContactInfoTest"
+					>
+						<dcf.Text Name="First" Label="First" Record="Names" />
+						<dcf.Text Name="Last" Label="Last" Record="Names" />
+						<dcf.Text Name="SSN" Label="SSN" Record="Birth" />
+						<dcf.Text Name="Sex" Label="Sex" Record="Birth" />
+						<dcf.Text Name="DOB" Label="DOB" Record="Birth" />
+						<dcf.Text Name="Phone" Label="Phone" Record="Contact" />
+				
+						<dcf.FormButtons>
+							<dcf.SubmitButton Label="Save" />
+						</dcf.FormButtons>
+					</dcf.Form>
+				</dc.Panel>
+			</dc.FullLayout>
+		</dc.Band>
+	</dc.Body>
+
+	<Function Name="Load">
+				var page = this;
+			
+				console.log('page loaded: ' + page.Name);
+    </Function>
+</dc.Html>

@@ -1,0 +1,3 @@
+<dcs.Script Title="Order Placed">
+	<dcs.Info>Just got an order placed: {$_Param.Id}!</dcs.Info>
+</dcs.Script>

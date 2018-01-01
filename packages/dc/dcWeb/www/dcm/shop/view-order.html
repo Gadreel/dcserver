@@ -1,0 +1,330 @@
+<dc.Html Badges="User">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="View Order" />
+	</Meta>
+
+	<dc.Body class="dcuiWide">
+		<dc.PagePanel>
+			<dcf.Form>
+				<dc.Region Hint="Order Detail">
+					<dc.FullLayout id="layoutSpecial" Pad="Large">
+						<p id="sectSpecial" />
+					</dc.FullLayout>
+
+					<dc.FullLayout id="layoutCustomerComments" Pad="Large">
+						<p id="sectCustomerComments" />
+					</dc.FullLayout>
+
+					<dc.RowLayout Collapse="Medium" Pad="Large">
+						<dc.Column Pad="Large" Size="1-2">
+							<b>Order</b>
+
+							<p id="sectCustomer" />
+						</dc.Column>
+						<dc.Column Pad="Large" Size="1-2">
+							<b>Delivery</b>
+
+							<p id="sectDelivery" />
+						</dc.Column>
+					</dc.RowLayout>
+
+					<dc.FullLayout Pad="Large">
+						<table id="lstCartTotal" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+							<thead>
+								<th>Item</th>
+								<th>Description</th>
+								<th>Status</th>
+								<th>Quantity / Price</th>
+								<th>Sub-Total</th>
+							</thead>
+							<tbody id="lstCartTotalBody" />
+						</table>
+					</dc.FullLayout>
+
+					<dc.RowLayout Collapse="Medium" Pad="Large">
+						<dc.Column Pad="Large" Size="1-2">
+							<b>Totals</b>
+
+							<p>
+								<table id="sectCalcs7689e351683f448fb52058d623003b9f" />
+							</p>
+						</dc.Column>
+						<dc.Column Pad="Large" Size="1-2">
+							<b>Billing</b>
+
+							<p id="sectBilling" />
+						</dc.Column>
+					</dc.RowLayout>
+				</dc.Region>
+
+				<dcf.FormButtons Hint="Form options">
+					<dc.Button Label="Close" Click="AfterSave" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Message = {
+				Service: 'dcmStoreServices',
+				Feature: 'Orders',
+				Op: 'LoadMy',
+				Body: { Id: page.Params.Order.Id }
+			};
+	]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			var cart = e.Data;
+
+			if (cart.Comment) {
+				$('#sectCustomerComments').dcappend(
+					$('<b>').text('Customer Comments'),
+					$('<br>'),
+					$('<br>'),
+					cart.Comment
+				);
+			}
+			else {
+				$('#layoutCustomerComments').hide();
+			}
+
+			var foundSpecial = false;
+
+			for (var i = 0; i < cart.Items.length; i++) {
+				var item = cart.Items[i];
+
+				if (item.Instructions) {
+					if (! foundSpecial) {
+						$('#sectSpecial').dcappend(
+							$('<b>').text('Special Instructions'),
+							$('<br>'),
+							$('<br>')
+						);
+
+						foundSpecial = true;
+					}
+					else {
+						$('#sectSpecial').dcappend(
+							$('<br>'),
+							$('<br>')
+						);
+					}
+
+					$('#sectSpecial').dcappend(
+						item.Title + ' - ' + item.Instructions
+					);
+				}
+			}
+
+			if (! foundSpecial) {
+				$('#layoutSpecial').hide();
+			}
+
+			// Customer
+			$('#sectCustomer').dcappend(
+				'Order Id: ',
+				page.Params.Order.Id.substr(15),
+				$('<br>'),
+				'Order Date: ',
+				dc.util.Date.formatZLocalMedium(cart.OrderDate),
+				$('<br>'),
+				'Order Status: ',
+				cart.Status,
+				$('<br>'),
+				$('<br>'),
+				'By: ',
+				cart.CustomerInfo.FirstName + ' ' + cart.CustomerInfo.LastName,
+				$('<br>'),
+				cart.CustomerInfo.Email,
+				$('<br>'),
+				cart.CustomerInfo.Phone
+			);
+
+			// Totals
+			if (cart.CalcInfo.ProductDiscount) {
+				$('#sectCalcs7689e351683f448fb52058d623003b9f').dcappend(
+					$('<tr>').dcappend(
+						$('<td>').text('Product Total: '),
+						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ItemCalc))
+					),
+					$('<tr>').dcappend(
+						$('<td>').text('Discount: '),
+						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ProductDiscount))
+					)
+				);
+			}
+
+			$('#sectCalcs7689e351683f448fb52058d623003b9f').dcappend(
+				$('<tr>').dcappend(
+					$('<td>').text('Cart Total: '),
+					$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ItemTotal))
+				)
+			);
+
+			if (cart.CalcInfo.ShipDiscount) {
+				$('#sectCalcs7689e351683f448fb52058d623003b9f').dcappend(
+					$('<tr>').dcappend(
+						$('<td>').text('Shipping Total: '),
+						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ShipAmount))
+					),
+					$('<tr>').dcappend(
+						$('<td>').text('Discount: '),
+						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ShipDiscount))
+					)
+				);
+			}
+
+			$('#sectCalcs7689e351683f448fb52058d623003b9f').dcappend(
+				$('<tr>').dcappend(
+					$('<td>').text('Shipping: '),
+					$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ShipTotal))
+				),
+				$('<tr>').dcappend(
+					$('<td>').text('Taxes: '),
+					$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.TaxTotal))
+				),
+				$('<tr>').dcappend(
+					$('<td>').text('Order Total: '),
+					$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.GrandTotal))
+				)
+			);
+
+			// Delivery
+			if (cart.Delivery == 'Pickup') {
+				$('#sectDelivery').text('All of the items will be picked up at the store or are items that you will download.');
+			}
+			else {
+				$('#sectDelivery').text('Shipping service requested for at least some of these items, see special instructions for exceptions.');
+
+				if (! cart.ShippingInfo) {
+					$('#sectDelivery').dcappend(
+						$('<br>'),
+						$('<br>'),
+						'Shipping information is incomplete.'
+					);
+				}
+				else {
+					$('#sectDelivery').dcappend(
+						$('<br>'),
+						$('<br>'),
+						'Ship To:',
+						$('<br>'),
+						cart.ShippingInfo.FirstName + ' ' + cart.ShippingInfo.LastName,
+						$('<br>'),
+						cart.ShippingInfo.Address,
+						$('<br>'),
+						cart.ShippingInfo.Address2,
+						$('<br>'),
+						cart.ShippingInfo.City + ', ' + cart.ShippingInfo.State
+							+ ' ' + cart.ShippingInfo.Zip
+					);
+				}
+			}
+
+			// Billing
+			if (! cart.BillingInfo || ! cart.PaymentInfo) {
+				$('#sectBilling').dcappend(
+					'Billing or payment information is incomplete.',
+					$('<br><br>')
+				);
+			}
+
+			if (cart.PaymentInfo) {
+				$('#sectBilling').dcappend(
+					'Payment method: ',
+					cart.PaymentInfo.PaymentMethod,
+					$('<br>'),
+					'Payment Id: ',
+					cart.PaymentId,
+					$('<br><br>')
+				);
+			}
+
+			if (cart.BillingInfo) {
+				$('#sectBilling').dcappend(
+					cart.BillingInfo.FirstName + ' ' + cart.BillingInfo.LastName,
+					$('<br>'),
+					cart.BillingInfo.Address,
+					$('<br>'),
+					cart.BillingInfo.Address2,
+					$('<br>'),
+					cart.BillingInfo.City + ', ' + cart.BillingInfo.State
+						+ ' ' + cart.BillingInfo.Zip
+				);
+			}
+
+			var $tbl = $('#lstCartTotalBody');
+
+			$tbl.empty();
+
+			for (var i = 0; i < cart.Items.length; i++) {
+				var item = cart.Items[i];
+
+				$tbl.dcappend(
+					$('<tr>').dcappend(
+						$('<td>').dcappend(
+							$('<b>').addClass('dc-table-cell-label').text('Item'),
+							' ',
+							$('<img>')
+								.attr('aria-hidden', 'true')
+								.attr('src', '/galleries/store/product/'
+									+ item.Alias + '/' + (item.Image ? item.Image : 'main') + '.v/thumb.jpg')
+						),
+						$('<td>').dcappend(
+							$('<b>').addClass('dc-table-cell-label').text('Description'),
+							' ',
+							item.Title,
+							$('<br>'),
+							$('<br>'),
+							(item.Instructions ? item.Instructions : null)
+						),
+						$('<td>').dcappend(
+							$('<b>').addClass('dc-table-cell-label').text('Status'),
+							' ',
+							item.Status
+						),
+						$('<td>').dcappend(
+							$('<b>').addClass('dc-table-cell-label').text('Quantity / Price'),
+							' ',
+							item.Quantity,
+							' @ $',
+							dc.util.Number.formatMoney(item.Price)
+						),
+						$('<td>').dcappend(
+							$('<b>').addClass('dc-table-cell-label').text('Sub-Total'),
+							' $',
+							dc.util.Number.formatMoney(item.Total)
+						)
+					)
+				);
+			}
+
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Message = {
+				Service: 'dcmStoreServices',
+				Feature: 'Orders',
+				Op: 'Update',
+				Body: {
+					Id: page.Params.Order.Id,
+					Status: e.Data.Status
+				}
+			};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback();
+	]]></Function>
+</dcui>

@@ -1,0 +1,45 @@
+<dc.Html>
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Password Reset / Confirm Code" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form Name="Reset">
+				<dcf.Text Name="Username" Label="Email" placeholder="email or username" Required="true" />
+
+				<dcf.FormButtons>
+					<dc.Button Label="Cancel" Click="onCancel" />
+					<dc.Button Label="Request Reset" Click="DoConfirm" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="onCancel">
+				var entry = this;
+
+				entry.Layer.back();
+	</Function>
+	<Function Name="DoConfirm" Params="e">
+				var entry = this;
+
+				dc.comm.sendMessage({
+					Service: 'dcCoreServices',
+					Feature: 'Users',
+					Op: 'InitiateConfirm',
+					Body: {
+						Username: entry.form().getValue('Username')
+					}
+				}, function(resp) {
+					if (resp.Result > 0) {
+						dc.pui.Popup.alert('Unable to request a confirmation code.');
+					}
+					else {
+						dc.pui.Popup.alert('Request sent.', function() {
+							entry.Layer.back();
+						});
+					}
+				});
+	</Function>
+</dc.Html>

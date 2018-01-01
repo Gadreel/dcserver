@@ -1,0 +1,40 @@
+<Config>
+    <Service Name="ChainDataService" RunClass="dcraft.example.service.ChainDataService" />
+
+    <Schema>
+        <Shared>
+            <StringType Id="zName">
+                <StringRestriction Pattern="\w{3,}" />
+            </StringType>
+
+            <StringType Id="zDish">
+                <StringRestriction MaxLength="50" />
+            </StringType>
+
+            <NumberType Id="zRating">
+                <NumberRestriction Conform="Decimal" />
+            </NumberType>
+
+            <Record Id="zChefRating">
+                <Field Name="Dish" Type="zDish" Required="True" />
+                <Field Name="Judge" Type="zName" Required="True" />
+                <Field Name="Rating" Type="zRating" Required="True" />
+            </Record>
+
+            <List Id="zChefRatings" Type="zChefRating" />
+        </Shared>
+
+        <Services>
+            <Service Name="ChainDataService">
+                <Feature Name="Default">
+                    <Secure Badges="SysAdmin,Admin,User">
+                        <Op Name="Simple">
+                            <Request Type="zName" Required="True" />
+                            <Response Type="zChefRating" />
+                        </Op>
+                    </Secure>
+                </Feature>
+            </Service>
+        </Services>
+    </Schema>
+</Config>

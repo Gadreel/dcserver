@@ -1,0 +1,9 @@
+{
+	en: { 
+		Name: "Lance Ellis", 
+		Title: "CTO", 
+		Email: "lance@abc.com", 
+		Phone: "ext. 207", 
+		Description: "Tech visionary" 
+	}
+}

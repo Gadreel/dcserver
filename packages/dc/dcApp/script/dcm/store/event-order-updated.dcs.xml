@@ -1,0 +1,3 @@
+<dcs.Script Title="Order Updated">
+	<dcs.Info>Just got an order update: {$_Param.Id}!</dcs.Info>
+</dcs.Script>

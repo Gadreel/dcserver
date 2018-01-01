@@ -1,0 +1,537 @@
+<dc.Html>
+	<Require Style="/examples/styles.css" />
+	
+	<Meta Name="Title"> 
+		<Tr Locale="en" Value="Row layout examples" />
+	</Meta>
+	
+	<dc.Body class="row-layout">
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			Font Size: 
+			<dc.Button Icon="fa-plus" Click="DoFontBigger" />
+			<dc.Button Icon="fa-minus" Click="DoFontSmaller" />
+		
+			<dc.FullLayout>
+				<dc.Callout>
+					These examples show RowLayout with three columns of text.
+					Each RowLayout uses Medium collapse.
+					Each Band is a different width.
+				</dc.Callout>
+		
+				<h3>Wide Band Example</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Wide" class="content">
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title One
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Two
+
+- Lorem ipsum dolor sit amet
+- consectetur adipiscing elit
+- sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Three
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<h3>Medium Band Example</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="content">
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title One
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Two
+
+- Lorem ipsum dolor sit amet
+- consectetur adipiscing elit
+- sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Three
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<h3>Narrow Band Example</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Narrow" class="content">
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title One
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Two
+
+- Lorem ipsum dolor sit amet
+- consectetur adipiscing elit
+- sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Three
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<dc.Callout>
+					Each RowLayout uses Narrow collapse.
+					Each Band is a different width.
+				</dc.Callout>
+		
+				<h3>Wide Band Example</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Wide" class="content">
+			<dc.RowLayout Collapse="Narrow">
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title One
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Two
+
+- Lorem ipsum dolor sit amet
+- consectetur adipiscing elit
+- sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Three
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<h3>Medium Band Example</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="content">
+			<dc.RowLayout Collapse="Narrow">
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title One
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Two
+
+- Lorem ipsum dolor sit amet
+- consectetur adipiscing elit
+- sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Three
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<h3>Narrow Band Example</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Narrow" class="content">
+			<dc.RowLayout Collapse="Narrow">
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title One
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Two
+
+- Lorem ipsum dolor sit amet
+- consectetur adipiscing elit
+- sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Three
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>		
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<dc.Callout>
+					Examples of Wide Band but with column padding.
+				</dc.Callout>
+		
+				<h3>Small Column Padding Example</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Wide" class="content">
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-3" Pad="Small">
+					<dc.TextWidget>
+						<Tr>
+## Title One
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="Small">
+					<dc.TextWidget>
+						<Tr>
+## Title Two
+
+- Lorem ipsum dolor sit amet
+- consectetur adipiscing elit
+- sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="Small">
+					<dc.TextWidget>
+						<Tr>
+## Title Three
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<h3>Medium Column Padding Example</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Wide" class="content">
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-3" Pad="Medium">
+					<dc.TextWidget>
+						<Tr>
+## Title One
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="Medium">
+					<dc.TextWidget>
+						<Tr>
+## Title Two
+
+- Lorem ipsum dolor sit amet
+- consectetur adipiscing elit
+- sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="Medium">
+					<dc.TextWidget>
+						<Tr>
+## Title Three
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<h3>Large Column Padding Example</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Wide" class="content">
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-3" Pad="Large">
+					<dc.TextWidget>
+						<Tr>
+## Title One
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="Large">
+					<dc.TextWidget>
+						<Tr>
+## Title Two
+
+- Lorem ipsum dolor sit amet
+- consectetur adipiscing elit
+- sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="Large">
+					<dc.TextWidget>
+						<Tr>
+## Title Three
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<dc.Callout>
+					Examples of Wide Band with band padding.
+				</dc.Callout>
+		
+				<h3>Small Band Padding Example</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Wide" class="content" Pad="Small">
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title One
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Two
+
+- Lorem ipsum dolor sit amet
+- consectetur adipiscing elit
+- sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Three
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<h3>Medium Band Padding Example</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Wide" class="content" Pad="Medium">
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title One
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Two
+
+- Lorem ipsum dolor sit amet
+- consectetur adipiscing elit
+- sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Three
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<h3>Large Band Padding Example</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Wide" class="content" Pad="Large">
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title One
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Two
+
+- Lorem ipsum dolor sit amet
+- consectetur adipiscing elit
+- sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dc.TextWidget>
+						<Tr>
+## Title Three
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<dc.Callout>
+					Example of Wide Band with band padding and column padding.
+				</dc.Callout>
+		
+				<h3>Small Band Padding w/ Extra Column Padding Example</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Wide" class="content" Pad="Small">
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-3" Pad="Extra">
+					<dc.TextWidget>
+						<Tr>
+## Title for 1/3
+
+- Lorem ipsum dolor sit amet
+- consectetur adipiscing elit
+- sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="2-3" Pad="Extra">
+					<dc.TextWidget>
+						<Tr>
+## Title for 2/3
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+	</dc.Body>
+	
+	<Function Name="DoFontBigger">
+		var size = $('html').css('font-size');
+		
+		size = size.substr(0, size.length - 2);
+		
+		$('html').css('font-size', '' + (size / 16 * 100 + 25) + '%');
+	</Function>
+	<Function Name="DoFontSmaller">
+		var size = $('html').css('font-size');
+		
+		size = size.substr(0, size.length - 2);
+		
+		$('html').css('font-size', '' + (size / 16 * 100 - 25) + '%');
+	</Function>
+</dc.Html>

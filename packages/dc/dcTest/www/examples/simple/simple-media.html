@@ -1,0 +1,29 @@
+<dc.Html Title="Greetings!" Cms="Auto">
+	<dc.PagePartDef Title="Article" For="article" BuildId="pubBody" />
+	
+	<dc.Body>
+		<div id="pubBody" />
+		
+		<dc.MediaSection>
+			<Media Thumb="/galleries/Board-Members/Paul-Ganshert.v/thumb.jpg" Image="/galleries/Board-Members/Paul-Ganshert.v/full.jpg">
+				<Field Name="Title" Value="ha ha 1" />
+				<Field Name="Description" Value="a funny thing 1" />
+			</Media>
+			<Media YouTubeId="6_XYrX5FvOY" ThumbHint="4:3-ratio or 16:9-ratio">
+				<Field Name="Title" Value="ha ha 2" />
+				<Field Name="Description" Value="a funny thing 2" />
+			</Media>
+			<Media Thumb="/galleries/Store/Life-on-a-Coral-Reef-interior.v/thumb.jpg" Image="/galleries/Store/Life-on-a-Coral-Reef-interior.v/medium.jpg">
+				<Field Name="Title" Value="ha ha 3" />
+				<Field Name="Description" Value="a funny thing 3" />
+			</Media>
+			<Template>
+				<a href="#" data-dc-kind="@mediakind@"><img src="@path@" data-dc-media="@mediadata@" class="pure-img" /></a>
+			</Template>
+		</dc.MediaSection>
+	</dc.Body>
+	
+	<dc.Function Name="Load">
+			dc.pui.Apps.activateCms()
+    </dc.Function>
+</dc.Html>

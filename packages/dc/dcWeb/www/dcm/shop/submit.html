@@ -1,0 +1,87 @@
+<dc.Html>
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Placing Order" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<p id="sectProcessMessage">
+				Please wait while the order is placed.
+
+				<br />
+				<br />
+
+				<i class="fa fa-spinner fa-spin fa-2x" aria-hidden="true" />
+			</p>
+
+			<!-- do not display so alert is not triggered -->
+			<div id="sectProcessFail" role="alert" style="display: none;" tabindex="-1">
+				<p id="lblOrderFail" />
+
+				<dc.Button Label="Return to Order" Click="onDone" />
+			</div>
+
+			<!-- do not display so alert is not triggered -->
+			<div id="sectProcessSuccess" role="alert" style="display: none;" tabindex="-1">
+				<p>
+					Order placed.
+				</p>
+				<p id="lblOrderSubmitted" />
+				<p>
+					An order confirmation will be sent to your email address,
+					please check your spam box if it does not arrive.
+				</p>
+				<p>
+					Thank you for shopping at {$SiteOwner}!
+				</p>
+
+				<dc.Button Label="Return to Website" Click="onDone" />
+			</div>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+				var page = this;
+
+				dc.cms.cart.Cart.submit(function(id, resp) {
+					$('#sectProcessMessage').empty();
+
+					if (! id) {
+						$('#lblOrderFail').text('Unable place order: ' + resp.Message + ' Please check your billing information.');
+						$('#sectProcessFail').show().focus();
+					}
+					else {
+						page.Store.NewId = id;
+
+						var oldcart = dc.cms.cart.Cart._cart;
+
+						$('#lblOrderSubmitted').dcappend(
+							'Order Number: ' + id.substr(id.length - 6),
+							$('<br>'),
+							'Amount: $' + dc.util.Number.formatMoney(oldcart.CalcInfo.GrandTotal)
+						);
+
+						dc.cms.cart.Cart.clear();
+
+						$('#sectProcessSuccess').show().focus();
+
+						if (ga)
+							ga('send', 'event', 'Order', 'Submit', id);
+
+						// TODO review, does not seem too work
+						dc.user.updateUser();
+					}
+
+					$('#sectProcessAction').show();
+				});
+	]]></Function>
+	<Function Name="onDone"><![CDATA[
+				var page = this;
+
+				page.Layer.back();
+
+				if (page.Params.Callback) {
+					page.Params.Callback(page.Store.NewId);
+				}
+	]]></Function>
+</dc.Html>

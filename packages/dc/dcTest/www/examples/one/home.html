@@ -1,0 +1,82 @@
+<dc.Html>
+	<Require Style="/examples/styles.css" />
+	
+	<Meta Name="Title"> 
+		<Tr Locale="en" Value="Home One" />
+	</Meta>
+	<Meta Name="Description">
+		<Tr Locale="en" Value="We develop and implement creative solutions for your landscaping needs, creating a unique project that fits your lifestyle." /> 
+	</Meta>
+	
+	<dc.Body class="home">
+		<dc.Fragment>
+			<dc.Band Width="wide" class="header white">
+				<h2>header with title: {$Page.Title}</h2>
+			</dc.Band>
+		</dc.Fragment>
+
+		<dc.Fragment>
+			<dc.Band Width="wide">
+				<dc.FullLayout id="layout1">
+					<dcm.CarouselWidget id="widget1" Gallery="/examples/one" Show="home" />
+				</dc.FullLayout>
+			</dc.Band>
+			<dc.Band Width="medium" class="blue">
+				<dc.FullLayout id="layout2">
+					<dc.TextWidget id="widget2">
+						<Tr Locale="en"><![CDATA[
+Our firm has designed and installed **residential landscapes** throughout the _Greater Madison_ area since 1951. Experienced Ganshert architects, designers and installers ...
+						]]></Tr>
+					</dc.TextWidget>
+				</dc.FullLayout>
+			</dc.Band>
+			<dc.Band Width="wide">
+				<dc.RowLayout id="layout3" class="leaders" Collapse="medium">
+					<dc.Column Size="1-4">
+						<dcm.ImageWidget id="widget3" Path="/examples/simple/board/tom" class="leader-image" />
+					</dc.Column>
+					<dc.Column Size="1-4">
+						<dcm.ImageWidget id="widget4" Path="/examples/simple/board/mac" class="leader-image" />
+					</dc.Column>
+					<dc.Column Size="1-4">
+						<dcm.ImageWidget id="widget5" Path="/examples/simple/board/lance" class="leader-image" />
+					</dc.Column>
+					<dc.Column Size="1-4">
+						<dcm.ImageWidget id="widget6" Path="/examples/simple/board/carrie" class="leader-image" />
+					</dc.Column>
+				</dc.RowLayout>
+			</dc.Band>
+			<dc.Band Width="wide" class="brown-gray">
+				<dc.RowLayout id="layout4" class="feeds" Collapse="medium">
+					<dc.Column Size="1-2">
+						<dc.CodeWidget id="widget7">
+							<h1><span>Testimonials</span></h1>	
+				
+							<dcm.YouTubeWidget VideoId="3EMOM3hoLFI" />
+
+							<dc.TextWidget id="widget8">
+								<Tr Locale="en"><![CDATA[
+We are very <i>pleased</i> with the design, quality of product, and installation of the recent landscaping project...
+							]]></Tr>
+							</dc.TextWidget>
+				
+							<dc.Link Page="/Testimonials" class="testimonialRight" id="homeMoreTestimonials">Read More.</dc.Link>
+						</dc.CodeWidget>
+					</dc.Column>
+					<dc.Column Size="1-2">
+						<dc.CodeWidget id="widget9">
+							<h1><span>On Facebook</span></h1>
+							<dcm.Facebook />
+						</dc.CodeWidget>
+					</dc.Column>
+				</dc.RowLayout>
+			</dc.Band>
+		</dc.Fragment>
+
+		<dc.Fragment>
+			<dc.Band Width="wide" class="footer blue">
+				<h2>footer</h2>
+			</dc.Band>
+		</dc.Fragment>
+	</dc.Body>
+</dc.Html>

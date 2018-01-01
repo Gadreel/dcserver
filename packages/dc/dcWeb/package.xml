@@ -1,0 +1,30 @@
+<Package
+	ClassRoot="dcraft"
+	Abbrv="dcw"
+	Version="0.9.5"
+	MessageCodes="150000-199999"
+>
+	<DependsOn>
+		<Package Name="dc/dcApp" MinVersion="0.9" />
+	</DependsOn>
+
+	<Config>
+		<Web.Global Style="/css/font-awesome.min.css" />
+		<Web.Global Style="/css/dc.app.css" />
+		<Web.Global Style="/css/dcm.app.css" />
+
+		<Web.Global Script="/js/vendor/jquery-3.2.1.slim.min.js" />
+		<Web.Global Script="/js/vendor/moment.min.js" />
+		<Web.Global Script="/js/vendor/numeral/numeral.min.js" />
+		<Web.Global Script="/js/vendor/numeral/languages.min.js" />
+		<!-- TODO only used by carousel, consider remove -->
+		<Web.Global Script="/js/vendor/velocity.min.js" />
+		<Web.Global Script="/js/dc.lang.js" />
+		<Web.Global Script="/js/dc.schema.js" />
+		<Web.Global Script="/js/dc.schema.def.js" />
+		<Web.Global Script="/js/dc.user.js" />
+		<Web.Global Script="/js/dc.comm.js" />
+		<Web.Global Script="/js/dc.app.js" />
+		<Web.Global Script="/js/dcm.app.js" />
+	</Config>
+</Package>

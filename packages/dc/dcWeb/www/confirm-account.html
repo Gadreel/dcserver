@@ -1,0 +1,55 @@
+<dc.Html>
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Confirm Code" />
+	</Meta>
+
+	<dc.Body>
+		<div id="sectMsg">
+			<p>Checking confirmation code, please wait...</p>
+
+			<i class="fa fa-spinner fa-lg fa-pulse" />
+		</div>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var entry = this;
+
+			var grecover = dc.util.Web.getFromParams(dc.pui.Loader.OriginHash, 'code');
+			var user = dc.util.Web.getFromParams(dc.pui.Loader.OriginHash, 'user');
+
+			if (grecover && user) {
+				dc.pui.Loader.OriginHash = null;
+
+				dc.user.signin(user, grecover, false, function() {
+					if (dc.user.isVerified()) {
+						dc.pui.Dialog.loadPage('/dcw/user/edit-password', {
+							Callback: function() {
+								entry.callPageFunc('AfterCheck');
+							}
+						});
+
+						$('#sectMsg').empty().dcappend(
+							$('<p>').dcappend(
+								'Confirmation completed. ',
+								$('<a>')
+									.attr('href', '#')
+									.text('Continue')
+							)
+						);
+					}
+					else {
+						$('#sectMsg').html('<p>Confirmation code did not work, perhaps the code expired.</p>');
+					}
+				});
+			}
+			else {
+				$('#sectMsg').html('<p>Confirmation code is incomplete.</p>');
+			}
+	]]></Function>
+	<Function Name="AfterCheck">
+			if (dc.handler.confirmEvent)
+				dc.handler.confirmEvent();
+			else
+				window.location = '/';		// try to get this page out of the history
+	</Function>
+</dcui>

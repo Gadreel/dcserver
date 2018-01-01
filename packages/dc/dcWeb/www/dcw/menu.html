@@ -1,0 +1,74 @@
+<dc.Html Title="Fast Menu">
+	<dc.Body class="menu">
+		<section id="dcuiFastMenuArea" class="dc-panel dc-panel-primary dc-panel-page">
+			<div class="dc-panel-heading">
+				<h1 id="dcuiFastMenuHeading">Menu</h1>
+			</div>
+			<main id="dcuiFastMenuBody" aria-labelledby="dcuiFastMenuHeading" tabindex="-1">
+				<ul id="dcuiFastMenu" />
+			</main>
+		</section>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+				var entry = this;
+
+				if (entry.Params.Menu && entry.Params.Menu.Tabs) {
+					for (var i = 0; i < entry.Params.Menu.Tabs.length; i++) {
+						var opt = entry.Params.Menu.Tabs[i];
+
+						if (opt.Auth && ! dc.user.isAuthorized(opt.Auth))
+							continue;
+
+						$('#dcuiFastMenu').dcappend(
+							$('<li>')
+								.dcappend(
+									$('<a>')
+									 	.attr('href', '#')
+										.attr('class', 'pure-button')
+										.addClass(opt.Kind)
+										// TODO maybe - .addClass(opt.Alias == app.TabFocus ? 'pure-button-selected' : '')
+										.text(opt.Title)
+										.click(opt, function(e) {
+											entry.Layer.back();
+
+											// TODO support other layers - via Params
+											dc.pui.App.loadTab(e.data.Alias);
+
+											e.preventDefault();
+											return false;
+										})
+								)
+						);
+					}
+				}
+
+				if (entry.Params.Menu && entry.Params.Menu.Options) {
+					for (var i = 0; i < entry.Params.Menu.Options.length; i++) {
+						var opt = entry.Params.Menu.Options[i];
+
+						if (opt.Auth && ! dc.user.isAuthorized(opt.Auth))
+							continue;
+
+						$('#dcuiFastMenu').dcappend(
+							$('<li>')
+								.dcappend(
+									$('<a>')
+									 	.attr('href', '#')
+										.attr('class', 'pure-button')
+										.addClass(opt.Kind)
+										.text(opt.Title)
+										.click(opt, function(e) {
+											entry.Layer.back();
+
+											e.data.Op.call(entry, e);
+
+											e.preventDefault();
+											return false;
+										})
+								)
+						);
+					}
+				}
+	]]></Function>
+</dc.Html>

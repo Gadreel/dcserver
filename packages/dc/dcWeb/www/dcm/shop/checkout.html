@@ -1,0 +1,53 @@
+<dc.Html>
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Step 1: Customer Information" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dc.Region Hint="Customer form">
+					<dcf.Text Label="Email" Name="Email" Required="true" />
+					<dcf.Text Label="First Name" Name="FirstName" Required="true" />
+					<dcf.Text Label="Last Name" Name="LastName" Required="true" />
+					<dcf.Text Label="Phone" Name="Phone" Required="true" />
+
+					<div id="sectPassword">
+						<dcf.Password Label="Password" Name="Password" placeholder="to create user account just add password" />
+						<dcf.Password Label="Confirm Password" Name="ConfirmPassword" placeholder="confirm to create user account" />
+					</div>
+				</dc.Region>
+
+				<dcf.FormButtons Hint="Form options">
+					<dcf.SubmitButton Label="Next" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load" Params="e"><![CDATA[
+			dc.cms.cart.Cart.load();	// make sure it is loaded
+
+			if (dc.user.isVerified())
+				$('#sectPassword').hide();
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			// if user is logged in and yet no info collected yet then default their data
+			if (dc.user.isVerified() && $.isEmptyObject(dc.cms.cart.Cart._cart.CustomerInfo)) {
+				e.Data = dc.user.getUserInfo();
+			}
+			else {
+				e.Data = dc.cms.cart.Cart._cart.CustomerInfo;
+			}
+	]]></Function>
+	<Function Name="Freeze" Params="e"><![CDATA[
+			var page = this;
+
+			dc.cms.cart.Cart._cart.CustomerInfo = this.form().getValues();
+
+			dc.cms.cart.Cart.save();
+	]]></Function>
+	<Function Name="AfterSave" Params="e"><![CDATA[
+			dc.pui.App.loadTab('Shipping');
+	]]></Function>
+</dcui>

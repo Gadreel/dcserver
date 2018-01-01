@@ -1,0 +1,156 @@
+<dc.Html>
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Item Quantity" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dc.Region Hint="Item Quantity form">
+					<dc.RowLayout Collapse="Narrow">
+						<dc.Column Size="1-4" Pad="Medium" aria-hidden="true">
+							<!-- TODO improve alt -->
+							<img id="schpVarQtyImage" alt="product image" />
+						</dc.Column>
+						<dc.Column Size="3-4" Pad="Medium">
+							<dcf.Label Label="Product" Name="Title" />
+							<dcf.Label Label="Description" Name="Description" />
+							<dcf.Label Label="Instructions" Name="Instructions" />
+							<dcf.Label Label="Price" Name="Price" />
+							<dcf.Text Label="Quantity" Name="Quantity" Type="Decimal" Required="true" />
+						</dc.Column>
+					</dc.RowLayout>
+				</dc.Region>
+
+				<dcf.FormButtons Hint="Form options">
+					<dc.Button id="btnShpCartAdd2" Click="DoAddCont" Label="Add and Continue Shopping" />
+					<dc.Button id="btnShpCartCheck2" Click="DoAddCheckout" Label="Add and Checkout" />
+					<dc.Button id="btnShpCartClose1b" Click="DoClose" Label="Cancel" aria-label="Close and do not Add" />
+					<dc.Button id="btnShpCartUp2" Click="DoUpdate" Label="Update Quantity" />
+					<dc.Button id="btnShpCartClose2b" Click="DoClose" Label="Cancel" aria-label="Close and do not Update" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			dc.cms.cart.Cart.load();	// make sure it is loaded
+
+			if (page.Params.Product) {
+				$('#btnShpCartAdd2,#btnShpCartCheck2,#btnShpCartClose1b').hide();
+			}
+			else {
+				$('#btnShpCartUp2,#btnShpCartClose2b').hide();
+			}
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.AsNew = true;
+
+			if (page.Params.Product) {
+				e.Data = page.Params.Product;
+			}
+			else {
+				e.Message = {
+					Service: 'dcmStoreServices',
+					Feature: 'Product',
+					Op: 'Lookup',
+					Body: {
+						Id: page.Params.Id,
+						Alias: page.Params.Alias
+					}
+				}
+			}
+	]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (page.Params.Product)
+				page.Store.Product = page.Params.Product;
+			else
+				page.Store.Product = e.Data;
+
+			var img = 'main';
+
+			if (page.Store.Product.Image)
+				img = page.Store.Product.Image;
+
+			$('#schpVarQtyImage').attr('src', '/galleries/store/product/'
+				+ page.Store.Product.Alias + '/' + img + '.v/thumb.jpg');
+
+			e.Data = {
+				Title: page.Store.Product.Title,
+				Description: page.Store.Product.Description,
+				Instructions: page.Store.Product.Instructions,
+				Price: '$' + dc.util.Number.formatMoney(page.Store.Product.Price),
+				Quantity: page.Params.Product ? page.Params.Product.Quantity : 1
+			};
+	]]></Function>
+	<Function Name="DoAddCont" Params="e"><![CDATA[
+			var page = this;
+
+			page.Store.After = 'close';
+
+			page.form().submit();
+	]]></Function>
+	<Function Name="DoAddCheckout" Params="e"><![CDATA[
+			var page = this;
+
+			page.Store.After = 'checkout';
+
+			page.form().submit();
+	]]></Function>
+	<Function Name="DoUpdate" Params="e"><![CDATA[
+			var page = this;
+
+			page.Store.After = 'update';
+
+			page.form().submit();
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (page.Params.Product) {
+				page.Params.Product.Quantity = e.Data.Quantity
+			}
+			else {
+				dc.cms.cart.Cart.addItem({
+					Product: page.Store.Product.Id,
+					Quantity: e.Data.Quantity
+				});
+			}
+	]]></Function>
+	<Function Name="AfterSave" Params="e"><![CDATA[
+			var page = this;
+
+			var after = function() {
+				dc.cms.cart.Cart.save();
+
+				page.Layer.back();
+
+				if (page.Store.After == 'checkout')
+					dc.pui.App.startTab({
+						Tab: 'Checkout',
+						Menu: 'dcmShop'
+					});
+				else if (page.Params.Callback)
+					page.Params.Callback();
+			};
+
+			if (page.Params.Product) {
+				dc.cms.cart.Cart.updateTotals();
+				after();
+			}
+			else {
+				dc.cms.cart.Cart.calculate(after);
+			}
+	]]></Function>
+	<Function Name="DoClose" Params="e"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+	]]></Function>
+</dcui>

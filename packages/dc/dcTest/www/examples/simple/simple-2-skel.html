@@ -1,0 +1,91 @@
+<dc.MixIn PageClass="general">
+	<Meta Name="Title"> 
+		<Tr Locale="en" Value="Greetings!" />
+	</Meta>
+	
+	<Require Class="newreq" />
+	
+	<dc.Fragment class="fragclass" id="pubBody">
+			<h2>Hello part two!</h2>
+			<p>Good to be here! {$welcome1}</p>
+			
+			<!-- dc.QotD / -->
+			
+			<br />
+			<br />
+			
+			<dc.TextWidget><Tr><![CDATA[## title in MD
+- aaa
+- bbb **bold**
+- ccc _italic_
+
+[click here](/files/pdfs/test.pdf)
+			]]></Tr></dc.TextWidget>
+			
+			<br />
+			<br />
+			
+			<dc.TextWidget><Tr>## title in MD
+CDATA not needed!			
+
+- aaa
+- bbb **bold**
+- ccc _italic_
+
+{$welcome1}
+
+[click here](/files/pdfs/test.pdf)
+			</Tr></dc.TextWidget>
+			
+			<br />
+			<br />
+			
+			<Blanket />
+			
+			<br />
+			<br />
+			
+			<dc.Panel id="sectTest" Title="Test's Section" class="banana ">
+				<p>Also good to be here! test Herb's smile</p>
+			</dc.Panel>
+			
+			<br />
+			<br />
+
+			<dcf.Form>
+				<p>Not really here!</p>
+			</dcf.Form>
+			
+			<br />
+			<br />
+			
+			<!-- ServerInfo / -->
+			
+			<dc.IncludeFragment Path="/examples/simple/simple-2-frag" class="inccls2">
+				<Param Name="test2">
+					<dc.Button Page="/About-Us" Label="About 0" />
+					
+					<p>abc</p>
+					<p>xyz</p>
+					
+					<div data-combo="other">
+						<p>
+							one
+							<span>two <b>is</b> bold</span>
+							three
+						</p>
+					</div>
+					
+					<dc.Button Page="/About-Us" Label="About 1" class="abc" />
+					<dc.Button Click="DoAbout2" Label="About 2" />
+					<dc.Link Click="DoAbout2" Label="About 2b" class="abc" />
+				</Param>
+			</dc.IncludeFragment>
+	</dc.Fragment>
+	
+	<Function Name="DoAbout2"><![CDATA[
+			var page = this;
+			
+			console.log('about 2');
+    ]]></Function>
+</dc.MixIn>

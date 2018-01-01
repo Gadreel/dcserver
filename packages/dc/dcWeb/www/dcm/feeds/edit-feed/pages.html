@@ -1,0 +1,146 @@
+<dc.Html Badges="Editor,Admin">
+	<Require Script="/js/vendor/speakingurl-5.0.1.min.js" />
+
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Edit Page" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.Text Name="Title" Label="Title" DataType="dcmPageTitle" Required="true" />
+				<dcf.Text Name="Keywords" Label="Keywords" DataType="dcmPageKeywords" />
+				<dcf.Text
+					Name="Image"
+					Label="Image"
+				>
+					<Input />
+					<Button Icon="fa-ellipsis-h" Click="DoSelectImage" />
+				</dcf.Text>
+				<dcf.TextArea Name="Description" Label="Description" DataType="dcmPageDescription" />
+
+				<dcf.FormButtons>
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var entry = this;
+
+    ]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			e.Message = {
+				Service: 'dcCoreServices',
+				Feature: 'Vaults',
+				Op: 'Custom',
+				Body: {
+					Vault: 'Feeds',
+					Command: 'LoadMeta',
+					Path: '/' + entry.Params.Feed + entry.Params.Path
+				}
+			};
+    ]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			var metalist = e.Data.Extra;
+
+			for (var i = 0; i < metalist.length; i++) {
+				var m = metalist[i];
+
+				if (! m.attributes || ! m.attributes.Name)
+					continue;
+
+				if (! m.children || ! m.children.length) {
+					if (m.attributes.Value)
+						e.Data[m.attributes.Name] = m.attributes.Value;
+
+					continue;
+				}
+
+				// TODO scan for locale
+
+				var tr0 = m.children[0];
+
+				if (! tr0.attributes || ! tr0.attributes.Value)
+					continue;
+
+				e.Data[m.attributes.Name] = tr0.attributes.Value;
+			}
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			var savedata = {
+				Vault: 'Feeds',
+				Command: 'SaveMeta',
+				Path: '/' + entry.Params.Feed + entry.Params.Path,
+				Params: {
+					Meta: []
+				}
+			};
+
+			for (var fldname in e.Data) {
+				if (e.Data.hasOwnProperty(fldname)) {
+					savedata.Params.Meta.push({
+						type: 'element',
+						name: 'Meta',
+						attributes: {
+							Name: fldname
+						},
+						children: [
+							{
+								type: 'element',
+								name: 'Tr',
+								attributes: {
+									Value: e.Data[fldname]
+								}
+							}
+						]
+					});
+				}
+			}
+
+			e.Message = {
+				Service: 'dcCoreServices',
+				Feature: 'Vaults',
+				Op: 'Custom',
+				Body: savedata
+			};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback( page.Params.Path );
+	]]></Function>
+	<Function Name="DoSelectImage"><![CDATA[
+			var page = this;
+
+			/*
+			var path = page.form().getValue('Image');
+			var pos = path ? path.lastIndexOf('/') : -1;
+
+			if (pos != -1)
+				path = path.substr(0, pos);
+			else
+				path = '/';
+			*/
+
+			dc.pui.Dialog.loadPage('/dcm/galleries/chooser', {
+				//Path: path,
+				Callback: function(res) {
+					if (res.Images && res.Images.length) {
+						var fh = res.Images[0];
+
+						page.form().setValue('Image', '/galleries' + fh.FullPath);
+					}
+				}
+			});
+    ]]></Function>
+</dc.Html>

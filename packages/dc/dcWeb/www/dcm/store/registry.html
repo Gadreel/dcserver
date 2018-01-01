@@ -1,0 +1,182 @@
+<dc.Html Badges="Clerk,Admin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Gift Registry" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dc.Region Label="Gift Registry">
+				<span style="display: inline-block; margin-top: 9px; margin-right: 9px;">
+					<span style="display: inline-block; margin-top: 18px; vertical-align: top;">Search Term:</span>
+					<input id="txtTerm" placeholder="" style="margin-top: 9px; margin-right: 9px;" />
+				</span>
+
+				<dc.Button Label="Search" Click="LoadRegistry" style="margin-top: 9px; margin-right: 9px;" />
+
+				<dc.Button Label="Add New Registry" Click="DoAddRegistry" style="margin-top: 9px; margin-right: 9px;" />
+
+				<br />
+				<br />
+
+				<table id="lstRegistry" class="dc-table-break-std dc-table dc-table-reflow dc-table-stripe" />
+			</dc.Region>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.callPageFunc('LoadRegistry');
+	]]></Function>
+	<Function Name="LoadRegistry"><![CDATA[
+			var page = this;
+
+			var $list = $('#lstRegistry');
+
+			$list.empty().dcappend(
+				$('<tbody>').dcappend(
+					$('<tr>').dcappend(
+						$('<td>').dcappend(
+							$('<i>').addClass('fa fa-spinner fa-pulse fa-lg')
+						)
+					)
+				)
+			);
+
+			dc.comm.sendMessage({
+				Service: 'dcmStoreServices',
+				Feature: 'GiftRegistry',
+				Op: 'Search',
+				Body: {
+					Term: $('#txtTerm').val()
+				}
+			}, function(rmsg) {
+				if (rmsg.Result > 0) {
+					dc.pui.Popup.alert('Unable to load list: ' + rmsg.Message);
+					return;
+				}
+
+				var resortColumn = function(e) {
+					page.Store.SortField = $(this).attr('data-sort-on');
+					page.callPageFunc('LoadRegistry');
+				};
+
+				var editRegistry = function(e) {
+					dc.pui.Dialog.loadPage('/dcm/store/registry-entry', {
+						Id: e.data.Id,
+						Callback: function(e) {
+							page.callPageFunc('LoadRegistry');
+						}
+					 });
+
+					e.preventDefault();
+					return false;
+				};
+
+				$tbl = $('<tbody>');
+
+				$list.empty().dcappend(
+					$('<thead>').dcappend(
+						$('<tr>').dcappend(
+							$('<th>').dcappend(
+								$('<a>').attr('data-sort-on', 'Id').click(resortColumn).dcappend(
+									$('<span>Id  &nbsp;</span>'),
+									$('<i>').addClass('fa fa-sort fa-lg')
+								)
+							),
+							$('<th>').dcappend(
+								$('<a>').attr('data-sort-on', 'OrderDate').click(resortColumn).dcappend(
+									$('<span>Date  &nbsp;</span>'),
+									$('<i>').addClass('fa fa-sort fa-lg')
+								)
+							),
+							$('<th>').dcappend(
+								$('<a>').attr('data-sort-on', 'Status').click(resortColumn).dcappend(
+									$('<span>Type  &nbsp;</span>'),
+									$('<i>').addClass('fa fa-sort fa-lg')
+								)
+							),
+							$('<th>').dcappend(
+								$('<a>').attr('data-sort-on', 'Name').click(resortColumn).dcappend(
+									$('<span>For &nbsp;</span>'),
+									$('<i>').addClass('fa fa-sort fa-lg')
+								)
+							)
+						)
+					),
+					$tbl
+				);
+
+				var recs = rmsg.Body;
+
+				if (! recs.length) {
+					$tbl.dcappend(
+						$('<tr>').dcappend(
+							$('<td>').attr('span', '6').text('[None Found]')
+						)
+					);
+
+					return;
+				}
+
+				// prep for sort
+				for (var i = 0; i < recs.length; i++) {
+					var item = recs[i];
+
+					item.CleanId = item.Id.substr(15);
+				}
+
+				// sort
+				var sortfld = page.Store.SortField ? page.Store.SortField : 'EventDate';
+
+				recs.sort(dc.util.List.sortObjects(sortfld));
+
+				for (var i = 0; i < recs.length; i++) {
+					var item = recs[i];
+
+					$tbl.dcappend(
+						$('<tr>').dcappend(
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Id'),
+								' ',
+								$('<a>')
+									.attr('href', '#')
+									.click(item, editRegistry)
+									.dcappend(
+										item.CleanId
+									)
+							),
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Date'),
+								' ',
+								dc.util.Date.formatZLocalMedium(item.EventDate)
+							),
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Type'),
+								' ',
+								item.EventType
+							),
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('For'),
+								' ',
+								item.For
+							)
+						)
+					);
+				}
+			});
+	]]></Function>
+	<Function Name="DoClose"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+	]]></Function>
+	<Function Name="DoAddRegistry"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcm/store/registry-entry', {
+				Callback: function(e) {
+					page.callPageFunc('LoadRegistry');
+				}
+			 });
+	]]></Function>
+</dc.Html>

@@ -1,0 +1,175 @@
+<dc.Html>
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Shopping Cart" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.FormButtons Hint="Cart options">
+				<dc.Button Label="Empty Cart" Click="DoEmpty" />
+				<dc.Button Label="Continue Shopping" Click="DoClose" />
+				<dc.Button Label="Checkout" Click="DoCheckout" Scope="primary" />
+			</dcf.FormButtons>
+
+			<dc.Region Hint="Cart contents">
+				<table id="lstCart" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+					<thead>
+						<th>Item</th>
+						<th>Description</th>
+						<th>Price</th>
+						<th>Quantity</th>
+						<th>Sub-Total</th>
+					</thead>
+					<tbody id="lstCartBody" />
+				</table>
+
+				<dcf.FormButtons>
+					<div id="sectTotal"><b>Cart Total:</b> <span id="lblTotal">$0.00</span></div>
+				</dcf.FormButtons>
+			</dc.Region>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			dc.cms.cart.Cart.load();	// make sure it is loaded
+
+			// TODO consider
+			if (! dc.handler.settings.storeOnline) {
+				$('#lstCart h1').before('<h2 style="color: red;">Our store is currently unavailable, please check back again soon!</h2>');
+			}
+
+			var editItem = function(e) {
+					if (e.data.VariablePrice)
+						dc.pui.Dialog.loadPage('/dcm/shop/variable-amount', {
+							Product: e.data,
+							Callback: function() {
+								page.reload();
+							}
+						});
+					else
+						dc.pui.Dialog.loadPage('/dcm/shop/variable-quantity', {
+							Product: e.data,
+							Callback: function() {
+								page.reload();
+							}
+						});
+
+				e.preventDefault();
+				return false;
+			};
+
+			var removeItem = function(e) {
+				dc.cms.cart.Cart.removeItem(e.data);
+				dc.cms.cart.Cart.save();
+
+				page.reload();
+
+				e.preventDefault();
+				return false;
+			};
+
+			var $tbl = $('#lstCartBody');
+
+			$tbl.empty().append('<tr><td><i class="fa fa-spinner fa-spin fa-lg"></i></td></tr>');
+
+			dc.cms.cart.Cart.calculate(function() {
+				$tbl.empty();
+
+				for (var i = 0; i < dc.cms.cart.Cart._cart.Items.length; i++) {
+					var item = dc.cms.cart.Cart._cart.Items[i];
+
+					$tbl.dcappend(
+						$('<tr>').dcappend(
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Item'),
+								' ',
+								$('<img>')
+									.attr('aria-hidden', 'true')
+									.attr('src', '/galleries/store/product/'
+										+ item.Alias + '/' + (item.Image ? item.Image : 'main') + '.v/thumb.jpg')
+							),
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Description'),
+								' ',
+								item.Title,
+								$('<br>'),
+								$('<br>'),
+								(item.Instructions ? item.Instructions : null)
+							),
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Price'),
+								' $',
+								dc.util.Number.formatMoney(item.Price)
+							),
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Quantity'),
+								' ',
+								item.Quantity,
+								$('<br>'),
+								$('<br>'),
+								$('<b>').addClass('dc-table-cell-label').text('Actions'),
+								' ',
+								$('<a>')
+									.attr('href', '#')
+									.click(item, editItem)
+									.text('edit'),
+								$('<span>').html(' &nbsp;&nbsp; '),
+								$('<a>')
+									.attr('href', '#')
+									.click(item, removeItem)
+									.text('remove')
+							),
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Sub-Total'),
+								' $',
+								dc.util.Number.formatMoney(item.Total)
+							)
+						)
+					);
+				}
+
+				$('#lblTotal').text('$' + dc.util.Number.formatMoney(dc.cms.cart.Cart._cart.CalcInfo.ItemCalc));
+			});
+    ]]></Function>
+	<Function Name="DoEmpty"><![CDATA[
+			dc.cms.cart.Cart.clear();
+			dc.cms.cart.Cart.save();
+
+			this.callPageFunc('Load');
+    ]]></Function>
+	<Function Name="DoCheckout"><![CDATA[
+			var entry = this;
+
+			if (! dc.handler.settings.storeOnline) {
+					dc.pui.Popup.confirm('The store is offline, would you like to continue and place a test order?', function(confirm) {
+						if (confirm) {
+							entry.Layer.back();
+
+							dc.pui.App.startTab({
+												Tab: 'Checkout',
+												Menu: 'dcmShop'
+											});
+
+							//dc.pui.Dialog.loadPage('/dcm/shop/checkout');
+						}
+					});
+			}
+			else {
+				entry.Layer.back();
+
+				dc.pui.App.startTab({
+									Tab: 'Checkout',
+									Menu: 'dcmShop'
+								});
+
+				//dc.pui.Dialog.loadPage('/dcm/shop/checkout');
+			}
+	]]></Function>
+	<Function Name="DoClose"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+	]]></Function>
+</dcui>

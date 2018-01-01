@@ -1,0 +1,1113 @@
+<Schema>
+	<Database>
+		<!-- extend tenant, use same id as was in the root domain for this domain -->
+		<Table Id="dcTenant">
+			<Field Name="dcmStoreOpen" Type="Boolean" />
+			<Field Name="dcmWishListEnabled" Type="Boolean" />
+			<Field Name="dcmShippingRateMode" Type="dcmShipRateModeEnum" />
+			<!--
+				find the lowest min for the order total
+
+				[ { Min: NNN, Amount: $$$ }, { Min: NNN, Amount: $$$ } ]
+			-->
+			<Field Name="dcmShippingTable" Type="AnyRecord" />
+		</Table>
+
+		<!-- extend state -->
+		<Table Id="dcState">
+			<Field Name="dcmRate" Type="Decimal" />
+			<Field Name="dcmRateName" Type="dcSmallString" />
+		</Table>
+
+		<!-- User as Customer -->
+		<Table Id="dcUser">
+			<!-- coupons used - tracked for 1 time use coupons -->
+			<Field Name="dcmDiscounts" ForeignKey="dcmDiscount" List="True" />
+		</Table>
+
+		<Table Id="dcmOrder">
+			<!--  this is what we are really using here -->
+
+			<Field Name="dcmOrderDate" Type="DateTime" Required="True" Indexed="True" />
+
+			<Field Name="dcmStatus" Type="dcmOrderStatusEnum" Required="True" Indexed="True" />
+			<Field Name="dcmLastStatusDate" Type="DateTime" Required="True" Indexed="True" />
+
+			<Field Name="dcmCustomer" ForeignKey="dcUser" />
+
+			<Field Name="dcmPaymentId" Type="dcSmallString" />
+
+			<!-- sub = EntryId - TODO remove after Dec 15 -->
+			<Field Name="dcmItems" List="True" Type="dcmOrderItemInfo" />
+
+			<!-- dcmItems group - sub = EntryId -->
+			<Field Name="dcmItemEntryId" Group="dcmItems" List="True" Type="dcTinyString" />
+			<Field Name="dcmItemProduct" Group="dcmItems" List="True" ForeignKey="dcmProduct" />
+			<Field Name="dcmItemQuantity" Group="dcmItems" List="True" Type="Integer" />
+			<Field Name="dcmItemPrice" Group="dcmItems" List="True" Type="Decimal" />
+			<Field Name="dcmItemTotal" Group="dcmItems" List="True" Type="Decimal" />
+			<Field Name="dcmItemExtra" Group="dcmItems" List="True" Type="AnyRecord" />
+			<Field Name="dcmItemStatus" Group="dcmItems" List="True" Type="dcmItemStatusEnum" />
+			<Field Name="dcmItemShipment" Group="dcmItems" List="True" Type="Integer" />
+
+			<Field Name="dcmCustomerInfo" Type="dcmOrderCustomerInfo" />
+			<Field Name="dcmShippingInfo" Type="dcmOrderShippingInfo" />
+			<Field Name="dcmBillingInfo" Type="dcmOrderBillingInfo" />
+			<Field Name="dcmDelivery" Type="dcmDeliveryEnum" />
+			<Field Name="dcmComment" Type="dcLargeString" />
+
+			<!-- lowercase, TODO remove -->
+			<Field Name="dcmKeywords" Type="dcLargeString" />
+
+			<!-- we are trying to apply this code(s)  -->
+			<Field Name="dcmCouponCodes" List="True" Type="dcSmallString" Indexed="True" />
+
+			<!-- sub = EntryId -->
+			<!-- this is what we get (could be a combined sale, coupon, gift cert) -->
+			<Field Name="dcmDiscounts" List="True" Type="dcmDiscountInfo" />
+			<Field Name="dcmPaymentInfo" Type="dcmOrderPaymentInfo" />
+			<Field Name="dcmCalcInfo" Type="dcmOrderCalcInfo" />		<!-- not required coming in from outside world, but is required once payment is being processed -->
+
+			<Field Name="dcmExtra" Type="AnyRecord" />
+
+			<Field Name="dcmGrandTotal" Type="Decimal" />
+
+			<!-- this will likely be used -->
+
+			<Field Name="dcmExternalOrderId" Type="dcSmallString" />
+			<Field Name="dcmExternalCustomerId" Type="dcSmallString" />
+
+			<!-- TODO review
+			<Field Name="dcmShippingNumber" Type="dcTinyString" />
+
+			<Field Name="dcmPrintingPin" Type="dcTinyString" />
+			<Field Name="dcmPrintPinExpiration" Type="DateTime" />
+			-->
+
+			<!-- need to rethink this one  -->
+
+			<Field Name="dcmGateway" ForeignKey="dcmGateway" />
+
+			<!-- sid = stamp -->
+			<Field Name="dcmAudit" Type="dcmOrderAudit" List="True" />
+		</Table>
+
+		<!-- rethink this, move into order above (no we need some per item tracking)
+			TODO no - actually move it to Thread
+		<Table Id="dcmOrderLog">
+			<Field Name="dcmOrder" ForeignKey="dcmOrder" />   ??? item ???
+			<Field Name="dcmLogDate" Type="DateTime" />
+
+			<Field Name="dcmStatus" Type="dcmOrderStatusEnum" />
+			 Hide note From Customer
+			<Field Name="dcmInternalMessage" Type="Boolean" />
+
+			<Field Name="dcmNotes" Type="dcLargeString" />
+
+			 if a shipment is associated with this entry
+			<Field Name="dcmShippingNumber" Type="dcTinyString" />
+		</Table>
+		-->
+
+		<Table Id="dcmCategory">
+			<Field Name="dcmTitle" Type="dcSmallString" />
+			<Field Name="dcmMode" Type="dcmCategoryModeEnum" />
+			<Field Name="dcmAlias" Type="dcTinyString" Required="True" Unique="True" Indexed="True" />
+
+			<Field Name="dcmParent" ForeignKey="dcmCategory" />
+
+			<Field Name="dcmDescription" Type="String" />
+
+			<!-- sid = field name -->
+			<Field Name="dcmCustomDisplayField" Type="dcSmallString" List="True" />
+
+			<!-- if dcTenant:dcmShippingRateMode is PerItemFromCategory -->
+			<Field Name="dcmShipAmount" Type="Decimal" />
+		</Table>
+
+		<Table Id="dcmProduct">
+			<!-- product is still on record but no longer sold -->
+			<Field Name="dcmDisabled" Type="Boolean" />
+			<!-- can still be purchased, just shouldn't be shown on its own -->
+			<Field Name="dcmPurchaseOnline" Type="Boolean" />
+			<Field Name="dcmShowInStore" Type="Boolean" />
+			<Field Name="dcmShowInFavorites" Type="Boolean" Indexed="True" />
+			<Field Name="dcmDelivery" Type="dcmDeliveryEnum" List="True" />
+
+			<Field Name="dcmTitle" Type="dcSmallString" />
+			<Field Name="dcmAlias" Type="dcTinyString" Required="True" Unique="True" Indexed="True" />
+			<Field Name="dcmSku" Type="dcSmallString" Indexed="True" />
+			<Field Name="dcmDescription" Type="String" />
+			<Field Name="dcmInstructions" Type="dcString" />
+			<Field Name="dcmImage" Type="dcString" />
+
+			<!-- sid = field name -->
+			<!--
+			<Field Name="dcmCustomDisplayField" Type="dcSmallString" List="True" />
+			-->
+
+			<!-- tag = tag -->
+			<Field Name="dcmTag" Type="dcTinyString" List="True" />
+
+			<Field Name="dcmCategories" ForeignKey="dcmCategory" List="True" />
+			<!-- TODO review
+			<Field Name="dcmCategoryPosition" Type="Integer" />
+			-->
+
+			<Field Name="dcmVariablePrice" Type="Boolean" />
+			<Field Name="dcmMininumPrice" Type="Decimal" />
+			<Field Name="dcmPrice" Type="Decimal" />
+			<Field Name="dcmSalePrice" Type="Decimal" />
+
+			<!-- if dcTenant:dcmShippingRateMode is PerItem -->
+			<Field Name="dcmShipAmount" Type="Decimal" />
+
+			<Field Name="dcmShipWeight" Type="Decimal" />
+
+			<!-- for donations, etc -->
+			<Field Name="dcmTaxFree" Type="Boolean" />
+
+			<!-- Free for donations, electronic content, etc -->
+			<Field Name="dcmShipCost" Type="dcmShipCostEnum" />
+		</Table>
+
+		<Table Id="dcmDiscount">
+			<Field Name="dcmEntryDate" Type="DateTime" />
+
+			<Field Name="dcmCode" Type="dcTinyString" Indexed="True" Unique="True" />
+			<Field Name="dcmTitle" Type="dcSmallString" />
+			<Field Name="dcmType" Type="dcmDiscountTypeEnum" Indexed="True" />
+			<Field Name="dcmMode" Type="dcmDiscountModeEnum" />
+
+			<Field Name="dcmAmount" Type="Decimal" />
+			<Field Name="dcmMinimumOrder" Type="Decimal" />
+
+			<Field Name="dcmStart" Type="DateTime" />
+			<Field Name="dcmExpire" Type="DateTime" />
+
+			<!-- this is a general discount (sale), no code required -->
+			<Field Name="dcmAutomatic" Type="Boolean" />
+			<Field Name="dcmOneTimeUse" Type="Boolean" />
+
+			<Field Name="dcmWasUsed" Type="Boolean" />
+			<Field Name="dcmAmountUsed" Type="Decimal" />
+			<Field Name="dcmForCustomer" ForeignKey="dcUser" />
+		</Table>
+
+		<Table Id="dcmGiftRegistry">
+			<Field Name="dcmEventType" Type="dcTinyString" />
+			<Field Name="dcmEventDate" Type="LocalDate" />
+
+			<Field Name="dcmFor" Type="dcString" />
+			<!-- for searches -->
+			<Field Name="dcmKeywords" Type="dcString" />
+			<Field Name="dcmIntro" Type="dcString" />
+			<Field Name="dcmDetail" Type="dcLargeString" />
+		</Table>
+	</Database>
+
+	<Shared>
+		<StringType Id="dcmShipRateModeEnum">
+			<StringRestriction Enum="Disabled,OrderWeight,OrderTotal,PerItem,PerItemFromCategory,Custom" />
+		</StringType>
+
+		<StringType Id="dcmShipCostEnum">
+			<StringRestriction Enum="Regular,Extra,Fixed,Free" />
+		</StringType>
+
+		<StringType Id="dcmDiscountTypeEnum">
+			<StringRestriction Enum="Coupon,Sale,GiftCertificate,Credit" />
+		</StringType>
+
+		<StringType Id="dcmDiscountModeEnum">
+			<StringRestriction Enum="FixedOffTotal,FixedOffProduct,PercentOffProduct,FixedOffShipping,PercentOffShipping,FlatShipping,FreeShipping" />
+		</StringType>
+
+		<StringType Id="dcmCategoryModeEnum">
+			<StringRestriction Enum="TopWithSub,TopWithProduct,Sub" />
+		</StringType>
+
+		<StringType Id="dcmOrderStatusEnum">
+			<StringRestriction Enum="Pending,AwaitingPayment,AwaitingFulfillment,AwaitingShipment,AwaitingPickup,PartiallyCompleted,Completed,Canceled,VerificationRequired" />
+		</StringType>
+
+		<StringType Id="dcmItemStatusEnum">
+			<StringRestriction Enum="AwaitingFulfillment,AwaitingShipment,AwaitingPickup,Completed,Canceled" />
+		</StringType>
+
+		<StringType Id="dcmDeliveryEnum">
+			<StringRestriction Enum="Ship,Pickup,Download" />
+		</StringType>
+
+		<StringType Id="dcmPaymentMethodEnum">
+			<StringRestriction Enum="CreditCard,StoreCredit" />
+		</StringType>
+
+		<StringType Id="dcmTargetUserEnum">
+			<StringRestriction Enum="Store,Customer" />
+		</StringType>
+
+		<!-- https://www.w3resource.com/javascript/form/credit-card-validation.php -->
+		<StringType Id="dcmCreditCard">
+			<!-- Visa -->
+			<StringRestriction Pattern="(?:4[0-9]{12}(?:[0-9]{3})?)" />
+			<!-- Master Card -->
+			<StringRestriction Pattern="(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}" />
+			<!-- Discover -->
+			<StringRestriction Pattern="(?:6(?:011|5[0-9][0-9])[0-9]{12})" />
+			<!-- AMX -->
+			<StringRestriction Pattern="(?:3[47][0-9]{13})" />
+		</StringType>
+
+		<Record Id="dcmOrderItemInfo">
+			<!-- uuid for this item entry -->
+			<Field Name="EntryId" Type="dcTinyString" Required="True" />
+			<Field Name="Product" Type="Id" Required="True" />
+			<Field Name="Quantity" Type="Integer" Required="True" />
+
+			<Field Name="Title" Type="dcmProduct:dcmTitle" />
+			<Field Name="Alias" Type="dcmProduct:dcmAlias" />
+			<Field Name="Sku" Type="dcmProduct:dcmSku" />
+			<Field Name="Description" Type="dcmProduct:dcmDescription" />
+			<Field Name="Instructions" Type="dcmProduct:dcmInstructions" />
+			<Field Name="Delivery">
+				<List Type="dcmProduct:dcmDelivery" />
+			</Field>
+			<Field Name="CatTitle" Type="dcmCategory:dcmTitle" />
+			<Field Name="CatAlias" Type="dcmCategory:dcmAlias" />
+			<Field Name="Image" Type="dcmProduct:dcmImage" />
+
+			<!-- TODO
+			<Field Name="dcmCustomDisplayField">
+				<List Type="dcSmallString">
+			</Field>
+			 -->
+
+			<Field Name="Tags">
+				<List Type="dcmProduct:dcmTag" />
+			</Field>
+
+			<Field Name="Price" Type="dcmProduct:dcmPrice" />
+			<Field Name="SalePrice" Type="dcmProduct:dcmSalePrice" />
+			<Field Name="Total" Type="Decimal" />
+			<Field Name="VariablePrice" Type="dcmProduct:dcmVariablePrice" />
+			<Field Name="MininumPrice" Type="dcmProduct:dcmMininumPrice" />
+
+			<!-- for donations, etc -->
+			<Field Name="TaxFree" Type="dcmProduct:dcmTaxFree" />
+
+			<!-- for donations, electronic content, etc -->
+			<Field Name="ShipCost" Type="dcmProduct:dcmShipCost" />
+
+			<Field Name="Extra" Type="AnyRecord" />
+		</Record>
+
+		<Record Id="dcmOrderCustomerInfo" >
+			<Field Name="FirstName" Type="dcTinyString" Required="True" />
+			<Field Name="LastName" Type="dcTinyString" Required="True" />
+			<Field Name="Email" Type="dcEmail" Required="True" />
+			<!-- Required won't pass data validation if running a calculate before checkout -->
+			<Field Name="Phone" Type="dcTinyString" />
+			<!-- if present and not logged in the create an account -->
+			<Field Name="Password" Type="dcSmallString" />
+			<Field Name="CustomerId" Type="dcUser:Id" />
+		</Record>
+
+		<Record Id="dcmOrderShippingInfo" >
+			<Field Name="FirstName" Type="dcTinyString" Required="True" />
+			<Field Name="LastName" Type="dcTinyString" Required="True" />
+			<Field Name="Address" Type="dcSmallString" Required="True" />
+			<Field Name="Address2" Type="dcSmallString" />
+			<Field Name="City" Type="dcTinyString" Required="True" />
+			<Field Name="State" Type="dcUsaState" Required="True" />
+			<Field Name="Zip" Type="dcUsaZip" Required="True" />
+			<!-- alias of selected estimate -->
+			<Field Name="SelectedEstimate" Type="dcTinyString" />
+		</Record>
+
+		<Record Id="dcmOrderBillingInfo" >
+			<Field Name="FirstName" Type="dcTinyString" Required="True" />
+			<Field Name="LastName" Type="dcTinyString" Required="True" />
+			<Field Name="Address" Type="dcSmallString" Required="True" />
+			<Field Name="Address2" Type="dcSmallString" />
+			<Field Name="City" Type="dcTinyString" Required="True" />
+			<Field Name="State" Type="dcUsaState" Required="True" />
+			<Field Name="Zip" Type="dcUsaZip" Required="True" />
+		</Record>
+
+		<Record Id="dcmDiscountInfo">
+			<Field Name="EntryId" Type="dcTinyString" Required="True" />
+			<Field Name="Discount" Type="Id" Required="True" />
+			<Field Name="Code" Type="dcmDiscount:dcmCode" Required="True" />
+			<Field Name="Title" Type="dcmDiscount:dcmTitle" Required="True" />
+			<Field Name="Amount" Type="dcmDiscount:dcmAmount" Required="True" />
+		</Record>
+
+		<Record Id="dcmOrderPaymentInfo">
+			<Field Name="PaymentMethod" Type="dcmPaymentMethodEnum" Required="True" />
+			<Field Name="CardNumber" Type="dcTinyString" />
+			<Field Name="Expiration" Type="dcTinyString" />
+			<Field Name="Code" Type="dcTinyString" />
+		</Record>
+
+		<Record Id="dcmShipEstimateInfo">
+			<Field Name="Title" Type="dcSmallString" />
+			<Field Name="Alias" Type="dcTinyString" />
+			<Field Name="Amount" Type="Decimal" />
+		</Record>
+
+		<Record Id="dcmOrderCalcInfo">
+			<!-- product total before discount is applied  -->
+			<Field Name="ItemCalc" Type="Decimal" Required="True" />
+			<!-- counts toward taxes -->
+			<Field Name="ProductDiscount" Type="Decimal" Required="True" />
+			<!-- product total after discount is applied  -->
+			<Field Name="ItemTotal" Type="Decimal" Required="True" />
+
+			<!-- amount that counts toward shipping -->
+			<Field Name="ShipCalc" Type="Decimal" Required="True" />
+			<!-- shipping amount for this order  -->
+			<Field Name="ShipAmount" Type="Decimal" Required="True" />
+			<Field Name="ShipDiscount" Type="Decimal" Required="True" />
+			<!-- does not count toward taxes -->
+			<!-- shipping after discount is applied  -->
+			<Field Name="ShipTotal" Type="Decimal" Required="True" />
+
+			<!-- amount that counts toward taxes, after product discount applied (removing any tax free items) -->
+			<Field Name="TaxCalc" Type="Decimal" Required="True" />
+			<Field Name="TaxAt" Type="Decimal" Required="True" />
+			<Field Name="TaxTotal" Type="Decimal" Required="True" />
+
+			<!-- item total + ship total + tax total  -->
+			<Field Name="GrandTotal" Type="Decimal" Required="True" />
+		</Record>
+
+		<Record Id="dcmOrderInfo" >
+			<Field Name="Items" Required="True">
+				<List Type="dcmOrderItemInfo" />
+			</Field>
+			<Field Name="CustomerInfo" Type="AnyRecord" />
+			<Field Name="ShippingInfo" Type="AnyRecord" />
+			<Field Name="BillingInfo" Type="AnyRecord" />
+			<Field Name="Delivery" Type="dcmDeliveryEnum" Required="True" />
+			<Field Name="Comment" Type="dcLargeString" />
+			<!-- TODO move into a table
+			<Field Name="Delivery" Type="dcmOrder:dcmOrderDelivery" Required="True" />
+			-->
+			<Field Name="CouponCodes">
+				<List Type="dcSmallString" /> 	<!-- we are trying to apply this code(s) (could be comma list)  -->
+			</Field>
+			<Field Name="Discounts"> 		<!-- this is what we get (could be a combined sale, coupon, gift cert) -->
+				<List Type="dcmDiscountInfo" />
+			</Field>
+			<Field Name="DiscountsSignature" Type="dcLargeString" />
+
+			<!-- this is just an incoming flag to tell the system to create an estimate -->
+			<Field Name="ShipEstimateRequest" Type="Boolean" />
+			<Field Name="ShipEstimates">
+				<List Type="dcmShipEstimateInfo" />
+			</Field>
+			<Field Name="ShipEstimatesSignature" Type="dcLargeString" />
+
+			<Field Name="PaymentInfo" Type="dcmOrderPaymentInfo" />
+			<Field Name="CalcInfo" Type="dcmOrderCalcInfo" />		<!-- not required coming in from outside world, but is required once payment is being processed -->
+
+			<Field Name="Extra" Type="AnyRecord" />
+		</Record>
+
+		<Record Id="dcmOrderInfoSubmit" Inherits="dcmOrderInfo">
+			<Field Name="CustomerInfo" Type="dcmOrderCustomerInfo" Required="True" />
+			<Field Name="ShippingInfo" Type="dcmOrderShippingInfo" />
+			<Field Name="BillingInfo" Type="dcmOrderBillingInfo" />
+		</Record>
+
+		<!-- this needs more review, it might be better as a Thread -->
+		<Record Id="dcmOrderNotice">
+			<Field Name="For" Type="dcmTargetUserEnum" />
+			<Field Name="Stamp" Type="DateTime" />
+			<Field Name="Type" Type="dcTinyString" />
+		</Record>
+
+		<Record Id="dcmOrderAudit">
+			<Field Name="Origin" Type="dcmTargetUserEnum" />
+			<Field Name="Stamp" Type="DateTime" />
+			<Field Name="Internal" Type="Boolean" />
+			<Field Name="Comment" Type="dcLargeString" />
+			<Field Name="Status" Type="dcmOrderStatusEnum" />
+			<!-- also needs review, notice stamp is the notice item responding too -->
+			<Field Name="NoticeStamp" Type="DateTime" />
+		</Record>
+
+		<Record Id="dcmOrderItemList">
+			<!-- uuid for this item entry -->
+			<Field Name="EntryId" Type="dcTinyString" Required="True" />
+			<Field Name="Product" Type="Id" Required="True" />
+			<Field Name="Quantity" Type="Integer" Required="True" />
+
+			<Field Name="Title" Type="dcmProduct:dcmTitle" />
+			<Field Name="Alias" Type="dcmProduct:dcmAlias" />
+			<Field Name="Sku" Type="dcmProduct:dcmSku" />
+			<Field Name="Description" Type="dcmProduct:dcmDescription" />
+			<Field Name="Instructions" Type="dcmProduct:dcmInstructions" />
+			<Field Name="Image" Type="dcmProduct:dcmImage" />
+			<Field Name="Price" Type="dcmProduct:dcmPrice" />
+			<Field Name="Total" Type="Decimal" />
+			<Field Name="Status" Type="dcmItemStatusEnum" />
+		</Record>
+	</Shared>
+
+	<Services>
+		<Service Name="dcmStoreServices">
+			<Feature Name="Orders">
+				<Secure Badges="User,Guest">
+					<Op Name="Calculate">
+						<Description>
+							Calculate shipping, discounts and taxes, return full order.
+						</Description>
+						<RecordRequest Inherits="dcmOrderInfo" Required="True" />
+						<RecordResponse Inherits="dcmOrderInfo" />
+					</Op>
+					<Op Name="Submit">
+						<Description>
+							Place an order.
+						</Description>
+						<RecordRequest Inherits="dcmOrderInfoSubmit" Required="True" />
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+							<Field Name="Cart" Type="dcmOrderInfo" />
+						</RecordResponse>
+					</Op>
+				</Secure>
+				<Secure Badges="User">
+					<Op Name="LoadMy">
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="OrderDate" Type="DateTime" />
+							<Field Name="Status" Type="dcmOrderStatusEnum" />
+							<Field Name="LastStatusDate" Type="DateTime" />
+							<Field Name="Customer" Type="Id" />
+							<Field Name="CustomerInfo" Type="dcmOrderCustomerInfo" />
+							<Field Name="Delivery" Type="dcmDeliveryEnum" />
+							<Field Name="Items">
+								<List Type="dcmOrderItemList" />
+							</Field>
+							<Field Name="ShippingInfo" Type="dcmOrderShippingInfo" />
+							<Field Name="BillingInfo" Type="dcmOrderBillingInfo" />
+							<Field Name="Comment" Type="dcLargeString" />
+							<Field Name="CouponCodes">
+								<List Type="dcSmallString" />
+							</Field>
+							<Field Name="Discounts">
+								<List Type="dcmDiscountInfo" />
+							</Field>
+							<Field Name="PaymentId" Type="dcSmallString" />
+							<Field Name="PaymentInfo" Type="dcmOrderPaymentInfo" />
+							<Field Name="CalcInfo" Type="dcmOrderCalcInfo" />
+							<Field Name="GrandTotal" Type="Decimal" />
+						</RecordResponse>
+					</Op>
+					<Op Name="ListMy">
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<Field Name="OrderDate" Type="DateTime" />
+								<Field Name="Status" Type="dcmOrderStatusEnum" />
+								<Field Name="CustomerInfo" Type="dcmOrderCustomerInfo" />
+								<Field Name="Delivery" Type="dcmDeliveryEnum" />
+								<Field Name="GrandTotal" Type="Decimal" />
+							</Record>
+						</ListResponse>
+					</Op>
+				</Secure>
+				<Secure Badges="Admin,Clerk">
+					<Op Name="Load">
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="OrderDate" Type="DateTime" />
+							<Field Name="Status" Type="dcmOrderStatusEnum" />
+							<Field Name="LastStatusDate" Type="DateTime" />
+							<Field Name="Customer" Type="Id" />
+							<Field Name="CustomerInfo" Type="dcmOrderCustomerInfo" />
+							<Field Name="Delivery" Type="dcmDeliveryEnum" />
+							<Field Name="Items">
+								<List Type="dcmOrderItemList" />
+							</Field>
+							<Field Name="ShippingInfo" Type="dcmOrderShippingInfo" />
+							<Field Name="BillingInfo" Type="dcmOrderBillingInfo" />
+							<Field Name="Comment" Type="dcLargeString" />
+							<Field Name="CouponCodes">
+								<List Type="dcSmallString" />
+							</Field>
+							<Field Name="Discounts">
+								<List Type="dcmDiscountInfo" />
+							</Field>
+							<Field Name="PaymentId" Type="dcSmallString" />
+							<Field Name="PaymentInfo" Type="dcmOrderPaymentInfo" />
+							<Field Name="CalcInfo" Type="dcmOrderCalcInfo" />
+							<Field Name="GrandTotal" Type="Decimal" />
+							<Field Name="Audit">
+								<List Type="dcmOrderAudit" />
+							</Field>
+						</RecordResponse>
+					</Op>
+					<Op Name="UpdateStatus">
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Status" Type="dcmOrderStatusEnum" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="UpdateItems">
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Status" Type="dcmItemStatusEnum" Required="True" />
+							<Field Name="Items" Required="True">
+								<List Type="dcTinyString" />
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="AddComment">
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Internal" Type="Boolean" />
+							<Field Name="Comment" Type="dcLargeString" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Search">
+						<RecordRequest Required="True">
+							<Field Name="Term" Type="dcSmallString" />
+							<Field Name="Scope" Type="dcTinyString" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<Field Name="OrderDate" Type="DateTime" />
+								<Field Name="Status" Type="dcmOrderStatusEnum" />
+								<Field Name="CustomerInfo" Type="dcmOrderCustomerInfo" />
+								<Field Name="Delivery" Type="dcmDeliveryEnum" />
+								<Field Name="GrandTotal" Type="Decimal" />
+							</Record>
+						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+			<Feature Name="Category">
+				<Secure Badges="Admin">
+					<Op Name="Load">
+						<Description>
+							Load a category record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcmCategory:Id" />
+							<Field Name="Alias" Type="dcmCategory:dcmAlias" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="dcmCategory:Id" />
+							<Field Name="Title" Type="dcmCategory:dcmTitle" />
+							<Field Name="Alias" Type="dcmCategory:dcmAlias" />
+							<Field Name="Mode" Type="dcmCategory:dcmMode" />
+							<Field Name="Parent" Type="dcmCategory:dcmParent" />
+							<Field Name="Description" Type="dcmCategory:dcmDescription" />
+							<Field Name="CustomDisplayField" Type="AnyList" />
+							<Field Name="ShipAmount" Type="dcmCategory:dcmShipAmount" />
+							<Field Name="Children">
+								<List>
+									<Record>
+										<Field Name="Id" Type="dcmCategory:Id" />
+										<Field Name="Title" Type="dcmCategory:dcmTitle" />
+										<Field Name="Alias" Type="dcmCategory:dcmAlias" />
+										<Field Name="Mode" Type="dcmCategory:dcmMode" />
+										<Field Name="Parent" Type="dcmCategory:dcmParent" />
+										<Field Name="Description" Type="dcmCategory:dcmDescription" />
+									</Record>
+								</List>
+							</Field>
+						</RecordResponse>
+					</Op>
+					<Op Name="Update">
+						<Description>
+							Update a category record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcmCategory:Id" Required="True" />
+							<Field Name="Title" Type="dcmCategory:dcmTitle" Required="IfPresent" />
+							<Field Name="Alias" Type="dcmCategory:dcmAlias" Required="IfPresent" />
+							<Field Name="Mode" Type="dcmCategory:dcmMode" Required="IfPresent" />
+							<Field Name="Parent" Type="dcmCategory:dcmParent" />
+							<Field Name="Description" Type="dcmCategory:dcmDescription" />
+							<!--  TODO  Field Name="CustomDisplayField" Type="AnyList" / -->
+							<Field Name="ShipAmount" Type="dcmCategory:dcmShipAmount" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Add">
+						<Description>
+							Add a category record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Title" Type="dcmCategory:dcmTitle" Required="True" />
+							<Field Name="Alias" Type="dcmCategory:dcmAlias" Required="True" />
+							<Field Name="Mode" Type="dcmCategory:dcmMode" Required="True" />
+							<Field Name="Parent" Type="dcmCategory:dcmParent" />
+							<Field Name="Description" Type="dcmCategory:dcmDescription" />
+							<!--  TODO  Field Name="CustomDisplayField" Type="AnyList" / -->
+							<Field Name="ShipAmount" Type="dcmCategory:dcmShipAmount" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="dcmCategory:Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Retire">
+						<Description>
+							Remove (retire) category record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcmCategory:Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Revive">
+						<Description>
+							Undo retirement of category record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcmCategory:Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Lookup">
+						<Description>
+							Find category record id based on title.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Alias" Type="dcmCategory:dcmAlias" Required="True" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="dcmCategory:Id" />
+								<Field Name="Title" Type="dcmCategory:dcmTitle" />
+								<Field Name="Alias" Type="dcmCategory:dcmAlias" />
+								<Field Name="Mode" Type="dcmCategory:dcmMode" />
+								<Field Name="Parent" Type="dcmCategory:dcmParent" />
+								<Field Name="Description" Type="dcmCategory:dcmDescription" />
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="List">
+						<Description>
+							Load a list all category records, no matter how many.
+						</Description>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="dcmCategory:Id" />
+								<Field Name="Title" Type="dcmCategory:dcmTitle" />
+								<Field Name="Alias" Type="dcmCategory:dcmAlias" />
+								<Field Name="Mode" Type="dcmCategory:dcmMode" />
+								<Field Name="Parent" Type="dcmCategory:dcmParent" />
+								<Field Name="Description" Type="dcmCategory:dcmDescription" />
+							</Record>
+						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+
+			<Feature Name="Product">
+				<Secure Badges="Admin">
+					<Op Name="Load">
+						<Description>
+							Load a product record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcmProduct:Id" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="dcmProduct:Id" />
+							<Field Name="Title" Type="dcmProduct:dcmTitle" />
+							<Field Name="Alias" Type="dcmProduct:dcmAlias" />
+							<Field Name="Sku" Type="dcmProduct:dcmSku" />
+							<Field Name="Description" Type="dcmProduct:dcmDescription" />
+							<Field Name="Instructions" Type="dcmProduct:dcmInstructions" />
+							<Field Name="Image" Type="dcmProduct:dcmImage" />
+							<Field Name="CustomDisplayField" Type="AnyList" />
+							<Field Name="Categories">
+								<List Type="dcmProduct:dcmCategories" />
+							</Field>
+							<Field Name="VariablePrice" Type="dcmProduct:dcmVariablePrice" />
+							<Field Name="MininumPrice" Type="dcmProduct:dcmMininumPrice" />
+							<Field Name="Price" Type="dcmProduct:dcmPrice" />
+							<Field Name="ShipAmount" Type="dcmProduct:dcmShipAmount" />
+							<Field Name="ShipWeight" Type="dcmProduct:dcmShipWeight" />
+							<Field Name="ShipCost" Type="dcmProduct:dcmShipCost" />
+							<Field Name="TaxFree" Type="dcmProduct:dcmTaxFree" />
+							<Field Name="ShowInStore" Type="dcmProduct:dcmShowInStore" />
+							<Field Name="Delivery">
+								<List Type="dcmProduct:dcmDelivery" />
+							</Field>
+							<Field Name="Tags">
+								<List Type="dcmProduct:dcmTag" />
+							</Field>
+						</RecordResponse>
+					</Op>
+					<Op Name="Update">
+						<Description>
+							Update a product record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcmProduct:Id" Required="True" />
+							<Field Name="Title" Type="dcmProduct:dcmTitle" Required="IfPresent" />
+							<Field Name="Alias" Type="dcmProduct:dcmAlias" Required="IfPresent" />
+							<Field Name="Sku" Type="dcmProduct:dcmSku" />
+							<Field Name="Description" Type="dcmProduct:dcmDescription" />
+							<Field Name="Instructions" Type="dcmProduct:dcmInstructions" />
+							<Field Name="Image" Type="dcmProduct:dcmImage" />
+							<Field Name="CustomDisplayField" Type="AnyList" />
+							<Field Name="Categories">
+								<List Type="dcmProduct:dcmCategories" />
+							</Field>
+							<Field Name="VariablePrice" Type="dcmProduct:dcmVariablePrice" />
+							<Field Name="MininumPrice" Type="dcmProduct:dcmMininumPrice" />
+							<Field Name="Price" Type="dcmProduct:dcmPrice" />
+							<Field Name="ShipAmount" Type="dcmProduct:dcmShipAmount" />
+							<Field Name="ShipWeight" Type="dcmProduct:dcmShipWeight" />
+							<Field Name="ShipCost" Type="dcmProduct:dcmShipCost" />
+							<Field Name="TaxFree" Type="dcmProduct:dcmTaxFree" />
+							<Field Name="ShowInStore" Type="dcmProduct:dcmShowInStore" />
+							<Field Name="Delivery">
+								<List Type="dcmProduct:dcmDelivery" />
+							</Field>
+							<Field Name="Tags">
+								<List Type="dcmProduct:dcmTag" />
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="Add">
+						<Description>
+							Add a product record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Title" Type="dcmProduct:dcmTitle" Required="True" />
+							<Field Name="Alias" Type="dcmProduct:dcmAlias" Required="True" />
+							<Field Name="Sku" Type="dcmProduct:dcmSku" />
+							<Field Name="Description" Type="dcmProduct:dcmDescription" />
+							<Field Name="Instructions" Type="dcmProduct:dcmInstructions" />
+							<Field Name="Image" Type="dcmProduct:dcmImage" />
+							<Field Name="CustomDisplayField" Type="AnyList" />
+							<Field Name="Categories" Required="True">
+								<List Type="dcmProduct:dcmCategories" />
+							</Field>
+							<Field Name="VariablePrice" Type="dcmProduct:dcmVariablePrice" />
+							<Field Name="MininumPrice" Type="dcmProduct:dcmMininumPrice" />
+							<Field Name="Price" Type="dcmProduct:dcmPrice" />
+							<Field Name="ShipAmount" Type="dcmProduct:dcmShipAmount" />
+							<Field Name="ShipWeight" Type="dcmProduct:dcmShipWeight" />
+							<Field Name="ShipCost" Type="dcmProduct:dcmShipCost" />
+							<Field Name="TaxFree" Type="dcmProduct:dcmTaxFree" />
+							<Field Name="ShowInStore" Type="dcmProduct:dcmShowInStore" />
+							<Field Name="Delivery">
+								<List Type="dcmProduct:dcmDelivery" />
+							</Field>
+							<Field Name="Tags">
+								<List Type="dcmProduct:dcmTag" />
+							</Field>
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="dcmProduct:Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Retire">
+						<Description>
+							Remove (retire) product record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcmProduct:Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Revive">
+						<Description>
+							Undo retirement of product record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcmProduct:Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="CatList">
+						<Description>
+							Find product records based on category alias OR id.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Alias" Type="dcmCategory:dcmAlias" />
+							<Field Name="Id" Type="dcmCategory:Id" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="CategoryId" Type="dcmCategory:Id" />
+							<Field Name="CategoryAlias" Type="dcmCategory:dcmAlias" />
+							<Field Name="Category" Type="dcmCategory:dcmTitle" />
+
+							<Field Name="Products">
+								<List>
+									<Record>
+										<Field Name="Id" Type="dcmProduct:Id" />
+										<Field Name="Title" Type="dcmProduct:dcmTitle" />
+										<Field Name="Alias" Type="dcmProduct:dcmAlias" />
+										<Field Name="Sku" Type="dcmProduct:dcmSku" />
+										<Field Name="Description" Type="dcmProduct:dcmDescription" />
+										<Field Name="Image" Type="dcmProduct:dcmImage" />
+										<Field Name="Price" Type="dcmProduct:dcmPrice" />
+										<Field Name="ShowInStore" Type="dcmProduct:dcmShowInStore" />
+									</Record>
+								</List>
+							</Field>
+						</RecordResponse>
+					</Op>
+					<Op Name="List">
+						<Description>
+							Load a list all product records, no matter how many.
+						</Description>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="dcmProduct:Id" />
+								<Field Name="Title" Type="dcmProduct:dcmTitle" />
+								<Field Name="Alias" Type="dcmProduct:dcmAlias" />
+								<Field Name="Sku" Type="dcmProduct:dcmSku" />
+								<Field Name="Description" Type="dcmProduct:dcmDescription" />
+								<Field Name="Image" Type="dcmProduct:dcmImage" />
+								<Field Name="Price" Type="dcmProduct:dcmPrice" />
+								<Field Name="ShowInStore" Type="dcmProduct:dcmShowInStore" />
+							</Record>
+						</ListResponse>
+					</Op>
+				</Secure>
+				<Secure Badges="User,Guest">
+					<Op Name="Lookup">
+						<Description>
+							Find product record id based on alias.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcmProduct:Id" />
+							<Field Name="Alias" Type="dcmProduct:dcmAlias" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="dcmProduct:Id" />
+							<Field Name="Title" Type="dcmProduct:dcmTitle" />
+							<Field Name="Alias" Type="dcmProduct:dcmAlias" />
+							<Field Name="Sku" Type="dcmProduct:dcmSku" />
+							<Field Name="Description" Type="dcmProduct:dcmDescription" />
+							<Field Name="Instructions" Type="dcmProduct:dcmInstructions" />
+							<Field Name="Image" Type="dcmProduct:dcmImage" />
+							<Field Name="Price" Type="dcmProduct:dcmPrice" />
+							<Field Name="VariablePrice" Type="dcmProduct:dcmVariablePrice" />
+							<Field Name="MininumPrice" Type="dcmProduct:dcmMininumPrice" />
+							<Field Name="TaxFree" Type="dcmProduct:dcmTaxFree" />
+							<Field Name="Delivery">
+								<List Type="dcmProduct:dcmDelivery" />
+							</Field>
+						</RecordResponse>
+					</Op>
+				</Secure>
+			</Feature>
+
+			<Feature Name="Coupons">
+				<Secure Badges="Admin">
+					<Op Name="Load">
+						<Description>
+							Load a coupon record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcmDiscount:Id" />
+							<Field Name="Code" Type="dcmDiscount:dcmCode" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="dcmDiscount:Id" />
+							<Field Name="Title" Type="dcmDiscount:dcmTitle" />
+							<Field Name="Code" Type="dcmDiscount:dcmCode" />
+							<Field Name="Type" Type="dcmDiscount:dcmType" />
+							<Field Name="Mode" Type="dcmDiscount:dcmMode" />
+							<Field Name="Amount" Type="dcmDiscount:dcmAmount" />
+							<Field Name="MinimumOrder" Type="dcmDiscount:dcmMinimumOrder" />
+							<Field Name="Start" Type="dcmDiscount:dcmStart" />
+							<Field Name="Expire" Type="dcmDiscount:dcmExpire" />
+							<Field Name="Automatic" Type="dcmDiscount:dcmAutomatic" />
+							<Field Name="OneTimeUse" Type="dcmDiscount:dcmOneTimeUse" />
+							<Field Name="WasUsed" Type="dcmDiscount:dcmWasUsed" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Update">
+						<Description>
+							Update a coupon record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcmDiscount:Id" Required="True" />
+							<Field Name="Title" Type="dcmDiscount:dcmTitle" Required="IfPresent" />
+							<Field Name="Type" Type="dcmDiscount:dcmType" />
+							<Field Name="Mode" Type="dcmDiscount:dcmMode" Required="IfPresent" />
+							<Field Name="Code" Type="dcmDiscount:dcmCode" />
+							<Field Name="Amount" Type="dcmDiscount:dcmAmount" />
+							<Field Name="MinimumOrder" Type="dcmDiscount:dcmMinimumOrder" />
+							<Field Name="Start" Type="dcmDiscount:dcmStart" />
+							<Field Name="Expire" Type="dcmDiscount:dcmExpire" />
+							<Field Name="Automatic" Type="dcmDiscount:dcmAutomatic" />
+							<Field Name="OneTimeUse" Type="dcmDiscount:dcmOneTimeUse" />
+							<Field Name="WasUsed" Type="dcmDiscount:dcmWasUsed" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Add">
+						<Description>
+							Add a coupon record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Title" Type="dcmDiscount:dcmTitle" Required="True" />
+							<Field Name="Type" Type="dcmDiscount:dcmType" />
+							<Field Name="Mode" Type="dcmDiscount:dcmMode" Required="True" />
+							<Field Name="Code" Type="dcmDiscount:dcmCode" />
+							<Field Name="Amount" Type="dcmDiscount:dcmAmount" />
+							<Field Name="MinimumOrder" Type="dcmDiscount:dcmMinimumOrder" />
+							<Field Name="Start" Type="dcmDiscount:dcmStart" />
+							<Field Name="Expire" Type="dcmDiscount:dcmExpire" />
+							<Field Name="Automatic" Type="dcmDiscount:dcmAutomatic" />
+							<Field Name="OneTimeUse" Type="dcmDiscount:dcmOneTimeUse" />
+							<Field Name="WasUsed" Type="dcmDiscount:dcmWasUsed" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="dcmDiscount:Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Retire">
+						<Description>
+							Remove (retire) coupon record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcmDiscount:Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Revive">
+						<Description>
+							Undo retirement of coupon record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcmDiscount:Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="List">
+						<Description>
+							Load a list all coupon records, no matter how many.
+							Filter by type is available.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Type" Type="dcmDiscount:dcmType" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="dcmDiscount:Id" />
+								<Field Name="Title" Type="dcmDiscount:dcmTitle" />
+								<Field Name="Code" Type="dcmDiscount:dcmCode" />
+								<Field Name="Type" Type="dcmDiscount:dcmType" />
+								<Field Name="Mode" Type="dcmDiscount:dcmMode" />
+								<Field Name="Amount" Type="dcmDiscount:dcmAmount" />
+								<Field Name="MinimumOrder" Type="dcmDiscount:dcmMinimumOrder" />
+								<Field Name="Start" Type="dcmDiscount:dcmStart" />
+								<Field Name="Expire" Type="dcmDiscount:dcmExpire" />
+								<Field Name="Automatic" Type="dcmDiscount:dcmAutomatic" />
+								<Field Name="OneTimeUse" Type="dcmDiscount:dcmOneTimeUse" />
+								<Field Name="WasUsed" Type="dcmDiscount:dcmWasUsed" />
+							</Record>
+						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+
+			<Feature Name="GiftRegistry">
+				<Secure Badges="Clerk,Admin">
+					<Op Name="Load">
+						<Description>
+							Load a registry record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+							<Field Name="For" Type="dcmGiftRegistry:dcmFor" />
+							<Field Name="Intro" Type="dcmGiftRegistry:dcmIntro" />
+							<Field Name="Detail" Type="dcmGiftRegistry:dcmDetail" />
+							<Field Name="EventType" Type="dcmGiftRegistry:dcmEventType" />
+							<Field Name="EventDate" Type="dcmGiftRegistry:dcmEventDate" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Update">
+						<Description>
+							Update a registry record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="For" Type="dcmGiftRegistry:dcmFor" />
+							<Field Name="Intro" Type="dcmGiftRegistry:dcmIntro" />
+							<Field Name="Detail" Type="dcmGiftRegistry:dcmDetail" />
+							<Field Name="EventType" Type="dcmGiftRegistry:dcmEventType" Required="IfPresent" />
+							<Field Name="EventDate" Type="dcmGiftRegistry:dcmEventDate" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Add">
+						<Description>
+							Add a registry record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="For" Type="dcmGiftRegistry:dcmFor" />
+							<Field Name="Intro" Type="dcmGiftRegistry:dcmIntro" />
+							<Field Name="Detail" Type="dcmGiftRegistry:dcmDetail" />
+							<Field Name="EventType" Type="dcmGiftRegistry:dcmEventType" Required="True" />
+							<Field Name="EventDate" Type="dcmGiftRegistry:dcmEventDate" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Retire">
+						<Description>
+							Remove (retire) registry record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Revive">
+						<Description>
+							Undo retirement of registry record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="List">
+						<Description>
+							Load a list all registry records, no matter how many.
+						</Description>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<Field Name="For" Type="dcmGiftRegistry:dcmFor" />
+								<Field Name="EventType" Type="dcmGiftRegistry:dcmEventType" />
+								<Field Name="EventDate" Type="dcmGiftRegistry:dcmEventDate" />
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="Search">
+						<Description>
+							Find registry record based on keywords.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Term" Type="dcSmallString" Required="True" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<Field Name="For" Type="dcmGiftRegistry:dcmFor" />
+								<Field Name="EventType" Type="dcmGiftRegistry:dcmEventType" />
+								<Field Name="EventDate" Type="dcmGiftRegistry:dcmEventDate" />
+							</Record>
+						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+		</Service>
+	</Services>
+</Schema>

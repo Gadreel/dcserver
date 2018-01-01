@@ -1,0 +1,23 @@
+<dc.MixIn>
+	<Require Class="fragreq" />
+	<Require Types="dcDollarOItem,dcDollarORequest" Trs="150006,150007" />
+	<Require Types="dcQueryListResultFull" />
+	<Require Trs="150008" />
+	
+	<dc.Fragment id="frag2" class="fragcls2">
+		<h2>Hello from frag!</h2>
+		<p>Funny to be here!</p>
+		
+		<br />
+		<br />
+		
+		<dc.IncludeParam Name="test2" />
+		
+		<br />
+		<br />
+		
+		<div data-any="some">
+			<dc.IncludeParam Name="test1" />
+		</div>
+	</dc.Fragment>
+</dc.MixIn>

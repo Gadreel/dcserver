@@ -1,0 +1,27 @@
+<dc.Html Badges="Developer">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Vaults" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dc.Button Click="DoViewVault" Label="Feeds" data-name="Feeds" />
+			<!-- TODO tighten
+			<dc.Button Click="DoViewVault" Label="Web Files" data-name="Web" />
+			<dc.Button Click="DoViewVault" Label="Feed Templates" data-name="Templates" />
+			<dc.Button Click="DoViewVault" Label="Email Templates" data-name="Emails" />
+			<dc.Button Click="DoViewVault" Label="Config Files" data-name="Config" />
+			-->
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			// TODO load other vaults, better display
+	]]></Function>
+	<Function Name="DoViewVault" Params="e,target"><![CDATA[
+			var page = this;
+
+			page.Layer.loadPage('/dcm/files/browser/' + $(target).attr('data-name'));
+	]]></Function>
+</dc.Html>

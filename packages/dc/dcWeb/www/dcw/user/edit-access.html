@@ -1,0 +1,70 @@
+<dc.Html Badges="User">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Edit Accessibility" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.HorizRadioGroup Label="Text Size" Name="TextSize">
+				   <RadioButton Value="default" Label="Default" />
+				   <RadioButton Value="large" Label="Large" />
+				   <RadioButton Value="giant" Label="Giant" />
+				</dcf.HorizRadioGroup>
+
+				<dcf.FormButtons>
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load" Params="e"><![CDATA[
+			// init
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			e.Data = {
+				TextSize: dc.pui.Loader.TextSize
+			};
+
+			/* TODO
+			e.Message = {
+				Service: 'dcCoreServices',
+				Feature: 'Users',
+				Op: 'LoadSelf'
+			};
+			*/
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (e.Data.TextSize) {
+				dc.pui.Loader.TextSize = e.Data.TextSize;
+
+				if (e.Data.TextSize == 'default') {
+					$('html').css('font-size', '62.5%');
+					$('body').removeClass('dcuiTextIncrease');
+				}
+				else if (e.Data.TextSize == 'large') {
+					$('html').css('font-size', '100%');
+					$('body').addClass('dcuiTextIncrease');
+				}
+				else if (e.Data.TextSize == 'giant') {
+					$('html').css('font-size', '125%');
+					$('body').addClass('dcuiTextIncrease');
+				}
+			}
+
+			/* TODO
+			e.Message = {
+				Service: 'dcCoreServices',
+				Feature: 'Users',
+				Op: 'UpdateSelf',
+				Body: e.Data
+			};
+			*/
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			this.Layer.back();
+	]]></Function>
+</dc.Html>

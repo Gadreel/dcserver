@@ -1,0 +1,29 @@
+<dc.Html Badges="Editor,Admin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="CMS Dashboard" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<!--
+			<dcf.FormButtons>
+				<dc.Button Label="Close" Click="DoClose" />
+			</dcf.FormButtons>
+			-->
+
+			<p>
+				Coming soon - notices, status...
+			</p>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+	]]></Function>
+	<Function Name="DoClose"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+	]]></Function>
+</dc.Html>

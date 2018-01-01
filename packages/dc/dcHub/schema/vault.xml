@@ -1,0 +1,213 @@
+<Schema>
+	<Shared>
+		<Record Id="dcFileDescriptor">
+			<Field Name="Size" Type="Integer" />
+			<Field Name="Modified" Type="DateTime" />
+			<Field Name="Path" Type="dcString" />
+			<Field Name="IsFolder" Type="Boolean" />
+			<Field Name="Extra" Type="Any" />
+		</Record>
+    
+		<Record Id="dcFileStoreFile" Inherits="dcFileDescriptor">
+			<Field Name="Exists" Type="Boolean" />
+		</Record>
+
+		<Record Id="dcLocalStoreFile" Inherits="dcFileDescriptor" Class="dcraft.filestore.local.LocalStoreFile" />
+		
+		<Record Id="dcLocalStoreScanner" Class="dcraft.filestore.local.LocalStoreScanner" />
+		
+		<Record Id="dcLocalStore" Class="dcraft.filestore.local.LocalStore">
+			<Field Name="Scanner" Type="dcLocalStoreScanner" />
+		</Record>
+
+		<Record Id="dcAwsStoreFile" Inherits="dcFileDescriptor" Class="dcraft.filestore.aws.AwsStoreFile">
+			<Field Name="AwsETag" Type="dcTinyString" />
+		</Record>
+		
+		<Record Id="dcAwsStoreScanner" Class="dcraft.filestore.aws.AwsStoreScanner" />
+		
+		<Record Id="dcAwsStore" Class="dcraft.filestore.aws.AwsStore">
+			<Field Name="Scanner" Type="dcLocalStoreScanner" />
+		</Record>
+		
+		<StringType Id="dcTransferStatus">
+			<StringRestriction Enum="Failure,Success" />
+		</StringType>
+		
+		<StringType Id="dcHashMethod">
+			<StringRestriction Enum="MD5,SHA128,SHA256,SHA512" />
+		</StringType>
+		
+		<Record Id="dcVaultRequest">
+			<Field Name="Vault" Type="dcTinyString" Required="True" />
+			<Field Name="Params" Type="AnyRecord" />
+		</Record>
+		
+		<Record Id="dcVaultPathRequest" Inherits="dcVaultRequest">
+			<Field Name="Token" Type="dcTinyString" />
+			<Field Name="Path" Type="dcString" />
+		</Record>
+		
+		<Record Id="dcVaultResponse">
+			<Field Name="Extra" Type="Any" />
+		</Record>
+		
+		<Record Id="dcVaultFileDescriptor" Inherits="dcFileDescriptor">
+			<Field Name="FileName" Type="dcString" />
+		</Record>
+    
+		<Record Id="dcVaultTransferResponse" Inherits="dcVaultResponse">
+			<Field Name="Channel" Type="dcTinyString" />
+			<Field Name="TransactionId" Type="dcTinyString" />
+			<Field Name="Size" Type="Integer" />
+			<Field Name="BestEvidence" Type="dcTinyString" />
+			<Field Name="MinimumEvidence" Type="dcTinyString" />
+		</Record>
+	</Shared>
+		
+	<Services>
+		<Service Name="dcCoreServices">
+			<Feature Name="Vaults">
+				<Secure Tags="Guest,User">		
+					<Op Name="ListFiles">
+						<Description>
+							Loads a file listing for a given folder.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultPathRequest" />
+						<ListResponse Type="dcVaultFileDescriptor" />
+					</Op>
+					<Op Name="FileDetail">
+						<Description>
+							Get the file details, optionally including a file checksums if a method is provided.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultPathRequest">
+							<Field Name="Method" Type="dcHashMethod" />
+						</RecordRequest>
+						<RecordResponse Inherits="dcVaultFileDescriptor">
+							<Field Name="Hash" Type="dcString" />
+						</RecordResponse>
+					</Op>
+					<Op Name="DeleteFile">
+						<Description>
+							Removes a file.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultPathRequest" />
+						<RecordResponse Inherits="dcVaultResponse" />
+					</Op>
+					<Op Name="AddFolder">
+						<Description>
+							Adds a new folder.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultPathRequest" />
+						<RecordResponse Inherits="dcVaultResponse" />
+					</Op>
+					<Op Name="DeleteFolder">
+						<Description>
+							Removes a folder and all files under it.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultPathRequest" />
+						<RecordResponse Inherits="dcVaultResponse" />
+					</Op>
+					<Op Name="Custom">
+						<Description>
+							Execute a custom command.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultPathRequest">
+							<Field Name="Command" Type="dcTinyString" Required="True" />
+						</RecordRequest>
+						<RecordResponse Inherits="dcVaultResponse" />
+					</Op>
+					<Op Name="AllocateUploadToken">
+						<Description>
+							Get an upload token.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultRequest" />
+						<RecordResponse Inherits="dcVaultResponse">
+							<Field Name="Token" Type="dcTinyString" />
+						</RecordResponse>
+					</Op>
+					<Op Name="BeginTransaction">
+						<Description>
+							Get a transaction id for use with multiple file uploads.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultRequest" />
+						<RecordResponse Inherits="dcVaultResponse">
+							<Field Name="TransactionId" Type="dcTinyString" />
+						</RecordResponse>
+					</Op>
+					<Op Name="CommitTransaction">
+						<Description>
+							Get a transaction id for use with multiple file uploads.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultRequest">
+							<Field Name="TransactionId" Type="dcTinyString" Required="True" />
+						</RecordRequest>
+						<RecordResponse Inherits="dcVaultResponse" />
+					</Op>
+					<Op Name="RollbackTransaction">
+						<Description>
+							Get a transaction id for use with multiple file uploads.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultRequest">
+							<Field Name="TransactionId" Type="dcTinyString" Required="True" />
+						</RecordRequest>
+						<RecordResponse Inherits="dcVaultResponse" />
+					</Op>
+					<Op Name="StartUpload">
+						<Description>
+							Sets up a file uploader channel (on a session) and initiates a data stream to the requesting server.
+							Size is required to determine available space/quota and track progress.  Params is optional.
+							Overwrite - set to true if you do not want to do a resume.
+							
+							Channel is added by Session, only add path, size and token.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultPathRequest">
+							<Field Name="Size" Type="Integer" Required="True" />
+							<Field Name="Overwrite" Type="Boolean" />
+							<Field Name="TransactionId" Type="dcTinyString" />
+						</RecordRequest>
+						<RecordResponse Inherits="dcVaultTransferResponse" />
+					</Op>
+					<Op Name="FinishUpload">
+						<Description>
+							Give evidence for the upload success.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultPathRequest">
+							<Field Name="Channel" Type="dcTinyString" />
+							<Field Name="TransactionId" Type="dcTinyString" />
+							<Field Name="Evidence" Type="AnyRecord" />
+							<Field Name="Status" Type="dcTransferStatus" Required="True" />
+							<Field Name="Note" Type="dcString" />
+						</RecordRequest>
+						<RecordResponse Inherits="dcVaultResponse" />
+					</Op>
+					<Op Name="StartDownload">
+						<Description>
+							Sets up a file downloader channel (on a session) and initiates a data stream to the requesting server.
+							Params is optional.
+							Channel is added by Session, only add bucket, path, offset, params and token.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultPathRequest">
+							<Field Name="Offset" Type="Integer" />
+							<Field Name="TransactionId" Type="dcTinyString" />
+						</RecordRequest>
+						<RecordResponse Inherits="dcVaultTransferResponse" />
+					</Op>
+					<Op Name="FinishDownload">
+						<Description>
+							Give evidence for the download success.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultPathRequest">
+							<Field Name="Channel" Type="dcTinyString" />
+							<Field Name="TransactionId" Type="dcTinyString" />
+							<Field Name="Evidence" Type="AnyRecord" />
+							<Field Name="Status" Type="dcTransferStatus" Required="True" />
+							<Field Name="Note" Type="dcString" />
+						</RecordRequest>
+						<RecordResponse Inherits="dcVaultResponse" />
+					</Op>
+				</Secure>
+			</Feature>
+		</Service>
+	</Services>
+</Schema>

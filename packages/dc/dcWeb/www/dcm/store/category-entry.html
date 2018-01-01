@@ -1,0 +1,139 @@
+<dc.Html AuthTags="Clerk,Admin">
+	<Require Script="/js/vendor/speakingurl-5.0.1.min.js" />
+
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Enter Category" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.Text Label="Name" Name="Title" Required="true" />
+				<dcf.Text Label="Alias" Name="Alias" DataType="dcPageSlug" Required="true" placeholder="Lowercase or numeric characters, dashes for spaces" />
+
+				<div id="dcmesCatSubs">
+					<dcf.HorizRadioGroup Label="Contains" Name="Mode">
+						<RadioButton Value="TopWithProduct" Label="Products" />
+						<RadioButton Value="TopWithSub" Label="Sub Categories" />
+					</dcf.HorizRadioGroup>
+				</div>
+
+				<dcf.TextArea Label="Description" Name="Description" />
+				<dcf.Text Label="Ship Amount" Name="ShipAmount" DataType="Decimal" Instructions="Use with the Category Shipping Calculator" />
+
+				<dcf.FormButtons>
+					<dc.Button Label="Delete" Click="DoRemove" />
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.form().inputQuery('Title')
+				.focusout(function(e) {
+					var slug = page.form().getValue('Alias');
+
+					if (! slug) {
+						slug = getSlug(page.form().getValue('Title'));
+						page.form().setValue('Alias', slug);
+					}
+				});
+
+			if (page.Params.Id) {
+				page.form().inputQuery('Alias').prop('readonly', 'readonly');
+			}
+
+			if (page.Params.ParentId)
+				$('#dcmesCatSubs').hide();
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (page.Params.Id) {
+				e.Message = {
+					Service: 'dcmStoreServices',
+					Feature: 'Category',
+					Op: 'Load',
+					Body: { Id: page.Params.Id }
+				};
+			}
+			else {
+				e.AsNew = true;
+				e.Data = {
+					Mode: 'TopWithProduct'
+				};
+			}
+	]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (e.Data.Mode == 'Sub')
+				$('#dcmesCatSubs').hide();
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (page.Params.ParentId) {
+				e.Data.Mode = 'Sub';
+				e.Data.Parent = page.Params.ParentId;
+			}
+
+			if (page.Params.Id)
+				e.Data.Id = page.Params.Id;
+
+			e.Message = {
+				Service: 'dcmStoreServices',
+				Feature: 'Category',
+				Op: page.Params.Id ? 'Update' : 'Add',
+				Body: e.Data
+			};
+	]]></Function>
+	<Function Name="AfterSaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (e.Data && e.Data.Id)
+				page.Store.NewId = e.Data.Id;
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback({
+					NewId: page.Store.NewId
+				});
+	]]></Function>
+	<Function Name="DoRemove"><![CDATA[
+			var page = this;
+
+			if (! page.Params.Id) {
+				page.callPageFunc('AfterSave')
+				return;
+			}
+
+			dc.pui.Popup.confirm('Are you sure you want to delete this Category?', function(confirm) {
+				if (! confirm)
+					return;
+
+				//console.log('delete');
+				dc.comm.sendMessage({
+					Service: 'dcmStoreServices',
+					Feature: 'Category',
+					Op: 'Retire',
+					Body: {
+						Id: page.Params.Id
+					}
+				}, function(resp) {
+					if (resp.Result > 0) {
+						dc.pui.Popup.alert(resp.Message);
+						return;
+					}
+
+					page.callPageFunc('AfterSave')
+				});
+			});
+	]]></Function>
+</dc.Html>

@@ -1,0 +1,133 @@
+<dc.Html Badges="Admin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="List Users" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.HorizCheckGroup Label="Badges" Name="Badges">
+					<Checkbox Label="Staff" Value="Staff" />
+					<Checkbox Label="Editor" Value="Editor" />
+					<Checkbox Label="Clerk" Value="Clerk" />
+					<Checkbox Label="Admin" Value="Admin" />
+					<Checkbox Label="Developer" Value="Developer" />
+				</dcf.HorizCheckGroup>
+
+				<dcf.FormButtons>
+					<dc.Button Click="DoSearch" Label="Search" />
+					<dc.Button Click="DoAddUser" Label="Add User" />
+				</dcf.FormButtons>
+			</dcf.Form>
+
+			<h3>Users</h3>
+
+			<div id="lstDcwLUUsers" class="dcm-file-list" />
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var entry = this;
+
+			this.callPageFunc('LoadList');
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.AsNew = true;
+			e.Data = {
+				Badges: [ 'Staff' ]
+			};
+	]]></Function>
+	<Function Name="LoadList"><![CDATA[
+			var entry = this;
+			var badges = entry.form().getValues().Badges;
+
+			$('#lstDcwLUUsers')
+				.empty()
+				.append('<h3><i class="fa fa-spinner fa-spin"></i></h3>');
+
+			dc.comm.sendMessage({
+				Service: 'dcCoreServices',
+				Feature: 'Users',
+				Op: 'Search',
+				Body: {
+					Badges: badges
+				}
+			}, function(resp) {
+				if (resp.Result > 0) {
+					dc.pui.Popup.alert('Unable to load users: ' + resp.Message);
+					return;
+				}
+
+				var items = resp.Body;
+				var sfield = entry.Store.SortField ? entry.Store.SortField : 'FirstName';
+
+				// sort
+				items.sort(dc.util.List.sortObjects(sfield));
+
+				// ########## USERS ##########
+
+				var flist = $('#lstDcwLUUsers');
+
+				flist.empty();
+
+				// display
+				for (var i = 0; i < items.length; i++) {
+					var item = items[i];
+
+					var litm = $('<a>')
+						.attr('href', '#')
+						.attr('class', 'dcm-file');
+
+					var path = '/galleries/dcUsers/' + item.Id;
+
+					var imgel = $('<img>')
+						.attr('src', '/imgs/dots.png');
+
+					litm.append(imgel);
+
+					// to keep the scope of imgel, make function
+					var lfunc = function(path, imgel) {
+						dc.util.Image.load(path + '.v/thumb.jpg',
+							function(img) {
+								if (img)
+									imgel.attr('src', img.src);
+								else
+									imgel.attr('src', '/imgs/question.png');
+							});
+					};
+
+					lfunc(path, imgel);
+
+					litm.click(item, function(e) {
+						dc.pui.Dialog.loadPage('/dcw/user/edit-user', {
+							Id: e.data.Id,
+							Callback: function(g) {
+								entry.callPageFunc('LoadList');
+							}
+						});
+
+						e.preventDefault();
+						return false;
+					});
+
+					var itmtitle = $('<div class="dcm-file-title"></div>');
+					itmtitle.text(item.FirstName + ' ' + item.LastName);
+
+					litm.append(itmtitle);
+
+					flist.append(litm);
+				}
+			});
+	]]></Function>
+	<Function Name="DoAddUser"><![CDATA[
+			var entry = this;
+
+			dc.pui.Dialog.loadPage('/dcw/user/edit-user', {
+				Callback: function() {
+					entry.callPageFunc('LoadList');
+				}
+			});
+	]]></Function>
+</dc.Html>

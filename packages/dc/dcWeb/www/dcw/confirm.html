@@ -1,0 +1,42 @@
+<dc.Html Title="Confirm">
+	<dc.Body>
+		<dc.PagePanel id="panDcwAlert">
+			<div id="panDcwMessage" />
+			
+			<dcf.FormButtons>
+				<dc.Button Label="No" Click="onDeny" />
+				<dc.Button Label="Yes" Click="onApprove" />
+			</dcf.FormButtons>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load">
+				var entry = this;
+			
+				if (entry.Params.Title)
+					entry.callTagFunc('#panDcwAlert', 'setTitle', entry.Params.Title);
+			
+				if (entry.Params.Message)
+					$('#panDcwMessage').html(entry.Params.Message);
+	</Function>
+	<Function Name="onApprove">
+				var entry = this;
+			
+				entry.Store.Called = true;
+				
+				if (entry.Params.Callback)
+					entry.Params.Callback.call(entry, true);
+					
+				entry.Layer.back();
+	</Function>
+	<Function Name="onDeny">
+				var entry = this;
+					
+				entry.Layer.back();
+	</Function>
+	<Function Name="onDestroy">
+				var entry = this;
+			
+				if (entry.Params.Callback && ! entry.Store.Called)
+					entry.Params.Callback.call(entry, false);
+	</Function>
+</dc.Html>

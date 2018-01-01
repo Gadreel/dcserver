@@ -1,0 +1,95 @@
+<dc.Html Badges="Admin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Edit File" />
+	</Meta>
+
+	<Require Script="/js/dc.transfer.js" />
+	<Require Script="/js/vendor/ace-1.1.8/ace.js" />
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.FormButtons>
+					<dc.Button Click="DoSave" Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+
+			<!-- TODO create editor control -->
+			<div id="edFile" style="height: 70vh;" />
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var entry = this;
+
+			var path = entry.Params.Path;
+
+			$('#lblFile').append(": " + path);
+
+		    var editor = ace.edit('edFile');
+
+		    editor.setTheme("ace/theme/chrome");
+			editor.setShowPrintMargin(false);
+			editor.getSession().setTabSize(5);
+			editor.getSession().setUseSoftTabs(false);
+			editor.getSession().setUseWrapMode(true);
+
+			if (path.endsWith('.css'))
+			    editor.getSession().setMode("ace/mode/css");
+			else if (path.endsWith('.html'))
+			    editor.getSession().setMode("ace/mode/xml");
+			else if (path.endsWith('.xml'))
+			    editor.getSession().setMode("ace/mode/xml");
+			else if (path.endsWith('.js'))
+			    editor.getSession().setMode("ace/mode/javascript");
+			else if (path.endsWith('.md'))
+			    editor.getSession().setMode("ace/mode/markdown");
+			else if (path.endsWith('.groovy'))
+			    editor.getSession().setMode("ace/mode/groovy");
+			else if (path.endsWith('.text'))
+			    editor.getSession().setMode("ace/mode/text");
+			else if (path.endsWith('.json'))
+			    editor.getSession().setMode("ace/mode/javascript");
+
+			entry.Store.CurrentEditor = editor;
+
+			var transfer = new dc.transfer.Vault({
+				Vault: entry.Params.Vault,
+				Callback: function(buff) {
+					var content = dc.util.Text.utf8Decode(buff);
+					entry.Store.CurrentEditor.setValue(content, -1);
+				}
+			});
+
+			transfer.downloadBuffer(entry.Params.Path);
+    ]]></Function>
+	<Function Name="onDestroy"><![CDATA[
+			var entry = this;
+
+			if (entry.Store.CurrentEditor)
+				entry.Store.CurrentEditor.destroy();
+
+			entry.Store.CurrentEditor = null;
+	]]></Function>
+	<Function Name="DoSave"><![CDATA[
+			var entry = this;
+
+			if (entry.Store.CurrentEditor) {
+				entry.Store.Transfer = new dc.transfer.Vault({
+					Vault: entry.Params.Vault,
+					Callback: function(e2) {
+						dc.pui.Popup.alert('File saved');
+
+						delete page.Store.Transfer;
+
+						e.Task.resume();
+					}
+				});
+
+				var file = dc.util.Text.utf8Encode(entry.Store.CurrentEditor.getValue());
+
+				var blob = new Blob([ file ], { type: 'text/xml' });
+
+				entry.Store.Transfer.upload(blob, entry.Params.Path, null, true);
+			}
+	]]></Function>
+</dcui>

@@ -1,0 +1,126 @@
+<dc.Html>
+	<Meta Name="Title"> 
+		<Tr Locale="en" Value="Test Basic Form Functions" />
+	</Meta>
+	
+	<dc.Body style="padding: 16px;">
+		<dc.Panel Title="Simple Form Load and Save">
+			<dcf.Form Name="TestUserEdit2">
+				<dcf.Text Name="Phone" Label="Phone" Pattern="\d\d\d\-\d\d\d\d" ValidateButton="true" Instructions="Please enter your Phone" />
+				
+				<dcf.Select Name="State" Label="State">
+					<option value="abc">A.B.C.</option>
+					<option value="AL">AL</option>
+					<option selected="selected" value="CA">CA</option>
+					<option value="IL">IL</option>
+				</dcf.Select>
+				
+				<dcf.Select Name="AltState" Label="Alt State" Required="true" />
+
+				<dcf.TextArea Name="Comment" Label="Comment" Required="true" />
+
+				<dcf.RadioGroup Name="Phone" Label="Radio" Name="Internship">
+				   <RadioButton Value="Internship" Label="Yes, a pre-Apprenticeship Internship only right now" />
+				   <RadioButton Value="Either" Label="Yes, either a pre-Apprenticeship Internship or an Apprenticeship" />
+				   <RadioButton Value="Apprenticeship" Label="No thanks, an Apprenticeship only please" />
+				</dcf.RadioGroup>
+
+				<dcf.HorizRadioGroup Label="Years Experience" Name="GrazingYears" Required="true">
+				   <RadioButton Value="LessThanFive" Label="0 - 5" />
+				   <RadioButton Value="FiveToTen" Label="5 - 10" />
+				   <RadioButton Value="TenToFifteen" Label="10 - 15" />
+				   <RadioButton Value="FifteenToTwenty" Label="15 - 20" />
+				   <RadioButton Value="TwentyOrMore" Label="20+" />
+				</dcf.HorizRadioGroup>
+
+				<dcf.YesNo Label="Access to Fast Internet" Name="FastInternet" />
+
+				<dcf.Checkbox Name="Con1" Label="Confirm 1" LongLabel="I meet the requirements" />
+				<dcf.Checkbox Name="Con2" Label="Confirm 2" />
+
+				<dcf.CheckGroup Label="Badges" Name="Badges" Required="true">
+					<Checkbox Label="Apprentice Candidate" Value="ApprenticeCandidate" />
+					<Checkbox Label="Apprentice" Value="Apprentice" />
+					<Checkbox Label="Master" Value="Master" />
+					<Checkbox Label="Staff" Value="Staff" />
+					<Checkbox Label="Admin" Value="Admin" />
+				</dcf.CheckGroup>
+
+				<dcf.HorizCheckGroup Label="Badges" Name="Badges2">
+					<Checkbox Label="Apprentice" Value="Apprentice" />
+					<Checkbox Label="Master" Value="Master" />
+					<Checkbox Label="Staff" Value="Staff" />
+				</dcf.HorizCheckGroup>
+
+				<dcf.Hidden Name="Hide" Label="Hidden" />
+				
+				<dcf.FormButtons>
+					<dc.Button Icon="fa-square" Click="Test4" />
+					<dc.Button Icon="fa-star" Click="Test1" />
+					<dc.Button Icon="fa-circle" Click="Test3" />
+					<dc.Button Icon="fa-bell" Click="Test2" />
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.Panel>
+	</dc.Body>
+
+	<Function Name="Load">
+				var page = this;
+			
+				console.log('page loaded: ' + page.Name);
+    </Function>
+	<Function Name="LoadRecord" Params="e">
+				e.Data = {
+					Phone: '344-2334',
+					Hide: 'aaa',
+					Comment: 'this is a greeting\n\nand a test',
+					State: 'abc',
+					AltState: 'IL',
+					GrazingYears: 'FifteenToTwenty',
+					Internship: 'Either',
+					Email2: 'b@awww.com',
+					FastInternet: false,
+					Con1: true,
+					Con2: false,
+					//Badges: [ 'Editor', 'Staff', 'Master' ],
+					Badges2: [ 'Editor', 'Staff', 'Master' ]
+				};
+	</Function>
+	<Function Name="SaveRecord" Params="e">
+				console.log('save data: ' + JSON.stringify(e.Data, null, '\t'));
+	</Function>
+	<Function Name="Test1">
+				console.log('test 1');
+				
+				this.form().input('AltState').add([
+					{ Label: 'AL', Value: 'AL' },
+					{ Label: 'CA', Value: 'CA' },
+					{ Label: 'IL', Value: 'IL' },
+					{ Label: 'TX', Value: 'TX' }
+				]);
+    </Function>
+	<Function Name="Test2">
+				console.log('test 2');
+				
+				this.form().input('Hide').setValue('zzz');
+    </Function>
+	<Function Name="Test3">
+				console.log('test 3');
+				
+				this.form().input('AltState').setValue('AL');
+    </Function>
+	<Function Name="Test4">
+				console.log('test 4');
+				
+				this.form().input('Badges').add( [ 
+					{ Value: 'Editor', Label: 'Editor' },
+					{ Value: 'Test', Label: 'Test' }
+				]);
+				
+				this.form().input('Badges2').add( [ 
+					{ Value: 'Editor', Label: 'Editor' },
+					{ Value: 'Test', Label: 'Test' }
+				]);
+    </Function>
+</dc.Html>

@@ -1,0 +1,4 @@
+<Config>
+    <TaskOne Seconds="4" />
+    <TaskTwo Seconds="3" />
+</Config>

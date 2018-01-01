@@ -1,0 +1,57 @@
+<dc.Html Badges="Developer,SysAdmin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Database Management" />
+	</Meta>
+
+	<Require Script="/js/dc.db.js" />
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.FormButtons>
+				<dc.Button Label="Reindex Tenant" Click="DoReindex" />
+				<dc.Button Label="Reindex All" Click="DoReindexAll" />
+			</dcf.FormButtons>
+
+			<p>
+				Coming soon - stats
+			</p>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+	]]></Function>
+	<Function Name="DoReindex"><![CDATA[
+			var page = this;
+
+			dc.comm.sendMessage({
+				Service: 'dcDatabase',
+				Feature: 'ExecuteProc',
+				Op: 'dcReindexTenant'
+			}, function(rmsg) {
+				if (rmsg.Result > 0) {
+					dc.pui.Popup.alert('Unable to complete indexing: ' + rmsg.Message);
+				}
+				else {
+					dc.pui.Popup.alert('Indexing Completed');
+				}
+			});
+	]]></Function>
+	<Function Name="DoReindexAll"><![CDATA[
+			var page = this;
+
+			dc.comm.sendMessage({
+				Service: 'dcDatabase',
+				Feature: 'ExecuteProc',
+				Op: 'dcReindexAll'
+			}, function(rmsg) {
+				if (rmsg.Result > 0) {
+					dc.pui.Popup.alert('Unable to complete indexing: ' + rmsg.Message);
+				}
+				else {
+					dc.pui.Popup.alert('Indexing Completed');
+				}
+			});
+	]]></Function>
+</dc.Html>

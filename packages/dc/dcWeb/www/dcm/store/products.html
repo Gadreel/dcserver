@@ -1,0 +1,108 @@
+<dc.Html AuthTags="Clerk,Admin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Products" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.FormButtons>
+				<dc.Button Label="Add Product" Click="DoAdd" />
+			</dcf.FormButtons>
+
+			<h4 id="dcmStPrdsTitle">Products for ...</h4>
+
+			<ul id="dcmStPrds" />
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			var list = $('#dcmStPrds');
+
+			list.empty().dcappend(
+				$('<li>').dcappend(
+					$('<i>').attr('class', 'fa fa-spinner fa-spin fa-2x')
+				)
+			);
+
+			dc.comm.sendMessage({
+				Service: 'dcmStoreServices',
+				Feature: 'Product',
+				Op: 'CatList',
+				Body: {
+					Id: page.Params.CategoryId
+				}
+			}, function(rmsg) {
+				if (rmsg.Result > 0) {
+					dc.pui.Popup.alert('Unable to list products: ' + rmsg.Message);
+					return;
+				}
+
+				$('#dcmStPrdsTitle').empty().dcappend('Products for ' + rmsg.Body.Category);
+
+				var prods = rmsg.Body.Products;
+				list.empty();
+
+				if (prods.length == 0) {
+					list.dcappend(
+						$('<li>').text('No products found.')
+					);
+
+					return;
+				}
+
+				// sort
+				var sfield = page.Store.SortField ? page.Store.SortField : 'Title';
+				prods.sort(dc.util.List.sortObjects(sfield));
+
+				// output
+				for (var i = 0; i < prods.length; i++) {
+					var item = prods[i];
+
+					var litm = $('<li>').dcappend(
+						$('<a>')
+							.attr('href', '#')
+							.attr('class', 'pure-button-default pure-button dc-button')
+							.dcappend(
+								$('<i>').attr('class', 'fa fa-pencil')
+							)
+							.click(item, function(e) {
+								dc.pui.Dialog.loadPage('/dcm/store/product-entry', {
+									Id: e.data.Id,
+									CategoryId: page.Params.CategoryId,
+									Callback: function() {
+										page.reload();
+									}
+								});
+
+								e.preventDefault();
+								return false;
+							}),
+						' ',
+						$('<b>').text(item.Title + ' (' + item.Alias + ')'),
+						$('<p>').dcappend(
+							'Sku: ' + item.Sku + ' - Price: $' + dc.util.Number.formatMoney(item.Price)
+						)
+					);
+
+					list.append(litm);
+				}
+			});
+	]]></Function>
+	<Function Name="DoAdd"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcm/store/product-entry', {
+				CategoryId: this.Params.CategoryId,
+				Callback: function() {
+					page.reload();
+				}
+			});
+	]]></Function>
+	<Function Name="DoClose"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+	]]></Function>
+</dcui>

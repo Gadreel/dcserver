@@ -1,0 +1,156 @@
+<dc.Html>
+	<Require Style="/examples/styles.css" />
+	
+	<Meta Name="Title"> 
+		<Tr Locale="en" Value="Row layout examples" />
+	</Meta>
+	
+	<dc.Body class="row-layout">
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<dc.Callout>
+					Examples of images and text mixed. Medium bands with small padding. 
+					Image columns with no (additional) padding, text columns with Large padding.
+				</dc.Callout>
+		
+				<h3>Image Left</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="content" Pad="Small">
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-3" Pad="None">
+					<dcm.ImageWidget Path="/examples/simple/board/carrie" />
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="Large">
+					<dc.TextWidget>
+						<Tr>
+## Title Two
+
+- Lorem ipsum dolor sit amet
+- consectetur adipiscing elit
+- sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="Large">
+					<dc.TextWidget>
+						<Tr>
+## Title Three
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<h3>Image Middle</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="content" Pad="Small">
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-3" Pad="Large">
+					<dc.TextWidget>
+						<Tr>
+## Title One
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dcm.ImageWidget Path="/examples/simple/board/carrie" />
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="Large">
+					<dc.TextWidget>
+						<Tr>
+## Title Three
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<h3>Image Right</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="content" Pad="Small">
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-3" Pad="Large">
+					<dc.TextWidget>
+						<Tr>
+## Title One
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="Large">
+					<dc.TextWidget>
+						<Tr>
+## Title Two
+
+- Lorem ipsum dolor sit amet
+- consectetur adipiscing elit
+- sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="None">
+					<dcm.ImageWidget Path="/examples/simple/board/carrie" />
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+				<dc.Callout>
+					Examples of images and text mixed. Medium bands with small padding. 
+					Image columns with no (additional) padding, text columns with Extra padding.
+				</dc.Callout>
+		
+				<h3>Image Left</h3>
+		</dc.Band>
+		<dc.Band Width="Medium" class="content" Pad="Small">
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-3" Pad="None">
+					<dcm.ImageWidget Path="/examples/simple/board/carrie" />
+				</dc.Column>
+				<dc.Column Size="2-3" Pad="Extra">
+					<dc.TextWidget>
+						<Tr>
+## Title for 2/3
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="describe" Pad="Medium">
+			<dc.FullLayout>
+				<h3>Image Right</h3>
+			</dc.FullLayout>
+		</dc.Band>
+		<dc.Band Width="Medium" class="content" Pad="Small">
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-3" Pad="Extra">
+					<dc.TextWidget>
+						<Tr>
+## Title for 1/3
+
+- Lorem ipsum dolor sit amet
+- consectetur adipiscing elit
+- sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+						</Tr>
+					</dc.TextWidget>
+				</dc.Column>
+				<dc.Column Size="2-3" Pad="None">
+					<dcm.ImageWidget Path="/examples/simple/board/carrie" />
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.Band>
+	</dc.Body>
+</dc.Html>

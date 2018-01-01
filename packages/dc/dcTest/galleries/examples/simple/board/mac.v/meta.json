@@ -1,0 +1,9 @@
+{
+	en: { 
+		Name: "Mac Ternes", 
+		Title: "CIO", 
+		Email: "mac@abc.com", 
+		Phone: "ext. 201", 
+		Description: "Server guru" 
+	} 
+}

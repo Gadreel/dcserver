@@ -1,0 +1,222 @@
+<dc.Html Badges="SysAdmin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Globals Explorer" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.FormButtons>
+					<dc.Button Click="DoAddNode" Label="Add Node" />
+				</dcf.FormButtons>
+			</dcf.Form>
+
+			<div id="areaGlobals">
+				<h4>Globals</h4>
+
+				<div id="keyPath"></div>
+
+				<ul id="lstGlobals" />
+			</div>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+				var entry = this;
+
+				if (! entry.Params.Keys) {
+					entry.Params.Keys = [];
+					entry.Params.DisplayKeys = [];
+				}
+
+				if (! entry.Params.Explode)
+					entry.Params.Explode = false;
+
+				var kpath = $('#keyPath');
+
+				kpath.empty();
+
+				var rlink = $('<a href="#" class="pure-button dc-button">/</a>');
+
+				rlink.click(function(e) {
+					entry.Layer.loadPage('/dcr/global-explorer', {
+						Keys: [],
+						DisplayKeys: [],
+						Explode: false
+					});
+
+					e.preventDefault();
+					return false;
+				});
+
+				kpath.append(rlink);
+
+				var upclick = function(e) {
+					entry.Layer.loadPage('/dcr/global-explorer', {
+						Keys: entry.Params.Keys.slice(0, e.data.Pos +1),
+						DisplayKeys: entry.Params.DisplayKeys.slice(0, e.data.Pos + 1),
+						Explode: (e.data.Pos >= 4)
+					});
+
+					e.preventDefault();
+					return false;
+				};
+
+				for (var i = 0; i < entry.Params.DisplayKeys.length; i++) {
+					var dkey = entry.Params.DisplayKeys[i];
+
+					rlink = $('<a href="#" class="pure-button dc-button">' + dkey + '/</a>');
+
+					rlink.click({ Pos: i }, upclick);
+
+					kpath.append(rlink);
+				}
+
+				entry.callPageFunc('LoadList');
+	]]></Function>
+	<Function Name="LoadList" Params="skiprefresh"><![CDATA[
+				var entry = this;
+
+				var list = $('#lstGlobals');
+
+				if (! skiprefresh) {
+					list.empty();
+					list.append('<li><i class="fa fa-spinner fa-spin fa-lg"></i></li>');
+				}
+
+				dc.comm.sendMessage({
+					Service: 'dcDatabase',
+					Feature: 'ExecuteProc',
+					Op: 'dcKeyQuery',
+					Body: {
+						Keys: entry.Params.Keys,
+						Explode: entry.Params.Explode
+					}
+				}, function(rmsg) {
+					if (rmsg.Result > 0) {
+						dc.pui.Popup.alert('Unable to list globals: ' + rmsg.Message);
+						return;
+					}
+
+					var list = $('#lstGlobals');
+
+					var expandItem = function(item, prekey, keylist, dkeylist) {
+						keylist = $.merge([], keylist);	// copy keys
+						keylist.push(item.Key);
+
+						dkeylist = $.merge([], dkeylist);	// copy keys
+						dkeylist.push(item.DisplayKey);
+
+						var dkey = dc.util.String.isString(item.DisplayKey) ? dc.util.Web.escapeHtml(item.DisplayKey) : item.DisplayKey;
+						var dval = dc.util.String.isString(item.DisplayValue) ? dc.util.Web.escapeHtml(item.DisplayValue) : item.hasOwnProperty('DisplayValue') ? item.DisplayValue : '';
+
+						if (dc.util.Struct.isComposite(dval))
+							dval = JSON.stringify(dval);
+
+						if (! entry.Params.Compact || ! entry.Params.Explode || item.hasOwnProperty('DisplayValue')) {
+							var litm = $('<li class="ui-li-static ui-body-inherit"></li>');
+
+							var ditm = $('<div class="genericFlexRow"><div class="genericFlexOne"><h2>' + prekey + dkey + '</h2><p>'
+									+ dval + '</p></div></div>')
+
+							rlink = $('<a href="#" class="pure-button dc-button">Children</a>');
+
+							rlink.click(item, function(e) {
+								entry.Layer.loadPage('/dcr/global-explorer', {
+									Keys: keylist,
+									DisplayKeys: dkeylist,
+									Explode: false
+								});
+
+								e.preventDefault();
+								return false;
+							});
+
+							ditm.append(rlink);
+
+							rlink = $('<a href="#" class="pure-button dc-button">Compact Explode</a>');
+
+							rlink.click(item, function(e) {
+								entry.Layer.loadPage('/dcr/global-explorer', {
+									Keys: keylist,
+									DisplayKeys: dkeylist,
+									Explode: true,
+									Compact: true
+								});
+
+								e.preventDefault();
+								return false;
+							});
+
+							ditm.append(rlink);
+
+							rlink = $('<a href="#" class="pure-button dc-button">Detailed Explode</a>');
+
+							rlink.click(item, function(e) {
+								entry.Layer.loadPage('/dcr/global-explorer', {
+									Keys: keylist,
+									DisplayKeys: dkeylist,
+									Explode: true,
+									Compact: false
+								});
+
+								e.preventDefault();
+								return false;
+							});
+
+							ditm.append(rlink);
+
+							rlink = $('<a href="#" class="pure-button dc-button">Kill Node</a>');
+
+							rlink.click(item, function(e) {
+								dc.pui.Popup.confirm('Are you sure you want to kill this Node?', function() {
+									dc.comm.sendMessage({
+										Service: 'dcDatabase',
+										Feature: 'ExecuteProc',
+										Op: 'dcKeyKill',
+										Body: {
+											Keys: keylist
+										}
+									}, function(resp) {
+										if (resp.Result > 0) {
+											dc.pui.Popup.alert(resp.Message);
+											return;
+										}
+
+										entry.callPageFunc('LoadList', true);
+									});
+								});
+
+								e.preventDefault();
+								return false;
+							});
+
+							ditm.append(rlink);
+
+							litm.append(ditm);
+							list.append(litm);
+						}
+
+						if (item.Children && item.Children.length) {
+							for (var i = 0; i < item.Children.length; i++) {
+								var subitem = item.Children[i];
+
+								expandItem(subitem, prekey + dkey + '/', keylist, dkeylist);
+							}
+						}
+					};
+
+					var globals = rmsg.Body;
+					list.empty();
+
+					for (var i = 0; i < globals.length; i++) {
+						var item = globals[i];
+
+						expandItem(item, '', entry.Params.Keys, entry.Params.DisplayKeys);
+					}
+				});
+	]]></Function>
+	<Function Name="DoAddNode"><![CDATA[
+				// TODO
+	]]></Function>
+</dcui>

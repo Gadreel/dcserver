@@ -1,0 +1,43 @@
+<dc.MixIn>
+	<dc.Fragment>
+		<dc.FullLayout id="sectAutoYhG4wqjzsezGFGYh" Hidden="true">
+			<dc.TextWidget><Tr>
+## Test One
+
+### downloads
+
+[image download test](/files/examples/simple/test.jpg "")
+[json download test](/files/examples/simple/test.json "")
+[pdf download test](/files/examples/simple/test.pdf "")
+
+### links
+
+[space 2](/examples/simple/space-2)
+[space 3](/examples/simple/space-3.html)
+
+### direct gallery link
+
+![](/galleries/examples/one/fog.v/full.jpg "")
+			</Tr></dc.TextWidget>
+		</dc.FullLayout>
+		<dc.FullLayout id="sectAutovyHZ3wSECkJq6Wfu" Title="Board">
+			<dcm.GalleryWidget Path="/examples/simple/board" Show="main" Size="1-3">
+				<div class="board-member">
+					<img src="{$Image.Path}" class="pure-img" />
+					
+					<p class="name-title">{$Image.Name}<br />{$Image.Title}</p>
+					
+					<p> 
+						{$Image.Description}<br />
+						<a href="tel:{$Image.Phone}">{$Image.Phone}</a>
+						<br />
+						<a href="mailto:{$Image.Email}">{$Image.Email}</a>
+					</p>
+				</div>
+			</dcm.GalleryWidget>
+		</dc.FullLayout>
+	</dc.Fragment>
+</dc.MixIn>
+
+
+

@@ -1,0 +1,13 @@
+<Package 
+	ClassRoot="dcraft" 
+	Abbrv="dct" 
+	Version="0.9.5"
+	MessageCodes="150000-199999"
+>
+	<DependsOn>
+		<Package Name="dc/dcHub" MinVersion="0.9" />
+	</DependsOn>
+	
+	<Config>
+	</Config>
+</Package>

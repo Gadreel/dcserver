@@ -1,0 +1,516 @@
+<dc.Html Badges="Clerk,Admin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="View Order" />
+	</Meta>
+
+	<dc.Body class="dcuiWide">
+		<dc.PagePanel>
+			<dc.RowLayout Collapse="Medium" Pad="Small">
+				<dc.Column Pad="Small" Size="3-4">
+					<dcf.Form>
+						<dcf.FormButtons Hint="Form options">
+							<dc.Button Label="Cancel Order" Click="DoCancel" />
+							<dc.Button Label="Quick Complete" Click="DoQuickComplete" />
+							<dc.Button Label="Close" Click="AfterSave" />
+
+							<!--
+							<dcf.SubmitButton Label="Update Order" />
+
+							<br />
+							<br />
+
+							<dcf.Select Name="Status" Label="Order Status">
+								<option value="Pending">Pending</option>
+								<option value="AwaitingPayment">Awaiting Payment</option>
+								<option value="AwaitingFulfillment">Awaiting Fulfillment</option>
+								<option value="AwaitingShipment">Awaiting Shipment</option>
+								<option value="AwaitingPickup">Awaiting Pickup</option>
+								<option value="PartiallyCompleted">Partially Completed</option>
+								<option value="Completed">Completed</option>
+								<option value="Canceled">Canceled</option>
+								<option value="VerificationRequired">Verification Required</option>
+							</dcf.Select>
+
+							<br />
+							-->
+						</dcf.FormButtons>
+
+						<dc.Region Hint="Order Detail">
+							<dc.FullLayout Pad="Large">
+								<b>Items</b>
+
+								<table id="lstCartTotal" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+									<thead>
+										<th><a href="#"><i class="fa fa-fw fa-lg fa-square-o" /></a></th>
+										<th>Item</th>
+										<th>Status</th>
+										<th>Quantity / Price</th>
+										<th>Sub-Total</th>
+									</thead>
+									<tbody id="lstCartTotalBody" />
+								</table>
+							</dc.FullLayout>
+
+							<dc.Region Hint="Item options">
+								Items Status:
+								<select id="cbItemStatus">
+									<option value="AwaitingFulfillment">Awaiting Fulfillment</option>
+									<option value="AwaitingShipment">Awaiting Shipment</option>
+									<option value="AwaitingPickup">Awaiting Pickup</option>
+									<option value="Completed">Completed</option>
+									<option value="Canceled">Canceled</option>
+								</select>
+
+								<dc.Button Label="Update Items" Click="DoItemStatus" Scope="primary" />
+
+								<dc.Button Label="Create Shipment" Click="DoShipment" Scope="primary" />
+							</dc.Region>
+
+							<dc.FullLayout id="layoutCustomerComments" Pad="Large">
+								<p id="sectCustomerComments" />
+							</dc.FullLayout>
+
+							<dc.RowLayout Collapse="Medium" Pad="Large">
+								<dc.Column Pad="Large" Size="1-2">
+									<b>Order</b>
+
+									<p id="sectCustomer" />
+								</dc.Column>
+								<dc.Column Pad="Large" Size="1-2">
+									<b>Delivery</b>
+
+									<p id="sectDelivery" />
+								</dc.Column>
+							</dc.RowLayout>
+
+							<dc.RowLayout Collapse="Medium" Pad="Large">
+								<dc.Column Pad="Large" Size="1-2">
+									<b>Totals</b>
+
+									<p>
+										<table id="sectCalcs7689e351683f448fb52058d623003b9f" />
+									</p>
+								</dc.Column>
+								<dc.Column Pad="Large" Size="1-2">
+									<b>Billing</b>
+
+									<p id="sectBilling" />
+								</dc.Column>
+							</dc.RowLayout>
+						</dc.Region>
+					</dcf.Form>
+				</dc.Column>
+				<dc.Column Pad="Small" Size="1-4">
+					<dcf.Form Prefix="nt">
+						<dcf.FormButtons Hint="Order audit options">
+							<dcf.TextArea Name="Notes" Stacked="true" />
+							<dcf.SubmitButton Label="Add Note" Click="DoAddNote" />
+						</dcf.FormButtons>
+
+						<b>Notes</b>
+
+						<table id="sectNotes" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+							<tbody id="sectNotesBody" />
+						</table>
+					</dcf.Form>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Message = {
+				Service: 'dcmStoreServices',
+				Feature: 'Orders',
+				Op: 'Load',
+				Body: { Id: page.Params.Order.Id }
+			};
+	]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			var cart = e.Data;
+
+			$('#sectCustomerComments').empty();
+
+			if (cart.Comment) {
+				$('#sectCustomerComments').dcappend(
+					$('<b>').text('Customer Comments'),
+					$('<br>'),
+					$('<br>'),
+					cart.Comment
+				);
+			}
+			else {
+				$('#layoutCustomerComments').hide();
+			}
+
+			$('#sectCustomer').empty();
+
+			// Customer
+			$('#sectCustomer').dcappend(
+				'Order Id: ',
+				page.Params.Order.Id.substr(15),
+				$('<br>'),
+				'Order Date: ',
+				dc.util.Date.formatZLocalMedium(cart.OrderDate),
+				$('<br>'),
+				'Order Status: ',
+				cart.Status,
+				$('<br>'),
+				$('<br>'),
+				'By: ',
+				cart.CustomerInfo.FirstName + ' ' + cart.CustomerInfo.LastName,
+				$('<br>'),
+				cart.CustomerInfo.Email,
+				$('<br>'),
+				cart.CustomerInfo.Phone
+			);
+
+			$('#sectCalcs7689e351683f448fb52058d623003b9f').empty();
+
+			// Totals
+			if (cart.CalcInfo.ProductDiscount) {
+				$('#sectCalcs7689e351683f448fb52058d623003b9f').dcappend(
+					$('<tr>').dcappend(
+						$('<td>').text('Product Total: '),
+						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ItemCalc))
+					),
+					$('<tr>').dcappend(
+						$('<td>').text('Discount: '),
+						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ProductDiscount))
+					)
+				);
+			}
+
+			$('#sectCalcs7689e351683f448fb52058d623003b9f').dcappend(
+				$('<tr>').dcappend(
+					$('<td>').text('Cart Total: '),
+					$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ItemTotal))
+				)
+			);
+
+			if (cart.CalcInfo.ShipDiscount) {
+				$('#sectCalcs7689e351683f448fb52058d623003b9f').dcappend(
+					$('<tr>').dcappend(
+						$('<td>').text('Shipping Total: '),
+						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ShipAmount))
+					),
+					$('<tr>').dcappend(
+						$('<td>').text('Discount: '),
+						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ShipDiscount))
+					)
+				);
+			}
+
+			$('#sectCalcs7689e351683f448fb52058d623003b9f').dcappend(
+				$('<tr>').dcappend(
+					$('<td>').text('Shipping: '),
+					$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ShipTotal))
+				),
+				$('<tr>').dcappend(
+					$('<td>').text('Taxes: '),
+					$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.TaxTotal))
+				),
+				$('<tr>').dcappend(
+					$('<td>').text('Order Total: '),
+					$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.GrandTotal))
+				)
+			);
+
+			$('#sectDelivery').empty();
+
+			// Delivery
+			if (cart.Delivery == 'Pickup') {
+				$('#sectDelivery').text('PICKUP: All of the items will be picked up at the store or are items that customer will download.');
+			}
+			else {
+				$('#sectDelivery').text('SHIP: Customer has requested shipping service for at least some of these items. Customer was notified if some items can not be shipped.');
+
+				if (! cart.ShippingInfo) {
+					$('#sectDelivery').dcappend(
+						$('<br>'),
+						$('<br>'),
+						'Shipping information is incomplete.'
+					);
+				}
+				else {
+					$('#sectDelivery').dcappend(
+						$('<br>'),
+						$('<br>'),
+						'Ship To:',
+						$('<br>'),
+						cart.ShippingInfo.FirstName + ' ' + cart.ShippingInfo.LastName,
+						$('<br>'),
+						cart.ShippingInfo.Address,
+						$('<br>'),
+						cart.ShippingInfo.Address2,
+						$('<br>'),
+						cart.ShippingInfo.City + ', ' + cart.ShippingInfo.State
+							+ ' ' + cart.ShippingInfo.Zip
+					);
+				}
+			}
+
+			$('#sectBilling').empty();
+
+			// Billing
+			if (! cart.BillingInfo || ! cart.PaymentInfo) {
+				$('#sectBilling').dcappend(
+					'Billing or payment information is incomplete.',
+					$('<br><br>')
+				);
+			}
+
+			if (cart.PaymentInfo) {
+				$('#sectBilling').dcappend(
+					'Payment method: ',
+					cart.PaymentInfo.PaymentMethod,
+					$('<br>'),
+					'Payment Id: ',
+					cart.PaymentId,
+					$('<br><br>')
+				);
+			}
+
+			if (cart.BillingInfo) {
+				$('#sectBilling').dcappend(
+					cart.BillingInfo.FirstName + ' ' + cart.BillingInfo.LastName,
+					$('<br>'),
+					cart.BillingInfo.Address,
+					$('<br>'),
+					cart.BillingInfo.Address2,
+					$('<br>'),
+					cart.BillingInfo.City + ', ' + cart.BillingInfo.State
+						+ ' ' + cart.BillingInfo.Zip
+				);
+			}
+
+			$($('#lstCartTotal thead th').get(0)).empty().dcappend(
+				$('<a>')
+					.attr('href', '#')
+					.dcappend(
+						$('<i>').addClass('fa fa-fw fa-lg fa-square-o')
+					)
+					.click(function(e) {
+						$('#lstCartTotal').find('i.fa')
+							.toggleClass('fa-square-o')
+							.toggleClass('fa-check-square-o')
+					})
+			);
+
+			var $tbl = $('#lstCartTotalBody');
+
+			$tbl.empty();
+
+			for (var i = 0; i < cart.Items.length; i++) {
+				var item = cart.Items[i];
+
+				$tbl.dcappend(
+					$('<tr>').dcappend(
+						$('<td>').dcappend(
+							$('<a>')
+								.attr('href', '#')
+								.dcappend(
+									$('<i>')
+										.addClass('fa fa-fw fa-lg fa-square-o')
+										.attr('dc-data', item.EntryId)
+								)
+								.click(function(e) {
+									$(this).find('i')
+										.toggleClass('fa-square-o')
+										.toggleClass('fa-check-square-o')
+								})
+						),
+						$('<td>').dcappend(
+							$('<b>').addClass('dc-table-cell-label').text('Description'),
+							' ',
+							item.Title
+						),
+						$('<td>').dcappend(
+							$('<b>').addClass('dc-table-cell-label').text('Status'),
+							' ',
+							item.Status
+						),
+						$('<td>').dcappend(
+							$('<b>').addClass('dc-table-cell-label').text('Quantity / Price'),
+							' ',
+							item.Quantity,
+							' @ $',
+							dc.util.Number.formatMoney(item.Price)
+						),
+						$('<td>').dcappend(
+							$('<b>').addClass('dc-table-cell-label').text('Sub-Total'),
+							' $',
+							dc.util.Number.formatMoney(item.Total)
+						)
+					)
+				);
+			}
+
+
+			var $tbl = $('#sectNotesBody');
+
+			$tbl.empty();
+
+			var audits = cart.Audit;
+			audits.sort(dc.util.List.sortDescObjects('Stamp'));
+
+			for (var i = 0; i < audits.length; i++) {
+				var item = cart.Audit[i];
+
+				$tbl.dcappend(
+					$('<tr>').dcappend(
+						$('<td>').dcappend(
+							'By: ',
+							item.Origin,
+							$('<br>'),
+							'At: ',
+							dc.util.Date.formatZLocalMedium(item.Stamp),
+							$('<br>'),
+							'Status: ',
+							item.Status,
+							$('<br>'),
+							$('<br>'),
+							item.Comment
+						)
+					)
+				);
+			}
+	]]></Function>
+
+	<Function Name="DoCancel"><![CDATA[
+			var page = this;
+
+			dc.pui.Popup.confirm('Are you sure you want to cancel this Order?', function(confirm) {
+				if (! confirm)
+					return;
+
+				//console.log('delete');
+				dc.comm.sendMessage({
+					Service: 'dcmStoreServices',
+					Feature: 'Orders',
+					Op: 'UpdateStatus',
+					Body: {
+						Id: page.Params.Order.Id,
+						Status: 'Canceled'
+					}
+				}, function(resp) {
+					if (resp.Result > 0) {
+						dc.pui.Popup.alert(resp.Message);
+						return;
+					}
+
+					page.callPageFunc('AfterSave')
+				});
+			});
+	]]></Function>
+
+	<Function Name="DoQuickComplete"><![CDATA[
+			var page = this;
+
+			dc.pui.Popup.confirm('Complete this entire Order?', function(confirm) {
+				if (! confirm)
+					return;
+
+				//console.log('delete');
+				dc.comm.sendMessage({
+					Service: 'dcmStoreServices',
+					Feature: 'Orders',
+					Op: 'UpdateStatus',
+					Body: {
+						Id: page.Params.Order.Id,
+						Status: 'Completed'
+					}
+				}, function(resp) {
+					if (resp.Result > 0) {
+						dc.pui.Popup.alert(resp.Message);
+						return;
+					}
+
+					page.callPageFunc('AfterSave')
+				});
+			});
+	]]></Function>
+
+	<!--
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Message = {
+				Service: 'dcmStoreServices',
+				Feature: 'Orders',
+				Op: 'UpdateStatus',
+				Body: {
+					Id: page.Params.Order.Id,
+					Status: e.Data.Status
+				}
+			};
+	]]></Function>
+	-->
+
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback();
+	]]></Function>
+	<Function Name="nt-SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Message = {
+				Service: 'dcmStoreServices',
+				Feature: 'Orders',
+				Op: 'AddComment',
+				Body: {
+					Id: page.Params.Order.Id,
+					Internal: true,
+					Comment: e.Data.Notes
+				}
+			};
+	]]></Function>
+	<Function Name="nt-AfterSave"><![CDATA[
+			var page = this;
+
+			page.reload();
+	]]></Function>
+	<Function Name="DoItemStatus"><![CDATA[
+			var page = this;
+
+			var items = $('#lstCartTotalBody a i.fa-check-square-o').map(function(){
+				return $(this).attr('dc-data');
+			}).get();
+
+			if (items.length == 0) {
+				dc.pui.Popup.alert('Select items to update.');
+				return;
+			}
+
+			var istatus = $('#cbItemStatus').val();
+
+			dc.comm.sendMessage({
+				Service: 'dcmStoreServices',
+				Feature: 'Orders',
+				Op: 'UpdateItems',
+				Body: {
+					Id: page.Params.Order.Id,
+					Status: istatus,
+					Items: items
+				}
+			}, function(rmsg) {
+				if (rmsg.Result > 0) {
+					dc.pui.Popup.alert('Unable to update items: ' + rmsg.Message);
+					return;
+				}
+
+				page.reload();
+			});
+	]]></Function>
+</dcui>

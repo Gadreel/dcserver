@@ -1,0 +1,139 @@
+<Package
+	ClassRoot="dcraft"
+	Abbrv="dc"
+	Version="0.9.5"
+	MessageCodes="1-99999"
+>
+	<!-- MessageCodes="90000-99999" for zCustom -->
+	<DependsOn>
+		<Library File="bcpg-jdk15on-156.jar"/>
+		<Library File="bcpkix-jdk15on-156.jar"/>
+		<Library File="bcprov-ext-jdk15on-155.jar"/>
+		<Library File="commons-compress-1.13.jar" />
+		<Library File="commons-daemon-1.0.15.jar"/>
+		<Library File="groovy-all-2.4.7-indy.jar" />
+		<Library File="java-ipv6-0.16.jar"/>
+		<Library File="javax.mail-1.5.jar"/>
+		<Library File="jsch-0.1.54.jar" />
+		<Library File="netty-all-4.1.11.Final.jar" />
+		<Library File="netty-tcnative-boringssl-static-2.0.1.Final.jar" />
+		<Library File="rocksdbjni-4.9.0.jar"/>
+		<Library File="slf4j-api-1.7.22.jar"/>
+		<Library File="threeten-extra-1.1.jar"/>
+
+		<Folder Path="bin"/>
+		<Folder Path="util"/>
+		<Folder Path="lib/licenses"/>
+
+		<File Path="README.md"/>
+		<File Path="LICENSE.md"/>
+		<File Path="NOTICE.md"/>
+	</DependsOn>
+
+	<Config Locale="en" Chronology="UTC">
+		<CommandLine ClientClass="dcraft.cli.HubUtil" Mode="tenant" />
+
+		<Service.Definition Id="dc-database-rocks" Name="dcDatabase" RunClass="dcraft.db.rocks.Service" />
+
+		<Service.Definition Id="dc-sessions" Name="dcSessions" RunClass="dcraft.session.Service" />
+
+		<Service.Definition Id="dc-status" Name="dcStatus" RunClass="dcraft.service.Status" />
+
+		<Service.Definition Id="dc-mail" Name="dcEmail" RunClass="dcraft.mail.MailService" />
+
+		<!--
+		<Service.Definition Id="dc-core-db" Name="dcCoreServices" RunClass="dcraft.service.db.Service" />
+		-->
+
+		<Service.Definition Id="dc-core-simple" Name="dcCoreServices" RunClass="dcraft.service.simple.Service" />
+
+		<Mime>
+			<Definition Ext="html" Type="text/html" Compress="True" />
+			<Definition Ext="shtml" Type="text/html" Compress="True" />
+			<Definition Ext="xml" Type="text/xml" Compress="True" />
+			<Definition Ext="txt" Type="text/plain" Compress="True" />
+			<Definition Ext="jpg" Type="image/jpeg" />
+			<Definition Ext="png" Type="image/png" />
+			<Definition Ext="gif" Type="image/gif" />
+			<Definition Ext="css" Type="text/css" Compress="True" />
+			<Definition Ext="json" Type="application/json" Compress="True" />
+			<Definition Ext="js" Type="application/javascript" Compress="True" />
+			<Definition Ext="yaml" Type="text/yaml" Compress="True" />
+			<Definition Ext="woff" Type="application/x-font-woff" />
+			<Definition Ext="woff2" Type="application/font-woff2" />
+			<Definition Ext="cur" Type="image/vnd.microsoft.icon" />
+			<Definition Ext="ico" Type="image/vnd.microsoft.icon" />
+			<Definition Ext="svg" Type="image/svg+xml" />
+			<Definition Ext="pdf" Type="application/pdf" />
+		</Mime>
+
+		<!-- TODO cleanup
+		<FileView Name="WebGallery" RootFolder="/galleries"
+			ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" />
+
+		<FileView Name="WebFile" RootFolder="/files"
+			ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" />
+
+		<FileView Name="SiteFile" RootFolder="/"
+			ReadBadges="Developer" WriteBadges="Developer" />
+
+		<FileView Name="ManagedForm" RootFolder="/buckets/ManagedForm" UploadToken="true"
+			ReadBadges="Admin,Staff" WriteBadges="Guest,User" />
+		-->
+
+		<Instructions>
+			<Tag Name="dcs.Break" Class="dcraft.script.inst.Break" />
+			<Tag Name="dcs.CallFunc" Class="dcraft.script.inst.CallFunction" />
+			<Tag Name="dcs.Case" Class="dcraft.script.inst.Case" />
+			<Tag Name="dcs.Console" Class="dcraft.script.inst.Console" />
+			<Tag Name="dcs.Continue" Class="dcraft.script.inst.Continue" />
+			<Tag Name="dcs.Debug" Class="dcraft.script.inst.Debug" />
+			<Tag Name="dcs.Debugger" Class="dcraft.script.inst.Debugger" />
+			<Tag Name="dcs.Error" Class="dcraft.script.inst.Error" />
+			<Tag Name="dcs.Else" Class="dcraft.script.inst.Else" />
+			<Tag Name="dcs.ElseIf" Class="dcraft.script.inst.ElseIf" />
+			<Tag Name="dcs.Exit" Class="dcraft.script.inst.Exit" />
+			<Tag Name="dcs.For" Class="dcraft.script.inst.For" />
+			<Tag Name="dcs.ForEach" Class="dcraft.script.inst.ForEach" />
+			<Tag Name="dcs.Function" Class="dcraft.script.inst.Function" />
+			<Tag Name="dcs.Global" Class="dcraft.script.inst.Global" />
+			<Tag Name="dcs.If" Class="dcraft.script.inst.If" />
+			<Tag Name="dcs.Info" Class="dcraft.script.inst.Info" />
+			<Tag Name="dcs.Main" Class="dcraft.script.inst.Main" />
+			<Tag Name="dcs.Out" Class="dcraft.script.inst.doc.Out" />
+			<Tag Name="dcs.Progress" Class="dcraft.script.inst.Progress" />
+			<Tag Name="dcs.Return" Class="dcraft.script.inst.Return" />
+			<Tag Name="dcs.Script" Class="dcraft.script.inst.Main" />
+			<Tag Name="dcs.Sleep" Class="dcraft.script.inst.Sleep" />
+			<!-- Tag Name="dcs.Sort" Class="dcraft.script.inst.Sort" / -->
+			<Tag Name="dcs.Switch" Class="dcraft.script.inst.Switch" />
+			<Tag Name="dcs.Trace" Class="dcraft.script.inst.Trace" />
+			<Tag Name="dcs.Var" Class="dcraft.script.inst.Var" />
+			<Tag Name="dcs.Until" Class="dcraft.script.inst.Until" />
+			<Tag Name="dcs.Warn" Class="dcraft.script.inst.Warn" />
+			<Tag Name="dcs.While" Class="dcraft.script.inst.While" />
+			<Tag Name="dcs.With" Class="dcraft.script.inst.With" />
+
+			<Tag Name="dcdb.Query" Class="dcraft.script.inst.db.Query" />
+			<Tag Name="dcdb.LoadRecord" Class="dcraft.script.inst.db.LoadRecord" />
+
+			<Tag Name="dcs.SendEmail" Class="dcraft.script.inst.ext.SendEmail" />
+			<Tag Name="dcs.File" Class="dcraft.script.inst.file.File" />
+		</Instructions>
+
+		<Catalog Name="Security-Policy-Http">
+			<Settings>
+				<Header
+						Name="Content-Security-Policy"
+						Value="default-src 'self'; style-src 'unsafe-inline' 'self'; img-src * data: blob:; media-src *; font-src *;"
+				/>
+			</Settings>
+		</Catalog>
+
+		<Service.Definition Id="dc-web-full" Name="Web" RunClass="dcraft.web.Service">
+			<!-- if module is loaded this will be contrubuted to the global config, it may point to an alternative Web-Config catalog -->
+			<Config>
+			</Config>
+		</Service.Definition>
+	</Config>
+</Package>

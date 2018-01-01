@@ -1,0 +1,186 @@
+<dc.Html Badges="User">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="My Orders" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dc.Region Label="Orders List">
+				<table id="lstOutstanding" class="dc-table-break-std dc-table dc-table-reflow dc-table-stripe" />
+			</dc.Region>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.callPageFunc('DoOutstanding');
+	]]></Function>
+	<Function Name="DoOutstanding"><![CDATA[
+			var page = this;
+
+			var $list = $('#lstOutstanding');
+
+			$list.empty().dcappend(
+				$('<tbody>').dcappend(
+					$('<tr>').dcappend(
+						$('<td>').dcappend(
+							$('<i>').addClass('fa fa-spinner fa-pulse fa-lg')
+						)
+					)
+				)
+			);
+
+			dc.comm.sendMessage({
+				Service: 'dcmStoreServices',
+				Feature: 'Orders',
+				Op: 'ListMy'
+			}, function(rmsg) {
+				if (rmsg.Result > 0) {
+					dc.pui.Popup.alert('Unable to load list: ' + rmsg.Message);
+					return;
+				}
+
+				var resortColumn = function(e) {
+					page.Store.SortField = $(this).attr('data-sort-on');
+					page.callPageFunc('DoOutstanding');
+				};
+
+				var viewOrder = function(e) {
+					dc.pui.Dialog.loadPage('/dcm/shop/view-order', {
+						Order: e.data,
+						Callback: function(e) {
+							page.callPageFunc('DoOutstanding');
+						}
+					 });
+
+					e.preventDefault();
+					return false;
+				};
+
+				$tbl = $('<tbody>');
+
+				$list.empty().dcappend(
+					$('<thead>').dcappend(
+						$('<tr>').dcappend(
+							$('<th>').dcappend(
+								$('<a>').attr('data-sort-on', 'Id').click(resortColumn).dcappend(
+									$('<span>Id  &nbsp;</span>'),
+									$('<i>').addClass('fa fa-sort fa-lg')
+								)
+							),
+							$('<th>').dcappend(
+								$('<a>').attr('data-sort-on', 'Status').click(resortColumn).dcappend(
+									$('<span>Status  &nbsp;</span>'),
+									$('<i>').addClass('fa fa-sort fa-lg')
+								)
+							),
+							$('<th>').dcappend(
+								$('<a>').attr('data-sort-on', 'OrderDate').click(resortColumn).dcappend(
+									$('<span>Order Date  &nbsp;</span>'),
+									$('<i>').addClass('fa fa-sort fa-lg')
+								)
+							),
+							$('<th>').dcappend(
+								$('<a>').attr('data-sort-on', 'Name').click(resortColumn).dcappend(
+									$('<span>Name &nbsp;</span>'),
+									$('<i>').addClass('fa fa-sort fa-lg')
+								)
+							),
+							$('<th>').dcappend(
+								$('<a>').attr('data-sort-on', 'Delivery').click(resortColumn).dcappend(
+									$('<span>Delivery  &nbsp;</span>'),
+									$('<i>').addClass('fa fa-sort fa-lg')
+								)
+							),
+							$('<th>').dcappend(
+								$('<a>').attr('data-sort-on', 'GrandTotal').click(resortColumn).dcappend(
+									$('<span>Total  &nbsp;</span>'),
+									$('<i>').addClass('fa fa-sort fa-lg')
+								)
+							)
+						)
+					),
+					$tbl
+				);
+
+				var recs = rmsg.Body;
+
+				if (! recs.length) {
+					$tbl.dcappend(
+						$('<tr>').dcappend(
+							$('<td>').attr('span', '6').text('[None Found]')
+						)
+					);
+
+					return;
+				}
+
+				// prep for sort
+				for (var i = 0; i < recs.length; i++) {
+					var item = recs[i];
+
+					item.Name = item.CustomerInfo.FirstName + ' '
+						+ item.CustomerInfo.LastName;
+
+					item.CleanId = item.Id.substr(15);
+				}
+
+				// sort
+				var sortfld = page.Store.SortField ? page.Store.SortField : 'OrderDate';
+
+				if (sortfld == 'OrderDate')
+					recs.sort(dc.util.List.sortDescObjects(sortfld));
+				else
+					recs.sort(dc.util.List.sortObjects(sortfld));
+
+				for (var i = 0; i < recs.length; i++) {
+					var item = recs[i];
+
+					$tbl.dcappend(
+						$('<tr>').dcappend(
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Id'),
+								' ',
+								$('<a>')
+									.attr('href', '#')
+									.click(item, viewOrder)
+									.dcappend(
+										item.CleanId
+									)
+							),
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Status'),
+								' ',
+								item.Status
+							),
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Order Date'),
+								' ',
+								dc.util.Date.formatZLocalMedium(item.OrderDate)
+							),
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Name'),
+								' ',
+								item.Name
+							),
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Delivery'),
+								' ',
+								item.Delivery
+							),
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Total'),
+								' $',
+								dc.util.Number.formatMoney(item.GrandTotal)
+							)
+						)
+					);
+				}
+			});
+	]]></Function>
+	<Function Name="DoClose"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+	]]></Function>
+</dc.Html>

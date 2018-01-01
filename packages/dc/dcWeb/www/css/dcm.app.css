@@ -1,0 +1,104 @@
+
+.dcm-fb-header {
+	display: -ms-flexbox;
+	display: -webkit-flex;
+	display: flex;
+}
+
+.dcm-fb-icon img {
+	width: 50px;
+}
+
+.dcm-fb-stamp {
+	margin-left: .8rem;
+}
+
+.dcm-fb-stamp h3 {
+	margin-top: 0;
+	margin-bottom: .2rem;
+}
+
+.dcm-fb-stamp {
+	font-size: 1.4rem;
+}
+
+.dcm-fb-body img {
+	max-width: 100%;
+}
+
+.dcm-ig-listing {
+	text-align: center;
+}
+
+.dcm-ig-entry img {
+	width: 114px;
+	margin-top: .8rem;
+	margin-right: .8rem;
+	float: right;
+}
+
+.dcm-widget-carousel .dcm-widget-carousel-fader,
+.dcm-widget-carousel .dcm-widget-carousel-img {
+	height: 100%;
+    position: absolute;
+}
+
+.dcm-widget-carousel .dcm-widget-carousel-fader {
+	z-index: 0;
+}
+
+.dcm-widget-carousel .dcm-widget-carousel-img {
+	z-index: 4;
+}
+
+.dcm-widget-carousel .dcm-widget-carousel-list {
+	display: none;
+}
+
+.dcm-widget-social-media {
+	display: -webkit-flex;
+	display: flex;
+	-webkit-justify-content: center;
+	justify-content: center;
+	-webkit-align-items: flex-start;
+	align-items: flex-start;
+}
+
+.dcm-widget-social-media .dc-link {
+	margin: 0 .1rem 0 .1rem;
+}
+
+/* hide internal CMS buttons before CMS is loaded */
+
+.dcm-cms-editable:not(.dcuiCms) .dcuiCmsi {
+	display: none !important;
+}
+
+ul.dc-list-control {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: block;
+}
+
+ul.dc-list-control li {
+	display: inline-block;
+}
+
+/* TODO maybe improve someday */
+
+#sectCalcsField01dea8fb54024150bccbfb584a94d51b {
+	text-align: right;
+}
+
+#sectCalcs01dea8fb54024150bccbfb584a94d51b {
+	margin-left: auto;
+}
+
+#sectCalcs01dea8fb54024150bccbfb584a94d51b th {
+	padding-right: 24px;
+}
+
+#sectCalcs179b99fde9f74d4f85f681087266e756 td:first-child {
+	padding-right: 24px;
+}

@@ -1,0 +1,262 @@
+<dc.Html>
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Step 3: Order Totals" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dc.Region Hint="Cart Contents">
+					<table id="lstCartTotal" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+						<thead>
+							<th>Item</th>
+							<th>Description</th>
+							<th>Price</th>
+							<th>Quantity</th>
+							<th>Sub-Total</th>
+						</thead>
+						<tbody id="lstCartTotalBody" />
+					</table>
+
+					<br />
+
+					<dcf.Custom>
+						<div id="sectCalcsField01dea8fb54024150bccbfb584a94d51b">
+							<table id="sectCalcs01dea8fb54024150bccbfb584a94d51b" />
+						</div>
+					</dcf.Custom>
+
+					<br />
+
+					<dcf.TextArea Label="Order Comment" Name="Comment" />
+				</dc.Region>
+
+				<dcf.FormButtons Hint="Form options">
+					<dc.Button Label="Previous" Click="DoBack" />
+					<!-- TODO
+					<Button Label="Use Coupon" Icon="tag" Click="OnCoupon" />
+					-->
+					<dcf.SubmitButton Label="Next" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<!--
+	<div data-role="popup" id="popupCoupon" data-theme="a" class="ui-corner-all">
+		 <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
+
+		<form>
+			<div style="padding:10px 20px;">
+				<h3>Use Coupon</h3>
+
+				<label for="acCouponCode" class="ui-hidden-accessible">Code:</label>
+				<input type="text" name="couponcode" id="acCouponCode" value="" placeholder="coupon code" data-theme="a" autocomplete="off" />
+
+				<button id="btnApplyCoupon" type="button" class="ui-btn ui-corner-all ui-shadow ui-btn-a ui-btn-icon-left ui-icon-check">Apply Coupon</button>
+			</div>
+		</form>
+	</div>
+
+				$('#btnApplyCoupon').click(function(e) {
+					dc.cms.cart.Cart._cart.CouponCode = $('#acCouponCode').val();
+
+					// don't use empty coupons
+					if (!dc.cms.cart.Cart._cart.CouponCode)
+						delete dc.cms.cart.Cart._cart.CouponCode;
+
+					dc.cms.cart.Cart.save();
+
+					$('#popupCoupon').popup('close');
+
+					this.callPageFunc('Refresh');
+
+					e.preventDefault();
+					return false;
+				});
+	-->
+
+	<Function Name="Load"><![CDATA[
+			dc.cms.cart.Cart.load();	// make sure it is loaded
+
+			this.callPageFunc('Refresh');
+	]]></Function>
+	<Function Name="Refresh"><![CDATA[
+			var page = this;
+
+			var editItem = function(e) {
+					if (e.data.VariablePrice)
+						dc.pui.Dialog.loadPage('/dcm/shop/variable-amount', {
+							Product: e.data,
+							Callback: function() {
+								page.reload();
+							}
+						});
+					else
+						dc.pui.Dialog.loadPage('/dcm/shop/variable-quantity', {
+							Product: e.data,
+							Callback: function() {
+								page.reload();
+							}
+						});
+
+				e.preventDefault();
+				return false;
+			};
+
+			var removeItem = function(e) {
+				dc.cms.cart.Cart.removeItem(e.data);
+				dc.cms.cart.Cart.save();
+
+				page.reload();
+
+				e.preventDefault();
+				return false;
+			};
+
+			var $tbl = $('#lstCartTotalBody');
+
+			$tbl.empty().append('<tr><td><i class="fa fa-spinner fa-spin fa-lg"></i></td></tr>');
+
+			dc.cms.cart.Cart.calculate(function() {
+				$tbl.empty();
+
+				var cart = dc.cms.cart.Cart._cart;
+
+				for (var i = 0; i < cart.Items.length; i++) {
+					var item = cart.Items[i];
+
+					$tbl.dcappend(
+						$('<tr>').dcappend(
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Item'),
+								' ',
+								$('<img>')
+									.attr('aria-hidden', 'true')
+									.attr('src', '/galleries/store/product/'
+										+ item.Alias + '/' + (item.Image ? item.Image : 'main') + '.v/thumb.jpg')
+							),
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Description'),
+								' ',
+								item.Title,
+								$('<br>'),
+								$('<br>'),
+								(item.Instructions ? item.Instructions : null)
+							),
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Price'),
+								' $',
+								dc.util.Number.formatMoney(item.Price)
+							),
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Quantity'),
+								' ',
+								item.Quantity,
+								$('<br>'),
+								$('<br>'),
+								$('<b>').addClass('dc-table-cell-label').text('Actions'),
+								' ',
+								$('<a>')
+									.attr('href', '#')
+									.click(item, editItem)
+									.text('edit'),
+								$('<span>').html(' &nbsp;&nbsp; '),
+								$('<a>')
+									.attr('href', '#')
+									.click(item, removeItem)
+									.text('remove')
+							),
+							$('<td>').dcappend(
+								$('<b>').addClass('dc-table-cell-label').text('Sub-Total'),
+								' $',
+								dc.util.Number.formatMoney(item.Total)
+							)
+						)
+					);
+				}
+
+				$('#sectCalcs01dea8fb54024150bccbfb584a94d51b').empty();
+
+				if (cart.CalcInfo.ProductDiscount) {
+					$('#sectCalcs01dea8fb54024150bccbfb584a94d51b').dcappend(
+						$('<tr>').dcappend(
+							$('<th>').text('Product Total: '),
+							$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ItemCalc))
+						),
+						$('<tr>').dcappend(
+							$('<th>').text('Discount: '),
+							$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ProductDiscount))
+						)
+					);
+				}
+
+				$('#sectCalcs01dea8fb54024150bccbfb584a94d51b').dcappend(
+					$('<tr>').dcappend(
+						$('<th>').text('Cart Total: '),
+						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ItemTotal))
+					)
+				);
+
+				if (cart.CalcInfo.ShipDiscount) {
+					$('#sectCalcs01dea8fb54024150bccbfb584a94d51b').dcappend(
+						$('<tr>').dcappend(
+							$('<th>').text('Shipping Total: '),
+							$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ShipAmount))
+						),
+						$('<tr>').dcappend(
+							$('<th>').text('Discount: '),
+							$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ShipDiscount))
+						)
+					);
+				}
+
+				$('#sectCalcs01dea8fb54024150bccbfb584a94d51b').dcappend(
+					$('<tr>').dcappend(
+						$('<th>').text('Shipping: '),
+						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ShipTotal))
+					),
+					$('<tr>').dcappend(
+						$('<th>').text('Taxes: '),
+						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.TaxTotal))
+					),
+					$('<tr>').dcappend(
+						$('<th>').text('Order Total: '),
+						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.GrandTotal))
+					)
+				);
+			});
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			e.Data = { };
+
+			if (dc.cms.cart.Cart._cart.Comment)
+				e.Data.Comment = dc.cms.cart.Cart._cart.Comment;
+	]]></Function>
+	<Function Name="Freeze" Params="e"><![CDATA[
+			var data = this.form().getValues();
+
+			dc.cms.cart.Cart._cart.Comment = data.Comment;
+			dc.cms.cart.Cart.save();
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			dc.pui.App.loadTab('Billing');
+	]]></Function>
+	<Function Name="OnCoupon"><![CDATA[
+			/* TODO
+			if (dc.cms.cart.Cart._cart.CouponCode)
+				$('#acCouponCode').val(dc.cms.cart.Cart._cart.CouponCode);
+			else
+				$('#acCouponCode').val('');
+
+			$('#popupCoupon').popup('open', { positionTo: 'window', transition: 'pop' });
+			*/
+	]]></Function>
+	<Function Name="DoBack"><![CDATA[
+			var page = this;
+
+			dc.pui.App.loadTab('Shipping');
+	]]></Function>
+</dcui>

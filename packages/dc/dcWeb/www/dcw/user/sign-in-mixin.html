@@ -1,0 +1,42 @@
+<dc.MixIn>
+	<dc.Fragment>
+		<dcf.Form Name="SignIn">
+			<dcf.Text Name="Username" Label="Email" placeholder="email or username" Required="true" />
+			<dcf.Password Name="Password" Label="Password" Required="true" />
+			<dcf.YesNo Label="Remember Me" Name="RememberMe" />
+
+			<dcf.FormButtons>
+				<dc.Button Label="Reset Password" Click="onRecover" />
+				<dcf.SubmitButton Label="Sign In" />
+			</dcf.FormButtons>
+		</dcf.Form>
+	</dc.Fragment>
+	<Function Name="onRecover">
+				dc.pui.Dialog.loadPage('/dcw/user/reset.html');
+	</Function>
+	<Function Name="LoadRecord" Params="e">
+				var info = dc.user.getUserInfo();
+
+				if (info.Credentials) {
+					e.Data = $.extend(true, { RememberMe: info.RememberMe }, info.Credentials);
+					this.form().query('Password').focus();
+				}
+				else {
+					this.form().query('Username').focus();
+				}
+	</Function>
+	<Function Name="AfterSave" Params="e">
+				var entry = this;
+
+				var values = this.form().getValues();
+
+				dc.user.signin(values.Username, values.Password, values.RememberMe, function(msg) {
+					if (dc.user.isVerified()) {
+						entry.callPageFunc('SignedIn');
+					}
+					else {
+						dc.pui.Popup.alert('Invalid sign in');
+					}
+				});
+	</Function>
+</dc.MixIn>

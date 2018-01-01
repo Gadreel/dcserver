@@ -1,0 +1,26 @@
+<dc.Html PageClass="simple">
+	<dc.Body>
+		<!-- for pubCal -->
+		<dc.Param Name="test1">
+			<p class="abc">from page</p>
+		</dc.Param>
+
+		<div id="pubHeader" data-combo="other">
+			<p>in header</p>
+		</div>
+		
+		<dc.IncludeFragment Path="/examples/simple/simple-2-skel" Meta="true" class="inccls">
+			<Param Name="welcome1" Value="welcome Thelina" />
+		</dc.IncludeFragment>
+
+		<div id="pubFooter" data-combo="other">
+			<p>in footer</p>
+		</div>
+	</dc.Body>	
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+			
+			console.log('abc');
+    ]]></Function>
+</dc.Html>

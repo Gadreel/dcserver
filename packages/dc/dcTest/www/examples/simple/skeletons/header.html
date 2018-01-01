@@ -1,0 +1,86 @@
+<MixIn>
+	<Fragment>
+		<header id="pubHeader">
+			<div class="pubWrapper">
+				<div id="pubHeaderContent">
+					<Link id="pubHeaderLogoLink" Page="/">
+						<img id="pubHeaderLogo" src="/imgs/logo.png" height="80" />
+					</Link>
+				</div>
+			</div>
+		</header>
+		<header id="pubHeader2">
+			<div class="pubWrapper">
+				<nav id="pubHeaderMenu">
+					<ul>
+					  <li><Link Page="/Our-Standards" Label="Our Standards" /></li>
+					  <li><Link Page="/New-Patients" Label="New Patients" /></li>
+					  <li><Link Page="/Smiles" Label="Smiles" /></li>
+					  <li><Link Page="/Dental-Concerns" Label="Dental Concerns" /></li>
+					  <li><Link Page="/Services" Label="Services" /></li>
+					  <li><Link Page="/Insurance-Financing" Label="Insurance/Financing" /></li>
+					  <li><Link Page="/Contact-Us" Label="Contact Us" /></li>
+					</ul>
+				</nav>
+
+			</div>
+		</header>
+	</Fragment>
+	<Function Name="pubLoad" Mode="Load"><![CDATA[
+			var page = this;
+
+			var showCurrent = function() {
+				var rec = dc.handler.Store.Current;
+
+				if (rec.Date)  {
+					var anchr = $('<a href="#"><img src="/galleries/Issues/' + rec.Date + '/Cover.v/cover-thumb.jpg" /></a>');
+					anchr.attr('href', rec.IssuLink).attr('target', '_blank');
+
+					/*
+					anchr.click(rec, function(e) {
+						dc.pui.Loader.loadPage('/Issue/' + e.data.Date);
+
+						e.preventDefault();
+						return false;
+					});
+					*/
+
+					$('#pubHeaderCover').append(anchr);
+				}
+
+				if (rec.IssuLink)
+					$('#pubHeaderButtons a:first-child').attr('href', rec.IssuLink).attr('target', '_blank');
+			};
+
+			if (dc.handler.Store && dc.handler.Store.Current) {
+				//console.log('cached');
+				showCurrent();
+				return;
+			}
+
+			if (!dc.handler.Store)
+				dc.handler.Store = { };
+
+			/*
+			dc.comm.sendMessage({
+				Service: 'mem',
+				Feature: 'Issues',
+				Op: 'LoadCurrent'
+			}, function(rmsg) {
+				if (rmsg.Result > 0) {
+					dc.pui.Popup.alert('Unable to load locations list: ' + rmsg.Message);
+					return;
+				}
+
+				//console.log('lookup');
+				dc.handler.Store.Current = rmsg.Body;
+				showCurrent();
+			});
+			*/
+    ]]></Function>
+	<Function Name="pubOnMenuOpen"><![CDATA[
+			var page = this;
+
+			$('#pubHeaderMenuPop').popup('open', { positionTo: '#pubHeaderMenuMobile' });
+    ]]></Function>
+</MixIn>

@@ -1,0 +1,22 @@
+ { 
+	"Variations":  [ 
+		 { 
+			"ExactWidth": 500, 
+			"Alias": "full", 
+			"Name": "Full"
+		 }, 
+		 { 
+			"ExactWidth": 152, 
+			"ExactHeight": 152, 
+			"Alias": "thumb", 
+			"Name": "Thumb"
+		 } 
+	 ] ,
+	 "Shows": [
+	 	{
+	 		"Title": "All board members",
+	 		"Alias": "main",
+	 		"Images": [ "carrie", "lance", "mac", "tom" ]
+	 	}
+	 ]
+ } 

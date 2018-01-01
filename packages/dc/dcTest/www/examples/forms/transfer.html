@@ -1,0 +1,80 @@
+<dc.Html>
+	<Require Style="/examples/styles.css" />
+	
+	<Require Script="/js/dc.transfer.js" />
+	<Require Script="/js/vendor/jquery.fileDownload.js" />
+	
+	<Meta Name="Title"> 
+		<Tr Locale="en" Value="File Transfers" />
+	</Meta>
+	
+	<dc.Body class="form-forms">
+		<dc.Band Width="Medium" Pad="Medium">
+			<dc.FullLayout>
+				<h3>Upload Example</h3>
+				
+				<input id="upctrl" type="file" />
+				
+				<dc.Button Label="Upload" Click="DoUpload" />
+			</dc.FullLayout>
+
+			<dc.FullLayout>
+				<h3>Download Example</h3>
+				
+				<dc.Button Label="Download" Click="DoDownload" />
+			</dc.FullLayout>
+		</dc.Band>
+	</dc.Body>
+
+	<Function Name="Load">
+				var page = this;
+			
+				console.log('page loaded: ' + page.Name);
+				
+    </Function>
+	<Function Name="DoDownload"><![CDATA[
+			dc.util.Cookies.deleteCookie('fileDownload');
+			
+			var tmsg = { 
+				Service: 'dcCoreServices',
+				Feature: 'Vaults',
+				Op: 'StartDownload',
+				Body: {
+					Vault: 'WebFiles', 
+					Path: '/examples/placeholder.pdf'
+				}
+			};
+			
+			dc.comm.sendMessage(tmsg, function(rmsg) {
+				if (rmsg.Result == 0) { 
+					var binding = rmsg.Body;
+					
+					$.fileDownload('/dcdyn/xfer/' + binding.Channel, {
+						httpMethod: 'GET', 
+						successCallback: function(url) {
+							// only means that it started, not finished
+							console.log('download worked!');
+						},
+						failCallback: function(html, url) {
+							console.log('download failed!');
+						}
+					});
+				}
+				else {			
+					dc.pui.Popup.alert('Error requesting download channel.');
+				}
+			});
+	]]></Function>
+	
+	<Function Name="DoUpload"><![CDATA[
+			var page = this;
+			var files = $('#upctrl').get(0).files;
+	
+			var uploadtask = dc.transfer.Util.uploadFiles(files, 'WebFiles', null, function() {
+				console.log('uploaded');
+			});
+
+			uploadtask.run();		
+	]]></Function>
+	
+</dc.Html>

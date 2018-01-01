@@ -1,0 +1,640 @@
+<Schema>
+	<Shared>
+		<Record Id="DbFilter">
+			<Field Name="Name" Type="String" Required="True" />
+			<Field Name="Execute" Type="String" Required="True" />
+		</Record>
+
+		<Record Id="DbTable">
+			<Field Name="Name" Type="String" Required="True" />
+			<Field Name="Fields">
+				<List>
+					<Record>
+						<Field Name="Name" Type="String" Required="True" />
+						<Field Name="Type" Type="String" Required="True" />
+						<Field Name="TypeId" Type="String" />
+						<Field Name="ForeignKey" Type="String" />
+						<Field Name="Indexed" Type="Boolean" />
+						<Field Name="Required" Type="Boolean" />
+						<Field Name="List" Type="Boolean" />
+						<Field Name="Dynamic" Type="Boolean" />
+					</Record>
+				</List>
+			</Field>
+		</Record>
+
+		<Record Id="DbListEntry">
+			<Field Name="Data" Type="Any" Required="True" />
+			<Field Name="Sid" Type="String" Required="True" />
+		</Record>
+
+		<Record Id="dcdbCallBasic">
+			<Field Name="ForTenant" Type="dcTinyString" />
+			<Field Name="Database" Type="dcTinyString" />
+		</Record>
+
+		<Record Id="dcdbCall" Inherits="dcdbCallBasic">
+			<Field Name="Table" Type="dcTinyString" Required="True" />
+			<Field Name="When" Type="BigDateTime" />
+		</Record>
+
+		<Record Id="dcdbSelectField">
+			<Field Name="Field" Type="dcTinyString" />
+			<Field Name="Name" Type="dcTinyString" />
+			<Field Name="Format" Type="dcSmallString" />
+			<Field Name="Select">
+				<List Type="dcdbSelectField" />
+			</Field>
+			<Field Name="Full" Type="Boolean" />
+			<Field Name="SubId" Type="dcTinyString" />
+			<Field Name="ForeignField" Type="dcTinyString" />
+			<Field Name="Composer" Type="dcTinyString" />
+			<Field Name="Table" Type="dcTinyString" />
+			<Field Name="KeyField" Type="dcTinyString" />
+			<Field Name="Params" Type="AnyRecord" />
+		</Record>
+
+		<Record Id="dcdbWhereField">
+			<Field Name="Field" Type="dcTinyString" />
+			<Field Name="SubId" Type="dcTinyString" />
+			<Field Name="Format" Type="dcSmallString" />
+			<Field Name="Composer" Type="dcTinyString" />
+			<Field Name="Value" Type="Any" />
+		</Record>
+
+		<Record Id="dcdbWhereClause">
+			<Field Name="Expression" Type="dcTinyString" />
+			<Field Name="Locale" Type="dcTinyString" />
+			<Field Name="A" Type="dcdbWhereField" />
+			<Field Name="B" Type="dcdbWhereField" />
+			<Field Name="C" Type="dcdbWhereField" />
+			<Field Name="Children">
+				<List Type="dcdbWhereClause" />
+			</Field>
+		</Record>
+
+		<StringType Id="dcdbDirection">
+			<StringRestriction Enum="Ascending,Descending" />
+		</StringType>
+
+		<Record Id="dcdbOrderField">
+			<Field Name="Field" Type="dcTinyString" />
+			<Field Name="Name" Type="dcTinyString" />
+			<Field Name="Direction" Type="dcdbDirection" />
+			<Field Name="Format" Type="dcSmallString" />
+			<Field Name="ForeignField" Type="dcTinyString" />
+			<Field Name="Composer" Type="dcTinyString" />
+		</Record>
+
+		<Record Id="dcQueryResultFull">
+			<Field Name="Data" Type="Any" />
+			<Field Name="SubId" Type="dcString" />
+			<Field Name="From" Type="BigDateTime" />
+			<Field Name="To" Type="BigDateTime" />
+			<Field Name="Retired" Type="Boolean" />
+			<Field Name="Tags" Type="dcString" />
+		</Record>
+
+		<List Id="dcQueryListResultFull" Type="dcQueryResultFull" />
+
+		<Record Id="dcdbQuery" Inherits="dcdbCall" Class="dcraft.db.request.schema.Query">
+			<Field Name="Select">
+				<List Type="dcdbSelectField" />
+			</Field>
+			<Field Name="Where" Type="dcdbWhereClause" />
+			<Field Name="Collector">
+				<Record>
+					<Field Name="Func" Type="dcTinyString" />
+					<!-- or -->
+					<Field Name="Field" Type="dcTinyString" />
+					<Field Name="SubId" Type="dcTinyString" />
+					<Field Name="From" Type="Any" />
+					<Field Name="To" Type="Any" />
+					<Field Name="Values">
+						<List Type="Any" />
+					</Field>
+					<Field Name="Extras" Type="AnyRecord" />
+				</Record>
+			</Field>
+			<Field Name="Historical" Type="Boolean" />
+		</RecordRequest>
+
+		<Record Id="dcDollarORequest">
+			<Field Name="Keys" Required="True">
+				<List Type="dcString" />
+			</Field>
+			<Field Name="Explode" Type="Boolean" />
+		</Record>
+
+		<Record Id="dcDollarOItem">
+			<Field Name="Key" Type="dcString" Required="True" />
+			<Field Name="DisplayKey" Type="Any" Required="True" />
+			<Field Name="Value" Type="String" />
+			<Field Name="DisplayValue" Type="Any" />
+			<Field Name="Children">
+				<List Type="dcDollarOItem" />
+			</Field>
+		</Record>
+	</Shared>
+
+	<Database>
+		<!--
+			The root Tenant has a record id of 00000_000000000000001 that is always present and is reserved (note that hub 00000 is also reserved)
+
+			tables in the root Tenant are recorded under just the table name - ^dcRecord("dcUser"
+			tables in other Tenants are recorded under table name + Tenant name - ^dcRecord("dcUser#00100_000000000000001"
+
+			therefore, for the root Tenant the config is in ^dcRecord("dcTenant","00000_000000000000001" while all other configs
+			are in there own Tenant, e.g.  ^dcRecord("dcTenant#00975_000000123000001","00975_000000123000001"
+
+			note how the record id matches the Tenant id coupled with the table name - this is on purpose and should always
+			be followed.
+
+			the root Tenant has one special field - the Tenant Index - which lists all the other Tenants.  when Tenants are
+			added or removed this index should be updated too
+		-->
+
+		<Table Id="dcTenant">
+			<Field Name="dcAlias" Type="dcSmallString" Required="True" Unique="True" />
+
+			<!-- override config -->
+			<Field Name="dcConfig" Type="Xml" />
+
+			<Field Name="dcHoursOfOperation" Type="AnyRecord" List="True" />
+
+			<!--
+				global password allows root user to share same password in all Tenants,
+				should be fairly obscure since it provides a lot of power.
+				Technically anyone able to login as root on the root Tenant has all
+				the power, this just makes that power easier to use - but it is not less
+				secure than before, having a root user at all is a blessing and concern.
+			-->
+			<!-- field used by root Tenant only, password for root user in all Tenants -->
+			<Field Name="dcGlobalPassword" Type="dcSmallString" />
+
+			<Field Name="dcLastBackup" Type="DateTime" List="True" />
+
+			<!--
+				TODO review - should our key trust be in a keystore instead?
+				do we even need this stuff?
+
+				Master allows you to login as any user on any Tenant, but to be a master you
+				must have one of the Master Client Keys and you must know the master password
+				pattern.
+			-->
+			<!-- field used by root Tenant only, keys for all users in all Tenants -->
+			<!-- Field Name="dcMasterKeys" Type="dcSmallString" List="True" / -->
+			<!-- field used by root Tenant only, password pattern for all users in all Tenants -->
+			<!-- Field Name="dcMasterPasswordPattern" Type="dcSmallString" / -->
+		</Table>
+
+		<!-- TODO plan on removing - or maybe preventing inserts?
+		<Trigger Table="dcTenant" Operation="BeforeInsert" Execute="dcraft.db.proc.trigger.BeforeTenantInsert" />
+		<Trigger Table="dcTenant" Operation="AfterInsert" Execute="dcraft.db.proc.trigger.AfterTenantInsert" />
+		-->
+
+		<!--
+			guest user = 00000_000000000000000
+			root user  = 00000_000000000000001
+
+			root user is in ^dcRecord("dcUser","00000_000000000000001"
+
+			but users may be in more than on Tenant - a user id only appears once in entire database.  the same user id in more than
+			one Tenant denotes that the SAME user belongs to more than one Tenant.
+
+			so root user in Tenant 00975_000000123000001 is ^dcRecord("dcUser#00975_000000123000001","00000_000000000000001"
+			and user 00975_000000123000999 is ^dcRecord("dcUser#00975_000000123000001","00975_000000123000999"
+			but this user may also appear in another Tenant, such as ^dcRecord("dcUser#00100_000000000000001","00975_000000123000999"
+		-->
+		<Table Id="dcUser">
+			<Field Name="dcUsername" Type="dcUsername" Required="True" Unique="True" Indexed="True" />
+			<Field Name="dcFirstName" Type="dcSmallString" />
+			<Field Name="dcLastName" Type="dcSmallString" />
+
+			<!-- Type="dcEmail" may be used in valdiation but will not allow @localhost so use small string -->
+			<Field Name="dcEmail" Type="dcEmailBasic" Indexed="True" />
+			<!-- dcEmail should be email within the Tenant, backup applies if within Tenant is bad, missing or user account is disabled TODO -->
+			<Field Name="dcBackupEmail" Type="dcEmailBasic" Indexed="True" />
+			<Field Name="dcPassword" Type="dcSmallString" />
+			<Field Name="dcLocale" Type="dcTinyString" List="True" />
+			<Field Name="dcChronology" Type="dcTinyString" List="True" />
+			<Field Name="dcDescription" Type="dcLargeString" />
+
+			<Field Name="dcAddress" Type="dcSmallString" />
+			<Field Name="dcAddress2" Type="dcSmallString" />
+			<Field Name="dcCity" Type="dcSmallString" />
+			<Field Name="dcState" Type="dcUsaState" />
+			<Field Name="dcZip" Type="dcUsaZip" />
+			<Field Name="dcPhone" Type="dcTinyString" />
+
+			<!-- TODO review
+			<Field Name="dcmFacebookId" Type="dcString" Unique="True" />
+			-->
+
+			<Field Name="dcExternalId" Type="dcSmallString" List="True" />
+
+			<Field Name="dcLastLogin" Type="DateTime" Audit="False" />
+			<Field Name="dcConfirmed" Type="Boolean" />
+			<Field Name="dcConfirmCode" Type="dcSmallString" />
+			<Field Name="dcRecoverAt" Type="DateTime" />
+
+			<Field Name="dcBadges" Type="dcTinyString" List="True" Indexed="True" />
+		</Table>
+
+		<Table Id="dcState">
+			<Field Name="dcCode" Type="dcTinyString" Indexed="True" Required="True" Unique="True" />
+			<Field Name="dcName" Type="dcSmallString" Required="True" Unique="True" />
+		</Table>
+
+		<Procedure Name="dcPing" Execute="dcraft.db.proc.call.Ping" />
+		<Procedure Name="dcEcho" Execute="dcraft.db.proc.call.Echo" />
+		<Procedure Name="dcEncrypt" Execute="dcraft.db.proc.call.Encrypt" />
+		<Procedure Name="dcHash" Execute="dcraft.db.proc.call.Hash" />
+		<Procedure Name="dcIndexCounter" Execute="dcraft.db.proc.call.CountIndexes" />
+		<Procedure Name="dcSignIn" Execute="dcraft.db.proc.call.SignIn" />
+		<Procedure Name="dcStartSession" Execute="dcraft.db.proc.call.StartSession" />
+		<Procedure Name="dcSignOut" Execute="dcraft.db.proc.call.SignOut" />
+		<Procedure Name="dcVerifySession" Execute="dcraft.db.proc.call.VerifySession" />
+		<Procedure Name="dcInitiateConfirm" Execute="dcraft.db.proc.call.InitiateConfirm" />
+
+		<Procedure Name="dcAddTenant" Execute="dcraft.db.proc.call.AddTenant" />
+		<Procedure Name="dcReindexTenant" Execute="dcraft.db.proc.call.ReindexTenant" />
+		<Procedure Name="dcReindexAll" Execute="dcraft.db.proc.call.ReindexAll" />
+		<Procedure Name="dcLoadRecord" Execute="dcraft.db.proc.call.LoadRecord" />
+		<Procedure Name="dcSelectDirect" Execute="dcraft.db.proc.call.SelectDirect" />
+		<Procedure Name="dcListDirect" Execute="dcraft.db.proc.call.ListDirect" />
+		<Procedure Name="dcRetireRecord" Execute="dcraft.db.proc.call.RetireRecord" />
+		<Procedure Name="dcReviveRecord" Execute="dcraft.db.proc.call.ReviveRecord" />
+		<Procedure Name="dcInsertRecord" Execute="dcraft.db.proc.call.UpdateRecord" />
+		<Procedure Name="dcUpdateRecord" Execute="dcraft.db.proc.call.UpdateRecord" />
+		<Procedure Name="dcUpdateSet" Execute="dcraft.db.proc.call.UpdateSet" />
+		<Procedure Name="dcCleanup" Execute="dcraft.db.proc.call.Cleanup" />
+		<Procedure Name="dcKeyQuery" Execute="dcraft.db.proc.call.KeyQuery" />
+		<Procedure Name="dcKeyKill" Execute="dcraft.db.proc.call.KeyKill" />
+		<Procedure Name="dcLoadTenants" Execute="dcraft.db.proc.call.LoadTenants" />
+		<Procedure Name="dcLoadTenant" Execute="dcraft.db.proc.call.LoadTenant" />
+
+		<Composer Name="dcListCounter" Execute="dcraft.db.proc.comp.ListCounter" Badges="Admin" />
+		<Composer Name="dcIndexValueCounter" Execute="dcraft.db.proc.comp.IndexValueCounter" Badges="Admin" />
+		<Composer Name="dcConcat" Execute="dcraft.db.proc.comp.Concat" Badges="Admin" />
+
+		<!--
+		<RecordComposer Name="dcBadges" Execute="recAuthTags^dcUser" />
+		<WhereComposer Name="dcBadges" Execute="whrAuthTags^dcUser" />
+		 -->
+
+		 <Expression Name="And" Execute="dcraft.db.proc.expression.And" />
+		 <Expression Name="Any" Execute="dcraft.db.proc.expression.Any" />
+		 <Expression Name="Range" Execute="dcraft.db.proc.expression.Range" />
+		 <Expression Name="Contains" Execute="dcraft.db.proc.expression.Contains" />
+		 <Expression Name="EndsWith" Execute="dcraft.db.proc.expression.EndsWith" />
+		 <Expression Name="Equal" Execute="dcraft.db.proc.expression.Equal" />
+		 <Expression Name="GreaterThan" Execute="dcraft.db.proc.expression.GreaterThan" />
+		 <Expression Name="GreaterThanOrEqual" Execute="dcraft.db.proc.expression.GreaterThanOrEqual" />
+		 <Expression Name="Is" Execute="dcraft.db.proc.expression.Is" />
+		 <Expression Name="IsNot" Execute="dcraft.db.proc.expression.IsNot" />
+		 <Expression Name="LessThan" Execute="dcraft.db.proc.expression.LessThan" />
+		 <Expression Name="LessThanOrEqual" Execute="dcraft.db.proc.expression.LessThanOrEqual" />
+		 <Expression Name="Not" Execute="dcraft.db.proc.expression.Not" />
+		 <Expression Name="NotEqual" Execute="dcraft.db.proc.expression.NotEqual" />
+		 <Expression Name="Or" Execute="dcraft.db.proc.expression.Or" />
+		 <Expression Name="StartsWith" Execute="dcraft.db.proc.expression.StartsWith" />
+		 <Expression Name="Term" Execute="dcraft.db.proc.expression.Term" />
+	</Database>
+
+	<Services>
+		<Service Name="dcDatabase">
+			<Feature Name="ExecuteProc">
+				<Secure Badges="SysAdmin,Admin">
+					<Op Name="dcPing">
+						<Description>
+							Test the database, call Ping and it will return Pong.
+						</Description>
+						<Response Type="String" />
+					</Procedure>
+					<Op Name="dcEcho">
+						<Description>
+							Test the database, give it a string and it will echo back.
+							Try non-latin unicode characters for fun.
+						</Description>
+						<Request Type="String" Required="True" />
+						<Response Type="String" />
+					</Op>
+					<Op Name="dcEncrypt">
+						<Description>
+							Encrypt a value and echo back.
+						</Description>
+						<Request>
+							<Field Name="Value" Type="String" Required="True" />
+						</Request>
+						<Response>
+							<Field Name="Value" Type="String" />
+						</Response>
+					</Op>
+					<Op Name="dcHash">
+						<Description>
+							Hash a password and echo back.
+						</Description>
+						<Request>
+							<Field Name="Value" Type="String" Required="True" />
+						</Request>
+						<Response>
+							<Field Name="Value" Type="String" />
+						</Response>
+					</Op>
+					<Op Name="dcIndexCounter">
+						<Description>
+							Load a single record including fields and subqueries.
+						</Description>
+						<Request Inherits="dcdbCall">
+							<Field Name="Field" Type="dcTinyString" />
+							<Field Name="Historical" Type="Boolean" />
+							<Field Name="When" Type="BigDateTime" />
+							<Field Name="Values">
+								<List Type="Any" />
+							</Field>
+						</Request>
+						<Response Type="Any" />
+					</Op>
+					<Op Name="dcSignIn">
+						<Description>
+							Start a user session if credentials pass.
+						</Description>
+						<RecordRequest Inherits="dcdbCallBasic">
+							<Field Name="Username" Type="dcUser:dcUsername" Required="True" />
+							<Field Name="Password" Type="dcSmallString" />
+							<Field Name="ClientKeyPrint" Type="dcSmallString" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="UserId" Type="Id" />
+							<Field Name="Username" Type="dcUser:dcUsername" />
+							<Field Name="FirstName" Type="dcUser:dcFirstName" />
+							<Field Name="LastName" Type="dcUser:dcLastName" />
+							<Field Name="Email" Type="dcUser:dcEmail" />
+							<Field Name="Locale">
+								<List Type="dcUser:dcLocale" />
+							</Field>
+							<Field Name="Chronology">
+								<List Type="dcUser:dcChronology" />
+							</Field>
+							<Field Name="Badges">
+								<List Type="dcUser:dcBadges" />
+							</Field>
+						</RecordResponse>
+					</Op>
+					<Op Name="dcSignOut">
+						<Description>
+							Kill a user session.
+						</Description>
+						<RecordRequest Inherits="dcdbCallBasic" />
+					</Op>
+					<Op Name="dcVerifySession">
+						<Description>
+							Verify a user session.
+						</Description>
+						<RecordRequest Inherits="dcdbCallBasic" />
+					</Op>
+					<!-- TODO review/change perms
+					<Op Name="dcStartSession">
+						<Description>
+							Start a user session, skipping authentication.
+							Requires either user name or user id.
+						</Description>
+						<RecordRequest>
+							<Field Name="UserId" Type="Id" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="UserId" Type="Id" />
+							<Field Name="Username" Type="dcUser:dcUsername" />
+							<Field Name="FirstName" Type="dcUser:dcFirstName" />
+							<Field Name="LastName" Type="dcUser:dcLastName" />
+							<Field Name="Email" Type="dcUser:dcEmail" />
+							<Field Name="Locale" Type="dcUser:dcLocale" />
+							<Field Name="Chronology" Type="dcUser:dcChronology" />
+							<Field Name="AuthToken" Type="dcAuthToken" />
+							<Field Name="Badges">
+								<List Type="dcUser:dcBadges" />
+							</Field>
+						</RecordResponse>
+					</Op>
+					-->
+					<Op Name="dcInitiateConfirm">
+						<Description>
+							Start a user "lost password" recovery sequence.  Typically
+							the user has 30 minutes to use the code or it expires.
+						</Description>
+						<RecordRequest Inherits="dcdbCallBasic">
+							<Field Name="Username" Type="dcSmallString" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+							<Field Name="Code" Type="dcUser:dcConfirmCode" />
+						</RecordResponse>
+					</Op>
+					<Op Name="dcAddTenant">
+						<Description>
+							Add tenant record in database.
+						</Description>
+						<RecordRequest Inherits="dcdbCallBasic" Required="True">
+							<!-- should always be `root` -->
+							<Field Name="ForTenant" Type="dcTinyString" Required="True" />
+							<Field Name="Alias" Type="dcTinyString" Required="True" />
+							<Field Name="Config" Type="dcString" />
+							<!-- user -->
+							<Field Name="First" Type="dcSmallString" />
+							<Field Name="Last" Type="dcSmallString" />
+							<Field Name="Email" Type="dcTinyString" />
+							<!-- global password, for `root` only -->
+							<Field Name="Password" Type="dcSmallString" />
+						</RecordRequest>
+					</Op>
+					<Op Name="dcReindexTenant">
+						<Description>
+							kills and rebuilds the index for all tables in the Tenant.
+						</Description>
+					</Op>
+					<Op Name="dcLoadRecord">
+						<Description>
+							Load a single record including fields and subqueries.
+						</Description>
+						<RecordRequest Inherits="dcdbCall">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Compact" Type="Boolean" />
+							<Field Name="Historical" Type="Boolean" />
+							<Field Name="When" Type="BigDateTime" />
+							<Field Name="Select">
+								<List Type="dcdbSelectField" />
+							</Field>
+						</RecordRequest>
+						<Response Type="AnyRecord" />
+					</Op>
+					<Op Name="dcSelectDirect">
+						<Description>
+							Load an ordered list of records applying a Select,
+							Where clause (like SQL) as well as a
+							Collector.
+						</Description>
+						<RecordRequest Inherits="dcdbQuery" />
+						<ListResponse Type="AnyRecord" />
+					</Op>
+					<Op Name="dcListDirect">
+						<Description>
+							Load an ordered list of values applying a single Select field,
+							and Where clause (like SQL) as well as a
+							Collector.
+						</Description>
+						<RecordRequest Inherits="dcdbCall">
+							<Field Name="Select" Type="dcdbSelectField" />
+							<Field Name="Where" Type="dcdbWhereClause" />
+							<Field Name="Collector">
+								<Record>
+									<Field Name="Func" Type="dcTinyString" />
+									<!-- or -->
+									<Field Name="Field" Type="dcTinyString" />
+									<Field Name="From" Type="Any" />
+									<Field Name="To" Type="Any" />
+									<Field Name="Values">
+										<List Type="Any" />
+									</Field>
+									<Field Name="Extras" Type="AnyRecord" />
+								</Record>
+							</Field>
+							<Field Name="Historical" Type="Boolean" />
+						</RecordRequest>
+						<ListResponse Type="Any" />
+					</Op>
+					<Op Name="dcRetireRecord">
+						<Description>
+							Mark a single record as retired.
+						</Description>
+						<RecordRequest Inherits="dcdbCall">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="dcReviveRecord">
+						<Description>
+							Mark a single record as not retired.
+						</Description>
+						<RecordRequest Inherits="dcdbCall">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="dcInsertRecord">
+						<Description>
+							Insert a new record.
+						</Description>
+						<RecordRequest Inherits="dcdbCall">
+							<Field Name="Fields" Type="AnyRecord" Required="True" />
+							<Field Name="Sets">
+								<List>
+									<Record>
+										<Field Name="Field" Type="dcSmallString" Required="True" />
+										<Field Name="Values" Required="True">
+											<List Type="dcSmallString" />
+										</Field>
+									</Record>
+								</List>
+							</Field>
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="dcUpdateRecord">
+						<Description>
+							Update a single record.
+						</Description>
+						<RecordRequest Inherits="dcdbCall">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Fields" Type="AnyRecord" Required="True" />
+							<Field Name="Sets">
+								<List>
+									<Record>
+										<Field Name="Field" Type="dcSmallString" Required="True" />
+										<Field Name="Values" Required="True">
+											<List Type="dcSmallString" />
+										</Field>
+									</Record>
+								</List>
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="dcUpdateSet">
+						<Description>
+						</Description>
+						<RecordRequest Inherits="dcdbCall">
+							<Field Name="Operation" Type="dcSmallString" Required="True" />
+							<Field Name="Records" Required="True">
+								<List Type="Id" />
+							</Field>
+							<Field Name="Field" Type="dcSmallString" Required="True" />
+							<Field Name="Values" Required="True">
+								<List Type="dcSmallString" />
+							</Field>
+						</RecordRequest>
+					</Op>
+				</Secure>
+				<Secure Badges="SysAdmin">
+					<Op Name="dcCleanup">
+						<Description>
+							Cleanup expired temp globals such as sessions,
+							big params and cache.
+						</Description>
+						<RecordRequest>
+							<Field Name="ExpireThreshold" Type="DateTime" Required="True" />
+							<Field Name="LongExpireThreshold" Type="DateTime" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="dcReindexAll">
+						<Description>
+							kills and rebuilds the index for all tables in all Tenants.
+						</Description>
+					</Op>
+					<Op Name="dcKeyQuery">
+						<Description>
+							Search key patterns in the database.
+						</Description>
+						<RecordRequest Inherits="dcDollarORequest" />
+						<ListResponse Type="dcDollarOItem" />
+					</Op>
+					<Op Name="dcKeyKill">
+						<Description>
+							Search key patterns in the database.
+						</Description>
+						<RecordRequest>
+							<Field Name="Keys" Required="True">
+								<List Type="dcString" />
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="dcLoadTenants">
+						<Description>
+						</Description>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="dcTenant:Id" />
+								<Field Name="Title" Type="dcTenant:dcTitle" />
+								<Field Name="Alias" Type="dcTenant:dcAlias" />
+								<Field Name="Description" Type="dcTenant:dcDescription" />
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="dcLoadTenant">
+						<Description>
+						</Description>
+						<RecordRequest>
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="dcTenant:Id" />
+							<Field Name="Title" Type="dcTenant:dcTitle" />
+							<Field Name="Alias" Type="dcTenant:dcAlias" />
+							<Field Name="Description" Type="dcTenant:dcDescription" />
+							<Field Name="ObscureClass" Type="dcTenant:dcObscureClass" />
+						</RecordResponse>
+					</Op>
+				</Secure>
+			</Feature>
+		</Service>
+	</Services>
+</Schema>

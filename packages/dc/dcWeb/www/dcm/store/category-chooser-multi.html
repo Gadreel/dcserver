@@ -1,0 +1,201 @@
+<dc.Html AuthTags="Clerk,Admin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Category Selector" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dc.Region Hint="Selected Categories">
+				<ul id="dcmStCatsMulti" />
+			</dc.Region>
+
+			<dcf.FormButtons>
+				<dc.Button Label="Add Category" Click="DoAdd" />
+				<dc.Button Label="Save" Click="DoSave" Scope="Primary" />
+			</dcf.FormButtons>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			var list = $('#dcmStCatsMulti');
+
+			list.empty().dcappend(
+				$('<li>').dcappend(
+					$('<i>').attr('class', 'fa fa-spinner fa-spin fa-2x')
+				)
+			);
+
+			dc.comm.sendMessage({
+				Service: 'dcmStoreServices',
+				Feature: 'Category',
+				Op: 'List'
+			}, function(rmsg) {
+				if (rmsg.Result > 0) {
+					dc.pui.Popup.alert('Unable to list categories: ' + rmsg.Message);
+					return;
+				}
+
+				var cats = rmsg.Body;
+				list.empty();
+
+				if (cats.length == 0) {
+					list.dcappend(
+						$('<li>').text('No categories found.')
+					);
+
+					return;
+				}
+
+				// sort
+				var sfield = page.Store.SortField ? page.Store.SortField : 'Title';
+				cats.sort(dc.util.List.sortObjects(sfield));
+
+				// output
+				for (var i = 0; i < cats.length; i++) {
+					var item = cats[i];
+
+					if (item.Mode == 'Sub')
+						continue;
+
+					var selected = false;
+
+					if (page.Params && page.Params.Selected) {
+						for (var n = 0; n < page.Params.Selected.length; n++) {
+							var scat = page.Params.Selected[n];
+
+							if (scat == item.Id) {
+								selected = true;
+								break;
+							}
+						}
+					}
+
+					var litm = $('<li>').dcappend(
+						$('<a>')
+							.attr('href', '#')
+							.attr('data-id', item.Id)
+							.attr('class', 'pure-button-default pure-button dc-button')
+							.dcappend(
+								$('<i>').attr('class', selected ? 'fa fa-check' : 'fa fa-square')
+							)
+							.click(item, function(e) {
+								var $icon = $(this).find('i');
+
+								if ($icon.hasClass('fa-check'))
+									$icon.removeClass('fa-check').addClass('fa-square');
+								else
+									$icon.removeClass('fa-square').addClass('fa-check');
+
+								e.preventDefault();
+								return false;
+							}),
+						' ',
+						$('<b>').text(item.Title + ' (' + item.Alias + ')')
+					);
+
+					list.dcappend(litm);
+
+					var sublist = null;
+
+					for (var i2 = 0; i2 < cats.length; i2++) {
+						var item2 = cats[i2];
+
+						if (item2.Parent != item.Id)
+							continue;
+
+						if (sublist == null) {
+							sublist = $('<ul>');
+
+							litm.dcappend(sublist);
+						}
+
+						selected = false;
+
+						if (page.Params && page.Params.Selected) {
+							for (var n = 0; n < page.Params.Selected.length; n++) {
+								var scat = page.Params.Selected[n];
+
+								if (scat == item2.Id) {
+									selected = true;
+									break;
+								}
+							}
+						}
+
+						sublist.dcappend(
+							$('<li>').dcappend(
+								$('<a>')
+									.attr('href', '#')
+									.attr('data-id', item2.Id)
+									.attr('class', 'pure-button-default pure-button dc-button')
+									.dcappend(
+										$('<i>').attr('class', selected ? 'fa fa-check' : 'fa fa-square')
+									)
+									.click(item2, function(e) {
+										var $icon = $(this).find('i');
+
+										if ($icon.hasClass('fa-check'))
+											$icon.removeClass('fa-check').addClass('fa-square');
+										else
+											$icon.removeClass('fa-square').addClass('fa-check');
+
+										e.preventDefault();
+										return false;
+									}),
+								' ',
+								$('<b>').text(item2.Title + ' (' + item2.Alias + ')')
+							)
+						);
+					}
+
+					if (sublist != null)
+						litm.dcappend(sublist);
+				}
+			});
+	]]></Function>
+	<Function Name="DoAdd" Params="e"><![CDATA[
+			var page = this;
+
+			page.callPageFunc('DoUpdateSelected');
+
+			dc.pui.Dialog.loadPage('/dcm/store/category-entry', {
+				Callback: function(res) {
+					if (res.NewId)
+						page.Params.Selected.push(res.NewId);
+
+					page.reload();
+				}
+			});
+	]]></Function>
+	<Function Name="DoUpdateSelected"><![CDATA[
+			var page = this;
+
+			var selected = [];
+
+			$('#dcmStCatsMulti li a').each(function(item) {
+				if ($(this).find('.fa-check').length)
+					selected.push($(this).attr('data-id'));
+			});
+
+			page.Params.Selected = selected;
+	]]></Function>
+	<Function Name="DoSave"><![CDATA[
+			var page = this;
+
+			page.callPageFunc('DoUpdateSelected');
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback({
+					Selected: page.Params.Selected
+				});
+    ]]></Function>
+	<Function Name="DoClose"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+	]]></Function>
+</dc.Html>
