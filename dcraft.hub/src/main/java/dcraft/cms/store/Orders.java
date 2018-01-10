@@ -110,6 +110,7 @@ public class Orders {
 						.with("dcmOrderDate", "OrderDate")
 						.with("dcmStatus", "Status")
 						.with("dcmLastStatusDate", "LastStatusDate")
+						.with("dcmLastCustomerNotice", "LastNotify")
 						.with("dcmCustomer", "Customer")
 						.with("dcmCustomerInfo", "CustomerInfo")
 						.with("dcmDelivery", "Delivery")
@@ -127,6 +128,8 @@ public class Orders {
 						.with("dcmItemPrice", "ItemPrice", null, true)
 						.with("dcmItemTotal", "ItemTotal", null,true)
 						.with("dcmItemStatus", "ItemStatus", null,true)
+						.with("dcmItemUpdated", "ItemUpdated", null,true)
+						.with("dcmItemShipment", "ItemShipment", null,true)
 						.with("dcmShippingInfo", "ShippingInfo")
 						.with("dcmBillingInfo", "BillingInfo")
 						.with("dcmComment", "Comment")
@@ -164,6 +167,12 @@ public class Orders {
 
 						ListStruct slist = rec.getFieldAsList("ItemStatus");
 						rec.removeField("ItemStatus");
+						
+						ListStruct uplist = rec.getFieldAsList("ItemUpdated");
+						rec.removeField("ItemUpdated");
+						
+						ListStruct shlist = rec.getFieldAsList("ItemShipment");
+						rec.removeField("ItemShipment");
 
 						for (Struct pentry : plist.items()) {
 							RecordStruct prec = Struct.objectToRecord(pentry);
@@ -218,6 +227,24 @@ public class Orders {
 									break;
 								}
 							}
+							
+							for (Struct xentry : uplist.items()) {
+								RecordStruct xrec = Struct.objectToRecord(xentry);
+								
+								if (eid.equals(xrec.getFieldAsString("SubId"))) {
+									resrec.with("Updated", xrec.getField("Data"));
+									break;
+								}
+							}
+							
+							for (Struct xentry : shlist.items()) {
+								RecordStruct xrec = Struct.objectToRecord(xentry);
+								
+								if (eid.equals(xrec.getFieldAsString("SubId"))) {
+									resrec.with("Shipment", xrec.getField("Data"));
+									break;
+								}
+							}
 
 							finallist.with(resrec);
 						}
@@ -262,6 +289,8 @@ public class Orders {
 						.with("dcmItemPrice", "ItemPrice", null, true)
 						.with("dcmItemTotal", "ItemTotal", null,true)
 						.with("dcmItemStatus", "ItemStatus", null,true)
+						.with("dcmItemUpdated", "ItemUpdated", null,true)
+						.with("dcmItemShipment", "ItemShipment", null,true)
 						.with("dcmShippingInfo", "ShippingInfo")
 						.with("dcmBillingInfo", "BillingInfo")
 						.with("dcmComment", "Comment")
@@ -304,6 +333,12 @@ public class Orders {
 
 				ListStruct slist = rec.getFieldAsList("ItemStatus");
 				rec.removeField("ItemStatus");
+				
+				ListStruct uplist = rec.getFieldAsList("ItemUpdated");
+				rec.removeField("ItemUpdated");
+				
+				ListStruct shlist = rec.getFieldAsList("ItemShipment");
+				rec.removeField("ItemShipment");
 
 				for (Struct pentry : plist.items()) {
 					RecordStruct prec = Struct.objectToRecord(pentry);
@@ -355,6 +390,24 @@ public class Orders {
 
 						if (eid.equals(xrec.getFieldAsString("SubId"))) {
 							resrec.with("Status", xrec.getField("Data"));
+							break;
+						}
+					}
+					
+					for (Struct xentry : uplist.items()) {
+						RecordStruct xrec = Struct.objectToRecord(xentry);
+						
+						if (eid.equals(xrec.getFieldAsString("SubId"))) {
+							resrec.with("Updated", xrec.getField("Data"));
+							break;
+						}
+					}
+					
+					for (Struct xentry : shlist.items()) {
+						RecordStruct xrec = Struct.objectToRecord(xentry);
+						
+						if (eid.equals(xrec.getFieldAsString("SubId"))) {
+							resrec.with("Shipment", xrec.getField("Data"));
 							break;
 						}
 					}
@@ -692,15 +745,13 @@ public class Orders {
 			
 			req.withCollector(CollectorField.collect()
 					.withField("dcmStatus")
-					.withValues(scope)
+					.withValues((Object[]) scope)
 			);
 			
-			String t = StringUtil.stripWhitespace(term);
-			
-			if (StringUtil.isNotEmpty(t)) {
+			if (StringUtil.isNotEmpty(term)) {
 				req.withWhere(WhereTerm.term()
 						.withField("dcmCustomerInfo")
-						.withValue(t)
+						.withValue(term)
 				);
 				
 				/*

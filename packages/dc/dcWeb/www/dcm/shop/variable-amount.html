@@ -111,9 +111,9 @@
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 			var page = this;
 
-			if (page.Store.Product.MininumPrice && (e.Data.Amount < page.Store.Product.MininumPrice)) {
+			if (page.Store.Product.MinimumPrice && (e.Data.Amount < page.Store.Product.MinimumPrice)) {
 				e.Alert = 'Mininum amount is: $'
-					+ dc.util.Number.formatMoney(page.Store.Product.MininumPrice);
+					+ dc.util.Number.formatMoney(page.Store.Product.MinimumPrice);
 				return;
 			}
 

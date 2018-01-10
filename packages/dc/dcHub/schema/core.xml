@@ -118,6 +118,14 @@
 			<StringRestriction MaxLength="64" />
 		</StringType>
 
+		<StringType Id="dcPath" Searchable="False">
+			<StringRestriction MaxLength="4000" />
+		</StringType>
+
+		<StringType Id="dcMetaString" Searchable="False">
+			<StringRestriction MaxLength="64" />
+		</StringType>
+
 		<StringType Id="dcHubId">
 			<StringRestriction Pattern="\d{5}" />
 		</StringType>
@@ -680,6 +688,7 @@
 							<Field Name="LastName" Type="dcUser:dcLastName" />
 							<Field Name="Email" Type="dcUser:dcEmail" />
 							<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
+							<Field Name="Phone" Type="dcUser:dcPhone" />
 							<Field Name="Chronology" Type="dcUser:dcChronology" />
 							<Field Name="Locale" Type="dcUser:dcLocale" />
 							<Field Name="Description" Type="dcUser:dcDescription" />
@@ -699,6 +708,7 @@
 							<Field Name="LastName" Type="dcUser:dcLastName" Required="IfPresent" />
 							<Field Name="Email" Type="dcUser:dcEmail" Required="IfPresent" />
 							<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
+							<Field Name="Phone" Type="dcUser:dcPhone" />
 							<Field Name="Password" Type="dcUser:dcPassword" Required="IfPresent" />
 							<Field Name="Chronology" Type="dcUser:dcChronology" />
 							<Field Name="Locale" Type="dcUser:dcLocale" />
@@ -724,6 +734,7 @@
 							<Field Name="FirstName" Type="dcUser:dcFirstName" />
 							<Field Name="LastName" Type="dcUser:dcLastName" />
 							<Field Name="Email" Type="dcUser:dcEmail" />
+							<Field Name="Phone" Type="dcUser:dcPhone" />
 							<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
 							<Field Name="Chronology" Type="dcUser:dcChronology" />
 							<Field Name="Locale" Type="dcUser:dcLocale" />
@@ -750,6 +761,7 @@
 							<Field Name="LastName" Type="dcUser:dcLastName" />
 							<Field Name="Email" Type="dcUser:dcEmail" />
 							<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
+							<Field Name="Phone" Type="dcUser:dcPhone" />
 							<Field Name="Password" Type="dcUser:dcPassword" />
 							<Field Name="Chronology" Type="dcUser:dcChronology" />
 							<Field Name="Locale" Type="dcUser:dcLocale" />
@@ -770,6 +782,7 @@
 							<Field Name="LastName" Type="dcUser:dcLastName" />
 							<Field Name="Email" Type="dcUser:dcEmail" />
 							<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
+							<Field Name="Phone" Type="dcUser:dcPhone" />
 							<Field Name="Password" Type="dcUser:dcPassword" />
 							<Field Name="Chronology" Type="dcUser:dcChronology" />
 							<Field Name="Locale" Type="dcUser:dcLocale" />

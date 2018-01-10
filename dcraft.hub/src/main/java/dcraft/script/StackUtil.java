@@ -185,8 +185,14 @@ public class StackUtil {
 			
 			Struct qvar2 = StackUtil.queryVariable(stack, varname);
 			
-			if (qvar2 != null)
-				sb.append(qvar2.toString());
+			if (qvar2 != null) {
+				// do not allow nested variables, that would be a major security issue!!  consider values pulled from user input
+				String qval = qvar2.toString().replace("{$", "{`$");
+				
+				// may want to add ` in front of $ at start, review for evidence of this
+				
+				sb.append(qval);
+			}
 			else if (! cleanRefs) {
 				sb.append(val.substring(bpos, epos + 1));
 			}

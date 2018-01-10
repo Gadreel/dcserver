@@ -84,6 +84,18 @@ public class CollectorField implements ICollector {
 		return this;
 	}
 	
+	public CollectorField withMax(int v) {
+		this.column.with("Max", v);
+		
+		return this;
+	}
+	
+	public CollectorField withRevers(boolean v) {
+		this.column.with("Reverse", v);
+		
+		return this;
+	}
+	
 	@Override
 	public Struct getParams() {
 		return this.column;

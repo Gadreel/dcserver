@@ -16,7 +16,7 @@
 		<!-- extend state -->
 		<Table Id="dcState">
 			<Field Name="dcmRate" Type="Decimal" />
-			<Field Name="dcmRateName" Type="dcSmallString" />
+			<Field Name="dcmRateName" Type="dcMetaString" />
 		</Table>
 
 		<!-- User as Customer -->
@@ -33,6 +33,9 @@
 			<Field Name="dcmStatus" Type="dcmOrderStatusEnum" Required="True" Indexed="True" />
 			<Field Name="dcmLastStatusDate" Type="DateTime" Required="True" Indexed="True" />
 
+			<!-- when was customer last notified -->
+			<Field Name="dcmLastCustomerNotice" Type="DateTime" />
+
 			<Field Name="dcmCustomer" ForeignKey="dcUser" />
 
 			<Field Name="dcmPaymentId" Type="dcSmallString" />
@@ -48,7 +51,8 @@
 			<Field Name="dcmItemTotal" Group="dcmItems" List="True" Type="Decimal" />
 			<Field Name="dcmItemExtra" Group="dcmItems" List="True" Type="AnyRecord" />
 			<Field Name="dcmItemStatus" Group="dcmItems" List="True" Type="dcmItemStatusEnum" />
-			<Field Name="dcmItemShipment" Group="dcmItems" List="True" Type="Integer" />
+			<Field Name="dcmItemUpdated" Group="dcmItems" List="True" Type="DateTime" />
+			<Field Name="dcmItemShipment" Group="dcmItems" List="True" Type="dcTinyString" />
 
 			<Field Name="dcmCustomerInfo" Type="dcmOrderCustomerInfo" />
 			<Field Name="dcmShippingInfo" Type="dcmOrderShippingInfo" />
@@ -56,11 +60,14 @@
 			<Field Name="dcmDelivery" Type="dcmDeliveryEnum" />
 			<Field Name="dcmComment" Type="dcLargeString" />
 
+			<!-- sub = EntryId -->
+			<Field Name="dcmShipmentInfo" Type="dcmOrderShipmentInfo" List="True" />
+
 			<!-- lowercase, TODO remove -->
 			<Field Name="dcmKeywords" Type="dcLargeString" />
 
 			<!-- we are trying to apply this code(s)  -->
-			<Field Name="dcmCouponCodes" List="True" Type="dcSmallString" Indexed="True" />
+			<Field Name="dcmCouponCodes" List="True" Type="dcMetaString" Indexed="True" />
 
 			<!-- sub = EntryId -->
 			<!-- this is what we get (could be a combined sale, coupon, gift cert) -->
@@ -112,7 +119,7 @@
 		<Table Id="dcmCategory">
 			<Field Name="dcmTitle" Type="dcSmallString" />
 			<Field Name="dcmMode" Type="dcmCategoryModeEnum" />
-			<Field Name="dcmAlias" Type="dcTinyString" Required="True" Unique="True" Indexed="True" />
+			<Field Name="dcmAlias" Type="dcMetaString" Required="True" Unique="True" Indexed="True" />
 
 			<Field Name="dcmParent" ForeignKey="dcmCategory" />
 
@@ -135,8 +142,8 @@
 			<Field Name="dcmDelivery" Type="dcmDeliveryEnum" List="True" />
 
 			<Field Name="dcmTitle" Type="dcSmallString" />
-			<Field Name="dcmAlias" Type="dcTinyString" Required="True" Unique="True" Indexed="True" />
-			<Field Name="dcmSku" Type="dcSmallString" Indexed="True" />
+			<Field Name="dcmAlias" Type="dcMetaString" Required="True" Unique="True" Indexed="True" />
+			<Field Name="dcmSku" Type="dcMetaString" Indexed="True" />
 			<Field Name="dcmDescription" Type="String" />
 			<Field Name="dcmInstructions" Type="dcString" />
 			<Field Name="dcmImage" Type="dcString" />
@@ -147,7 +154,7 @@
 			-->
 
 			<!-- tag = tag -->
-			<Field Name="dcmTag" Type="dcTinyString" List="True" />
+			<Field Name="dcmTag" Type="dcMetaString" List="True" />
 
 			<Field Name="dcmCategories" ForeignKey="dcmCategory" List="True" />
 			<!-- TODO review
@@ -155,7 +162,7 @@
 			-->
 
 			<Field Name="dcmVariablePrice" Type="Boolean" />
-			<Field Name="dcmMininumPrice" Type="Decimal" />
+			<Field Name="dcmMinimumPrice" Type="Decimal" />
 			<Field Name="dcmPrice" Type="Decimal" />
 			<Field Name="dcmSalePrice" Type="Decimal" />
 
@@ -174,7 +181,7 @@
 		<Table Id="dcmDiscount">
 			<Field Name="dcmEntryDate" Type="DateTime" />
 
-			<Field Name="dcmCode" Type="dcTinyString" Indexed="True" Unique="True" />
+			<Field Name="dcmCode" Type="dcMetaString" Indexed="True" Unique="True" />
 			<Field Name="dcmTitle" Type="dcSmallString" />
 			<Field Name="dcmType" Type="dcmDiscountTypeEnum" Indexed="True" />
 			<Field Name="dcmMode" Type="dcmDiscountModeEnum" />
@@ -195,7 +202,7 @@
 		</Table>
 
 		<Table Id="dcmGiftRegistry">
-			<Field Name="dcmEventType" Type="dcTinyString" />
+			<Field Name="dcmEventType" Type="dcMetaString" />
 			<Field Name="dcmEventDate" Type="LocalDate" />
 
 			<Field Name="dcmFor" Type="dcString" />
@@ -291,7 +298,7 @@
 			<Field Name="SalePrice" Type="dcmProduct:dcmSalePrice" />
 			<Field Name="Total" Type="Decimal" />
 			<Field Name="VariablePrice" Type="dcmProduct:dcmVariablePrice" />
-			<Field Name="MininumPrice" Type="dcmProduct:dcmMininumPrice" />
+			<Field Name="MinimumPrice" Type="dcmProduct:dcmMinimumPrice" />
 
 			<!-- for donations, etc -->
 			<Field Name="TaxFree" Type="dcmProduct:dcmTaxFree" />
@@ -323,6 +330,34 @@
 			<Field Name="Zip" Type="dcUsaZip" Required="True" />
 			<!-- alias of selected estimate -->
 			<Field Name="SelectedEstimate" Type="dcTinyString" />
+		</Record>
+
+		<!-- one per package -->
+		<Record Id="dcmOrderShipmentInfo" >
+			<!-- uuid for this item entry -->
+			<Field Name="EntryId" Type="dcTinyString" Required="True" />
+			<!-- USPS, FedEx, UPS, etc -->
+			<Field Name="ShipMethod" Type="dcTinyString" Required="True" />
+			<!-- url or id to track -->
+			<Field Name="TrackLink" Type="dcString" />
+			<Field Name="TrackId" Type="dcSmall" />
+			<Field Name="Cost" Type="Decimal" />
+			<Field Name="Purchased" Type="DateTime" />
+
+			<!-- package shipped -->
+			<Field Name="Width" Type="Decimal" />
+			<Field Name="Height" Type="Decimal" />
+			<Field Name="Depth" Type="Decimal" />
+			<Field Name="Weight" Type="Decimal" />
+
+			<!-- where shipped -->
+			<Field Name="FirstName" Type="dcTinyString" Required="True" />
+			<Field Name="LastName" Type="dcTinyString" Required="True" />
+			<Field Name="Address" Type="dcSmallString" Required="True" />
+			<Field Name="Address2" Type="dcSmallString" />
+			<Field Name="City" Type="dcTinyString" Required="True" />
+			<Field Name="State" Type="dcUsaState" Required="True" />
+			<Field Name="Zip" Type="dcUsaZip" Required="True" />
 		</Record>
 
 		<Record Id="dcmOrderBillingInfo" >
@@ -453,6 +488,9 @@
 			<Field Name="Price" Type="dcmProduct:dcmPrice" />
 			<Field Name="Total" Type="Decimal" />
 			<Field Name="Status" Type="dcmItemStatusEnum" />
+
+			<Field Name="Updated" Type="DateTime" />
+			<Field Name="Shipment" Type="dcTinyString" />
 		</Record>
 	</Shared>
 
@@ -487,6 +525,7 @@
 							<Field Name="OrderDate" Type="DateTime" />
 							<Field Name="Status" Type="dcmOrderStatusEnum" />
 							<Field Name="LastStatusDate" Type="DateTime" />
+							<Field Name="LastNotify" Type="DateTime" />
 							<Field Name="Customer" Type="Id" />
 							<Field Name="CustomerInfo" Type="dcmOrderCustomerInfo" />
 							<Field Name="Delivery" Type="dcmDeliveryEnum" />
@@ -574,6 +613,24 @@
 							<Field Name="Id" Type="Id" Required="True" />
 							<Field Name="Internal" Type="Boolean" />
 							<Field Name="Comment" Type="dcLargeString" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="EstimateItems">
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Shipment" Type="dcmOrderShipmentInfo" Required="True" />
+							<Field Name="Items" Required="True">
+								<List Type="dcTinyString" />
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="ShipItems">
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Shipment" Type="dcmOrderShipmentInfo" Required="True" />
+							<Field Name="Items" Required="True">
+								<List Type="dcTinyString" />
+							</Field>
 						</RecordRequest>
 					</Op>
 					<Op Name="Search">
@@ -733,7 +790,7 @@
 								<List Type="dcmProduct:dcmCategories" />
 							</Field>
 							<Field Name="VariablePrice" Type="dcmProduct:dcmVariablePrice" />
-							<Field Name="MininumPrice" Type="dcmProduct:dcmMininumPrice" />
+							<Field Name="MinimumPrice" Type="dcmProduct:dcmMinimumPrice" />
 							<Field Name="Price" Type="dcmProduct:dcmPrice" />
 							<Field Name="ShipAmount" Type="dcmProduct:dcmShipAmount" />
 							<Field Name="ShipWeight" Type="dcmProduct:dcmShipWeight" />
@@ -765,7 +822,7 @@
 								<List Type="dcmProduct:dcmCategories" />
 							</Field>
 							<Field Name="VariablePrice" Type="dcmProduct:dcmVariablePrice" />
-							<Field Name="MininumPrice" Type="dcmProduct:dcmMininumPrice" />
+							<Field Name="MinimumPrice" Type="dcmProduct:dcmMinimumPrice" />
 							<Field Name="Price" Type="dcmProduct:dcmPrice" />
 							<Field Name="ShipAmount" Type="dcmProduct:dcmShipAmount" />
 							<Field Name="ShipWeight" Type="dcmProduct:dcmShipWeight" />
@@ -796,7 +853,7 @@
 								<List Type="dcmProduct:dcmCategories" />
 							</Field>
 							<Field Name="VariablePrice" Type="dcmProduct:dcmVariablePrice" />
-							<Field Name="MininumPrice" Type="dcmProduct:dcmMininumPrice" />
+							<Field Name="MinimumPrice" Type="dcmProduct:dcmMinimumPrice" />
 							<Field Name="Price" Type="dcmProduct:dcmPrice" />
 							<Field Name="ShipAmount" Type="dcmProduct:dcmShipAmount" />
 							<Field Name="ShipWeight" Type="dcmProduct:dcmShipWeight" />
@@ -896,7 +953,7 @@
 							<Field Name="Image" Type="dcmProduct:dcmImage" />
 							<Field Name="Price" Type="dcmProduct:dcmPrice" />
 							<Field Name="VariablePrice" Type="dcmProduct:dcmVariablePrice" />
-							<Field Name="MininumPrice" Type="dcmProduct:dcmMininumPrice" />
+							<Field Name="MinimumPrice" Type="dcmProduct:dcmMinimumPrice" />
 							<Field Name="TaxFree" Type="dcmProduct:dcmTaxFree" />
 							<Field Name="Delivery">
 								<List Type="dcmProduct:dcmDelivery" />

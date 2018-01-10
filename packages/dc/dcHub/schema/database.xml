@@ -97,26 +97,40 @@
 
 		<List Id="dcQueryListResultFull" Type="dcQueryResultFull" />
 
+		<Record Id="dcQueryCollector">
+			<Field Name="Func" Type="dcTinyString" />
+			<!-- or -->
+			<Field Name="Field" Type="dcTinyString" />
+			<Field Name="SubId" Type="dcTinyString" />
+			<!-- for values list -->
+			<Field Name="Values">
+				<List Type="Any" />
+			</Field>
+			<!-- for range -->
+			<Field Name="From" Type="Any" />
+			<Field Name="To" Type="Any" />
+			<!-- for range and other Funcs (feed scanner) -->
+			<Field Name="Reverse" Type="Boolean" />
+			<Field Name="Max" Type="Integer" />
+			<Field Name="Extras" Type="AnyRecord" />
+		</Record>
+
 		<Record Id="dcdbQuery" Inherits="dcdbCall" Class="dcraft.db.request.schema.Query">
 			<Field Name="Select">
 				<List Type="dcdbSelectField" />
 			</Field>
 			<Field Name="Where" Type="dcdbWhereClause" />
-			<Field Name="Collector">
-				<Record>
-					<Field Name="Func" Type="dcTinyString" />
-					<!-- or -->
-					<Field Name="Field" Type="dcTinyString" />
-					<Field Name="SubId" Type="dcTinyString" />
-					<Field Name="From" Type="Any" />
-					<Field Name="To" Type="Any" />
-					<Field Name="Values">
-						<List Type="Any" />
-					</Field>
-					<Field Name="Extras" Type="AnyRecord" />
-				</Record>
+			<Field Name="Collector" Type="dcQueryCollector" />
+			<Field Name="Historical" Type="Boolean" />
+		</RecordRequest>
+
+		<Record Id="dcdbLoadRecord" Inherits="dcdbCall" Class="dcraft.db.request.schema.Load">
+			<Field Name="Id" Type="Id" />
+			<Field Name="Select">
+				<List Type="dcdbSelectField" />
 			</Field>
 			<Field Name="Historical" Type="Boolean" />
+			<Field Name="Compact" Type="Boolean" />
 		</RecordRequest>
 
 		<Record Id="dcDollarORequest">
@@ -155,7 +169,7 @@
 		-->
 
 		<Table Id="dcTenant">
-			<Field Name="dcAlias" Type="dcSmallString" Required="True" Unique="True" />
+			<Field Name="dcAlias" Type="dcMetaString" Required="True" Unique="True" />
 
 			<!-- override config -->
 			<Field Name="dcConfig" Type="Xml" />
@@ -170,7 +184,7 @@
 				secure than before, having a root user at all is a blessing and concern.
 			-->
 			<!-- field used by root Tenant only, password for root user in all Tenants -->
-			<Field Name="dcGlobalPassword" Type="dcSmallString" />
+			<Field Name="dcGlobalPassword" Type="dcMetaString" />
 
 			<Field Name="dcLastBackup" Type="DateTime" List="True" />
 
@@ -215,9 +229,9 @@
 			<Field Name="dcEmail" Type="dcEmailBasic" Indexed="True" />
 			<!-- dcEmail should be email within the Tenant, backup applies if within Tenant is bad, missing or user account is disabled TODO -->
 			<Field Name="dcBackupEmail" Type="dcEmailBasic" Indexed="True" />
-			<Field Name="dcPassword" Type="dcSmallString" />
-			<Field Name="dcLocale" Type="dcTinyString" List="True" />
-			<Field Name="dcChronology" Type="dcTinyString" List="True" />
+			<Field Name="dcPassword" Type="dcMetaString" />
+			<Field Name="dcLocale" Type="dcMetaString" List="True" />
+			<Field Name="dcChronology" Type="dcMetaString" List="True" />
 			<Field Name="dcDescription" Type="dcLargeString" />
 
 			<Field Name="dcAddress" Type="dcSmallString" />
@@ -238,11 +252,11 @@
 			<Field Name="dcConfirmCode" Type="dcSmallString" />
 			<Field Name="dcRecoverAt" Type="DateTime" />
 
-			<Field Name="dcBadges" Type="dcTinyString" List="True" Indexed="True" />
+			<Field Name="dcBadges" Type="dcMetaString" List="True" Indexed="True" />
 		</Table>
 
 		<Table Id="dcState">
-			<Field Name="dcCode" Type="dcTinyString" Indexed="True" Required="True" Unique="True" />
+			<Field Name="dcCode" Type="dcMetaString" Indexed="True" Required="True" Unique="True" />
 			<Field Name="dcName" Type="dcSmallString" Required="True" Unique="True" />
 		</Table>
 
@@ -277,6 +291,8 @@
 		<Composer Name="dcListCounter" Execute="dcraft.db.proc.comp.ListCounter" Badges="Admin" />
 		<Composer Name="dcIndexValueCounter" Execute="dcraft.db.proc.comp.IndexValueCounter" Badges="Admin" />
 		<Composer Name="dcConcat" Execute="dcraft.db.proc.comp.Concat" Badges="Admin" />
+
+		<Collector Name="dcCollectorGeneral" Execute="dcraft.db.proc.collect.General" />
 
 		<!--
 		<RecordComposer Name="dcBadges" Execute="recAuthTags^dcUser" />

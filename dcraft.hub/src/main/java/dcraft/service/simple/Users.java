@@ -72,6 +72,7 @@ public class Users {
 								.withForeignField("dcGroup", "Groups", "dcName")
 								.with("dcEmail", "Email")
 								.with("dcBackupEmail", "BackupEmail")
+								.with("dcPhone", "Phone")
 								.with("dcLocale", "Locale")
 								.with("dcChronology", "Chronology")
 								.with("dcDescription", "Description")
@@ -111,7 +112,10 @@ public class Users {
 				
 				if (rec.hasField("BackupEmail"))
 					req.setBackupEmail(rec.getFieldAsString("BackupEmail"));
-				
+
+				if (rec.hasField("Phone"))
+					req.withPhone(rec.getFieldAsString("Phone"));
+
 				if (rec.hasField("Locale"))
 					req.setLocale(rec.getFieldAsString("Locale"));
 				
@@ -185,6 +189,9 @@ public class Users {
 
 				if (rec.hasField("BackupEmail"))
 					req.withBackupEmail(rec.getFieldAsString("BackupEmail"));
+
+				if (rec.hasField("Phone"))
+					req.withPhone(rec.getFieldAsString("Phone"));
 
 				if (rec.hasField("Locale"))
 					req.withLocale(rec.getFieldAsString("Locale"));

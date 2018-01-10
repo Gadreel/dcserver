@@ -20,54 +20,18 @@ import dcraft.struct.scalar.NullStruct;
 import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 
-public class Query extends RecordStruct {
+public class Load extends RecordStruct {
 	@Override
 	public ReturnOption operation(IParentAwareWork state, XElement code) throws OperatingContextException {
 		// TODO add support for select classes - parse like Where does
 		if ("Select".equals(code.getName())) {
-			Query.addSelect(this, state, code);
+			Load.addSelect(this, state, code);
 			
 			return ReturnOption.CONTINUE;
 		}
 		
 		if ("SelectSubquery".equals(code.getName())) {
-			Query.addSelect(this, state, code);
-			
-			return ReturnOption.CONTINUE;
-		}
-		
-		if ("Where".equals(code.getName())) {
-			RecordStruct where = this.getFieldAsRecord("Where");
-			
-			if (where == null) {
-				where = RecordStruct.record()
-					.with("Expression", "And")
-					.with("Children", ListStruct.list());
-				
-				this.with("Where", where);
-			}
-			
-			Query.addWhere(where.getFieldAsList("Children"), state, code);
-			
-			return ReturnOption.CONTINUE;
-		}
-		
-		if ("Collector".equals(code.getName())) {
-			DbCollector collector = ResourceHub.getResources().getSchema().getDbCollector(StackUtil.stringFromElement(state, code, "Func", "dcCollectorGeneral"));
-
-			if (collector == null) {
-				Logger.warn("Missing collector: " + code.getName());
-				return ReturnOption.CONTINUE;
-			}
-
-			ICollector sp = collector.getCollector();
-
-			if (sp == null) {
-				Logger.warn("Cannot create collector: " + collector.name);
-				return ReturnOption.CONTINUE;
-			}
-
-			this.with("Collector", sp.parse(state, code));
+			Load.addSelect(this, state, code);
 			
 			return ReturnOption.CONTINUE;
 		}
@@ -78,7 +42,7 @@ public class Query extends RecordStruct {
 			//if (state instanceof StackWork)
 			//	((StackWork)state).setState(ExecuteState.DONE);
 			
-			ServiceHub.call(DbServiceRequest.of("dcSelectDirect")
+			ServiceHub.call(DbServiceRequest.of("dcLoadRecord")
 					.withData(this)
 					.withOutcome(
 						new OperationOutcomeStruct() {
@@ -196,7 +160,7 @@ public class Query extends RecordStruct {
 				field.with("Name", StackUtil.stringFromElement(state, code,"As"));
 			
 			for (XElement child : code.selectAll("*"))
-				Query.addSelect(field, state, child);
+				Load.addSelect(field, state, child);
 			
 			selects.with(field);
 			

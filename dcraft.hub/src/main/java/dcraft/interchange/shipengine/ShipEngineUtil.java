@@ -61,6 +61,7 @@ public class ShipEngineUtil {
 
 		RecordStruct shipto = order.getFieldAsRecord("ShippingInfo");
 		RecordStruct cinfo = order.getFieldAsRecord("CustomerInfo");
+		RecordStruct sminfo = order.getFieldAsRecord("ShipmentInfo");
 
 		RecordStruct shipment = RecordStruct.record()
 				.with("shipment", RecordStruct.record()
@@ -92,7 +93,7 @@ public class ShipEngineUtil {
 					.with("packages", ListStruct.list(
 							RecordStruct.record()
 								.with("weight", RecordStruct.record()
-									.with("value", "32")
+									.with("value", sminfo.getFieldAsString("Weight"))
 									.with("unit", "ounce")
 								)
 						)
@@ -137,7 +138,7 @@ public class ShipEngineUtil {
 					return;
 				}
 
-				System.out.println("ShipEngine:\n" + resp.toPrettyString());
+				//System.out.println("ShipEngine:\n" + resp.toPrettyString());
 
 				callback.returnValue((RecordStruct) resp);
 

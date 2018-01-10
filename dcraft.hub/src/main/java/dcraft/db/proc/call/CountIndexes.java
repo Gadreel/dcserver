@@ -4,7 +4,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 import dcraft.db.DbServiceRequest;
+import dcraft.db.proc.BasicFilter;
+import dcraft.db.proc.FilterResult;
 import dcraft.db.proc.IStoredProc;
+import dcraft.db.proc.filter.Max;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationMarker;
@@ -36,32 +39,19 @@ public class CountIndexes implements IStoredProc {
 			if ((values == null) || (values.size() == 0)) {
 				BigDateTime fwhen = when;
 				
-				db.traverseIndexValRange(table, fname, null, null, fwhen, historical, new Function<Object,Boolean>() {
+				db.traverseIndexValRange(table, fname, null, null, fwhen, historical, new BasicFilter() {
 					@Override
-					public Boolean apply(Object val) {
-						try {
-							AtomicLong cnt = new AtomicLong();
-							
-							db.traverseIndex(table, fname, val, fwhen, historical, new Function<Object,Boolean>() {
-								@Override
-								public Boolean apply(Object subid) {
-									cnt.incrementAndGet();
-									return true;
-								}
-							});
+					public FilterResult check(TablesAdapter adapter, Object val, BigDateTime when, boolean historical) throws OperatingContextException {
+						Max cnt = Max.max();
 						
-							out.with(RecordStruct.record()
-									.with("Name", val)
-									.with("Count", new Long(cnt.get()))
-							);
-							
-							return true;
-						}
-						catch (Exception x) {
-							Logger.error("Issue with counting index record: " + x);
-						}
+						db.traverseIndex(table, fname, val, fwhen, historical, cnt);
 						
-						return false;
+						out.with(RecordStruct.record()
+								.with("Name", val)
+								.with("Count", cnt.getCount())
+						);
+						
+						return FilterResult.accepted();
 					}
 				});
 			}
@@ -69,19 +59,13 @@ public class CountIndexes implements IStoredProc {
 				for (Struct vs : values.items()) {
 					Object val = Struct.objectToCore(vs);
 					
-					AtomicLong cnt = new AtomicLong();
+					Max cnt = Max.max();
 			
-					db.traverseIndex(table, fname, val, when, historical, new Function<Object,Boolean>() {				
-						@Override
-						public Boolean apply(Object subid) {
-							cnt.incrementAndGet();
-							return true;
-						}
-					});
+					db.traverseIndex(table, fname, val, when, historical, cnt);
 					
 					out.with(RecordStruct.record()
 						.with("Name", val)
-						.with("Count", new Long(cnt.get()))
+						.with("Count", cnt.getCount())
 					);
 				}
 			}

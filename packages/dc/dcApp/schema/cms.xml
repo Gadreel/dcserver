@@ -3,18 +3,90 @@
 		<StringType Id="dcmPageTitle">
 			<StringRestriction MaxLength="70" />
 		</StringType>
-		
+
 		<StringType Id="dcPageSlug">
 			<StringRestriction Pattern="[a-z0-9\-]+" MaxLength="70" />
 		</StringType>
-		
+
 		<StringType Id="dcmPageKeywords">
 			<StringRestriction MaxLength="70" />
 		</StringType>
-		
+
 		<StringType Id="dcmPageDescription">
 			<StringRestriction MaxLength="200" />
 		</StringType>
-		
+
 	</Shared>
+
+	<Database>
+		<Table Id="dcmFeed">
+			<!-- feed alias -->
+			<Field Name="dcmAlias" Type="dcMetaString" Indexed="True" />
+			<!-- dcmPath includes the site alias and feed alias to be truly unique -->
+			<Field Name="dcmPath" Type="dcPath" Indexed="True" Required="True" Unique="True" />
+			<!-- dcmLocalPath is path as seen in search results (local to site), null if no local path (i.e. this is a block, not an independent entry) -->
+			<Field Name="dcmLocalPath" Type="dcPath" />
+
+			<Field Name="dcmPublishAt" Type="DateTime" />
+			<Field Name="dcmModified" Type="DateTime" />
+
+			<!--
+			<Field Name="dcmBadges" Type="dcTinyString" List="True" Indexed="True" />
+		-->
+
+			<!-- tags are like categories -->
+			<Field Name="dcmTags" Type="dcMetaString" Indexed="True" List="True" />
+
+			<!-- indexed for quick lookups of blocks for user -->
+			<Field Name="dcmAuthor" ForeignKey="dcUser" Indexed="True" />
+
+			<!-- core fields: Title, Keywords, Description, AuthorName, AuthorUsername, Created, Modified, Published -->
+			<!--
+				sid = part name + '.' + locale [site default if none]
+			-->
+			<Field Name="dcmLocaleFields" Type="dcString" List="True" />
+
+			<Field Name="dcmSharedFields" Type="dcString" List="True" />
+
+			<!--
+				sid = part name + '.' + locale ['default' if not locale]
+			<Field Name="dcmPartContent" Type="String" List="True" />
+			<Field Name="dcmPreviewPartContent" Type="String" List="True" />
+			-->
+
+			<!--
+				Id in some external system, a link to.
+
+				sid = system name (e.g. system "calendar.google", id "4tr2rkstf14u3llvlnt9qvl4ao")
+			<Field Name="dcmExternalId" Type="dcTinyString" Indexed="True" List="True" />
+			-->
+		</Table>
+
+		<Procedure Name="dcmUpdateFeed" Execute="dcraft.cms.feed.db.Update" />
+
+		<Collector Name="dcmScanFeed" Execute="dcraft.cms.feed.db.Scan" />
+	</Database>
+
+	<Services>
+		<Service Name="dcDatabase">
+			<Feature Name="ExecuteProc">
+				<Secure Badges="SysAdmin,Admin">
+					<Op Name="dcmUpdateFeed">
+						<Description>
+							List of feeds to index/remove.
+						</Description>
+						<RecordRequest Inherits="dcdbCallBasic" Required="True">
+							<Field Name="Updated">
+								<List Type="dcString" />
+							</Field>
+							<Field Name="Deleted">
+								<List Type="dcString" />
+							</Field>
+						</RecordRequest>
+					</Op>
+				</Secure>
+			</Feature>
+		</Service>
+	</Services>
+
 </Schema>

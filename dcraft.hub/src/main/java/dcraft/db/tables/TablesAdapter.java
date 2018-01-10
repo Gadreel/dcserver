@@ -10,7 +10,10 @@ import java.util.function.Function;
 
 import dcraft.db.DatabaseException;
 import dcraft.db.DbServiceRequest;
+import dcraft.db.proc.BasicFilter;
+import dcraft.db.proc.FilterResult;
 import dcraft.db.proc.IExpression;
+import dcraft.db.proc.IFilter;
 import dcraft.db.proc.IStoredProc;
 import dcraft.db.proc.expression.ExpressionUtil;
 import dcraft.db.util.ByteUtil;
@@ -564,23 +567,18 @@ public class TablesAdapter {
 	}
 	
 	public void indexCleanRecords(DbTable table) throws OperatingContextException {
-		this.traverseRecords(table.name, BigDateTime.nowDateTime(), false, new Function<Object, Boolean>() {
+		this.traverseRecords(table.name, BigDateTime.nowDateTime(), false, new BasicFilter() {
 			@Override
-			public Boolean apply(Object o) {
-				try {
-					OperationContext.getOrThrow().touch();
-					
-					String id = o.toString();
-					
-					Logger.info(" - Record: " + id);
-					
-					TablesAdapter.this.indexCleanFields(table, id);
-				}
-				catch (Exception x) {
-					Logger.error("Issue with traverseRecords: " + x);
-				}
+			public FilterResult check(TablesAdapter adapter, Object val, BigDateTime when, boolean historical) throws OperatingContextException {
+				OperationContext.getOrThrow().touch();
 				
-				return false;
+				String id = val.toString();
+				
+				Logger.info(" - Record: " + id);
+				
+				TablesAdapter.this.indexCleanFields(table, id);
+				
+				return FilterResult.accepted();
 			}
 		});
 	}
@@ -1950,7 +1948,7 @@ public class TablesAdapter {
 		}
 	}
 
-	public void traverseRecords(String table, BigDateTime when, boolean historical, Function<Object,Boolean> out) throws OperatingContextException {
+	public void traverseRecords(String table, BigDateTime when, boolean historical, IFilter out) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		try {
@@ -1959,8 +1957,12 @@ public class TablesAdapter {
 			while (id != null) {
 				Object oid = ByteUtil.extractValue(id);
 				
-				if (this.isCurrent(table, oid.toString(), when, historical)) 
-					out.apply(oid);
+				if (this.isCurrent(table, oid.toString(), when, historical)) {
+					FilterResult filterResult = out.check(this, oid, when, historical);
+					
+					if (! filterResult.resume)
+						return;
+				}
 				
 				id = this.request.getInterface().nextPeerKey(did, DB_GLOBAL_RECORD, table, oid);
 			}
@@ -1970,11 +1972,11 @@ public class TablesAdapter {
 		}
 	}
 	
-	public void traverseIndex(String table, String fname, Object val, BigDateTime when, boolean historical, Function<Object,Boolean> out) throws OperatingContextException {
+	public void traverseIndex(String table, String fname, Object val, BigDateTime when, boolean historical, IFilter out) throws OperatingContextException {
 		this.traverseIndex(table, fname, val, null, when, historical, out);
 	}
 	
-	public void traverseIndex(String table, String fname, Object val, String subid, BigDateTime when, boolean historical, Function<Object,Boolean> out) throws OperatingContextException {
+	public void traverseIndex(String table, String fname, Object val, String subid, BigDateTime when, boolean historical, IFilter out) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		SchemaResource schema = ResourceHub.getResources().getSchema();
@@ -1998,7 +2000,10 @@ public class TablesAdapter {
 
 				if (this.isCurrent(table, rid.toString(), when, historical)) {
 					if (ffdef.isStaticScalar()) {
-						out.apply(rid);
+						FilterResult filterResult = out.check(this, rid, when, historical);
+						
+						if (! filterResult.resume)
+							return;
 					}
 					else {
 						byte[] recsid = request.getInterface().nextPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, null);
@@ -2010,7 +2015,10 @@ public class TablesAdapter {
 								String range = request.getInterface().getAsString(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, rsid);
 								
 								if (StringUtil.isEmpty(range) || (when == null)) {
-									out.apply(rid);
+									FilterResult filterResult = out.check(this, rid, when, historical);
+									
+									if (! filterResult.resume)
+										return;
 								}
 								else {
 									int pos = range.indexOf(':');
@@ -2029,8 +2037,12 @@ public class TablesAdapter {
 										to = BigDateTime.parse(range.substring(pos + 1));
 									}
 									
-									if (((from == null) || (when.compareTo(from) >= 0)) && ((to == null) || (when.compareTo(to) < 0))) 
-										out.apply(rid);
+									if (((from == null) || (when.compareTo(from) >= 0)) && ((to == null) || (when.compareTo(to) < 0))) {
+										FilterResult filterResult = out.check(this, rid, when, historical);
+										
+										if (! filterResult.resume)
+											return;
+									}
 								}
 							}
 							
@@ -2118,7 +2130,7 @@ public class TablesAdapter {
 	}	
 	
 	// traverse the values
-	public void traverseIndexValRange(String table, String fname, Object fromval, Object toval, BigDateTime when, boolean historical, Function<Object,Boolean> out) throws OperatingContextException {
+	public void traverseIndexValRange(String table, String fname, Object fromval, Object toval, BigDateTime when, boolean historical, IFilter out) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		SchemaResource schema = ResourceHub.getResources().getSchema();
@@ -2146,8 +2158,11 @@ public class TablesAdapter {
 					break;
 				
 				Object val = ByteUtil.extractValue(valb);
-
-				out.apply(val);
+				
+				FilterResult filterResult = out.check(this, val, when, historical);
+				
+				if (! filterResult.resume)
+					return;
 				
 				valb = request.getInterface().nextPeerKey(did, ffdef.getIndexName(), table, fname, val);
 			}
@@ -2158,7 +2173,7 @@ public class TablesAdapter {
 	}	
 	
 	// traverse the record ids
-	public void traverseIndexRange(String table, String fname, Object fromval, Object toval, BigDateTime when, boolean historical, Function<Object,Boolean> out) throws OperatingContextException {
+	public void traverseIndexRange(String table, String fname, Object fromval, Object toval, BigDateTime when, boolean historical, IFilter out) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		SchemaResource schema = ResourceHub.getResources().getSchema();
@@ -2194,7 +2209,10 @@ public class TablesAdapter {
 
 					if (this.isCurrent(table, rid.toString(), when, historical)) {
 						if (ffdef.isStaticScalar()) {
-							out.apply(rid);
+							FilterResult filterResult = out.check(this, rid, when, historical);
+							
+							if (! filterResult.resume)
+								return;
 						}
 						else {
 							byte[] recsid = request.getInterface().nextPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, null);
@@ -2205,7 +2223,10 @@ public class TablesAdapter {
 								String range = request.getInterface().getAsString(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, rsid);
 								
 								if (StringUtil.isEmpty(range) || (when == null)) {
-									out.apply(rid);
+									FilterResult filterResult = out.check(this, rid, when, historical);
+									
+									if (! filterResult.resume)
+										return;
 								}
 								else {
 									int pos = range.indexOf(':');
@@ -2224,8 +2245,12 @@ public class TablesAdapter {
 										to = BigDateTime.parse(range.substring(pos + 1));
 									}
 									
-									if (((from == null) || (when.compareTo(from) >= 0)) && ((to == null) || (when.compareTo(to) < 0))) 
-										out.apply(rid);
+									if (((from == null) || (when.compareTo(from) >= 0)) && ((to == null) || (when.compareTo(to) < 0))) {
+										FilterResult filterResult = out.check(this, rid, when, historical);
+										
+										if (! filterResult.resume)
+											return;
+									}
 								}
 								
 								recsid = request.getInterface().nextPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rsid);
@@ -2242,7 +2267,104 @@ public class TablesAdapter {
 		catch (Exception x) {
 			Logger.error("traverseIndex error: " + x);
 		}
-	}	
+	}
+	
+	// traverse the record ids, going backwards in values and ids
+	public void traverseIndexReverseRange(String table, String fname, Object fromval, Object toval, BigDateTime when, boolean historical, IFilter out) throws OperatingContextException {
+		String did = this.request.getTenant();
+		
+		SchemaResource schema = ResourceHub.getResources().getSchema();
+		DbField ffdef = schema.getDbField(table, fname);
+		
+		if (ffdef == null)
+			return;
+		
+		DataType dtype = schema.getType(ffdef.getTypeId());
+		
+		if (dtype == null)
+			return;
+		
+		fromval = dtype.toIndex(fromval, "en");	// TODO increase locale support
+		
+		toval = dtype.toIndex(toval, "en");	// TODO increase locale support
+		
+		try {
+			byte[] valb = request.getInterface().getOrPrevPeerKey(did, ffdef.getIndexName(), table, fname, fromval);
+			byte[] valfin = (toval != null) ? ByteUtil.buildKey(toval) : null;
+			
+			while (valb != null) {
+				// check if past "To"
+				if ((valfin != null) && (ByteUtil.compareKeys(valb, valfin) < 0))		// inclusive
+					break;
+				
+				Object val = ByteUtil.extractValue(valb);
+				
+				byte[] recid = request.getInterface().prevPeerKey(did, ffdef.getIndexName(), table, fname, val, null);
+				
+				while (recid != null) {
+					Object rid = ByteUtil.extractValue(recid);
+					
+					if (this.isCurrent(table, rid.toString(), when, historical)) {
+						if (ffdef.isStaticScalar()) {
+							FilterResult filterResult = out.check(this, rid, when, historical);
+							
+							if (! filterResult.resume)
+								return;
+						}
+						else {
+							byte[] recsid = request.getInterface().prevPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, null);
+							
+							while (recsid != null) {
+								Object rsid = ByteUtil.extractValue(recsid);
+								
+								String range = request.getInterface().getAsString(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, rsid);
+								
+								if (StringUtil.isEmpty(range) || (when == null)) {
+									FilterResult filterResult = out.check(this, rid, when, historical);
+									
+									if (! filterResult.resume)
+										return;
+								}
+								else {
+									int pos = range.indexOf(':');
+									
+									BigDateTime from = null;
+									BigDateTime to = null;
+									
+									if (pos == -1) {
+										from = BigDateTime.parse(range);
+									}
+									else if (pos == 0) {
+										to = BigDateTime.parse(range.substring(1));
+									}
+									else {
+										from = BigDateTime.parse(range.substring(0, pos));
+										to = BigDateTime.parse(range.substring(pos + 1));
+									}
+									
+									if (((from == null) || (when.compareTo(from) >= 0)) && ((to == null) || (when.compareTo(to) < 0))) {
+										FilterResult filterResult = out.check(this, rid, when, historical);
+										
+										if (! filterResult.resume)
+											return;
+									}
+								}
+								
+								recsid = request.getInterface().prevPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rsid);
+							}
+						}
+					}
+					
+					recid = request.getInterface().prevPeerKey(did, ffdef.getIndexName(), table, fname, val, rid);
+				}
+				
+				valb = request.getInterface().prevPeerKey(did, ffdef.getIndexName(), table, fname, val);
+			}
+		}
+		catch (Exception x) {
+			Logger.error("traverseIndex error: " + x);
+		}
+	}
 	
 	public void executeTrigger(String table, String op, DbServiceRequest task) {
 		SchemaResource schema = ResourceHub.getResources().getSchema();

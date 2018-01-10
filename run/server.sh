@@ -2,13 +2,13 @@
 
 # JAVA_HOME="/usr/lib/jvm/jre"
 # export JAVA_HOME
-# 
+#
 # DC_NAME="dcServer"
 # export DC_NAME
-# 
+#
 # DC_DEPLOYMENT="production"
 # export DC_DEPLOYMENT
-# 
+#
 # DC_NODE="01001"
 # export DC_NODE
 
@@ -65,6 +65,14 @@ JSVC="$DC_BASE/jsvc64"
 CMD=$1
 
 #
+# Copy binary updates
+#
+
+if [ "$CMD" = "start" ] ; then
+	mv ./ext/* ./lib
+fi
+
+#
 # Build classpath
 #
 
@@ -75,9 +83,9 @@ for i in ./lib/*.jar; do
   CLASSPATH=$CLASSPATH$S$i
 done
 
-for i in ./ext/*.jar; do
-  CLASSPATH=$CLASSPATH$S$i
-done
+# for i in ./ext/*.jar; do
+#  CLASSPATH=$CLASSPATH$S$i
+# done
 
 # Increase the maximum file descriptors if we can
 MAX_FD=`ulimit -H -n`

@@ -330,6 +330,7 @@ public class Emitter {
         }
         else if (token == MarkToken.IMAGE) {
         	XElement img = W3Closed.tag("img")
+				.withAttribute("class", "inline-img " + (classes == null ? "" : classes))
         		.withAttribute("src", link)
         		.withAttribute("alt", name);
         	

@@ -5,6 +5,7 @@ import java.util.function.Function;
 
 import dcraft.db.DbServiceRequest;
 import dcraft.db.proc.IComposer;
+import dcraft.db.proc.filter.Max;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
@@ -50,17 +51,11 @@ public class IndexValueCounter implements IComposer {
 			// get as a type we understand
 			Object val = Struct.objectToCore(field.getField("Value"));
 			
-			AtomicLong cnt = new AtomicLong();
+			Max cnt = Max.max();
 
-			db.traverseIndex(table, fname, val, when, historical, new Function<Object,Boolean>() {				
-				@Override
-				public Boolean apply(Object subid) {
-					cnt.incrementAndGet();
-					return true;
-				}
-			});
+			db.traverseIndex(table, fname, val, when, historical, cnt);
 			
-			out.value(new Long(cnt.get()));
+			out.value(cnt.getCount());
 		} 
 		catch (BuilderStateException x) {
 			// TODO Auto-generated catch block

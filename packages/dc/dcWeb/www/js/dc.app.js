@@ -1391,12 +1391,11 @@ dc.pui.PageEntry.prototype = {
 			//console.log('observer: ' + res.Code);
 
 			entry.Loaded = true;
+			entry.Frozen = false;
 
 			if (callback)
 				callback.call(entry);
 		});
-
-		entry.Frozen = false;
 
 		loadtask.run();
 	},

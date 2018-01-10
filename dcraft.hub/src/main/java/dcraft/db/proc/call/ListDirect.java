@@ -3,6 +3,10 @@ package dcraft.db.proc.call;
 import java.util.function.Function;
 
 import dcraft.db.DbServiceRequest;
+import dcraft.db.proc.BasicFilter;
+import dcraft.db.proc.FilterResult;
+import dcraft.db.proc.IFilter;
+import dcraft.db.proc.filter.Unique;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationMarker;
@@ -11,6 +15,7 @@ import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
+import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.builder.ObjectBuilder;
 
@@ -89,26 +94,29 @@ public class ListDirect extends LoadRecord {
 		try (OperationMarker om = OperationMarker.create()) {
 			out.startList();
 			
-			db.traverseRecords(table, when, historical, new Function<Object,Boolean>() {				
-				@Override
-				public Boolean apply(Object t) {
-					try {
-						String id = t.toString();
-						
-						db.checkSelect(table, id, fwhen, where, historical);
-						
-						ListDirect.this.writeField(request, out, db, table, id, fwhen, select.getItemAsRecord(0),
-								historical, compact);
-						
-						return true;
-					}
-					catch (Exception x) {
-						Logger.error("Issue with select list: " + x);
-					}
-					
-					return false;
-				}
-			});
+			
+			IFilter filter = Unique.unique()
+					.withNested(new BasicFilter() {
+						@Override
+						public FilterResult check(TablesAdapter adapter, Object id, BigDateTime when, boolean historical) throws OperatingContextException {
+							if (adapter.checkSelect(table, id.toString(), when, where, historical)) {
+								try {
+									ListDirect.this.writeField(request, out, db, table, id.toString(), fwhen, select.getItemAsRecord(0),
+											historical, compact);
+								}
+								catch (BuilderStateException x) {
+									return FilterResult.halt();
+								}
+								
+								return FilterResult.accepted();
+							}
+							
+							return FilterResult.rejected();
+						}
+					});
+			
+			
+			db.traverseRecords(table, when, historical, filter);
 	
 			out.endList();
 			

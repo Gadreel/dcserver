@@ -3,6 +3,8 @@ package dcraft.db.proc.call;
 import java.util.function.Function;
 
 import dcraft.db.DbServiceRequest;
+import dcraft.db.proc.BasicFilter;
+import dcraft.db.proc.FilterResult;
 import dcraft.db.proc.IComposer;
 import dcraft.db.proc.IStoredProc;
 import dcraft.db.tables.TablesAdapter;
@@ -18,6 +20,7 @@ import dcraft.schema.SchemaResource;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.builder.ObjectBuilder;
 import dcraft.util.StringUtil;
@@ -61,7 +64,7 @@ public class LoadRecord implements IStoredProc {
 	
 	public void writeRecord(DbServiceRequest task, ICompositeBuilder out,
 							TablesAdapter db, String table, String id, BigDateTime when, ListStruct select,
-							boolean compact, boolean skipWriteRec, boolean historical) throws Exception
+							boolean compact, boolean skipWriteRec, boolean historical) throws OperatingContextException, BuilderStateException
 	{		
 		if (!db.isCurrent(table, id, when, historical))
 			return;
@@ -101,7 +104,7 @@ public class LoadRecord implements IStoredProc {
 	
 	public void writeField(DbServiceRequest task, ICompositeBuilder out,
 						   TablesAdapter db, String table, String id, BigDateTime when, RecordStruct field,
-						   boolean historical, boolean compact) throws Exception
+						   boolean historical, boolean compact) throws BuilderStateException, OperatingContextException
 	{		
 		// some fields may request full details even if query is not in general
 		if (compact && field.getFieldAsBooleanOrFalse("Full"))
@@ -159,13 +162,13 @@ public class LoadRecord implements IStoredProc {
 		// when set, sfield indicates we want the foreign value inline with the other values
 		RecordStruct sfield = ((subselect != null) && (subselect.size() == 1)) ? subselect.getItemAsRecord(0) : null;
 		
-		Function<Object,Boolean> foreignSink = new Function<Object,Boolean>() {				
+		Function<Object,Boolean> foreignSink = new Function<Object,Boolean>() {
 			@Override
 			public Boolean apply(Object fid) {
 				try {
-					if (fid == null) 
+					if (fid == null)
 						out.value(null);
-					else if (sfield != null) 
+					else if (sfield != null)
 						// if a single field the write out the field out "inlined"
 						LoadRecord.this.writeField(task, out, db, fktable, fid.toString(), when,
 							sfield, historical, myCompact);
@@ -182,7 +185,7 @@ public class LoadRecord implements IStoredProc {
 				
 				return false;
 			}
-		};		
+		};
 		
 		if ("Id".equals(fname)) {
 			// keep in mind that `id` is the "value" 
@@ -195,7 +198,15 @@ public class LoadRecord implements IStoredProc {
 			else {
 				// write all records in reverse index within a List
 				out.startList();
-				db.traverseIndex(fktable, field.getFieldAsString("KeyField"), id, when, historical, foreignSink);
+				db.traverseIndex(fktable, field.getFieldAsString("KeyField"), id, when, historical, new BasicFilter() {
+					@Override
+					public FilterResult check(TablesAdapter adapter, Object id, BigDateTime when, boolean historical) throws OperatingContextException {
+						if (foreignSink.apply(id))
+							return FilterResult.accepted();
+						
+						return FilterResult.rejected();
+					}
+				});
 				out.endList();
 			}
 			

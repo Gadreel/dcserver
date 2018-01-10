@@ -141,9 +141,9 @@ public class DynamicOutputAdapter extends ChainWork implements IOutputWork {
 		// TODO cleanup everything about wctrl - including making this part more transparent
 		RecordStruct page = RecordStruct.record()
 				.with("Path", req.getFieldAsString("Path"))
-				.with("PathParts", ListStruct.list(req.getFieldAsString("Path").substring(1).split("/")))
+				.with("PathParts", ListStruct.list((Object[]) req.getFieldAsString("Path").substring(1).split("/")))
 				.with("OriginalPath", req.getFieldAsString("OriginalPath"))
-				.with("OriginalPathParts", ListStruct.list(req.getFieldAsString("OriginalPath").substring(1).split("/")))
+				.with("OriginalPathParts", ListStruct.list((Object[]) req.getFieldAsString("OriginalPath").substring(1).split("/")))
 				.with("PageClass", req.getFieldAsString("Path").substring(1).replace('/', '-'));
 		
 		OperationContext.getOrThrow().getController().addVariable("Page", page);

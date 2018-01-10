@@ -4,7 +4,11 @@ import java.util.HashMap;
 import java.util.function.Function;
 
 import dcraft.db.DbServiceRequest;
+import dcraft.db.proc.BasicFilter;
+import dcraft.db.proc.FilterResult;
 import dcraft.db.proc.ICollector;
+import dcraft.db.proc.IFilter;
+import dcraft.db.proc.filter.Unique;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
@@ -17,9 +21,12 @@ import dcraft.schema.SchemaResource;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.builder.ObjectBuilder;
+import dcraft.task.IParentAwareWork;
 import dcraft.util.StringUtil;
+import dcraft.xml.XElement;
 
 public class SelectDirect extends LoadRecord {
 	/*
@@ -89,147 +96,53 @@ public class SelectDirect extends LoadRecord {
 		TablesAdapter db = TablesAdapter.of(request);
 		ICompositeBuilder out = new ObjectBuilder();
 		
-		RecordStruct collector = params.getFieldAsRecord("Collector");
-		
-		if (collector != null) {
-			try (OperationMarker om = OperationMarker.create()) {
-				out.startList();
-				
-				// TODO make sure we produce only unique records
-				// enhance by making this use ^dcTemp for large number of records
-				HashMap<String, Boolean> unique = new HashMap<>();
-				
-				String func = collector.getFieldAsString("Func");
-				String fname = collector.getFieldAsString("Field");
-				String subid = collector.getFieldAsString("SubId");
-				
-				ListStruct values = collector.getFieldAsList("Values");
-				
-				Function<Object,Boolean> uniqueConsumer = new Function<Object,Boolean>() {
-					// return true only if value was accepted into output stream
+		IFilter filter = Unique.unique()
+				.withNested(new BasicFilter() {
 					@Override
-					public Boolean apply(Object t) {
-						try {
-							String id = t.toString();
-							
-							// we have already returned this one
-							if (unique.containsKey(id))
-								return false;
-							
-							if (db.checkSelect(table, id, fwhen, where, historical)) {
-								unique.put(id, true);
-								
-								SelectDirect.this.writeRecord(request, out, db, table, id, fwhen, select, compact, false, historical);
-								
-								return true;
+					public FilterResult check(TablesAdapter adapter, Object id, BigDateTime when, boolean historical) throws OperatingContextException {
+						if (adapter.checkSelect(table, id.toString(), when, where, historical)) {
+							try {
+								SelectDirect.this.writeRecord(request, out, db, table, id.toString(), fwhen, select, compact, false, historical);
 							}
-						}
-						catch (Exception x) {
-							Logger.error("Issue with select direct: " + x);
+							catch (BuilderStateException x) {
+								return FilterResult.halt();
+							}
+							
+							return FilterResult.accepted();
 						}
 						
-						return false;
+						return FilterResult.rejected();
 					}
-				};				
+				});
+		
+		try (OperationMarker om = OperationMarker.create()) {
+			out.startList();
+			
+			RecordStruct collector = params.getFieldAsRecord("Collector");
+			
+			if (collector != null) {
+				String func = collector.getFieldAsString("Func", "dcCollectorGeneral");
 				
-				if (StringUtil.isNotEmpty(func)) {
-					SchemaResource schema = ResourceHub.getResources().getSchema();
-					DbCollector proc = schema.getDbCollector(func);
+				SchemaResource schema = ResourceHub.getResources().getSchema();
+				DbCollector proc = schema.getDbCollector(func);
+				
+				if (proc != null) {
+					ICollector sp = proc.getCollector();
 					
-					if (proc != null) {
-						ICollector sp = proc.getCollector();
-
-						if (sp != null) {
-							sp.collect(request, collector, uniqueConsumer);
-						}
-						else {
-							Logger.error("Stored func not found or bad: " + func);
-						}
+					if (sp != null) {
+						sp.collect(request, db, table, when, historical, collector, filter);
 					}
 					else {
 						Logger.error("Stored func not found or bad: " + func);
 					}
 				}
-				else if (values != null) {
-					for (Struct s : values.items()) { 
-						if ("Id".equals(fname))
-							uniqueConsumer.apply(s);
-						else
-							db.traverseIndex(table, fname, Struct.objectToCore(s), subid, when, historical, uniqueConsumer);
-					}
-				}
 				else {
-					Object from = Struct.objectToCore(collector.getField("From"));
-					Object to = Struct.objectToCore(collector.getField("To"));
-					
-					db.traverseIndexRange(table, fname, from, to, when, historical, uniqueConsumer);
-				}
-				
-				out.endList();
-				
-				if (! om.hasErrors()) {
-					callback.returnValue(out.toLocal());
-					return;
+					Logger.error("Stored func not found or bad: " + func);
 				}
 			}
-			catch (Exception x) {
-				Logger.error("Issue with select direct: " + x);
+			else {
+				db.traverseRecords(table, when, historical, filter);
 			}
-			
-			callback.returnEmpty();
-			return;
-		}
-		
-		/*
-		// TODO support collector
-		// m collector=Params("Collector")
-		 * 
-		 i collector("Name")'="" d  quit
-		 . s cname=collector("Name")		; "cstate" is a variable available to the collector for state across calls
-		 . i ^dcProg("collector",cname)="" q
-		 . w StartList
-		 . f  x "s id=$$"_^dcProg("collector",cname)_"()" q:id=""  d  q:Errors
-		 . . d:$$check^dcDbSelect(table,id,when,.where,historical) writeRec(table,id,when,.select,5,1,0,historical)
-		 . w EndList
-		 ;
-		 i collector("Field")'="" d  quit
-		 . i $d(collector("Values")) d  q
-		 . . n values m values=collector("Values")
-		 . . w StartList
-		 . . f  s id=$$loopValues^dcDb(table,collector("Field"),.values,.cstate,when,historical) q:id=""  d
-		 . . . d:$$check^dcDbSelect(table,id,when,.where,historical) writeRec(table,id,when,.select,5,1,0,historical)
-		 . . w EndList
-		 . ;
-		 . w StartList
-		 . f  s id=$$loopRange^dcDb(table,collector("Field"),collector("From"),collector("To"),.cstate,when,historical) q:id=""  d 
-		 . . d:$$check^dcDbSelect(table,id,when,.where,historical) writeRec(table,id,when,.select,5,1,0,historical)
-		 . w EndList
-		 ;
-		 w StartList		
-		*/
-		
-		try (OperationMarker om = OperationMarker.create()) {
-			out.startList();
-	
-			db.traverseRecords(table, when, historical, new Function<Object,Boolean>() {				
-				@Override
-				public Boolean apply(Object t) {
-					try {
-						String id = t.toString();
-						
-						if (db.checkSelect(table, id, fwhen, where, historical)) {
-							SelectDirect.this.writeRecord(request, out, db, table, id, fwhen, select, compact, false, historical);
-							
-							return true;
-						}
-					}
-					catch (Exception x) {
-						Logger.error("Issue with select direct: " + x);
-					}
-					
-					return false;
-				}
-			});
 			
 			out.endList();
 			

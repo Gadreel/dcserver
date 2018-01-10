@@ -384,6 +384,7 @@ public class OrderUtil {
 			pidlist.with(((RecordStruct) itm).getFieldAsString("Product"));
 		
 		// grab weight / ship cost from here but don't store in order info
+		// TODO consider dcmPurchaseOnline or dcmDisabled
 		SelectDirectRequest req = SelectDirectRequest.of("dcmProduct")
 			.withSelect(SelectFields.select()
 				.with("Id", "Product")
@@ -396,7 +397,7 @@ public class OrderUtil {
 				.with("dcmImage", "Image")
 				.with("dcmTag", "Tags")
 				.with("dcmVariablePrice", "VariablePrice")
-				.with("dcmMininumPrice", "MininumPrice")
+				.with("dcmMinimumPrice", "MinimumPrice")
 				.with("dcmPrice", "Price")
 				.with("dcmSalePrice", "SalePrice")
 				.with("dcmTaxFree", "TaxFree")
@@ -435,10 +436,10 @@ public class OrderUtil {
 
 				AtomicReference<BigDecimal> itmcalc = new AtomicReference<>(BigDecimal.ZERO);
 				AtomicReference<BigDecimal> taxcalc = new AtomicReference<>(BigDecimal.ZERO);
-				AtomicReference<BigDecimal> shipcalc = new AtomicReference<>(BigDecimal.ZERO);
+				//AtomicReference<BigDecimal> shipcalc = new AtomicReference<>(BigDecimal.ZERO);
 				
 				AtomicReference<BigDecimal> itemshipcalc = new AtomicReference<>(BigDecimal.ZERO);
-				AtomicReference<BigDecimal> catshipcalc = new AtomicReference<>(BigDecimal.ZERO);
+				//AtomicReference<BigDecimal> catshipcalc = new AtomicReference<>(BigDecimal.ZERO);
 				AtomicReference<BigDecimal> itemshipweight = new AtomicReference<>(BigDecimal.ZERO);
 				
 				// TODO look up shipping
@@ -450,7 +451,9 @@ public class OrderUtil {
 				
 				// if we find items from submitted list in the database then add those items to our true item list
 				ListStruct fnditems = new ListStruct();
-				
+
+				String orderdelivery = order.getFieldAsString("Delivery");
+
 				// loop our items
 				for (Struct itm : items.items()) {
 					RecordStruct orgitem = (RecordStruct) itm;
@@ -458,10 +461,10 @@ public class OrderUtil {
 					for (Struct match : ((ListStruct)result).items()) {
 						RecordStruct rec = (RecordStruct) match;
 						
-						if (!rec.getFieldAsString("Product").equals(orgitem.getFieldAsString("Product")))
+						if (! rec.getFieldAsString("Product").equals(orgitem.getFieldAsString("Product")))
 							continue;
 					
-						RecordStruct item = (RecordStruct) orgitem.deepCopy();
+						RecordStruct item = orgitem.deepCopy();
 						
 						// make sure we are using the 'real' values here, from the DB
 						// we are excluding fields that are not valid in an order item, however these fields are still used in the calculation below
@@ -476,7 +479,7 @@ public class OrderUtil {
 						if (rec.getFieldAsBooleanOrFalse("VariablePrice")) {
 							price = orgitem.getFieldAsDecimal("Price", BigDecimal.ZERO);
 							
-							BigDecimal min = rec.getFieldAsDecimal("MininumPrice", BigDecimal.ZERO);
+							BigDecimal min = rec.getFieldAsDecimal("MinimumPrice", BigDecimal.ZERO);
 							
 							if (price.compareTo(min) < 0)
 								price = min;
@@ -493,27 +496,40 @@ public class OrderUtil {
 						
 						itmcalc.set(itmcalc.get().add(total));
 
-						String shipcost = item.getFieldAsString("ShipCost", "Regular");
-
-						//if (! item.getFieldAsBooleanOrFalse("ShipFree"))
-						//	shipcalc.set(shipcalc.get().add(total));
-						
 						if (! item.getFieldAsBooleanOrFalse("TaxFree"))
 							taxcalc.set(taxcalc.get().add(total));
 
-						if (! rec.isFieldEmpty("ShipAmount")) {
-							if ("Fixed".equals(shipcost))
-								itemshipcalc.set(itemshipcalc.get().add(rec.getFieldAsDecimal("ShipAmount").multiply(qty)));
-							else if ("Extra".equals(shipcost))    // TODO make it so Extra is in addition to normal shipping amt
-								itemshipcalc.set(itemshipcalc.get().add(rec.getFieldAsDecimal("ShipAmount").multiply(qty)));
+						String shipcost = item.getFieldAsString("ShipCost", "Regular");
+						ListStruct delivery = item.getFieldAsList("Delivery");
+
+						if ("Ship".equals(orderdelivery)) {
+							for (int d = 0; d < delivery.getSize(); d++) {
+								if (! "Ship".equals(delivery.getItemAsString(d)))
+									continue;
+
+								//if (! item.getFieldAsBooleanOrFalse("ShipFree"))
+								//	shipcalc.set(shipcalc.get().add(total));
+
+								if (rec.isNotFieldEmpty("ShipAmount")) {
+									if ("Fixed".equals(shipcost))
+										itemshipcalc.set(itemshipcalc.get().add(rec.getFieldAsDecimal("ShipAmount").multiply(qty)));
+									else if ("Extra".equals(shipcost))    // TODO make it so Extra is in addition to normal shipping amt
+										itemshipcalc.set(itemshipcalc.get().add(rec.getFieldAsDecimal("ShipAmount").multiply(qty)));
+								}
+
+								if (rec.isNotFieldEmpty("ShipWeight")) {
+									// only include weight if not Free or Fixed
+									if ("Regular".equals(shipcost) || "Extra".equals(shipcost))
+										itemshipweight.set(itemshipweight.get().add(rec.getFieldAsDecimal("ShipWeight").multiply(qty)));
+								}
+
+								//if (rec.isNotFieldEmpty("CatShipAmount"))
+								//	catshipcalc.set(catshipcalc.get().add(rec.getFieldAsDecimal("CatShipAmount").multiply(qty)));
+
+								break;
+							}
 						}
 
-						if (! rec.isFieldEmpty("ShipWeight"))
-							itemshipweight.set(itemshipweight.get().add(rec.getFieldAsDecimal("ShipWeight").multiply(qty)));
-						
-						if (! rec.isFieldEmpty("CatShipAmount"))
-							catshipcalc.set(catshipcalc.get().add(rec.getFieldAsDecimal("CatShipAmount").multiply(qty)));
-						
 						break;
 					}
 				}
@@ -523,8 +539,8 @@ public class OrderUtil {
 				
 				/* Enum="Disabled,OrderWeight,OrderTotal,PerItem,PerItemFromCategory,Custom" 
 				 */
-				
-				XElement shipsettings = sset.selectFirst("Shipping");
+
+				/*
 				String shipmode = "Disabled";
 
 				// shipping is based on Order Total before discounts
@@ -540,7 +556,33 @@ public class OrderUtil {
 					else if ("PerItemFromCategory".equals(shipmode))
 						shipamt.set(catshipcalc.get());
 				}
-				
+				*/
+
+				// ship calcs
+
+				shipamt.set(itemshipcalc.get());
+
+				XElement shipsettings = sset.selectFirst("Shipping");
+
+				// if settings, and any weight at all (note non-shippable and fixed shipping items do not add weight)
+				if ((shipsettings != null) && (itemshipweight.get().compareTo(BigDecimal.ZERO) > 0)) {
+					for (XElement stel : shipsettings.selectAll("WeightTable/Limit")) {
+						BigDecimal max = Struct.objectToDecimal(stel.getAttribute("Max"));
+
+						// if fall in the range, then add
+						if ((max != null) && (itemshipweight.get().compareTo(max) < 0)) {
+							BigDecimal shipat = Struct.objectToDecimal(stel.getAttribute("Price"));
+
+							if (shipat != null)
+								shipamt.set(shipamt.get().add(shipat));
+
+							break;
+						}
+					}
+				}
+
+				// coupons
+
 				CountDownCallback couponcd = new CountDownCallback(1, new OperationOutcomeEmpty() {
 					@Override
 					public void callback() {
@@ -595,7 +637,7 @@ public class OrderUtil {
 							.with("ItemCalc", itmcalc.get())
 							.with("ProductDiscount", itmdiscount.get())
 							.with("ItemTotal", itmtotal)
-							.with("ShipCalc", shipcalc.get())
+							.with("ShipCalc", shipamt.get())
 							.with("ShipAmount", shipamt.get())
 							.with("ShipDiscount", shipdiscount.get())
 							.with("ShipTotal", shiptotal)

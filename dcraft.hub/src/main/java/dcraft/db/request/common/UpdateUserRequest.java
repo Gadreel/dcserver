@@ -36,6 +36,7 @@ public class UpdateUserRequest extends UpdateRecordRequest {
 	protected ConditionalValue lastname = new ConditionalValue();
 	protected ConditionalValue email = new ConditionalValue();
 	protected ConditionalValue backupemail = new ConditionalValue();
+	protected ConditionalValue phone = new ConditionalValue();
 	protected ConditionalValue password = new ConditionalValue();
 	protected ConditionalValue locale = new ConditionalValue();
 	protected ConditionalValue chrono = new ConditionalValue();
@@ -87,7 +88,12 @@ public class UpdateUserRequest extends UpdateRecordRequest {
 	public void setBackupEmail(String v) {
 		this.backupemail.setValue(v);
 	}
-	
+
+	public UpdateUserRequest withPhone(String v) {
+		this.phone.setValue(v);
+		return this;
+	}
+
 	public void setLocale(String v) {
 		this.locale.setValue(v);
 	}
@@ -132,6 +138,7 @@ public class UpdateUserRequest extends UpdateRecordRequest {
 		this.withSetField("dcLastName", this.lastname);
 		this.withSetField("dcEmail", this.email);
 		this.withSetField("dcBackupEmail", this.backupemail);
+		this.withSetField("dcPhone", this.phone);
 		this.withSetField("dcDescription", this.desc);
 		this.withSetField("dcLocale", this.locale);
 		this.withSetField("dcChronology", this.chrono);

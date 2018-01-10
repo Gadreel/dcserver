@@ -5,9 +5,11 @@ import dcraft.filestore.local.LocalStoreFile;
 import dcraft.hub.op.*;
 import dcraft.stream.StreamFragment;
 import dcraft.tenant.Base;
+import dcraft.util.FileUtil;
 import dcraft.util.RndUtil;
 
 import java.lang.reflect.Method;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
@@ -148,7 +150,24 @@ public class Vault {
 	public FileStore getFileStore() {
 		return this.fsd;
 	}
-	
+
+	// TODO should use a callback approach
+	public void commitFiles(Transaction tx) throws OperatingContextException {
+		FileStore vfs = this.getFileStore();
+
+		if (vfs instanceof LocalStore) {
+			for (CommonPath delete : tx.getDeletelist())
+				vfs.fileReference(delete).remove(null);		// TODO should wait, doesn't matter with locals though
+
+			FileUtil.moveFileTree(tx.getFolder().getPath(), ((LocalStore) vfs).getPath(), null);
+		}
+		else {
+			// TODO add Expand for non-local vaults - probably just to the deposit worker since
+			// non-local vaults are not guaranteed to be epxanded at end of this call
+			Logger.error("Non-local Expand Vaults not yet supported!");
+		}
+	}
+
 	/*
 	 * ================ programming points ==================
 	 */

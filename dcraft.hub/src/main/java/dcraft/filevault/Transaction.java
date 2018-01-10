@@ -20,6 +20,8 @@ import dcraft.util.FileUtil;
 import dcraft.util.RndUtil;
 
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Transaction {
 	static public String createTransactionId() {
@@ -48,7 +50,16 @@ public class Transaction {
 	
 	protected String id = null;
 	protected Vault vault = null;
-	
+	protected List<CommonPath> deletelist = new ArrayList<>();
+
+	public List<CommonPath> getDeletelist() {
+		return this.deletelist;
+	}
+
+	public void addDeleteList(CommonPath path) {
+		this.deletelist.add(path);
+	}
+
 	public LocalStore getFolder() {
 		return LocalStore.of(DepositHub.DepositStore.resolvePath("/transactions/" + this.id));
 	}
@@ -58,7 +69,7 @@ public class Transaction {
 	 * completely destroyed before such sync can happen
 	 */
 	public void commitTransaction(String vault, OperationOutcomeEmpty callback) throws OperatingContextException {
-		LocalStore dstore = LocalStore.of(DepositHub.DepositStore.resolvePath("/transactions/" + this.id));
+		LocalStore dstore = this.getFolder();  // LocalStore.of(DepositHub.DepositStore.resolvePath("/transactions/" + this.id));
 		
 		TaskHub.submit(Task.ofSubtask("Create Transaction Tar", "XFR")
 				.withWork(StreamWork.of(
@@ -71,30 +82,19 @@ public class Transaction {
 					public void callback(TaskContext subtask) {
 						try {
 							if (Transaction.this.vault != null) {
-								if (Transaction.this.vault.getMode() == VaultMode.Expand) {
-									FileStore vfs = Transaction.this.vault.getFileStore();
-									
-									if (vfs instanceof LocalStore) {
-										FileUtil.moveFileTree(dstore.getPath(), ((LocalStore) vfs).getPath(), null);
-										
-										FileUtil.deleteDirectory(dstore.getPath());
-									}
-									else {
-										// TODO add Expand for non-local vaults - probably just to the deposit worker since
-										// non-local vaults are not guaranteed to be epxanded at end of this call
-										Logger.error("Non-local Expand Vaults not yet supported!");
-										callback.returnEmpty();
-										return;
-									}
-								}
-								
+								if (Transaction.this.vault.getMode() == VaultMode.Expand)
+									Transaction.this.vault.commitFiles(Transaction.this);
+
 								// TODO support other vault modes
-								
+
+								FileUtil.deleteDirectory(((LocalStore)dstore).getPath());
+
 								DepositHub.submitVaultDeposit(Transaction.this.id, Transaction.this.vault.getName());
 							}
 							else {
 								FileUtil.deleteDirectory(dstore.getPath());
-								
+
+								// vault in name only, not function (server backup)
 								DepositHub.submitVaultDeposit(Transaction.this.id, vault);
 							}
 						}

@@ -26,19 +26,12 @@ public class DbCollector {
 	public String name = null;
 	public String execute = null;
 	public String[] securityTags = null;
-	public ICollector sp = null;
-	
+
 	public ICollector getCollector() {
-		if (this.sp != null)
-			return this.sp;
-		
 		// composer should be stateless, save effort by putting 1 instance inside DbComposer and reusing it
 		if (StringUtil.isNotEmpty(this.execute)) 
-			this.sp = (ICollector) ResourceHub.getResources().getClassLoader().getInstance(this.execute);
-		
-		if (this.sp == null)
-			Logger.error("Collector " + this.name + " failed to create.");
-		
-		return this.sp;
+			return (ICollector) ResourceHub.getResources().getClassLoader().getInstance(this.execute);
+
+		return null;
 	}
 }

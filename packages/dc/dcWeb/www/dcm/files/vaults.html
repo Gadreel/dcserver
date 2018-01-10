@@ -24,4 +24,24 @@
 
 			page.Layer.loadPage('/dcm/files/browser/' + $(target).attr('data-name'));
 	]]></Function>
+
+	<!-- index Feed folder
+
+				dc.comm.sendMessage({
+					Service: 'dcCoreServices',
+					Feature: 'Vaults',
+					Op: 'Custom',
+					Body: {
+						Vault: 'Feeds',
+						Path: '/pages',
+						Command: 'IndexFolder'
+					}
+				}, function(resp) {
+					if (resp.Result > 0) {
+						dc.pui.Popup.alert(resp.Message);
+						return;
+					}
+				});
+
+	-->
 </dc.Html>

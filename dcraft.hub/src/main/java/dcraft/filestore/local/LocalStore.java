@@ -167,7 +167,7 @@ public class LocalStore extends FileStore {
 		if (callback != null)
 			callback.returnResult();
 	}
-	
+
 	@Override
 	public ReturnOption operation(IParentAwareWork stack, XElement codeEl) throws OperatingContextException {
 		// connect and close in super
@@ -403,12 +403,12 @@ public class LocalStore extends FileStore {
 	}
 	
 	@Override
-	public FileStoreFile fileReference(CommonPath path) {
+	public LocalStoreFile fileReference(CommonPath path) {
 		return LocalStoreFile.of(this, path);
 	}
 	
 	@Override
-	public FileStoreFile fileReference(CommonPath path, boolean isFolder) {
+	public LocalStoreFile fileReference(CommonPath path, boolean isFolder) {
 		return LocalStoreFile.of(this, path, isFolder);
 	}
 	

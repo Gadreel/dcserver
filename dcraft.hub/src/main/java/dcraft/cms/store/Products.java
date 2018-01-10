@@ -440,7 +440,7 @@ public class Products {
 							.with("dcmCategoryPosition", "CategoryPosition")
 							.with("dcmPrice", "Price")
 							.with("dcmVariablePrice", "VariablePrice")
-							.with("dcmMininumPrice", "MininumPrice")
+							.with("dcmMinimumPrice", "MinimumPrice")
 							.with("dcmShipAmount", "ShipAmount")
 							.with("dcmShipWeight", "ShipWeight")
 							.with("dcmShipCost", "ShipCost")
@@ -463,7 +463,7 @@ public class Products {
 					.withConditionallySetFields(rec, "Title", "dcmTitle", "Alias", "dcmAlias", "Sku", "dcmSku",
 							"Description", "dcmDescription", "Instructions", "dcmInstructions", "Image", "dcmImage",
 							"Price", "dcmPrice", "ShipAmount", "dcmShipAmount", "ShipWeight", "dcmShipWeight",
-							"VariablePrice", "dcmVariablePrice", "MininumPrice", "dcmMininumPrice",
+							"VariablePrice", "dcmVariablePrice", "MinimumPrice", "dcmMinimumPrice",
 							"ShipCost", "dcmShipCost", "TaxFree", "dcmTaxFree", "ShowInStore", "dcmShowInStore")
 					.withConditionallySetList(rec, "Delivery", "dcmDelivery")
 					.withConditionallySetList(rec, "Categories", "dcmCategories")
@@ -481,7 +481,7 @@ public class Products {
 					.withConditionallySetFields(rec, "Title", "dcmTitle", "Alias", "dcmAlias", "Sku", "dcmSku",
 							"Description", "dcmDescription", "Instructions", "dcmInstructions", "Image", "dcmImage",
 							"Price", "dcmPrice", "ShipAmount", "dcmShipAmount", "ShipWeight", "dcmShipWeight",
-							"VariablePrice", "dcmVariablePrice", "MininumPrice", "dcmMininumPrice",
+							"VariablePrice", "dcmVariablePrice", "MinimumPrice", "dcmMinimumPrice",
 							"ShipCost", "dcmShipCost", "TaxFree", "dcmTaxFree", "ShowInStore", "dcmShowInStore")
 					.withConditionallySetList(rec, "Delivery", "dcmDelivery")
 					.withConditionallySetList(rec, "Categories", "dcmCategories")
@@ -558,7 +558,7 @@ public class Products {
 					.with("dcmImage", "Image")
 					.with("dcmPrice", "Price")
 					.with("dcmVariablePrice", "VariablePrice")
-					.with("dcmMininumPrice", "MininumPrice")
+					.with("dcmMinimumPrice", "MinimumPrice")
 					.with("dcmTaxFree", "TaxFree")
 					.with("dcmDelivery", "Delivery")
 					.with("dcmShowInStore", "ShowInStore");

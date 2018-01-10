@@ -1,20 +1,74 @@
 package dcraft.filevault;
 
+import dcraft.db.request.DataRequest;
 import dcraft.filestore.CommonPath;
+import dcraft.filestore.FileStore;
 import dcraft.filestore.FileStoreFile;
+import dcraft.filestore.local.LocalStore;
 import dcraft.filestore.mem.MemoryStoreFile;
 import dcraft.hub.op.*;
 import dcraft.log.Logger;
+import dcraft.service.ServiceHub;
 import dcraft.stream.file.MemorySourceStream;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.util.FileUtil;
 import dcraft.util.StringUtil;
 import dcraft.xml.*;
 
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.EnumSet;
 import java.util.List;
 
 public class FeedVault extends Vault {
+
+	public void commitFiles(Transaction tx) throws OperatingContextException {
+		ListStruct deletes = ListStruct.list();
+		ListStruct updates = ListStruct.list();
+
+		FileStore vfs = this.getFileStore();
+
+		if (vfs instanceof LocalStore) {
+			for (CommonPath delete : tx.getDeletelist())
+				deletes.with(delete);
+
+			Path source = tx.getFolder().getPath();
+
+			try {
+				if (Files.exists(source)) {
+					Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
+							new SimpleFileVisitor<Path>() {
+								@Override
+								public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+									if (file.endsWith(".DS_Store"))
+										return FileVisitResult.CONTINUE;
+
+									Path dest = source.relativize(file);
+
+									updates.with(CommonPath.from("/" + dest.toString()));
+
+									return FileVisitResult.CONTINUE;
+								}
+							});
+				}
+			}
+			catch (IOException x) {
+				Logger.error("Error copying file tree: " + x);
+			}
+
+		}
+
+		super.commitFiles(tx);
+
+		ServiceHub.call(DataRequest.of("dcmUpdateFeed")
+				.withParam("Updated", updates)
+				.withParam("Deleted" ,deletes)
+		);
+	}
+
 	@Override
 	public void listFiles(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
 		// check bucket security
@@ -580,7 +634,8 @@ public class FeedVault extends Vault {
 									fcb.returnEmpty();
 									return;
 								}
-								
+
+								// determine where to add Meta tags into document
 								int idxlastmeta = 0;
 								
 								for (int i = 0; i < root.getChildCount(); i++) {
@@ -630,6 +685,50 @@ public class FeedVault extends Vault {
 							else {
 								fcb.returnEmpty();
 							}
+						}
+					});
+				}
+			});
+			
+			return;
+		}
+		
+		// TODO check security
+		if ("IndexFolder".equals(cmd)) {
+			this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
+				@Override
+				public void callback(FileStoreFile result) throws OperatingContextException {
+					if (this.hasErrors()) {
+						fcb.returnEmpty();
+						return;
+					}
+					
+					if (this.isEmptyResult()) {
+						Logger.error("Your request appears valid but does not map to a folder.  Unable to complete.");
+						fcb.returnEmpty();
+						return;
+					}
+					
+					FileStoreFile fi = result;
+					
+					if (! fi.exists() || ! fi.isFolder()) {
+						Logger.error("Your request appears valid but does not map to a folder.  Unable to complete.");
+						fcb.returnEmpty();
+						return;
+					}
+					
+					fi.getFolderListing(new OperationOutcome<List<FileStoreFile>>() {
+						@Override
+						public void callback(List<FileStoreFile> result) throws OperatingContextException {
+							ListStruct files = ListStruct.list();
+							
+							for (FileStoreFile file : result)
+								files.with(file.getPath());
+							
+							ServiceHub.call(DataRequest.of("dcmUpdateFeed")
+									.withParam("Updated", files),
+									fcb
+							);
 						}
 					});
 				}
