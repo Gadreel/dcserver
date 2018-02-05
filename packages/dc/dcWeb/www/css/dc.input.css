@@ -1,0 +1,136 @@
+.dc-calendar-widget {
+    width: 100%;
+	border-right: 1px solid black;
+	border-bottom: 1px solid black;
+}
+
+.dc-calendar-header,
+.dc-calendar-week-labels td,
+.dc-calendar-day-header {
+	border-top: 1px solid black;
+}
+
+.dc-calendar-header {
+	border-left: 1px solid black;
+}
+
+.dc-calendar-header-nav,
+.dc-calendar-header-month {
+	padding: 12px;
+	text-align: center;
+}
+
+.dc-calendar-header-nav:hover {
+	background-color: #f0f0f8;
+	border-right: 1px solid black;
+	border-left: 1px solid black;
+}
+
+.dc-calendar-week-labels td {
+	width: 14%;
+}
+
+.dc-calendar-week-labels td,
+.dc-calendar-day-span,
+.dc-calendar-day-header,
+.dc-calendar-day-spot,
+.dc-calendar-day-footer {
+	border-left: 1px solid black;
+	padding: 4px 12px;
+	text-align: center;
+}
+
+.dc-calendar-day-footer {
+	padding: 12px 12px 4px 12px;
+}
+
+.dc-calendar-day-span-fill {
+	border-left: 1px solid black;
+}
+
+.dc-calendar-day-span-fill::after {
+	content: "";
+	display: inline-block;
+	vertical-align: top;
+	min-height: 12px;		/* does not work directly on TD, so fake content */
+}
+
+.dc-calendar-day-entry,
+.dc-calendar-day-span {
+	background-color: #f8f8f8;
+	border-left: 1px solid black;
+	border-bottom: 1px solid #999;
+	border-top: 1px solid #999;
+	text-align: center;
+	cursor: pointer;
+}
+
+.dc-calendar-day-entry:hover,
+.dc-calendar-day-span:hover {
+	background-color: #f0f0f8;
+}
+
+.dc-calendar-chooser .dc-calendar-day-area,
+.dc-calendar-day-header {
+	cursor: pointer;
+}
+
+.dc-calendar-chooser .dc-calendar-day-area:hover,
+.dc-calendar-day-header:hover {
+	background-color: #f0f0f8;
+	border-bottom: 1px solid black;
+}
+
+.dc-calendar-header-month,
+.dc-calendar-week-labels td,
+.dc-calendar-day-header {
+	font-size: 133%;
+}
+
+.dc-calendar-day-header-pad {
+	color: #ddd;
+}
+
+@media all and (max-width: 499px) {
+	.dc-calendar-header-nav,
+	.dc-calendar-header-month {
+		padding: 9px;
+	}
+
+	.dc-calendar-week-labels td,
+	.dc-calendar-day-span,
+	.dc-calendar-day-header,
+	.dc-calendar-day-spot,
+	.dc-calendar-day-footer {
+		padding: 3px 9px;
+	}
+
+	.dc-calendar-day-footer {
+		padding: 9px 9px 3px 9px;
+	}
+
+	.dc-calendar-header-month,
+	.dc-calendar-week-labels td,
+	.dc-calendar-day-header {
+		font-size: 100%;
+	}
+
+	.dc-calendar-day-span-label, .dc-calendar-day-spot-label {
+		display: none;
+	}
+
+	.dc-calendar-day-spot-label::after {
+		content: "...";
+		font-size: 50%;
+	}
+
+	.dc-calendar-day-span-fill::after {
+		display: inline;
+	}
+}
+
+@media all and (max-width: 399px) {
+	.dc-calendar-widget {
+		margin-left: -24px;
+	}
+}

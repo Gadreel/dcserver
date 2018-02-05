@@ -1,17 +1,28 @@
 package dcraft.web.ui.inst.feed;
 
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
+import dcraft.db.request.query.CollectorField;
+import dcraft.db.request.query.SelectDirectRequest;
+import dcraft.db.request.query.SelectFields;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.script.StackUtil;
+import dcraft.script.inst.Var;
+import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
-import dcraft.util.TimeUtil;
+import dcraft.script.work.ReturnOption;
+import dcraft.service.ServiceHub;
+import dcraft.struct.ListStruct;
+import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
 
-import dcraft.util.StringUtil;
 import dcraft.script.inst.doc.Base;
-import dcraft.web.ui.inst.Button;
 import dcraft.xml.XElement;
-import org.threeten.extra.PeriodDuration;
+import dcraft.xml.XNode;
+import dcraft.xml.XmlUtil;
 
 public class Feed extends Base {
 	static public Feed tag() {
@@ -24,37 +35,165 @@ public class Feed extends Base {
 	public XElement newNode() {
 		return Feed.tag();
 	}
-	
+
+	protected ListStruct entries = null;
+	protected boolean loaded = false;
+	protected boolean readydone = false;
+
+	@Override
+	public ReturnOption run(InstructionWork state) throws OperatingContextException {
+		if (! this.loaded) {
+			this.loaded = true;
+
+			String feed = StackUtil.stringFromSource(state, "Name", "pages");
+
+			SelectDirectRequest request = SelectDirectRequest.of("dcmFeed")
+					.withSelect(SelectFields.select()
+							.with("Id")
+							.with("dcmAlias", "Alias")
+							.with("dcmPath", "IndexPath")
+							.with("dcmLocalPath", "Path")
+							.with("dcmPublishAt", "PublishAt")
+							.with("dcmModified", "Modified")
+							.with("dcmTags", "Tags")
+							.withSubquery("dcmAuthor","Author", SelectFields.select()
+									.with("Id")
+									.with("dcLastName", "Last")
+									.with("dcFirstName", "First")
+							)
+							.with("dcmLocaleFields", "LocaleFields", null, true)
+							.with("dcmSharedFields", "SharedFields", null, true)
+					)
+					.withCollector(CollectorField.collect()
+							.withFunc("dcmScanFeed")
+							.withFrom(StackUtil.refFromSource(state, "From"))
+							.withTo(StackUtil.refFromSource(state, "To"))
+							.withExtras(RecordStruct.record()
+									.with("Feed", feed)
+									.with("LastId", StackUtil.refFromSource(state, "LastId"))
+							)
+							.withMax(StackUtil.intFromSource(state, "Max", 0))
+					);
+
+			ServiceHub.call(request, new OperationOutcomeStruct() {
+				@Override
+				public void callback(Struct result) throws OperatingContextException {
+					Feed.this.entries = (ListStruct)result;
+
+					for (int r = 0; r < entries.getSize(); r++) {
+						RecordStruct info = entries.getItemAsRecord(r);
+
+						ListStruct sharedFields = info.getFieldAsList("SharedFields");
+						ListStruct localeFields = info.getFieldAsList("LocaleFields");
+
+						info.removeField("SharedFields");
+						info.removeField("LocaleFields");
+
+						RecordStruct fields = RecordStruct.record();
+
+						// get current locale first
+						String myLocale = "." + OperationContext.getOrThrow().getLocale();
+
+						for (int i = 0; i < localeFields.getSize(); i++) {
+							RecordStruct full = localeFields.getItemAsRecord(i);
+
+							String fieldName = full.getFieldAsString("SubId");
+
+							if (fieldName.endsWith(myLocale)) {
+								fieldName = fieldName.substring(0, fieldName.length() - myLocale.length());
+
+								fields.with(fieldName, full.getField("Data"));
+							}
+						}
+
+						// get site locale second
+						String siteLocale = "." + OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale();
+
+						if (! myLocale.equals(siteLocale)) {
+							for (int i = 0; i < localeFields.getSize(); i++) {
+								RecordStruct full = localeFields.getItemAsRecord(i);
+
+								String fieldName = full.getFieldAsString("SubId");
+
+								if (fieldName.endsWith(siteLocale)) {
+									fieldName = fieldName.substring(0, fieldName.length() - myLocale.length());
+
+									if (!fields.hasField(fieldName))
+										fields.with(fieldName, full.getField("Data"));
+								}
+							}
+						}
+
+						// third - add shared fields only if not overridden by locale fields
+						for (int i = 0; i < sharedFields.getSize(); i++) {
+							RecordStruct full = sharedFields.getItemAsRecord(i);
+
+							String fieldName = full.getFieldAsString("SubId");
+
+							if (! fields.hasField(fieldName))
+								fields.with(fieldName, full.getField("Data"));
+						}
+
+						info.with("Fields", fields);
+					}
+
+					OperationContext.getAsTaskOrThrow().resume();
+				}
+			});
+
+			return ReturnOption.AWAIT;
+		}
+
+		if (! this.readydone) {
+			state.setState(ExecuteState.READY);
+			this.readydone = true;
+		}
+
+		return super.run(state);
+	}
+
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
-		String channel = this.getAttribute("Channel");
-		boolean reverse = this.getAttributeAsBooleanOrFalse("Reverse");
-		String start = this.getAttribute("Start");
+		String feed = StackUtil.stringFromSource(state, "Name", "pages");
 
-		this.withAttribute("data-dcm-channel", channel);
-		
-		PeriodDuration period = StringUtil.isEmpty(start)
-				? PeriodDuration.ZERO
-				: PeriodDuration.parse(start.startsWith("-") ? start.substring(1) : start);
-		
-		ZonedDateTime fromdate = TimeUtil.now();		// TODO adjust to site chronology
-		
-		if (start.startsWith("-"))
-			fromdate = fromdate.minus(period);
-		else
-			fromdate = fromdate.plus(period);
-		
-		long max = StringUtil.parseInt(this.getAttribute("Max"), 100);
-		
+		this.withAttribute("data-dcm-feed", feed);
+
 		XElement tel = this.find("Template");
-		XElement mtel = this.find("MissingTemplate");
+		XElement mtel = this.find("Empty");
 
 		// start with clean children
 		this.children = new ArrayList<>();
-		
+
+		// TODO put in defaults
 		if ((tel == null) || (mtel == null))
 			return;
-        
+
+		if (this.entries.isEmpty()) {
+			Feed.this.withAll(mtel.getChildren());
+		}
+		else {
+			for (int r = 0; r < this.entries.getSize(); r++) {
+				RecordStruct info = this.entries.getItemAsRecord(r);
+
+				StackUtil.addVariable(state, "entry-" + r, info);
+
+				// switch images during expand
+				XElement setvar = Var.tag()
+						.withAttribute("Name", "Entry")
+						.withAttribute("SetTo", "$entry-" + r);
+
+				Feed.this.with(setvar);
+
+				//Feed.this.with(W3.tag("p").withText(info.getFieldAsString("Path") + " - " + info.selectAsString("Author.Last")));
+
+				List<XNode> template = XmlUtil.deepCopyChildren(tel.getChildren());
+
+				Feed.this.withAll(template);
+			}
+		}
+
+		//this.with(W3.tag("p").withText("done"));
+
         // now build up the xml for the content
 		/* TODO restore
         StringBuilder out = new StringBuilder();
@@ -134,11 +273,13 @@ public class Feed extends Base {
 					})
 			);
 			*/
-		
+
+		/*
 		this.with(Button.tag("dcmi.AddFeedButton")
 				.withClass("dcuiPartButton", "dcuiCmsi")
 				.withAttribute("Icon", "fa-plus")
 			);
+			*/
 	}
 	
 	
@@ -408,7 +549,7 @@ public class Feed extends Base {
 	public void renderAfterChildren(InstructionWork state) throws OperatingContextException {
 		this
 			.withClass("dcm-cms-editable", "dcm-feed")
-			.withAttribute("data-dccms-edit", this.getAttribute("AuthTags", "Editor,Admin,Developer"))
+			//.withAttribute("data-dccms-edit", this.getAttribute("AuthTags", "Editor,Admin,Developer"))
 			.withAttribute("data-dc-enhance", "true")
 			.withAttribute("data-dc-tag", this.getName());
 		

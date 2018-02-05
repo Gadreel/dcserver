@@ -548,7 +548,7 @@ The rules: Eggs may be decorated in any style, but must be real chicken eggs -- 
 							continue;
 						
 						TemporalAccessor start = incomingFormat.parse(entry.getFieldAsString("start_time"));
-						TemporalAccessor end = incomingFormat.parse(entry.getFieldAsString("end_time"));
+						TemporalAccessor end = entry.isNotFieldEmpty("end_time") ? incomingFormat.parse(entry.getFieldAsString("end_time")) : start;
 						
 						if (now > end.getLong(ChronoField.INSTANT_SECONDS))
 							continue;

@@ -1,19 +1,18 @@
 package dcraft.db.proc.call;
 
-import dcraft.db.DbServiceRequest;
 import dcraft.db.proc.IUpdatingStoredProc;
+import dcraft.db.ICallContext;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.op.UserContext;
 import dcraft.log.Logger;
 import dcraft.session.Session;
-import dcraft.struct.RecordStruct;
 import dcraft.util.StringUtil;
 
 public class SignOut implements IUpdatingStoredProc {
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		OperationContext ctx = OperationContext.getOrThrow();
 		UserContext uc = ctx.getUserContext();
 		

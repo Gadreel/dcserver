@@ -132,8 +132,8 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		if (path.length == 1) 
 			return o;			
 		
-		if (o instanceof CompositeStruct) 
-			return ((CompositeStruct)o).select(Arrays.copyOfRange(path, 1, path.length));		
+		if (o instanceof IPartSelector)
+			return ((IPartSelector)o).select(Arrays.copyOfRange(path, 1, path.length));
 		
 		Logger.warnTr(503, o);
 		return null;
@@ -218,8 +218,10 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 	}
 	
 	public ListStruct withCollection(Collection<? extends Object> coll) {
-		for (Object o : coll)
-			this.with(o);		// extra slow, enhance TODO
+		if (coll != null) {
+			for (Object o : coll)
+				this.with(o);        // extra slow, enhance TODO
+		}
 		
 		return this;
 	}
@@ -585,29 +587,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		else if ("Sort".equals(code.getName())) {
 			String field = StackUtil.stringFromElement(stack, code, "ByField");
 
-			this.items.sort(new Comparator<Struct>() {
-				@Override
-				public int compare(Struct o1, Struct o2) {
-					if (StringUtil.isNotEmpty(field)) {
-						Struct fld1 = ((RecordStruct)o1).getField(field);
-						Struct fld2 = ((RecordStruct)o2).getField(field);
-
-						if ((fld1 == null) && (fld2 == null))
-							return 0;
-
-						if (fld1 == null)
-							return 1;
-
-						if (fld2 == null)
-							return -1;
-
-						if (fld1 instanceof ScalarStruct && fld2 instanceof ScalarStruct)
-							return ((ScalarStruct)fld1).compareTo(fld2);
-					}
-
-					return 0;
-				}
-			});
+			this.sortRecords(field);
 			
 			return ReturnOption.CONTINUE;
 		}
@@ -637,6 +617,36 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 				nlist.add(((ScalarStruct)s).getGenericValue());
 		
 		return nlist;
+	}
+	
+	public void sort(Comparator<Struct> comparator) {
+		this.items.sort(comparator);
+	}
+	
+	public void sortRecords(String field) {
+		this.items.sort(new Comparator<Struct>() {
+			@Override
+			public int compare(Struct o1, Struct o2) {
+				if (StringUtil.isNotEmpty(field)) {
+					Struct fld1 = ((RecordStruct)o1).getField(field);
+					Struct fld2 = ((RecordStruct)o2).getField(field);
+					
+					if ((fld1 == null) && (fld2 == null))
+						return 0;
+					
+					if (fld1 == null)
+						return 1;
+					
+					if (fld2 == null)
+						return -1;
+					
+					if (fld1 instanceof ScalarStruct && fld2 instanceof ScalarStruct)
+						return ((ScalarStruct)fld1).compareTo(fld2);
+				}
+				
+				return 0;
+			}
+		});
 	}
 
 	@Override

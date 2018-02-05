@@ -1,7 +1,7 @@
 package dcraft.db.proc.call;
 
 import dcraft.db.DatabaseAdapter;
-import dcraft.db.DbServiceRequest;
+import dcraft.db.ICallContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
@@ -12,17 +12,13 @@ import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.session.Session;
 import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.builder.ICompositeBuilder;
-import dcraft.struct.builder.ObjectBuilder;
 import dcraft.util.StringUtil;
 
 public class VerifySession extends LoadRecord {
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.of(request);
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
+		TablesAdapter db = TablesAdapter.ofNow(request);
 		String tenant = request.getTenant();
-		BigDateTime when = BigDateTime.nowDateTime();
 		
 		OperationContext ctx = OperationContext.getOrThrow();
 		UserContext uc = ctx.getUserContext();
@@ -91,7 +87,7 @@ public class VerifySession extends LoadRecord {
 			Logger.error("SignOut: Unable to create resp: " + x);
 		}
 		
-		uc.clearToGuest();
+		uc.clearToGuestKeepSite();
 		
 		Session sess = ctx.getSession();
 		

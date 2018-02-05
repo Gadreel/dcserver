@@ -155,8 +155,8 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 		if (path.length == 1) 
 			return (o != null) ? o : null;
 		
-		if (o instanceof CompositeStruct) 
-			return ((CompositeStruct)o).select(Arrays.copyOfRange(path, 1, path.length));		
+		if (o instanceof IPartSelector)
+			return ((IPartSelector)o).select(Arrays.copyOfRange(path, 1, path.length));
 		
 		//Logger.warnTr(503, o);
 		

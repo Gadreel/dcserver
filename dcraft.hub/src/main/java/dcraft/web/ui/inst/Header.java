@@ -14,7 +14,12 @@ public class Header extends Main {
 		el.setName("dc.Header");
 		return el;
 	}
-	
+
+	public Header() {
+		super();
+		this.headertag ="h2";
+	}
+
 	@Override
 	public XElement newNode() {
 		return Header.tag();

@@ -16,32 +16,21 @@
 ************************************************************************ */
 package dcraft.db.request.query;
 
+import dcraft.struct.ListStruct;
+
 public class WhereAny extends WhereExpression {
-	public WhereAny(Object a, Object b) {
-		super("Any");
-		
-		this.addValue("A", a);
-		this.addValue("B", b);
+	static public WhereAny any() {
+		return new WhereAny();
 	}
 	
-	public WhereAny(IWhereField a, Object b) {
-		super("Any");
-		
-		this.addField("A", a);
-		this.addValue("B", b);
+	static public WhereAny of(String field, Object... value) {
+		WhereAny expression = new WhereAny();
+		expression.withFieldOne(field);
+		expression.withValueTwo(ListStruct.list(value));
+		return expression;
 	}
 	
-	public WhereAny(Object a, IWhereField b) {
+	public WhereAny() {
 		super("Any");
-		
-		this.addValue("A", a);
-		this.addField("B", b);
-	}
-	
-	public WhereAny(IWhereField a, IWhereField b) {
-		super("Any");
-		
-		this.addField("A", a);
-		this.addField("B", b);
 	}
 }

@@ -9,9 +9,10 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import dcraft.db.DatabaseException;
-import dcraft.db.DbServiceRequest;
+import dcraft.db.ICallContext;
+import dcraft.db.IRequestContext;
 import dcraft.db.proc.BasicFilter;
-import dcraft.db.proc.FilterResult;
+import dcraft.db.proc.ExpressionResult;
 import dcraft.db.proc.IExpression;
 import dcraft.db.proc.IFilter;
 import dcraft.db.proc.IStoredProc;
@@ -37,16 +38,31 @@ import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
 
 public class TablesAdapter {
-	static public TablesAdapter of(ITablesContext request) {
+	static public TablesAdapter ofNow(IRequestContext request) {
 		TablesAdapter adapter = new TablesAdapter();
 		adapter.request = request;
+		adapter.when = BigDateTime.nowDateTime();
 		return adapter;
 	}
 	
-	protected ITablesContext request = null;
+	static public TablesAdapter of(IRequestContext request, BigDateTime when, boolean historical) {
+		TablesAdapter adapter = new TablesAdapter();
+		adapter.request = request;
+		adapter.when = (when != null) ? when : BigDateTime.nowDateTime();
+		adapter.historical = historical;
+		return adapter;
+	}
+	
+	protected IRequestContext request = null;
+	protected BigDateTime when = null;
+	protected boolean historical = false;
 	
 	// don't call for general code...
 	protected TablesAdapter() {
+	}
+
+	public IRequestContext getRequest() {
+		return this.request;
 	}
 	
 	public String createRecord(String table) {
@@ -111,7 +127,7 @@ public class TablesAdapter {
 				
 				try {
 					// make sure value is unique - null for when is fine because uniqueness is not time bound
-					Object id = TablesAdapter.this.firstInIndex(table, schema.getName(), cValue, null, false);
+					Object id = TablesAdapter.this.firstInIndex(table, schema.getName(), cValue);
 					
 					// if we are a new record
 					if (inId == null) {
@@ -567,9 +583,9 @@ public class TablesAdapter {
 	}
 	
 	public void indexCleanRecords(DbTable table) throws OperatingContextException {
-		this.traverseRecords(table.name, BigDateTime.nowDateTime(), false, new BasicFilter() {
+		this.traverseRecords(table.name, new BasicFilter() {
 			@Override
-			public FilterResult check(TablesAdapter adapter, Object val, BigDateTime when, boolean historical) throws OperatingContextException {
+			public ExpressionResult check(TablesAdapter adapter, Object val) throws OperatingContextException {
 				OperationContext.getOrThrow().touch();
 				
 				String id = val.toString();
@@ -578,7 +594,7 @@ public class TablesAdapter {
 				
 				TablesAdapter.this.indexCleanFields(table, id);
 				
-				return FilterResult.accepted();
+				return ExpressionResult.accepted();
 			}
 		});
 	}
@@ -839,7 +855,27 @@ public class TablesAdapter {
 						.with("Data", data)
 				);
 		
-		return this.setFields(table, id, fields);
+		return this.checkSetFields(table, id, fields);
+	}
+	
+	public boolean updateStaticScalar(String table, String id, String field, Object data) throws OperatingContextException {
+		RecordStruct fields = new RecordStruct()
+				.with(field, new RecordStruct()
+						.with("Data", data)
+						.with("UpdateOnly", true)
+				);
+		
+		return this.checkSetFields(table, id, fields);
+	}
+	
+	public boolean retireStaticScalar(String table, String id, String field) throws OperatingContextException {
+		RecordStruct fields = new RecordStruct()
+				.with(field, new RecordStruct()
+						.with("Retired", true)
+						.with("UpdateOnly", true)
+				);
+		
+		return this.checkSetFields(table, id, fields);
 	}
 	
 	public boolean setStaticList(String table, String id, String field, String subid, Object data) throws OperatingContextException {
@@ -848,7 +884,31 @@ public class TablesAdapter {
 						.with(subid, new RecordStruct().with("Data", data))
 				);
 		
-		return this.setFields(table, id, fields);
+		return this.checkSetFields(table, id, fields);
+	}
+	
+	public boolean updateStaticList(String table, String id, String field, String subid, Object data) throws OperatingContextException {
+		RecordStruct fields = new RecordStruct()
+				.with(field, new RecordStruct()
+						.with(subid, new RecordStruct()
+								.with("Data", data)
+								.with("UpdateOnly", true)
+						)
+				);
+		
+		return this.checkSetFields(table, id, fields);
+	}
+	
+	public boolean retireStaticList(String table, String id, String field, String subid) throws OperatingContextException {
+		RecordStruct fields = new RecordStruct()
+				.with(field, new RecordStruct()
+						.with(subid, new RecordStruct()
+								.with("Retired", true)
+								.with("UpdateOnly", true)
+						)
+				);
+		
+		return this.checkSetFields(table, id, fields);
 	}
 	
 	// from is ms since 1970
@@ -861,7 +921,7 @@ public class TablesAdapter {
 						)
 				);
 		
-		return this.setFields(table, id, fields);
+		return this.checkSetFields(table, id, fields);
 	}
 	
 	// from and to are ms since 1970
@@ -875,7 +935,7 @@ public class TablesAdapter {
 						)
 				);
 		
-		return this.setFields(table, id, fields);
+		return this.checkSetFields(table, id, fields);
 	}
 	
 	/* 
@@ -961,35 +1021,42 @@ public class TablesAdapter {
 	 ; active indefinitely in the past, prior to To.  If there is no To then record
 	 ; is active current and since From.
 	 */
-	public boolean isCurrent(String table, String id, BigDateTime when, boolean historical) throws OperatingContextException {
+	public boolean isCurrent(String table, String id) throws OperatingContextException {
 		if (this.isRetired(table, id))
 			return false;
 		
-		if (when == null)
-			return true;
-		
-		if (!historical) {
+		if (! this.historical) {
 			BigDateTime to = Struct.objectToBigDateTime(this.getStaticScalar(table, id, "To"));
 			
 			// when must come before to
-			if ((to != null) && (when.compareTo(to) != -1))
+			if ((to != null) && (this.when.compareTo(to) != -1))
 				return false;
 		}
 		
 		BigDateTime from = Struct.objectToBigDateTime(this.getStaticScalar(table, id, "From"));
 		
 		// when must come after - or at - from
-		if ((from != null) && (when.compareTo(from) >= 0))
+		if ((from != null) && (this.when.compareTo(from) >= 0))
 			return false;
 		
 		return true;
 	}
 	
-	public Object getStaticScalar(String table, String id, String field) {
+	public Object getStaticScalar(String table, String id, String field) throws OperatingContextException {
 		return this.getStaticScalar(table, id, field, null);
 	}
 	
-	public Object getStaticScalar(String table, String id, String field, String format) {
+	public Object getStaticScalar(String table, String id, String field, String format) throws OperatingContextException {
+		byte[] val = this.getStaticScalarRaw(table, id, field);
+
+		return TableUtil.normalizeFormatRaw(table, id, field, val, format);
+	}
+	
+	public byte[] getStaticScalarRaw(String table, String id, String field) throws OperatingContextException {
+		return this.getStaticScalarRaw(table, id, field, "Data");
+	}
+	
+	public byte[] getStaticScalarRaw(String table, String id, String field, String area) throws OperatingContextException {
 		// checks the Retired flag 
 		BigDecimal stamp = this.getStaticScalarStamp(table, id, field);
 		
@@ -997,95 +1064,35 @@ public class TablesAdapter {
 			return null;
 		
 		try {
-			Object val = this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, stamp, "Data");
-			
-			// TODO format
-			
-			return val;
+			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, stamp, area);
 		}
-		catch (Exception x) {
+		catch (DatabaseException x) {
 			Logger.error("getStaticScalar error: " + x);
 		}
 		
 		return null;
 	}
 	
-	public byte[] getStaticScalarRaw(String table, String id, String field) {
-		// checks the Retired flag 
+	public RecordStruct getStaticScalarExtended(String table, String id, String field, String format) throws OperatingContextException {
 		BigDecimal stamp = this.getStaticScalarStamp(table, id, field);
 		
 		if (stamp == null)
 			return null;
 		
 		try {
-			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, stamp, "Data");
+			return RecordStruct.record()
+				.with("Data", this.getStaticScalar(table, id, field, format))
+				.with("Tags", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, stamp, "Tags"))
+				.with("Retired", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, stamp, "Retired"));
 		}
-		catch (Exception x) {
+		catch (DatabaseException x) {
 			Logger.error("getStaticScalar error: " + x);
 		}
 		
 		return null;
 	}
 	
-	public byte[] getStaticScalarRawSearch(String table, String id, String field) {
-		// checks the Retired flag
-		BigDecimal stamp = this.getStaticScalarStamp(table, id, field);
-		
-		if (stamp == null)
-			return null;
-		
-		try {
-			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, stamp, "Search");
-		}
-		catch (Exception x) {
-			Logger.error("getStaticScalar error: " + x);
-		}
-		
-		return null;
-	}
-	
-	public byte[] getStaticScalarRawIndex(String table, String id, String field) {
-		// checks the Retired flag
-		BigDecimal stamp = this.getStaticScalarStamp(table, id, field);
-		
-		if (stamp == null)
-			return null;
-		
-		try {
-			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, stamp, "Index");
-		}
-		catch (Exception x) {
-			Logger.error("getStaticScalar error: " + x);
-		}
-		
-		return null;
-	}
-	
-	public RecordStruct getStaticScalarExtended(String table, String id, String field, String format) {
-		BigDecimal stamp = this.getStaticScalarStamp(table, id, field);
-		
-		if (stamp == null)
-			return null;
-		
-		try {
-			RecordStruct ret = new RecordStruct();
-			
-			// TODO format data
-			
-			ret.with("Data", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, stamp, "Data"));
-			ret.with("Tags", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, stamp, "Tags"));
-			ret.with("Retired", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, stamp, "Retired"));
-			
-			return ret;
-		}
-		catch (Exception x) {
-			Logger.error("getStaticScalar error: " + x);
-		}
-		
-		return null;
-	}
-	
-	public BigDecimal getStaticScalarStamp(String table, String id, String field) {
+	public BigDecimal getStaticScalarStamp(String table, String id, String field) throws OperatingContextException {
 		try {
 			byte[] olderStamp = this.request.getInterface().getOrNextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, this.request.getStamp());
 			
@@ -1099,115 +1106,65 @@ public class TablesAdapter {
 			
 			return oldStamp;
 		}
-		catch (Exception x) {
+		catch (DatabaseException x) {
 			Logger.error("getStaticScalar error: " + x);
 		}
 		
 		return null;
 	}
 	
-	public Object getStaticList(String table, String id, String field, String subid) {
+	public Object getStaticList(String table, String id, String field, String subid) throws OperatingContextException {
 		return this.getStaticList(table, id, field, subid, null);
 	}
 	
-	public Object getStaticList(String table, String id, String field, String subid, String format) {
+	public Object getStaticList(String table, String id, String field, String subid, String format) throws OperatingContextException {
+		byte[] val = this.getStaticListRaw(table, id, field, subid);
+		
+		return TableUtil.normalizeFormatRaw(table, id, field, val, format);
+	}
+	
+	public byte[] getStaticListRaw(String table, String id, String field, String subid) throws OperatingContextException {
+		return this.getStaticListRaw(table, id, field, subid, "Data");
+	}
+	
+	public byte[] getStaticListRaw(String table, String id, String field, String subid, String area) throws OperatingContextException {
 		// checks the Retired flag 
-		BigDecimal stamp = this.getListStamp(table, id, field, subid, null);
+		BigDecimal stamp = this.getListStamp(table, id, field, subid);
 		
 		if (stamp == null)
 			return null;
 		
 		try {
-			Object val = this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Data");
-			
-			// TODO format
-			
-			return val;
+			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, area);
 		}
-		catch (Exception x) {
+		catch (DatabaseException x) {
 			Logger.error("getStaticList error: " + x);
 		}
 		
 		return null;
 	}
 	
-	public byte[] getStaticListRaw(String table, String id, String field, String subid) {
-		// checks the Retired flag 
-		BigDecimal stamp = this.getListStamp(table, id, field, subid, null);
+	public RecordStruct getStaticListExtended(String table, String id, String field, String subid, String format) throws OperatingContextException {
+		BigDecimal stamp = this.getListStamp(table, id, field, subid);
 		
 		if (stamp == null)
 			return null;
 		
 		try {
-			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Data");
+			return RecordStruct.record()
+				.with("SubId", subid)
+				.with("Data", this.getStaticList(table, id, field, subid, format))
+				.with("Tags", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Tags"))
+				.with("Retired", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Retired"));
 		}
-		catch (Exception x) {
+		catch (DatabaseException x) {
 			Logger.error("getStaticList error: " + x);
 		}
 		
 		return null;
 	}
 	
-	public byte[] getStaticListRawSearch(String table, String id, String field, String subid) {
-		// checks the Retired flag
-		BigDecimal stamp = this.getListStamp(table, id, field, subid, null);
-		
-		if (stamp == null)
-			return null;
-		
-		try {
-			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Search");
-		}
-		catch (Exception x) {
-			Logger.error("getStaticList error: " + x);
-		}
-		
-		return null;
-	}
-	
-	public byte[] getStaticListRawIndex(String table, String id, String field, String subid) {
-		// checks the Retired flag
-		BigDecimal stamp = this.getListStamp(table, id, field, subid, null);
-		
-		if (stamp == null)
-			return null;
-		
-		try {
-			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Index");
-		}
-		catch (Exception x) {
-			Logger.error("getStaticList error: " + x);
-		}
-		
-		return null;
-	}
-	
-	public RecordStruct getStaticListExtended(String table, String id, String field, String subid, String format) {
-		BigDecimal stamp = this.getListStamp(table, id, field, subid, null);
-		
-		if (stamp == null)
-			return null;
-		
-		try {
-			RecordStruct ret = new RecordStruct();
-			
-			// TODO format
-			
-			ret.with("SubId", subid);
-			ret.with("Data", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Data"));
-			ret.with("Tags", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Tags"));
-			ret.with("Retired", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Retired"));
-			
-			return ret;
-		}
-		catch (Exception x) {
-			Logger.error("getStaticList error: " + x);
-		}
-		
-		return null;
-	}
-	
-	public List<String> getStaticListKeys(String table, String id, String field) {
+	public List<String> getStaticListKeys(String table, String id, String field) throws OperatingContextException {
 		List<String> ret = new ArrayList<>();
 		
 		try {
@@ -1217,7 +1174,7 @@ public class TablesAdapter {
 				Object sid = ByteUtil.extractValue(subid);
 
 				// checks retired
-				BigDecimal stamp = this.getListStamp(table, id, field, (String) sid, null);
+				BigDecimal stamp = this.getListStamp(table, id, field, (String) sid);
 
 				if (stamp != null)
 					ret.add(Struct.objectToString(sid));
@@ -1225,147 +1182,81 @@ public class TablesAdapter {
 				subid = this.request.getInterface().nextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, sid);
 			}
 		}
-		catch (Exception x) {
+		catch (DatabaseException x) {
 			Logger.error("getStaticList error: " + x);
 		}
 		
 		return ret;
 	}
 	
-	public Object getDynamicScalar(String table, String id, String field, BigDateTime when) {
-		return this.getDynamicScalar(table, id, field, when, null, false);
+	public Object getDynamicScalar(String table, String id, String field) throws OperatingContextException {
+		return this.getDynamicScalar(table, id, field, null);
 	}
 	
-	public Object getDynamicScalar(String table, String id, String field, BigDateTime when, String format, boolean historical) {
-		String subid = this.getDynamicScalarSubId(table, id, field, when, historical);
+	public Object getDynamicScalar(String table, String id, String field, String format) throws OperatingContextException {
+		byte[] val = this.getDynamicScalarRaw(table, id, field);
+		
+		return TableUtil.normalizeFormatRaw(table, id, field, val, format);
+	}
+	
+	public byte[] getDynamicScalarRaw(String table, String id, String field) throws OperatingContextException {
+		return this.getDynamicScalarRaw(table, id, field, "Data");
+	}
+	
+	public byte[] getDynamicScalarRaw(String table, String id, String field, String area) throws OperatingContextException {
+		String subid = this.getDynamicScalarSubId(table, id, field);
 		
 		if (StringUtil.isEmpty(subid))
 			return null;
 		
 		// checks the Retired flag 
-		BigDecimal stamp = this.getListStamp(table, id, field, subid, when);
+		BigDecimal stamp = this.getListStamp(table, id, field, subid);
 		
 		if (stamp == null)
 			return null;
 		
 		try {
-			Object val = this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Data");
-			
-			// TODO format
-			
-			return val;
+			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, area);
 		}
-		catch (Exception x) {
+		catch (DatabaseException x) {
 			Logger.error("getDynamicScalar error: " + x);
 		}
 		
 		return null;
 	}
 	
-	public byte[] getDynamicScalarRaw(String table, String id, String field, BigDateTime when, boolean historical) {
-		String subid = this.getDynamicScalarSubId(table, id, field, when, historical);
+	public RecordStruct getDynamicScalarExtended(String table, String id, String field, String format) throws OperatingContextException {
+		String subid = this.getDynamicScalarSubId(table, id, field);
 		
 		if (StringUtil.isEmpty(subid))
 			return null;
 		
-		// checks the Retired flag 
-		BigDecimal stamp = this.getListStamp(table, id, field, subid, when);
+		BigDecimal stamp = this.getListStamp(table, id, field, subid);
 		
 		if (stamp == null)
 			return null;
 		
 		try {
-			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Data");
+			return RecordStruct.record()
+				.with("SubId", subid)
+				.with("Data", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Data"))
+				.with("Tags", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Tags"))
+				.with("Retired", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Retired"))
+				.with("From", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "From"));
 		}
-		catch (Exception x) {
+		catch (DatabaseException x) {
 			Logger.error("getDynamicScalar error: " + x);
 		}
 		
 		return null;
 	}
 	
-	public byte[] getDynamicScalarRawSearch(String table, String id, String field, BigDateTime when, boolean historical) {
-		String subid = this.getDynamicScalarSubId(table, id, field, when, historical);
-		
-		if (StringUtil.isEmpty(subid))
-			return null;
-		
-		// checks the Retired flag
-		BigDecimal stamp = this.getListStamp(table, id, field, subid, when);
-		
-		if (stamp == null)
-			return null;
-		
-		try {
-			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Search");
-		}
-		catch (Exception x) {
-			Logger.error("getDynamicScalar error: " + x);
-		}
-		
-		return null;
-	}
-	
-	public byte[] getDynamicScalarRawIndex(String table, String id, String field, BigDateTime when, boolean historical) {
-		String subid = this.getDynamicScalarSubId(table, id, field, when, historical);
-		
-		if (StringUtil.isEmpty(subid))
-			return null;
-		
-		// checks the Retired flag
-		BigDecimal stamp = this.getListStamp(table, id, field, subid, when);
-		
-		if (stamp == null)
-			return null;
-		
-		try {
-			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Index");
-		}
-		catch (Exception x) {
-			Logger.error("getDynamicScalar error: " + x);
-		}
-		
-		return null;
-	}
-	
-	public RecordStruct getDynamicScalarExtended(String table, String id, String field, BigDateTime when, String format, boolean historical) {
-		String subid = this.getDynamicScalarSubId(table, id, field, when, historical);
-		
-		if (StringUtil.isEmpty(subid))
-			return null;
-		
-		BigDecimal stamp = this.getListStamp(table, id, field, subid, when);
-		
-		if (stamp == null)
-			return null;
-		
-		try {
-			RecordStruct ret = new RecordStruct();
-			
-			ret.with("SubId", subid);
-			ret.with("Data", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Data"));
-			ret.with("Tags", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Tags"));
-			ret.with("Retired", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Retired"));
-			ret.with("From", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "From"));
-			
-			return ret;
-		}
-		catch (Exception x) {
-			Logger.error("getDynamicScalar error: " + x);
-		}
-		
-		return null;
-	}
-	
-	public String getDynamicScalarSubId(String table, String id, String field, BigDateTime when, boolean historical) {
-		if (when == null)
-			when = BigDateTime.nowDateTime();
-		
-		if (!historical) {
+	public String getDynamicScalarSubId(String table, String id, String field) throws OperatingContextException {
+		if (! this.historical) {
 			BigDateTime to = Struct.objectToBigDateTime(this.getStaticScalar(table, id, "To"));
 			
 			// when must come before to
-			if ((to != null) && (when.compareTo(to) != -1))
+			if ((to != null) && (this.when.compareTo(to) != -1))
 				return null;
 		}
 		
@@ -1405,14 +1296,14 @@ public class TablesAdapter {
 				subid = this.request.getInterface().nextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, sid);
 			}
 		}
-		catch (Exception x) {
+		catch (DatabaseException x) {
 			Logger.error("getDynamicScalar error: " + x);
 		}
 		
 		return matchSid;
 	}
 	
-	public List<String> getDynamicScalarKeys(String table, String id, String field) {
+	public List<String> getDynamicScalarKeys(String table, String id, String field) throws OperatingContextException {
 		List<String> ret = new ArrayList<>();
 		
 		try {
@@ -1426,115 +1317,67 @@ public class TablesAdapter {
 				subid = this.request.getInterface().nextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, sid);
 			}
 		}
-		catch (Exception x) {
+		catch (DatabaseException x) {
 			Logger.error("getDynamicScalar error: " + x);
 		}
 		
 		return ret;
 	}
 	
-	public Object getDynamicList(String table, String id, String field, String subid, BigDateTime when) {
-		return this.getDynamicList(table, id, field, subid, when, null);
+	public Object getDynamicList(String table, String id, String field, String subid) throws OperatingContextException {
+		return this.getDynamicList(table, id, field, subid, null);
 	}
 	
-	public Object getDynamicList(String table, String id, String field, String subid, BigDateTime when, String format) {
+	public Object getDynamicList(String table, String id, String field, String subid, String format) throws OperatingContextException {
+		byte[] val = this.getDynamicListRaw(table, id, field, subid);
+		
+		return TableUtil.normalizeFormatRaw(table, id, field, val, format);
+	}
+	
+	public byte[] getDynamicListRaw(String table, String id, String field, String subid) throws OperatingContextException {
+		return this.getDynamicListRaw(table, id, field, subid, "Data");
+	}
+	
+	public byte[] getDynamicListRaw(String table, String id, String field, String subid, String area) throws OperatingContextException {
 		// checks the Retired flag 
-		BigDecimal stamp = this.getListStamp(table, id, field, subid, when);
+		BigDecimal stamp = this.getListStamp(table, id, field, subid);
 		
 		if (stamp == null)
 			return null;
 		
 		try {
-			Object val = this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Data");
-			
-			// TODO format
-			
-			return val;
+			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, area);
 		}
-		catch (Exception x) {
+		catch (DatabaseException x) {
 			Logger.error("getDynamicList error: " + x);
 		}
 		
 		return null;
 	}
 	
-	public byte[] getDynamicListRaw(String table, String id, String field, String subid, BigDateTime when) {
-		// checks the Retired flag 
-		BigDecimal stamp = this.getListStamp(table, id, field, subid, when);
+	public RecordStruct getDynamicListExtended(String table, String id, String field, String subid, String format) throws OperatingContextException {
+		BigDecimal stamp = this.getListStamp(table, id, field, subid);
 		
 		if (stamp == null)
 			return null;
 		
 		try {
-			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Data");
+			return RecordStruct.record()
+				.with("SubId", subid)
+				.with("Data", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Data"))
+				.with("Tags", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Tags"))
+				.with("Retired", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Retired"))
+				.with("From", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "From"))
+				.with("To", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "To"));
 		}
-		catch (Exception x) {
-			Logger.error("getDynamicList error: " + x);
-		}
-		
-		return null;
-	}
-	
-	public byte[] getDynamicListRawSearch(String table, String id, String field, String subid, BigDateTime when) {
-		// checks the Retired flag
-		BigDecimal stamp = this.getListStamp(table, id, field, subid, when);
-		
-		if (stamp == null)
-			return null;
-		
-		try {
-			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Search");
-		}
-		catch (Exception x) {
-			Logger.error("getDynamicList error: " + x);
-		}
-		
-		return null;
-	}
-	
-	public byte[] getDynamicListRawIndex(String table, String id, String field, String subid, BigDateTime when) {
-		// checks the Retired flag
-		BigDecimal stamp = this.getListStamp(table, id, field, subid, when);
-		
-		if (stamp == null)
-			return null;
-		
-		try {
-			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Index");
-		}
-		catch (Exception x) {
-			Logger.error("getDynamicList error: " + x);
-		}
-		
-		return null;
-	}
-	
-	public RecordStruct getDynamicListExtended(String table, String id, String field, String subid, BigDateTime when, String format) {
-		BigDecimal stamp = this.getListStamp(table, id, field, subid, when);
-		
-		if (stamp == null)
-			return null;
-		
-		try {
-			RecordStruct ret = new RecordStruct();
-			
-			ret.with("SubId", subid);
-			ret.with("Data", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Data"));
-			ret.with("Tags", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Tags"));
-			ret.with("Retired", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Retired"));
-			ret.with("From", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "From"));
-			ret.with("To", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "To"));
-			
-			return ret;
-		}
-		catch (Exception x) {
+		catch (DatabaseException x) {
 			Logger.error("getDynamicList error: " + x);
 		}
 		
 		return null;
 	}
 		
-	public BigDecimal getListStamp(String table, String id, String field, String subid, BigDateTime when) {
+	public BigDecimal getListStamp(String table, String id, String field, String subid) throws OperatingContextException {
 		try {
 			byte[] olderStamp = this.request.getInterface().getOrNextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, this.request.getStamp());
 			
@@ -1546,16 +1389,13 @@ public class TablesAdapter {
 			if (this.request.getInterface().getAsBooleanOrFalse(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, oldStamp, "Retired"))
 				return null;
 			
-			if (when == null)
-				return oldStamp;
-			
 			BigDateTime to = this.request.getInterface().getAsBigDateTime(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, oldStamp, "To");
 			
 			if (to == null) 
 				to = Struct.objectToBigDateTime(this.getStaticScalar(table, id, "To"));
 			
 			// if `to` is before or at `when` then bad
-			if ((to != null) && (to.compareTo(when) <= 0))
+			if ((to != null) && (to.compareTo(this.when) <= 0))
 				return null;
 			
 			BigDateTime from = this.request.getInterface().getAsBigDateTime(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, oldStamp, "From");
@@ -1567,17 +1407,17 @@ public class TablesAdapter {
 				return oldStamp;
 			
 			// if `from` is before or at `when` then good
-			if (from.compareTo(when) <= 0)
+			if (from.compareTo(this.when) <= 0)
 				return oldStamp;
 		}
-		catch (Exception x) {
+		catch (DatabaseException x) {
 			Logger.error("getDynamicList error: " + x);
 		}
 		
 		return null;
 	}
 	
-	public List<String> getDynamicListKeys(String table, String id, String field) {
+	public List<String> getDynamicListKeys(String table, String id, String field) throws OperatingContextException {
 		List<String> ret = new ArrayList<>();
 		
 		try {
@@ -1591,7 +1431,7 @@ public class TablesAdapter {
 				subid = this.request.getInterface().nextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, sid);
 			}
 		}
-		catch (Exception x) {
+		catch (DatabaseException x) {
 			Logger.error("getDynamicList error: " + x);
 		}
 		
@@ -1599,11 +1439,11 @@ public class TablesAdapter {
 	}
 	
 	// TODO review these three methods, not sure they provide useful functions
-	public List<Object> get(String table, String id, String field, BigDateTime when) {
-		return this.get(table, id, field, null, when, null, false);
+	public List<Object> get(String table, String id, String field) throws OperatingContextException {
+		return this.get(table, id, field, null, null);
 	}
 	
-	public List<Object> get(String table, String id, String field, String subid, BigDateTime when, String format, boolean historical) {
+	public List<Object> get(String table, String id, String field, String subid, String format) throws OperatingContextException {
 		List<Object> ret = new ArrayList<>();
 		
 		SchemaResource sch = ResourceHub.getResources().getSchema();
@@ -1618,7 +1458,7 @@ public class TablesAdapter {
 		}
 		
 		if (!schema.isList() && schema.isDynamic()) {
-			ret.add(this.getDynamicScalar(table, id, field, when, format, historical));
+			ret.add(this.getDynamicScalar(table, id, field, format));
 			return ret;
 		}
 		
@@ -1626,7 +1466,7 @@ public class TablesAdapter {
 			if (schema.isList() && !schema.isDynamic())
 				ret.add(this.getStaticList(table, id, field, subid));
 			else
-				ret.add(this.getDynamicList(table, id, field, subid, when));	// TODO check if this returns null sometimes, not what we want right?
+				ret.add(this.getDynamicList(table, id, field, subid));	// TODO check if this returns null sometimes, not what we want right?
 		}
 		else {
 			try {
@@ -1638,12 +1478,12 @@ public class TablesAdapter {
 					if (schema.isList() && !schema.isDynamic())
 						ret.add(this.getStaticList(table, id, field, Struct.objectToString(sid), format));
 					else
-						ret.add(this.getDynamicList(table, id, field, Struct.objectToString(sid), when, format));
+						ret.add(this.getDynamicList(table, id, field, Struct.objectToString(sid), format));
 					
 					bsubid = this.request.getInterface().nextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, sid);
 				}
 			}
-			catch (Exception x) {
+			catch (DatabaseException x) {
 				Logger.error("getDynamicList error: " + x);
 			}
 		}
@@ -1651,7 +1491,7 @@ public class TablesAdapter {
 		return ret;
 	}
 	
-	public List<Object> getExtended(String table, String id, String field, String subid, BigDateTime when, String format, boolean historical) {
+	public List<Object> getExtended(String table, String id, String field, String subid, String format) throws OperatingContextException {
 		List<Object> ret = new ArrayList<>();
 		
 		SchemaResource sch = ResourceHub.getResources().getSchema();
@@ -1666,7 +1506,7 @@ public class TablesAdapter {
 		}
 		
 		if (!schema.isList() && schema.isDynamic()) {
-			ret.add(this.getDynamicScalarExtended(table, id, field, when, format, historical));
+			ret.add(this.getDynamicScalarExtended(table, id, field, format));
 			return ret;
 		}
 		
@@ -1674,7 +1514,7 @@ public class TablesAdapter {
 			if (schema.isList() && !schema.isDynamic())
 				ret.add(this.getStaticListExtended(table, id, field, subid, format));
 			else
-				ret.add(this.getDynamicListExtended(table, id, field, subid, when, format));	// TODO check if this returns null sometimes, not what we want right?
+				ret.add(this.getDynamicListExtended(table, id, field, subid, format));	// TODO check if this returns null sometimes, not what we want right?
 		}
 		else {
 			try {
@@ -1686,12 +1526,12 @@ public class TablesAdapter {
 					if (schema.isList() && !schema.isDynamic())
 						ret.add(this.getStaticListExtended(table, id, field, Struct.objectToString(sid), format));
 					else
-						ret.add(this.getDynamicListExtended(table, id, field, Struct.objectToString(sid), when, format));
+						ret.add(this.getDynamicListExtended(table, id, field, Struct.objectToString(sid), format));
 					
 					bsubid = this.request.getInterface().nextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, sid);
 				}
 			}
-			catch (Exception x) {
+			catch (DatabaseException x) {
 				Logger.error("getDynamicList error: " + x);
 			}
 		}
@@ -1700,7 +1540,7 @@ public class TablesAdapter {
 	}
 	
 	// subid null for all
-	public List<byte[]> getRaw(String table, String id, String field, String subid, BigDateTime when, boolean historical) {
+	public List<byte[]> getRaw(String table, String id, String field, String subid, String area) throws OperatingContextException {
 		List<byte[]> ret = new ArrayList<>();
 		
 		SchemaResource schema = ResourceHub.getResources().getSchema();
@@ -1708,22 +1548,32 @@ public class TablesAdapter {
 		
 		if (schemafld == null)
 			return ret;
+		
+		DataType dtype = schema.getType(schemafld.getTypeId());
+		
+		if (dtype == null)
+			return ret;
+		
+		if ("Index".equals(area) && ! dtype.isSearchable())
+			area = "Data";
+		else if ("Search".equals(area) && ! dtype.isSearchable())
+			area = "Data";
 		
 		if (! schemafld.isList() && !schemafld.isDynamic()) {
-			ret.add(this.getStaticScalarRaw(table, id, field));
+			ret.add(this.getStaticScalarRaw(table, id, field, area));
 			return ret;
 		}
 		
 		if (! schemafld.isList() && schemafld.isDynamic()) {
-			ret.add(this.getDynamicScalarRaw(table, id, field, when, historical));
+			ret.add(this.getDynamicScalarRaw(table, id, field, area));
 			return ret;
 		}
 		
 		if (subid != null) {
 			if (schemafld.isList() && ! schemafld.isDynamic())
-				ret.add(this.getStaticListRaw(table, id, field, subid));
+				ret.add(this.getStaticListRaw(table, id, field, subid, area));
 			else
-				ret.add(this.getDynamicListRaw(table, id, field, subid, when));	// TODO check if this returns null sometimes, not what we want right?
+				ret.add(this.getDynamicListRaw(table, id, field, subid, area));	// TODO check if this returns null sometimes, not what we want right?
 		}
 		else {
 			try {
@@ -1733,142 +1583,14 @@ public class TablesAdapter {
 					Object sid = ByteUtil.extractValue(bsubid);
 					
 					if (schemafld.isList() && ! schemafld.isDynamic())
-						ret.add(this.getStaticListRaw(table, id, field, Struct.objectToString(sid)));
+						ret.add(this.getStaticListRaw(table, id, field, Struct.objectToString(sid), area));
 					else
-						ret.add(this.getDynamicListRaw(table, id, field, Struct.objectToString(sid), when));	// TODO check if this returns null sometimes, not what we want right?
+						ret.add(this.getDynamicListRaw(table, id, field, Struct.objectToString(sid), area));	// TODO check if this returns null sometimes, not what we want right?
 					
 					bsubid = this.request.getInterface().nextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, sid);
 				}
 			}
-			catch (Exception x) {
-				Logger.error("getDynamicList error: " + x);
-			}
-		}
-		
-		return ret;
-	}
-	
-	// subid null for all
-	public List<byte[]> getRawSearch(String table, String id, String field, String subid, BigDateTime when, boolean historical) {
-		List<byte[]> ret = new ArrayList<>();
-		
-		SchemaResource schema = ResourceHub.getResources().getSchema();
-		DbField schemafld = schema.getDbField(table, field);
-		
-		if (schemafld == null)
-			return ret;
-		
-		if ("Id".equals(schemafld.getName())) {
-			ret.add(ByteUtil.buildValue(id));
-			return ret;
-		}
-		
-		DataType dtype = schema.getType(schemafld.getTypeId());
-		
-		if (dtype == null)
-			return ret;
-		
-		if (! schemafld.isList() && ! schemafld.isDynamic()) {
-			ret.add(dtype.isSearchable() ? this.getStaticScalarRawSearch(table, id, field) : this.getStaticScalarRaw(table, id, field));
-			return ret;
-		}
-		
-		if (! schemafld.isList() && schemafld.isDynamic()) {
-			ret.add(dtype.isSearchable() ? this.getDynamicScalarRawSearch(table, id, field, when, historical)
-				: this.getDynamicScalarRaw(table, id, field, when, historical));
-			return ret;
-		}
-		
-		if (subid != null) {
-			if (schemafld.isList() && ! schemafld.isDynamic())
-				ret.add(dtype.isSearchable() ? this.getStaticListRawSearch(table, id, field, subid)
-					: this.getStaticListRaw(table, id, field, subid));
-			else
-				ret.add(dtype.isSearchable() ? this.getDynamicListRawSearch(table, id, field, subid, when)
-					: this.getDynamicListRaw(table, id, field, subid, when));	// TODO check if this returns null sometimes, not what we want right?
-		}
-		else {
-			try {
-				byte[] bsubid = this.request.getInterface().nextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, null);
-				
-				while (bsubid != null) {
-					Object sid = ByteUtil.extractValue(bsubid);
-					
-					if (schemafld.isList() && ! schemafld.isDynamic())
-						ret.add(dtype.isSearchable() ? this.getStaticListRawSearch(table, id, field, Struct.objectToString(sid))
-							: this.getStaticListRaw(table, id, field, Struct.objectToString(sid)));
-					else
-						ret.add(dtype.isSearchable() ? this.getDynamicListRawSearch(table, id, field, Struct.objectToString(sid), when)
-							: this.getDynamicListRaw(table, id, field, Struct.objectToString(sid), when));	// TODO check if this returns null sometimes, not what we want right?
-					
-					bsubid = this.request.getInterface().nextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, sid);
-				}
-			}
-			catch (Exception x) {
-				Logger.error("getDynamicList error: " + x);
-			}
-		}
-		
-		return ret;
-	}
-	
-	// subid null for all
-	public List<byte[]> getRawIndex(String table, String id, String field, String subid, BigDateTime when, boolean historical) {
-		List<byte[]> ret = new ArrayList<>();
-		
-		SchemaResource schema = ResourceHub.getResources().getSchema();
-		DbField schemafld = schema.getDbField(table, field);
-		
-		if (schemafld == null)
-			return ret;
-		
-		if ("Id".equals(schemafld.getName())) {
-			ret.add(ByteUtil.buildValue(id));
-			return ret;
-		}
-		
-		DataType dtype = schema.getType(schemafld.getTypeId());
-		
-		if (dtype == null)
-			return ret;
-		
-		if (! schemafld.isList() && ! schemafld.isDynamic()) {
-			ret.add(dtype.isSearchable() ? this.getStaticScalarRawIndex(table, id, field) : this.getStaticScalarRaw(table, id, field));
-			return ret;
-		}
-		
-		if (! schemafld.isList() && schemafld.isDynamic()) {
-			ret.add(dtype.isSearchable() ? this.getDynamicScalarRawIndex(table, id, field, when, historical)
-					: this.getDynamicScalarRaw(table, id, field, when, historical));
-			return ret;
-		}
-		
-		if (subid != null) {
-			if (schemafld.isList() && ! schemafld.isDynamic())
-				ret.add(dtype.isSearchable() ? this.getStaticListRawIndex(table, id, field, subid)
-						: this.getStaticListRaw(table, id, field, subid));
-			else
-				ret.add(dtype.isSearchable() ? this.getDynamicListRawIndex(table, id, field, subid, when)
-						: this.getDynamicListRaw(table, id, field, subid, when));	// TODO check if this returns null sometimes, not what we want right?
-		}
-		else {
-			try {
-				byte[] bsubid = this.request.getInterface().nextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, null);
-				
-				while (bsubid != null) {
-					Object sid = ByteUtil.extractValue(bsubid);
-					
-					if (schemafld.isList() && ! schemafld.isDynamic())
-						ret.add(dtype.isSearchable() ? this.getStaticListRawIndex(table, id, field, Struct.objectToString(sid))
-								: this.getStaticListRaw(table, id, field, Struct.objectToString(sid)));
-					else
-						ret.add(dtype.isSearchable() ? this.getDynamicListRawIndex(table, id, field, Struct.objectToString(sid), when)
-								: this.getDynamicListRaw(table, id, field, Struct.objectToString(sid), when));	// TODO check if this returns null sometimes, not what we want right?
-					
-					bsubid = this.request.getInterface().nextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, sid);
-				}
-			}
-			catch (Exception x) {
+			catch (DatabaseException x) {
 				Logger.error("getDynamicList error: " + x);
 			}
 		}
@@ -1893,22 +1615,8 @@ public class TablesAdapter {
 	 ;
 */
 	
-	public Object formatField(String table, String fname, Object value, String format) {
-		if ("Tr".equals(format)) {
-			// TODO translate $$tr^dcStrUtil("_enum_"_table_"_"_field_"_"_val)
-		}
-		
-		// TODO format date/time to chrono
-		
-		// TODO format numbers to locale
-		
-		// TODO split? pad? custom format function?
-		
-		return value;
-	}
-	
-	public boolean checkSelect(String table, String id, BigDateTime when, RecordStruct where, boolean historical) throws OperatingContextException {
-		if (! this.isCurrent(table, id, when, historical))
+	public boolean checkSelect(String table, String id, RecordStruct where) throws OperatingContextException {
+		if (! this.isCurrent(table, id))
 			return false;
 		
 		if (where == null)
@@ -1924,10 +1632,10 @@ public class TablesAdapter {
 			return false;
 		}
 	
-		return expression.check(this, id, when, historical);
+		return expression.check(this, id).accepted;
 	}
 	
-	public void traverseSubIds(String table, String id, String fname, BigDateTime when, boolean historical, Function<Object,Boolean> out) throws OperatingContextException {
+	public void traverseSubIds(String table, String id, String fname, Function<Object,Boolean> out) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		try {
@@ -1937,7 +1645,7 @@ public class TablesAdapter {
 				Object sid = ByteUtil.extractValue(subid);
 				
 				// if stamp is null it means Retired
-				if (this.getListStamp(table, id, fname, sid.toString(), when) != null)
+				if (this.getListStamp(table, id, fname, sid.toString()) != null)
 					out.apply(sid);
 				
 				subid = this.request.getInterface().nextPeerKey(did, DB_GLOBAL_RECORD, table, id, fname, sid);
@@ -1948,7 +1656,7 @@ public class TablesAdapter {
 		}
 	}
 
-	public void traverseRecords(String table, BigDateTime when, boolean historical, IFilter out) throws OperatingContextException {
+	public void traverseRecords(String table, IFilter out) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		try {
@@ -1957,8 +1665,8 @@ public class TablesAdapter {
 			while (id != null) {
 				Object oid = ByteUtil.extractValue(id);
 				
-				if (this.isCurrent(table, oid.toString(), when, historical)) {
-					FilterResult filterResult = out.check(this, oid, when, historical);
+				if (this.isCurrent(table, oid.toString())) {
+					ExpressionResult filterResult = out.check(this, oid);
 					
 					if (! filterResult.resume)
 						return;
@@ -1972,11 +1680,11 @@ public class TablesAdapter {
 		}
 	}
 	
-	public void traverseIndex(String table, String fname, Object val, BigDateTime when, boolean historical, IFilter out) throws OperatingContextException {
-		this.traverseIndex(table, fname, val, null, when, historical, out);
+	public void traverseIndex(String table, String fname, Object val, IFilter out) throws OperatingContextException {
+		this.traverseIndex(table, fname, val, null, out);
 	}
 	
-	public void traverseIndex(String table, String fname, Object val, String subid, BigDateTime when, boolean historical, IFilter out) throws OperatingContextException {
+	public void traverseIndex(String table, String fname, Object val, String subid, IFilter out) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		SchemaResource schema = ResourceHub.getResources().getSchema();
@@ -1990,7 +1698,7 @@ public class TablesAdapter {
 		if (dtype == null)
 			return;
 
-		val = dtype.toIndex(val, "en");	// TODO increase locale support
+		val = dtype.toIndex(val, "eng");	// TODO increase locale support
 
 		try {
 			byte[] recid = request.getInterface().nextPeerKey(did, ffdef.getIndexName(), table, fname, val, null);
@@ -1998,9 +1706,9 @@ public class TablesAdapter {
 			while (recid != null) {
 				Object rid = ByteUtil.extractValue(recid);
 
-				if (this.isCurrent(table, rid.toString(), when, historical)) {
+				if (this.isCurrent(table, rid.toString())) {
 					if (ffdef.isStaticScalar()) {
-						FilterResult filterResult = out.check(this, rid, when, historical);
+						ExpressionResult filterResult = out.check(this, rid);
 						
 						if (! filterResult.resume)
 							return;
@@ -2015,7 +1723,7 @@ public class TablesAdapter {
 								String range = request.getInterface().getAsString(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, rsid);
 								
 								if (StringUtil.isEmpty(range) || (when == null)) {
-									FilterResult filterResult = out.check(this, rid, when, historical);
+									ExpressionResult filterResult = out.check(this, rid);
 									
 									if (! filterResult.resume)
 										return;
@@ -2038,7 +1746,7 @@ public class TablesAdapter {
 									}
 									
 									if (((from == null) || (when.compareTo(from) >= 0)) && ((to == null) || (when.compareTo(to) < 0))) {
-										FilterResult filterResult = out.check(this, rid, when, historical);
+										ExpressionResult filterResult = out.check(this, rid);
 										
 										if (! filterResult.resume)
 											return;
@@ -2059,7 +1767,7 @@ public class TablesAdapter {
 		}
 	}
 	
-	public Object firstInIndex(String table, String fname, Object val, BigDateTime when, boolean historical) throws OperatingContextException {
+	public Object firstInIndex(String table, String fname, Object val) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		SchemaResource schema = ResourceHub.getResources().getSchema();
@@ -2073,7 +1781,7 @@ public class TablesAdapter {
 		if (dtype == null)
 			return null;
 
-		val = dtype.toIndex(val, "en");	// TODO increase locale support
+		val = dtype.toIndex(val, "eng");	// TODO increase locale support
 
 		try {
 			byte[] recid = request.getInterface().nextPeerKey(did, ffdef.getIndexName(), table, fname, val, null);
@@ -2081,7 +1789,7 @@ public class TablesAdapter {
 			while (recid != null) {
 				Object rid = ByteUtil.extractValue(recid);
 				
-				if (this.isCurrent(table, rid.toString(), when, historical)) { 
+				if (this.isCurrent(table, rid.toString())) {
 	
 					if (ffdef.isStaticScalar()) 
 						return rid;
@@ -2112,7 +1820,7 @@ public class TablesAdapter {
 							to = BigDateTime.parse(range.substring(pos + 1));
 						}
 						
-						if (((from == null) || (when.compareTo(from) >= 0)) && ((to == null) || (when.compareTo(to) < 0))) 
+						if (((from == null) || (this.when.compareTo(from) >= 0)) && ((to == null) || (this.when.compareTo(to) < 0)))
 							return rid;
 						
 						recsid = request.getInterface().nextPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rsid);
@@ -2130,7 +1838,7 @@ public class TablesAdapter {
 	}	
 	
 	// traverse the values
-	public void traverseIndexValRange(String table, String fname, Object fromval, Object toval, BigDateTime when, boolean historical, IFilter out) throws OperatingContextException {
+	public void traverseIndexValRange(String table, String fname, Object fromval, Object toval, IFilter out) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		SchemaResource schema = ResourceHub.getResources().getSchema();
@@ -2144,9 +1852,9 @@ public class TablesAdapter {
 		if (dtype == null)
 			return;
 
-		fromval = dtype.toIndex(fromval, "en");	// TODO increase locale support
+		fromval = dtype.toIndex(fromval, "eng");	// TODO increase locale support
 
-		toval = dtype.toIndex(toval, "en");	// TODO increase locale support
+		toval = dtype.toIndex(toval, "eng");	// TODO increase locale support
 
 		try {
 			byte[] valb = request.getInterface().getOrNextPeerKey(did, ffdef.getIndexName(), table, fname, fromval);
@@ -2159,7 +1867,7 @@ public class TablesAdapter {
 				
 				Object val = ByteUtil.extractValue(valb);
 				
-				FilterResult filterResult = out.check(this, val, when, historical);
+				ExpressionResult filterResult = out.check(this, val);
 				
 				if (! filterResult.resume)
 					return;
@@ -2173,7 +1881,7 @@ public class TablesAdapter {
 	}	
 	
 	// traverse the record ids
-	public void traverseIndexRange(String table, String fname, Object fromval, Object toval, BigDateTime when, boolean historical, IFilter out) throws OperatingContextException {
+	public void traverseIndexRange(String table, String fname, Object fromval, Object toval, IFilter out) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		SchemaResource schema = ResourceHub.getResources().getSchema();
@@ -2187,9 +1895,9 @@ public class TablesAdapter {
 		if (dtype == null)
 			return;
 
-		fromval = dtype.toIndex(fromval, "en");	// TODO increase locale support
+		fromval = dtype.toIndex(fromval, "eng");	// TODO increase locale support
 
-		toval = dtype.toIndex(toval, "en");	// TODO increase locale support
+		toval = dtype.toIndex(toval, "eng");	// TODO increase locale support
 
 		try {
 			byte[] valb = request.getInterface().getOrNextPeerKey(did, ffdef.getIndexName(), table, fname, fromval);
@@ -2207,9 +1915,9 @@ public class TablesAdapter {
 				while (recid != null) {
 					Object rid = ByteUtil.extractValue(recid);
 
-					if (this.isCurrent(table, rid.toString(), when, historical)) {
+					if (this.isCurrent(table, rid.toString())) {
 						if (ffdef.isStaticScalar()) {
-							FilterResult filterResult = out.check(this, rid, when, historical);
+							ExpressionResult filterResult = out.check(this, rid);
 							
 							if (! filterResult.resume)
 								return;
@@ -2223,7 +1931,7 @@ public class TablesAdapter {
 								String range = request.getInterface().getAsString(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, rsid);
 								
 								if (StringUtil.isEmpty(range) || (when == null)) {
-									FilterResult filterResult = out.check(this, rid, when, historical);
+									ExpressionResult filterResult = out.check(this, rid);
 									
 									if (! filterResult.resume)
 										return;
@@ -2245,8 +1953,8 @@ public class TablesAdapter {
 										to = BigDateTime.parse(range.substring(pos + 1));
 									}
 									
-									if (((from == null) || (when.compareTo(from) >= 0)) && ((to == null) || (when.compareTo(to) < 0))) {
-										FilterResult filterResult = out.check(this, rid, when, historical);
+									if (((from == null) || (this.when.compareTo(from) >= 0)) && ((to == null) || (this.when.compareTo(to) < 0))) {
+										ExpressionResult filterResult = out.check(this, rid);
 										
 										if (! filterResult.resume)
 											return;
@@ -2270,7 +1978,7 @@ public class TablesAdapter {
 	}
 	
 	// traverse the record ids, going backwards in values and ids
-	public void traverseIndexReverseRange(String table, String fname, Object fromval, Object toval, BigDateTime when, boolean historical, IFilter out) throws OperatingContextException {
+	public void traverseIndexReverseRange(String table, String fname, Object fromval, Object toval, IFilter out) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		SchemaResource schema = ResourceHub.getResources().getSchema();
@@ -2284,9 +1992,9 @@ public class TablesAdapter {
 		if (dtype == null)
 			return;
 		
-		fromval = dtype.toIndex(fromval, "en");	// TODO increase locale support
+		fromval = dtype.toIndex(fromval, "eng");	// TODO increase locale support
 		
-		toval = dtype.toIndex(toval, "en");	// TODO increase locale support
+		toval = dtype.toIndex(toval, "eng");	// TODO increase locale support
 		
 		try {
 			byte[] valb = request.getInterface().getOrPrevPeerKey(did, ffdef.getIndexName(), table, fname, fromval);
@@ -2304,9 +2012,9 @@ public class TablesAdapter {
 				while (recid != null) {
 					Object rid = ByteUtil.extractValue(recid);
 					
-					if (this.isCurrent(table, rid.toString(), when, historical)) {
+					if (this.isCurrent(table, rid.toString())) {
 						if (ffdef.isStaticScalar()) {
-							FilterResult filterResult = out.check(this, rid, when, historical);
+							ExpressionResult filterResult = out.check(this, rid);
 							
 							if (! filterResult.resume)
 								return;
@@ -2320,7 +2028,7 @@ public class TablesAdapter {
 								String range = request.getInterface().getAsString(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, rsid);
 								
 								if (StringUtil.isEmpty(range) || (when == null)) {
-									FilterResult filterResult = out.check(this, rid, when, historical);
+									ExpressionResult filterResult = out.check(this, rid);
 									
 									if (! filterResult.resume)
 										return;
@@ -2342,8 +2050,8 @@ public class TablesAdapter {
 										to = BigDateTime.parse(range.substring(pos + 1));
 									}
 									
-									if (((from == null) || (when.compareTo(from) >= 0)) && ((to == null) || (when.compareTo(to) < 0))) {
-										FilterResult filterResult = out.check(this, rid, when, historical);
+									if (((from == null) || (this.when.compareTo(from) >= 0)) && ((to == null) || (this.when.compareTo(to) < 0))) {
+										ExpressionResult filterResult = out.check(this, rid);
 										
 										if (! filterResult.resume)
 											return;
@@ -2366,7 +2074,7 @@ public class TablesAdapter {
 		}
 	}
 	
-	public void executeTrigger(String table, String op, DbServiceRequest task) {
+	public void executeTrigger(String table, String op, ICallContext task) {
 		SchemaResource schema = ResourceHub.getResources().getSchema();
 		List<DbTrigger> trigs = schema.getDbTriggers(table, op);
 		

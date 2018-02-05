@@ -60,9 +60,7 @@ public class WhereField implements IWhereField {
 	}
 	
 	public WhereField withFormat(String format) {
-		if (StringUtil.isNotEmpty(format))
-			this.column.with("Format", format);
-		
+		this.column.with("Format", format);
 		return this;
 	}
 	

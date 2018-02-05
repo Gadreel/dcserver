@@ -540,7 +540,7 @@ public class Emitter {
 	    	
         int pos = b + (dub ? 1 : 0);
         
-        parent.with(W3.tag("code").withCData(in.substring(a, b)));
+        parent.with(W3.tag("code").withText(in.substring(a, b)));
         
         return pos;
 	}
@@ -976,12 +976,12 @@ public class Emitter {
         Line line = lines;
 
 		if (StringUtil.isNotEmpty(meta))
-			parent.setAttribute("class", meta);
+			parent.attr("class", "language-" + meta + " fenced");
 		
 		StringBuilder sb = new StringBuilder();
 
         while (line != null) {
-            if (!line.isEmpty)
+            if (! line.isEmpty)
                 sb.append(removeIndent ? line.value.substring(4) : line.value);
             
             sb.append("\n");
@@ -989,7 +989,7 @@ public class Emitter {
             line = line.next;
         }
         
-        parent.with(new XText(true, sb.toString()));
+        parent.with(new XText(false, sb.toString()));
     }
     
     /*

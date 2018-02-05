@@ -17,7 +17,17 @@
 package dcraft.db.request.query;
 
 public class WhereOr extends WhereGroupExpression {
+	static public WhereOr or() {
+		return new WhereOr();
+	}
+	
+	static public WhereOr of(WhereExpression... list) {
+		WhereOr expression = new WhereOr();
+		expression.withAll(list);
+		return expression;
+	}
+	
 	public WhereOr(WhereExpression... list) {
-		super("Or", list);
+		super("Or");
 	}
 }

@@ -184,6 +184,10 @@ dc.user = {
 		});
 	},
 
+	currentLocale: function() {
+		return dc.util.Cookies.getCookie('dcLang');
+	},
+
 	/* TODO
 	 *
 	 * check dc.comm.isSecure()
@@ -365,7 +369,7 @@ dc.user = {
 	signout : function() {
 		dc.user._info = { };
 		localStorage.removeItem("dc.info.remember");
-		
+
 		dc.comm.sendMessage({
 			Service: 'dcCoreServices',
 			Feature: 'Authentication',

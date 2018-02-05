@@ -8,7 +8,6 @@ import dcraft.struct.RecordStruct;
 import dcraft.struct.builder.ICompositeBuilder;
 
 public interface IComposer {
-	void writeField(DbServiceRequest task, ICompositeBuilder out,
-					TablesAdapter db, String table, String id, BigDateTime when, RecordStruct field,
-					boolean historical, boolean compact) throws OperatingContextException;
+	void writeField(ICompositeBuilder out, TablesAdapter db, String table, String id, RecordStruct field,
+					boolean compact) throws OperatingContextException;
 }

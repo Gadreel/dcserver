@@ -1,10 +1,16 @@
 package dcraft.hub.config;
 
+import dcraft.db.request.common.RequestFactory;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.app.HubState;
+import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.log.Logger;
+import dcraft.service.ServiceHub;
+import dcraft.struct.Struct;
+import dcraft.task.IWork;
 import dcraft.task.Task;
 import dcraft.task.TaskContext;
 import dcraft.task.TaskHub;
@@ -12,6 +18,7 @@ import dcraft.task.queue.QueueHub;
 import dcraft.task.run.WorkTopic;
 import dcraft.task.scheduler.ScheduleHub;
 import dcraft.task.scheduler.common.CommonSchedule;
+import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
 
 import java.time.Instant;
@@ -21,6 +28,30 @@ import java.time.Instant;
 public class HubStartFinalWork extends CoreLoaderWork {
 	@Override
 	public void firstload(TaskContext taskctx, ResourceTier tier) {
+		if (ResourceHub.getResources().getDatabases().hasDefaultDatabase()) {
+			Task dbCleaner = Task.ofHubRoot()
+					.withTitle("Clean temporary/expiring values from database")
+					.withTopic(WorkTopic.SYSTEM)
+					.withNextId("QUEUE")
+					.withTimeout(5)
+					.withWork(new IWork() {
+						@Override
+						public void run(TaskContext taskctx) throws OperatingContextException {
+							ServiceHub.call(RequestFactory.cleanDatabaseRequest(TimeUtil.now().minusHours(72)), new OperationOutcomeStruct() {
+								@Override
+								public void callback(Struct result) throws OperatingContextException {
+									taskctx.returnEmpty();
+								}
+							});
+						}
+					});
+			
+			
+			TaskHub.scheduleEvery(dbCleaner, 60 * 60);  // once an hour
+			
+			//TaskHub.scheduleIn(dbCleaner, 15);  //
+		}
+		
 	/*
 
 		ISystemWork filefolderwatcher = new ISystemWork() {
@@ -80,27 +111,6 @@ public class HubStartFinalWork extends CoreLoaderWork {
 						// TODO turn all this into a job and give it a OpContext - since we shouldn't have one here
 						
 						FileUtil.cleanupTemp();
-					
-						IDatabaseManager db = DatabaseHub.defaultDb();
-						
-						if (db != null) {
-							RecordStruct params = new RecordStruct()
-									.with("ExpireThreshold", new DateTime().minusMinutes(5))
-									.with("LongExpireThreshold", new DateTime().minusHours(72));
-							
-							try {
-								db.submit(new DataRequest("dcCleanup").withParams(params), new StructOutcome() {
-									@Override
-									public void callback(CompositeStruct result) throws OperatingContextException {
-										if (this.hasErrors())
-											Logger.errorTr(114);
-									}
-								});
-							}
-							catch (OperatingContextException x) {
-								System.out.println("opps we need an OC: " + x);
-							}
-						}
 					}
 					
 					reporter.setStatus("After cleaning contexts and temp files");

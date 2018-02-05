@@ -300,12 +300,14 @@ public class DataType {
 	public List<IndexInfo> toIndexTokens(Object val, String lang) {
 		if (val == null)
 			return null;
-		
-		if (this.kind == DataKind.Record) {
+
+		// although the type might be record, incoming val might be a string (search term) so just test the types instead of assuming the type
+		if ((this.kind == DataKind.Record) || (this.kind == DataKind.List) || (this.core != null) && this.core.isSearchable()) {
+			List<IndexInfo> tokens = new ArrayList<>();
+
 			if (val instanceof RecordStruct) {
 				RecordStruct data = Struct.objectToRecord(val);
-				List<IndexInfo> tokens = new ArrayList<>();
-				
+
 				for (Field fld : this.fields.values()) {
 					DataType ftype = fld.getPrimaryType();
 					
@@ -324,15 +326,10 @@ public class DataType {
 						tokens.addAll(LocaleUtil.simple(data.getFieldAsString(fld.name), lang));
 					}
 				}
-				
-				return tokens;
 			}
-		}
-		else if (this.kind == DataKind.List) {
-			if (val instanceof ListStruct) {
+			else if (val instanceof ListStruct) {
 				ListStruct data = Struct.objectToList(val);
-				List<IndexInfo> tokens = new ArrayList<>();
-				
+
 				DataType ftype = this.items.getPrimaryType();
 				
 				if (ftype == null)
@@ -342,7 +339,6 @@ public class DataType {
 				
 				if (ctype == null)
 					return null;
-				
 				
 				if ((ctype != null) && ctype.isSearchable()) {
 					for (int i = 0; i < data.size(); i++) {
@@ -354,12 +350,12 @@ public class DataType {
 						tokens.addAll(LocaleUtil.simple(data.getItemAsString(i), lang));
 					}
 				}
-				
-				return tokens;
 			}
-		}
-		else if ((this.core != null) && this.core.isSearchable()) {
-			return LocaleUtil.full(Struct.objectToString(val), lang);
+			else {
+				tokens.addAll(LocaleUtil.full(Struct.objectToString(val), lang));
+			}
+
+			return tokens;
 		}
 		
 		return null;

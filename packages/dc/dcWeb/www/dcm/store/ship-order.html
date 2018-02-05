@@ -1,0 +1,58 @@
+<dc.Html Badges="Clerk,Admin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Ship Order Items" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.Text Label="Weight" Name="Weight" DataType="Decimal" placeholder="in ounces" />
+				<dcf.Text Label="Width" Name="Width" DataType="Decimal" placeholder="in inches" />
+				<dcf.Text Label="Height" Name="Height" DataType="Decimal" placeholder="in inches" />
+				<dcf.Text Label="Depth" Name="Depth" DataType="Decimal" placeholder="in inches" />
+
+				<dcf.FormButtons Hint="Shipment options">
+					<dcf.SubmitButton Label="Create Shipment/Label" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.AsNew = true;
+			e.Data = {
+			};
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			var shipinfo = e.Data;
+
+			shipinfo.EntryId = dc.util.Uuid.create();
+			shipinfo.ShipProvider = 'UPS';	// TODO configure
+
+			e.Message = {
+				Service: 'dcmStoreServices',
+				Feature: 'Orders',
+				Op: 'ShipItems',
+				Body: {
+					Id: page.Params.Id,
+					Shipment: shipinfo,
+					Items: page.Params.Items
+				}
+			};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback();
+	]]></Function>
+</dcui>

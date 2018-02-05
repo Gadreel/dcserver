@@ -17,15 +17,23 @@
 package dcraft.db.request.query;
 
 public class WhereIs extends WhereExpression {
-	public WhereIs(Object a) {
-		super("Is");
-		
-		this.addValue("A", a);
+	static public WhereIs is() {
+		return new WhereIs();
 	}
 	
-	public WhereIs(IWhereField a) {
+	static public WhereIs of(String field) {
+		WhereIs expression = new WhereIs();
+		expression.withFieldOne(field);
+		return expression;
+	}
+	
+	static public WhereIs of(String field, String subid) {
+		WhereIs expression = new WhereIs();
+		expression.withFieldOne(field, subid);
+		return expression;
+	}
+	
+	public WhereIs() {
 		super("Is");
-		
-		this.addField("A", a);
 	}
 }

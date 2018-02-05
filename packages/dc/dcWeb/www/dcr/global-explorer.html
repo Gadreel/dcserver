@@ -169,22 +169,24 @@
 							rlink = $('<a href="#" class="pure-button dc-button">Kill Node</a>');
 
 							rlink.click(item, function(e) {
-								dc.pui.Popup.confirm('Are you sure you want to kill this Node?', function() {
-									dc.comm.sendMessage({
-										Service: 'dcDatabase',
-										Feature: 'ExecuteProc',
-										Op: 'dcKeyKill',
-										Body: {
-											Keys: keylist
-										}
-									}, function(resp) {
-										if (resp.Result > 0) {
-											dc.pui.Popup.alert(resp.Message);
-											return;
-										}
+								dc.pui.Popup.confirm('Are you sure you want to kill this Node?', function(confirm) {
+									if (confirm) {
+										dc.comm.sendMessage({
+											Service: 'dcDatabase',
+											Feature: 'ExecuteProc',
+											Op: 'dcKeyKill',
+											Body: {
+												Keys: keylist
+											}
+										}, function(resp) {
+											if (resp.Result > 0) {
+												dc.pui.Popup.alert(resp.Message);
+												return;
+											}
 
-										entry.callPageFunc('LoadList', true);
-									});
+											entry.callPageFunc('LoadList', true);
+										});
+									}
 								});
 
 								e.preventDefault();

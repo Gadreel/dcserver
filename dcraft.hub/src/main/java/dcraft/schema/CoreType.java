@@ -16,7 +16,6 @@
 ************************************************************************ */
 package dcraft.schema;
 
-import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -24,7 +23,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import dcraft.hub.ResourceHub;
-import dcraft.locale.analyzer.EnglishFullAnalyzer;
 import dcraft.log.Logger;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
@@ -34,14 +32,12 @@ import dcraft.struct.scalar.NullStruct;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 public class CoreType {
 	protected Schema schema = null;
 	protected RootType root = null;
 	protected XElement def = null;
-	protected List<IDataRestriction> restrictions = new ArrayList<IDataRestriction>();
+	protected List<IDataRestriction> restrictions = new ArrayList<>();
 	
 	public RootType getType() {
 		return this.root;
@@ -380,6 +376,24 @@ public class CoreType {
 			}
 			
 			return pass;
+		}
+		
+		return false;
+	}
+	
+	public boolean isInteger() {
+		if (this.def.hasAttribute("Integer"))
+			return this.def.getAttributeAsBooleanOrFalse("Integer");
+		
+		if (this.root == RootType.Number) {
+			for (IDataRestriction dr : this.restrictions) {
+				if (dr instanceof NumberRestriction) {
+					NumberRestriction nr = (NumberRestriction) dr;
+					
+					if ((nr.conform == ConformKind.Integer) || (nr.conform == ConformKind.BigInteger))
+						return true;
+				}
+			}
 		}
 		
 		return false;

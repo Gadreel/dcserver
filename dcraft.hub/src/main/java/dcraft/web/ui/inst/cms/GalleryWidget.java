@@ -83,7 +83,7 @@ public class GalleryWidget extends Base {
 		List<XNode> fchildren = children;
 		AtomicLong currimg = new AtomicLong();
 		
-		RecordStruct page = (RecordStruct) StackUtil.queryVariable(state, "Page");
+		//RecordStruct page = (RecordStruct) StackUtil.queryVariable(state, "Page");
 		
 	    GalleryUtil.forEachGalleryShowImage(meta, path, show, new GalleryImageConsumer() {
 			@Override

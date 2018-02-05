@@ -17,15 +17,23 @@
 package dcraft.db.request.query;
 
 public class WhereIsNot extends WhereExpression {
-	public WhereIsNot(Object a) {
-		super("IsNot");
-		
-		this.addValue("A", a);
+	static public WhereIsNot isNot() {
+		return new WhereIsNot();
 	}
 	
-	public WhereIsNot(IWhereField a) {
+	static public WhereIsNot of(String field) {
+		WhereIsNot expression = new WhereIsNot();
+		expression.withFieldOne(field);
+		return expression;
+	}
+	
+	static public WhereIsNot of(String field, String subid) {
+		WhereIsNot expression = new WhereIsNot();
+		expression.withFieldOne(field, subid);
+		return expression;
+	}
+	
+	public WhereIsNot() {
 		super("IsNot");
-		
-		this.addField("A", a);
 	}
 }

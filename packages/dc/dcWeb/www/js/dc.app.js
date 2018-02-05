@@ -822,13 +822,28 @@ dc.pui.Loader = {
 
 			var id = state ? state.Id : null;
 
-			if (id) {
-				loader.LoadPageId = id;
+			if (loader.MainLayer == dc.pui.Loader.currentLayer()) {
+				if (id) {
+					loader.LoadPageId = id;
 
-				if (loader.Ids[id])
-					loader.MainLayer.manifestPage(loader.Ids[id], true);
-				else
-					loader.MainLayer.loadPage(document.location.pathname, state.Params);
+					if (loader.Ids[id])
+						loader.MainLayer.manifestPage(loader.Ids[id], true);
+					else
+						loader.MainLayer.loadPage(document.location.pathname, state.Params);
+				}
+			}
+			else {
+				e.preventDefault();
+				//history.go(1);
+
+				if (loader.Ids[loader.LoadPageId]) {
+					var entry = dc.pui.Loader.MainLayer.Current;
+
+					history.pushState(state, loader.Pages[entry.Name].Meta.Title,
+					entry.Name);
+
+					dc.pui.Loader.currentLayer().back();
+				}
 			}
 	    });
 
@@ -901,13 +916,16 @@ dc.pui.Loader = {
 
 		loader.Pages[name] = def;
 	},
-	resumePageLoad: function() {
+	resumePageLoad: function(pagename) {
 		var loader = this;
 
 		var entry = loader.Ids[loader.LoadPageId];
 
 		if (!entry)
 			return;
+
+		if (pagename)
+			entry.Name = pagename;
 
 		var page = loader.Pages[entry.Name];
 
@@ -2789,12 +2807,12 @@ dc.pui.TagFuncs = {
 	},
 	'dc.PagePanel': {
 		'setTitle': function(entry, node, title) {
-			$(node).find('> div:first-child h5').text(title);
+			$(node).find('> div:first-child h1').text(title);
 		}
 	},
 	'dc.Panel': {
 		'setTitle': function(entry, node, title) {
-			$(node).find('> div:first-child h5').text(title);
+			$(node).find('> div:first-child h2').text(title);
 		}
 	}
 };
@@ -2851,7 +2869,7 @@ dc.pui.Tags = {
 
 		if (click || page) {
 			$(node).click(function(e) {
-				if (! $(node).hasClass('pure-button-disabled') && !dc.pui.Apps.busyCheck()) {
+				if (! $(node).hasClass('pure-button-disabled') && ! dc.pui.Apps.busyCheck()) {
 					entry.LastFocus = $(node);
 
 					if (click)

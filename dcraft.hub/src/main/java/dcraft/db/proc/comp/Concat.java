@@ -20,9 +20,8 @@ import dcraft.util.StringUtil;
 
 public class Concat implements IComposer {
 	@Override
-	public void writeField(DbServiceRequest task, ICompositeBuilder out,
-						   TablesAdapter db, String table, String id, BigDateTime when, RecordStruct field,
-						   boolean historical, boolean compact) throws OperatingContextException
+	public void writeField(ICompositeBuilder out, TablesAdapter db, String table, String id,
+						   RecordStruct field, boolean compact) throws OperatingContextException
 	{	
 		try {
 			RecordStruct params = field.getFieldAsRecord("Params");
@@ -36,7 +35,7 @@ public class Concat implements IComposer {
 				for (int i = 0; i < items.size(); i++) {
 					RecordStruct fld = (RecordStruct) items.getAt(i);
 					
-					ret += this.getField(task, db, table, id, when, fld, historical, compact);
+					ret += this.getField(db, table, id, fld, compact);
 				}
 			}
 		
@@ -48,9 +47,7 @@ public class Concat implements IComposer {
 		}
 	}
 	
-	public String getField(DbServiceRequest task,
-			TablesAdapter db, String table, String id, BigDateTime when, RecordStruct field, 
-			boolean historical, boolean compact) throws Exception 
+	public String getField(TablesAdapter db, String table, String id, RecordStruct field, boolean compact) throws Exception
 	{		
 		// composer not valid inside of concat
 		if (!field.isFieldEmpty("Composer")) 
@@ -76,19 +73,20 @@ public class Concat implements IComposer {
 		String subid = field.getFieldAsString("SubId");
 
 		if (StringUtil.isNotEmpty(subid) && fdef.isList()) 
-			return Struct.objectToString(db.getDynamicList(table, id, fname, subid, when, format));
+			return Struct.objectToString(db.getDynamicList(table, id, fname, subid, format));
 
 		// DynamicList, StaticList (or DynamicScalar is when == null)
-		if (fdef.isList() || (fdef.isDynamic() && when == null)) {
+		// TODO was if (fdef.isList() || (fdef.isDynamic() && when == null)) { -- restore?
+		if (fdef.isList()) {
 			AtomicReference<String> res = new AtomicReference<>("");
 			
 			// keep in mind that `id` is the "value" in the index
-			db.traverseSubIds(table, id, fname, when, historical, new Function<Object,Boolean>() {				
+			db.traverseSubIds(table, id, fname, new Function<Object,Boolean>() {
 				@Override
 				public Boolean apply(Object subid) {
 					try {
 						// don't output null values in this list - Extended might return null data but otherwise no nulls
-							Object value = db.getDynamicList(table, id, fname, subid.toString(), when);
+							Object value = db.getDynamicList(table, id, fname, subid.toString());
 							
 							if (value != null) {
 								String v = res.get();
@@ -116,7 +114,7 @@ public class Concat implements IComposer {
 		
 		// DynamicScalar
 		if (fdef.isDynamic()) 
-			return Struct.objectToString(db.getDynamicScalar(table, id, fname, when, format, historical));
+			return Struct.objectToString(db.getDynamicScalar(table, id, fname, format));
 		
 		// StaticScalar
 		return Struct.objectToString(db.getStaticScalar(table, id, fname, format));

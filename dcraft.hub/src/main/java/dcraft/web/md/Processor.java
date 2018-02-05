@@ -17,6 +17,7 @@ package dcraft.web.md;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringReader;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.log.Logger;
@@ -34,17 +35,34 @@ import dcraft.xml.XElement;
  * this whole thing needs to be rewritten to use one string builder with markers pointing to the blocks, etc
  */
 public class Processor {
-    static public Processor of(ProcessContext ctx, Reader reader) {
+	static public Processor of(ProcessContext ctx, Reader reader) {
 		Processor p = new Processor();
-
+		
 		p.ctx = ctx;
 		p.reader = reader;
 		p.emitter = new Emitter(ctx);
-
+		
 		return p;
 	}
-
-    // instance code
+	
+	public static Block parseToBlock(ProcessContext ctx, String input) throws IOException {
+		try (StringReader in = new StringReader(input)) {
+			return parseToBlock(ctx, in);
+		}
+	}
+	
+	public static Block parseToBlock(ProcessContext ctx, Reader reader) throws IOException {
+		try {
+			Processor p = Processor.of(ctx, reader);
+			return p.toBlocks();
+		}
+		catch (Exception x) {
+			Logger.warn("Inline MD problems: " + x);
+			throw x;
+		}
+	}
+	
+	// instance code
     
     protected Reader reader = null;
     protected Emitter emitter = null;

@@ -17,60 +17,93 @@
 package dcraft.web.adapter;
 
 import dcraft.hub.op.OperatingContextException;
-import dcraft.log.count.CountHub;
+import dcraft.locale.LocaleUtil;
 import dcraft.script.Script;
-import dcraft.task.TaskContext;
+import dcraft.struct.FieldStruct;
+import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
+import dcraft.util.IOUtil;
+import dcraft.util.StringUtil;
+import dcraft.web.ui.inst.Html;
+import dcraft.web.ui.inst.IncludeFragmentInline;
+import dcraft.web.ui.inst.IncludeParam;
+import dcraft.web.ui.inst.TextWidget;
+import dcraft.web.ui.inst.W3;
+import dcraft.xml.XText;
 
-public class MarkdownOutputAdapter extends DynamicOutputAdapter  {
+import java.io.BufferedReader;
+import java.io.StringReader;
 
+public class MarkdownOutputAdapter extends DynamicOutputAdapter {
 	@Override
 	public Script getSource() throws OperatingContextException {
-		/* TODO recreate all
-		if (this.source != null)
-			return this.source;
+		if (this.script != null)
+			return this.script;
 
 		CharSequence md = IOUtil.readEntireFile(this.file);
 
 		if (md.length() == 0) 
 			return null;
 		
-		md = this.processIncludes(wctx, md);
+		// TODO md = this.processIncludes(wctx, md);
 		
 		try {
-			Html html = new Html();
+			Html html = Html.tag();
 			
-			/* TODO create a mixin
 			BufferedReader bufReader = new BufferedReader(new StringReader(md.toString()));
 	
 			String line = bufReader.readLine();
 			
+			RecordStruct fields = RecordStruct.record();
+			
+			// TODO enhance to become https://www.npmjs.com/package/front-matter compatible
+			
+			// start with $ for non-locale fields
 			while (StringUtil.isNotEmpty(line)) {
 				int pos = line.indexOf(':');
 				
 				if (pos == -1)
 					break;
 				
-				html.withAttribute(line.substring(0, pos), line.substring(pos + 1).trim());
+				String field = line.substring(0, pos);
+				
+				String value = line.substring(pos + 1).trim();
+				
+				fields.with(field, value);
 	
 				line = bufReader.readLine();
 			}
 			
+			String locale = LocaleUtil.normalizeCode(fields.getFieldAsString("Locale", "eng"));  // should be a way to override, but be careful because 3rd party might depend on being "en", sorry something has to be default
+
+			// TODO lookup alternative locales based on OC current locale
+			
+			for (FieldStruct fld : fields.getFields()) {
+				String name = fld.getName();
+				
+				if (name.startsWith("$")) {
+					html.with(
+							W3.tag("Meta")
+								.attr("Title", name.substring(1))
+								.attr("Value", Struct.objectToString(fld.getValue()))
+					);
+				}
+				else {
+					html.with(
+							W3.tag("Meta")
+									.attr("Title", name.substring(1))
+									.with(W3.tag("Tr")
+											.attr("Locale", locale)
+											.attr("Value", Struct.objectToString(fld.getValue()))
+									)
+					);
+				}
+			}
+			
 			// see if there is more - the body
 			if (line != null) {
-				Base body = html.hasNotEmptyAttribute("Skeleton")
-						? (Base) PagePart.tag().withAttribute("For", "article")
-						: Body.tag();
-				
-				html.with(body);
-				
-				Markdown mtag = new Markdown();
-				
-				body.with(mtag);  
-				
 				XText mdata = new XText();
 				mdata.setCData(true);
-				
-				mtag.with(mdata);
 				
 				line = bufReader.readLine();
 				
@@ -82,26 +115,30 @@ public class MarkdownOutputAdapter extends DynamicOutputAdapter  {
 				}
 				
 				mdata.closeBuffer();
+				
+				html.with(IncludeParam.tag()
+						.attr("Name", "content")
+						.with(
+							TextWidget.tag()
+							.with(W3.tag("Tr")
+									.attr("Locale", locale)
+									.with(mdata)
+							)
+						)
+				);
 			}
-			* /
 			
-			this.source = html;
+			String skeleton = fields.getFieldAsString("Skeleton", "general");
+			
+			html.with(IncludeFragmentInline.tag()
+					.withAttribute("Path", "/skeletons/" + skeleton));		// TODO if doesn't start with / assume skeletons folder
+			
+			this.script = Script.of(html, md);
 		}
 		catch (Exception x) {
 			System.out.println("md parse issue");
 		}
 		
-		return this.source;
-		*/
-		
-		return null;
-	}
-
-	@Override
-	public void run(TaskContext ctx) throws OperatingContextException {
-		// be sure we count only once
-		CountHub.countObjects("dcWebOutMarkdownCount-" + ctx.getTenant().getAlias(), this);
-		
-		super.run(ctx);
+		return this.script;
 	}
 }

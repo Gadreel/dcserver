@@ -97,8 +97,8 @@ public final class EnglishFullAnalyzer extends StopwordAnalyzerBase {
     final Tokenizer source = new StandardTokenizer();
     TokenStream result = new StandardFilter(source);
     result = new EnglishPossessiveFilter(result);
-    result = new LowerCaseFilter(result);
     result = new ASCIIFoldingFilter(result);
+    result = new LowerCaseFilter(result);
     result = new StopFilter(result, stopwords);
     if(!stemExclusionSet.isEmpty())
       result = new SetKeywordMarkerFilter(result, stemExclusionSet);
@@ -110,8 +110,8 @@ public final class EnglishFullAnalyzer extends StopwordAnalyzerBase {
   @Override
   protected TokenStream normalize(String fieldName, TokenStream in) {
     TokenStream result = new StandardFilter(in);
+    result = new ASCIIFoldingFilter(result);
     result = new LowerCaseFilter(result);
-	result = new ASCIIFoldingFilter(result);
 	  result = new StopFilter(result, stopwords);
 	  result = new PuncFilter(result);
     return result;

@@ -17,7 +17,17 @@
 package dcraft.db.request.query;
 
 public class WhereAnd extends WhereGroupExpression {
-	public WhereAnd(WhereExpression... list) {
-		super("And", list);
+	static public WhereAnd and() {
+		return new WhereAnd();
+	}
+	
+	static public WhereAnd of(WhereExpression... list) {
+		WhereAnd expression = new WhereAnd();
+		expression.withAll(list);
+		return expression;
+	}
+	
+	public WhereAnd() {
+		super("And");
 	}
 }

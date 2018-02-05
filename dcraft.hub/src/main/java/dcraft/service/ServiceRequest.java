@@ -102,15 +102,30 @@ public class ServiceRequest implements IWorkBuilder {
 	public String getName() {
 		return this.name;
 	}
-	
+
+	public ServiceRequest withName(String v) {
+		this.name = v;
+		return this;
+	}
+
 	public String getFeature() {
 		return this.feature;
 	}
-	
+
+	public ServiceRequest withFeature(String v) {
+		this.feature = v;
+		return this;
+	}
+
 	public String getOp() {
 		return this.op;
 	}
-	
+
+	public ServiceRequest withOp(String v) {
+		this.op = v;
+		return this;
+	}
+
 	// on available after call to validate
 	public OpInfo getDefinition() {
 		return this.def;

@@ -5,7 +5,7 @@ import java.time.ZonedDateTime;
 import dcraft.db.Constants;
 import dcraft.db.DatabaseException;
 import dcraft.db.DatabaseAdapter;
-import dcraft.db.DbServiceRequest;
+import dcraft.db.ICallContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.proc.IUpdatingStoredProc;
 import dcraft.db.util.ByteUtil;
@@ -28,7 +28,7 @@ import dcraft.util.StringUtil;
 
 public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		if (request.isReplicating()) {
 			// TODO what should happen during a replicate?
 			callback.returnEmpty();
@@ -40,9 +40,8 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 		
 		RecordStruct params = request.getDataAsRecord();
 		DatabaseAdapter conn = request.getInterface();
-		TablesAdapter db = TablesAdapter.of(request);
-		BigDateTime when = BigDateTime.nowDateTime();
-				
+		TablesAdapter db = TablesAdapter.ofNow(request);
+		
 		String password = params.getFieldAsString("Password");
 		String uname = params.getFieldAsString("Username");
 		
@@ -79,7 +78,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 		
 		String uid = null;
 		
-		Object userid = db.firstInIndex("dcUser", "dcUsername", uname, when, false);
+		Object userid = db.firstInIndex("dcUser", "dcUsername", uname);
 		
 		if (userid != null) 
 			uid = userid.toString();
@@ -154,7 +153,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 					// if password matches then good login
 					try {
 						if (uc.getTenant().getObfuscator().checkHashPassword(password, fndpass.toString())) {
-							this.signIn(request, db, when, uid);
+							this.signIn(request, db, uid);
 							return;
 						}
 					}
@@ -175,11 +174,12 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 					// if password matches global then good login
 					try {
 						if (TenantHub.resolveTenant("root").getObfuscator().checkHashPassword(password, gp.toString())) {
-							this.signIn(request, db, when, uid);
+							this.signIn(request, db, uid);
 							return;
 						}
 					}
-					catch (Exception x) {					
+					catch (Exception x) {
+						Logger.info("Global doesn't match: " + x);
 					}
 				}
 			}
@@ -195,7 +195,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 						db.setStaticScalar("dcUser", uid, "dcConfirmed", true);
 					
 					// if code matches then good login
-					this.signIn(request, db, when, uid);
+					this.signIn(request, db, uid);
 					return;
 				}
 				
@@ -209,7 +209,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 							db.setStaticScalar("dcUser", uid, "dcConfirmed", true);
 						
 						// if code matches and has not expired then good login
-						this.signIn(request, db, when, uid);
+						this.signIn(request, db, uid);
 						return;
 					}
 				}
@@ -228,7 +228,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 		callback.returnEmpty();
 	}
 	
-	public void signIn(DbServiceRequest task, TablesAdapter db, BigDateTime when, String uid) throws OperatingContextException {
+	public void signIn(ICallContext task, TablesAdapter db, String uid) throws OperatingContextException {
 		ICompositeBuilder out = new ObjectBuilder();
 		RecordStruct params = task.getDataAsRecord();
 		String did = task.getTenant();
@@ -246,7 +246,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 				return;
 			}
 			
-			if (! db.isCurrent("dcUser", uid, when, false)) {
+			if (! db.isCurrent("dcUser", uid)) {
 				Logger.errorTr(123);
 				task.getOutcome().returnEmpty();
 				return;

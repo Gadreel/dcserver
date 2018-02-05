@@ -52,6 +52,7 @@ public class PagePanel extends Base {
 		this.with(W3.tag("div")
 				.withAttribute("class", "dc-panel-heading")
 				.with(W3.tag("h1")
+						.withClass("dc-control")
 						.withAttribute("id", id + "Header")
 						.withAttribute("aria-label", title + " page")
 						.withText(title)

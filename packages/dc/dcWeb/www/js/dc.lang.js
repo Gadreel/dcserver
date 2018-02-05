@@ -363,7 +363,7 @@ var dc = {
 				if (z.indexOf('T') == -1)
 					return z;
 
-				return moment.utc(z, 'YYYYMMDDTHHmmssSSSZ', true).local().format('MM-DD-YYYY h:mm:ss a');
+				return moment.utc(z, 'YYYYMMDDTHHmmssSSSZ', true).local().format('MM-DD-YYYY h:mm a');
 			},
 
 			toUtc : function(date) {
@@ -610,15 +610,16 @@ var dc = {
 			blobToUrl: function(blob) {
 				return (window.URL || window.webkitURL).createObjectURL(blob);
 			},
-			load: function(url, callback, progcallback) {
+			load: function(url, callback, progcallback, asblob) {
 				var completedPercentage = 0;
 				var prevValue = 0;
 
 				var thisImg = new Image();
+				var blob = null;
 
 				thisImg.onload = function(e) {
 					if (callback)
-						callback(thisImg);
+						callback(asblob ? blob : thisImg);
 				};
 
 				var xmlHTTP = new XMLHttpRequest();
@@ -638,7 +639,7 @@ var dc = {
 					var m = h.match(/^Content-Type\:\s*(.*?)$/mi);
 					var mimeType = m[1] || 'image/png';
 
-					var blob = new Blob([ this.response ], { type: mimeType });
+					blob = new Blob([ this.response ], { type: mimeType });
 
 					thisImg.src = dc.util.Image.blobToUrl(blob);
 			    };

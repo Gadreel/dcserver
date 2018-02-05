@@ -17,31 +17,18 @@
 package dcraft.db.request.query;
 
 public class WhereLessThanOrEqual extends WhereExpression {
-	public WhereLessThanOrEqual(Object a, Object b) {
-		super("LessThanOrEqual");
-		
-		this.addValue("A", a);
-		this.addValue("B", b);
+	static public WhereLessThanOrEqual lessThanOrEqual() {
+		return new WhereLessThanOrEqual();
 	}
 	
-	public WhereLessThanOrEqual(IWhereField a, Object b) {
-		super("LessThanOrEqual");
-		
-		this.addField("A", a);
-		this.addValue("B", b);
+	static public WhereLessThanOrEqual of(String field, Object value) {
+		WhereLessThanOrEqual expression = new WhereLessThanOrEqual();
+		expression.withFieldOne(field);
+		expression.withValueTwo(value);
+		return expression;
 	}
 	
-	public WhereLessThanOrEqual(Object a, IWhereField b) {
+	public WhereLessThanOrEqual() {
 		super("LessThanOrEqual");
-		
-		this.addValue("A", a);
-		this.addField("B", b);
-	}
-	
-	public WhereLessThanOrEqual(IWhereField a, IWhereField b) {
-		super("LessThanOrEqual");
-		
-		this.addField("A", a);
-		this.addField("B", b);
 	}
 }

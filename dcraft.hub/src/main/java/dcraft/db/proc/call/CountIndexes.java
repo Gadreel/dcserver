@@ -1,13 +1,10 @@
 package dcraft.db.proc.call;
 
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
-
-import dcraft.db.DbServiceRequest;
 import dcraft.db.proc.BasicFilter;
-import dcraft.db.proc.FilterResult;
+import dcraft.db.proc.ExpressionResult;
 import dcraft.db.proc.IStoredProc;
 import dcraft.db.proc.filter.Max;
+import dcraft.db.ICallContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationMarker;
@@ -20,7 +17,7 @@ import dcraft.struct.Struct;
 
 public class CountIndexes implements IStoredProc {
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct params = request.getDataAsRecord();
 		
 		String table = params.getFieldAsString("Table");
@@ -29,29 +26,24 @@ public class CountIndexes implements IStoredProc {
 		boolean historical = params.getFieldAsBooleanOrFalse("Historical");	
 		ListStruct values = params.getFieldAsList("Values");
 		
-		if (when == null)
-			when = BigDateTime.nowDateTime();
-		
-		TablesAdapter db = TablesAdapter.of(request);
+		TablesAdapter db = TablesAdapter.of(request, when, historical);
 		ListStruct out = ListStruct.list();
 		
 		try (OperationMarker om = OperationMarker.create()) {
 			if ((values == null) || (values.size() == 0)) {
-				BigDateTime fwhen = when;
-				
-				db.traverseIndexValRange(table, fname, null, null, fwhen, historical, new BasicFilter() {
+				db.traverseIndexValRange(table, fname, null, null, new BasicFilter() {
 					@Override
-					public FilterResult check(TablesAdapter adapter, Object val, BigDateTime when, boolean historical) throws OperatingContextException {
+					public ExpressionResult check(TablesAdapter adapter, Object val) throws OperatingContextException {
 						Max cnt = Max.max();
 						
-						db.traverseIndex(table, fname, val, fwhen, historical, cnt);
+						db.traverseIndex(table, fname, val, cnt);
 						
 						out.with(RecordStruct.record()
 								.with("Name", val)
 								.with("Count", cnt.getCount())
 						);
 						
-						return FilterResult.accepted();
+						return ExpressionResult.accepted();
 					}
 				});
 			}
@@ -61,7 +53,7 @@ public class CountIndexes implements IStoredProc {
 					
 					Max cnt = Max.max();
 			
-					db.traverseIndex(table, fname, val, when, historical, cnt);
+					db.traverseIndex(table, fname, val, cnt);
 					
 					out.with(RecordStruct.record()
 						.with("Name", val)

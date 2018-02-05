@@ -1,15 +1,9 @@
 package dcraft.db.work;
 
 import dcraft.db.DatabaseAdapter;
-import dcraft.db.tables.BasicTablesContext;
-import dcraft.db.tables.ITablesContext;
-import dcraft.db.tables.TablesAdapter;
-import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.UserContext;
-import dcraft.log.Logger;
-import dcraft.schema.DbTable;
 import dcraft.task.IWork;
 import dcraft.task.Task;
 import dcraft.task.TaskContext;
@@ -20,12 +14,7 @@ import dcraft.tenant.Tenant;
 import dcraft.tenant.TenantHub;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Queue;
-
-import static dcraft.db.Constants.DB_GLOBAL_INDEX;
-import static dcraft.db.Constants.DB_GLOBAL_INDEX_SUB;
 
 public class IndexAll implements IWork {
 	static public IndexAll of(DatabaseAdapter conn) {

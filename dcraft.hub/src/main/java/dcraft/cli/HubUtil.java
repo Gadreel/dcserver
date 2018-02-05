@@ -52,10 +52,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
 import dcraft.struct.Struct;
-import dcraft.util.HexUtil;
-import dcraft.util.ISettingsObfuscator;
-import dcraft.util.StandardSettingsObfuscator;
-import dcraft.util.StringUtil;
+import dcraft.util.*;
 import dcraft.util.pgp.KeyRingCollection;
 import dcraft.xml.XElement;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
@@ -302,6 +299,12 @@ public class HubUtil implements ILocalCommandLine {
 
 					System.out.print("Obfuscator Seed (empty for random): ");
 					String obfseed = scan.nextLine();
+
+					if (StringUtil.isEmpty(obfseed)) {
+						byte[] feedbuff = new byte[64];
+						RndUtil.random.nextBytes(feedbuff);
+						obfseed = HexUtil.bufferToHex(feedbuff);
+					}
 
 					System.out.print("Global Root Password (required): ");
 					String password = scan.nextLine();

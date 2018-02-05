@@ -21,6 +21,8 @@ import java.util.List;
 
 import dcraft.db.request.DataRequest;
 import dcraft.hub.ResourceHub;
+import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
 import dcraft.hub.time.BigDateTime;
 import dcraft.schema.SchemaResource;
 import dcraft.struct.CompositeStruct;
@@ -119,6 +121,46 @@ abstract public class DbRecordRequest extends DataRequest {
 			dfld.withRandomSubKey().withFrom(this.when);
 		else if (fld.isList())		
 			dfld.withRandomSubKey();
+		
+		return this;
+	}
+	
+	public DbRecordRequest withUpdateTrField(String locale, String name, Object value) throws OperatingContextException {
+		if (value instanceof ConditionalValue) {
+			if (!((ConditionalValue)value).set)
+				return this;
+			
+			value = ((ConditionalValue)value).value;
+		}
+		
+		SchemaResource schema = ResourceHub.getResources().getSchema();
+		dcraft.schema.DbField fld = schema.getDbField(this.table, name);
+		
+		if (fld == null)
+			return this;
+		
+		FieldRequest dfld = new FieldRequest()
+				.withName(name)
+				.withValue(value)
+				.withUpdateOnly();
+		
+		this.withFields(dfld);
+		
+		// database uses the Tenant Locale when storing fields, so only Tr those locales that don't match tenant
+		if (StringUtil.isNotEmpty(locale) && ! locale.equals(OperationContext.getOrThrow().getTenant().getResources().getLocale().getDefaultLocale())) {
+			dfld
+					.withName(name + "Tr")
+					.withSubKey(locale)
+					.withLocale(locale);
+		}
+		else {
+			if (fld.isDynamic())
+				dfld.withRandomSubKey().withFrom(this.when);
+			
+			// Tr fields can only be scalars
+			//else if (fld.isList())
+			//	dfld.withRandomSubKey();
+		}
 		
 		return this;
 	}
@@ -243,6 +285,15 @@ abstract public class DbRecordRequest extends DataRequest {
 		for (int i = 0; i < (pairs.length - 1); i += 2) {
 			if (source.hasField(pairs[i])) 
 				this.withUpdateField(pairs[i+1], source.getField(pairs[i]));
+		}
+		
+		return this;
+	}
+	
+	public DbRecordRequest withConditionallyUpdateTrFields(RecordStruct source, String locale, String... pairs) throws OperatingContextException {
+		for (int i = 0; i < (pairs.length - 1); i += 2) {
+			if (source.hasField(pairs[i]))
+				this.withUpdateTrField(locale, pairs[i+1], source.getField(pairs[i]));
 		}
 		
 		return this;

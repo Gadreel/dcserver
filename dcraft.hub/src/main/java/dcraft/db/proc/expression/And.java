@@ -1,6 +1,8 @@
 package dcraft.db.proc.expression;
 
+import dcraft.db.proc.ExpressionResult;
 import dcraft.db.proc.IExpression;
+import dcraft.db.request.query.WhereAnd;
 import dcraft.db.request.schema.Query;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
@@ -13,6 +15,16 @@ import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 
 public class And implements IExpression {
+	/*
+	static public And of(String table, WhereAnd expression) throws OperatingContextException {
+		And obj = new And();
+		
+		obj.init(table, expression.getParams());
+		
+		return obj;
+	}
+	*/
+	
 	protected ListStruct children = null;
 	
 	@Override
@@ -27,9 +39,9 @@ public class And implements IExpression {
 	}
 	
 	@Override
-	public boolean check(TablesAdapter adapter, String id, BigDateTime when, boolean historical) throws OperatingContextException {
+	public ExpressionResult check(TablesAdapter adapter, String id) throws OperatingContextException {
 		if (this.children == null)
-			return false;
+			return ExpressionResult.REJECTED;
 		
 		for (Struct s : children.items()) {
 			RecordStruct where = Struct.objectToRecord(s);
@@ -38,14 +50,14 @@ public class And implements IExpression {
 			
 			if (expression == null) {
 				Logger.error("bad expression");
-				return false;
+				return ExpressionResult.HALT;
 			}
 			
-			if (! expression.check(adapter, id, when, historical))
-				return false;
+			if (! expression.check(adapter, id).accepted)
+				return ExpressionResult.REJECTED;
 		}
 		
-		return true;
+		return ExpressionResult.ACCEPTED;
 	}
 	
 	@Override

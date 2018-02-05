@@ -17,7 +17,17 @@
 package dcraft.db.request.query;
 
 public class WhereNot extends WhereGroupExpression {
-	public WhereNot(WhereExpression exp) {
-		super("Not", exp);
+	static public WhereNot not() {
+		return new WhereNot();
+	}
+	
+	static public WhereNot of(WhereExpression inner) {
+		WhereNot expression = new WhereNot();
+		expression.withExpression(inner);
+		return expression;
+	}
+	
+	public WhereNot() {
+		super("Not");
 	}
 }

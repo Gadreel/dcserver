@@ -1,8 +1,8 @@
 <Dictionary>
-	<Locale Id="en">
+	<Locale Id="eng">
 		<Entry Token="_code_1" Value="General execution error" />
 		<Entry Token="_code_2" Value="General execution warning" />
-		
+
 		<!-- start up codes, below 140 do not really translate because dict was not loaded yet -->
 		<Entry Token="_code_100" Value="Unable to load packages.xml file, expected: {$1}" />
 		<Entry Token="_code_101" Value="Unable to find config.xml file, expected: {$1}" />
@@ -105,7 +105,7 @@
 		<Entry Token="_code_197" Value="Task not started, system shutting down: {$1}" />
 		<Entry Token="_code_198" Value="Task not started, missing context: {$1}" />
 		<Entry Token="_code_199" Value="Task added to queue: {$1}" />
-		
+
 		<Entry Token="_code_200" Value="Missing package resource file, expected: {$1}" />
 		<Entry Token="_code_201" Value="Missing project resource file, expected: {$1}" />
 		<Entry Token="_code_202" Value="Settings decrypt encountered an invalid settings key" />
@@ -117,7 +117,7 @@
 		<Entry Token="_code_208" Value="Unable to load custom Database Clock class: {$1}" />
 		<Entry Token="_code_209" Value="Missing database configuration" />
 		<Entry Token="_code_210" Value="Missing database connection configuration" />
-		
+
 		<Entry Token="_code_211" Value="Task added to backlog: {$1}" />
 		<Entry Token="_code_212" Value="Error adding task: {$1} - {$2}" />
 		<Entry Token="_code_213" Value="Null argument: {$1}" />
@@ -135,7 +135,7 @@
 		<Entry Token="_code_225" Value="Starting SQL backed scheduler." />
 		<Entry Token="_code_226" Value="Stopping SQL backed scheduler." />
 		<Entry Token="_code_227" Value="Scheduler has a bad driver classname: {$1}." />
-		
+
 		<Entry Token="_code_230" Value="Missing value for BigDateTime" />
 		<Entry Token="_code_231" Value="Invalid format for BigDateTime, found: {$1}" />
 		<Entry Token="_code_232" Value="Missing schema for BigDateTime" />
@@ -154,7 +154,7 @@
 		<Entry Token="_code_245" Value="Content not text" />
 		<Entry Token="_code_246" Value="Composite Builder State Error: {$1}" />
 		<Entry Token="_code_247" Value="No XML found in input." />
-		
+
 		<Entry Token="_code_300" Value="Unable to use database key file: {$1} - error: {$2}" />
 		<Entry Token="_code_301" Value="Cannot start database pool, missing configuration" />
 		<Entry Token="_code_302" Value="Error while connecting to database: {$1} - error: {$2}" />
@@ -182,7 +182,7 @@
 		<Entry Token="_code_324" Value="Request rejected because it was too large.  Procedure '{$1}', size {$2}." />
 		<Entry Token="_code_325" Value="Database not connected, cannot upload stored procs" />
 		<Entry Token="_code_326" Value="Error uploading stored procs: {$1}" />
-		
+
 		<Entry Token="_code_400" Value="Expected a BigDecimal, got: {$1}" />
 		<Entry Token="_code_401" Value="Expected a Decimal, got: {$1}" />
 		<Entry Token="_code_402" Value="Expected a BigInteger, got: {$1}" />
@@ -242,7 +242,7 @@
 		<Entry Token="_code_456" Value="Cannot set Session Destination, IO error: {$1}" />
 		<Entry Token="_code_457" Value="Cannot mount file store on session" />
 		<Entry Token="_code_458" Value="Missing record for Id." />
-		
+
 		<Entry Token="_code_500" Value="Variable '{$1}' not found" />
 		<Entry Token="_code_501" Value="Path looks like a field name, but found a list: {$1}" />
 		<Entry Token="_code_502" Value="Index out of bounds: {$1}" />
@@ -284,7 +284,7 @@
 		<Entry Token="_code_538" Value="Unable to initialize Folder object" />
 		<Entry Token="_code_539" Value="Missing path for TempFile" />
 		<Entry Token="_code_540" Value="SetTo requires a scalar target" />
-		
+
 		<Entry Token="_code_50000" Value="'{$1}' not recognized" />
 		<Entry Token="_code_50001" Value="Exception in operation '{$1}'" />
 		<Entry Token="_code_50002" Value="Missing execute context for '{$1}'" />
@@ -303,7 +303,7 @@
 		<Entry Token="_code_50015" Value="Missing {$1} parameter in call to procedure {$2}." />
 		<Entry Token="_code_50016" Value="Requested record is missing or unavailable" />
 		<Entry Token="_code_50100" Value="Missing backup time stamp" />
-		
+
 		<!-- TODO remove, just for demo -->
 		<Entry Token="_code_900123" Value="File {$1} does not match file {$2}, first hash {$3} second hash {$4}." />
 	</Locale>

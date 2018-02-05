@@ -9,6 +9,10 @@
 		<dc.PagePanel>
 			<dcf.Form>
 				<dc.Region Hint="Product Properties form">
+					<div id="dcmesProdLocale">
+						<dcf.Select Name="TrLocale" Label="Edit Language" />
+					</div>
+
 					<dcf.Text Label="Name" Name="Title" Required="true" />
 					<dcf.Text Label="Alias" Name="Alias" DataType="dcPageSlug" Required="true" placeholder="Lowercase or numeric characters, dashes for spaces" />
 					<dcf.YesNo Label="Visible" Name="ShowInStore" />
@@ -61,6 +65,9 @@
 	<Function Name="Load"><![CDATA[
 			var page = this;
 
+			if (! page.Store.Locale)
+				page.Store.Locale = dc.user.currentLocale();
+
 			page.form().inputQuery('Title')
 				.focusout(function(e) {
 					var slug = page.form().getValue('Alias');
@@ -74,12 +81,23 @@
 
 			// TODO hide Manage Categories if new product
 
+			if (dc.handler && dc.handler.locales && dc.handler.locales.options) {
+				page.form().input('TrLocale').add(dc.handler.locales.options);
+
+				page.form().inputQuery('TrLocale').on('change', function() {
+					page.Store.Locale = this.value;
+
+					// reload only the form
+					page.form().load(function() { });
+				});
+			}
+			else {
+				$('#dcmesProdLocale').hide();
+			}
+
 			// make alias read only if edit
 			if (page.Params.Id) {
 				page.form().inputQuery('Alias').prop('readonly', 'readonly');
-			}
-			else {
-				page.form().inputQuery('Image').closest('.dc-field').hide();
 			}
 	]]></Function>
 	<Function Name="LoadRecord" Params="e"><![CDATA[
@@ -90,7 +108,10 @@
 					Service: 'dcmStoreServices',
 					Feature: 'Product',
 					Op: 'Load',
-					Body: { Id: page.Params.Id }
+					Body: {
+						Id: page.Params.Id,
+						TrLocale: page.Store.Locale
+					}
 				};
 			}
 			else {
@@ -98,6 +119,7 @@
 				e.Data = {
 					ShipCost: 'Regular',
 					ShowInStore: true,
+					TrLocale: page.Store.Locale,
 					Delivery: [ 'Ship', 'Pickup' ]
 				};
 			}
@@ -110,20 +132,26 @@
 
 			page.Store.Categories = e.Data.Categories;
 			page.Store.Slug = e.Data.Alias;
+
+			e.Data.TrLocale = page.Store.Locale;
 	]]></Function>
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 			var page = this;
 
 			if (page.Params.Id)
 				e.Data.Id = page.Params.Id;
-			else
+			else if (this.Params.CategoryId)
 				e.Data.Categories = [ this.Params.CategoryId ];
+			else
+				e.Data.Categories = [ ];
+
+			e.Data.TrLocale = page.form().getValue('TrLocale');
+
+			if (! e.Data.TrLocale)
+				delete e.Data.TrLocale;
 
 			//if (! dc.util.String.isEmpty(e.Data.Price))
 			//	e.Data.Price = dc.util.Number.toNumberStrict(e.Data.Price);	// convert to number
-
-			if (e.Data.Alias)
-				page.Store.Slug = e.Data.Alias;
 
 			e.Message = {
 				Service: 'dcmStoreServices',
@@ -135,8 +163,11 @@
 	<Function Name="AfterSaveRecord" Params="e"><![CDATA[
 			var page = this;
 
-			if (e.Data && e.Data.Id)
+			if (e.Data && e.Data.Id) {
 				page.Store.NewId = e.Data.Id;
+				page.Store.Slug = page.form().getValue('Alias');
+				page.form().inputQuery('Alias').prop('readonly', 'readonly');
+			}
 	]]></Function>
 	<Function Name="AfterSave"><![CDATA[
 			var page = this;
@@ -156,7 +187,16 @@
 						return;
 					}
 
-					page.callPageFunc('AfterSave')
+					page.Params.Id = page.Store.NewId;
+
+					if (page.Params.AddRecord)
+						page.Params.AddRecord({
+							NewId: page.Store.NewId
+						});
+
+					dc.pui.Popup.alert("Product added, you may add an image now or edit the item or close the form.");
+
+					//page.callPageFunc('AfterSave')
 				});
 
 				page.Store.NewFlag = true;
@@ -204,6 +244,11 @@
 	<Function Name="DoSelectImage"><![CDATA[
 			var page = this;
 
+			if (! page.Store.Slug) {
+				dc.pui.Popup.alert('Please save the product before selecting an image.');
+				return;
+			}
+
 			dc.pui.Dialog.loadPage('/dcm/store/product-image-chooser', {
 				Chained: true,
 				Path: '/store/product/' + page.Store.Slug,
@@ -218,6 +263,12 @@
 	]]></Function>
 	<Function Name="DoUploadImage"><![CDATA[
 			var page = this;
+
+			if (! page.Store.Slug) {
+				dc.pui.Popup.alert('Please save the product before selecting an image.');
+				return;
+			}
+
 			var path = '/store/product/' + page.Store.Slug;
 
 			dc.cms.image.Loader.loadGallery(path, function(gallery, resp) {

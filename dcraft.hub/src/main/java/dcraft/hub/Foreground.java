@@ -24,15 +24,13 @@ import java.util.Scanner;
 
 import dcraft.api.ApiSession;
 import dcraft.api.LocalSession;
-import dcraft.filestore.local.LocalDestStream;
-import dcraft.filevault.work.IndexFilesWork;
+import dcraft.filevault.work.IndexAllFilesWork;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.clock.SysReporter;
 import dcraft.hub.config.LocalHubConfigLoader;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.UserContext;
 import dcraft.hub.resource.ConfigResource;
-import dcraft.stream.StreamWork;
 import dcraft.task.Task;
 import dcraft.task.TaskContext;
 import dcraft.task.TaskHub;
@@ -161,6 +159,7 @@ public class Foreground {
 				System.out.println("4)  System Status");
 				System.out.println("5)  Backup Server");
 				System.out.println("6)  File ReIndex Vaults");
+				System.out.println("7)  File ReIndex Site Vaults");
 				System.out.println("100)  Enter Script Debugger");
 
 				String opt = scan.nextLine();
@@ -208,7 +207,32 @@ public class Foreground {
 				}
 				case 6: {
 					Task task = Task.ofSubtask("ReIndex Vault Files", "Vault")
-							.withWork(new IndexFilesWork());
+							.withWork(new IndexAllFilesWork());
+					
+					TaskHub.submit(task, new TaskObserver() {
+						@Override
+						public void callback(TaskContext subtask) {
+							if (subtask.hasExitErrors())
+								System.out.println("Failed to index the files.");
+							else
+								System.out.println("Files Indexed.");
+						}
+					});
+					
+					break;
+				}
+				case 7: {
+					System.out.println("Tenant:");
+					String tenant = scan.nextLine();
+					
+					System.out.println("Site:");
+					String site = scan.nextLine();
+					
+					OperationContext tctx = OperationContext.context(
+							UserContext.rootUser(tenant, site));
+					
+					Task task = Task.ofContext(tctx)
+							.withWork(new IndexAllFilesWork());
 					
 					TaskHub.submit(task, new TaskObserver() {
 						@Override

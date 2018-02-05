@@ -24,21 +24,26 @@ public class WhereTerm extends WhereExpression {
 		return new WhereTerm();
 	}
 	
+	static public WhereTerm of(String field, Object value) {
+		WhereTerm expression = new WhereTerm();
+		expression.withParam("A", new RecordStruct().with("Value",
+				ListStruct.list(WhereField.of(field).getParams()))
+		);
+		expression.withValueTwo(value);
+		return expression;
+	}
+	
 	public WhereTerm() {
 		super("Term");
 	}
 	
-	public WhereTerm withField(String name) {
-		return this.withField(WhereField.of(name));
-	}
-	
-	public WhereTerm withField(IWhereField fld) {
-		this.params.with("A", RecordStruct.record().with("Value", ListStruct.list(fld.getParams())));
-		return this;
-	}
-	
-	public WhereTerm withValue(Object v) {
-		this.addValue("B", v);
+	public WhereTerm withFields(String... fields) {
+		ListStruct flds = ListStruct.list();
+		
+		for (String f : fields)
+			flds.with(WhereField.of(f).getParams());
+		
+		this.withParam("A", new RecordStruct().with("Value", flds));
 		return this;
 	}
 }

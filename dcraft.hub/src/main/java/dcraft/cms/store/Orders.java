@@ -1,5 +1,6 @@
 package dcraft.cms.store;
 
+import dcraft.db.request.DataRequest;
 import dcraft.db.request.query.CollectorField;
 import dcraft.db.request.query.LoadRecordRequest;
 import dcraft.db.request.query.SelectDirectRequest;
@@ -71,6 +72,14 @@ public class Orders {
 		}
 		else if ("AddComment".equals(op)) {
 			Orders.handleAddComment(request, callback);
+			return true;
+		}
+		else if ("EstimateItems".equals(op)) {
+			Orders.handleEstimateItems(request, callback);
+			return true;
+		}
+		else if ("ShipItems".equals(op)) {
+			Orders.handleShipItems(request, callback);
 			return true;
 		}
 		else if ("Search".equals(op)) {
@@ -301,6 +310,7 @@ public class Orders {
 						.with("dcmCalcInfo", "CalcInfo")
 						.with("dcmGrandTotal", "GrandTotal")
 						.with("dcmAudit", "Audit")
+						.with("dcmShipmentInfo", "Shipments")
 				);
 
 		// Alias, Image, Instructions, Title - Price, Quantity, Total
@@ -422,6 +432,7 @@ public class Orders {
 		}));
 	}
 
+	// TODO move to stored proc
 	static public void handleUpdateStatus(ServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 		String id = data.getFieldAsString("Id");
@@ -503,186 +514,14 @@ public class Orders {
 		String id = data.getFieldAsString("Id");
 		String status = data.getFieldAsString("Status");
 		ListStruct updateList = data.getFieldAsList("Items");
-
-		LoadRecordRequest req = LoadRecordRequest.of("dcmOrder")
-				.withId(id)
-				.withSelect(SelectFields.select()
-						.withSubquery("dcmItemProduct", "ProductInfo", SelectFields.select()
-								.with("Id", "Product")
-								.with("dcmTitle", "Title")
-						)
-						.with("dcmItemProduct", "ItemProduct", null, true)
-						.with("dcmItemStatus", "ItemStatus", null,true)
-				);
-
-		ServiceHub.call(req.toServiceRequest().withOutcome(new OperationOutcomeStruct() {
-			@Override
-			public void callback(Struct result) throws OperatingContextException {
-				if (this.hasErrors()) {
-					callback.returnEmpty();
-					return;
-				}
-
-				RecordStruct rec = Struct.objectToRecord(result);
-				StringBuilder comment = new StringBuilder();
-
-				DbRecordRequest upreq = UpdateRecordRequest.update()
-						.withTable("dcmOrder")
-						.withId(id);
-
-				int fndcnt = 0;
-
-				ListStruct pinfo = rec.getFieldAsList("ProductInfo");
-				ListStruct plist = rec.getFieldAsList("ItemProduct");
-				ListStruct slist = rec.getFieldAsList("ItemStatus");
-
-				for (Struct pentry : plist.items()) {
-					RecordStruct prec = Struct.objectToRecord(pentry);
-
-					String eid = prec.getFieldAsString("SubId");
-					String pid = prec.getFieldAsString("Data");
-
-					boolean fnd = false;
-
-					for (Struct upentry : updateList.items()) {
-						String upid = Struct.objectToString(upentry);
-
-						if (upid.equals(eid)) {
-							fnd = true;
-							break;
-						}
-					}
-
-					if (! fnd)
-						continue;
-
-					upreq
-							.withUpdateField("dcmItemStatus", eid, status);
-
-					for (Struct prodentry : pinfo.items()) {
-						RecordStruct prodrec = Struct.objectToRecord(prodentry);
-
-						if (pid.equals(prodrec.getFieldAsString("Product"))) {
-							if (fndcnt > 0)
-								comment.append(", ");
-
-							comment.append(prodrec.getFieldAsString("Title"));
-							fndcnt++;
-							break;
-						}
-					}
-				}
-
-				if (fndcnt > 0) {
-					int totitm = plist.size();
-					int totfull = 0;
-					int totcomp = 0;
-					int totcan = 0;
-					boolean sendEmail = false;
-					
-					for (Struct sentry : slist.items()) {
-						RecordStruct srec = Struct.objectToRecord(sentry);
-						
-						String eid = srec.getFieldAsString("SubId");
-						String sstatus = srec.getFieldAsString("Data");
-						
-						boolean fnd = false;
-						
-						for (Struct upentry : updateList.items()) {
-							String upid = Struct.objectToString(upentry);
-							
-							if (upid.equals(eid)) {
-								fnd = true;
-								break;
-							}
-						}
-						
-						if (fnd)
-							continue;
-						
-						if ("AwaitingFulfillment".equals(sstatus))
-							totfull++;
-						else if ("Completed".equals(sstatus))
-							totcomp++;
-						else if ("Canceled".equals(sstatus))
-							totcan++;
-					}
-					
-					// update overall order status when appropriate
-					if ("AwaitingShipment".equals(status)) {
-						upreq
-								.withUpdateField("dcmStatus", status);
-					}
-					else if ("AwaitingPickup".equals(status)) {
-						upreq
-								.withUpdateField("dcmStatus", status);
-						
-						sendEmail = true;
-					}
-					else if ("AwaitingFulfillment".equals(status)) {
-						totfull += updateList.size();
-						
-						if (totfull == totitm)
-							upreq
-								.withUpdateField("dcmStatus", status);
-					}
-					else if ("Completed".equals(status)) {
-						totcomp += updateList.size();
-						
-						if (totcomp == totitm)
-							upreq
-								.withUpdateField("dcmStatus", status);
-						
-						sendEmail = true;
-					}
-					else if ("Canceled".equals(status)) {
-						totcan += updateList.size();
-						
-						if (totcan == totitm)
-							upreq
-								.withUpdateField("dcmStatus", status);
-					}
-					
-					ZonedDateTime stamp = TimeUtil.now();
-
-					RecordStruct audit = RecordStruct.record()
-							.with("Origin", "Store")
-							.with("Stamp", stamp)
-							.with("Internal", false)
-							.with("Comment", "Items updated: " + comment + (sendEmail ? " - customer notified" : ""))
-							.with("Status", status);
-
-					upreq
-						.withSetField("dcmAudit", TimeUtil.stampFmt.format(stamp), audit);
-
-					boolean sendEmailF = sendEmail;
-					
-					ServiceHub.call(upreq
-							.toServiceRequest()
-							.withOutcome(new OperationOutcomeStruct() {
-								@Override
-								public void callback(Struct upresult) throws OperatingContextException {
-									if (sendEmailF) {
-										TaskHub.submit(Task.ofSubtask("Order placed trigger", "STORE")
-												.withTopic("Batch")
-												.withMaxTries(5)
-												.withTimeout(10)        // TODO this should be graduated - 10 minutes moving up to 30 minutes if fails too many times
-												.withParams(RecordStruct.record()
-														.with("Id", id)
-												)
-												.withScript(CommonPath.from("/dcm/store/event-order-updated.dcs.xml")));
-									}
-									
-									callback.returnValue(upresult);
-								}
-							})
-					);
-				}
-				else {
-					callback.returnEmpty();
-				}
-			}
-		}));
+		
+		// update the database
+		DataRequest record = DataRequest.of("dcmUpdateItems")
+				.withParam("Id", id)
+				.withParam("Status", status)
+				.withParam("Items", updateList);
+		
+		ServiceHub.call(record, callback);
 	}
 
 	static public void handleAddComment(ServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
@@ -707,6 +546,23 @@ public class Orders {
 				.toServiceRequest()
 				.withOutcome(callback)
 		);
+	}
+	
+	static public void handleEstimateItems(ServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
+		RecordStruct data = request.getDataAsRecord();
+		
+		String id = data.getFieldAsString("Id");
+
+		Logger.error("Op not currently supported");
+		callback.returnEmpty();
+	}
+	
+	static public void handleShipItems(ServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
+		RecordStruct data = request.getDataAsRecord();
+		
+		String id = data.getFieldAsString("Id");
+	
+		OrderUtil.createShipment(id, data.getFieldAsRecord("Shipment"), data.getFieldAsList("Items"), callback);
 	}
 
 	/*
@@ -749,10 +605,7 @@ public class Orders {
 			);
 			
 			if (StringUtil.isNotEmpty(term)) {
-				req.withWhere(WhereTerm.term()
-						.withField("dcmCustomerInfo")
-						.withValue(term)
-				);
+				req.withWhere(WhereTerm.of("dcmCustomerInfo", term));
 				
 				/*
 				String[] terms = term.split(" ");

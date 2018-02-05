@@ -8,6 +8,10 @@
 	<dc.Body>
 		<dc.PagePanel>
 			<dcf.Form>
+				<div id="dcmesCatLocale">
+					<dcf.Select Name="TrLocale" Label="Edit Language" />
+				</div>
+
 				<dcf.Text Label="Name" Name="Title" Required="true" />
 				<dcf.Text Label="Alias" Name="Alias" DataType="dcPageSlug" Required="true" placeholder="Lowercase or numeric characters, dashes for spaces" />
 
@@ -18,8 +22,16 @@
 					</dcf.HorizRadioGroup>
 				</div>
 
-				<dcf.TextArea Label="Description" Name="Description" />
+				<dcf.YesNo Label="Visible" Name="ShowInStore" />
 				<dcf.Text Label="Ship Amount" Name="ShipAmount" DataType="Decimal" Instructions="Use with the Category Shipping Calculator" />
+
+				<dcf.Text Label="Image">
+					<Input Name="Image" placeholder="defaults to `main` image if present" />
+					<Button Icon="fa-ellipsis-h" Click="DoSelectImage" />
+					<Button Icon="fa-upload" Click="DoUploadImage" />
+				</dcf.Text>
+
+				<dcf.TextArea Label="Description" Name="Description" />
 
 				<dcf.FormButtons>
 					<dc.Button Label="Delete" Click="DoRemove" />
@@ -30,6 +42,9 @@
 	</dc.Body>
 	<Function Name="Load"><![CDATA[
 			var page = this;
+
+			if (! page.Store.Locale)
+				page.Store.Locale = dc.user.currentLocale();
 
 			page.form().inputQuery('Title')
 				.focusout(function(e) {
@@ -47,6 +62,20 @@
 
 			if (page.Params.ParentId)
 				$('#dcmesCatSubs').hide();
+
+			if (dc.handler && dc.handler.locales && dc.handler.locales.options) {
+				page.form().input('TrLocale').add(dc.handler.locales.options);
+
+				page.form().inputQuery('TrLocale').on('change', function() {
+					page.Store.Locale = this.value;
+
+					// reload only the form
+					page.form().load(function() { });
+				});
+			}
+			else {
+				$('#dcmesCatLocale').hide();
+			}
 	]]></Function>
 	<Function Name="LoadRecord" Params="e"><![CDATA[
 			var page = this;
@@ -56,13 +85,17 @@
 					Service: 'dcmStoreServices',
 					Feature: 'Category',
 					Op: 'Load',
-					Body: { Id: page.Params.Id }
+					Body: {
+						Id: page.Params.Id,
+						TrLocale: page.Store.Locale
+					}
 				};
 			}
 			else {
 				e.AsNew = true;
 				e.Data = {
-					Mode: 'TopWithProduct'
+					Mode: 'TopWithProduct',
+					TrLocale: page.Store.Locale
 				};
 			}
 	]]></Function>
@@ -71,6 +104,10 @@
 
 			if (e.Data.Mode == 'Sub')
 				$('#dcmesCatSubs').hide();
+
+			e.Data.TrLocale = page.Store.Locale;
+
+			page.Store.Slug = e.Data.Alias;
 	]]></Function>
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 			var page = this;
@@ -82,6 +119,11 @@
 
 			if (page.Params.Id)
 				e.Data.Id = page.Params.Id;
+
+			e.Data.TrLocale = page.form().getValue('TrLocale');
+
+			if (! e.Data.TrLocale)
+				delete e.Data.TrLocale;
 
 			e.Message = {
 				Service: 'dcmStoreServices',
@@ -105,6 +147,54 @@
 				page.Params.Callback({
 					NewId: page.Store.NewId
 				});
+	]]></Function>
+	<Function Name="DoSelectImage"><![CDATA[
+			var page = this;
+
+			if (! page.Store.Slug) {
+				dc.pui.Popup.alert('Please save the product before selecting an image.');
+				return;
+			}
+
+			dc.pui.Dialog.loadPage('/dcm/store/product-image-chooser', {
+				Chained: true,
+				Path: '/store/category/' + page.Store.Slug,
+				Callback: function(res) {
+					if (res.Images && res.Images.length) {
+						var fh = res.Images[0];
+
+						page.form().setValue('Image', fh.FileName);
+					}
+				}
+			});
+	]]></Function>
+	<Function Name="DoUploadImage"><![CDATA[
+			var page = this;
+
+			if (! page.Store.Slug) {
+				dc.pui.Popup.alert('Please save the product before selecting an image.');
+				return;
+			}
+
+			var path = '/store/category/' + page.Store.Slug;
+
+			dc.cms.image.Loader.loadGallery(path, function(gallery, resp) {
+				if (resp.Result > 0) {
+					dc.pui.Popup.alert(resp.Message);
+					return;
+				}
+
+				dc.pui.Dialog.loadPage('/dcm/galleries/quick-upload', {
+					Gallery: gallery,
+					Path: path,
+					Variation: 'full',
+					Callback: function(files) {
+						if (files && files.length) {
+							page.form().setValue('Image', files[0].FileName);
+						}
+					}
+				});
+			});
 	]]></Function>
 	<Function Name="DoRemove"><![CDATA[
 			var page = this;

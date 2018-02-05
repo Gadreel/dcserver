@@ -22,7 +22,7 @@ public class DbUtil {
 
 		if (conn == null) {
 			String reqdbname = (params instanceof RecordStruct)
-					? ((RecordStruct)params).getFieldAsString("Database", "default")
+					? ((RecordStruct)params).getFieldAsString("_Database", "default")
 					: "default";
 
 			Logger.error("Missing database: " + reqdbname);
@@ -56,8 +56,8 @@ public class DbUtil {
 				.withInterface(conn.allocateAdapter())
 				.withStamp(conn.allocateStamp(0));
 
-		if ((params instanceof RecordStruct) && ((RecordStruct)params).isFieldEmpty("ForTenant"))
-			((RecordStruct)params).with("ForTenant", OperationContext.getOrThrow().getUserContext().getTenantAlias());
+		if ((params instanceof RecordStruct) && ((RecordStruct)params).isFieldEmpty("_ForTenant"))
+			((RecordStruct)params).with("_ForTenant", OperationContext.getOrThrow().getUserContext().getTenantAlias());
 
 		// if we are playing a cloned request, then replicating should be set
 		//request.withReplicating(true);

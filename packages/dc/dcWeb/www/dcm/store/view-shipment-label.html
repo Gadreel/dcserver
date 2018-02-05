@@ -1,0 +1,26 @@
+<dc.Html Badges="Clerk,Admin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="View Shipment Label" />
+	</Meta>
+
+	<dc.Body>
+		<div id="panDcmShipLabelViewer" style="height: 100%;">
+			<img id="img2e4c98044bbe4b30b7088d7e22e38964"  class="pure-img" />
+
+			<dc.Link id="panDcmShipLabelViewerClose" Click="onClose" style="position: absolute; top: 24px; right: 24px;" Icon="fa-times" />
+		</div>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			$('#img2e4c98044bbe4b30b7088d7e22e38964').attr('src', page.Params.Label);
+
+			window.print();
+	]]></Function>
+	<Function Name="onClose"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+	]]></Function>
+</dcui>

@@ -19,7 +19,9 @@ package dcraft.util;
 import java.util.Iterator;
 import java.util.regex.Pattern;
 
+import dcraft.struct.Struct;
 import dcraft.struct.builder.JsonMemoryBuilder;
+import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 
 public class StringUtil {
 	private static final int PAD_LIMIT = 8192;
@@ -1005,5 +1007,19 @@ public class StringUtil {
 		}
 
 		return count;
+	}
+
+	public static String apiClean(Object source, int maxlength) {
+	    String in = Struct.objectToString(source);
+
+	    if (StringUtil.isEmpty(in))
+	    	return "";
+
+	    String out = ASCIIFoldingFilter.foldToASCII(in);
+
+	    if (out.length() > maxlength)
+	    	out = out.substring(0, maxlength);
+
+	    return out;
 	}
 }

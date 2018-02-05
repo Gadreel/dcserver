@@ -1,6 +1,6 @@
 <!-- TODO, for startup before hub resources is loaded  -->
 <Dictionary>
-	<Locale Id="en">
+	<Locale Id="eng">
 		<Entry Token="cldr_time_format_full" Value="h:mm:ss a zzzz" />
 	</Locale>
 	<Locale Id="x-pig-latin">

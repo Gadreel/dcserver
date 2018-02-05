@@ -228,6 +228,9 @@ public class RpcHandler implements IContentDecoder {
 						sk.setPath("/");
 						sk.setHttpOnly(true);
 						
+						// help pass security tests if Secure by default when using https
+						sk.setSecure(wctrl.isSecure());
+						
 						wctrl.getResponse().setCookie(sk);
 					}
 				}

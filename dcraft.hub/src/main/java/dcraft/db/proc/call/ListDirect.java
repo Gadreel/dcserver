@@ -1,12 +1,11 @@
 package dcraft.db.proc.call;
 
-import java.util.function.Function;
-
-import dcraft.db.DbServiceRequest;
 import dcraft.db.proc.BasicFilter;
-import dcraft.db.proc.FilterResult;
+import dcraft.db.proc.ExpressionResult;
 import dcraft.db.proc.IFilter;
 import dcraft.db.proc.filter.Unique;
+import dcraft.db.ICallContext;
+import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationMarker;
@@ -64,7 +63,7 @@ public class ListDirect extends LoadRecord {
 	 ;
 	 */
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct params = request.getDataAsRecord();
 		
 		String table = params.getFieldAsString("Table");
@@ -74,15 +73,10 @@ public class ListDirect extends LoadRecord {
 		ListStruct select = ListStruct.list(params.getFieldAsRecord("Select"));
 		RecordStruct where = params.getFieldAsRecord("Where");
 		
-		if (when == null)
-			when = BigDateTime.nowDateTime();
-		
-		BigDateTime fwhen = when;
-		
 		// TODO add db filter option
 		//d runFilter("Query") quit:Errors  ; if any violations in filter then do not proceed
 		
-		TablesAdapter db = TablesAdapter.of(request);
+		TablesAdapter db = TablesAdapter.of(request, when, historical);
 		
 		/*
 		// TODO support collector
@@ -98,25 +92,25 @@ public class ListDirect extends LoadRecord {
 			IFilter filter = Unique.unique()
 					.withNested(new BasicFilter() {
 						@Override
-						public FilterResult check(TablesAdapter adapter, Object id, BigDateTime when, boolean historical) throws OperatingContextException {
-							if (adapter.checkSelect(table, id.toString(), when, where, historical)) {
+						public ExpressionResult check(TablesAdapter adapter, Object id) throws OperatingContextException {
+							if (adapter.checkSelect(table, id.toString(), where)) {
 								try {
-									ListDirect.this.writeField(request, out, db, table, id.toString(), fwhen, select.getItemAsRecord(0),
-											historical, compact);
+									TableUtil.writeField(out, db, table, id.toString(),
+											select.getItemAsRecord(0), compact);
 								}
 								catch (BuilderStateException x) {
-									return FilterResult.halt();
+									return ExpressionResult.halt();
 								}
 								
-								return FilterResult.accepted();
+								return ExpressionResult.accepted();
 							}
 							
-							return FilterResult.rejected();
+							return ExpressionResult.rejected();
 						}
 					});
 			
 			
-			db.traverseRecords(table, when, historical, filter);
+			db.traverseRecords(table, filter);
 	
 			out.endList();
 			

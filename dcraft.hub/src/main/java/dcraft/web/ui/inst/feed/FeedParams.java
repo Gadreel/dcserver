@@ -2,7 +2,6 @@ package dcraft.web.ui.inst.feed;
 
 import dcraft.hub.op.OperatingContextException;
 
-import dcraft.cms.feed.core.FeedAdapter;
 import dcraft.struct.RecordStruct;
 import dcraft.script.inst.doc.Base;
 import dcraft.xml.XElement;
@@ -15,22 +14,24 @@ public class FeedParams extends Base {
 	}
 	
 	//protected RecordStruct feeddata = null;
-	protected FeedAdapter adapter = null;
+	//protected FeedAdapter adapter = null;
 	
 	@Override
 	public XElement newNode() {
 		return FeedParams.tag();
 	}
-	
+
+	/*
 	public void setFeedData(RecordStruct v) throws OperatingContextException {
 		// TODO review
 		//this.adapter = FeedAdapter.from(v);
 	}
 	
 	public void setFeedData(FeedAdapter v) {
-		this.adapter = v;
+		//this.adapter = v;
 	}
-	
+	*/
+
 	public FeedParams() {
 		this.exclude = true;
 	}

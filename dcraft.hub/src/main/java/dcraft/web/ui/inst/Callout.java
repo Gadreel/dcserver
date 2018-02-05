@@ -30,6 +30,7 @@ public class Callout extends Base {
 		
 		if (StringUtil.isNotEmpty(title))
 			this.add(0, W3.tag("h4")
+					.withClass("dc-control")
 				.withText(title)
 			);
     }

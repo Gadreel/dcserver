@@ -20,6 +20,7 @@ import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
@@ -129,6 +130,8 @@ public class Html extends Base {
 					bestvalue = value;
 					continue;
 				}
+
+				trl = LocaleUtil.normalizeCode(trl);
 				
 				if (! locale.equals(trl))
 					continue;

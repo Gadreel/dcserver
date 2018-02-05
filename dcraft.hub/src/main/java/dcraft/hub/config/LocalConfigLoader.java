@@ -27,6 +27,7 @@ import dcraft.hub.resource.Package;
 import dcraft.hub.resource.lib.Bundle;
 import dcraft.locale.Dictionary;
 import dcraft.locale.LocaleResource;
+import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
 import dcraft.schema.SchemaResource;
 import dcraft.struct.Struct;
@@ -178,7 +179,7 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 		
 		lr.setDefaultChronology(configres.getAttribute("Chronology", "UTC"));
 		
-		lr.setDefaultLocale(configres.getAttribute("Locale", "en"));
+		lr.setDefaultLocale(LocaleUtil.normalizeCode(configres.getAttribute("Locale", "eng")));
 		
 		Logger.trace( "Loaded locale settomgs");
 		

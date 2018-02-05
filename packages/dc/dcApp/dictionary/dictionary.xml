@@ -1,0 +1,11 @@
+<Dictionary>
+	<Locale Id="eng">
+		<Entry Token="_code_60000" Value="Open menu" />
+		<Entry Token="_code_60001" Value="Close menu" />
+	</Locale>
+	<!-- TODO separate out languages -->
+	<Locale Id="spa">
+		<Entry Token="_code_60000" Value="Menú abierto" />
+		<Entry Token="_code_60001" Value="Cerrar el menú" />
+	</Locale>
+</Dictionary>

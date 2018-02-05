@@ -17,31 +17,18 @@
 package dcraft.db.request.query;
 
 public class WhereGreaterThanOrEqual extends WhereExpression {
-	public WhereGreaterThanOrEqual(Object a, Object b) {
-		super("GreaterThanOrEqual");
-		
-		this.addValue("A", a);
-		this.addValue("B", b);
+	static public WhereGreaterThanOrEqual greaterThanOrEqual() {
+		return new WhereGreaterThanOrEqual();
 	}
 	
-	public WhereGreaterThanOrEqual(IWhereField a, Object b) {
-		super("GreaterThanOrEqual");
-		
-		this.addField("A", a);
-		this.addValue("B", b);
+	static public WhereGreaterThanOrEqual of(String field, Object value) {
+		WhereGreaterThanOrEqual expression = new WhereGreaterThanOrEqual();
+		expression.withFieldOne(field);
+		expression.withValueTwo(value);
+		return expression;
 	}
 	
-	public WhereGreaterThanOrEqual(Object a, IWhereField b) {
+	public WhereGreaterThanOrEqual() {
 		super("GreaterThanOrEqual");
-		
-		this.addValue("A", a);
-		this.addField("B", b);
-	}
-	
-	public WhereGreaterThanOrEqual(IWhereField a, IWhereField b) {
-		super("GreaterThanOrEqual");
-		
-		this.addField("A", a);
-		this.addField("B", b);
 	}
 }

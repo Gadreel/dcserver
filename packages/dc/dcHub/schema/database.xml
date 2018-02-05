@@ -29,8 +29,8 @@
 		</Record>
 
 		<Record Id="dcdbCallBasic">
-			<Field Name="ForTenant" Type="dcTinyString" />
-			<Field Name="Database" Type="dcTinyString" />
+			<Field Name="_ForTenant" Type="dcTinyString" />
+			<Field Name="_Database" Type="dcTinyString" />
 		</Record>
 
 		<Record Id="dcdbCall" Inherits="dcdbCallBasic">
@@ -39,18 +39,18 @@
 		</Record>
 
 		<Record Id="dcdbSelectField">
-			<Field Name="Field" Type="dcTinyString" />
-			<Field Name="Name" Type="dcTinyString" />
-			<Field Name="Format" Type="dcSmallString" />
+			<Field Name="Field" Type="dcMetaString" />
+			<Field Name="Name" Type="dcMetaString" />
+			<Field Name="Format" Type="dcMetaString" />
 			<Field Name="Select">
 				<List Type="dcdbSelectField" />
 			</Field>
 			<Field Name="Full" Type="Boolean" />
-			<Field Name="SubId" Type="dcTinyString" />
-			<Field Name="ForeignField" Type="dcTinyString" />
-			<Field Name="Composer" Type="dcTinyString" />
-			<Field Name="Table" Type="dcTinyString" />
-			<Field Name="KeyField" Type="dcTinyString" />
+			<Field Name="SubId" Type="dcMetaString" />
+			<Field Name="ForeignField" Type="dcMetaString" />
+			<Field Name="Composer" Type="dcMetaString" />
+			<Field Name="Table" Type="dcMetaString" />
+			<Field Name="KeyField" Type="dcMetaString" />
 			<Field Name="Params" Type="AnyRecord" />
 		</Record>
 
@@ -241,9 +241,10 @@
 			<Field Name="dcZip" Type="dcUsaZip" />
 			<Field Name="dcPhone" Type="dcTinyString" />
 
-			<!-- TODO review
-			<Field Name="dcmFacebookId" Type="dcString" Unique="True" />
-			-->
+			<!-- geocoded address -->
+			<Field Name="dcLocation" Type="dcMetaString" />
+
+			<Field Name="dcFacebookId" Type="dcString" Unique="True" />
 
 			<Field Name="dcExternalId" Type="dcSmallString" List="True" />
 
@@ -290,7 +291,8 @@
 
 		<Composer Name="dcListCounter" Execute="dcraft.db.proc.comp.ListCounter" Badges="Admin" />
 		<Composer Name="dcIndexValueCounter" Execute="dcraft.db.proc.comp.IndexValueCounter" Badges="Admin" />
-		<Composer Name="dcConcat" Execute="dcraft.db.proc.comp.Concat" Badges="Admin" />
+		<Composer Name="dcConcat" Execute="dcraft.db.proc.comp.Concat" />
+		<Composer Name="dcTranslate" Execute="dcraft.db.proc.comp.Translate" />
 
 		<Collector Name="dcCollectorGeneral" Execute="dcraft.db.proc.collect.General" />
 
@@ -453,7 +455,7 @@
 						</Description>
 						<RecordRequest Inherits="dcdbCallBasic" Required="True">
 							<!-- should always be `root` -->
-							<Field Name="ForTenant" Type="dcTinyString" Required="True" />
+							<Field Name="_ForTenant" Type="dcTinyString" Required="True" />
 							<Field Name="Alias" Type="dcTinyString" Required="True" />
 							<Field Name="Config" Type="dcString" />
 							<!-- user -->
@@ -596,8 +598,8 @@
 							Cleanup expired temp globals such as sessions,
 							big params and cache.
 						</Description>
-						<RecordRequest>
-							<Field Name="ExpireThreshold" Type="DateTime" Required="True" />
+						<RecordRequest Inherits="dcdbCallBasic">
+							<!-- Field Name="ExpireThreshold" Type="DateTime" Required="True" / -->
 							<Field Name="LongExpireThreshold" Type="DateTime" Required="True" />
 						</RecordRequest>
 					</Op>

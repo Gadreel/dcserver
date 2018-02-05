@@ -1,0 +1,244 @@
+<Schema>
+	<!--
+		^[tenant]dcmThreadA("party path", "folder name/path", stamp, msg id) = read t/f
+	-->
+	<Database>
+		<Table Id="dcmThread">
+			<Field Name="dcmTitle" Type="dcString" />
+			<!-- the original hash of the thread title, used to link external resources into the thread such as message replies -->
+			<Field Name="dcmHash" Type="dcMetaString" Required="True" Unique="True" Indexed="True" />
+			<!-- alt way to identify this message -->
+			<Field Name="dcmUuid" Type="dcMetaString" Required="True" Unique="True" Indexed="True" />
+			<Field Name="dcmMessageType" Type="dcMetaString" Required="True" Indexed="True" />
+			<Field Name="dcmCreated" Type="DateTime" Required="True" />
+			<!-- when content is set into the thread -->
+			<Field Name="dcmModified" Type="DateTime" Required="True" />
+			<Field Name="dcmOriginator" ForeignKey="dcUser" />
+			<Field Name="dcmTargetDate" Type="DateTime" />
+			<Field Name="dcmEndDate" Type="DateTime" />
+			<!-- if set, this message can be archived automatically after this date -->
+			<Field Name="dcmExpireDate" Type="DateTime" />
+
+			<Field Name="dcmLabels" Type="dcMetaString" />
+			<Field Name="dcmSharedAttributes" Type="AnyRecord" />
+
+			<!-- Party related group, sid = party id  -->
+			<Field Name="dcmParty" Type="dcMetaString" Indexed="True" List="True" />
+			<Field Name="dcmFolder" Type="dcMetaString" List="True"  />
+			<Field Name="dcmPartyLabels" Type="dcMetaString" List="True"  />
+			<Field Name="dcmRead" Type="Boolean" List="True"  />
+			<Field Name="dcmLastRead" Type="DateTime" List="True"  />
+
+			<!-- Content related group, sid = timestamp of content  -->
+			<Field Name="dcmContent" Type="String" List="True" />
+			<Field Name="dcmContentType" Type="dcmThreadContentEnum" List="True"  />
+			<Field Name="dcmContentHash" Type="dcMetaString" List="True"  />
+			<Field Name="dcmContentOriginator" ForeignKey="dcUser" List="True" />
+			<!-- only if source is different from Content (minus attachments for emails) -->
+			<Field Name="dcmContentSource" Type="String" List="True" />
+			<!-- specific to content -->
+			<Field Name="dcmContentAttributes" Type="AnyRecord" List="True" />
+		</Table>
+	</Database>
+
+	<Shared>
+		<StringType Id="dcmThreadContentEnum">
+			<StringRestriction Enum="Text,UnsafeMD,SafeMD,HTML" />
+			<!--  to support for pattern of "MIME:[type]" -->
+		</StringType>
+
+		<Record Id="dcmThreadContent">
+			<Field Name="Content" Type="dcmThread:dcmContent" Required="True" />
+			<Field Name="ContentType" Type="dcmThread:dcmContentType" Required="True" />
+			<Field Name="ContentOriginator" Type="dcmThread:dcmContentOriginator" />
+			<!-- only if source is different from Content (minus attachments for emails) -->
+			<Field Name="Source" Type="dcmThread:dcmSource" />
+			<Field Name="Attributes" Type="dcmThread:dcmAttributes" />
+		</Record>
+
+		<Record Id="dcmThreadContentAdd" Inherits="dcmThreadContent">
+			<Field Name="Stamp" Type="DateTime" />
+		</Record>
+
+		<Record Id="dcmThreadParty">
+			<Field Name="Party" Type="dcmThread:dcmParty" Required="True" />
+			<Field Name="Folder" Type="dcmThread:dcmFolder" Required="True" />
+			<Field Name="PartyLabels">
+				<List Type="dcmThread:dcmPartyLabels" />
+			</Field>
+		</Record>
+
+		<Record Id="dcmThreadActionInfo">
+			<!-- any one of these is adequate to identify an existing thread to add to -->
+			<!-- title goes either way - it add to an existing thread if hashed and matches or it can create a new -->
+			<!-- title is updated if present and if any of the other three are present -->
+			<Field Name="Id" Type="Id" />
+			<Field Name="Hash" Type="dcmThread:dcmHash" />
+			<Field Name="Uuid" Type="dcmThread:dcmUuid" />
+		</Record>
+
+		<!-- add or update a thread  -->
+		<Record Id="dcmThreadCoreInfo">
+			<Field Name="Title" Type="dcmThread:dcmTitle" />
+			<Field Name="Originator" Type="dcmThread:dcmOriginator" />
+
+			<Field Name="Labels">
+				<List Type="dcmThread:dcmLabels" />
+			</Field>
+
+			<Field Name="TargetDate" Type="dcmThread:dcmTargetDate" />
+			<Field Name="EndDate" Type="dcmThread:dcmEndDate" />
+		</Record>
+
+		<Record Id="dcmThreadNewInfo" Inherits="dcmThreadCoreInfo">
+			<Field Name="TrackTitle" Type="Boolean" />
+
+			<!-- One item of Content - related group, sid = timestamp of content  -->
+			<Field Name="Content" Type="dcmThreadContent" />
+
+			<!-- Party related group, sid = party id  -->
+			<Field Name="Parties" Required="True">
+				<List Type="dcmThreadParty" />
+			</Field>
+		</Record>
+
+		<Record Id="dcmThreadReplyInfo" Inherits="dcmThreadActionInfo">
+			<Field Name="Labels">
+				<List Type="dcmThread:dcmLabels" />
+			</Field>
+
+			<!-- One item of Content - related group, sid = timestamp of content  -->
+			<Field Name="Content" Type="dcmThreadContent" />
+
+			<!-- Party related group, sid = party id  -->
+			<Field Name="Parties" Required="True">
+				<List Type="dcmThreadParty" />
+			</Field>
+		</Record>
+
+		<!-- update Title, TargetDate, EndDate via this -->
+		<Record Id="dcmThreadUpdateInfo" Inherits="dcmThreadCoreInfo,dcmThreadActionInfo" />
+
+		<Record Id="dcmThreadDetailRequestInfo" Inherits="dcmThreadActionInfo">
+			<Field Name="Party" Type="dcmThread:dcmParty" Required="True" />
+			<Field Name="DisplayNameField" Type="dcTinyString" />	<!--  for originator  -->
+		</Record>
+
+		<Record Id="dcmThreadDetailInfo" Inherits="dcmThreadCoreInfo,dcmThreadActionInfo">
+			<Field Name="OriginatorName" Type="dcSmallString" />
+
+			<Field Name="Created" Type="dcmThread:dcmCreated"  />
+			<!-- when content is set into the thread -->
+			<Field Name="Modified" Type="dcmThread:dcmModified" />
+
+			<!-- read/folder for the requested party -->
+			<Field Name="Read" Type="dcmThread:dcmRead" />
+			<Field Name="Folder" Type="dcmThread:dcmFolder" />
+
+			<Field Name="Content">
+				<List Type="dcmThreadContent" Required="True" />
+			</Field>
+
+			<Field Name="Parties">
+				<List>
+					<Record>
+						<Field Name="Party" Type="dcSmallString" />
+						<Field Name="Name" Type="dcString" />
+					</Record>
+				</List>
+			</Field>
+		</Record>
+
+		<Record Id="dcmThreadListRequestInfo">
+			<Field Name="Folder" Type="dcmThread:dcmFolder" Required="True" />
+			<Field Name="FilterParties">
+				<List Type="dcmThread:dcmParty" Required="True" />
+			</Field>
+			<Field Name="FilterLabels">
+				<List Type="dcmThread:dcmLabels" />
+			</Field>
+		</Record>
+
+		<Record Id="dcmThreadSummaryInfo">
+			<Field Name="Party" Type="dcmThread:dcmParty" Required="True" />
+			<Field Name="Folder" Required="True">
+				<List>
+					<Record Inherits="dcmThreadCoreInfo,dcmThreadActionInfo">
+						<Field Name="Created" Type="dcmThread:dcmCreated"  />
+						<!-- when content is set into the thread -->
+						<Field Name="Modified" Type="dcmThread:dcmModified" />
+						<Field Name="Read" Type="dcmThread:dcmRead" />
+					</Record>
+				</List>
+			</Field>
+		</Record>
+
+		<Record Id="dcmThreadCountRequestInfo">
+			<Field Name="FilterParties">
+				<List Type="dcmThread:dcmParty" Required="True" />
+			</Field>
+			<Field Name="FilterLabels">
+				<List Type="dcmThread:dcmLabels" />
+			</Field>
+		</Record>
+
+		<Record Id="dcmThreadCountInfo">
+			<Field Name="Party" Type="dcmThread:dcmParty" Required="True" />
+			<Field Name="Folders" Required="True">
+				<List>
+					<Record>
+						<Field Name="Name" Type="dcmThread:dcmFolder" Required="True" />
+						<Field Name="New" Type="Integer" Required="True" />
+						<Field Name="Total" Type="Integer" Required="True" />
+						<Field Name="Labels" Required="True">
+							<List Type="dcmThread:dcmLabels" />
+						</Field>
+						<Field Name="NextRecalculate" Type="DateTime" />
+					</Record>
+				</List>
+			</Field>
+		</Record>
+
+		<!-- list to add, list to remove -->
+		<Record Id="dcmThreadChangePartiesAction" Inherits="dcmThreadActionInfo">
+			<Field Name="AddParties">
+				<List Type="dcmThreadParty" Required="True" />
+			</Field>
+			<Field Name="RemoveParties">
+				<List Type="dcmThread:dcmParty" Required="True" />
+			</Field>
+		</Record>
+
+		<!-- change folder for given parties -->
+		<Record Id="dcmThreadChangeFolderAction" Inherits="dcmThreadActionInfo">
+			<Field Name="Parties" Required="True">
+				<List Type="dcmThread:dcmParty" Required="True" />
+			</Field>
+			<Field Name="Folder" Type="dcmThread:dcmFolder" Required="True" />
+		</Record>
+
+		<Record Id="dcmThreadAddContentAction" Inherits="dcmThreadActionInfo">
+			<Field Name="Content" Required="True">
+				<List Type="dcmThreadContentAdd" Required="True" />
+			</Field>
+		</Record>
+
+		<Record Id="dcmThreadChangeStatusAction" Inherits="dcmThreadActionInfo">
+			<Field Name="Parties" Required="True">
+				<List Type="dcmThread:dcmParty" Required="True" />
+			</Field>
+			<Field Name="Read" Type="dcmThread:dcmRead" Required="True" />
+		</Record>
+
+		<!-- list to add, list to remove, party optional depending on if it is a party label or shared label -->
+		<Record Id="dcmThreadChangeLabelsAction" Inherits="dcmThreadActionInfo">
+			<Field Name="AddLabels">
+				<List Type="dcmThread:dcmLabels" />
+			</Field>
+			<Field Name="RemoveLabels">
+				<List Type="dcmThread:dcmLabels" />
+			</Field>
+			<Field Name="Party" Type="dcmThread:dcmParty" />
+		</Record>
+	</Shared>
+</Schema>

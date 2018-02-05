@@ -20,30 +20,15 @@ public class WhereNotEqual extends WhereExpression {
 	static public WhereNotEqual notEqual() {
 		return new WhereNotEqual();
 	}
-
+	
+	static public WhereNotEqual of(String field, Object value) {
+		WhereNotEqual expression = new WhereNotEqual();
+		expression.withFieldOne(field);
+		expression.withValueTwo(value);
+		return expression;
+	}
+	
 	public WhereNotEqual() {
 		super("NotEqual");
-	}
-
-	public WhereNotEqual withField(String name) {
-		return this.withField(WhereField.of(name));
-	}
-
-	public WhereNotEqual withField(IWhereField fld) {
-		if (! this.params.hasField("A"))
-			this.addField("A", fld);
-		else if (! this.params.hasField("B"))
-			this.addField("B", fld);
-
-		return this;
-	}
-
-	public WhereNotEqual withValue(Object v) {
-		if (! this.params.hasField("A"))
-			this.addValue("A", v);
-		else if (! this.params.hasField("B"))
-			this.addValue("B", v);
-
-		return this;
 	}
 }

@@ -198,6 +198,8 @@ public class LoadDepositWork extends ChainWork {
 				}
 			};
 			
+			// TODO handle deletes from deposit manifest
+			
 			IWork downloaddeposit = new ChainWork() {
 				protected boolean first = true;
 				
@@ -218,6 +220,7 @@ public class LoadDepositWork extends ChainWork {
 						
 						int cnt = (int) manifest.getFieldAsInteger("SplitCount", 0);
 						
+						// TODO can be zero if deletes are present
 						if (cnt <= 0) {
 							Logger.error("Invalid SplitCount: " + cnt);
 							taskctx.returnEmpty();
@@ -318,6 +321,8 @@ public class LoadDepositWork extends ChainWork {
 							finalfiles.withFiles(nodeDepositStore.resolvePathToStore(fname));
 						}
 						
+						
+						// TODO add support for dcFileIndex
 						this.then(
 							StreamWork.of(
 									CollectionSourceStream.of(finalfiles),

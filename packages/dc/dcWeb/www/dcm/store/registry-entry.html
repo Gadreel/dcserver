@@ -20,15 +20,23 @@
 
 				<dcf.TextArea Label="Detail" Name="Detail" />
 
+				<dcf.Custom Label="Products">
+					<table id="lstb203f8d3e406479ab925b7d316c3d3a5" class="dc-table-break-std dc-table dc-table-reflow dc-table-stripe" />
+				</dcf.Custom>
+
 				<dcf.FormButtons>
+					<dc.Button Label="Add Product" Click="DoAddProduct" />
 					<dc.Button Label="Delete" Click="DoRemove" />
 					<dcf.SubmitButton Label="Save" />
 				</dcf.FormButtons>
 			</dcf.Form>
 		</dc.PagePanel>
 	</dc.Body>
-	<Function Name="Load"><![CDATA[
+	<Function Name="Load" Params="e"><![CDATA[
 			var page = this;
+
+			if (e.Thaw)
+				page.callPageFunc('LoadProducts');
 	]]></Function>
 	<Function Name="LoadRecord" Params="e"><![CDATA[
 			var page = this;
@@ -40,12 +48,126 @@
 					Op: 'Load',
 					Body: { Id: page.Params.Id }
 				};
+
+				var $list = $('#lstb203f8d3e406479ab925b7d316c3d3a5');
+
+				$list.empty().dcappend(
+					$('<tbody>').dcappend(
+						$('<tr>').dcappend(
+							$('<td>').dcappend(
+								$('<i>').addClass('fa fa-spinner fa-pulse fa-lg')
+							)
+						)
+					)
+				);
 			}
 			else {
 				e.AsNew = true;
 				e.Data = {
 					EventType: 'Wedding'
 				};
+			}
+	]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			page.Store.Products = e.Data.Products;
+
+			page.callPageFunc('LoadProducts');
+	]]></Function>
+	<Function Name="LoadProducts"><![CDATA[
+			var page = this;
+
+			if (! page.Store.Products)
+				return;
+
+			var $list = $('#lstb203f8d3e406479ab925b7d316c3d3a5');
+
+			var editProduct = function(e) {
+				dc.pui.Dialog.loadPage('/dcm/store/product-entry', {
+					Id: e.data.Product,
+					Callback: function(e) {
+						page.reload();
+					}
+				 });
+
+				e.preventDefault();
+				return false;
+			};
+
+			var unlinkProduct = function(e) {
+				dc.comm.sendMessage({
+					Service: 'dcmStoreServices',
+					Feature: 'GiftRegistry',
+					Op: 'UnlinkProduct',
+					Body: {
+						RegistryId: page.Params.Id,
+						ProductId: e.data.Product
+					}
+				}, function(resp) {
+					page.reload();
+				});
+
+				e.preventDefault();
+				return false;
+			};
+
+			$tbl = $('<tbody>');
+
+			$list.empty().dcappend(
+				$('<thead>').dcappend(
+					$('<tr>').dcappend(
+						$('<th>').dcappend(
+							$('<span>Title  &nbsp;</span>')
+						),
+						$('<th>').dcappend(
+							$('<span>Action &nbsp;</span>'),
+						)
+					)
+				),
+				$tbl
+			);
+
+			var recs = page.Store.Products;
+
+			if (! recs.length) {
+				$tbl.dcappend(
+					$('<tr>').dcappend(
+						$('<td>').attr('span', '2').text('[None Found]')
+					)
+				);
+
+				return;
+			}
+
+			// sort
+			recs.sort(dc.util.List.sortObjects('Title'));
+
+			for (var i = 0; i < recs.length; i++) {
+				var item = recs[i];
+
+				$tbl.dcappend(
+					$('<tr>').dcappend(
+						$('<td>').dcappend(
+							$('<b>').addClass('dc-table-cell-label').text('Title'),
+							' ',
+							item.Title
+						),
+						$('<td>').dcappend(
+							$('<b>').addClass('dc-table-cell-label').text('Action'),
+							' ',
+							$('<a>')
+								.attr('href', '#')
+								.click(item, editProduct)
+								.text('Edit'),
+							' - ',
+							$('<a>')
+								.attr('href', '#')
+								.click(item, unlinkProduct)
+								.text('Remove')
+						)
+					)
+				);
 			}
 	]]></Function>
 	<Function Name="SaveRecord" Params="e"><![CDATA[
@@ -105,6 +227,38 @@
 
 					page.callPageFunc('AfterSave')
 				});
+			});
+	]]></Function>
+	<Function Name="DoAddProduct"><![CDATA[
+			var page = this;
+
+			if (! page.Params.Id) {
+				dc.pui.Popup.alert('Save the registry first');
+				return;
+			}
+
+			dc.pui.Dialog.loadPage('/dcm/store/product-entry', {
+				AddRecord: function(data) {
+					dc.comm.sendMessage({
+						Service: 'dcmStoreServices',
+						Feature: 'GiftRegistry',
+						Op: 'LinkProduct',
+						Body: {
+							RegistryId: page.Params.Id,
+							ProductId: data.NewId
+						}
+					}, function(resp) {
+						/*
+						if (resp.Result > 0) {
+							dc.pui.Popup.alert(resp.Message);
+							return;
+						}
+						*/
+					});
+				},
+				Callback: function(data) {
+					page.reload();
+				}
 			});
 	]]></Function>
 </dc.Html>

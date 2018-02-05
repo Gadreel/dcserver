@@ -4,13 +4,17 @@ import dcraft.db.request.query.CollectorField;
 import dcraft.db.request.query.LoadRecordRequest;
 import dcraft.db.request.query.SelectDirectRequest;
 import dcraft.db.request.query.SelectFields;
+import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
+import dcraft.script.inst.OperationsInstruction;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
+import dcraft.script.work.OperationsWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.service.ServiceHub;
 import dcraft.struct.Struct;
@@ -18,7 +22,7 @@ import dcraft.struct.scalar.NullStruct;
 import dcraft.task.TaskContext;
 import dcraft.xml.XElement;
 
-public class LoadRecord extends Instruction {
+public class LoadRecord extends OperationsInstruction {
 	static public LoadRecord tag() {
 		LoadRecord el = new LoadRecord();
 		el.setName("dcdb.LoadRecord");
@@ -43,77 +47,45 @@ public class LoadRecord extends Instruction {
 	@Override
 	public ReturnOption run(InstructionWork state) throws OperatingContextException {
 		if (state.getState() == ExecuteState.READY) {
-			String table = StackUtil.stringFromSource(state, "Table");
-			String id = StackUtil.stringFromSource(state, "Id");
-			String name = StackUtil.stringFromSource(state, "Result");
+			String name = StackUtil.stringFromSource(state, "Name");
 			
-			SelectFields fields = SelectFields.select();
+			Struct var = ResourceHub.getResources().getSchema().getType("dcdbLoadRecord").create();
 			
-			for (XElement select : this.selectAll("Select")) {
-				if (select.hasNotEmptyAttribute("As")) {
-					fields.with(StackUtil.stringFromElement(state, select,"Field"),
-							StackUtil.stringFromElement(state, select,"As"));
-				}
-				else {
-					fields.with(StackUtil.stringFromElement(state, select,"Field"));
-				}
+			if (var == null) {
+				Logger.errorTr(520);
+				return ReturnOption.DONE;
 			}
 			
-			for (XElement subselect : this.selectAll("SelectSubquery")) {
-				SelectFields subfields = SelectFields.select();
-				
-				for (XElement select : subselect.selectAll("Select")) {
-					if (select.hasNotEmptyAttribute("As")) {
-						subfields.with(StackUtil.stringFromElement(state, select,"Field"),
-								StackUtil.stringFromElement(state, select,"As"));
-					}
-					else {
-						subfields.with(StackUtil.stringFromElement(state, select,"Field"));
-					}
-				}
-				
-				if (subselect.hasNotEmptyAttribute("As")) {
-					fields.withSubquery(StackUtil.stringFromElement(state, subselect,"Field"),
-							StackUtil.stringFromElement(state, subselect,"As"), subfields);
-				}
-				else {
-					fields.withSubquery(StackUtil.stringFromElement(state, subselect,"Field"), subfields);
-				}
-				
-			}
+			if (this.hasNotEmptyAttribute("Id"))
+				this.add(0, XElement.tag("SetField")
+						.withAttribute("Name", "Id")
+						.withAttribute("Value", this.getAttribute("Id"))
+				);
 			
-			LoadRecordRequest request = LoadRecordRequest.of(table)
-					.withId(id)
-					.withSelect(fields);
+			if (this.hasNotEmptyAttribute("Table"))
+				this.add(0, XElement.tag("SetField")
+						.withAttribute("Name", "Table")
+						.withAttribute("Value", this.getAttribute("Table"))
+				);
 			
-			// TODO check Query, should not need this in query either
-			//TaskContext ctx = OperationContext.getAsTaskOrThrow();
+			if (this.hasNotEmptyAttribute("Result"))
+				this.with(XElement.tag("Execute")
+						.withAttribute("Result", this.getAttribute("Result"))
+				);
 			
-			ServiceHub.call(request
-					.toServiceRequest()
-					.withOutcome(new OperationOutcomeStruct() {
-						@Override
-						public void callback(Struct result) throws OperatingContextException {
-							//OperationContext.set(ctx);
-							
-							// not sure if this is useful
-							if (result == null)
-								result = NullStruct.instance;
-							
-							StackUtil.addVariable(state, name, result);
-							
-							state.setState(ExecuteState.RESUME);
-							
-							//ctx.resume();
-							
-							OperationContext.getAsTaskOrThrow().resume();
-						}
-					})
-			);
+			StackUtil.addVariable(state, name, var);
 			
-			return ReturnOption.AWAIT;
+			((OperationsWork) state).setTarget(var);
+			
+			if (this.gotoTop(state))
+				return ReturnOption.CONTINUE;
+		}
+		else {
+			if (this.gotoNext(state, false))
+				return ReturnOption.CONTINUE;
 		}
 		
-		return ReturnOption.CONTINUE;
+		return ReturnOption.DONE;
 	}
+
 }

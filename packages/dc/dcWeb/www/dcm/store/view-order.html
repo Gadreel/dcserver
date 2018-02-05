@@ -46,6 +46,8 @@
 										<th>Status</th>
 										<th>Quantity / Price</th>
 										<th>Sub-Total</th>
+										<th>Updated</th>
+										<th>Ship</th>
 									</thead>
 									<tbody id="lstCartTotalBody" />
 								</table>
@@ -120,21 +122,25 @@
 
 	<Function Name="Load"><![CDATA[
 			var page = this;
-	]]></Function>
-	<Function Name="LoadRecord" Params="e"><![CDATA[
-			var page = this;
 
-			e.Message = {
+			dc.comm.sendMessage({
 				Service: 'dcmStoreServices',
 				Feature: 'Orders',
 				Op: 'Load',
-				Body: { Id: page.Params.Order.Id }
-			};
-	]]></Function>
-	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
-			var page = this;
+				Body: {
+					Id: page.Params.Order.Id
+				}
+			}, function(rmsg) {
+				if (rmsg.Result > 0) {
+					dc.pui.Popup.alert('Unable to load order: ' + rmsg.Message);
+					return;
+				}
 
-			var cart = e.Data;
+				page.callPageFunc('LoadOrder', rmsg.Body);
+			});
+	]]></Function>
+	<Function Name="LoadOrder" Params="cart"><![CDATA[
+			var page = this;
 
 			$('#sectCustomerComments').empty();
 
@@ -300,7 +306,10 @@
 					.click(function(e) {
 						$('#lstCartTotal').find('i.fa')
 							.toggleClass('fa-square-o')
-							.toggleClass('fa-check-square-o')
+							.toggleClass('fa-check-square-o');
+
+						e.preventDefault();
+						return false;
 					})
 			);
 
@@ -310,6 +319,31 @@
 
 			for (var i = 0; i < cart.Items.length; i++) {
 				var item = cart.Items[i];
+
+				var shiplink = '';
+
+				if (item.Shipment && cart.Shipments) {
+					for (var i2 = 0; i2 < cart.Shipments.length; i2++) {
+						var shitem = cart.Shipments[i2];
+
+						if (shitem.EntryId == item.Shipment) {
+							shiplink = $('<a>')
+								.attr('href', '#')
+								.text('#' + (i2 + 1))
+								.click(shitem, function(e) {
+									dc.pui.Dialog.loadPage('/dcm/store/view-shipment', {
+										Id: page.Params.Order.Id,
+										Shipment: e.data
+									});
+
+									e.preventDefault();
+									return false;
+								});
+
+							break;
+						}
+					}
+				}
 
 				$tbl.dcappend(
 					$('<tr>').dcappend(
@@ -324,7 +358,10 @@
 								.click(function(e) {
 									$(this).find('i')
 										.toggleClass('fa-square-o')
-										.toggleClass('fa-check-square-o')
+										.toggleClass('fa-check-square-o');
+
+									e.preventDefault();
+									return false;
 								})
 						),
 						$('<td>').dcappend(
@@ -348,6 +385,16 @@
 							$('<b>').addClass('dc-table-cell-label').text('Sub-Total'),
 							' $',
 							dc.util.Number.formatMoney(item.Total)
+						),
+						$('<td>').dcappend(
+							$('<b>').addClass('dc-table-cell-label').text('Updated'),
+							' ',
+							dc.util.Date.formatZLocalMedium(item.Updated)
+						),
+						$('<td>').dcappend(
+							$('<b>').addClass('dc-table-cell-label').text('Ship'),
+							' ',
+							shiplink
 						)
 					)
 				);
@@ -512,5 +559,25 @@
 
 				page.reload();
 			});
+	]]></Function>
+	<Function Name="DoShipment"><![CDATA[
+		var page = this;
+
+		var items = $('#lstCartTotalBody a i.fa-check-square-o').map(function(){
+			return $(this).attr('dc-data');
+		}).get();
+
+		if (items.length == 0) {
+			dc.pui.Popup.alert('Select items to update.');
+			return;
+		}
+
+		dc.pui.Dialog.loadPage('/dcm/store/ship-order', {
+			Id: page.Params.Order.Id,
+			Items: items,
+			Callback: function(res) {
+				//page.reload();
+			}
+		});
 	]]></Function>
 </dcui>

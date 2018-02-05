@@ -1,5 +1,5 @@
 ﻿<Dictionary>
-	<Locale Id="en">
+	<Locale Id="eng">
 		<Entry Token="_cldr_name" Value="English" />
 		<Entry Token="_cldr_orientation" Value="LTR" />
 		<!-- calendar -->

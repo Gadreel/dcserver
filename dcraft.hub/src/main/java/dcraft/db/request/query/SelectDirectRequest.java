@@ -21,7 +21,6 @@ import java.time.ZonedDateTime;
 import dcraft.db.request.DataRequest;
 import dcraft.hub.time.BigDateTime;
 import dcraft.struct.CompositeStruct;
-import dcraft.struct.RecordStruct;
 
 public class SelectDirectRequest extends DataRequest {
 	static public SelectDirectRequest of(String table) {
@@ -58,7 +57,7 @@ public class SelectDirectRequest extends DataRequest {
 	}
 	
 	public SelectDirectRequest withWhere(WhereExpression v) {
-		this.withParam("Where", v.getFields());
+		this.withParam("Where", v.getParams());
 		return this;
 	}
 	

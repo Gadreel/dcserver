@@ -1,14 +1,9 @@
 package dcraft.db.proc.call;
 
-import java.util.HashMap;
-import java.util.function.Function;
-
-import dcraft.db.DbServiceRequest;
-import dcraft.db.proc.BasicFilter;
-import dcraft.db.proc.FilterResult;
-import dcraft.db.proc.ICollector;
-import dcraft.db.proc.IFilter;
+import dcraft.db.proc.*;
 import dcraft.db.proc.filter.Unique;
+import dcraft.db.ICallContext;
+import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
@@ -20,15 +15,11 @@ import dcraft.schema.DbCollector;
 import dcraft.schema.SchemaResource;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
 import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.builder.ObjectBuilder;
-import dcraft.task.IParentAwareWork;
-import dcraft.util.StringUtil;
-import dcraft.xml.XElement;
 
-public class SelectDirect extends LoadRecord {
+public class SelectDirect implements IStoredProc {
 	/*
 	 ;  Table			name
 	 ;	When			"" = now
@@ -75,7 +66,7 @@ public class SelectDirect extends LoadRecord {
 	 ;		List of records, content based on Select
 	 */
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct params = request.getDataAsRecord();
 		
 		String table = params.getFieldAsString("Table");
@@ -85,33 +76,28 @@ public class SelectDirect extends LoadRecord {
 		ListStruct select = params.getFieldAsList("Select");
 		RecordStruct where = params.getFieldAsRecord("Where");
 		
-		if (when == null)
-			when = BigDateTime.nowDateTime();
-		
-		BigDateTime fwhen = when;
-		
 		// TODO add db filter option
 		//d runFilter("Query") quit:Errors  ; if any violations in filter then do not proceed
 		
-		TablesAdapter db = TablesAdapter.of(request);
+		TablesAdapter db = TablesAdapter.of(request, when, historical);
 		ICompositeBuilder out = new ObjectBuilder();
 		
 		IFilter filter = Unique.unique()
 				.withNested(new BasicFilter() {
 					@Override
-					public FilterResult check(TablesAdapter adapter, Object id, BigDateTime when, boolean historical) throws OperatingContextException {
-						if (adapter.checkSelect(table, id.toString(), when, where, historical)) {
+					public ExpressionResult check(TablesAdapter adapter, Object id) throws OperatingContextException {
+						if (adapter.checkSelect(table, id.toString(), where)) {
 							try {
-								SelectDirect.this.writeRecord(request, out, db, table, id.toString(), fwhen, select, compact, false, historical);
+								TableUtil.writeRecord(out, db, table, id.toString(), select, compact, false);
 							}
 							catch (BuilderStateException x) {
-								return FilterResult.halt();
+								return ExpressionResult.halt();
 							}
 							
-							return FilterResult.accepted();
+							return ExpressionResult.accepted();
 						}
 						
-						return FilterResult.rejected();
+						return ExpressionResult.rejected();
 					}
 				});
 		
@@ -130,7 +116,7 @@ public class SelectDirect extends LoadRecord {
 					ICollector sp = proc.getCollector();
 					
 					if (sp != null) {
-						sp.collect(request, db, table, when, historical, collector, filter);
+						sp.collect(request, db, table, collector, filter);
 					}
 					else {
 						Logger.error("Stored func not found or bad: " + func);
@@ -141,7 +127,7 @@ public class SelectDirect extends LoadRecord {
 				}
 			}
 			else {
-				db.traverseRecords(table, when, historical, filter);
+				db.traverseRecords(table, filter);
 			}
 			
 			out.endList();

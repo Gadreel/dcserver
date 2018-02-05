@@ -14,7 +14,9 @@ public class Main extends Base {
 		el.setName("dc.Main");
 		return el;
 	}
-	
+
+	protected String headertag = "h1";
+
 	@Override
 	public XElement newNode() {
 		return Main.tag();
@@ -43,7 +45,7 @@ public class Main extends Base {
 				
 				this.attr("aria-labelledby", id + "Header");
 				
-				this.add(0, W3.tag("h1")
+				this.add(0, W3.tag(this.headertag)
 						.withClass("dc-region-header", ariaOnly ? "dc-element-hidden" : "")
 						.attr("id", id + "Header")
 						.with(

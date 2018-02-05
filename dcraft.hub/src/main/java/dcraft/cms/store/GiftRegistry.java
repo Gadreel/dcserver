@@ -47,6 +47,12 @@ public class GiftRegistry {
 							.with("dcmDetail", "Detail")
 							.with("dcmEventType", "EventType")
 							.with("dcmEventDate", "EventDate")
+							.withSubquery("dcmProducts", "Products", SelectFields.select()
+									.with("Id", "Product")
+									.with("dcmTitle", "Title")
+									.with("dcmAlias", "Alias")
+									.with("dcmImage", "Image")
+							)
 					);
 			
 			ServiceHub.call(req.toServiceRequest().withOutcome(callback));
@@ -72,7 +78,7 @@ public class GiftRegistry {
 			
 			return true;
 		}
-		
+
 		if ("Add".equals(op)) {
 			DbRecordRequest req = InsertRecordRequest.insert()
 					.withTable("dcmGiftRegistry")
@@ -90,7 +96,35 @@ public class GiftRegistry {
 			
 			return true;
 		}
-		
+
+		if ("LinkProduct".equals(op)) {
+			DbRecordRequest req = UpdateRecordRequest.update()
+					.withTable("dcmGiftRegistry")
+					.withId(rec.getFieldAsString("RegistryId"))
+					.withSetField("dcmProducts", rec.getFieldAsString("ProductId"), rec.getFieldAsString("ProductId"));
+
+			ServiceHub.call(req
+					.toServiceRequest()
+					.withOutcome(callback)
+			);
+
+			return true;
+		}
+
+		if ("UnlinkProduct".equals(op)) {
+			DbRecordRequest req = UpdateRecordRequest.update()
+					.withTable("dcmGiftRegistry")
+					.withId(rec.getFieldAsString("RegistryId"))
+					.withRetireField("dcmProducts", rec.getFieldAsString("ProductId"));
+
+			ServiceHub.call(req
+					.toServiceRequest()
+					.withOutcome(callback)
+			);
+
+			return true;
+		}
+
 		if ("Retire".equals(op)) {
 			ServiceHub.call(RetireRecordRequest.of("dcmGiftRegistry", rec.getFieldAsString("Id"))
 					.toServiceRequest()

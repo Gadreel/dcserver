@@ -6,6 +6,7 @@ import java.util.UUID;
 import dcraft.hub.time.BigDateTime;
 import dcraft.struct.RecordStruct;
 import dcraft.util.RndUtil;
+import dcraft.util.StringUtil;
 
 /**
  * Base class for supporting the four database structures: StaticScalar, StaticList,
@@ -18,6 +19,7 @@ public class FieldRequest {
 	protected String name = null;
 	protected String subkey = null;
 	protected Object value = null;
+	protected String locale = null;
 	protected BigDateTime from = null;
 	protected BigDateTime to = null;
 	protected FieldTags tags = null;
@@ -35,6 +37,11 @@ public class FieldRequest {
 	
 	public FieldRequest withName(String v) {
 		this.name = v;
+		return this;
+	}
+	
+	public FieldRequest withLocale(String v) {
+		this.locale = v;
 		return this;
 	}
 	
@@ -97,6 +104,9 @@ public class FieldRequest {
 		
 		if (this.updateOnly)
 			data.with("UpdateOnly", true);
+		
+		if (StringUtil.isNotEmpty(this.locale))
+			data.with("Lang", this.locale);
 		
 		// static scalar stops here
 		if (this.subkey == null)

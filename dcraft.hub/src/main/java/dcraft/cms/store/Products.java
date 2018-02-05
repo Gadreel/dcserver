@@ -20,11 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import dcraft.db.request.query.CollectorField;
-import dcraft.db.request.query.LoadRecordRequest;
-import dcraft.db.request.query.SelectDirectRequest;
-import dcraft.db.request.query.SelectFields;
-import dcraft.db.request.query.WhereEqual;
+import dcraft.db.request.query.*;
 import dcraft.db.request.update.InsertRecordRequest;
 import dcraft.db.request.update.RetireRecordRequest;
 import dcraft.db.request.update.ReviveRecordRequest;
@@ -43,6 +39,7 @@ import dcraft.struct.CompositeStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.tenant.Site;
+import dcraft.util.StringUtil;
 
 public class Products {
 	/******************************************************************
@@ -54,19 +51,33 @@ public class Products {
 		RecordStruct rec = request.getDataAsRecord();
 
 		if ("Load".equals(op)) {
-			LoadRecordRequest req = LoadRecordRequest.of("dcmCategory")
-				.withId(rec.getFieldAsString("Id"))
-				.withNow()
-				.withSelect(SelectFields.select()
+			SelectFields flds = SelectFields.select()
 					.with("Id")
-					.with("dcmTitle", "Title")
 					.with("dcmAlias", "Alias")
 					.with("dcmMode", "Mode")
 					.with("dcmParent", "Parent")
-					.with("dcmDescription", "Description")
-					.with("dcmCustomDisplayField", "CustomDisplayField", null, true)
 					.with("dcmShipAmount", "ShipAmount")
-				);  
+					.with("dcmImage", "Image")
+					.with("dcmShowInStore", "ShowInStore")
+					.with("dcmCustomDisplayField", "CustomDisplayField", null, true);
+			String tr = rec.getFieldAsString("TrLocale");
+			
+			if (StringUtil.isEmpty(tr) || tr.equals(OperationContext.getOrThrow().getTenant().getResources().getLocale().getDefaultLocale())) {
+				flds
+						// .withComposer("dcTranslate", "Title", "dcmTitle", null)
+						.with("dcmTitle", "Title")
+						.with("dcmDescription", "Description");
+			}
+			else {
+				flds
+						.withSubField("dcmTitleTr", tr, "Title")
+						.withSubField("dcmDescriptionTr", tr, "Description");
+			}
+			
+			LoadRecordRequest req = LoadRecordRequest.of("dcmCategory")
+				.withId(rec.getFieldAsString("Id"))
+				.withNow()
+				.withSelect(flds);
 			
 			ServiceHub.call(req.toServiceRequest()
 				.withOutcome(new OperationOutcomeStruct() {
@@ -116,10 +127,17 @@ public class Products {
 		}
 		
 		if ("Update".equals(op)) {
+			String locale = rec.getFieldAsString("TrLocale");
+			
 			ServiceHub.call(UpdateRecordRequest.update()
 					.withTable("dcmCategory")
 					.withId(rec.getFieldAsString("Id"))
-					.withConditionallySetFields(rec, "Title", "dcmTitle", "Alias", "dcmAlias", "Mode", "dcmMode", "Parent", "dcmParent", "Description", "dcmDescription", "ShipAmount", "dcmShipAmount")
+					.withConditionallySetFields(rec, "Alias", "dcmAlias", "Mode", "dcmMode",
+							"Parent", "dcmParent", "ShipAmount", "dcmShipAmount",
+							"Image", "dcmImage", "ShowInStore", "dcmShowInStore"
+					)
+					.withConditionallyUpdateTrFields(rec, locale, "Title", "dcmTitle",
+							"Description", "dcmDescription")
 					.toServiceRequest()
 					.withOutcome(callback)
 			);
@@ -128,12 +146,15 @@ public class Products {
 		}
 		
 		if ("Add".equals(op)) {
+			String locale = rec.getFieldAsString("TrLocale");
+			
 			ServiceHub.call(InsertRecordRequest.insert()
 					.withTable("dcmCategory")
-					.withConditionallySetFields(rec, "Title", "dcmTitle", "Alias", "dcmAlias",
-							"Mode", "dcmMode", "Parent", "dcmParent", "Description", "dcmDescription",
-							"ShipAmount", "dcmShipAmount"
+					.withConditionallySetFields(rec, "dcmTitle", "Alias", "dcmAlias", "Mode", "dcmMode", "Parent", "dcmParent",
+							"ShipAmount", "dcmShipAmount", "Image", "dcmImage", "ShowInStore", "dcmShowInStore"
 					)
+					.withConditionallyUpdateTrFields(rec, locale, "Title", "dcmTitle",
+							"Description", "dcmDescription")
 					.toServiceRequest()
 					.withOutcome(new OperationOutcomeStruct() {
 						@Override
@@ -153,53 +174,6 @@ public class Products {
 								}
 
 								callback.returnValue(result);
-
-								/* TODO review what to do here...probably use the Bucket instead
-								fs..addFolder(new CommonPath(path), new FuncCallback<IFileStoreFile>() {
-									@Override
-									public void callback() {
-										request.returnValue(result);
-
-										// TODO remove this - it is specific to a website - make general purpose setting instead
-										/*
-										if (!this.hasErrors()) {
-											CommonPath metapath = this.getResult().resolvePath(new CommonPath("/meta.json"));
-
-											fs.getFileDetail(metapath, new FuncCallback<IFileStoreFile>() {
-												@Override
-												public void callback() {
-													if (!this.hasErrors()) {
-														RecordStruct meta = new RecordStruct(
-																new FieldStruct("Variations", new ListStruct(
-																		new RecordStruct(
-																				new FieldStruct("ExactWidth", 175),
-																				new FieldStruct("ExactHeight", 150),
-																				new FieldStruct("Alias", "full"),
-																				new FieldStruct("Name", "Full Size")
-																		)
-																))
-														);
-
-														this.getResult().writeAllText(meta.toPrettyString(), new OperationCallback() {
-															@Override
-															public void callback() {
-																request.returnValue(result);
-															}
-														});
-													}
-													else {
-														request.returnValue(result);
-													}
-												}
-											});
-										}
-										else {
-											request.returnValue(result);
-										}
-										* /
-									}
-								});
-								*/
 							}
 							else {
 								callback.returnValue(result);
@@ -424,31 +398,45 @@ public class Products {
 		RecordStruct rec = request.getDataAsRecord();
 		
 		if ("Load".equals(op)) {
+			SelectFields flds = SelectFields.select()
+					.with("Id")
+					.with("dcmAlias", "Alias")
+					.with("dcmSku", "Sku")
+					.with("dcmImage", "Image")
+					.with("dcmCustomDisplayField", "CustomDisplayField", null, true)
+					.with("dcmCategories", "Categories")
+					.with("dcmCategoryPosition", "CategoryPosition")
+					.with("dcmPrice", "Price")
+					.with("dcmVariablePrice", "VariablePrice")
+					.with("dcmMinimumPrice", "MinimumPrice")
+					.with("dcmShipAmount", "ShipAmount")
+					.with("dcmShipWeight", "ShipWeight")
+					.with("dcmShipCost", "ShipCost")
+					.with("dcmTaxFree", "TaxFree")
+					.with("dcmShowInStore", "ShowInStore")
+					.with("dcmDelivery", "Delivery")
+					.with("dcmTag", "Tags");
+			
+			String tr = rec.getFieldAsString("TrLocale");
+			
+			if (StringUtil.isEmpty(tr) || tr.equals(OperationContext.getOrThrow().getTenant().getResources().getLocale().getDefaultLocale())) {
+				flds
+					// .withComposer("dcTranslate", "Title", "dcmTitle", null)
+						.with("dcmTitle", "Title")
+						.with("dcmDescription", "Description")
+						.with("dcmInstructions", "Instructions");
+			}
+			else {
+				flds
+						.withSubField("dcmTitleTr", tr, "Title")
+						.withSubField("dcmDescriptionTr", tr, "Description")
+						.withSubField("dcmInstructionsTr", tr, "Instructions");
+			}
+			
 			ServiceHub.call(LoadRecordRequest.of("dcmProduct")
 					.withId(rec.getFieldAsString("Id"))
 					.withNow()
-					.withSelect(new SelectFields()
-							.with("Id")
-							.with("dcmTitle", "Title")
-							.with("dcmAlias", "Alias")
-							.with("dcmSku", "Sku")
-							.with("dcmDescription", "Description")
-							.with("dcmInstructions", "Instructions")
-							.with("dcmImage", "Image")
-							.with("dcmCustomDisplayField", "CustomDisplayField", null, true)
-							.with("dcmCategories", "Categories")
-							.with("dcmCategoryPosition", "CategoryPosition")
-							.with("dcmPrice", "Price")
-							.with("dcmVariablePrice", "VariablePrice")
-							.with("dcmMinimumPrice", "MinimumPrice")
-							.with("dcmShipAmount", "ShipAmount")
-							.with("dcmShipWeight", "ShipWeight")
-							.with("dcmShipCost", "ShipCost")
-							.with("dcmTaxFree", "TaxFree")
-							.with("dcmShowInStore", "ShowInStore")
-							.with("dcmDelivery", "Delivery")
-							.with("dcmTag", "Tags")
-					)
+					.withSelect(flds)
 				.toServiceRequest()
 				.withOutcome(callback)
 			);
@@ -457,14 +445,17 @@ public class Products {
 		}
 		
 		if ("Update".equals(op)) {
+			String locale = rec.getFieldAsString("TrLocale");
+			
 			ServiceHub.call(UpdateRecordRequest.update()
 					.withTable("dcmProduct")
 					.withId(rec.getFieldAsString("Id"))
-					.withConditionallySetFields(rec, "Title", "dcmTitle", "Alias", "dcmAlias", "Sku", "dcmSku",
-							"Description", "dcmDescription", "Instructions", "dcmInstructions", "Image", "dcmImage",
+					.withConditionallyUpdateFields(rec, "Alias", "dcmAlias", "Sku", "dcmSku", "Image", "dcmImage",
 							"Price", "dcmPrice", "ShipAmount", "dcmShipAmount", "ShipWeight", "dcmShipWeight",
 							"VariablePrice", "dcmVariablePrice", "MinimumPrice", "dcmMinimumPrice",
 							"ShipCost", "dcmShipCost", "TaxFree", "dcmTaxFree", "ShowInStore", "dcmShowInStore")
+					.withConditionallyUpdateTrFields(rec, locale, "Title", "dcmTitle",
+							"Description", "dcmDescription", "Instructions", "dcmInstructions")
 					.withConditionallySetList(rec, "Delivery", "dcmDelivery")
 					.withConditionallySetList(rec, "Categories", "dcmCategories")
 					.withConditionallySetList(rec, "Tags", "dcmTag")
@@ -476,13 +467,16 @@ public class Products {
 		}
 		
 		if ("Add".equals(op)) {
+			String locale = rec.getFieldAsString("TrLocale");
+			
 			ServiceHub.call(InsertRecordRequest.insert()
 					.withTable("dcmProduct")
-					.withConditionallySetFields(rec, "Title", "dcmTitle", "Alias", "dcmAlias", "Sku", "dcmSku",
-							"Description", "dcmDescription", "Instructions", "dcmInstructions", "Image", "dcmImage",
+					.withConditionallyUpdateFields(rec, "Alias", "dcmAlias", "Sku", "dcmSku", "Image", "dcmImage",
 							"Price", "dcmPrice", "ShipAmount", "dcmShipAmount", "ShipWeight", "dcmShipWeight",
 							"VariablePrice", "dcmVariablePrice", "MinimumPrice", "dcmMinimumPrice",
 							"ShipCost", "dcmShipCost", "TaxFree", "dcmTaxFree", "ShowInStore", "dcmShowInStore")
+					.withConditionallyUpdateTrFields(rec, locale, "Title", "dcmTitle",
+							"Description", "dcmDescription", "Instructions", "dcmInstructions")
 					.withConditionallySetList(rec, "Delivery", "dcmDelivery")
 					.withConditionallySetList(rec, "Categories", "dcmCategories")
 					.withConditionallySetList(rec, "Tags", "dcmTag")
@@ -536,12 +530,13 @@ public class Products {
 				public void callback(Struct result) throws OperatingContextException {
 					if (this.isNotEmptyResult()) {
 						RecordStruct rec = Struct.objectToRecord(result);
-						
-						if (rec.getFieldAsBooleanOrFalse("ShowInStore")) {
+
+						// need lookup even for "hidden" registries
+						//if (rec.getFieldAsBooleanOrFalse("ShowInStore")) {
 							rec.removeField("ShowInStore");
 							callback.returnValue(rec);
 							return;
-						}
+						//}
 					}
 
 					callback.returnEmpty();
@@ -681,6 +676,33 @@ public class Products {
 						.withOutcome(callback)
 			);
 			
+			return true;
+		}
+
+		if ("SearchAvailable".equals(op)) {
+			ServiceHub.call(
+					SelectDirectRequest.of("dcmProduct")
+							.withSelect(SelectFields.select()
+									.with("Id")
+									.with("dcmTitle", "Title")
+									.with("dcmAlias", "Alias")
+									.with("dcmSku", "Sku")
+									.with("dcmPrice", "Price")
+									.with("dcmDescription", "Description")
+									.with("dcmImage", "Image")
+									.with("dcmVariablePrice", "VariablePrice")
+									.with("dcmDelivery", "Delivery")
+							)
+							.withWhere(WhereAnd.of(
+									WhereEqual.of("dcmShowInStore", true),
+									WhereTerm.term()
+										.withFields("dcmTitle", "dcmDescription")
+										.withValueTwo(rec.getFieldAsString("Term"))
+							))
+							.toServiceRequest()
+							.withOutcome(callback)
+			);
+
 			return true;
 		}
 

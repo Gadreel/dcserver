@@ -5,6 +5,8 @@ import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.util.StringUtil;
 
+import java.time.ZonedDateTime;
+
 public class RequestFactory {
 	/**
 	 * Send an empty request to the database that merely returns the string "PONG".
@@ -65,6 +67,11 @@ public class RequestFactory {
 	static public DataRequest startSessionRequestFromName(String username) {
 		return DataRequest.of("dcStartSession")
 			.withParam("Username", (username != null) ? username.trim().toLowerCase() : null);
+	}
+	
+	static public DataRequest cleanDatabaseRequest(ZonedDateTime threshold) {
+		return DataRequest.of("dcCleanup")
+				.withParam("LongExpireThreshold", threshold);
 	}
 	
 	/**

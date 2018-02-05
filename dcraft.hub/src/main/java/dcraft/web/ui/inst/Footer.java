@@ -14,7 +14,12 @@ public class Footer extends Main {
 		el.setName("dc.Footer");
 		return el;
 	}
-	
+
+	public Footer() {
+		super();
+		this.headertag ="h2";
+	}
+
 	@Override
 	public XElement newNode() {
 		return Footer.tag();

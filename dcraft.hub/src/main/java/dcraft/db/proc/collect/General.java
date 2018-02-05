@@ -1,10 +1,11 @@
 package dcraft.db.proc.collect;
 
-import dcraft.db.DbServiceRequest;
+import dcraft.db.IRequestContext;
 import dcraft.db.proc.ICollector;
 import dcraft.db.proc.IFilter;
 import dcraft.db.proc.expression.ExpressionUtil;
 import dcraft.db.proc.filter.Max;
+import dcraft.db.ICallContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.util.ByteUtil;
 import dcraft.hub.ResourceHub;
@@ -22,11 +23,10 @@ import dcraft.xml.XElement;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 public class General implements ICollector {
 	@Override
-	public void collect(DbServiceRequest task, TablesAdapter db, String table, BigDateTime when, boolean historical, RecordStruct collector, IFilter filter) throws OperatingContextException {
+	public void collect(IRequestContext task, TablesAdapter db, String table, RecordStruct collector, IFilter filter) throws OperatingContextException {
 		String fname = collector.getFieldAsString("Field");
 		String subid = collector.getFieldAsString("SubId");
 		
@@ -38,9 +38,9 @@ public class General implements ICollector {
 		if (values != null) {
 			for (Struct s : values.items()) {
 				if ("Id".equals(fname))
-					filter.check(db, s.toString(), when, historical);
+					filter.check(db, s.toString());
 				else
-					db.traverseIndex(table, fname, Struct.objectToCore(s), subid, when, historical, filter);
+					db.traverseIndex(table, fname, Struct.objectToCore(s), subid, filter);
 			}
 		}
 		else {
@@ -63,18 +63,18 @@ public class General implements ICollector {
 			List<byte[]> tokey = new ArrayList<>();
 			
 			if (from != null)
-				fromkey.add(ByteUtil.buildKey(dtype.toIndex(from, "en")));    // TODO increase locale support
+				fromkey.add(ByteUtil.buildKey(dtype.toIndex(from, "eng")));    // TODO increase locale support
 			
 			if (to != null)
-				tokey.add(ByteUtil.buildKey(dtype.toIndex(to, "en")));    // TODO increase locale support
+				tokey.add(ByteUtil.buildKey(dtype.toIndex(to, "eng")));    // TODO increase locale support
 			
 			if (ExpressionUtil.compare(fromkey, tokey) > 0)
 				reverse = true;
 
 			if (Struct.objectToBooleanOrFalse(reverse))
-				db.traverseIndexReverseRange(table, fname, from, to, when, historical, filter);
+				db.traverseIndexReverseRange(table, fname, from, to, filter);
 			else
-				db.traverseIndexRange(table, fname, from, to, when, historical, filter);
+				db.traverseIndexRange(table, fname, from, to, filter);
 		}
 	}
 

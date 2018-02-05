@@ -31,6 +31,7 @@ import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.locale.LocaleUtil;
 import dcraft.service.ServiceHub;
 import dcraft.service.ServiceRequest;
 import dcraft.struct.ListStruct;
@@ -117,7 +118,7 @@ public class Users {
 					req.withPhone(rec.getFieldAsString("Phone"));
 
 				if (rec.hasField("Locale"))
-					req.setLocale(rec.getFieldAsString("Locale"));
+					req.setLocale(LocaleUtil.normalizeCode(rec.getFieldAsString("Locale")));
 				
 				if (rec.hasField("Chronology"))
 					req.setChronology(rec.getFieldAsString("Chronology"));
@@ -194,7 +195,7 @@ public class Users {
 					req.withPhone(rec.getFieldAsString("Phone"));
 
 				if (rec.hasField("Locale"))
-					req.withLocale(rec.getFieldAsString("Locale"));
+					req.withLocale(LocaleUtil.normalizeCode(rec.getFieldAsString("Locale")));
 
 				if (rec.hasField("Chronology"))
 					req.withChronology(rec.getFieldAsString("Chronology"));

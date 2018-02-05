@@ -17,67 +17,19 @@
 package dcraft.db.request.query;
 
 public class WhereRange extends WhereExpression {
-	public WhereRange(Object a, Object b, Object c) {
-		super("Range");
-		
-		this.addValue("A", a);
-		this.addValue("B", b);
-		this.addValue("C", c);
+	static public WhereRange range() {
+		return new WhereRange();
 	}
 	
-	public WhereRange(IWhereField a, Object b, Object c) {
-		super("Range");
-		
-		this.addField("A", a);
-		this.addValue("B", b);
-		this.addValue("C", c);
+	static public WhereRange of(String field, Object from, Object to) {
+		WhereRange expression = new WhereRange();
+		expression.withFieldOne(field);
+		expression.withValueTwo(from);
+		expression.withValueThree(to);
+		return expression;
 	}
 	
-	public WhereRange(Object a, IWhereField b, Object c) {
+	public WhereRange() {
 		super("Range");
-		
-		this.addValue("A", a);
-		this.addField("B", b);
-		this.addValue("C", c);
-	}
-	
-	public WhereRange(Object a, Object b, IWhereField c) {
-		super("Range");
-		
-		this.addValue("A", a);
-		this.addValue("B", b);
-		this.addField("C", c);
-	}
-		
-	public WhereRange(IWhereField a, Object b, IWhereField c) {
-		super("Range");
-		
-		this.addField("A", a);
-		this.addValue("B", b);
-		this.addField("C", c);
-	}
-	
-	public WhereRange(IWhereField a, IWhereField b, Object c) {
-		super("Range");
-		
-		this.addField("A", a);
-		this.addField("B", b);
-		this.addValue("C", c);
-	}
-	
-	public WhereRange(Object a, IWhereField b, IWhereField c) {
-		super("Range");
-		
-		this.addValue("A", a);
-		this.addField("B", b);
-		this.addField("C", c);
-	}
-	
-	public WhereRange(IWhereField a, IWhereField b, IWhereField c) {
-		super("Range");
-		
-		this.addField("A", a);
-		this.addField("B", b);
-		this.addField("C", c);
 	}
 }

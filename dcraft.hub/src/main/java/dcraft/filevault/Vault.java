@@ -423,8 +423,17 @@ public class Vault {
 
 							fi.remove(new OperationOutcomeEmpty() {					
 								@Override
-								public void callback() {
-									Vault.this.afterRemove(fi, request, extra, fcb);
+								public void callback() throws OperatingContextException {
+									Transaction ftx = Transaction.of(Vault.this);
+									
+									ftx.withDelete(fi.getPathAsCommon());
+									
+									ftx.commitTransaction(new OperationOutcomeEmpty() {
+										@Override
+										public void callback() throws OperatingContextException {
+											Vault.this.afterRemove(fi, request, extra, fcb);
+										}
+									});
 								}
 							});
 						}

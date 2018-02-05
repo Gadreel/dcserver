@@ -70,10 +70,10 @@ public class InputControl extends Base {
 		
 		if (StringUtil.isNotEmpty(icon) && StringUtil.isNotEmpty(invicon))
 			ret
-				.with(W3.tag("i").withAttribute("class", "dc-invalid-hidden fa " + icon))
-				.with(W3.tag("i").withAttribute("class", "dc-valid-hidden dc-valid-flag fa " + invicon));
+				.with(W3.tag("i").withAttribute("class", "dc-invalid-hidden fa fa-fw " + icon))
+				.with(W3.tag("i").withAttribute("class", "dc-valid-hidden dc-valid-flag fa fa-fw " + invicon));
 		else if (StringUtil.isNotEmpty(icon))
-			ret.with(W3.tag("i").withAttribute("class", "fa " + icon));
+			ret.with(W3.tag("i").withAttribute("class", "fa fa-fw " + icon));
 		else if (StringUtil.isNotEmpty(label))
 			ret.withText(label);
 
@@ -88,7 +88,11 @@ public class InputControl extends Base {
 			ret
 				.withAttribute("data-dc-enhance", "true")
 				.withAttribute("data-dc-tag", "dc.Button");
-		
+
+		if (input.hasNotEmptyAttribute("title"))
+			ret
+					.withAttribute("title", input.getAttribute("title"));
+
 		if (StringUtil.isNotEmpty(page))
 			ret.withAttribute("data-dc-page", page);
 		

@@ -21,6 +21,7 @@ import dcraft.log.Logger;
 import dcraft.struct.CompositeParser;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.FieldStruct;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.*;
@@ -35,6 +36,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -123,7 +125,7 @@ public class DepositHub {
 		return null;
 	}
 	
-	static public boolean submitVaultDeposit(String transactionid, String vaultname) throws OperatingContextException {
+	static public boolean submitVaultDeposit(String transactionid, String vaultname, List<CommonPath> deletes) throws OperatingContextException {
 		// create a resil trigger file so we are found if server stops
 		String depositId = DepositHub.allocateDepositId();
 		
@@ -132,11 +134,12 @@ public class DepositHub {
 		
 		RecordStruct trec = RecordStruct.record()
 				.with("Manifest", RecordStruct.record()
-					.with("TimeStamp", TimeUtil.now())
-					.with("Type", "Deposit")
-					.with("Tenant", OperationContext.getOrThrow().getTenant().getAlias())
-					.with("Site", OperationContext.getOrThrow().getSite().getAlias())
-					.with("Vault", vaultname)
+						.with("TimeStamp", TimeUtil.now())
+						.with("Type", "Deposit")
+						.with("Tenant", OperationContext.getOrThrow().getTenant().getAlias())
+						.with("Site", OperationContext.getOrThrow().getSite().getAlias())
+						.with("Vault", vaultname)
+						.with("Delete", ListStruct.list().withCollection(deletes))
 				)
 				.with("Transaction", transactionid)
 				.with("DepositId", depositId);

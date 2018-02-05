@@ -2,8 +2,8 @@ package dcraft.cms.feed.db;
 
 import dcraft.db.DatabaseAdapter;
 import dcraft.db.DatabaseException;
-import dcraft.db.DbServiceRequest;
 import dcraft.db.proc.IStoredProc;
+import dcraft.db.ICallContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileStore;
@@ -13,6 +13,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.time.BigDateTime;
+import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
@@ -26,8 +27,8 @@ import java.util.List;
 
 public class Update implements IStoredProc {
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.of(request);
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
+		TablesAdapter db = TablesAdapter.ofNow(request);
 
 		ListStruct updated = request.getDataAsRecord().getFieldAsList("Updated");
 		ListStruct deleted = request.getDataAsRecord().getFieldAsList("Deleted");
@@ -54,8 +55,7 @@ public class Update implements IStoredProc {
 		CommonPath opath = CommonPath.from("/" + OperationContext.getOrThrow().getSite().getAlias() + path.substring(0, path.length() - 5));
 		CommonPath ochan = opath.subpath(0, 2);		// site and feed
 
-		BigDateTime when = BigDateTime.nowDateTime();
-		String oid = Struct.objectToString(db.firstInIndex("dcmFeed", "dcmPath", opath, when, false));
+		String oid = Struct.objectToString(db.firstInIndex("dcmFeed", "dcmPath", opath));
 
 		ZonedDateTime opubtime = null;
 
@@ -172,7 +172,7 @@ public class Update implements IStoredProc {
 				String name = meta.getAttribute("Name");
 
 				for (XElement tr : meta.selectAll("Tr")) {
-					String locale = tr.getAttribute("Locale", defloc);
+					String locale = LocaleUtil.normalizeCode(tr.getAttribute("Locale", defloc));
 
 					name = name + "." + locale;
 
@@ -240,8 +240,7 @@ public class Update implements IStoredProc {
 		CommonPath opath = CommonPath.from("/" + OperationContext.getOrThrow().getSite().getAlias() + path);
 		CommonPath ochan = opath.subpath(0, 2);		// site and feed
 
-		BigDateTime when = BigDateTime.nowDateTime();
-		Object oid = db.firstInIndex("dcmFeed", "dcmPath", path, when, false);
+		Object oid = db.firstInIndex("dcmFeed", "dcmPath", path);
 
 		if (oid == null)
 			return;

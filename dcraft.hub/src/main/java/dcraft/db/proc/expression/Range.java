@@ -1,5 +1,6 @@
 package dcraft.db.proc.expression;
 
+import dcraft.db.proc.ExpressionResult;
 import dcraft.db.request.schema.Query;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
@@ -25,16 +26,16 @@ public class Range extends TwoExpression {
 	}
 	
 	@Override
-	public boolean check(TablesAdapter adapter, String id, BigDateTime when, boolean historical) throws OperatingContextException {
-		List<byte[]> data = adapter.getRawIndex(table, id, this.fieldInfo.field.getName(), this.fieldInfo.subid, when, historical);
+	public ExpressionResult check(TablesAdapter adapter, String id) throws OperatingContextException {
+		List<byte[]> data = adapter.getRaw(table, id, this.fieldInfo.field.getName(), this.fieldInfo.subid, "Index");
 		
 		if (ExpressionUtil.compare(data, this.values) > -1) {
 			if (ExpressionUtil.compare(data, this.values2) < 1) {
-				return true;
+				return ExpressionResult.ACCEPTED;
 			}
 		}
 		
-		return false;
+		return ExpressionResult.REJECTED;
 	}
 	
 	@Override

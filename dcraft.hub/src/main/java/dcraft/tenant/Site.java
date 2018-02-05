@@ -1,7 +1,5 @@
 package dcraft.tenant;
 
-import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -15,6 +13,7 @@ import dcraft.filevault.FeedVault;
 import dcraft.filevault.GalleryVault;
 import dcraft.filevault.Vault;
 import dcraft.filestore.local.LocalStore;
+import dcraft.filevault.SiteVault;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.resource.ResourceTier;
@@ -26,7 +25,6 @@ import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
-import dcraft.util.groovy.GCompClassLoader;
 import dcraft.web.HtmlMode;
 import dcraft.web.IOutputWork;
 import dcraft.web.WebController;
@@ -132,7 +130,7 @@ public class Site extends Base {
 		return this;
 	}
 	
-	public LocaleDefinition getLocaleDefinition(String domain) {
+	public LocaleDefinition getLocaleDomain(String domain) {
 		return this.sitelocales.get(domain);
 	}
 	
@@ -281,13 +279,18 @@ public class Site extends Base {
 		this.getVault("Galleries");
 		this.getVault("Files");
 		this.getVault("Feeds");
+		this.getVault("SiteFiles");
+
+		/*
 		this.getVault("Web");
 		this.getVault("Templates");
 		this.getVault("Emails");
 		this.getVault("Config");
+		*/
+
 		this.getVault("StoreOrders");
 		this.getVault("ManagedForms");
-		
+
 		return this.vaults.values();
 	}
 
@@ -359,6 +362,29 @@ public class Site extends Base {
 			return this.vaults.get(name);
 		}
 
+		if ("SiteFiles".equals(name)) {
+			if (! this.vaults.containsKey(name)) {
+				XElement vconfig = this.getResources().getConfig().findId("Vault", name);
+
+				if (vconfig == null)
+					vconfig = XElement.tag("Vault").withAttribute("Id", "SiteFiles")
+							.withAttribute("ReadAuthTags", "Developer")
+							.withAttribute("WriteAuthTags", "Developer")
+							.withAttribute("RootFolder", "/");
+
+				Vault vault = vconfig.hasNotEmptyAttribute("VaultClass")
+						? (Vault) this.getResources().getClassLoader().getInstance(vconfig.getAttribute("VaultClass"))
+						: new SiteVault();
+
+				vault.init(this, vconfig, null);
+
+				this.vaults.put(name, vault);
+			}
+
+			return this.vaults.get(name);
+		}
+
+		/*
 		if ("Web".equals(name)) {
 			if (! this.vaults.containsKey(name)) {
 				XElement vconfig = this.getResources().getConfig().findId("Vault", name);
@@ -446,6 +472,7 @@ public class Site extends Base {
 
 			return this.vaults.get(name);
 		}
+		*/
 
 		// TODO move into config, really all these should be in config
 		if ("StoreOrders".equals(name)) {

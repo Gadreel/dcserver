@@ -56,12 +56,19 @@ public class Transaction {
 		return this.deletelist;
 	}
 
-	public void addDeleteList(CommonPath path) {
-		this.deletelist.add(path);
+	public Transaction withDelete(CommonPath... paths) {
+		for (CommonPath p : paths)
+			this.deletelist.add(p);
+			
+		return this;
 	}
 
 	public LocalStore getFolder() {
 		return LocalStore.of(DepositHub.DepositStore.resolvePath("/transactions/" + this.id));
+	}
+	
+	public void commitTransaction(OperationOutcomeEmpty callback) throws OperatingContextException {
+		this.commitTransaction(this.vault.getName(), callback);
 	}
 	
 	/*
@@ -89,13 +96,13 @@ public class Transaction {
 
 								FileUtil.deleteDirectory(((LocalStore)dstore).getPath());
 
-								DepositHub.submitVaultDeposit(Transaction.this.id, Transaction.this.vault.getName());
+								DepositHub.submitVaultDeposit(Transaction.this.id, Transaction.this.vault.getName(), Transaction.this.deletelist);
 							}
 							else {
 								FileUtil.deleteDirectory(dstore.getPath());
 
 								// vault in name only, not function (server backup)
-								DepositHub.submitVaultDeposit(Transaction.this.id, vault);
+								DepositHub.submitVaultDeposit(Transaction.this.id, vault, Transaction.this.deletelist);
 							}
 						}
 						catch (OperatingContextException x) {

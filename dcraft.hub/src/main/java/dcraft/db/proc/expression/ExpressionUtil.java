@@ -153,8 +153,10 @@ public class ExpressionUtil {
 		if (pdef == null)
 			return null;
 		
-		Struct val = pdef.getField("Value");
-		
+		return ExpressionUtil.loadIndexValues(pdef.getField("Value"), field, locale);
+	}
+	
+	static public List<byte[]> loadIndexValues(Object val, FieldInfo field, String locale) throws OperatingContextException {
 		if (val == null)
 			return null;
 		
@@ -174,7 +176,7 @@ public class ExpressionUtil {
 		return vl;
 	}
 	
-	static public void loadIndexValue(List<byte[]> vl, FieldInfo field, Struct val, String locale) throws OperatingContextException {
+	static public void loadIndexValue(List<byte[]> vl, FieldInfo field, Object val, String locale) throws OperatingContextException {
 		if (vl == null)
 			return;
 		
@@ -189,18 +191,26 @@ public class ExpressionUtil {
 			return null;
 		
 		String pfname = pdef.getFieldAsString("Field");
-
-		// TODO add support for Composer
-		// TODO add support for Format
-		// String pformat = pdef.getFieldAsString("Format");
-		// add support for Format, this converts from byte to object, then formats object, then back to byte for compares
 		
-		if (StringUtil.isEmpty(pfname))
+		FieldInfo fieldInfo = ExpressionUtil.loadField(table, pfname);
+
+		if (fieldInfo != null)
+			fieldInfo.subid = pdef.getFieldAsString("SubId");
+		
+		return fieldInfo;
+	}
+	
+	// TODO add support for Composer
+	// TODO add support for Format
+	// String pformat = pdef.getFieldAsString("Format");
+	// add support for Format, this converts from byte to object, then formats object, then back to byte for compares
+	static public FieldInfo loadField(String table, String field) throws OperatingContextException {
+		if (StringUtil.isEmpty(table) || StringUtil.isEmpty(field))
 			return null;
 		
 		SchemaResource schema = ResourceHub.getResources().getSchema();
 		
-		DbField sfld = schema.getDbField(table, pfname);
+		DbField sfld = schema.getDbField(table, field);
 		
 		if (sfld == null)
 			return null;
@@ -213,7 +223,6 @@ public class ExpressionUtil {
 		FieldInfo fieldInfo = new FieldInfo();
 		fieldInfo.field = sfld;
 		fieldInfo.type = tfld;
-		fieldInfo.subid = pdef.getFieldAsString("SubId");
 		
 		return fieldInfo;
 	}

@@ -1,0 +1,118 @@
+<dc.Html Badges="Clerk,Admin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="View Shipment" />
+	</Meta>
+
+	<Require Script="/js/dc.transfer.js" />
+
+	<dc.Body>
+		<dc.PagePanel id="sect2d4c98044bbe4b30b7088d7e22e38964">
+			<dc.RowLayout Collapse="Medium" Pad="Small">
+				<dc.Column Pad="Small" Size="1-2">
+					<b>Package</b>
+
+					<p id="sectPackage" />
+
+					<b>Delivery</b>
+
+					<p id="sectDelivery" />
+				</dc.Column>
+				<dc.Column Pad="Small" Size="1-2">
+					<img id="img2d4c98044bbe4b30b7088d7e22e38964" class="pure-img" />
+				</dc.Column>
+			</dc.RowLayout>
+			<dc.FullLayout>
+				<dcf.FormButtons Hint="Shipment options">
+					<dc.Button Label="Open Tracking" Click="DoTrack" />
+					<dc.Button Label="Print Label" Click="DoPrint" />
+					<dc.Button Label="Download Label" Click="DoDownload" />
+				</dcf.FormButtons>
+			</dc.FullLayout>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			var shipment = page.Params.Shipment;
+
+			$('#sectPackage').empty();
+
+			// Customer
+			$('#sectPackage').dcappend(
+				'Provider: ',
+				shipment.ShipProvider,
+				$('<br>'),
+				'Track Id: ',
+				shipment.TrackId,
+				$('<br>'),
+				'Purchased: ',
+				dc.util.Date.formatZLocalMedium(shipment.Purchased),
+				$('<br>'),
+				'Cost: $',
+				dc.util.Number.formatMoney(shipment.Cost)
+			);
+
+			$('#sectDelivery').empty();
+
+			$('#sectDelivery').dcappend(
+				shipment.FirstName + ' ' + shipment.LastName,
+				$('<br>'),
+				shipment.Address,
+				$('<br>'),
+				shipment.Address2,
+				$('<br>'),
+				shipment.City + ', ' + shipment.State + ' ' + shipment.Zip
+			);
+
+			var transfer = new dc.transfer.Vault({
+				Vault: 'StoreOrders',
+				Callback: function(buff) {
+					var blob = new Blob([ buff ], { type: 'image/gif' });
+
+					page.Store.Label = blob;
+
+					var src = dc.util.Image.blobToUrl(blob);
+
+					$('#img2d4c98044bbe4b30b7088d7e22e38964').attr('src', src);
+				}
+			});
+
+			transfer.downloadBuffer('/' + page.Params.Id + '/ship-' + shipment.EntryId + '-label.gif');
+	]]></Function>
+	<Function Name="DoPrint"><![CDATA[
+			var page = this;
+
+			dc.pui.FullScreen.loadPage('/dcm/store/view-shipment-label', {
+				Label: $('#img2d4c98044bbe4b30b7088d7e22e38964').attr('src')
+			});
+	]]></Function>
+	<Function Name="DoDownload"><![CDATA[
+			var page = this;
+
+			//var chart = document.getElementById("img2d4c98044bbe4b30b7088d7e22e38964");
+
+			//var	blob = new Blob([data], {type: "octet/stream"});
+			//chart.toBlob(function(blob) {
+				var url = window.URL.createObjectURL(page.Store.Label);
+
+				var a = document.createElement("a");
+				a.style = "display: none";
+				a.href = url;
+				a.download = 'label.png';
+
+				document.body.appendChild(a);
+
+				a.click();
+
+				window.URL.revokeObjectURL(url);
+			//});
+	]]></Function>
+	<Function Name="DoTrack"><![CDATA[
+		var page = this;
+
+		var shipment = page.Params.Shipment;
+
+		window.open(shipment.TrackLink, "dcmShipment");
+	]]></Function>
+</dcui>

@@ -44,7 +44,7 @@
 			<Tag Name="dc.FullLayout" Class="dcraft.web.ui.inst.layout.FullLayout" />
 			<Tag Name="dc.RowLayout" Class="dcraft.web.ui.inst.layout.RowLayout" />
 			<Tag Name="dc.Column" Class="dcraft.web.ui.inst.layout.Column" />
-			<Tag Name="dc.GridLayout" Class="dcraft.web.ui.inst.layout.GridLayout" />
+			<Tag Name="dc.GalleryLayout" Class="dcraft.web.ui.inst.layout.GalleryLayout" />
 
 			<!-- cms content extended tags -->
 			<Tag Name="dcm.IncludeFeed" Class="dcraft.web.ui.inst.cms.IncludeFeed" />
@@ -72,9 +72,9 @@
 			<!-- cms feed tags -->
 			<Tag Name="dcm.FacebookWidget" Class="dcraft.web.ui.inst.feed.Facebook" />
 			<Tag Name="dcm.FacebookEventsWidget" Class="dcraft.web.ui.inst.feed.FacebookEvents" />
+			<Tag Name="dcm.FeedWidget" Class="dcraft.web.ui.inst.feed.Feed" />
 
 			<!-- TODO
-			<Tag Name="dcm.FeedWidget" Class="dcraft.web.ui.inst.feed.Feed" />
 			<Tag Name="dcm.FeedDetailWidget" Class="dcraft.web.ui.inst.feed.FeedDetail" />
 			<Tag Name="dcm.FeedParams" Class="dcraft.web.ui.inst.feed.FeedParams" />
 			<Tag Name="dcm.InstagramWidget" Class="dcraft.web.ui.inst.feed.Instagram" />

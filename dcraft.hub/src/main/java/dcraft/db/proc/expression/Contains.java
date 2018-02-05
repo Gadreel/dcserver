@@ -1,5 +1,6 @@
 package dcraft.db.proc.expression;
 
+import dcraft.db.proc.ExpressionResult;
 import dcraft.db.proc.IExpression;
 import dcraft.db.request.schema.Query;
 import dcraft.db.tables.TablesAdapter;
@@ -42,24 +43,24 @@ public class Contains implements IExpression {
 	}
 	
 	@Override
-	public boolean check(TablesAdapter adapter, String id, BigDateTime when, boolean historical) throws OperatingContextException {
-		List<byte[]> data = adapter.getRawSearch(table, id, this.fieldInfo.field.getName(), this.fieldInfo.subid, when, historical);
+	public ExpressionResult check(TablesAdapter adapter, String id) throws OperatingContextException {
+		List<byte[]> data = adapter.getRaw(table, id, this.fieldInfo.field.getName(), this.fieldInfo.subid, "Search");
 		
 		if ((this.values == null) && (data == null))
-			return true;
+			return ExpressionResult.ACCEPTED;
 		
 		// rule out one being null
 		if ((this.values == null) || (data == null))
-			return false;
+			return ExpressionResult.REJECTED;
 		
 		for (int i = 0; i < data.size(); i++) {
 			for (int i2 = 0; i2 < this.values.size(); i2++) {
 				if (ByteUtil.dataContains(data.get(i), this.values.get(i2)))
-					return true;
+					return ExpressionResult.ACCEPTED;
 			}
 		}
 		
-		return false;
+		return ExpressionResult.REJECTED;
 	}
 	
 	@Override

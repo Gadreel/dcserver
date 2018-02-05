@@ -43,6 +43,8 @@ import dcraft.xml.XElement;
  *
  */
 public class Service extends BaseService {
+	// do not extend BaseDataService - could bypass security
+
 	@Override
 	public void start() {
 		Logger.info(0, "dcDatabase Service Started");
@@ -61,8 +63,8 @@ public class Service extends BaseService {
 			Struct params = request.getData();
 			
 			// only a sysadmin can ask for tenant changes remotely
-			if ((params instanceof RecordStruct) && ((RecordStruct)params).isNotFieldEmpty("ForTenant")) {
-				String talias = ((RecordStruct)params).getFieldAsString("ForTenant");
+			if ((params instanceof RecordStruct) && ((RecordStruct)params).isNotFieldEmpty("_ForTenant")) {
+				String talias = ((RecordStruct)params).getFieldAsString("_ForTenant");
 				UserContext usr = OperationContext.getOrThrow().getUserContext();
 				
 				if (request.isFromRpc() && ! usr.getTenantAlias().equals(talias) && ! usr.isTagged("SysAdmin")) {
@@ -93,7 +95,7 @@ public class Service extends BaseService {
 		Struct params = request.getData();
 		
 		String reqdbname = (params instanceof RecordStruct)
-				? ((RecordStruct)params).getFieldAsString("Database", "default")
+				? ((RecordStruct)params).getFieldAsString("_Database", "default")
 				: "default";
 		
 		IConnectionManager conn = ResourceHub.getResources().getDatabases().getDatabase(reqdbname);

@@ -21,9 +21,8 @@ import dcraft.util.StringUtil;
 // TODO re-think, this is not yet used
 public class IndexValueCounter implements IComposer {
 	@Override
-	public void writeField(DbServiceRequest task, ICompositeBuilder out,
-						   TablesAdapter db, String table, String id, BigDateTime when, RecordStruct field,
-						   boolean historical, boolean compact) throws OperatingContextException
+	public void writeField(ICompositeBuilder out, TablesAdapter db, String table, String id,
+						   RecordStruct field, boolean compact) throws OperatingContextException
 	{	
 		try {
 			String fname = field.getFieldAsString("Field");
@@ -53,7 +52,7 @@ public class IndexValueCounter implements IComposer {
 			
 			Max cnt = Max.max();
 
-			db.traverseIndex(table, fname, val, when, historical, cnt);
+			db.traverseIndex(table, fname, val, cnt);
 			
 			out.value(cnt.getCount());
 		} 

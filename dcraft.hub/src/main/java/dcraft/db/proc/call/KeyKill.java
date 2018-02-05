@@ -1,7 +1,7 @@
 package dcraft.db.proc.call;
 
-import dcraft.db.DbServiceRequest;
 import dcraft.db.proc.IUpdatingStoredProc;
+import dcraft.db.ICallContext;
 import dcraft.db.util.ByteUtil;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
@@ -12,7 +12,7 @@ import dcraft.util.HexUtil;
 
 public class KeyKill implements IUpdatingStoredProc {
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct params = request.getDataAsRecord();
 
 		ListStruct keys = params.getFieldAsList("Keys");

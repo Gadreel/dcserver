@@ -19,22 +19,34 @@ package dcraft.db.request.query;
 import dcraft.struct.ListStruct;
 
 abstract public class WhereGroupExpression extends WhereExpression {
-	public WhereGroupExpression(String name, WhereExpression... list) {
+	public WhereGroupExpression(String name) {
 		super(name);
-		
-		ListStruct dlst = new ListStruct();						
-		
-		for (WhereExpression ex : list) 
-			dlst.withItem(ex.getFields());
+	}
+	
+	public WhereGroupExpression withAll(WhereExpression... list) {
+		ListStruct children = ListStruct.list();
 
-		this.params.with("Children",  dlst);
+		for (WhereExpression expression : list)
+			children.with(expression.getParams());
+
+		this.params.with("Children",  children);
+		return this;
+	}
+	
+	public WhereGroupExpression withExpression(WhereExpression ex) {
+		ListStruct children = this.params.getFieldAsList("Children");
+		
+		if (children == null) {
+			children = ListStruct.list();
+			this.params.with("Children", children);
+		}
+		
+		children.with(ex.getParams());
+		
+		return this;
 	}
 	
 	public int getExpressionCount() {
 		return this.params.getFieldAsList("Children").size();
-	}
-	
-	public void addWhere(WhereExpression ex) {
-		this.params.getFieldAsList("Children").withItem(ex.getFields()); 
 	}
 }

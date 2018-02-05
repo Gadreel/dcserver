@@ -3,6 +3,7 @@ package dcraft.xml;
 import dcraft.log.Logger;
 import dcraft.xml.XElement;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -89,7 +90,7 @@ public class XmlUtil {
 		return true;
 	}
 	
-	static public List<XNode> deepCopyChildren(List<XNode> children) {
+	static public List<XNode> deepCopyChildren(Collection<XNode> children) {
 		if (children != null) {
 			List<XNode> copychildren = new CopyOnWriteArrayList<>();
 			

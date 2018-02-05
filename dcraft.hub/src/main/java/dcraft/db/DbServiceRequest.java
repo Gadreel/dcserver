@@ -20,20 +20,16 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-import dcraft.db.tables.ITablesContext;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
-import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.schema.SchemaResource;
 import dcraft.service.ServiceRequest;
-import dcraft.stream.StreamFragment;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 
 /**
  *
  */
-public class DbServiceRequest extends ServiceRequest implements ITablesContext {
+public class DbServiceRequest extends ServiceRequest implements ICallContext {
 	// be in the calling context when you use this method, otherwise may miss the proper OpInfo def
 	static public DbServiceRequest of(String proc) {
 		DbServiceRequest req = new DbServiceRequest();
@@ -115,8 +111,8 @@ public class DbServiceRequest extends ServiceRequest implements ITablesContext {
 		if ((this.tenants == null) || (this.tenants.size() == 0)) {
 			Struct params = this.getData();
 			
-			if ((params instanceof RecordStruct) && ((RecordStruct)params).isNotFieldEmpty("ForTenant"))
-				return ((RecordStruct)params).getFieldAsString("ForTenant");
+			if ((params instanceof RecordStruct) && ((RecordStruct)params).isNotFieldEmpty("_ForTenant"))
+				return ((RecordStruct)params).getFieldAsString("_ForTenant");
 			
 			return OperationContext.getOrThrow().getUserContext().getTenantAlias();
 		}
@@ -124,13 +120,15 @@ public class DbServiceRequest extends ServiceRequest implements ITablesContext {
 		return this.tenants.get(this.tenants.size() - 1);
 	}
 	
+	@Override
 	public void pushTenant(String did) {
 		if (this.tenants == null)
 			this.tenants = new ArrayList<>();
 		
 		this.tenants.add(did);
 	}
-	
+
+	@Override
 	public void popTenant() {
 		if (this.tenants != null)
 			this.tenants.remove(this.tenants.size() - 1);

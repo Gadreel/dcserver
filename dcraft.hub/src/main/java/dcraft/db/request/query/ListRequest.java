@@ -20,7 +20,6 @@ import java.time.ZonedDateTime;
 
 import dcraft.db.request.DataRequest;
 import dcraft.hub.time.BigDateTime;
-import dcraft.struct.RecordStruct;
 
 public class ListRequest extends DataRequest {
 	public long getOffset() {
@@ -104,7 +103,7 @@ public class ListRequest extends DataRequest {
 			this.parameters.with("Order", order.getFields());
 		
 		if (where != null)
-			this.parameters.with("Where", where.getFields());
+			this.parameters.with("Where", where.getParams());
 		
 		if (collector != null)
 			this.parameters.with("Collector", collector.getParams());

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-import dcraft.db.DbServiceRequest;
+import dcraft.db.ICallContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.proc.IUpdatingStoredProc;
 import dcraft.hub.op.OperatingContextException;
@@ -18,7 +18,7 @@ import dcraft.struct.Struct;
 
 public class UpdateSet implements IUpdatingStoredProc {
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct params = request.getDataAsRecord();
 		
 		String table = params.getFieldAsString("Table");
@@ -28,9 +28,9 @@ public class UpdateSet implements IUpdatingStoredProc {
 		ListStruct records = params.getFieldAsList("Records");
 		ListStruct subids = params.getFieldAsList("Values");
 		
-		TablesAdapter db = TablesAdapter.of(request);
+		TablesAdapter db = TablesAdapter.ofNow(request);
 		
-		BigDateTime when = BigDateTime.nowDateTime();		// TODO store in params for replication - use same when 
+		//BigDateTime when = BigDateTime.nowDateTime();		// TODO store WHEN from 'db' in params for replication - use same when
 		
 		try (OperationMarker om = OperationMarker.create()) {
 			for (Struct ssid : records.items()) {
@@ -40,7 +40,7 @@ public class UpdateSet implements IUpdatingStoredProc {
 				List<String> lsubids = subids.toStringList();
 				List<String> othersubids = new ArrayList<>();
 				
-				db.traverseSubIds(table, id, field, when, false, new Function<Object, Boolean>() {
+				db.traverseSubIds(table, id, field, new Function<Object, Boolean>() {
 					@Override
 					public Boolean apply(Object msub) {
 						try {
@@ -53,7 +53,7 @@ public class UpdateSet implements IUpdatingStoredProc {
 							
 							if ("RemoveFromSet".equals(op) && fnd) {
 								// if present in our list then retire it
-								db.setFields(table, id, new RecordStruct()
+								db.checkSetFields(table, id, new RecordStruct()
 										.with(field, new RecordStruct()
 												.with(suid, new RecordStruct()
 														.with("Retired", true)
@@ -76,7 +76,7 @@ public class UpdateSet implements IUpdatingStoredProc {
 				if ("MakeSet".equals(op)) {
 					for (String suid : othersubids) {
 						// if present in our list then retire it
-						db.setFields(table, id, new RecordStruct()
+						db.checkSetFields(table, id, new RecordStruct()
 								.with(field, new RecordStruct()
 										.with(suid, new RecordStruct()
 												.with("Retired", true)
@@ -90,7 +90,7 @@ public class UpdateSet implements IUpdatingStoredProc {
 				if ("MakeSet".equals(op) || "AddToSet".equals(op)) {
 					for (String suid : lsubids) {
 						// if present in our list then retire it
-						db.setFields(table, id, new RecordStruct()
+						db.checkSetFields(table, id, new RecordStruct()
 								.with(field, new RecordStruct()
 										.with(suid, new RecordStruct()
 												.with("Data", suid)

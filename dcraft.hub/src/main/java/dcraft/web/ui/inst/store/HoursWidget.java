@@ -113,7 +113,7 @@ public class HoursWidget extends Base {
 			}
 
 			// TODO checks
-			String msg = this.hoursdata.getFieldAsRecord("Widget").getFieldAsRecord("Open").getFieldAsString("en");
+			String msg = this.hoursdata.getFieldAsRecord("Widget").getFieldAsRecord("Open").getFieldAsString("eng");
 
 			this.with(TextWidget.tag()
 					.with(

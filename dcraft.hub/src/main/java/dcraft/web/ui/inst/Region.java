@@ -23,8 +23,8 @@ public class Region extends Base {
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
 		this
-				.withClass("dc-region")
-				.attr("role", "region");
+				.withClass("dc-region");
+				// TODO enable via "verbose" mode on client .attr("role", "region");
 		
 		if (this.hasEmptyAttribute("aria-labelledby") && this.hasEmptyAttribute("aria-label")) {
 			String label = StackUtil.stringFromSource(state, "Label");

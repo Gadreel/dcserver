@@ -17,31 +17,18 @@
 package dcraft.db.request.query;
 
 public class WhereLessThan extends WhereExpression {
-	public WhereLessThan(Object a, Object b) {
-		super("LessThan");
-		
-		this.addValue("A", a);
-		this.addValue("B", b);
+	static public WhereLessThan lessThan() {
+		return new WhereLessThan();
 	}
 	
-	public WhereLessThan(IWhereField a, Object b) {
-		super("LessThan");
-		
-		this.addField("A", a);
-		this.addValue("B", b);
+	static public WhereLessThan of(String field, Object value) {
+		WhereLessThan expression = new WhereLessThan();
+		expression.withFieldOne(field);
+		expression.withValueTwo(value);
+		return expression;
 	}
 	
-	public WhereLessThan(Object a, IWhereField b) {
+	public WhereLessThan() {
 		super("LessThan");
-		
-		this.addValue("A", a);
-		this.addField("B", b);
-	}
-	
-	public WhereLessThan(IWhereField a, IWhereField b) {
-		super("LessThan");
-		
-		this.addField("A", a);
-		this.addField("B", b);
 	}
 }

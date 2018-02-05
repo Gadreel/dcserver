@@ -20,7 +20,9 @@ import java.math.BigInteger;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.log.Logger;
+import dcraft.schema.DataType;
 import dcraft.schema.RootType;
+import dcraft.schema.SchemaHub;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
 import dcraft.struct.ScalarStruct;
@@ -44,6 +46,14 @@ public class BigIntegerStruct extends ScalarStruct {
 	protected BigInteger value = null;
 
 	public BigIntegerStruct() { }
+	
+	@Override
+	public DataType getType() {
+		if (this.explicitType != null)
+			return super.getType();
+		
+		return SchemaHub.getTypeOrError("BigInteger");
+	}
 
 	@Override
 	public Object getGenericValue() {

@@ -1,7 +1,7 @@
 package dcraft.db.proc.call;
 
-import dcraft.db.DbServiceRequest;
 import dcraft.db.proc.IStoredProc;
+import dcraft.db.ICallContext;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
@@ -12,7 +12,7 @@ import dcraft.tenant.Tenant;
 
 public class Hash implements IStoredProc {
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct params = request.getDataAsRecord();
 		
 		Tenant tenant = OperationContext.getOrThrow().getUserContext().getTenant();

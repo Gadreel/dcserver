@@ -1,5 +1,6 @@
 package dcraft.db.proc.expression;
 
+import dcraft.db.proc.ExpressionResult;
 import dcraft.db.proc.IExpression;
 import dcraft.db.request.schema.Query;
 import dcraft.db.tables.TablesAdapter;
@@ -27,9 +28,9 @@ public class Or implements IExpression {
 	}
 	
 	@Override
-	public boolean check(TablesAdapter adapter, String id, BigDateTime when, boolean historical) throws OperatingContextException {
+	public ExpressionResult check(TablesAdapter adapter, String id) throws OperatingContextException {
 		if (this.children == null)
-			return false;
+			return ExpressionResult.REJECTED;
 		
 		for (Struct s : children.items()) {
 			RecordStruct where = Struct.objectToRecord(s);
@@ -38,14 +39,14 @@ public class Or implements IExpression {
 			
 			if (expression == null) {
 				Logger.error("bad expression");
-				return false;
+				return ExpressionResult.REJECTED;
 			}
 			
-			if (expression.check(adapter, id, when, historical))
-				return true;
+			if (expression.check(adapter, id).accepted)
+				return ExpressionResult.ACCEPTED;
 		}
 		
-		return false;
+		return ExpressionResult.REJECTED;
 	}
 	
 	@Override

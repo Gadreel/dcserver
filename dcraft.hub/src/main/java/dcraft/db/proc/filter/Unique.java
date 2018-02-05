@@ -1,11 +1,12 @@
 package dcraft.db.proc.filter;
 
 import dcraft.db.proc.BasicFilter;
-import dcraft.db.proc.FilterResult;
+import dcraft.db.proc.ExpressionResult;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.time.BigDateTime;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,23 +19,21 @@ public class Unique extends BasicFilter {
 	// keyed by id
 	protected Set<Object> unique = new HashSet<>();
 	
+	public Collection<Object> getValues() {
+		return unique;
+	}
+	
 	@Override
-	public FilterResult check(TablesAdapter adapter, Object val, BigDateTime when, boolean historical) throws OperatingContextException {
+	public ExpressionResult check(TablesAdapter adapter, Object val) throws OperatingContextException {
 		// we have already returned this one
 		if (this.unique.contains(val))
-			return FilterResult.rejected();
+			return ExpressionResult.REJECTED;
 		
-		if (this.nested != null) {
-			FilterResult nres = this.nested.check(adapter, val, when, historical);
-			
-			if (nres.accepted)
-				this.unique.add(val);
-			
-			return nres;
-		}
+		ExpressionResult nres = this.nestOrAccept(adapter, val);
 		
-		this.unique.add(val);
+		if (nres.accepted)
+			this.unique.add(val);
 		
-		return FilterResult.accepted();
+		return nres;
 	}
 }

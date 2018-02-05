@@ -34,13 +34,17 @@ public class CollectorField implements ICollector {
 	protected RecordStruct column = new RecordStruct();
 	
 	public CollectorField() { }
-	
+
+	public CollectorField withFunc(String name) {
+		this.column.with("Func", name);
+		return this;
+	}
+
 	public CollectorField withField(String name) {
 		this.column.with("Field", name);
 		return this;
 	}
-	
-	
+
 	public CollectorField withValues(Object... values) {
 		if (values != null) {
 			ListStruct list = new ListStruct();
@@ -60,7 +64,7 @@ public class CollectorField implements ICollector {
 		return this;
 	}
 	
-	public CollectorField withExtra(RecordStruct v) {
+	public CollectorField withExtras(RecordStruct v) {
 		this.column.with("Extras", v);
 		
 		return this;
@@ -84,18 +88,12 @@ public class CollectorField implements ICollector {
 		return this;
 	}
 	
-	public CollectorField withMax(int v) {
+	public CollectorField withMax(long v) {
 		this.column.with("Max", v);
 		
 		return this;
 	}
-	
-	public CollectorField withRevers(boolean v) {
-		this.column.with("Reverse", v);
-		
-		return this;
-	}
-	
+
 	@Override
 	public Struct getParams() {
 		return this.column;

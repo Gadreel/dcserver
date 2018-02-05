@@ -1,9 +1,10 @@
 package dcraft.db.proc.call;
 
-import dcraft.db.DbServiceRequest;
+import dcraft.db.ICallContext;
+import dcraft.db.proc.IStoredProc;
+import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.time.BigDateTime;
@@ -15,15 +16,15 @@ import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.builder.ObjectBuilder;
 import dcraft.util.StringUtil;
 
-public class StartSession extends LoadRecord {
+public class StartSession implements IStoredProc {
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct params = request.getDataAsRecord();
 		ICompositeBuilder out = new ObjectBuilder();
-		TablesAdapter db = TablesAdapter.of(request);
 		String did = request.getTenant();
 		BigDateTime when = BigDateTime.nowDateTime();
-				
+		TablesAdapter db = TablesAdapter.of(request, when, false);
+		
 		String token = null;
 		String uid = params.getFieldAsString("UserId");
 		String uname = params.getFieldAsString("Username");
@@ -35,7 +36,7 @@ public class StartSession extends LoadRecord {
 			}
 			else {
 				if (StringUtil.isEmpty(uid)) {
-					Object userid = db.firstInIndex("dcUser", "dcUsername", uname, when, false);
+					Object userid = db.firstInIndex("dcUser", "dcUsername", uname);
 					
 					if (userid != null) 
 						uid = userid.toString();
@@ -48,7 +49,7 @@ public class StartSession extends LoadRecord {
 				return;
 			}
 			
-			if (! db.isCurrent("dcUser", uid, when, false)) {
+			if (! db.isCurrent("dcUser", uid)) {
 				Logger.errorTr(123);
 				callback.returnEmpty();
 				return;
@@ -118,8 +119,8 @@ public class StartSession extends LoadRecord {
 						.with("Name", "AuthToken")
 			);		
 			
-			this.writeRecord(request, out, db, "dcUser",
-					uid, when, select, true, false, false);
+			TableUtil.writeRecord(out, db, "dcUser",
+					uid, select, true, false);
 			
 			if (! om.hasErrors()) {
 				callback.returnValue(out.toLocal());

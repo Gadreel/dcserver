@@ -123,7 +123,7 @@
 		</StringType>
 
 		<StringType Id="dcMetaString" Searchable="False">
-			<StringRestriction MaxLength="64" />
+			<StringRestriction MaxLength="128" />
 		</StringType>
 
 		<StringType Id="dcHubId">

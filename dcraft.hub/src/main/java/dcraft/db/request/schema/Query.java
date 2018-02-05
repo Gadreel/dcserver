@@ -7,6 +7,7 @@ import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
 import dcraft.schema.DbCollector;
 import dcraft.schema.DbExpression;
@@ -144,7 +145,7 @@ public class Query extends RecordStruct {
 					.with("Expression", proc.name);
 			
 			if (code.hasNotEmptyAttribute("Locale"))
-				clause.with("Locale", StackUtil.stringFromElement(state, code,"Locale"));
+				clause.with("Locale", LocaleUtil.normalizeCode(StackUtil.stringFromElement(state, code,"Locale")));
 			
 			sp.parse(state, child, clause);
 			
@@ -175,6 +176,21 @@ public class Query extends RecordStruct {
 			
 			if (code.hasNotEmptyAttribute("Full"))
 				field.with("Full", StackUtil.boolFromElement(state, code,"Full"));
+			
+			if (code.hasNotEmptyAttribute("ForeignField"))
+				field.with("ForeignField", StackUtil.stringFromElement(state, code,"ForeignField"));
+			
+			if (code.hasNotEmptyAttribute("Composer"))
+				field.with("Composer", StackUtil.stringFromElement(state, code,"Composer"));
+			
+			if (code.hasNotEmptyAttribute("Table"))
+				field.with("Table", StackUtil.stringFromElement(state, code,"Table"));
+			
+			if (code.hasNotEmptyAttribute("KeyField"))
+				field.with("KeyField", StackUtil.stringFromElement(state, code,"KeyField"));
+			
+			if (code.hasNotEmptyAttribute("Params"))
+				field.with("Params", StackUtil.refFromElement(state, code,"Params"));
 			
 			selects.with(field);
 			

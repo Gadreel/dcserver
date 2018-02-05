@@ -17,31 +17,18 @@
 package dcraft.db.request.query;
 
 public class WhereGreaterThan extends WhereExpression {
-	public WhereGreaterThan(Object a, Object b) {
-		super("GreaterThan");
-		
-		this.addValue("A", a);
-		this.addValue("B", b);
+	static public WhereGreaterThan greaterThan() {
+		return new WhereGreaterThan();
 	}
 	
-	public WhereGreaterThan(IWhereField a, Object b) {
-		super("GreaterThan");
-		
-		this.addField("A", a);
-		this.addValue("B", b);
+	static public WhereGreaterThan of(String field, Object value) {
+		WhereGreaterThan expression = new WhereGreaterThan();
+		expression.withFieldOne(field);
+		expression.withValueTwo(value);
+		return expression;
 	}
 	
-	public WhereGreaterThan(Object a, IWhereField b) {
+	public WhereGreaterThan() {
 		super("GreaterThan");
-		
-		this.addValue("A", a);
-		this.addField("B", b);
-	}
-	
-	public WhereGreaterThan(IWhereField a, IWhereField b) {
-		super("GreaterThan");
-		
-		this.addField("A", a);
-		this.addField("B", b);
 	}
 }

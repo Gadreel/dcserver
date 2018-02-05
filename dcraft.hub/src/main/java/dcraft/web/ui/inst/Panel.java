@@ -40,7 +40,10 @@ public class Panel extends Base {
 		
 		this.with(W3.tag("div")
 				.withAttribute("class", "dc-panel-heading")
-				.with(W3.tag("h2").withText(title))
+				.with(W3.tag("h2")
+						.withClass("dc-control")
+						.withText(title)
+				)
 			);
 		
 		XElement bodyui = W3.tag("div")

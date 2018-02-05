@@ -382,7 +382,7 @@ public class ObjectBuilder implements ICompositeBuilder {
 	
 	@Override
 	public CompositeStruct toLocal() {
-		return this.root;
+		return this.root;		// don't error if null, some code relies on this
 	}
 	
 	@Override

@@ -6,6 +6,8 @@ import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import dcraft.db.DatabaseException;
+import dcraft.db.request.DataRequest;
 import dcraft.db.request.common.AddUserRequest;
 import dcraft.db.request.common.RequestFactory;
 import dcraft.db.request.query.*;
@@ -18,11 +20,14 @@ import dcraft.filevault.GalleryVault;
 import dcraft.filevault.VaultUtil;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.*;
+import dcraft.interchange.ups.UpsUtil;
 import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
 import dcraft.service.plugin.Operation;
 import dcraft.task.Task;
 import dcraft.task.TaskHub;
+import dcraft.util.Base64;
+import dcraft.util.Memory;
 import dcraft.util.TimeUtil;
 
 import dcraft.interchange.authorize.AuthUtil;
@@ -348,6 +353,130 @@ public class OrderUtil {
 			}
 		}));
 	}
+	
+	static public void createShipment(String id, RecordStruct shipment, ListStruct items, OperationOutcomeStruct callback) throws OperatingContextException {
+		LoadRecordRequest recordRequest = LoadRecordRequest.of("dcmOrder")
+				.withId(id)
+				.withSelect(SelectFields.select()
+						.with("dcmCustomerInfo", "CustomerInfo")
+						.with("dcmShippingInfo", "ShippingInfo")
+				);
+		
+		ServiceHub.call(recordRequest, new OperationOutcomeStruct() {
+			@Override
+			public void callback(Struct result) throws OperatingContextException {
+				if (this.hasErrors()) {
+					callback.returnEmpty();
+					return;
+				}
+				
+				RecordStruct orderRec = Struct.objectToRecord(result);
+				
+				// if shipment doesn't have a destination, copy from order
+				if (shipment.isFieldEmpty("Address")) {
+					shipment.copyFields(orderRec.getFieldAsRecord("ShippingInfo"));
+				}
+				
+				RecordStruct labelData = RecordStruct.record()
+						.with("ShipmentInfo", shipment)
+						.with("CustomerInfo", orderRec.getFieldAsRecord("CustomerInfo"));
+				
+				String provider = shipment.getFieldAsString("ShipProvider");
+				
+				if ("UPS".equals(provider)) {
+					UpsUtil.createLabel(shipment.getFieldAsString("Alternate"), labelData, shipment.getFieldAsString("ShipService"), new OperationOutcomeRecord() {
+						@Override
+						public void callback(RecordStruct result) throws OperatingContextException {
+							if (this.isEmptyResult()) {
+								Logger.error("Shipment request failed.");
+								return;
+							}
+							
+							String respcode = result.selectAsString("ShipmentResponse.Response.ResponseStatus.Code");
+							
+							if (! "1".equals(respcode)) {
+								Logger.error("Shipment request errored.");
+								Logger.error("UPS Code: " + result.selectAsString("Fault.detail.Errors.ErrorDetail.PrimaryErrorCode.Code"));
+								Logger.error("UPS Msg: " + result.selectAsString("Fault.detail.Errors.ErrorDetail.PrimaryErrorCode.Description"));
+							}
+							else {
+								BigDecimal amt = result.selectAsDecimal("ShipmentResponse.ShipmentResults.ShipmentCharges.TotalCharges.MonetaryValue");
+								String tracking = result.selectAsString("ShipmentResponse.ShipmentResults.ShipmentIdentificationNumber");
+								String image = result.selectAsString("ShipmentResponse.ShipmentResults.PackageResults.ShippingLabel.GraphicImage");
+								String thumb = result.selectAsString("ShipmentResponse.ShipmentResults.PackageResults.ShippingLabel.HTMLImage");
+								
+								shipment
+										.with("Cost", amt)
+										.with("Purchased", TimeUtil.now())
+										.with("TrackId", tracking)
+										.with("TrackLink", "https://wwwapps.ups.com/WebTracking/track?track=yes&trackNums=" + tracking);
+								
+								RecordStruct orderlog = RecordStruct.record()
+										.with("ShipmentResponse", result)
+										.with("Log", OperationContext.getOrThrow().getController().getMessages());
+								
+								// TODO trigger Event to send emails
+								
+								// store in deposit file - TODO make sure this is not expanded locally, should be in encrypted deposit file only
+								CommonPath logpath = CommonPath.from("/" + id + "/ship-" + shipment.getFieldAsString("EntryId") + ".json");
+								
+								MemoryStoreFile msource = MemoryStoreFile.of(logpath)
+										.with(orderlog.toPrettyString());
+								
+								// TODO combine these into 1 vault transaction
+								VaultUtil.transfer("StoreOrders", msource, logpath, new OperationOutcomeStruct() {
+									@Override
+									public void callback(Struct result) throws OperatingContextException {
+										//System.out.println(OperationContext.getOrThrow().toPrettyString());
+										
+										CommonPath imgpath = CommonPath.from("/" + id + "/ship-" + shipment.getFieldAsString("EntryId") + "-label.gif");
+										
+										MemoryStoreFile msource = MemoryStoreFile.of(imgpath)
+												.with(new Memory(Base64.decodeFast(image)));
+										
+										VaultUtil.transfer("StoreOrders", msource, imgpath, new OperationOutcomeStruct() {
+											@Override
+											public void callback(Struct result) throws OperatingContextException {
+												//System.out.println(OperationContext.getOrThrow().toPrettyString());
+												/*
+												CommonPath thmpath = CommonPath.from("/" + id + "/ship-" + shipment.getFieldAsString("EntryId") + "-thumb.gif");
+												
+												MemoryStoreFile msource = MemoryStoreFile.of(thmpath)
+														.with(new Memory(Base64.decodeFast(thumb)));
+												
+												VaultUtil.transfer("StoreOrders", msource, thmpath, new OperationOutcomeStruct() {
+													@Override
+													public void callback(Struct result) throws OperatingContextException {
+														//System.out.println(OperationContext.getOrThrow().toPrettyString());
+														*/
+
+														// update the database
+														DataRequest record = DataRequest.of("dcmRecordShipment")
+																.withParam("Id", id)
+																.withParam("Shipment", shipment)
+																.withParam("Items", items);
+														
+														ServiceHub.call(record, callback);
+														/*
+													}
+												});
+												*/
+											}
+										});
+									}
+								});
+							}
+						}
+					});
+				}
+				else {
+					Logger.error("Ship provider not supported");
+					callback.returnEmpty();
+					return;
+				}
+			}
+		});
+	}
 
 	static public void santitizeAndCalculateOrder(RecordStruct order, OperationOutcomeStruct callback) throws OperatingContextException {
 		// -------------------------------------------
@@ -410,10 +539,7 @@ public class OrderUtil {
 					.withField("Id")
 					.withValues(pidlist)
 			)
-			.withWhere(WhereNotEqual.notEqual()
-					.withField("dcmDisabled")
-					.withValue(true)
-			);
+			.withWhere(WhereNotEqual.of("dcmDisabled", true));
 
 		// do search
 		ServiceHub.call(req.toServiceRequest().withOutcome(new OperationOutcomeStruct() {

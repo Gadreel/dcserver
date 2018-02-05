@@ -88,6 +88,84 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 	
 	 */
 	
+	public void deleteIndex(DatabaseAdapter adapter, String depositId, RecordStruct manifestrec, CommonPath dpath) throws DatabaseException {
+		String tenant = manifestrec.getFieldAsString("Tenant");
+		String site = manifestrec.getFieldAsString("Site");
+		String vault = manifestrec.getFieldAsString("Vault");
+		
+		List<Object> indexkeys = new ArrayList<>();
+		
+		indexkeys.add(tenant);
+		indexkeys.add("dcFileIndex");
+		indexkeys.add(site);
+		indexkeys.add(vault);
+		
+		for (String part : dpath.getParts())
+			indexkeys.add(part);
+		
+		Object mm = adapter.get(indexkeys.toArray());
+		
+		if ((mm instanceof Boolean) && ((Boolean) mm)) {
+			// state
+			indexkeys = new ArrayList<>();
+			
+			indexkeys.add(tenant);
+			indexkeys.add("dcFileIndex");
+			indexkeys.add(site);
+			indexkeys.add(vault);
+			
+			for (String part : dpath.getParts())
+				indexkeys.add(part);
+			
+			indexkeys.add("State");
+			indexkeys.add(ByteUtil.dateTimeToReverse(manifestrec.getFieldAsDateTime("TimeStamp")));
+			indexkeys.add("Deleted");
+			
+			adapter.set(indexkeys.toArray());
+			
+			// history
+			indexkeys = new ArrayList<>();
+			
+			indexkeys.add(tenant);
+			indexkeys.add("dcFileIndex");
+			indexkeys.add(site);
+			indexkeys.add(vault);
+			
+			for (String part : dpath.getParts())
+				indexkeys.add(part);
+			
+			indexkeys.add("History");
+			indexkeys.add(ByteUtil.dateTimeToReverse(manifestrec.getFieldAsDateTime("TimeStamp")));
+			indexkeys.add(RecordStruct.record()
+					.with("Source", "Deposit")
+					.with("Deposit", depositId)
+					.with("Op", "Delete")
+					.with("TimeStamp", manifestrec.getFieldAsDateTime("TimeStamp"))
+					.with("Node", ApplicationHub.getNodeId())
+			);
+			
+			adapter.set(indexkeys.toArray());
+		}
+		else {
+			indexkeys.add(null);
+			
+			byte[] pkey = adapter.nextPeerKey(indexkeys.toArray());
+			
+			while (pkey != null) {
+				Object pval = ByteUtil.extractValue(pkey);
+				
+				if (pval instanceof String) {
+					this.deleteIndex(adapter, depositId, manifestrec, dpath.resolve((String) pval));
+				}
+				
+				indexkeys.remove(indexkeys.size() - 1);
+				indexkeys.add(pval);
+				
+				pkey = adapter.nextPeerKey(indexkeys.toArray());
+			}
+		}
+	}
+	
 	// TODO system messages if anything fails here
 	
 	@Override
@@ -180,15 +258,46 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 				return;
 			}
 			
+			RecordStruct manifestrec = params.getFieldAsRecord("Manifest");
+			
+			DatabaseAdapter adapter = ResourceHub.getResources().getDatabases().hasDefaultDatabase()
+					? ResourceHub.getResources().getDatabases().getDatabase().allocateAdapter()
+					: null;
+			
+
+			ListStruct deletes = manifestrec.getFieldAsList("Delete");
+			
+			if (deletes != null) {
+				for (int d = 0; d < deletes.size(); d++) {
+					CommonPath dpath = CommonPath.from(deletes.getItemAsString(d));
+					
+					Logger.info("Deleting path: " + dpath);
+					
+					try {
+						this.deleteIndex(adapter, depositId, manifestrec, dpath);
+					}
+					catch (DatabaseException x) {
+						Logger.error("Unable to index file in db: " + x);
+					}
+					
+				}
+			}
+			
 			// TODO check and skip the deposit build if that step is already done
+			
+			Path tarpath = outpath.resolve(transactionid + ".tar");
+			
+			boolean tarfiles = Files.exists(tarpath);
 			
 			// create a deposit file from TAR - deposit sequence number - and sig and chain
 			LocalStoreFile sigfile = DepositHub.DepositStore.resolvePathToStore("/files/" + depositId + ".sig");
 			
-			finalfiles.withFiles(sigfile);
+			if (tarfiles) {
+				finalfiles.withFiles(sigfile);
+			}
 			
 			IWork builddeposit = StreamWork.of(
-					StreamUtil.localFile(outpath.resolve(transactionid + ".tar")).allocStreamSrc(),
+					StreamUtil.localFile(tarpath).allocStreamSrc(),
 					new UntarStream(),
 					// create manifest - TODO switch to using Untar's Tabulator - or remove Tabulator altogether
 					new TransformFileStream() {
@@ -203,49 +312,76 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 									finalpaths.with(fd.getPath());
 									
 									// index the file if local database
-									if (ResourceHub.getResources().getDatabases().hasDefaultDatabase()) {
-										IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
+				
+										/* we can now get this
+									.with("Manifest", RecordStruct.record()
+												.with("TimeStamp", TimeUtil.now())
+												.with("Type", "Deposit")
+												.with("Tenant", OperationContext.getOrThrow().getTenant().getAlias())
+												.with("Site", OperationContext.getOrThrow().getSite().getAlias())
+												.with("Vault", vaultname)
+												.with("Write", ListStruct.list())
+										)
+										*/
+				
+									try {
+										// set entry marker
+										List<Object> indexkeys = new ArrayList<>();
 										
-										DatabaseAdapter adapter = connectionManager.allocateAdapter();
-										RecordStruct manifestrec = params.getFieldAsRecord("Manifest");
-					
-											/* we can now get this
-										.with("Manifest", RecordStruct.record()
-													.with("TimeStamp", TimeUtil.now())
-													.with("Type", "Deposit")
-													.with("Tenant", OperationContext.getOrThrow().getTenant().getAlias())
-													.with("Site", OperationContext.getOrThrow().getSite().getAlias())
-													.with("Vault", vaultname)
-													.with("Write", ListStruct.list())
-											)
-											*/
-					
-										try {
-											List<Object> indexkeys = new ArrayList<>();
-											
-											indexkeys.add(manifestrec.getFieldAsString("Tenant"));
-											indexkeys.add("dcFileIndex");
-											indexkeys.add(manifestrec.getFieldAsString("Site"));
-											indexkeys.add(manifestrec.getFieldAsString("Vault"));
-											
-											for (String part : fd.getPathAsCommon().getParts())
-												indexkeys.add(part);
-											
-											indexkeys.add("History");
-											indexkeys.add(ByteUtil.dateTimeToReverse(manifestrec.getFieldAsDateTime("TimeStamp")));
-											indexkeys.add(RecordStruct.record()
-													.with("Source", "Deposit")
-													.with("Deposit", depositId)
-													.with("Op", "Write")
-													.with("TimeStamp", manifestrec.getFieldAsDateTime("TimeStamp"))
-													.with("Node", ApplicationHub.getNodeId())
-											);
-											
-											adapter.set(indexkeys.toArray());
-										}
-										catch (DatabaseException x) {
-											Logger.error("Unable to index file in db: " + x);
-										}
+										indexkeys.add(manifestrec.getFieldAsString("Tenant"));
+										indexkeys.add("dcFileIndex");
+										indexkeys.add(manifestrec.getFieldAsString("Site"));
+										indexkeys.add(manifestrec.getFieldAsString("Vault"));
+										
+										for (String part : fd.getPathAsCommon().getParts())
+											indexkeys.add(part);
+										
+										indexkeys.add(true);
+										
+										adapter.set(indexkeys.toArray());
+										
+										// add state
+										indexkeys = new ArrayList<>();
+										
+										indexkeys.add(manifestrec.getFieldAsString("Tenant"));
+										indexkeys.add("dcFileIndex");
+										indexkeys.add(manifestrec.getFieldAsString("Site"));
+										indexkeys.add(manifestrec.getFieldAsString("Vault"));
+										
+										for (String part : fd.getPathAsCommon().getParts())
+											indexkeys.add(part);
+										
+										indexkeys.add("State");
+										indexkeys.add(ByteUtil.dateTimeToReverse(manifestrec.getFieldAsDateTime("TimeStamp")));
+										indexkeys.add("Present");
+										
+										adapter.set(indexkeys.toArray());
+										
+										// add history
+										indexkeys = new ArrayList<>();
+										
+										indexkeys.add(manifestrec.getFieldAsString("Tenant"));
+										indexkeys.add("dcFileIndex");
+										indexkeys.add(manifestrec.getFieldAsString("Site"));
+										indexkeys.add(manifestrec.getFieldAsString("Vault"));
+										
+										for (String part : fd.getPathAsCommon().getParts())
+											indexkeys.add(part);
+										
+										indexkeys.add("History");
+										indexkeys.add(ByteUtil.dateTimeToReverse(manifestrec.getFieldAsDateTime("TimeStamp")));
+										indexkeys.add(RecordStruct.record()
+												.with("Source", "Deposit")
+												.with("Deposit", depositId)
+												.with("Op", "Write")
+												.with("TimeStamp", manifestrec.getFieldAsDateTime("TimeStamp"))
+												.with("Node", ApplicationHub.getNodeId())
+										);
+										
+										adapter.set(indexkeys.toArray());
+									}
+									catch (DatabaseException x) {
+										Logger.error("Unable to index file in db: " + x);
 									}
 									
 									this.lastfd = fd;
@@ -299,6 +435,7 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 							.with("Site", OperationContext.getOrThrow().getSite().getAlias())
 							.with("Vault", vaultname)
 							.with("Write", ListStruct.list())
+							.with("Delete", ListStruct.list())
 					)
 					
 					and then add these things
@@ -320,13 +457,20 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 					
 					*/
 					
-					manifestrec
-							.with("SplitCount", finalcount)
-							.with("Write", finalpaths)
-							.with("ChainSig", DepositHub.getLastSig(ApplicationHub.getNodeId()))
-							.with("DepositSig", finalsig)
-							.with("DepositSignKey", Long.toHexString(seclocalsign.getPublicKey().getKeyID()))
-							.with("DepositEncryptKey", Long.toHexString(encryptor.getPublicKey().getKeyID()));
+					if (finalcount.getValue() == 0) {
+						manifestrec
+								.with("SplitCount", finalcount)
+								.with("ChainSig", DepositHub.getLastSig(ApplicationHub.getNodeId()));
+					}
+					else {
+						manifestrec
+								.with("SplitCount", finalcount)
+								.with("Write", finalpaths)
+								.with("ChainSig", DepositHub.getLastSig(ApplicationHub.getNodeId()))
+								.with("DepositSig", finalsig)
+								.with("DepositSignKey", Long.toHexString(seclocalsign.getPublicKey().getKeyID()))
+								.with("DepositEncryptKey", Long.toHexString(encryptor.getPublicKey().getKeyID()));
+					}
 					
 					String chain = manifestrec.toPrettyString();
 					
@@ -403,9 +547,13 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 					taskctx.returnEmpty();
 				}
 			};
+			
+			if (tarfiles) {
+				this
+						.then(builddeposit);
+			}
 
 			this
-					.then(builddeposit)
 					.then(ControlWork.dieOnError("Unable to create deposit files"))
 					.then(new IWork() {
 						@Override

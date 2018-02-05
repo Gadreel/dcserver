@@ -13,6 +13,8 @@ import java.time.format.DateTimeFormatter;
 
 import dcraft.db.Constants;
 import dcraft.hub.time.BigDateTime;
+import dcraft.schema.CoreType;
+import dcraft.schema.DataType;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.builder.BuilderStateException;
@@ -221,13 +223,17 @@ public class ByteUtil {
 	}
 	
 	static public Object extractValue(byte[] value) {
+		return ByteUtil.extractValue(value, null);
+	}
+	
+	static public Object extractValue(byte[] value, DataType dtype) {
 		if ((value == null) || (value.length < 1))
 			return null;
 		
 		Memory val = new Memory(value);		
 		val.setPosition(0);
 		
-		return ByteUtil.extractNext(val);
+		return ByteUtil.extractNext(val, dtype);
 	}
 	
 	static public List<Object> extractKeyParts(byte[] key) {
@@ -243,7 +249,7 @@ public class ByteUtil {
 		val.setPosition(0);
 		
 		while (val.readableBytes() > 0) {
-			ret.add(ByteUtil.extractNext(val));
+			ret.add(ByteUtil.extractNext(val, null));
 			
 			if (val.readableBytes() > 0) {
 				int m = val.readByte();
@@ -306,7 +312,7 @@ public class ByteUtil {
 		return ret;
 	}
 	
-	static public Object extractNext(Memory val) {
+	static public Object extractNext(Memory val, DataType dtype) {
 		if ((val == null) || (val.readableBytes() < 1))
 			return null;
 		
@@ -316,7 +322,7 @@ public class ByteUtil {
 			return null;
 		
 		if (type == Constants.DB_TYPE_NUMBER)
-			return ByteUtil.dbNumberToNumber(val);
+			return ByteUtil.dbNumberToNumber(val, (dtype != null) ? dtype.getCoreType() : null);
 		
 		if (type == Constants.DB_TYPE_STRING)
 			return ByteUtil.dbStringToString(val);
@@ -631,6 +637,9 @@ public class ByteUtil {
     }    
     
 	public static BigDecimal dateTimeToReverse(ZonedDateTime v) {
+    	if (v == null)
+    		return null;
+    	
 		return new BigDecimal("-" + v.toInstant().toEpochMilli());
 	}
     
@@ -744,7 +753,7 @@ public class ByteUtil {
     	return LocalTime.from(ByteUtil.localTime.parse(Utf8Decoder.decode(str).toString()));
     }    
     
-    public static Number dbNumberToNumber(Memory mem) {
+    public static Number dbNumberToNumber(Memory mem, CoreType coreType) {
     	// TODO return Long if possible - no probably need to return Big Decimal always so user can count on a casting
     	
     	// if there is not enough bytes left then error, skip to end
@@ -763,24 +772,27 @@ public class ByteUtil {
     	mem.read(left, 0, 12);
     	mem.read(right, 0, 4);
     	
-    	BigInteger ival = new BigInteger(left);
-    	
-    	if (isNeg)
-    		ival = ival.add(BigInteger.ONE);		
-    	
-    	BigInteger fval = new BigInteger(right);
-    	
-    	if (isNeg)
-    		fval = fval.add(BigInteger.ONE);
-    	
-    	if (fval.compareTo(BigInteger.ZERO) == 0)
-    		return ival;
-    	
-    	BigDecimal n = new BigDecimal(fval, 9);
-    	
-    	n = n.add(new BigDecimal(ival));
-    	
-    	return n.stripTrailingZeros();
+		BigInteger ival = new BigInteger(left);
+		
+		if (isNeg)
+			ival = ival.add(BigInteger.ONE);
+		
+		BigInteger fval = new BigInteger(right);
+		
+		if (isNeg)
+			fval = fval.add(BigInteger.ONE);
+		
+		if ((coreType == null) && (fval.compareTo(BigInteger.ZERO) == 0))
+			return ival;
+		
+		if ((coreType != null) && coreType.isInteger())
+			return ival;
+			
+		BigDecimal n = new BigDecimal(fval, 9);
+		
+		n = n.add(new BigDecimal(ival));
+		
+		return n.stripTrailingZeros();
     }
     
     public static Boolean dbBooleanToBoolean(Memory mem) {

@@ -1,13 +1,13 @@
 package dcraft.db.proc.call;
 
-import dcraft.db.DbServiceRequest;
 import dcraft.db.proc.IStoredProc;
+import dcraft.db.ICallContext;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 
 public class SelectAdvanced implements IStoredProc {
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		// TODO
 		
 		callback.returnEmpty();

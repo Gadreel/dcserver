@@ -253,7 +253,7 @@ public class RequestWork extends ChainWork {
 					this.then(xwork);
 			}
 		}
-		
+
 		super.run(taskctx);
 	}
 	
@@ -261,7 +261,7 @@ public class RequestWork extends ChainWork {
 		Site webSite = taskctx.getSite();
 		RecordStruct req = wctrl.getFieldAsRecord("Request");
 		CommonPath path = CommonPath.from(req.getFieldAsString("Path"));
-		
+
 		try (OperationMarker om = OperationMarker.create()) {
 			if (Logger.isDebug())
 				Logger.debug("Site: " + webSite.getAlias());

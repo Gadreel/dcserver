@@ -43,6 +43,7 @@ public class SelectFields {
 	 * @return the selected fields (uses an internal format)
 	 */
 	public ListStruct getFields() {
+		// in order for TablesUtil to be efficient this cannot be a computation - must return a same object each call
 		return this.fields;
 	}
 
@@ -315,10 +316,11 @@ public class SelectFields {
 	 * @param name display (return) name
 	 * @param format formatting for return value
 	 */
-	public SelectFields withComposer(String composer, String name, String format) {
+	public SelectFields withComposer(String composer, String name, String field, String format) {
 		SelectComposer sub = new SelectComposer()
 			.withComposer(composer)
 			.withName(name)
+			.with(field)
 			.withFormat(format);
 		
 		this.fields.withItem(sub.getParams());

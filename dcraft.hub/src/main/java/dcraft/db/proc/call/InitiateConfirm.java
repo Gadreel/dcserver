@@ -2,21 +2,20 @@ package dcraft.db.proc.call;
 
 import java.time.ZonedDateTime;
 
-import dcraft.db.DbServiceRequest;
+import dcraft.db.ICallContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.proc.IUpdatingStoredProc;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
-import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.util.StringUtil;
 
 public class InitiateConfirm implements IUpdatingStoredProc {
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.of(request);
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
+		TablesAdapter db = TablesAdapter.ofNow(request);
 		BigDateTime when = BigDateTime.nowDateTime();
 		
 		RecordStruct params = request.getDataAsRecord();
@@ -28,15 +27,15 @@ public class InitiateConfirm implements IUpdatingStoredProc {
 			}
 			else {
 				boolean uisemail = false;
-				Object userid = db.firstInIndex("dcUser", "dcUsername", user, when, false);
+				Object userid = db.firstInIndex("dcUser", "dcUsername", user);
 				
 				if (userid == null) {
-					userid = db.firstInIndex("dcUser", "dcEmail", user, when, false);
+					userid = db.firstInIndex("dcUser", "dcEmail", user);
 					uisemail = true;		// true for email or backup email
 				}
 				
 				if (userid == null)	
-					userid = db.firstInIndex("dcUser", "dcBackupEmail", user, when, false);
+					userid = db.firstInIndex("dcUser", "dcBackupEmail", user);
 				
 				if (userid == null) {
 					Logger.error("Unable to complete recovery");
@@ -50,11 +49,11 @@ public class InitiateConfirm implements IUpdatingStoredProc {
 				db.setStaticScalar("dcUser", uid, "dcConfirmCode", code);
 				db.setStaticScalar("dcUser", uid, "dcRecoverAt", ZonedDateTime.now());
 				
-				String email = uisemail ? uid : (String) db.getStaticScalar("dcUser", uid, "dcEmail");
+				//String email = uisemail ? uid : (String) db.getStaticScalar("dcUser", uid, "dcEmail");
 				
 				callback.returnValue(RecordStruct.record()
 							.with("Id", uid)
-							.with("Code", code)
+							.with("Code", code)		// TODO review this, prefer generalize and to not send this - defeats security :(
 				);
 				
 				return;

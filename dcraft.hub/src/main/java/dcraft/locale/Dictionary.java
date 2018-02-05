@@ -89,7 +89,7 @@ public class Dictionary {
 		}
 		
 		for (XElement lel : trroot.selectAll("Locale")) {
-			String lname = lel.getAttribute("Id");
+			String lname = LocaleUtil.normalizeCode(lel.getAttribute("Id"));
 			
 			if (StringUtil.isEmpty(lname))
 				continue;

@@ -1,8 +1,8 @@
 package dcraft.db.proc.call;
 
 import dcraft.db.DatabaseAdapter;
-import dcraft.db.DbServiceRequest;
 import dcraft.db.proc.IStoredProc;
+import dcraft.db.ICallContext;
 import dcraft.db.util.ByteUtil;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationMarker;
@@ -17,7 +17,7 @@ import dcraft.util.HexUtil;
 
 public class KeyQuery implements IStoredProc {
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct params = request.getDataAsRecord();
 
 		ListStruct keys = params.getFieldAsList("Keys");

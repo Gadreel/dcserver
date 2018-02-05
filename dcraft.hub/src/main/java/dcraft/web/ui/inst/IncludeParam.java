@@ -39,7 +39,7 @@ public class IncludeParam extends Out {
 		XElement pel = ((XElement) ((AnyStruct) funcwrap).getValue());
 		
 		if (pel != null) {
-			this.replace(pel);
+			this.replace(pel.deepCopy());
 			
 			// /examples/simple/simple-2
 		}

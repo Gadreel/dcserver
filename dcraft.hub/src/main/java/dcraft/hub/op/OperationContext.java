@@ -25,6 +25,7 @@ import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.locale.LocaleDefinition;
 import dcraft.locale.LocaleResource;
+import dcraft.locale.Translator;
 import dcraft.log.DebugLevel;
 import dcraft.log.Logger;
 import dcraft.session.Session;
@@ -511,7 +512,11 @@ public class OperationContext extends RecordStruct implements IVariableProvider 
 
 		if ("_User".equals(name))
 			return this.getUserContext();
-
+		
+		if ("_Tr".equals(name)) {
+			return Translator.of(this.getResources());
+		}
+		
 		if ("_Session".equals(name))
 			return this.getSession();
 

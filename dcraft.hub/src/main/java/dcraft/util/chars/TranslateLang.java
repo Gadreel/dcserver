@@ -33,7 +33,7 @@ public class TranslateLang {
 	static public String translateText(String source, String from, String to) {
 		Logger.debug("Translate " + from + " to " + to + ": " + source);
 		
-		if ("x-pig-latin".equals(to) && "en".equals(from))
+		if ("x-pig-latin".equals(to) && "eng".equals(from))
 			return PigLatin.translate(source);
 		
 		return source;
@@ -143,7 +143,7 @@ public class TranslateLang {
 			for (XElement lel : trroot.selectAll("Locale")) {
 				String lname = lel.getAttribute("Id");
 				
-				if (!"en".equals(lname))
+				if (! "eng".equals(lname))
 					continue;
 				
 				for (XElement tel : lel.selectAll("Entry")) {
@@ -186,7 +186,7 @@ public class TranslateLang {
 			for (XElement lel : trroot.selectAll("Locale")) {
 				String lname = lel.getAttribute("Id");
 				
-				if (!"en".equals(lname))
+				if (! "eng".equals(lname))
 					continue;
 				
 				for (XElement tel : lel.selectAll("Entry")) {

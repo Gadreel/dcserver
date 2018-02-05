@@ -170,7 +170,7 @@
 	#dcuiIntegratedMenu {
 		border-right: 3px solid #58595b;
 	}
-	
+
 	#dcuiIntegratedMenu > a {
 		display: none;
 	}
@@ -180,18 +180,18 @@
 	#dcuiIntegratedCms.ui-content {
 		padding: 8px;
 	}
-	
+
 	#dcuiIntegratedPane {
 		margin: 8px;
 		border-radius: 10px 10px 10px 10px;
 	}
-	
+
 	#dcuiIntegratedMenu {
 		width: 240px;
 		margin: 8px;
 		border-radius: 10px 10px 10px 10px;
 	}
-	
+
 	#dcuiIntegratedMenuCntrl {
 	    -webkit-flex-direction: row;
 	    -ms-flex-direction: row;
@@ -199,7 +199,7 @@
 	}
 
 	#dcuiIntegratedMenuCntrl > a.mobile {
-		display: none;		
+		display: none;
 	}
 }
 */
@@ -223,3 +223,49 @@
 	}
 }
 */
+
+/*
+	View Shipment form - dcWeb/www/dcm/store/view-shipment.html
+@media print, screen {
+	#sect2d4c98044bbe4b30b7088d7e22e38964 {
+	}
+
+	#sect2d4c98044bbe4b30b7088d7e22e38964.dc-panel-page {
+		height: auto;
+	}
+
+	#sect2d4c98044bbe4b30b7088d7e22e38964 .dc-panel-heading {
+		display: none;
+	}
+}
+*/
+
+#panDcmShipLabelViewer {
+	height: 100%;
+	overflow-y: auto;
+}
+
+#panDcmShipLabelViewerClose {
+	position: absolute;
+	top: 24px;
+	right: 24px;
+}
+
+#panDcmShipLabelViewerClose .dc-icon-background {
+	color: #E6E6E6;
+}
+
+#panDcmShipLabelViewerClose.dc-link:hover .dc-icon-foreground,
+#panDcmShipLabelViewerClose.dc-link:focus .dc-icon-foreground {
+	color: #fff;
+}
+
+#panDcmShipLabelViewerClose .dc-icon-foreground {
+	color: #444;
+}
+
+@media print {
+	#panDcmShipLabelViewerClose {
+		display: none;
+	}
+}

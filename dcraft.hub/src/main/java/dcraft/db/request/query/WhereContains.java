@@ -21,29 +21,14 @@ public class WhereContains extends WhereExpression {
 		return new WhereContains();
 	}
 	
+	static public WhereContains of(String field, Object value) {
+		WhereContains expression = new WhereContains();
+		expression.withFieldOne(field);
+		expression.withValueTwo(value);
+		return expression;
+	}
+	
 	public WhereContains() {
 		super("Contains");
-	}
-	
-	public WhereContains withField(String name) {
-		return this.withField(WhereField.of(name));
-	}
-	
-	public WhereContains withField(IWhereField fld) {
-		if (! this.params.hasField("A"))
-			this.addField("A", fld);
-		else if (! this.params.hasField("B"))
-			this.addField("B", fld);
-		
-		return this;
-	}
-	
-	public WhereContains withValue(Object v) {
-		if (! this.params.hasField("A"))
-			this.addValue("A", v);
-		else if (! this.params.hasField("B"))
-			this.addValue("B", v);
-		
-		return this;
 	}
 }

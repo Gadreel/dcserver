@@ -35,7 +35,9 @@ public class JsonPrinter extends XmlToJsonPrinterOld {
 		try {
 			this.printPageDef(doc, true);
 			
-			this.jsb.write("dc.pui.Loader.resumePageLoad();\n\n");
+			RecordStruct page = (RecordStruct) OperationContext.getOrThrow().queryVariable("Page");
+			
+			this.jsb.write("dc.pui.Loader.resumePageLoad('" + page.getFieldAsString("OriginalPath") + "');\n\n");
 		}
 		catch(Exception x) {
 			Logger.error("Unable to write page JSON: " + x);
@@ -239,7 +241,7 @@ public class JsonPrinter extends XmlToJsonPrinterOld {
 		catch (Exception x) {
 			Logger.error("Unable to write page JSON: " + x);
 			
-			// TODO failed js code
+			// TODO failed js code  resumePageLoad
 		}
 	}
 	

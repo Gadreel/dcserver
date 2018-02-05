@@ -20,7 +20,6 @@ import java.time.ZonedDateTime;
 
 import dcraft.db.request.DataRequest;
 import dcraft.hub.time.BigDateTime;
-import dcraft.struct.RecordStruct;
 
 public class ListDirectRequest extends DataRequest {
 	public void setHistorical(boolean v) {
@@ -61,7 +60,7 @@ public class ListDirectRequest extends DataRequest {
 			this.parameters.with("Select", select.getParams());
 		
 		if (where != null)
-			this.parameters.with("Where", where.getFields());
+			this.parameters.with("Where", where.getParams());
 		
 		if (collector != null)
 			this.parameters.with("Collector", collector.getParams());

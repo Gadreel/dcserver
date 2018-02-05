@@ -126,7 +126,17 @@ public class LocaleResource extends ResourceBase {
 	}
 	
 	public LocaleDefinition getLocaleDefinition(String name) {
-		return this.locales.get(name);
+		LocaleDefinition definition = this.locales.get(name);
+		
+		if (definition != null)
+			return definition;
+		
+		LocaleResource parent = this.getParentResource();
+		
+		if (parent != null)
+			return parent.getLocaleDefinition(name);
+		
+		return null;
 	}
 
 	public LocaleDefinition buildLocaleDefinition(String name) {
@@ -141,6 +151,7 @@ public class LocaleResource extends ResourceBase {
 		return ZoneId.of(name);
 	}
 	
+	/*
 	public Map<String, LocaleDefinition> getLocales() {
 		if (this.locales.size() == 0) {
 			// make sure we have at least 1 locale listed for the site
@@ -152,6 +163,7 @@ public class LocaleResource extends ResourceBase {
 		
 		return this.locales;
 	}
+	*/
 	
 	// 0 is best, higher the number the worse, -1 for not supported
 	public int rateLocale(String locale) {

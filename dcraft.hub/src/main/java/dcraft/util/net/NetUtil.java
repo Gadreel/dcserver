@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetSocketAddress;
@@ -74,33 +75,41 @@ public class NetUtil {
 		return null;
     }
     
-	public static boolean download(String address, String localFileName) {
-		boolean ret = false;
+	public static boolean download(String address, Path localFile, boolean allowRedirect) {
 		OutputStream out = null;
-		URLConnection conn = null;
+		HttpURLConnection conn = null;
 		InputStream  in = null;
 		
 		try {
 			URL url = new URL(address);
-			conn = url.openConnection();
+			conn = (HttpURLConnection) url.openConnection();
+			conn.setInstanceFollowRedirects(allowRedirect);
 			in = conn.getInputStream();
 			
-			Path f = Paths.get(localFileName);
-			
-			Files.createDirectories(Paths.get(localFileName).getParent());
-
-			out = new BufferedOutputStream(Files.newOutputStream(f));
 			byte[] buffer = new byte[1024];
-			int numRead;
-			//long numWritten = 0;
+			int numRead = in.read(buffer);
+			
+			// if no first block don't create a dest file
+			if (numRead == -1)
+				return false;
+
+			Files.createDirectories(localFile.getParent());
+
+			out = new BufferedOutputStream(Files.newOutputStream(localFile));
+			
+			// first block
+			out.write(buffer, 0, numRead);
+			
 			while ((numRead = in.read(buffer)) != -1) {
 				out.write(buffer, 0, numRead);
-				//numWritten += numRead;
 			}
-			ret = true;
-		} 
+
+			return true;
+		}
 		catch (Exception x) {
 			Logger.error("Unable to download file. " + x);
+			
+			return false;
 		} 
 		finally {
 			try {
@@ -121,6 +130,5 @@ public class NetUtil {
 				Logger.error("Unable to close downloaded file. " + x);
 			}
 		}
-		return ret;
-	}    
+	}
 }

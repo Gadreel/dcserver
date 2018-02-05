@@ -1,0 +1,387 @@
+<dc.Html Title="Message">
+	<Require Style="/css/dc.input.css" />
+
+	<dc.Body>
+		<dc.PagePanel id="panDcwInCal">
+			<div id="flat_calendar_1" class="dc-calendar-chooser" />
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load">
+				var page = this;
+
+				if (page.Params.Title)
+					page.callTagFunc('#panDcwInCal', 'setTitle', page.Params.Title);
+
+				//if (page.Params.Message)
+				//	$('#panDcwMessage').html(page.Params.Message);
+
+				page.Store.When = moment();
+
+				page.callPageFunc('updateCalendar');
+	</Function>
+	<Function Name="updateCalendar"><![CDATA[
+				var page = this;
+				var when = page.Store.When;
+				var data = [ ];		// no events support (yet, TODO)
+				var selmode = true;
+
+				var onclick = function(e) {
+					if (e.type == 'event') {
+						// TODO - event - showlink($('#events-listing div a[data-id="' + e.event.id + '"]'));
+					}
+					else if (e.type == 'date') {
+						if (selmode) {
+							page.Layer.back();
+
+							if (page.Params.Callback)
+								page.Params.Callback({
+									Date: e.when
+								});
+						}
+						else {
+							// TODO - date
+						}
+					}
+					else if (e.type == 'nav') {
+						if (e.direction == 'left')
+							page.Store.When.subtract(1, 'month');
+						else
+							page.Store.When.add(1, 'month');
+
+						page.callPageFunc('updateCalendar');
+					}
+				};
+
+				var $ret = $('<div></div>');
+				var momd1 = when.clone().startOf('month');
+				var mome1 = when.clone().endOf('month');				// end of month
+				var momr1 = momd1.clone().subtract(momd1.day(), 'days');	// start of grid
+				var momr2 = mome1.clone().add(6 - mome1.day(), 'days');		// end of grid
+				var dnum = momr2.diff(momr1, 'days') + 1;			// total days in grid
+
+				// prep for structuring the data
+				var days = [];		// objects, fields: when: date, spots: []
+				var weeks = [];		// objects, fields: spots: []
+
+				var dptr = momr1.clone();
+
+				for (var i = 0; i < dnum; i++) {
+					days.push({
+						when: dptr.clone(),
+						week: Math.floor(i / 7),
+						spots: []
+					});
+
+					dptr = dptr.add(1, 'days');
+				}
+
+				var wnum = Math.floor(dnum / 7);
+
+				for (var i = 0; i < wnum; i++) {
+					weeks.push({
+						spots: [],
+						maxspots: 0
+					});
+				}
+
+				// structure the data
+				for (var i = 0; i < data.length; i++) {
+					var event = data[i];
+
+					var soff = event.when.diff(momr1, 'days');
+					var eoff = event.end ? event.end.diff(momr1, 'days') : soff;
+
+					//console.log('event: ' + event.when.format() + ' off ' + soff);
+
+					// is date out of range?
+					if ((soff >= dnum) || (eoff < 0))
+						continue;
+
+					// for single day events
+					if (soff == eoff) {
+						days[soff].spots.push(event);
+						continue;
+					}
+
+					// for multi-day events
+					var lastweek = -1;
+
+					if (soff < 0)
+						soff = 0;
+
+					// add to spots or spans for each day in our month day array
+					for (var n = soff; n <= Math.min(dnum - 1, eoff); n++) {
+						var currweek = Math.floor(n / 7);
+
+						// check so we only add once to each week
+						if (currweek == lastweek)
+							continue;
+
+						lastweek = currweek;
+
+						var endweek = Math.floor(eoff / 7);
+
+						var ed = (endweek > currweek) ? 6 : (eoff % 7);
+
+						weeks[currweek].spots.push({
+							event: event,
+							start: n % 7,
+							end: ed
+						});
+					}
+				}
+
+				// sort the data
+				var dsort = function(a, b) {
+					if (a.when.isSame(b.when)) return 0;
+					return (a.when.isBefore(b.when)) ? -1 : 1;
+				};
+
+				for (var i = 0; i < dnum; i++) {
+					days[i].spots.sort(dsort);
+
+					var currweek = Math.floor(i / 7);
+
+					weeks[currweek].maxspots = Math.max(days[i].spots.length, weeks[currweek].maxspots);
+				}
+
+				var wsort = function(a, b) {
+					if (a.start == b.start) {
+						if (a.event.when.isSame(b.event.when)) return 0;
+						return (a.event.when.isBefore(b.event.when)) ? -1 : 1;
+					}
+
+					return (a.start < b.start) ? -1 : 1;
+				};
+
+				for (var i = 0; i < wnum; i++)
+					weeks[i].spots.sort(wsort);
+
+				// display the data
+				var $cal = $('<table class="dc-calendar-widget"></table>');
+
+				$ret.append($cal);
+
+				$calhdr = $('<tr class="dc-calendar-header"></tr>');
+
+				$cal.append($calhdr);
+
+				$calleft = $('<td class="dc-calendar-header-nav"><i class="fa fa-chevron-left" /></td>');
+
+				$calleft.click({
+					type: 'nav',
+					direction: 'left',
+					value: 'month'
+				}, function(e) {
+					if (onclick)
+						onclick(e.data);
+				});
+
+				$calhdr.append($calleft);
+
+				$caltitle = $('<td class="dc-calendar-header-month" colspan="5">' + when.format('MMMM YYYY') + '</td>');
+
+				$calhdr.append($caltitle);
+
+				$calright = $('<td class="dc-calendar-header-nav"><i class="fa fa-chevron-right" /></td>');
+
+				$calright.click({
+					type: 'nav',
+					direction: 'right',
+					value: 'month'
+				}, function(e) {
+					if (onclick)
+						onclick(e.data);
+				});
+
+				$calhdr.append($calright);
+
+				$cal.append('<tr class="dc-calendar-week-labels"><td>Sun</td><td>Mon</td><td>Tue</td><td>Wed</td><td>Thu</td><td>Fri</td><td>Sat</td></tr>');
+
+				for (var i = 0; i < wnum; i++) {
+					var w = weeks[i];
+					var finweek = (i + 1 == wnum);
+					var ds = i * 7;
+
+					//headers
+					var $rowhdr = $('<tr class="dc-calendar-week-header"></tr>');
+
+					$cal.append($rowhdr);
+
+					if (finweek)
+						$rowhdr.addClass('dc-calendar-week-end');
+
+					for (var i2 = ds; i2 < (ds + 7); i2++) {
+						var d = days[i2];
+						var dow = (i2 % 7);
+
+						var $cell = $('<td class="dc-calendar-day-header">' + d.when.date() + '</td>');
+
+						if (d.when.month() != when.month())
+							$cell.addClass('dc-calendar-day-header-pad');
+
+						var elist = d.spots.concat();		// copy day events
+
+						// add spans
+						for (var i3 = 0; i3 < w.spots.length; i3++) {
+							var span = w.spots[i3];
+
+							if ((span.start > dow) || (span.end < dow))
+								continue;
+
+							elist.push(span.event);
+						}
+
+						$cell.click({
+							type: 'date',
+							when: d.when,
+							events: elist
+						}, function(e) {
+							if (onclick)
+								onclick(e.data);
+						});
+
+						$rowhdr.append($cell);
+
+						if (dow == 6)
+							$cell.addClass('dc-calendar-day-end');
+					}
+
+					// day spans
+					for (var i3 = 0; i3 < w.spots.length; i3++) {
+						var $rowspt = $('<tr class="dc-calendar-week-span"></tr>');
+
+						$cal.append($rowspt);
+
+						if (finweek)
+							$rowspt.addClass('dc-calendar-week-end');
+
+						var span = w.spots[i3];
+
+						for (var i4 = 0; i4 < span.start; i4++) {
+							var $spot = $('<td class="dc-calendar-day-span-fill"></td>');
+							$rowspt.append($spot);
+						}
+
+						var $spot = $('<td class="dc-calendar-day-span"></td>');
+						$spot.attr('colspan', span.end - span.start + 1);
+
+						if (i3 == 0)
+							$spot.addClass('dc-calendar-day-span-top');
+
+						$rowspt.append($spot);
+
+						$spot.append('<span class="dc-calendar-day-span-label">' + span.event.title + '</span>');
+
+						$spot.click({
+							type: 'event',
+							event: span.event
+						}, function(e) {
+							if (onclick)
+								onclick(e.data);
+						});
+
+						for (var i4 = span.end + 1; i4 < 7; i4++) {
+							var $spot = $('<td class="dc-calendar-day-span-fill"></td>');
+							$rowspt.append($spot);
+						}
+					}
+
+					// day spots
+					for (var i3 = 0; i3 < w.maxspots; i3++) {
+						var $rowspt = $('<tr class="dc-calendar-week-spot"></tr>');
+
+						$cal.append($rowspt);
+
+						if (finweek)
+							$rowspt.addClass('dc-calendar-week-end');
+
+						for (var i2 = ds; i2 < (ds + 7); i2++) {
+							var d = days[i2];
+							var finday = ((i2 % 7) == 6);
+
+							var $spot = $('<td class="dc-calendar-day-spot"></td>');
+
+							$rowspt.append($spot);
+
+							if (i3 < d.spots.length) {
+								$spot.addClass('dc-calendar-day-entry');
+
+								$spot.append('<span class="dc-calendar-day-spot-label">' + d.spots[i3].title + '</span>');
+
+								$spot.click({
+									type: 'event',
+									event: d.spots[i3]
+								}, function(e) {
+									if (onclick)
+										onclick(e.data);
+								});
+							}
+						}
+					}
+
+					if (w.maxspots == 0) {
+						var $rowspt = $('<tr class="dc-calendar-week-spot"></tr>');
+
+						$cal.append($rowspt);
+
+						if (finweek)
+							$rowspt.addClass('dc-calendar-week-end');
+
+						for (var i4 = ds; i4 < (ds + 7); i4++) {
+							var d = days[i4];
+
+							var $spot = $('<td class="dc-calendar-day-span-fill"></td>');
+
+							if (selmode) {
+								$spot
+									.addClass('dc-calendar-day-area')
+									.click({
+										type: 'date',
+										when: d.when
+									}, function(e) {
+										if (onclick)
+											onclick(e.data);
+									});
+							}
+
+							$rowspt.append($spot);
+						}
+					}
+
+					// footers
+					var $rowftr = $('<tr class="dc-calendar-week-footer"></tr>');
+
+					if (finweek)
+						$rowftr.addClass('dc-calendar-week-end');
+
+					for (var i2 = ds; i2 < (ds + 7); i2++) {
+						var d = days[i2];
+						var finday = ((i2 % 7) == 6);
+
+						var $cell = $('<td class="dc-calendar-day-footer"></td>');
+
+						if (selmode) {
+							$cell
+								.addClass('dc-calendar-day-area')
+								.click({
+									type: 'date',
+									when: d.when
+								}, function(e) {
+									if (onclick)
+										onclick(e.data);
+								});
+						}
+
+						$rowftr.append($cell);
+
+						if (finday)
+							$cell.addClass('dc-calendar-day-end');
+					}
+
+					$cal.append($rowftr);
+				}
+
+				$('#flat_calendar_1').empty().append($ret);
+	]]></Function>
+</dc.Html>

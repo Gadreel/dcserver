@@ -165,6 +165,7 @@ public class Tenant extends Base {
 	
 	@Override
 	public Vault getVault(String name) {
+		/*
 		// these special vaults do not exist at the tenant level
 		if ("WebGallery".equals(name) || "WebFiles".equals(name) || "SiteFiles".equals(name))
 			return null;		// TODO return hub level vault??
@@ -188,7 +189,8 @@ public class Tenant extends Base {
 			
 			return this.tenantfiles;
 		}
-		
+		*/
+
 		// all other values are tenant level, like tenant database - this is shared data
 		
 		Vault b = this.vaults.get(name);

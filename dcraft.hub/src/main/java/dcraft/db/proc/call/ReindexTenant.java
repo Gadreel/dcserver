@@ -1,7 +1,7 @@
 package dcraft.db.proc.call;
 
-import dcraft.db.DbServiceRequest;
 import dcraft.db.proc.IUpdatingStoredProc;
+import dcraft.db.ICallContext;
 import dcraft.db.work.IndexTenant;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
@@ -13,7 +13,7 @@ import dcraft.task.run.WorkTopic;
 
 public class ReindexTenant implements IUpdatingStoredProc {
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		Task task = Task.ofSubtask("ReIndex Tenant", "DB")
 				.withTopic(WorkTopic.SYSTEM)
 				.withTimeout(5)

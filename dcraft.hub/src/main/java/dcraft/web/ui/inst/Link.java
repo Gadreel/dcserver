@@ -87,6 +87,9 @@ public class Link extends Base {
 		if (StringUtil.isNotEmpty(click))
 			this.withAttribute("data-dc-click", click);
 		
+		if (StringUtil.isNotEmpty(to))
+			this.withAttribute("data-dc-to", to);
+		
 		this
 				.withAttribute("href", StringUtil.isNotEmpty(page) ? page : to);
 	}

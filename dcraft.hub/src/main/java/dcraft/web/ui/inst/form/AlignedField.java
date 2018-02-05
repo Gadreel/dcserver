@@ -37,8 +37,8 @@ public class AlignedField extends CoreField {
 			
 			if (StringUtil.isNotEmpty(label)) {
 				this
-						.withClass("dc-region")
-						.attr("role", "region");
+						.withClass("dc-region");
+						// TODO enable via "verbose" mode on client .attr("role", "region");
 				
 				boolean ariaOnly = StackUtil.boolFromSource(state, "AriaOnly", true);
 				

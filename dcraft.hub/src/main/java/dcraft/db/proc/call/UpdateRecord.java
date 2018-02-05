@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-import dcraft.db.DbServiceRequest;
+import dcraft.db.ICallContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.proc.IUpdatingStoredProc;
 import dcraft.hub.op.OperatingContextException;
@@ -17,13 +17,11 @@ import dcraft.util.StringUtil;
 
 public class UpdateRecord implements IUpdatingStoredProc {
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		boolean isUpdate = request.getOp().equals("dcUpdateRecord");
 
 		RecordStruct params = request.getDataAsRecord();
 		String table = params.getFieldAsString("Table");
-		
-		TablesAdapter db = TablesAdapter.of(request);
 		
 		// ===========================================
 		//  verify the fields
@@ -32,8 +30,7 @@ public class UpdateRecord implements IUpdatingStoredProc {
 		RecordStruct fields = params.getFieldAsRecord("Fields");
 		BigDateTime when = params.getFieldAsBigDateTime("When");
 		
-		if (when == null)
-			when = BigDateTime.nowDateTime();
+		TablesAdapter db = TablesAdapter.of(request, when, false);
 		
 		if (! request.isReplicating()) {
 			// only check first time, otherwise allow replication
@@ -94,7 +91,7 @@ public class UpdateRecord implements IUpdatingStoredProc {
 				List<String> lsubids = rset.getFieldAsList("Values").toStringList();
 				List<String> othersubids = new ArrayList<>();
 				
-				db.traverseSubIds(table, id, field, when, false, new Function<Object,Boolean>() {			
+				db.traverseSubIds(table, id, field, new Function<Object,Boolean>() {
 					@Override
 					public Boolean apply(Object msub) {
 						String suid = msub.toString();

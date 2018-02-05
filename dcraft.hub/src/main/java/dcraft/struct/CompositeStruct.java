@@ -54,7 +54,7 @@ import dcraft.xml.XElement;
  * @author Andy
  *
  */
-abstract public class CompositeStruct extends Struct implements ICompositeOutput {
+abstract public class CompositeStruct extends Struct implements ICompositeOutput, IPartSelector {
 	public CompositeStruct() {
 	}
 	
@@ -78,7 +78,7 @@ abstract public class CompositeStruct extends Struct implements ICompositeOutput
 		return this.select(PathPart.parse(path));
 	} 
 	
-	/**
+	/** _Tr
 	 * A way to select a child or sub child structure similar to XPath but lightweight.
 	 * Can select composites and scalars.  Use a . or / delimiter.
 	 * 

@@ -8,19 +8,13 @@ public class WhereUtil {
 		String t = StringUtil.stripWhitespace(term);
 		
 		if (StringUtil.isNotEmpty(t))
-			where.addWhere(WhereStartsWith.starts()
-					.withField(field)
-					.withValue(t)
-			);
+			where.withExpression(WhereStartsWith.of(field, term));
 	}
 	
 	static public void tryWhereContains(WhereGroupExpression where, String field, String term) {
 		String t = StringUtil.stripWhitespace(term);
 		
 		if (StringUtil.isNotEmpty(t))
-			where.addWhere(WhereContains.contains()
-					.withField(field)
-					.withValue(t)
-			);
+			where.withExpression(WhereContains.of(field, t));
 	}
 }

@@ -44,7 +44,7 @@
 			<Field Name="dcmItems" List="True" Type="dcmOrderItemInfo" />
 
 			<!-- dcmItems group - sub = EntryId -->
-			<Field Name="dcmItemEntryId" Group="dcmItems" List="True" Type="dcTinyString" />
+			<Field Name="dcmItemEntryId" Group="dcmItems" List="True" Type="dcMetaString" />
 			<Field Name="dcmItemProduct" Group="dcmItems" List="True" ForeignKey="dcmProduct" />
 			<Field Name="dcmItemQuantity" Group="dcmItems" List="True" Type="Integer" />
 			<Field Name="dcmItemPrice" Group="dcmItems" List="True" Type="Decimal" />
@@ -52,7 +52,7 @@
 			<Field Name="dcmItemExtra" Group="dcmItems" List="True" Type="AnyRecord" />
 			<Field Name="dcmItemStatus" Group="dcmItems" List="True" Type="dcmItemStatusEnum" />
 			<Field Name="dcmItemUpdated" Group="dcmItems" List="True" Type="DateTime" />
-			<Field Name="dcmItemShipment" Group="dcmItems" List="True" Type="dcTinyString" />
+			<Field Name="dcmItemShipment" Group="dcmItems" List="True" Type="dcMetaString" />
 
 			<Field Name="dcmCustomerInfo" Type="dcmOrderCustomerInfo" />
 			<Field Name="dcmShippingInfo" Type="dcmOrderShippingInfo" />
@@ -85,9 +85,9 @@
 			<Field Name="dcmExternalCustomerId" Type="dcSmallString" />
 
 			<!-- TODO review
-			<Field Name="dcmShippingNumber" Type="dcTinyString" />
+			<Field Name="dcmShippingNumber" Type="dcMetaString" />
 
-			<Field Name="dcmPrintingPin" Type="dcTinyString" />
+			<Field Name="dcmPrintingPin" Type="dcMetaString" />
 			<Field Name="dcmPrintPinExpiration" Type="DateTime" />
 			-->
 
@@ -112,21 +112,25 @@
 			<Field Name="dcmNotes" Type="dcLargeString" />
 
 			 if a shipment is associated with this entry
-			<Field Name="dcmShippingNumber" Type="dcTinyString" />
+			<Field Name="dcmShippingNumber" Type="dcMetaString" />
 		</Table>
 		-->
 
 		<Table Id="dcmCategory">
 			<Field Name="dcmTitle" Type="dcSmallString" />
+			<Field Name="dcmTitleTr" Type="dcSmallString" List="True" />
 			<Field Name="dcmMode" Type="dcmCategoryModeEnum" />
 			<Field Name="dcmAlias" Type="dcMetaString" Required="True" Unique="True" Indexed="True" />
+			<Field Name="dcmShowInStore" Type="Boolean" />
+			<Field Name="dcmImage" Type="dcString" />
 
 			<Field Name="dcmParent" ForeignKey="dcmCategory" />
 
 			<Field Name="dcmDescription" Type="String" />
+			<Field Name="dcmDescriptionTr" Type="String" List="True" />
 
 			<!-- sid = field name -->
-			<Field Name="dcmCustomDisplayField" Type="dcSmallString" List="True" />
+			<Field Name="dcmCustomDisplayField" Type="dcMetaString" List="True" />
 
 			<!-- if dcTenant:dcmShippingRateMode is PerItemFromCategory -->
 			<Field Name="dcmShipAmount" Type="Decimal" />
@@ -142,10 +146,13 @@
 			<Field Name="dcmDelivery" Type="dcmDeliveryEnum" List="True" />
 
 			<Field Name="dcmTitle" Type="dcSmallString" />
+			<Field Name="dcmTitleTr" Type="dcSmallString" List="True" />
 			<Field Name="dcmAlias" Type="dcMetaString" Required="True" Unique="True" Indexed="True" />
 			<Field Name="dcmSku" Type="dcMetaString" Indexed="True" />
 			<Field Name="dcmDescription" Type="String" />
+			<Field Name="dcmDescriptionTr" Type="String" List="True" />
 			<Field Name="dcmInstructions" Type="dcString" />
+			<Field Name="dcmInstructionsTr" Type="dcString" List="True" />
 			<Field Name="dcmImage" Type="dcString" />
 
 			<!-- sid = field name -->
@@ -210,7 +217,15 @@
 			<Field Name="dcmKeywords" Type="dcString" />
 			<Field Name="dcmIntro" Type="dcString" />
 			<Field Name="dcmDetail" Type="dcLargeString" />
+
+			<Field Name="dcmProducts" List="True" ForeignKey="dcmProduct" />
 		</Table>
+
+		<Procedure Name="dcmRecordShipment" Execute="dcraft.cms.store.db.RecordShipment" />
+		<Procedure Name="dcmUpdateItems" Execute="dcraft.cms.store.db.UpdateItems" />
+
+		<Composer Name="dcmStoreImage" Execute="dcraft.cms.store.db.comp.StoreImage" />
+		<Composer Name="dcmProductPrice" Execute="dcraft.cms.store.db.comp.ProductPrice" />
 	</Database>
 
 	<Shared>
@@ -268,7 +283,7 @@
 
 		<Record Id="dcmOrderItemInfo">
 			<!-- uuid for this item entry -->
-			<Field Name="EntryId" Type="dcTinyString" Required="True" />
+			<Field Name="EntryId" Type="dcMetaString" Required="True" />
 			<Field Name="Product" Type="Id" Required="True" />
 			<Field Name="Quantity" Type="Integer" Required="True" />
 
@@ -329,18 +344,20 @@
 			<Field Name="State" Type="dcUsaState" Required="True" />
 			<Field Name="Zip" Type="dcUsaZip" Required="True" />
 			<!-- alias of selected estimate -->
-			<Field Name="SelectedEstimate" Type="dcTinyString" />
+			<Field Name="SelectedEstimate" Type="dcMetaString" />
 		</Record>
 
 		<!-- one per package -->
 		<Record Id="dcmOrderShipmentInfo" >
 			<!-- uuid for this item entry -->
-			<Field Name="EntryId" Type="dcTinyString" Required="True" />
+			<Field Name="EntryId" Type="dcMetaString" Required="True" />
 			<!-- USPS, FedEx, UPS, etc -->
-			<Field Name="ShipMethod" Type="dcTinyString" Required="True" />
+			<Field Name="ShipProvider" Type="dcMetaString" Required="True" />
+			<!-- such as ground, express, etc -->
+			<Field Name="ShipService" Type="dcMetaString" />
 			<!-- url or id to track -->
 			<Field Name="TrackLink" Type="dcString" />
-			<Field Name="TrackId" Type="dcSmall" />
+			<Field Name="TrackId" Type="dcMetaString" />
 			<Field Name="Cost" Type="Decimal" />
 			<Field Name="Purchased" Type="DateTime" />
 
@@ -351,13 +368,13 @@
 			<Field Name="Weight" Type="Decimal" />
 
 			<!-- where shipped -->
-			<Field Name="FirstName" Type="dcTinyString" Required="True" />
-			<Field Name="LastName" Type="dcTinyString" Required="True" />
-			<Field Name="Address" Type="dcSmallString" Required="True" />
+			<Field Name="FirstName" Type="dcTinyString" />
+			<Field Name="LastName" Type="dcTinyString" />
+			<Field Name="Address" Type="dcSmallString" />
 			<Field Name="Address2" Type="dcSmallString" />
-			<Field Name="City" Type="dcTinyString" Required="True" />
-			<Field Name="State" Type="dcUsaState" Required="True" />
-			<Field Name="Zip" Type="dcUsaZip" Required="True" />
+			<Field Name="City" Type="dcTinyString" />
+			<Field Name="State" Type="dcUsaState" />
+			<Field Name="Zip" Type="dcUsaZip" />
 		</Record>
 
 		<Record Id="dcmOrderBillingInfo" >
@@ -371,7 +388,7 @@
 		</Record>
 
 		<Record Id="dcmDiscountInfo">
-			<Field Name="EntryId" Type="dcTinyString" Required="True" />
+			<Field Name="EntryId" Type="dcMetaString" Required="True" />
 			<Field Name="Discount" Type="Id" Required="True" />
 			<Field Name="Code" Type="dcmDiscount:dcmCode" Required="True" />
 			<Field Name="Title" Type="dcmDiscount:dcmTitle" Required="True" />
@@ -387,7 +404,7 @@
 
 		<Record Id="dcmShipEstimateInfo">
 			<Field Name="Title" Type="dcSmallString" />
-			<Field Name="Alias" Type="dcTinyString" />
+			<Field Name="Alias" Type="dcMetaString" />
 			<Field Name="Amount" Type="Decimal" />
 		</Record>
 
@@ -460,7 +477,7 @@
 		<Record Id="dcmOrderNotice">
 			<Field Name="For" Type="dcmTargetUserEnum" />
 			<Field Name="Stamp" Type="DateTime" />
-			<Field Name="Type" Type="dcTinyString" />
+			<Field Name="Type" Type="dcMetaString" />
 		</Record>
 
 		<Record Id="dcmOrderAudit">
@@ -475,7 +492,7 @@
 
 		<Record Id="dcmOrderItemList">
 			<!-- uuid for this item entry -->
-			<Field Name="EntryId" Type="dcTinyString" Required="True" />
+			<Field Name="EntryId" Type="dcMetaString" Required="True" />
 			<Field Name="Product" Type="Id" Required="True" />
 			<Field Name="Quantity" Type="Integer" Required="True" />
 
@@ -490,7 +507,7 @@
 			<Field Name="Status" Type="dcmItemStatusEnum" />
 
 			<Field Name="Updated" Type="DateTime" />
-			<Field Name="Shipment" Type="dcTinyString" />
+			<Field Name="Shipment" Type="dcMetaString" />
 		</Record>
 	</Shared>
 
@@ -591,6 +608,9 @@
 							<Field Name="Audit">
 								<List Type="dcmOrderAudit" />
 							</Field>
+							<Field Name="Shipments">
+								<List Type="dcmOrderShipmentInfo" />
+							</Field>
 						</RecordResponse>
 					</Op>
 					<Op Name="UpdateStatus">
@@ -604,7 +624,7 @@
 							<Field Name="Id" Type="Id" Required="True" />
 							<Field Name="Status" Type="dcmItemStatusEnum" Required="True" />
 							<Field Name="Items" Required="True">
-								<List Type="dcTinyString" />
+								<List Type="dcMetaString" />
 							</Field>
 						</RecordRequest>
 					</Op>
@@ -620,7 +640,7 @@
 							<Field Name="Id" Type="Id" Required="True" />
 							<Field Name="Shipment" Type="dcmOrderShipmentInfo" Required="True" />
 							<Field Name="Items" Required="True">
-								<List Type="dcTinyString" />
+								<List Type="dcMetaString" />
 							</Field>
 						</RecordRequest>
 					</Op>
@@ -629,7 +649,7 @@
 							<Field Name="Id" Type="Id" Required="True" />
 							<Field Name="Shipment" Type="dcmOrderShipmentInfo" Required="True" />
 							<Field Name="Items" Required="True">
-								<List Type="dcTinyString" />
+								<List Type="dcMetaString" />
 							</Field>
 						</RecordRequest>
 					</Op>
@@ -660,6 +680,7 @@
 						<RecordRequest Required="True">
 							<Field Name="Id" Type="dcmCategory:Id" />
 							<Field Name="Alias" Type="dcmCategory:dcmAlias" />
+							<Field Name="TrLocale" Type="dcMetaString" Required="IfPresent" />
 						</RecordRequest>
 						<RecordResponse>
 							<Field Name="Id" Type="dcmCategory:Id" />
@@ -670,6 +691,8 @@
 							<Field Name="Description" Type="dcmCategory:dcmDescription" />
 							<Field Name="CustomDisplayField" Type="AnyList" />
 							<Field Name="ShipAmount" Type="dcmCategory:dcmShipAmount" />
+							<Field Name="Image" Type="dcmCategory:dcmImage" />
+							<Field Name="ShowInStore" Type="dcmCategory:dcmShowInStore" />
 							<Field Name="Children">
 								<List>
 									<Record>
@@ -690,6 +713,7 @@
 						</Description>
 						<RecordRequest Required="True">
 							<Field Name="Id" Type="dcmCategory:Id" Required="True" />
+							<Field Name="TrLocale" Type="dcMetaString" Required="IfPresent" />
 							<Field Name="Title" Type="dcmCategory:dcmTitle" Required="IfPresent" />
 							<Field Name="Alias" Type="dcmCategory:dcmAlias" Required="IfPresent" />
 							<Field Name="Mode" Type="dcmCategory:dcmMode" Required="IfPresent" />
@@ -697,6 +721,8 @@
 							<Field Name="Description" Type="dcmCategory:dcmDescription" />
 							<!--  TODO  Field Name="CustomDisplayField" Type="AnyList" / -->
 							<Field Name="ShipAmount" Type="dcmCategory:dcmShipAmount" />
+							<Field Name="Image" Type="dcmCategory:dcmImage" />
+							<Field Name="ShowInStore" Type="dcmCategory:dcmShowInStore" />
 						</RecordRequest>
 					</Op>
 					<Op Name="Add">
@@ -705,12 +731,15 @@
 						</Description>
 						<RecordRequest Required="True">
 							<Field Name="Title" Type="dcmCategory:dcmTitle" Required="True" />
+							<Field Name="TrLocale" Type="dcMetaString" Required="IfPresent" />
 							<Field Name="Alias" Type="dcmCategory:dcmAlias" Required="True" />
 							<Field Name="Mode" Type="dcmCategory:dcmMode" Required="True" />
 							<Field Name="Parent" Type="dcmCategory:dcmParent" />
 							<Field Name="Description" Type="dcmCategory:dcmDescription" />
 							<!--  TODO  Field Name="CustomDisplayField" Type="AnyList" / -->
 							<Field Name="ShipAmount" Type="dcmCategory:dcmShipAmount" />
+							<Field Name="Image" Type="dcmCategory:dcmImage" />
+							<Field Name="ShowInStore" Type="dcmCategory:dcmShowInStore" />
 						</RecordRequest>
 						<RecordResponse>
 							<Field Name="Id" Type="dcmCategory:Id" />
@@ -776,6 +805,7 @@
 						</Description>
 						<RecordRequest Required="True">
 							<Field Name="Id" Type="dcmProduct:Id" Required="True" />
+							<Field Name="TrLocale" Type="dcMetaString" Required="IfPresent" />
 						</RecordRequest>
 						<RecordResponse>
 							<Field Name="Id" Type="dcmProduct:Id" />
@@ -811,6 +841,7 @@
 						</Description>
 						<RecordRequest Required="True">
 							<Field Name="Id" Type="dcmProduct:Id" Required="True" />
+							<Field Name="TrLocale" Type="dcMetaString" Required="IfPresent" />
 							<Field Name="Title" Type="dcmProduct:dcmTitle" Required="IfPresent" />
 							<Field Name="Alias" Type="dcmProduct:dcmAlias" Required="IfPresent" />
 							<Field Name="Sku" Type="dcmProduct:dcmSku" />
@@ -842,6 +873,7 @@
 							Add a product record.
 						</Description>
 						<RecordRequest Required="True">
+							<Field Name="TrLocale" Type="dcMetaString" Required="IfPresent" />
 							<Field Name="Title" Type="dcmProduct:dcmTitle" Required="True" />
 							<Field Name="Alias" Type="dcmProduct:dcmAlias" Required="True" />
 							<Field Name="Sku" Type="dcmProduct:dcmSku" />
@@ -935,6 +967,29 @@
 					</Op>
 				</Secure>
 				<Secure Badges="User,Guest">
+					<Op Name="SearchAvailable">
+						<Description>
+							Search a list all available product records.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Term" Type="dcTinyString" Required="True" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="dcmProduct:Id" />
+								<Field Name="Title" Type="dcmProduct:dcmTitle" />
+								<Field Name="Alias" Type="dcmProduct:dcmAlias" />
+								<Field Name="Sku" Type="dcmProduct:dcmSku" />
+								<Field Name="Description" Type="dcmProduct:dcmDescription" />
+								<Field Name="Image" Type="dcmProduct:dcmImage" />
+								<Field Name="Price" Type="dcmProduct:dcmPrice" />
+								<Field Name="VariablePrice" Type="dcmProduct:dcmVariablePrice" />
+								<Field Name="Delivery">
+									<List Type="dcmProduct:dcmDelivery" />
+								</Field>
+							</Record>
+						</ListResponse>
+					</Op>
 					<Op Name="Lookup">
 						<Description>
 							Find product record id based on alias.
@@ -1088,6 +1143,14 @@
 							<Field Name="Detail" Type="dcmGiftRegistry:dcmDetail" />
 							<Field Name="EventType" Type="dcmGiftRegistry:dcmEventType" />
 							<Field Name="EventDate" Type="dcmGiftRegistry:dcmEventDate" />
+							<Field Name="Products">
+								<Record>
+									<Field Name="Id" Type="Id" />
+									<Field Name="Title" Type="dcmProduct:dcmTitle" />
+									<Field Name="Alias" Type="dcmProduct:dcmAlias" />
+									<Field Name="Image" Type="dcmProduct:dcmImage" />
+								</Record>
+							</Field>
 						</RecordResponse>
 					</Op>
 					<Op Name="Update">
@@ -1117,6 +1180,24 @@
 						<RecordResponse>
 							<Field Name="Id" Type="Id" />
 						</RecordResponse>
+					</Op>
+					<Op Name="LinkProduct">
+						<Description>
+							Connect a product to a registry record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="RegistryId" Type="Id" Required="True" />
+							<Field Name="ProductId" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="UnlinkProduct">
+						<Description>
+							Un connect a product to a registry record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="RegistryId" Type="Id" Required="True" />
+							<Field Name="ProductId" Type="Id" Required="True" />
+						</RecordRequest>
 					</Op>
 					<Op Name="Retire">
 						<Description>
@@ -1162,6 +1243,33 @@
 								<Field Name="EventDate" Type="dcmGiftRegistry:dcmEventDate" />
 							</Record>
 						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+		</Service>
+		<Service Name="dcDatabase">
+			<Feature Name="ExecuteProc">
+				<Secure Badges="SysAdmin,Admin">
+					<Op Name="dcmRecordShipment">
+						<Description>
+							Store a prepared shippment.
+						</Description>
+						<RecordRequest Inherits="dcdbCallBasic" Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Shipment" Type="dcmOrderShipmentInfo" Required="True" />
+							<Field Name="Items" Required="True">
+								<List Type="dcMetaString" />
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="dcmUpdateItems">
+						<RecordRequest Inherits="dcdbCallBasic" Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Status" Type="dcmItemStatusEnum" Required="True" />
+							<Field Name="Items" Required="True">
+								<List Type="dcMetaString" />
+							</Field>
+						</RecordRequest>
 					</Op>
 				</Secure>
 			</Feature>

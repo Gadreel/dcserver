@@ -17,9 +17,8 @@ import dcraft.struct.builder.ICompositeBuilder;
 
 public class ListCounter implements IComposer {
 	@Override
-	public void writeField(DbServiceRequest task, ICompositeBuilder out,
-						   TablesAdapter db, String table, String id, BigDateTime when, RecordStruct field,
-						   boolean historical, boolean compact) throws OperatingContextException
+	public void writeField(ICompositeBuilder out,
+						   TablesAdapter db, String table, String id, RecordStruct field, boolean compact) throws OperatingContextException
 	{	
 		try {
 			String fname = field.getFieldAsString("Field");
@@ -38,9 +37,10 @@ public class ListCounter implements IComposer {
 				cnt.set(1);
 			}
 			// DynamicList, StaticList (or DynamicScalar is when == null)
-			else if (fdef.isList() || (fdef.isDynamic() && when == null)) {
+			// TODO was --- else if (fdef.isList() || (fdef.isDynamic() && when == null)) { --- restore?
+			else if (fdef.isList()) {
 				// keep in mind that `id` is the "value" in the index
-				db.traverseSubIds(table, id, fname, when, historical, new Function<Object,Boolean>() {				
+				db.traverseSubIds(table, id, fname, new Function<Object,Boolean>() {
 					@Override
 					public Boolean apply(Object subid) {
 						cnt.incrementAndGet();
@@ -50,7 +50,7 @@ public class ListCounter implements IComposer {
 			}		
 			// DynamicScalar
 			else if (fdef.isDynamic()) {
-				if (db.getDynamicScalarRaw(table, id, fname, when, historical) != null)
+				if (db.getDynamicScalarRaw(table, id, fname) != null)
 					cnt.set(1);
 			}
 			// StaticScalar

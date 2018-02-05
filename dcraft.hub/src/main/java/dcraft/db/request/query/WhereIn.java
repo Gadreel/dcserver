@@ -16,20 +16,19 @@
 ************************************************************************ */
 package dcraft.db.request.query;
 
-import dcraft.util.StringUtil;
-
 public class WhereIn extends WhereExpression {
-	public WhereIn(Object a, String... b) {
-		super("In");
-		
-		this.addValue("A", a);
-		this.addValue("B", "|" + StringUtil.join(b,"|") + "|");
+	static public WhereIn in() {
+		return new WhereIn();
 	}
 	
-	public WhereIn(IWhereField a, String... b) {
+	static public WhereIn of(String field, Object value) {
+		WhereIn expression = new WhereIn();
+		expression.withFieldOne(field);
+		expression.withValueTwo(value);
+		return expression;
+	}
+	
+	public WhereIn() {
 		super("In");
-		
-		this.addField("A", a);
-		this.addValue("B", "|" + StringUtil.join(b,"|") + "|");
 	}
 }

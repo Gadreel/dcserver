@@ -8,6 +8,7 @@ import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.UserContext;
 import dcraft.locale.LocaleDefinition;
 import dcraft.locale.LocaleResource;
+import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
 import dcraft.log.count.CountHub;
 import dcraft.session.Session;
@@ -26,7 +27,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -36,7 +36,6 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.ReadTimeoutException;
 
 import java.net.InetSocketAddress;
-import java.util.Map;
 
 /**
  */
@@ -133,7 +132,6 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 			Logger.debug("Web server request c");
 
 		RecordStruct req = wctrl.getFieldAsRecord("Request");
-		Response resp = wctrl.getResponse();
 		
 		CommonPath path = CommonPath.from(req.getFieldAsString("Path"));
 		String method = req.getFieldAsString("Method");
@@ -334,7 +332,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 			// help pass security tests if Secure by default when using https
 			sk.setSecure(wctrl.isSecure());
 			
-			resp.setCookie(sk);
+			wctrl.getResponse().setCookie(sk);
 
 			if (Logger.isDebug())
 				Logger.debug("Web server request f4");
@@ -345,12 +343,73 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 		// --------------------------------------------
 		// locale for request
 		// --------------------------------------------
-
-		Cookie localek = this.resolveLocale();
 		
-		if (localek != null) {
-			localek.setPath("/");
-			resp.setCookie(localek);
+		{
+			LocaleResource locales = this.context.getResources().getLocale();
+			
+			LocaleDefinition locale = null;
+			
+			// see if the path indicates a language then redirect
+			if (path.getNameCount() > 0)  {
+				String lvalue = LocaleUtil.normalizeCode(path.getName(0));
+				
+				locale = locales.getLocaleDefinition(lvalue);
+				
+				if (locale != null) {
+					req
+							.with("Path", path.subpath(1))
+							.with("OriginalPath", path.subpath(1));
+				}
+			}
+			
+			String langcookie = req.isNotFieldEmpty("Cookies")
+					? req.getFieldAsRecord("Cookies").getFieldAsString("dcLang")
+					: null;
+			
+			// but respect the cookie if possible
+			if (locale == null) {
+				if (StringUtil.isNotEmpty(langcookie)) {
+					locale = locales.getLocaleDefinition(langcookie);
+				}
+			}
+			
+			// see if the domain is set for a specific language
+			if (locale == null) {
+				String domain = host;
+				
+				if (domain.indexOf(':') > -1)
+					domain = domain.substring(0, domain.indexOf(':'));
+				
+				locale = this.context.getSite().getLocaleDomain(domain);
+			}
+			
+			// see if the user has a preference
+			if (locale == null) {
+				ListStruct uplist = this.context.getUserContext().getLocale();
+				
+				if ((uplist != null) && (uplist.getSize() > 0))
+					locale = locales.getLocaleDefinition(uplist.getItemAsString(0));		// TODO support more than just first preference
+			}
+			
+			// use default locale for site
+			if (locale == null) {
+				locale = locales.getDefaultLocaleDefinition();
+			}
+			
+			// if selected locale does not match context locale, switch
+			if (! locale.getName().equals(this.context.getLocale())) {
+				this.context.withLocale(locale.getName());
+			}
+			
+			if (! locale.getName().equals(langcookie)) {
+				Cookie localek = new DefaultCookie("dcLang", locale.getName());
+				localek.setPath("/");
+				
+				// help pass security tests if Secure by default when using https
+				localek.setSecure(wctrl.isSecure());
+				
+				wctrl.getResponse().setCookie(localek);
+			}
 		}
 
 		if (Logger.isDebug())
@@ -396,91 +455,6 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 				.withTopic("Web")
 				.withWork(rwork)
 		);
-	}
-	
-	public Cookie resolveLocale() {
-		WebController wctrl = (WebController) this.context.getController();
-		
-		RecordStruct req = wctrl.getFieldAsRecord("Request");
-		CommonPath path = CommonPath.from(req.getFieldAsString("Path"));
-		
-		LocaleResource locales = this.context.getResources().getLocale();
-		
-		Map<String, LocaleDefinition> localesmap = locales.getLocales();
-		
-		LocaleDefinition locale = null;
-		
-		// see if the path indicates a language
-		if (path.getNameCount() > 0)  {
-			String lvalue = path.getName(0);
-			
-			locale = localesmap.get(lvalue);
-			
-			// extract the language from the path
-			if (locale != null)
-				req.with("Path", path.subpath(1));
-		}
-		
-		// but respect the cookie if it matches something though
-		String langcookie = wctrl.getFieldAsRecord("Request").isNotFieldEmpty("Cookies")
-				? wctrl.getFieldAsRecord("Request").getFieldAsRecord("Cookies").getFieldAsString("dcLang")
-				: null;
-		
-		if (locale == null) {
-			if (StringUtil.isNotEmpty(langcookie)) {
-				// if everything checks out set the op locale and done
-				if (localesmap.containsKey(langcookie)) {
-					this.context.withLocale(langcookie);
-					return null;
-				}
-				
-				locale = this.context.getSite().getLocaleDefinition(langcookie);
-				
-				// use language if variant - still ok and done
-				if (locale.hasVariant()) {
-					if (localesmap.containsKey(locale.getLanguage())) {
-						this.context.withLocale(langcookie);		// keep the variant part, it may be used in places on site - supporting a lang implicitly allows all variants
-						return null;
-					}
-				}
-				
-				// otherwise ignore the cookie, will replace it
-			}
-		}
-		
-		String host = req.getFieldAsString("Host");
-		
-		// see if the domain is set for a specific language
-		if (locale == null) {
-			String domain = host;
-			
-			if (domain.indexOf(':') > -1)
-				domain = domain.substring(0, domain.indexOf(':'));
-			
-			locale = this.context.getSite().getLocaleDefinition(domain);
-		}
-		
-		// see if the user has a preference
-		if (locale == null) {
-			ListStruct uplist = this.context.getSession().getUser().getLocale();
-			
-			if ((uplist != null) && (uplist.getSize() > 0))
-				locale = localesmap.get(uplist.getItemAsString(0));		// TODO support more than just first preference
-		}
-		
-		// if we find any locale at all then to see if it is the default
-		// if not use it, else use the default
-		if ((locale != null) && ! locale.equals(locales.getDefaultLocale())) {
-			this.context.withLocale(locale.getName());
-			return new DefaultCookie("dcLang", locale.getName());
-		}
-		
-		// clear the cookie if we are to use default locale
-		if (langcookie != null)
-			return new DefaultCookie("dcLang", "");
-		
-		// we are using default locale, nothing more to do
-		return null;
 	}
 	
 	// TODO this may not be a real threat but review it anyway

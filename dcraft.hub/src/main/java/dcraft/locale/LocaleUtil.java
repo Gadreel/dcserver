@@ -50,9 +50,17 @@ public class LocaleUtil {
 	}
 
 	static public List<IndexInfo> full(String v, String lang) {
+		lang = LocaleUtil.normalizeCode(lang);
+
 		// TODO configure
-		if ("en".equals(lang)) {
-			IndexBase indexer = new dcraft.locale.index.en.Index();
+		if ("eng".equals(lang)) {
+			IndexBase indexer = new dcraft.locale.index.eng.Index();
+
+			return indexer.full(v);
+		}
+
+		if ("spa".equals(lang)) {
+			IndexBase indexer = new dcraft.locale.index.spa.Index();
 
 			return indexer.full(v);
 		}
@@ -69,9 +77,11 @@ public class LocaleUtil {
 	}
 
 	static public List<IndexInfo> simple(String v, String lang) {
+		lang = LocaleUtil.normalizeCode(lang);
+
 		// TODO configure
-		if ("en".equals(lang)) {
-			IndexBase indexer = new dcraft.locale.index.en.Index();
+		if ("eng".equals(lang)) {
+			IndexBase indexer = new dcraft.locale.index.eng.Index();
 
 			return indexer.simple(v);
 		}
@@ -130,5 +140,21 @@ public class LocaleUtil {
 		}
 
 		return sb.toString();
+	}
+
+	static public String normalizeCode(String code) {
+		if (code == null)
+			return null;
+
+		// convert 2 char codes to 3 char codes
+		if (code.length() == 2) {
+			if ("en".equals(code))
+				return "eng";
+
+			if ("es".equals(code))
+				return "spa";
+		}
+
+		return code;
 	}
 }

@@ -1,5 +1,6 @@
 package dcraft.db.proc.expression;
 
+import dcraft.db.proc.ExpressionResult;
 import dcraft.db.proc.IExpression;
 import dcraft.db.request.schema.Query;
 import dcraft.db.tables.TablesAdapter;
@@ -67,19 +68,19 @@ public class Term implements IExpression {
 	}
 	
 	@Override
-	public boolean check(TablesAdapter adapter, String id, BigDateTime when, boolean historical) throws OperatingContextException {
+	public ExpressionResult check(TablesAdapter adapter, String id) throws OperatingContextException {
 		// TODO enhance to use scoring, to require all token
 		boolean[] found = new boolean[this.values.size()];
 		
 		for (ExpressionUtil.FieldInfo info : this.fieldInfo) {
-			List<byte[]> data = adapter.getRawSearch(table, id, info.field.getName(), info.subid, when, historical);
+			List<byte[]> data = adapter.getRaw(table, id, info.field.getName(), info.subid, "Search");
 			
 			if ((this.values == null) && (data == null))
-				return true;
+				return ExpressionResult.ACCEPTED;
 			
 			// rule out one being null
 			if ((this.values == null) || (data == null))
-				return false;
+				return ExpressionResult.REJECTED;
 			
 			for (int i = 0; i < data.size(); i++) {
 				for (int i2 = 0; i2 < this.values.size(); i2++) {
@@ -91,10 +92,10 @@ public class Term implements IExpression {
 		
 		for (boolean b : found) {
 			if (! b)
-				return false;
+				return ExpressionResult.REJECTED;
 		}
 		
-		return true;
+		return ExpressionResult.ACCEPTED;
 	}
 	
 	@Override

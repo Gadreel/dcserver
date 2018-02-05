@@ -12,6 +12,7 @@ import dcraft.hub.resource.*;
 import dcraft.hub.resource.Package;
 import dcraft.locale.Dictionary;
 import dcraft.locale.LocaleDefinition;
+import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
 import dcraft.schema.SchemaResource;
 import dcraft.service.IService;
@@ -367,7 +368,7 @@ public class PrepWork extends StateWork {
 				// --- load site level dictionary, if any ---
 				
 				try {
-					Path dpath = cpath.resolve("dictionary.xml");
+					Path dpath = scpath.resolve("dictionary.xml");
 					
 					if (Files.exists(dpath)) {
 						Dictionary dict = Dictionary.create();
@@ -385,7 +386,7 @@ public class PrepWork extends StateWork {
 				// these settings are valid for root and sub sites
 				
 				for (XElement lel : sconfig.getTagListLocal("Locale")) {
-					String lname = lel.getAttribute("Name");
+					String lname = LocaleUtil.normalizeCode(lel.getAttribute("Name"));
 					
 					if (StringUtil.isEmpty(lname))
 						continue;
@@ -403,7 +404,7 @@ public class PrepWork extends StateWork {
 				}
 			
 				site.getResourcesOrCreate(resources).getOrCreateTierLocale().setDefaultChronology(sconfig.getAttribute("Chronology"));
-				site.getResourcesOrCreate(resources).getOrCreateTierLocale().setDefaultLocale(sconfig.getAttribute("Locale"));
+				site.getResourcesOrCreate(resources).getOrCreateTierLocale().setDefaultLocale(LocaleUtil.normalizeCode(sconfig.getAttribute("Locale")));
 				
 				// this setting is only valid for sub sites
 				if (! site.isRoot()) {
@@ -504,7 +505,7 @@ public class PrepWork extends StateWork {
 						String certname = certinfo.getAttribute("Name");
 
 						if (StringUtil.isNotEmpty(certname)) {
-							Path certpath = cpath.resolve(certname);
+							Path certpath = scpath.resolve(certname);
 
 							if ((certpath == null) || Files.notExists(certpath)) {
 								Logger.error("Unable to locate certificate: " + certname);

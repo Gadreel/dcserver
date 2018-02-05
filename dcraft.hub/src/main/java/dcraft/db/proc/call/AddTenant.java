@@ -4,9 +4,9 @@ import dcraft.db.DatabaseAdapter;
 import dcraft.db.DatabaseException;
 import dcraft.db.DbServiceRequest;
 import dcraft.db.proc.IUpdatingStoredProc;
-import dcraft.db.request.common.AddUserRequest;
 import dcraft.db.request.update.DbRecordRequest;
 import dcraft.db.request.update.UpdateRecordRequest;
+import dcraft.db.ICallContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.util.DbUtil;
 import dcraft.hub.ResourceHub;
@@ -16,13 +16,10 @@ import dcraft.log.Logger;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.task.StateWorkStep;
 import dcraft.util.ISettingsObfuscator;
 import dcraft.util.StandardSettingsObfuscator;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
-
-import java.util.Locale;
 
 import static dcraft.db.Constants.*;
 
@@ -30,7 +27,7 @@ import static dcraft.db.Constants.*;
 // always call from `root` tenant
 public class AddTenant implements IUpdatingStoredProc {
 	@Override
-	public void execute(DbServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
+	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct params = request.getDataAsRecord();
 		
 		String tenant = params.getFieldAsString("Alias");
@@ -83,7 +80,7 @@ public class AddTenant implements IUpdatingStoredProc {
 
 		if (! "root".equals(tenant)) {
 			// this is in root Tenant
-			TablesAdapter db = TablesAdapter.of(request);
+			TablesAdapter db = TablesAdapter.ofNow(request);
 
 			if (StringUtil.isEmpty(first))
 				first = (String) db.getStaticScalar("dcUser", DB_GLOBAL_ROOT_RECORD, "dcFirstName");

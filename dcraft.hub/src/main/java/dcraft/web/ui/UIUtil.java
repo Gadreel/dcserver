@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
@@ -83,7 +84,7 @@ public class UIUtil {
 			if (! "Tr".equals(cel.getName()))
 				continue;
 			
-			String clocale = StackUtil.stringFromElement(state, cel,"Locale");
+			String clocale = LocaleUtil.normalizeCode(StackUtil.stringFromElement(state, cel,"Locale"));
 			
 			// match current locale then use it
 			if (locale.equals(clocale)) {

@@ -38,8 +38,8 @@ abstract public class TwoExpression implements IExpression {
 			Logger.error("Contains is missing values");
 	}
 	
-	public int compare(TablesAdapter adapter, String id, BigDateTime when, boolean historical) {
-		List<byte[]> data = adapter.getRawIndex(this.table, id, this.fieldInfo.field.getName(), this.fieldInfo.subid, when, historical);
+	public int compare(TablesAdapter adapter, String id) throws OperatingContextException {
+		List<byte[]> data = adapter.getRaw(this.table, id, this.fieldInfo.field.getName(), this.fieldInfo.subid, "Index");
 		
 		return ExpressionUtil.compare(data, this.values);
 	}

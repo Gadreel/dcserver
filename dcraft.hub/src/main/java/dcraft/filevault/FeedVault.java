@@ -182,20 +182,20 @@ public class FeedVault extends Vault {
 						return;
 					}
 
-					Vault tempvault = OperationContext.getOrThrow().getSite().getVault("Templates");
+					Vault tempvault = OperationContext.getOrThrow().getSite().getVault("SiteFiles");
 
 					if (tempvault == null) {
-						Logger.error("Template vault missing.");
+						Logger.error("SiteFiles vault missing.");
 						fcb.returnEmpty();
 						return;
 					}
 
 					// TODO future copy all the feed*.html files over
-					String temppath = "/" + fi.getPathAsCommon().getName(0)
+					String temppath = "/templates/" + fi.getPathAsCommon().getName(0)
 							+ "/" + request.selectAsString("Params.Template") + "/feed.html";
 
 					// only for "pages" feed
-					String wwwpath = "/" + fi.getPathAsCommon().getName(0)
+					String wwwpath = "/templates/" + fi.getPathAsCommon().getName(0)
 							+ "/" + request.selectAsString("Params.Template") + "/www.html";
 
 					tempvault.mapRequest(RecordStruct.record()

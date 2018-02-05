@@ -10,9 +10,8 @@ import dcraft.schema.SchemaHub;
 import dcraft.script.inst.Instruction;
 import dcraft.script.inst.Main;
 import dcraft.script.work.InstructionWork;
-import dcraft.struct.CompositeStruct;
+import dcraft.struct.IPartSelector;
 import dcraft.struct.Struct;
-import dcraft.struct.scalar.IntegerStruct;
 import dcraft.struct.scalar.NullStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.*;
@@ -22,7 +21,7 @@ import dcraft.xml.XElement;
 public class StackUtil {
 	static public IWork of(IParentAwareWork parent, Instruction... instructions) {
 		if ((instructions.length == 1) && (instructions[0] instanceof Main))
-			return ((Main) instructions[0]).createStack(parent);
+			return instructions[0].createStack(parent);
 		
 		Main main = Main.tag();
 		
@@ -271,12 +270,12 @@ public class StackUtil {
 				return null;
 			}
 			
-			if (! (ov instanceof CompositeStruct)) {
+			if (! (ov instanceof IPartSelector)) {
 				//Logger.errorTr(511, oname);
 				return null;
 			}
 			
-			return ((CompositeStruct)ov).select(name.substring(dotpos + 1));
+			return ((IPartSelector)ov).select(name.substring(dotpos + 1));
 		}
 
 		return vp.queryVariable(name);
