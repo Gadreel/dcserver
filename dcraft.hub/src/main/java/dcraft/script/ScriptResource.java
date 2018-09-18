@@ -7,6 +7,8 @@ import dcraft.hub.resource.ResourceTier;
 import dcraft.log.Logger;
 import dcraft.scriptold.IOperator;
 import dcraft.scriptold.mutator.Substring;
+import dcraft.struct.format.IFormatter;
+import dcraft.util.ISettingsObfuscator;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
@@ -19,8 +21,12 @@ import java.util.Map;
 
 public class ScriptResource extends ResourceBase {
 	// operator is type specific - [Type][Name] = mutator
-	protected Map<String, Map<String, IOperator>> operationExtensions = new HashMap<String, Map<String,IOperator>>();
+	protected Map<String, Map<String, IOperator>> operationExtensions = new HashMap<>();
 	protected List<Path> paths = new ArrayList<>();
+	
+	protected Map<String, XElement> formatterclasses = new HashMap<>();
+	//cached
+	protected Map<String, IFormatter> formatters = new HashMap<>();
 	
 	// TODO someday restore - protected IDebuggerHandler debugger = null;
 
@@ -72,7 +78,7 @@ public class ScriptResource extends ResourceBase {
 	public Map<String, Class<? extends XElement>>  getParseMap() {
 		Map<String, Class<? extends XElement>> tagmap = new HashMap<>();
 		
-		for (XElement config : tier.getConfig().getTagListDeep("Instructions/Tag")) {
+		for (XElement config : ResourceHub.getResources().getConfig().getTagListDeep("Instructions/Tag")) {
 			String name = config.getAttribute("Name");
 			String cname = config.getAttribute("Class");
 			
@@ -110,6 +116,50 @@ public class ScriptResource extends ResourceBase {
 		return null;
 	}
 	*/
+	
+	public void loadFormatter(XElement config) {
+		if ((config != null) && config.hasNotEmptyAttribute("Code")) {
+			// only place in "classes" as the JARs for this site/tenant are not yet loaded
+			this.formatters.remove(config.getAttribute("Code"));
+			this.formatterclasses.put(config.getAttribute("Code"), config);
+		}
+	}
+	
+	public IFormatter getFormatter(String op) {
+		if (StringUtil.isEmpty(op))
+			return null;
+			
+		IFormatter formatter = this.formatters.get(op);
+		
+		if (formatter != null)
+			return formatter;
+		
+		XElement config = this.formatterclasses.get(op);
+		
+		if (config != null) {
+			String cname = config.getAttribute("Class");
+			
+			if (StringUtil.isNotEmpty(cname)) {
+				try {
+					IFormatter fi = (IFormatter) ResourceHub.getTopResources().getClassLoader().getInstance(cname);
+					
+					this.formatters.put(op, fi);
+					
+					return fi;
+				}
+				catch (Exception x) {
+					Logger.error("Bad Formatter Class");
+				}
+			}
+		}
+		
+		ScriptResource parent = this.getParentResource();
+		
+		if (parent != null)
+			return parent.getFormatter(op);
+		
+		return null;
+	}
 	
 	public void loadOperation(XElement config) {
 		// TODO

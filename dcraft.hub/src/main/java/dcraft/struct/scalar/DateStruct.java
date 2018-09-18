@@ -21,6 +21,7 @@ import java.time.format.DateTimeFormatter;
 
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
+import dcraft.script.work.StackWork;
 import dcraft.task.IParentAwareWork;
 import org.threeten.extra.PeriodDuration;
 
@@ -87,7 +88,7 @@ public class DateStruct extends ScalarStruct {
 	}
 	
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		String op = code.getName();
 		
 		// we are loose on the idea of null/zero.  operations always perform on now, except Validate
@@ -104,8 +105,8 @@ public class DateStruct extends ScalarStruct {
 		}
 		else if ("Set".equals(op)) {
 			Struct sref = code.hasAttribute("Value")
-					? StackUtil.refFromElement(stack, code, "Value")
-					: StackUtil.resolveReference(stack, code.getText());
+					? StackUtil.refFromElement(stack, code, "Value", true)
+					: StackUtil.resolveReference(stack, code.getText(), true);
 			
 			this.adaptValue(sref);
 			return ReturnOption.CONTINUE;

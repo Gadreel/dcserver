@@ -53,7 +53,9 @@ dc.cms.cart = {
 	},
 	Cart: {
 		_isLoaded: false,
+		_hookDisplay: null,
 		_cart: {
+			Captcha: null,
 			Items: [],
 			CustomerInfo: null,
 			ShippingInfo: null,
@@ -118,6 +120,9 @@ dc.cms.cart = {
 				Extra: null
 			};
 
+			if (this._hookDisplay)
+				this._hookDisplay(this._cart)
+
 			return this._cart;
 		},
 
@@ -127,6 +132,9 @@ dc.cms.cart = {
 
 			this._cart.Items.push(item);
 			this.updateTotals();
+
+			if (this._hookDisplay)
+				this._hookDisplay(this._cart)
 		},
 
 		removeItem: function(item) {
@@ -134,9 +142,17 @@ dc.cms.cart = {
 				if (this._cart.Items[i] == item) {
 					this._cart.Items.splice(i, 1);
 					this.updateTotals();
-					return;
+					break;
 				}
 			}
+
+			if (this._hookDisplay)
+				this._hookDisplay(this._cart)
+		},
+
+		updateDisplay: function() {
+			if (this._hookDisplay)
+				this._hookDisplay(this._cart)
 		},
 
 		lookupItemById: function(id) {
@@ -249,10 +265,13 @@ dc.cms.cart = {
 			});
 		},
 
-		load: function() {
+		load: function(displayHook) {
 			// load once per page
 			if (this._isLoaded)
 				return;
+
+			if (displayHook)
+				this._hookDisplay = displayHook;
 
 			this.empty();
 
@@ -268,6 +287,9 @@ dc.cms.cart = {
 			}
 
 			this._isLoaded = true;
+
+			if (this._hookDisplay)
+				this._hookDisplay(this._cart)
 
 			return this._cart;
 		},

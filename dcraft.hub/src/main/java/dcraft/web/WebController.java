@@ -34,14 +34,8 @@ import dcraft.web.ui.UIUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.cookie.Cookie;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedInput;
@@ -208,7 +202,8 @@ public class WebController extends OperationController {
 		ret
 				.with("Path", path)
 				.with("OriginalPath", path)
-				.with("ContentType", new ContentTypeParser(headers.getFieldAsString(HttpHeaders.Names.CONTENT_TYPE)));
+				.with("ContentType", new ContentTypeParser(headers.getFieldAsString("Content-Type")))
+				.with("ContentLength", headers.getFieldAsString("Content-Length"));
 		
 		if (Logger.isDebug()) {
 			Logger.debug("Request Path " + ret.getFieldAsString("Path"));
@@ -236,6 +231,12 @@ public class WebController extends OperationController {
 		
 		if (d != null) 
 			d.offer(v);
+		else {
+			Channel tchan = this.getChannel();
+			
+			if (tchan != null)
+				tchan.read();
+		}
 		
 		//if (v instanceof LastHttpContent)
 		//	this.decoder = null;
@@ -263,14 +264,24 @@ public class WebController extends OperationController {
 		}
 	}
 	
-	public void sendForbidden() {
+	public void sendNotFoundRead() {
+    	if (Logger.isDebug())
+    		Logger.debug("Web server respond with Not Found");
+    	
+		if (this.getResponse() != null) {
+			this.getResponse().setStatus(HttpResponseStatus.NOT_FOUND);
+			this.sendRead();
+		}
+	}
+	
+	public void sendForbiddenRead() {
     	if (Logger.isDebug())
     		Logger.debug("Web server respond with Forbidden");
     	
 		if (this.getResponse() != null) {
 			this.getResponse().setStatus(HttpResponseStatus.FORBIDDEN);
 			this.getResponse().setKeepAlive(false);
-			this.send();
+			this.sendRead();
 		}
 	}
 	
@@ -285,6 +296,17 @@ public class WebController extends OperationController {
 		}
 	}
 	
+	public void sendInternalErrorRead() {
+    	if (Logger.isDebug())
+    		Logger.debug("Web server respond with Internal Server Error");
+    	
+		if (this.getResponse() != null) {
+			this.getResponse().setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+			this.getResponse().setKeepAlive(false);
+			this.sendRead();
+		}
+	}
+	
 	public void sendRequestBad() {
     	if (Logger.isDebug())
     		Logger.debug("Web server respond with Request Bad");
@@ -293,6 +315,18 @@ public class WebController extends OperationController {
 			this.getResponse().setStatus(HttpResponseStatus.BAD_REQUEST);
 			this.getResponse().setKeepAlive(false);
 			this.send();
+		}
+	}
+	
+	// read probably not needed, but just to be good
+	public void sendRequestBadRead() {
+		if (Logger.isDebug())
+			Logger.debug("Web server respond with Request Bad");
+		
+		if (this.getResponse() != null) {
+			this.getResponse().setStatus(HttpResponseStatus.BAD_REQUEST);
+			this.getResponse().setKeepAlive(false);
+			this.sendRead();
 		}
 	}
 	
@@ -326,12 +360,30 @@ public class WebController extends OperationController {
 		}
 	}
 	
+	public void sendRequestOkRead() {
+		if (this.getResponse() != null) {
+			this.getResponse().setStatus(HttpResponseStatus.OK);
+			//this.response.setKeepAlive(true);
+			this.sendRead();
+		}
+	}
+	
 	public void send() {
 		//if ((this.chan != null) && this.chan.isWritable() && (this.response != null)) 
 		Channel tchan = this.getChannel();
 		
 		if ((tchan != null) && (this.getResponse() != null))
 			this.getResponse().write(tchan);
+	}
+	
+	public void sendRead() {
+		//if ((this.chan != null) && this.chan.isWritable() && (this.response != null))
+		Channel tchan = this.getChannel();
+		
+		if ((tchan != null) && (this.getResponse() != null)) {
+			this.getResponse().write(tchan);
+			this.getChannel().read();
+		}
 	}
 	
 	public void sendStart(long contentLength) {

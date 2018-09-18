@@ -16,9 +16,11 @@
 			<StringRestriction MaxLength="200" />
 		</StringType>
 
+		<Record Id="dcmQuickPDF" Class="dcraft.util.pdf.QuickPDF" />
 	</Shared>
 
 	<Database>
+		<!-- Index for Feed Files -->
 		<Table Id="dcmFeed">
 			<!-- feed alias -->
 			<Field Name="dcmAlias" Type="dcMetaString" Indexed="True" />
@@ -27,7 +29,7 @@
 			<!-- dcmLocalPath is path as seen in search results (local to site), null if no local path (i.e. this is a block, not an independent entry) -->
 			<Field Name="dcmLocalPath" Type="dcPath" />
 
-			<Field Name="dcmPublishAt" Type="DateTime" />
+			<Field Name="dcmPublishAt" Type="DateTime" Indexed="True" />
 			<Field Name="dcmModified" Type="DateTime" />
 
 			<!--
@@ -62,9 +64,65 @@
 			-->
 		</Table>
 
+		<!-- Index for Feed History / Editor -->
+		<Table Id="dcmFeedHistory">
+			<!-- dcmPath includes the site alias and feed alias to be truly unique: /[site]/[feed]/[path]/[file] -->
+			<Field Name="dcmPath" Type="dcPath" Indexed="True" Required="True" />
+			<!-- dcmLocalPath is path as seen in search results (local to site), null if no local path (i.e. this is a block, not an independent entry) -->
+
+			<!--
+				dcmStartedBy - the one who started this entry or draft
+				dcmNote - author's note about the update
+				dcmScheduleAt - when it will run, if published (see below), empty for "draft" mode (when:now)
+				dcmPublished - if is a draft then false
+				dcmCompleted - if the update has been applied
+				dcmCompletedAt - when completed
+			-->
+			<Field Name="dcmStartedAt" Type="DateTime" />
+			<Field Name="dcmStartedBy" ForeignKey="dcUser" />
+			<Field Name="dcmModifiedAt" Type="DateTime" />
+			<Field Name="dcmModifiedBy" ForeignKey="dcUser" />
+			<Field Name="dcmNote" Type="dcString" />
+			<Field Name="dcmScheduleAt" Type="DateTime" />
+			<Field Name="dcmPublished" Type="Boolean" />
+			<Field Name="dcmCompleted" Type="Boolean" />
+			<Field Name="dcmCompletedAt" Type="DateTime" />
+			<Field Name="dcmCancelled" Type="Boolean" />
+			<Field Name="dcmCancelledAt" Type="DateTime" />
+			<Field Name="dcmCancelledBy" ForeignKey="dcUser" />
+
+			<!-- keyed by iso datetime stamp, apply in order of the stamps -->
+			<Field Name="dcmModifications" Type="AnyRecord" List="True" />
+
+			<!--
+				scheduled to run - only if not a draft mode
+				- plan to have batch run 3 days in advance and check that any update scheduled also
+				  has all previous schedules published - if any are Draft then send editor a notice
+				  cannot apply a change if any draft schedules or drafted changes are present cannot run
+				  the update. if not fixed then another notice is sent after the schedule has passed
+
+				  take the value (DateTime) format as ISO then use "when:[stamp]" as key for the scheduled
+				  entry
+			-->
+			<Field Name="dcmScheduled" Type="DateTime" Indexed="True" List="True" />
+		</Table>
+
 		<Procedure Name="dcmUpdateFeed" Execute="dcraft.cms.feed.db.Update" />
+		<Procedure Name="dcmServices.Feed.Reindex" Execute="dcraft.cms.feed.db.Reindex" />
+		<Procedure Name="dcmServices.Feed.LoadMeta" Execute="dcraft.cms.feed.db.LoadMeta" />
+		<Procedure Name="dcmServices.Feed.SaveMeta" Execute="dcraft.cms.feed.db.SaveMeta" />
+		<Procedure Name="dcmServices.Feed.LoadPart" Execute="dcraft.cms.feed.db.LoadPart" />
+		<Procedure Name="dcmServices.Feed.AddCommandHistory" Execute="dcraft.cms.feed.db.AddCommandHistory" />
+		<Procedure Name="dcmServices.Feed.LoadCommandHistory" Execute="dcraft.cms.feed.db.LoadCommandHistory" />
+		<Procedure Name="dcmServices.Feed.SaveCommandHistory" Execute="dcraft.cms.feed.db.SaveCommandHistory" />
+		<Procedure Name="dcmServices.Feed.DiscardCommandHistory" Execute="dcraft.cms.feed.db.DiscardCommandHistory" />
+
+		<Procedure Name="dcCoreServices.ManagedForm.Submit" Execute="dcraft.cms.db.forms.Submit" />
+		<Procedure Name="dcCoreServices.ManagedForm.Complete" Execute="dcraft.cms.db.forms.Complete" />
 
 		<Collector Name="dcmScanFeed" Execute="dcraft.cms.feed.db.Scan" />
+
+		<Composer Name="dcmFeedFields" Execute="dcraft.cms.feed.db.FeedFieldsComp" />
 	</Database>
 
 	<Services>
@@ -87,6 +145,166 @@
 				</Secure>
 			</Feature>
 		</Service>
-	</Services>
 
+		<Service Name="dcCoreServices">
+			<Feature Name="ManagedForm">
+				<Secure Tags="Guest,User">
+					<Op Name="Submit">
+						<Description>
+							Store the data for the form.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Captcha" Type="dcString" Required="True" />
+							<Field Name="Form" Type="dcTinyString" Required="True" />
+							<Field Name="Title" Type="dcString" Required="True" />
+							<Field Name="Data" Type="AnyRecord" Required="True" />
+							<Field Name="Files">
+								<List Type="dcSmallString" />
+							</Field>
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Token" Type="dcSmallString" />
+							<Field Name="Uuid" Type="dcSmallString" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Complete">
+						<Description>
+							Trigger the event after uploads.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Form" Type="dcTinyString" Required="True" />
+							<Field Name="Uuid" Type="dcSmallString" Required="True" />
+						</RecordRequest>
+					</Op>
+					<!--
+						TODO list forms
+
+						TODO load form
+
+						TODO resubmit form
+					 -->
+				</Secure>
+			</Feature>
+		</Service>
+
+		<Service Name="dcmServices">
+			<Feature Name="Feed">
+				<Secure Badges="SysAdmin,Admin">
+					<Op Name="Reindex">
+						<Description>
+							List of feeds to index/remove.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Feed" Type="dcMetaString" Required="True" />
+						</RecordRequest>
+					</Op>
+				</Secure>
+				<Secure Badges="Editor,Admin">
+					<Op Name="LoadMeta">
+						<Description>
+							Load meta, from file and apply any draft
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Feed" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcPath" Required="True" />
+							<!-- if When is blank then add to working draft, use only with Schedule -->
+							<Field Name="When" Type="DateTime" />
+						</RecordRequest>
+						<RecordResponse Type="AnyRecord" />
+					</Op>
+					<Op Name="SaveMeta">
+						<Description>
+							Load meta, from file and apply any draft
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Feed" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcPath" Required="True" />
+							<Field Name="Params" Type="AnyRecord" Required="True" />
+							<!-- if When is blank then add to working draft, use only with Schedule -->
+							<Field Name="When" Type="DateTime" />
+						</RecordRequest>
+					</Op>
+					<Op Name="LoadPart">
+						<Description>
+							Load part, from file and apply any draft
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Feed" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcPath" Required="True" />
+							<Field Name="PartId" Type="dcMetaString" Required="True" />
+							<!-- if When is blank then add to working draft, use only with Schedule -->
+							<Field Name="When" Type="DateTime" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Part" Type="String" />
+						</RecordResponse>
+					</Op>
+					<Op Name="AddCommandHistory">
+						<Description>
+							List of commands to save to the draft (or schedule).
+
+							Expect a command to be in the form:
+
+							{
+								Command: 'Reorder',
+								Params: {
+									PartId: 'articlesArea',
+									Order: [ 0, 2, 1, 3, 4 ]
+								}
+							}
+
+							As found in the Feeds vault custom commands library
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Feed" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcPath" Required="True" />
+							<Field Name="Commands">
+								<List Type="AnyRecord" />
+							</Field>
+							<!-- if When is blank then add to working draft, use only with Schedule -->
+							<Field Name="When" Type="DateTime" />
+						</RecordRequest>
+					</Op>
+					<Op Name="LoadCommandHistory">
+						<Description>
+							make it live, store in file
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Feed" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcPath" Required="True" />
+							<!-- if When is blank then add to working draft, use only with Schedule -->
+							<Field Name="When" Type="DateTime" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Note" Type="dcString" />
+						</RecordResponse>
+					</Op>
+					<Op Name="SaveCommandHistory">
+						<Description>
+							make it live, store in file
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Feed" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcPath" Required="True" />
+							<Field Name="Publish" Type="Boolean" />
+							<Field Name="Note" Type="dcString" />
+							<!-- if When is blank then add to working draft, use only with Schedule -->
+							<Field Name="When" Type="DateTime" />
+						</RecordRequest>
+					</Op>
+					<Op Name="DiscardCommandHistory">
+						<Description>
+							get rid of it
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Feed" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcPath" Required="True" />
+							<!-- if When is blank then add to working draft, use only with Schedule -->
+							<Field Name="When" Type="DateTime" />
+						</RecordRequest>
+					</Op>
+				</Secure>
+			</Feature>
+		</Service>
+	</Services>
 </Schema>

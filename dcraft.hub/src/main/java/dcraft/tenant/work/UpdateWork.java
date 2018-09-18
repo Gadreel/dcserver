@@ -8,6 +8,8 @@ import java.util.List;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.app.HubEvents;
+import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.UserContext;
 import dcraft.log.Logger;
 import dcraft.task.TaskContext;
 import dcraft.task.TaskHub;
@@ -163,7 +165,10 @@ public class UpdateWork extends StateWork {
 			Logger.info("- add schedule: " + schedule.getAttribute("Title"));
 			
 			if ("CommonSchedule".equals(schedule.getName())) {
-				Task schcontext = Task.ofHubRoot()
+				UserContext userContext = schedule.hasNotEmptyAttribute("Tenant")
+						? UserContext.rootUser(schedule.getAttribute("Tenant"), "root") : UserContext.rootUser();
+
+				Task schcontext = Task.of(OperationContext.context(userContext))
 						.withTitle("Scheduled run: " + schedule.getAttribute("Title"))
 						.withTopic("Batch")		// TODO need to build batch into the system
 						.withNextId("SCHEDULE");

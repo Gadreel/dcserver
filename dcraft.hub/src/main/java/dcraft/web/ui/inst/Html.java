@@ -16,20 +16,21 @@
 ************************************************************************ */
 package dcraft.web.ui.inst;
 
+import dcraft.cms.util.FeedUtil;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.UserContext;
 import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
-import dcraft.script.work.BlockWork;
-import dcraft.script.work.InstructionWork;
-import dcraft.script.work.MainWork;
-import dcraft.script.work.ReturnOption;
+import dcraft.script.work.*;
 import dcraft.script.inst.doc.Base;
+import dcraft.struct.FieldStruct;
 import dcraft.struct.RecordStruct;
+import dcraft.struct.builder.JsonStreamBuilder;
 import dcraft.struct.scalar.BooleanStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.IParentAwareWork;
@@ -52,6 +53,21 @@ public class Html extends Base {
 		Html el = new Html();
 		el.setName("dc.Html");
 		return el;
+	}
+
+	static public void mergePageVariables(StackWork state, Base source) throws OperatingContextException {
+		RecordStruct page = (RecordStruct) StackUtil.queryVariable(state, "Page");
+		
+		// feeds use site default
+		String defloc = OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale();
+
+		String locale = OperationContext.getOrThrow().getLocale();
+
+		for (XElement meta : source.selectAll("Meta")) {
+			// Name and Locale must be constants, thus don't resolve from stack
+			if (meta.hasNotEmptyAttribute("Name"))
+				page.with(meta.getAttribute("Name"), StackUtil.resolveValueToString(state, FeedUtil.bestLocaleMatch(meta, locale, defloc)));
+		}
 	}
 	
 	protected Map<String, String> hiddenattributes = null;
@@ -89,69 +105,11 @@ public class Html extends Base {
 		super.cleanup(state);
 		
 		// add meta variables
-		
-		RecordStruct page = (RecordStruct) StackUtil.queryVariable(state, "Page");
-		
-		String locale = OperationContext.getOrThrow().getLocale();
-		
-		// TODO refine, also check lang
-		
-		for (XNode n : this.getChildren()) {
-			if (!(n instanceof XElement))
-				continue;
-			
-			XElement el = (XElement) n;
-			
-			if (! "Meta".equals(el.getName()))
-				continue;
-			
-			String name = StackUtil.stringFromElement(state, el, "Name");
-			
-			if (StringUtil.isEmpty(name))
-				continue;
-			
-			boolean fnd = false;
-			String bestvalue = null;
-			
-			for (XNode t : el.getChildren()) {
-				if (!(t instanceof XElement))
-					continue;
-				
-				XElement tel = (XElement) t;
-				
-				if (! "Tr".equals(tel.getName()))
-					continue;
-				
-				String value = StackUtil.stringFromElement(state, tel, "Value");
-				
-				String trl = StackUtil.stringFromElement(state, tel, "Locale");
-				
-				if (StringUtil.isEmpty(trl)) {
-					bestvalue = value;
-					continue;
-				}
 
-				trl = LocaleUtil.normalizeCode(trl);
-				
-				if (! locale.equals(trl))
-					continue;
-				
-				page.with(name, value);
-				
-				fnd = true;
-				break;
-			}
-			
-			if (! fnd && StringUtil.isNotEmpty(bestvalue)) {
-				page.with(name, bestvalue);
-			}
-			else if (! fnd) {
-				String value = StackUtil.stringFromElement(state, el, "Value");
-				
-				page.with(name, value);
-			}
-		}
-		
+		Html.mergePageVariables(state, this);
+
+		RecordStruct page = (RecordStruct) StackUtil.queryVariable(state, "Page");
+
 		if (page.isFieldEmpty("Title")) {
 			String title = StackUtil.stringFromSource(state, "Title");
 			
@@ -220,7 +178,7 @@ public class Html extends Base {
 				)
 				.with(W3.tag("meta")
 						.withAttribute("name", "viewport")
-						.withAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no")
+						.withAttribute("content", "width=device-width, initial-scale=1")		//, maximum-scale=1.0, user-scalable=no")
 				)
 				.with(W3.tag("meta")
 						.withAttribute("name", "robots")
@@ -389,14 +347,10 @@ public class Html extends Base {
 		
 		// --- styles ---
 		
-		List<String> styles = OperationContext.getOrThrow().getSite().webGlobalStyles(true, cachemode);
+		List<XElement> styles = OperationContext.getOrThrow().getSite().webGlobalStyles(cachemode);
 		
-		for (String surl : styles)
-			head.with(W3.tag("link")
-					.withAttribute("type", "text/css")
-					.withAttribute("rel", "stylesheet")
-					.withAttribute("href", surl));
-		
+		for (XElement stag : styles)
+			head.with(stag);
 		
 		// add in styles specific for this page so we don't have to wait to see them load
 		// TODO enhance so style doesn't double load
@@ -415,13 +369,10 @@ public class Html extends Base {
 		
 		// --- scripts ---
 		
-		List<String> scripts = OperationContext.getOrThrow().getSite().webGlobalScripts(true, cachemode);
+		List<XElement> scripts = OperationContext.getOrThrow().getSite().webGlobalScripts(cachemode);
 		
-		for (String surl : scripts)
-			head.with(W3.tag("script")
-					.withAttribute("defer", "defer")
-					.withAttribute("src", surl));
-		
+		for (XElement stag : scripts)
+			head.with(stag);
 		
 		/*
 $(document).ready(function() {
@@ -469,6 +420,29 @@ $(document).ready(function() {
 					
 					prt.setFormatted(true);
 					prt.setOut(ps);
+					
+					JsonStreamBuilder jsb = prt.getStream();
+					
+					// user info
+					try {
+						ps.append("dc.user.setUserInfo(");
+						jsb.startRecord();
+						
+						UserContext user = OperationContext.getOrThrow().getUserContext();
+						
+						for (FieldStruct fld : user.getFields()) {
+							if (! "AuthToken".equals(fld.getName())) {
+								jsb.field(fld.getName(), fld.getValue());
+							}
+						}
+						
+						jsb.endRecord();
+						ps.append(");\n\n");
+					}
+					catch (Exception x) {
+					}
+					
+					// page def
 					prt.printPageDef(this, false);
 					
 					ps.append("\n\n");

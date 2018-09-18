@@ -27,10 +27,10 @@ public class HubStopFinalWork extends CoreCleanerWork {
 		catch (InterruptedException x) {
 		}
 		
-		Logger.debugTr(0, "Stopping logger");
+		Logger.debug( "Stopping logger");
 		HubLog.stop();
 		
-		Logger.infoTr(0, "Hub stopped");
+		Logger.info( "Hub stopped");
 		
 		ApplicationHub.setState(HubState.Stopped);
         

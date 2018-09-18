@@ -60,20 +60,14 @@ public class ExpressionUtil {
 		
 		if (b == null)
 			return false;
-		
-		int max = Math.max(a.size(), b.size());
-		
-		for (int i = 0; i < max; i++) {
-			if (i >= a.size())
-				return false;
-			
-			if (i >= b.size())
-				return false;
-			
-			int comp = ByteUtil.compareKeys(a.get(i), b.get(i));
-			
-			if (comp == 0)
-				return true;
+
+		for (int i = 0; i < a.size(); i++) {
+			for (int i2 = 0; i2 < b.size(); i2++) {
+				int comp = ByteUtil.compareKeys(a.get(i), b.get(i2));
+
+				if (comp == 0)
+					return true;
+			}
 		}
 		
 		return false;
@@ -194,8 +188,9 @@ public class ExpressionUtil {
 		
 		FieldInfo fieldInfo = ExpressionUtil.loadField(table, pfname);
 
-		if (fieldInfo != null)
+		if (fieldInfo != null) {
 			fieldInfo.subid = pdef.getFieldAsString("SubId");
+		}
 		
 		return fieldInfo;
 	}

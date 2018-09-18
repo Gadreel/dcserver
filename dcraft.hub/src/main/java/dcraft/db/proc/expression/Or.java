@@ -4,6 +4,7 @@ import dcraft.db.proc.ExpressionResult;
 import dcraft.db.proc.IExpression;
 import dcraft.db.request.schema.Query;
 import dcraft.db.tables.TablesAdapter;
+import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
@@ -28,7 +29,7 @@ public class Or implements IExpression {
 	}
 	
 	@Override
-	public ExpressionResult check(TablesAdapter adapter, String id) throws OperatingContextException {
+	public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, String id) throws OperatingContextException {
 		if (this.children == null)
 			return ExpressionResult.REJECTED;
 		
@@ -42,7 +43,7 @@ public class Or implements IExpression {
 				return ExpressionResult.REJECTED;
 			}
 			
-			if (expression.check(adapter, id).accepted)
+			if (expression.check(adapter, scope, table, id).accepted)
 				return ExpressionResult.ACCEPTED;
 		}
 		

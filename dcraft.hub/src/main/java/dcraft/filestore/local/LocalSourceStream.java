@@ -139,7 +139,7 @@ public class LocalSourceStream extends BaseFileStream implements IStreamSource {
 				return;
 			}
 			
-			System.out.println("reading: " + this.currfile.getPath() + " from: " + this.inprog);
+			//System.out.println("reading: " + this.currfile.getPath() + " from: " + this.inprog);
 			
 	        FileSlice slice = FileSlice.allocate(this.currfile, data, 0, false);
 	        

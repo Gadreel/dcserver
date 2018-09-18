@@ -1,4 +1,4 @@
-<dc.Html AuthTags="Clerk,Admin">
+<dc.Html Badges="Clerk,Admin">
 	<Meta Name="Title">
 		<Tr Locale="en" Value="Products" />
 	</Meta>
@@ -9,20 +9,30 @@
 				<dc.Button Label="Add Product" Click="DoAdd" />
 			</dcf.FormButtons>
 
-			<h4 id="dcmStPrdsTitle">Products for ...</h4>
+			<h3 id="dcmStPrdsTitle">Products for ...</h3>
 
-			<ul id="dcmStPrds" />
+			<table id="lstStPrds" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<th>Title</th>
+					<th>Sku</th>
+					<th>Price</th>
+					<th>Actions</th>
+				</thead>
+				<tbody id="lstStPrdsBody" />
+			</table>
 		</dc.PagePanel>
 	</dc.Body>
 
 	<Function Name="Load"><![CDATA[
 			var page = this;
 
-			var list = $('#dcmStPrds');
+			var list = $('#lstStPrdsBody');
 
 			list.empty().dcappend(
-				$('<li>').dcappend(
-					$('<i>').attr('class', 'fa fa-spinner fa-spin fa-2x')
+				$('<tr>').dcappend(
+					$('<td>').attr('colspan','4').dcappend(
+						$('<i>').attr('class', 'fa fa-spinner fa-spin fa-2x')
+					)
 				)
 			);
 
@@ -46,7 +56,9 @@
 
 				if (prods.length == 0) {
 					list.dcappend(
-						$('<li>').text('No products found.')
+						$('<tr>').dcappend(
+							$('<td>').attr('colspan','4').text('No products found.')
+						)
 					);
 
 					return;
@@ -60,33 +72,31 @@
 				for (var i = 0; i < prods.length; i++) {
 					var item = prods[i];
 
-					var litm = $('<li>').dcappend(
-						$('<a>')
-							.attr('href', '#')
-							.attr('class', 'pure-button-default pure-button dc-button')
-							.dcappend(
-								$('<i>').attr('class', 'fa fa-pencil')
-							)
-							.click(item, function(e) {
-								dc.pui.Dialog.loadPage('/dcm/store/product-entry', {
-									Id: e.data.Id,
-									CategoryId: page.Params.CategoryId,
-									Callback: function() {
-										page.reload();
-									}
-								});
+					list.dcappend(
+						$('<tr>').dcappend(
+							$('<td>').text(item.Title),
+							$('<td>').text(item.Sku),
+							$('<td>').text('$' + dc.util.Number.formatMoney(item.Price)),
+							$('<td>').dcappend(
+								$('<a>')
+									.attr('href', '#')
+									.attr('class', 'pure-button-default pure-button dc-button')
+									.text('Edit Product')
+									.click(item, function(e) {
+										dc.pui.Dialog.loadPage('/dcm/store/product-entry', {
+											Id: e.data.Id,
+											CategoryId: page.Params.CategoryId,
+											Callback: function() {
+												page.reload();
+											}
+										});
 
-								e.preventDefault();
-								return false;
-							}),
-						' ',
-						$('<b>').text(item.Title + ' (' + item.Alias + ')'),
-						$('<p>').dcappend(
-							'Sku: ' + item.Sku + ' - Price: $' + dc.util.Number.formatMoney(item.Price)
+										e.preventDefault();
+										return false;
+									})
+							)
 						)
 					);
-
-					list.append(litm);
 				}
 			});
 	]]></Function>

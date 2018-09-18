@@ -160,11 +160,11 @@ public class ShellWork implements IWork {
 				}
 				
 				if (code < 300)
-					Logger.infoTr(0, line);
+					Logger.info(line);
 				else if (code < 500)
-					Logger.warnTr(0, line);
+					Logger.warn(line);
 				else if (rooterr != null)
-					Logger.errorTr(rooterr + code, line);	
+					Logger.errorTr(rooterr + code, line);
 			}
 			
 			input.close();

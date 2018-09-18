@@ -23,6 +23,12 @@ import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
 public class DbTable {
+	static public DbTable table(String name) {
+		DbTable table = new DbTable();
+		table.name = name;
+		return table;
+	}
+	
 	public String name = null;
 	public Map<String, DbField> fields = new HashMap<String, DbField>();
 
@@ -122,5 +128,4 @@ public class DbTable {
 	protected DbField getField(String name2) {
 		return this.fields.get(name2);
 	}
-
 }

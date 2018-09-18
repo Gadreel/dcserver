@@ -1,14 +1,13 @@
 package dcraft.db.proc.call;
 
 import dcraft.db.proc.*;
+import dcraft.db.proc.filter.CurrentRecord;
 import dcraft.db.proc.filter.Unique;
 import dcraft.db.ICallContext;
 import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.ResourceHub;
-import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationMarker;
-import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.hub.op.*;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.schema.DbCollector;
@@ -32,6 +31,7 @@ public class SelectDirect implements IStoredProc {
 	 ;				"Format"
 	 ;				"Value"			if literal
 	 ;				"Composer"		composer scriptold to generate content
+	 ;				"Filter"		filter scriptold to generate content
 	 ;			"B"					value to compare against, or param to Filter
 	 ;			"C"					value to compare against, or param to Filter
 	 ;			"Children"
@@ -46,6 +46,7 @@ public class SelectDirect implements IStoredProc {
 	 ;				"ForeignField"	value field in fk relationship
 	 ;				"Table"			for reverse foreign
 	 ;				"Composer"		composer scriptold to generate content
+	 ;				"Filter"		filter scriptold to generate content
 	 ;				"Select"		list of fields to query, see above
 	 ;						0,
 	 ;						1...
@@ -69,6 +70,8 @@ public class SelectDirect implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct params = request.getDataAsRecord();
 		
+		//System.out.println("Query: " + params.toPrettyString());
+		
 		String table = params.getFieldAsString("Table");
 		BigDateTime when = params.getFieldAsBigDateTime("When");
 		boolean compact = params.hasField("Compact") ? params.getFieldAsBooleanOrFalse("Compact") : true;
@@ -81,25 +84,31 @@ public class SelectDirect implements IStoredProc {
 		
 		TablesAdapter db = TablesAdapter.of(request, when, historical);
 		ICompositeBuilder out = new ObjectBuilder();
-		
+
+		IVariableAware scope = OperationContext.getOrThrow();
+
 		IFilter filter = Unique.unique()
-				.withNested(new BasicFilter() {
-					@Override
-					public ExpressionResult check(TablesAdapter adapter, Object id) throws OperatingContextException {
-						if (adapter.checkSelect(table, id.toString(), where)) {
-							try {
-								TableUtil.writeRecord(out, db, table, id.toString(), select, compact, false);
+				.withNested(new CurrentRecord()
+					.withNested(new BasicFilter() {
+						@Override
+						public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, Object id) throws OperatingContextException {
+							//System.out.println("check: " + id);
+							RecordScope rscope =  RecordScope.of(scope);
+
+							if (adapter.checkSelect(rscope, table, id.toString(), where)) {
+								try {
+									TableUtil.writeRecord(out, db, rscope, table, id.toString(), select, compact, false);
+								} catch (BuilderStateException x) {
+									return ExpressionResult.halt();
+								}
+
+								return ExpressionResult.accepted();
 							}
-							catch (BuilderStateException x) {
-								return ExpressionResult.halt();
-							}
-							
-							return ExpressionResult.accepted();
+
+							return ExpressionResult.rejected();
 						}
-						
-						return ExpressionResult.rejected();
-					}
-				});
+					})
+				);
 		
 		try (OperationMarker om = OperationMarker.create()) {
 			out.startList();
@@ -116,7 +125,7 @@ public class SelectDirect implements IStoredProc {
 					ICollector sp = proc.getCollector();
 					
 					if (sp != null) {
-						sp.collect(request, db, table, collector, filter);
+						sp.collect(request, db, scope, table, collector, filter);
 					}
 					else {
 						Logger.error("Stored func not found or bad: " + func);
@@ -127,7 +136,7 @@ public class SelectDirect implements IStoredProc {
 				}
 			}
 			else {
-				db.traverseRecords(table, filter);
+				db.traverseRecords(scope, table, filter);
 			}
 			
 			out.endList();

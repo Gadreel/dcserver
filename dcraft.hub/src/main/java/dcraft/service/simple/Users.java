@@ -59,6 +59,10 @@ public class Users {
 	static public boolean handle(ServiceRequest request, OperationOutcomeStruct callback, CoreDatabase db) throws OperatingContextException {
 		if ("LoadSelf".equals(request.getOp()) || "Load".equals(request.getOp())) {
 			if (ResourceHub.getResources().getDatabases().hasDefaultDatabase()) {
+				// so we trigger stored proc instead
+				return false;
+				
+				/*
 				LoadRecordRequest req = LoadRecordRequest.of("dcUser")
 						.withId("Load".equals(request.getOp())
 								? request.getDataAsRecord().getFieldAsString("Id")
@@ -82,6 +86,7 @@ public class Users {
 						);
 				
 				ServiceHub.call(req.toServiceRequest().withOutcome(callback));
+				*/
 			}
 			else {
 				// TODO code op
@@ -93,6 +98,10 @@ public class Users {
 		
 		if ("UpdateSelf".equals(request.getOp()) || "Update".equals(request.getOp())) {
 			if (ResourceHub.getResources().getDatabases().hasDefaultDatabase()) {
+				// so we trigger stored proc instead
+				return false;
+				
+				/*
 				RecordStruct rec = request.getDataAsRecord();
 				
 				UpdateUserRequest req = new UpdateUserRequest("Update".equals(request.getOp())
@@ -139,6 +148,7 @@ public class Users {
 					req.setBadges(rec.getFieldAsList("Badges"));
 				
 				ServiceHub.call(req.toServiceRequest().withOutcome(callback));
+				*/
 			}
 			else {
 				// TODO code op
@@ -175,6 +185,10 @@ public class Users {
 		
 		if ("Add".equals(request.getOp())) {
 			if (ResourceHub.getResources().getDatabases().hasDefaultDatabase()) {
+				// so we trigger stored proc instead
+				return false;
+				
+				/*
 				RecordStruct rec = request.getDataAsRecord();
 
 				AddUserRequest req = new AddUserRequest(rec.getFieldAsString("Username"));
@@ -218,6 +232,7 @@ public class Users {
 					req.withBadges(rec.getFieldAsList("Badges"));
 
 				ServiceHub.call(req.toServiceRequest().withOutcome(callback));
+				*/
 			}
 			else {
 				// TODO code op
@@ -306,6 +321,7 @@ public class Users {
 			return true;
 		}
 		
+		/* deprecated
 		if ("ListUsers".equals(request.getOp())) {
 			if (ResourceHub.getResources().getDatabases().hasDefaultDatabase()) {
 				ServiceHub.call(
@@ -327,10 +343,15 @@ public class Users {
 
 			return true;
 		}
+		*/
 
 		if ("Search".equals(request.getOp())) {
 			// TODO support Term and Badges
 			if (ResourceHub.getResources().getDatabases().hasDefaultDatabase()) {
+				// so we trigger stored proc instead
+				return false;
+				
+				/*
 				ServiceHub.call(
 						SelectDirectRequest.of("dcUser")
 								.withSelect(SelectFields.select()
@@ -342,6 +363,7 @@ public class Users {
 								)
 								.toServiceRequest()
 								.withOutcome(callback));
+								*/
 			}
 			else {
 				// TODO code op

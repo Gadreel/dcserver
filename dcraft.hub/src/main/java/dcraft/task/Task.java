@@ -215,11 +215,20 @@ public class Task extends RecordStruct {
 	}
 	
 	// script path
+	public Task withScript(String path) {
+		if (! path.endsWith(".dcs.xml"))
+			path += ".dcs.xml";
+
+		this.with("ScriptPath", path);
+
+		return this;
+	}
+	
 	public Task withScript(CommonPath path) {
 		this.with("ScriptPath", path);
 		return this;
 	}
-	
+
 	public Task withScript(Path path) {
 		this.with("ScriptLocalPath", path);
 		return this;
@@ -231,7 +240,9 @@ public class Task extends RecordStruct {
 				this.work = (IWork) ResourceHub.getResources().getClassLoader().getInstance(this.getWorkClassname());
 			}
 			else if (this.isNotFieldEmpty("ScriptPath")) {
-				Script scrpt = Script.of(CommonPath.from(this.getFieldAsString("ScriptPath")));
+				Script scrpt = Script.of(
+						CommonPath.from(this.getFieldAsString("ScriptPath"))
+				);
 				
 				if (scrpt != null) {
 					if (this.isFieldEmpty("Title"))

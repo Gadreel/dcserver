@@ -1,0 +1,98 @@
+<dc.Html Badges="Admin,Editor">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Gallery Image Properties" />
+	</Meta>
+
+	<Require Script="/js/vendor/ace-1.1.8/ace.js" />
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<!--
+				<dcf.Text Name="Title" Label="Title" />
+				-->
+
+				<dcf.TextArea Name="Description" Label="Description" />
+
+				<dc.IncludeParam Name="ExtraProps" />
+
+				<dcf.FormButtons>
+					<dc.Button Click="AfterSave" Label="Close" />
+					<dcf.SubmitButton Label="Save and Preview" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var entry = this;
+
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			e.Message = {
+				Service: 'dcmServices',
+				Feature: 'Feed',
+				Op: 'LoadPart',
+				Body: {
+					Feed: entry.Params.Feed,
+					Path: entry.Params.Path,
+					PartId: entry.Params.PartId
+				}
+			};
+	]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+		var entry = this;
+
+		var widget = entry.Store.Widget = dc.util.Xml.toJQuery(e.Data.Part);
+
+		e.Data = { };
+
+		var $imgs = widget.find('Image');
+
+		for (var i = 0; i < $imgs.length; i++) {
+			if ($($imgs.get(i)).attr('Alias') == entry.Params.Image) {
+				e.Data.Description = $($imgs.get(i)).attr('Description');
+			}
+		}
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			var widget = entry.Store.Widget;
+
+			var $imgs = widget.find('Image');
+
+			for (var i = 0; i < $imgs.length; i++) {
+				if ($($imgs.get(i)).attr('Alias') == entry.Params.Image) {
+					$($imgs.get(i)).attr('Description', e.Data.Description);
+				}
+			}
+
+			var msg = {
+				Service: 'dcmServices',
+				Feature: 'Feed',
+				Op: 'AddCommandHistory',
+				Body: {
+					Feed: entry.Params.Feed,
+					Path: entry.Params.Path,
+					Commands: [
+						{
+							Command: 'SavePart',
+							Params: {
+								PartId: entry.Params.PartId,
+								Part: dc.util.Xml.toString(widget)
+							}
+						}
+					]
+				}
+			};
+
+			dc.comm.sendMessage(msg, function(rmsg) {
+				if (rmsg.Result != 0)
+					dc.pui.Popup.alert(rmsg.Message);
+				else
+					dc.pui.Loader.MainLayer.refreshPage();
+			});
+	]]></Function>
+</dc.Html>

@@ -20,6 +20,7 @@ import dcraft.db.request.update.ConditionalValue;
 import dcraft.db.request.update.InsertRecordRequest;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.ListStruct;
+import dcraft.struct.RecordStruct;
 
 /**
  * Insert a new group record into dcDatabase.  Name is required.
@@ -58,7 +59,7 @@ public class AddGroupRequest extends InsertRecordRequest {
 	}
 	
 	@Override
-	public CompositeStruct buildParams() {
+	public RecordStruct buildParams() {
 		this.withSetField("dcName", this.name);
 		this.withSetField("dcDescription", this.desc);
 		this.withSetList("dcBadges", this.badges);

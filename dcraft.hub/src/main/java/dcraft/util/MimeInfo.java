@@ -5,7 +5,7 @@ public class MimeInfo {
 	//	return "application/octetstream";
 	//}
 	
-	public static MimeInfo DEFAULT = new MimeInfo().withCompress(false).withExt("bin").withType("application/octetstream");
+	public static MimeInfo DEFAULT = new MimeInfo().withCompress(false).withExt("txt").withType("text/plain");
 	
 	public static MimeInfo create() {
 		return new MimeInfo();

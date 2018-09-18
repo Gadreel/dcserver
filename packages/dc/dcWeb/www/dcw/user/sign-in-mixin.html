@@ -1,11 +1,25 @@
 <dc.MixIn>
 	<dc.Fragment>
+		<dcs.With Target="$_Resources.Config">
+			<GetTag Path="Users" Result="UserConfig" />
+		</dcs.With>
+
 		<dcf.Form Name="SignIn">
 			<dcf.Text Name="Username" Label="Email" placeholder="email or username" Required="true" />
 			<dcf.Password Name="Password" Label="Password" Required="true" />
-			<dcf.YesNo Label="Remember Me" Name="RememberMe" />
+
+			<dcs.If Target="$UserConfig.@SignInRemember" Equal="true">
+				<dc.Out>
+					<dcf.YesNo Label="Remember Me" Name="RememberMe" />
+				</dc.Out>
+			</dcs.If>
 
 			<dcf.FormButtons>
+				<dcs.If Target="$UserConfig.@SignUpEnabled" Equal="true">
+					<dc.Out>
+						<dc.Button Label="Sign Up for Account" Click="onSignUp" />
+					</dc.Out>
+				</dcs.If>
 				<dc.Button Label="Reset Password" Click="onRecover" />
 				<dcf.SubmitButton Label="Sign In" />
 			</dcf.FormButtons>
@@ -14,15 +28,16 @@
 	<Function Name="onRecover">
 				dc.pui.Dialog.loadPage('/dcw/user/reset.html');
 	</Function>
+	<Function Name="onSignUp">
+				dc.pui.Dialog.loadPage('/dcw/user/sign-up.html');
+	</Function>
 	<Function Name="LoadRecord" Params="e">
-				var info = dc.user.getUserInfo();
+				var entry = this;
 
-				if (info.Credentials) {
-					e.Data = $.extend(true, { RememberMe: info.RememberMe }, info.Credentials);
-					this.form().query('Password').focus();
-				}
-				else {
-					this.form().query('Username').focus();
+				var info = dc.user.loadRemembered();
+
+				if (info) {
+					e.Data = $.extend(true, { RememberMe: true }, info);
 				}
 	</Function>
 	<Function Name="AfterSave" Params="e">
@@ -32,7 +47,14 @@
 
 				dc.user.signin(values.Username, values.Password, values.RememberMe, function(msg) {
 					if (dc.user.isVerified()) {
-						entry.callPageFunc('SignedIn');
+						if (entry.Params.Callback) {
+							entry.Layer.back();
+
+							entry.Params.Callback();
+						}
+						else {
+							window.location.reload(true);
+						}
 					}
 					else {
 						dc.pui.Popup.alert('Invalid sign in');

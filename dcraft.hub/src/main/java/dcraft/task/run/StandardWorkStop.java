@@ -32,7 +32,7 @@ public class StandardWorkStop extends StateWork {
 		if (this.waitTries >= 1000)		// 4 minutes, 10 seconds
 			return StateWorkStep.NEXT;
 		
-		Logger.debugTr(0, "Checking running in Work Hub");
+		Logger.debug("Checking running in Work Hub");
 		
 		int busycnt = 0;
 		

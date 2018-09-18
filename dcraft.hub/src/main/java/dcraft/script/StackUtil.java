@@ -10,13 +10,17 @@ import dcraft.schema.SchemaHub;
 import dcraft.script.inst.Instruction;
 import dcraft.script.inst.Main;
 import dcraft.script.work.InstructionWork;
+import dcraft.struct.DataUtil;
 import dcraft.struct.IPartSelector;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.NullStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.*;
+import dcraft.util.ArrayUtil;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
+
+import java.util.Arrays;
 
 public class StackUtil {
 	static public IWork of(IParentAwareWork parent, Instruction... instructions) {
@@ -40,19 +44,31 @@ public class StackUtil {
 		
 		return main.createStack();
 	}
-	
+
 	static public Struct refFromSource(InstructionWork stackWork, String attr) throws OperatingContextException {
-		return StackUtil.refFromElement(stackWork, stackWork.getInstruction(), attr);
+		return StackUtil.refFromElement(stackWork, stackWork.getInstruction(), attr, true);
 	}
 	
+	static public Struct refFromSource(InstructionWork stackWork, String attr, boolean cleanrefs) throws OperatingContextException {
+		return StackUtil.refFromElement(stackWork, stackWork.getInstruction(), attr, cleanrefs);
+	}
+
 	static public Struct refFromElement(IParentAwareWork stackWork, XElement el, String attr) throws OperatingContextException {
+		return StackUtil.refFromElement(stackWork, el, attr, true);
+	}
+	
+	static public Struct refFromElement(IParentAwareWork stackWork, XElement el, String attr, boolean cleanrefs) throws OperatingContextException {
 		if ((el == null) || StringUtil.isEmpty(attr))
 			return null;
 		
-		return StackUtil.resolveReference(stackWork, el.getAttribute(attr));
+		return StackUtil.resolveReference(stackWork, el.getAttribute(attr), cleanrefs);
 	}
 
 	static public Struct resolveReference(IParentAwareWork stack, String val) throws OperatingContextException {
+		return StackUtil.resolveReference(stack, val, true);
+	}
+
+	static public Struct resolveReference(IParentAwareWork stack, String val, boolean cleanrefs) throws OperatingContextException {
 		if (val == null)
 			return null;
 
@@ -67,7 +83,7 @@ public class StackUtil {
 			val = val.substring(1);
 
 		// otherwise just treat this as a string
-		return StringStruct.of(StackUtil.resolveValueToString(stack, val));
+		return StringStruct.of(StackUtil.resolveValueToString(stack, val, cleanrefs));
 	}
 
 	static public String stringFromSource(InstructionWork stackWork, String attr) throws OperatingContextException {
@@ -110,7 +126,7 @@ public class StackUtil {
 		if ((el == null) || StringUtil.isEmpty(attr))
 			return def;
 		
-		Object ret1 = StackUtil.refFromElement(stackWork, el, attr);
+		Object ret1 = StackUtil.refFromElement(stackWork, el, attr, true);
 
 		//if (ret1 == null)
 		//	ret1 = StackUtil.resolveValueToString(stackWork, el.getAttribute(attr));
@@ -139,7 +155,7 @@ public class StackUtil {
 		if ((el == null) || StringUtil.isEmpty(attr))
 			return def;
 
-		Object ret1 = StackUtil.refFromElement(stackWork, el, attr);
+		Object ret1 = StackUtil.refFromElement(stackWork, el, attr, true);
 
 		//if (ret1 == null)
 		//	ret1 = StackUtil.resolveValueToString(stackWork, el.getAttribute(attr));
@@ -178,19 +194,26 @@ public class StackUtil {
 			
 			String varname = val.substring(bpos + 2, epos).trim();
 			
-			// TODO add support for formatting - {$varname:op:LeftPad:Size=7:With=*}
+			// TODO add support for formatting - {$varname|op:LeftPad:Size=7:With=*|op}
 			//String fmtcmd = null;
 			//String fmt = null;
 			
-			Struct qvar2 = StackUtil.queryVariable(stack, varname);
+			String[] vparts = varname.split("\\|");
+			
+			Struct qvar2 = StackUtil.queryVariable(stack, vparts[0]);
 			
 			if (qvar2 != null) {
-				// do not allow nested variables, that would be a major security issue!!  consider values pulled from user input
-				String qval = qvar2.toString().replace("{$", "{`$");
-				
 				// may want to add ` in front of $ at start, review for evidence of this
+				Object qval2 = DataUtil.format(qvar2, Arrays.copyOfRange(vparts, 1, vparts.length));
 				
-				sb.append(qval);
+				if (qval2 != null) {
+					// do not allow nested variables, that would be a major security issue!!  consider values pulled from user input
+					String qval2s = Struct.objectToString(qval2);
+					
+					if (qval2s != null) {
+						sb.append(qval2s.replace("{$", "{`$"));
+					}
+				}
 			}
 			else if (! cleanRefs) {
 				sb.append(val.substring(bpos, epos + 1));
@@ -198,6 +221,17 @@ public class StackUtil {
 			else {
 				// TODO trace
 				//Logger.warnTr(500, varname);
+				
+				Object qval2 = DataUtil.format(null, Arrays.copyOfRange(vparts, 1, vparts.length));
+				
+				if (qval2 != null){
+					// do not allow nested variables, that would be a major security issue!!  consider values pulled from user input
+					String qval2s = Struct.objectToString(qval2);
+					
+					if (qval2s != null) {
+						sb.append(qval2s.replace("{$", "{`$"));
+					}
+				}
 			}
 			
 			bpos = val.indexOf("{$", epos);
@@ -231,6 +265,9 @@ public class StackUtil {
 	
 	// stack can be null
 	static public Struct queryVariable(IParentAwareWork stack, String name) throws OperatingContextException {
+		if (StringUtil.isEmpty(name))
+			return null;
+		
 		IVariableAware vp = StackUtil.queryVarAware(stack);
 
 		if (vp == null)

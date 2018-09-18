@@ -62,6 +62,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 		if (msg instanceof HttpContent) {
 			if (this.context == null) {
 				Logger.error("Got more content but no context");
+				ctx.channel().read();
 				return;
 			}
 			
@@ -70,7 +71,8 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 			Session session = this.context.getSession();
 			
 			if (session == null) {
-				Logger.error("Got more content but no session");
+				Logger.error("Got more content but no session - could be a redirect");
+				ctx.channel().read();
 				return;
 			}
 			
@@ -99,7 +101,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 					+ " from " + ctx.channel().remoteAddress());
 		
 		if (! (msg instanceof HttpRequest)) {
-			wctrl.sendRequestBad();
+			wctrl.sendRequestBadRead();
 			return;
 		}
 
@@ -110,7 +112,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 		// at the least don't allow web requests until running
 		// TODO later we may need to have a "Going Down" flag and filter new requests but allow existing
 		if (! ApplicationHub.isRunning()) {
-			wctrl.sendInternalError();
+			wctrl.sendInternalErrorRead();
 			return;
 		}
 
@@ -119,7 +121,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 
 		// Handle a bad request.
 		if (! httpreq.decoderResult().isSuccess()) {
-			wctrl.sendRequestBad();
+			wctrl.sendRequestBadRead();
 			return;
 		}
 
@@ -137,17 +139,17 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 		String method = req.getFieldAsString("Method");
 		String host = req.getFieldAsString("Host");
 		
-		boolean pass = "GET".equals(method);
+		boolean pass = "GET".equals(method) || "POST".equals(method);
 
 		if (Logger.isDebug())
 			Logger.debug("Web server request d");
 
 		// very limited support for http method - on purpose
-		if (("PUT".equals(method) || "POST".equals(method)) && (path.getNameCount() > 0) && path.getName(0).equals(ServerHandler.DYN_PATH))
+		if ("PUT".equals(method) && (path.getNameCount() > 0) && path.getName(0).equals(ServerHandler.DYN_PATH))
 			pass = true;
 		
 		if (! pass) {
-			wctrl.sendRequestBad();
+			wctrl.sendRequestBadRead();
 			return;
 		}
 		
@@ -178,7 +180,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 			if (Logger.isDebug())
 				Logger.debug("Tenant not found for: " + host);
 			
-			wctrl.sendForbidden();
+			wctrl.sendForbiddenRead();
 			return;
 		}
 		
@@ -195,9 +197,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 			CountHub.countObjects("dcWebStatusCount-" + site.getTenant().getAlias(), req);
 			
 			if (ApplicationHub.getState() == HubState.Running)
-				wctrl.sendRequestOk();
+				wctrl.sendRequestOkRead();
 			else
-				wctrl.sendRequestBad();
+				wctrl.sendRequestBadRead();
 			
 			return;
 		}
@@ -222,9 +224,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 			if (Logger.isDebug())
 				Logger.debug("Routing the request to: " + reroute);
 			
-			wctrl.getResponse().setStatus(HttpResponseStatus.FOUND);
+			wctrl.getResponse().setStatus(HttpResponseStatus.MOVED_PERMANENTLY);
 			wctrl.getResponse().setHeader(HttpHeaderNames.LOCATION, reroute);
-			wctrl.send();
+			wctrl.sendRead();
 			return;
 		}
 
@@ -288,7 +290,8 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 						
 						wctrl.getResponse().setStatus(HttpResponseStatus.FOUND);
 						wctrl.getResponse().setHeader(HttpHeaderNames.LOCATION, "/");
-						wctrl.send();
+						wctrl.getResponse().setHeader("Cache-Control", "no-cache");		// in case they login later, firefox was using cache
+						wctrl.sendRead();
 						return;
 					}
 					
@@ -346,8 +349,8 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 		
 		{
 			LocaleResource locales = this.context.getResources().getLocale();
-			
 			LocaleDefinition locale = null;
+			boolean needredirect = false;
 			
 			// see if the path indicates a language then redirect
 			if (path.getNameCount() > 0)  {
@@ -356,6 +359,8 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 				locale = locales.getLocaleDefinition(lvalue);
 				
 				if (locale != null) {
+					needredirect = true;
+
 					req
 							.with("Path", path.subpath(1))
 							.with("OriginalPath", path.subpath(1));
@@ -404,11 +409,19 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 			if (! locale.getName().equals(langcookie)) {
 				Cookie localek = new DefaultCookie("dcLang", locale.getName());
 				localek.setPath("/");
-				
+
 				// help pass security tests if Secure by default when using https
 				localek.setSecure(wctrl.isSecure());
-				
+
 				wctrl.getResponse().setCookie(localek);
+			}
+
+			if (needredirect) {
+				wctrl.getResponse().setStatus(HttpResponseStatus.FOUND);	// not permanent
+				wctrl.getResponse().setHeader(HttpHeaderNames.LOCATION, req.getFieldAsString("OriginalPath"));
+				wctrl.getResponse().setHeader("Cache-Control", "no-cache");		// in case they login later, FireFox was using cache
+				wctrl.sendRead();
+				return;
 			}
 		}
 
@@ -423,7 +436,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 		// thus they (well upload anyway) may fail if coming through here and somehow needed to verify
 		if (rwork.getNeedsVerify() && ! "GET".equals(method)) {
 			if ((path.getNameCount() < 2) || ! path.getName(0).equals(ServerHandler.DYN_PATH)) {
-				wctrl.sendRequestBad();
+				wctrl.sendRequestBadRead();
 				return;
 			}
 		}
@@ -438,7 +451,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 		// check errors now because we will clear errors after calling verify
 		// the call to verify does not count as real errors in our own operations of loading pages
 		if (om.hasErrors()) {
-			wctrl.sendRequestBad();
+			wctrl.sendRequestBadRead();
 			return;
 		}
 		

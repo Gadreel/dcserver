@@ -98,7 +98,7 @@ public class RpcHandler implements IContentDecoder {
 		
 		WebController wctrl = (WebController) ctx.getController();
 		
-		wctrl.sendRequestBad();
+		wctrl.sendRequestBadRead();
 		
 		wctrl.setDecoder(null);
 	}
@@ -122,7 +122,7 @@ public class RpcHandler implements IContentDecoder {
 		CompositeStruct croot = CompositeParser.parseJson(this.mem);
 		
 		if ((croot == null) || ! (croot instanceof RecordStruct)) {
-			wctrl.sendRequestBad();
+			wctrl.sendRequestBadRead();
 			return;
 		}
 		
@@ -130,7 +130,7 @@ public class RpcHandler implements IContentDecoder {
 		
 		// check that the request conforms to the schema for RpcMessage
 		if (! msg.validate("RpcMessage")) {
-			wctrl.sendRequestBad();
+			wctrl.sendRequestBadRead();
 			return;
 		}
 		

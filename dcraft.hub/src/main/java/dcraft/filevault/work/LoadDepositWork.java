@@ -90,7 +90,7 @@ public class LoadDepositWork extends ChainWork {
 			RecordStruct params = (RecordStruct) res;
 			
 			// get cloud file store
-			FileStore store = DepositHub.getCloudStore();
+			FileStore store = DepositHub.getCloudStore(null, null);
 			
 			if (store == null) {
 				Logger.error("Unable to access cloud file store");

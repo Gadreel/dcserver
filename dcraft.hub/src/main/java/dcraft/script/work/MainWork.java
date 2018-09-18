@@ -8,6 +8,8 @@ import dcraft.log.HubLog;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
+import dcraft.session.Session;
+import dcraft.session.SessionHub;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.NullStruct;
@@ -44,6 +46,18 @@ public class MainWork extends BlockWork implements IResultAwareWork, IChainAware
 			
 			if (StringUtil.isNotEmpty(pname))
 				this.addVariable(pname, param);
+
+			// scripts should have a Session
+			if (taskctx.getSessionId() == null) {
+				Session sess = Session.of("script:", taskctx.getUserContext());
+
+				//if (Logger.isDebug())
+				//	Logger.debug("Script session request f3");
+
+				SessionHub.register(sess);
+
+				taskctx.setSessionId(sess.getId());
+			}
 		}
 		
 		if (this.run() != ReturnOption.AWAIT) {

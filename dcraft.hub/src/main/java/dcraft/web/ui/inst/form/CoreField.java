@@ -3,8 +3,11 @@ package dcraft.web.ui.inst.form;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import dcraft.hub.op.OperatingContextException;
+import dcraft.log.Logger;
+import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.AnyStruct;
 import dcraft.util.RndUtil;
 import dcraft.web.ui.UIUtil;
 import dcraft.script.inst.doc.Base;
@@ -16,7 +19,7 @@ abstract public class CoreField extends Base {
 	protected String fieldid = null;
 	protected Base fieldinfo = null;
 	
-	abstract public void addControl();
+	abstract public void addControl(InstructionWork state) throws OperatingContextException;
 	
 	/**
 	 * call this from subclasses before making child updates in
@@ -25,17 +28,37 @@ abstract public class CoreField extends Base {
 	 * no field children are directly used in the final document, 
 	 * move them out and make room for the real field children
 	 */
-	public void initFieldInfo() {
+	public void initFieldInfo(InstructionWork state) throws OperatingContextException {
 		if (this.fieldinfo == null) {
 			this.fieldinfo = W3.tag(this.tagName);
 			this.fieldinfo.replace(this);
+			
+			Struct funcwrap = StackUtil.queryVariable(state, StackUtil.stringFromSource(state, "FieldParams"));
+
+			XElement pel = null;
+
+			if (funcwrap instanceof XElement) {
+				pel = (XElement) funcwrap;
+			}
+			else if (funcwrap instanceof AnyStruct) {
+				pel = ((XElement) ((AnyStruct) funcwrap).getValue());
+			}
+
+			if (pel != null) {
+				pel = pel.deepCopy();
+
+				for (XNode node : pel.getChildren()) {
+					this.fieldinfo.with(node);
+				}
+			}
+
 			this.children = new CopyOnWriteArrayList<>();
 		}
 	}
 	
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
-		this.initFieldInfo();	// should already be called by subclass
+		this.initFieldInfo(state);	// should already be called by subclass
 		
 		if (this.hasNotEmptyAttribute("id")) 
 			this.fieldid = this.getAttribute("id");
@@ -90,7 +113,7 @@ abstract public class CoreField extends Base {
 				this.with(W3.tag("div").withClass("dc-spacer").withClass(cmpt));
 		}
 		
-		this.addControl();
+		this.addControl(state);
 		
 		// add spacer before error message 
 		if (usespacer)

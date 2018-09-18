@@ -203,7 +203,7 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 			RecordStruct params = (RecordStruct) res;
 			
 			// get cloud file store
-			FileStore store = DepositHub.getCloudStore();
+			FileStore store = DepositHub.getCloudStore(null, null);
 			
 			if (store == null)
 				Logger.warn("Missing cloud file store for deposits");

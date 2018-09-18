@@ -2,16 +2,20 @@ package dcraft.web.ui.inst.cms;
 
 import dcraft.cms.util.GalleryImageConsumer;
 import dcraft.cms.util.GalleryUtil;
+import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Var;
 import dcraft.script.work.InstructionWork;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.script.inst.doc.Base;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
+import dcraft.web.ui.UIUtil;
+import dcraft.web.ui.inst.ICMSAware;
 import dcraft.web.ui.inst.W3;
 import dcraft.web.ui.inst.W3Closed;
 import dcraft.xml.XElement;
@@ -22,10 +26,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class GalleryWidget extends Base {
+public class GalleryWidget extends Base implements ICMSAware {
 	static public GalleryWidget tag() {
 		GalleryWidget el = new GalleryWidget();
-		el.setName("dc.GalleryWidget");
+		el.setName("dcm.GalleryWidget");
 		return el;
 	}
 	
@@ -38,20 +42,11 @@ public class GalleryWidget extends Base {
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
 		long maximgs = StackUtil.intFromSource(state,"Max", 24);
 		
-		List<XNode> children = this.children;
+		XElement template = this.selectFirst("Template");
+		
+		List<XElement> images = this.selectAll("Image");
 		
 		this.clearChildren();
-		
-		boolean hastemplate = false;
-		
-		if (children != null) {
-			for (int i = 0; i < children.size(); i++) {
-				if (children.get(i) instanceof XElement) {
-					hastemplate = true;
-					break;
-				}
-			}
-		}
 		
 		String vari = StackUtil.stringFromSource(state,"Variant", "full");
 		String path = StackUtil.stringFromSource(state,"Path");
@@ -64,10 +59,9 @@ public class GalleryWidget extends Base {
 
 		boolean usesrcset = ((vdata != null) && vdata.isNotFieldEmpty("Density"));
 		
-		if (! hastemplate) {
-			children = new ArrayList<>();
-			
-			children.add(W3.tag("a")
+		if (template == null) {
+			template = Base.tag("Template").with(
+				W3.tag("a")
 					.withAttribute("href", "#")
 					.withAttribute("data-image-alias", "{$Image.Alias}")
 					.withAttribute("data-image-info", "{$Image.Data}")
@@ -80,12 +74,11 @@ public class GalleryWidget extends Base {
 			);
 		}
 		
-		List<XNode> fchildren = children;
 		AtomicLong currimg = new AtomicLong();
 		
-		//RecordStruct page = (RecordStruct) StackUtil.queryVariable(state, "Page");
+		XElement ftemplate = template;
 		
-	    GalleryUtil.forEachGalleryShowImage(meta, path, show, new GalleryImageConsumer() {
+		GalleryImageConsumer galleryImageConsumer = new GalleryImageConsumer() {
 			@Override
 			public void accept(RecordStruct meta, RecordStruct show, RecordStruct img) throws OperatingContextException {
 				long cidx = currimg.incrementAndGet();
@@ -150,24 +143,36 @@ public class GalleryWidget extends Base {
 					GalleryWidget.this.with(setvar);
 					
 					// add nodes using the new variable
-					List<XNode> template = XmlUtil.deepCopyChildren(fchildren);
+					XElement entry = ftemplate.deepCopy();
 					
-					GalleryWidget.this.withAll(template);
+					for (XNode node : entry.getChildren())
+						GalleryWidget.this.with(node);
 				}
 				catch (OperatingContextException x) {
 					Logger.warn("Could not reference image data: " + x);
 				}
 			}
-		});
+		};
 		
-		// TODO check for parent with data-cms-feed
-		if (this.hasNotEmptyAttribute("id") && OperationContext.getOrThrow().getUserContext().isTagged("Admin", "Editor")) {
-			this
-					.withAttribute("data-cms-editable", "true")
-					.with(
-							EditButton.tag().attr("title", "CMS - edit previous gallery")
-					);
+		if (StringUtil.isNotEmpty(show)) {
+			GalleryUtil.forEachGalleryShowImage(meta, path, show, galleryImageConsumer);
 		}
+		else {
+			RecordStruct showrec = RecordStruct.record()
+					.with("Title", "Default")
+					.with("Alias", "default")
+					.with("Variation", vari);
+			
+			for (XElement img : images) {
+				galleryImageConsumer.accept(meta, showrec, RecordStruct.record()
+						.with("Alias", img.getAttribute("Alias"))
+						.with("Path", path + "/" + img.getAttribute("Alias"))
+						.with("Element", img)
+				);
+			}
+		}
+		
+		UIUtil.markIfEditable(state, this);
 	}
 	
 	@Override
@@ -198,5 +203,43 @@ public class GalleryWidget extends Base {
 		}
 		
 		this.setName("div");
+	}
+
+	@Override
+	public boolean applyCommand(CommonPath path, XElement root, RecordStruct command) {
+		XElement part = this;
+		
+		String cmd = command.getFieldAsString("Command");
+		
+		if ("Reorder".equals(cmd)) {
+			ListStruct neworder = command.selectAsList("Params.Order");
+			
+			if (neworder == null) {
+				Logger.error("New order is missing");
+				return true;		// command was handled
+			}
+			
+			List<XElement> children = this.selectAll("Image");
+
+			// remove all images
+			for (XElement el : children)
+				this.remove(el);
+			
+			// add images back in new order
+			for (int i = 0; i < neworder.size(); i++) {
+				int pos = neworder.getItemAsInteger(i).intValue();
+
+				if (pos >= children.size()) {
+					Logger.warn("bad gallery positions");
+					break;
+				}
+
+				part.with(children.get(pos));
+			}
+			
+			return true;		// command was handled
+		}
+		
+		return false;
 	}
 }

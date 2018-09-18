@@ -11,15 +11,12 @@ import java.util.function.Function;
 import dcraft.db.DatabaseException;
 import dcraft.db.ICallContext;
 import dcraft.db.IRequestContext;
-import dcraft.db.proc.BasicFilter;
-import dcraft.db.proc.ExpressionResult;
-import dcraft.db.proc.IExpression;
-import dcraft.db.proc.IFilter;
-import dcraft.db.proc.IStoredProc;
+import dcraft.db.proc.*;
 import dcraft.db.proc.expression.ExpressionUtil;
 import dcraft.db.util.ByteUtil;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
+import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationMarker;
@@ -28,10 +25,10 @@ import dcraft.locale.LocaleResource;
 import dcraft.log.Logger;
 import dcraft.schema.DataType;
 import dcraft.schema.DbField;
-import dcraft.schema.DbTable;
 import dcraft.schema.DbTrigger;
 import dcraft.schema.SchemaHub;
 import dcraft.schema.SchemaResource;
+import dcraft.schema.TableView;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -65,6 +62,14 @@ public class TablesAdapter {
 		return this.request;
 	}
 	
+	public BigDateTime getWhen() {
+		return this.when;
+	}
+	
+	public boolean isHistorical() {
+		return this.historical;
+	}
+	
 	public String createRecord(String table) {
 		String nodeId = ApplicationHub.getNodeId();
 		
@@ -75,7 +80,11 @@ public class TablesAdapter {
 		try {
 			Long id = this.request.getInterface().inc(metakey);
 			
-			return nodeId + "_" + StringUtil.leftPad(id.toString(), 15, '0');
+			String nid = nodeId + "_" + StringUtil.leftPad(id.toString(), 15, '0');
+			
+			this.executeTrigger(table, nid,"AfterCreate");
+			
+			return nid;
 		}
 		catch (Exception x) {
 			Logger.error("Unable to create record id: " + x);
@@ -127,7 +136,7 @@ public class TablesAdapter {
 				
 				try {
 					// make sure value is unique - null for when is fine because uniqueness is not time bound
-					Object id = TablesAdapter.this.firstInIndex(table, schema.getName(), cValue);
+					Object id = TablesAdapter.this.firstInIndex(table, schema.getName(), cValue, false);
 					
 					// if we are a new record
 					if (inId == null) {
@@ -154,13 +163,20 @@ public class TablesAdapter {
 		
 		SchemaResource schemares = ResourceHub.getResources().getSchema();
 		
+		TableView tableView = schemares.getTableView(table);
+		
+		if (tableView == null) {
+			Logger.error("Table does not exist: " + table);
+			return false;
+		}
+		
 		try (OperationMarker om = OperationMarker.create()) {
 			// checking incoming fields for type correctness, uniqueness and requiredness
 			for (FieldStruct field : fields.getFields()) {
 				String fname = field.getName();
 				
 				try {
-					DbField schema = schemares.getDbField(table, fname);
+					DbField schema = tableView.getField(fname);
 					
 					if (schema == null) {
 						Logger.error("Field not defined: " + table + " - " + fname);
@@ -201,7 +217,7 @@ public class TablesAdapter {
 		
 		// if we are a new record, check that we have all the required fields
 		if (inId == null) {
-			for (DbField schema : schemares.getDbFields(table)) {
+			for (DbField schema : tableView.getFields()) {
 				if (! schema.isRequired())
 					continue;
 				
@@ -242,13 +258,6 @@ public class TablesAdapter {
 			return false;
 		}
 
-		// not just retired, but truly deleted - then proceed no further
-		// could hit a race condition - DB cleanup will look for "deleted" records with data and remove TODO
-		if (this.isDeleted(table, id)) {
-			Logger.errorTr(50009);
-			return false;
-		}
-		
 		SchemaResource schemares = ResourceHub.getResources().getSchema();
 		// must use tenant since database is shared by sites
 		LocaleResource locale = OperationContext.getOrThrow().getTenant().getResources().getLocale();
@@ -309,11 +318,12 @@ public class TablesAdapter {
 					
 					if (newerStamp != null) {
 						BigDecimal newStamp = Struct.objectToDecimal(ByteUtil.extractValue(newerStamp));
-						hasNewer = stamp.compareTo(newStamp) > 0;  // if we come after newer then we are older info, there is newer
+						// if we come after newer then we are older info, there is newer
+						hasNewer = (stamp.compareTo(newStamp) > 0);
 					}
 					
 					// find the next, older, stamp after current
-					byte[] olderStamp = this.request.getInterface().nextPeerKey(did, DB_GLOBAL_RECORD, table, id, fname, stamp);
+					byte[] olderStamp = this.request.getInterface().getOrNextPeerKey(did, DB_GLOBAL_RECORD, table, id, fname, stamp);
 					boolean oldIsSet = false;
 					boolean oldIsRetired = false;
 					Object oldValue = null;
@@ -453,11 +463,12 @@ public class TablesAdapter {
 					
 					if (newerStamp != null) {
 						BigDecimal newStamp = Struct.objectToDecimal(ByteUtil.extractValue(newerStamp));
-						hasNewer = stamp.compareTo(newStamp) > 0;  // if we come after newer then we are older info, there is newer
+						// if we come after newer then we are older info, there is newer
+						hasNewer = (stamp.compareTo(newStamp) > 0);
 					}
 					
 					// find the next, older, stamp after current
-					byte[] olderStamp = this.request.getInterface().nextPeerKey(did, DB_GLOBAL_RECORD, table, id, fname, sid, stamp);
+					byte[] olderStamp = this.request.getInterface().getOrNextPeerKey(did, DB_GLOBAL_RECORD, table, id, fname, sid, stamp);
 					BigDecimal oldStamp = null;
 					boolean oldIsSet = false;
 					boolean oldIsRetired = false;
@@ -582,25 +593,25 @@ public class TablesAdapter {
 		return true;
 	}
 	
-	public void indexCleanRecords(DbTable table) throws OperatingContextException {
-		this.traverseRecords(table.name, new BasicFilter() {
+	public void indexCleanRecords(IVariableAware scope, TableView tableschema) throws OperatingContextException {
+		this.traverseRecords(scope, tableschema.getName(), new BasicFilter() {
 			@Override
-			public ExpressionResult check(TablesAdapter adapter, Object val) throws OperatingContextException {
+			public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, Object val) throws OperatingContextException {
 				OperationContext.getOrThrow().touch();
 				
 				String id = val.toString();
 				
 				Logger.info(" - Record: " + id);
 				
-				TablesAdapter.this.indexCleanFields(table, id);
+				TablesAdapter.this.indexCleanFields(tableschema, id);
 				
 				return ExpressionResult.accepted();
 			}
 		});
 	}
 	
-	public void indexCleanFields(DbTable table, String id) throws OperatingContextException {
-		for (DbField field : table.fields.values()) {
+	public void indexCleanFields(TableView table, String id) throws OperatingContextException {
+		for (DbField field : table.getFields()) {
 			//if (! field.isIndexed())
 			//	continue;
 			
@@ -611,19 +622,14 @@ public class TablesAdapter {
 		}
 	}
 	
-	public void indexCleanField(DbTable tableschema, DbField schema, String id) throws OperatingContextException {
+	public void indexCleanField(TableView tableschema, DbField schema, String id) throws OperatingContextException {
 		String did = this.request.getTenant();
-		
-		// not just retired, but truly deleted - then proceed no further
-		// could hit a race condition - DB cleanup will look for "deleted" records with data and remove TODO
-		if (this.isDeleted(tableschema.name, id))
-			return;
-		
+
 		if (schema == null) {
-			Logger.error("Field not defined: " + tableschema.name);
+			Logger.error("Field not defined: " + tableschema.getName());
 			return;
 		}
-		
+
 		SchemaResource schemares = ResourceHub.getResources().getSchema();
 		DataType dtype = schemares.getType(schema.getTypeId());
 		
@@ -635,9 +641,7 @@ public class TablesAdapter {
 		// --------------------------------------------------
 		
 		String fname = schema.getName();
-		
-		boolean auditDisabled = (this.request.getInterface().isAuditDisabled() || ! schema.isAudit());
-		
+
 		try {
 			// --------------------------------------
 			// StaticScalar handling - Data or Retired (true) not both
@@ -650,7 +654,7 @@ public class TablesAdapter {
 			// --------------------------------------
 			if (! schema.isList() && ! schema.isDynamic()) {
 				// find the first, newest, stamp
-				byte[] stampraw = this.request.getInterface().nextPeerKey( did, DB_GLOBAL_RECORD, tableschema.name, id, fname, null);
+				byte[] stampraw = this.request.getInterface().nextPeerKey( did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, null);
 				
 				if (stampraw == null)
 					return;
@@ -661,52 +665,60 @@ public class TablesAdapter {
 					return;
 				
 				// try to get the data if any - note retired fields have no data
-				boolean isRetired = this.request.getInterface().getAsBooleanOrFalse(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Retired");
-				boolean isSet = ! isRetired && this.request.getInterface().isSet(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Data");
+				boolean isRetired = this.request.getInterface().getAsBooleanOrFalse(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Retired");
+				boolean isSet = ! isRetired && this.request.getInterface().isSet(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Data");
 				
-				Object value = isSet ? this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Data") : null;
+				Object value = isSet ? this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Data") : null;
 				
 				String lang = locale.getDefaultLocale();
 				
-				if (this.request.getInterface().isSet(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Lang"))
-					lang = Struct.objectToString(this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Lang"));
+				if (this.request.getInterface().isSet(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Lang"))
+					lang = Struct.objectToString(this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Lang"));
 				
 				boolean isTenantLang = lang.equalsIgnoreCase(locale.getDefaultLocale());
-				
-				Object oldIdxValue = this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Index");
+
+				// same stamp - just a possible value in the index
+				Object oldIdxValue = this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Index");
 				
 				if (oldIdxValue == null)
 					oldIdxValue = dtype.toIndex(value, lang);
-				
+
 				Object newIdxValue = isRetired ? null : dtype.toIndex(value, lang);
 				
 				// set either retired or data, not both
 				if (isRetired) {
-					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Data");
-					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Search");
-					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Index");
-					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Lang");
+					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Data");
+					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Search");
+					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Index");
+					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Lang");
 				}
 				else if (dtype.isSearchable()) {
-					this.request.getInterface().set(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Search", dtype.toSearch(value, lang));
-					this.request.getInterface().set(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Index", newIdxValue);
+					this.request.getInterface().set(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Search", dtype.toSearch(value, lang));
+					this.request.getInterface().set(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Index", newIdxValue);
 					
 					if (! isTenantLang)
-						this.request.getInterface().set(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Lang", lang);
+						this.request.getInterface().set(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Lang", lang);
 					else
-						this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Lang");
+						this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Lang");
 				}
 				else {
-					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Search");
-					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Index");
-					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Lang");
+					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Search");
+					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Index");
+					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, stamp, "Lang");
 				}
-				
-				if ((oldIdxValue != null) && this.request.getInterface().isSet(did, DB_GLOBAL_INDEX, tableschema.name, fname, oldIdxValue, id)) {
+
+				/* not good because prevents set from clean global
+				boolean effectivelyEqual = ((oldIdxValue == null) && (newIdxValue == null)) || ((oldIdxValue != null) && oldIdxValue.equals(newIdxValue));
+
+				if (effectivelyEqual)
+					return;
+				*/
+
+				if ((oldIdxValue != null) && this.request.getInterface().isSet(did, DB_GLOBAL_INDEX, tableschema.getName(), fname, oldIdxValue, id)) {
 					// decrement index count for the old value
 					// remove the old index value
-					this.request.getInterface().dec(did, DB_GLOBAL_INDEX, tableschema.name, fname, oldIdxValue);
-					this.request.getInterface().kill(did, DB_GLOBAL_INDEX, tableschema.name, fname, oldIdxValue, id);
+					this.request.getInterface().dec(did, DB_GLOBAL_INDEX, tableschema.getName(), fname, oldIdxValue);
+					this.request.getInterface().kill(did, DB_GLOBAL_INDEX, tableschema.getName(), fname, oldIdxValue, id);
 				}
 				
 				// don't bother with the indexes if not configured
@@ -714,8 +726,8 @@ public class TablesAdapter {
 				if (schema.isIndexed() && (newIdxValue != null)) {
 					// increment index count
 					// set the new index new
-					this.request.getInterface().inc(did, DB_GLOBAL_INDEX, tableschema.name, fname, newIdxValue);
-					this.request.getInterface().set(did, DB_GLOBAL_INDEX, tableschema.name, fname, newIdxValue, id, null);
+					this.request.getInterface().inc(did, DB_GLOBAL_INDEX, tableschema.getName(), fname, newIdxValue);
+					this.request.getInterface().set(did, DB_GLOBAL_INDEX, tableschema.getName(), fname, newIdxValue, id, null);
 				}
 				
 				return;
@@ -748,7 +760,7 @@ public class TablesAdapter {
 			// --------------------------------------
 			// find the first, newest, stamp
 			
-			byte[] subraw = this.request.getInterface().nextPeerKey( did, DB_GLOBAL_RECORD, tableschema.name, id, fname, null);
+			byte[] subraw = this.request.getInterface().nextPeerKey( did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, null);
 			
 			while (subraw != null) {
 				String sid = Struct.objectToString(ByteUtil.extractValue(subraw));
@@ -756,91 +768,264 @@ public class TablesAdapter {
 				// error
 				if (sid == null)
 					return;
-				
+
+				// STAY IN LOOP until we run out of sub ids
+
 				// find the first, newest, stamp
-				byte[] stampraw = this.request.getInterface().nextPeerKey(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, null);
+				byte[] stampraw = this.request.getInterface().nextPeerKey(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, null);
 				
+				if (stampraw != null) {
+					BigDecimal stamp = Struct.objectToDecimal(ByteUtil.extractValue(stampraw));
+
+					if (stamp != null) {
+						// try to get the data if any - note retired fields have no data
+						boolean isRetired = this.request.getInterface().getAsBooleanOrFalse(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Retired");
+						boolean isSet = !isRetired && this.request.getInterface().isSet(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Data");
+
+						Object value = isSet ? this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Data") : null;
+
+						String lang = locale.getDefaultLocale();
+
+						if (this.request.getInterface().isSet(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Lang"))
+							lang = Struct.objectToString(this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Lang"));
+
+						boolean isTenantLang = lang.equalsIgnoreCase(locale.getDefaultLocale());
+
+						Object oldIdxValue = this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Index");
+
+						if (oldIdxValue == null)
+							oldIdxValue = dtype.toIndex(value, lang);
+
+						Object newIdxValue = isRetired ? null : dtype.toIndex(value, lang);
+
+						// set either retired or data, not both
+						if (isRetired) {
+							this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Data");
+							this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Search");
+							this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Index");
+							this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Lang");
+						} else if (dtype.isSearchable()) {
+							this.request.getInterface().set(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Search", dtype.toSearch(value, lang));
+							this.request.getInterface().set(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Index", newIdxValue);
+
+							if (!isTenantLang)
+								this.request.getInterface().set(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Lang", lang);
+							else
+								this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Lang");
+						} else {
+							this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Search");
+							this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Index");
+							this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "Lang");
+						}
+
+						/* not good because prevents set from clean global
+						boolean effectivelyEqual = ((oldIdxValue == null) && (newIdxValue == null)) || ((oldIdxValue != null) && oldIdxValue.equals(newIdxValue));
+
+						if (! effectivelyEqual) {
+						*/
+							if ((oldIdxValue != null) && this.request.getInterface().isSet(did, DB_GLOBAL_INDEX_SUB, tableschema.getName(), fname, oldIdxValue, id, sid)) {
+								// decrement index count for the old value
+								// remove the old index value
+								this.request.getInterface().dec(did, DB_GLOBAL_INDEX_SUB, tableschema.getName(), fname, oldIdxValue);
+								this.request.getInterface().kill(did, DB_GLOBAL_INDEX_SUB, tableschema.getName(), fname, oldIdxValue, id, sid);
+							}
+
+							// don't bother with the indexes if not configured
+							// or if there is a newer value for this field already set
+							if (schema.isIndexed() && (newIdxValue != null)) {
+								BigDateTime from = Struct.objectToBigDateTime(this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "From"));
+								BigDateTime to = Struct.objectToBigDateTime(this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid, stamp, "To"));
+
+								// increment index count
+								// set the new index new
+								String range = null;
+
+								if (from != null)
+									range = from.toString();
+
+								if (to != null) {
+									if (range == null)
+										range = ":" + to.toString();
+									else
+										range += ":" + to.toString();
+								}
+
+								this.request.getInterface().inc(did, DB_GLOBAL_INDEX_SUB, tableschema.getName(), fname, newIdxValue);
+								this.request.getInterface().set(did, DB_GLOBAL_INDEX_SUB, tableschema.getName(), fname, newIdxValue, id, sid, range);
+							}
+						//}
+					}
+				}
+				
+				subraw = this.request.getInterface().nextPeerKey( did, DB_GLOBAL_RECORD, tableschema.getName(), id, fname, sid);
+			}
+		}
+		catch (Exception x) {
+			Logger.error("Error indexing field: " + fname);
+		}
+	}
+
+	/* TODO use TableView
+	public void clearIndexField(DbTable table, String id) throws OperatingContextException {
+		for (DbField field : table.fields.values()) {
+			//if (! field.isIndexed())
+			//	continue;
+
+			// TODO if debug
+			//Logger.info("   - Field: " + field.getName());
+
+			this.clearIndexField(table, field, id);
+		}
+	}
+
+	public void clearIndexField(DbTable tableschema, DbField schema, String id) throws OperatingContextException {
+		String did = this.request.getTenant();
+
+		if (schema == null) {
+			Logger.error("Table not defined: " + tableschema.name);
+			return;
+		}
+
+		SchemaResource schemares = ResourceHub.getResources().getSchema();
+		DataType dtype = schemares.getType(schema.getTypeId());
+
+		LocaleResource locale = OperationContext.getOrThrow().getTenant().getResources().getLocale();
+
+		// --------------------------------------------------
+		//   index updates herein may have race condition issues with the value counts
+		//   this is ok as counts are just used for suggestions anyway
+		// --------------------------------------------------
+
+		String fname = schema.getName();
+
+		try {
+			// --------------------------------------
+			// StaticScalar handling - Data or Retired (true) not both
+			//
+			//   fields([field name],"Data") = [value]
+			//   fields([field name],"Lang") = [value]
+			//   fields([field name],"Tags") = [value]
+			//   fields([field name],"UpdateOnly") = [value]
+			//   fields([field name],"Retired") = [value]
+			// --------------------------------------
+			if (! schema.isList() && ! schema.isDynamic()) {
+				// find the first, newest, stamp
+				byte[] stampraw = this.request.getInterface().nextPeerKey( did, DB_GLOBAL_RECORD, tableschema.name, id, fname, null);
+
 				if (stampraw == null)
 					return;
-				
+
 				BigDecimal stamp = Struct.objectToDecimal(ByteUtil.extractValue(stampraw));
-				
+
 				if (stamp == null)
 					return;
-				
+
 				// try to get the data if any - note retired fields have no data
-				boolean isRetired = this.request.getInterface().getAsBooleanOrFalse(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Retired");
-				boolean isSet = ! isRetired && this.request.getInterface().isSet(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Data");
-				
-				Object value = isSet ? this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Data") : null;
-				
-				String lang = locale.getDefaultLocale();
-				
-				if (this.request.getInterface().isSet(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Lang"))
-					lang = Struct.objectToString(this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Lang"));
-				
-				boolean isTenantLang = lang.equalsIgnoreCase(locale.getDefaultLocale());
-				
-				Object oldIdxValue = this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Index");
-				
-				if (oldIdxValue == null)
-					oldIdxValue = dtype.toIndex(value, lang);
-				
-				Object newIdxValue = isRetired ? null : dtype.toIndex(value, lang);
-				
-				// set either retired or data, not both
-				if (isRetired) {
-					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Data");
-					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Search");
-					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Index");
-					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Lang");
+				boolean isRetired = this.request.getInterface().getAsBooleanOrFalse(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Retired");
+
+				if (isRetired)
+					return;
+
+				Object idxValue = this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Index");
+
+				if (idxValue == null) {
+					Object value = this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Data");
+
+					if (value == null)
+						return;
+
+					String lang = locale.getDefaultLocale();
+
+					if (this.request.getInterface().isSet(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Lang"))
+						lang = Struct.objectToString(this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, stamp, "Lang"));
+
+					idxValue = dtype.toIndex(value, lang);
 				}
-				else if (dtype.isSearchable()) {
-					this.request.getInterface().set(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Search", dtype.toSearch(value, lang));
-					this.request.getInterface().set(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Index", newIdxValue);
-					
-					if (! isTenantLang)
-						this.request.getInterface().set(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Lang", lang);
-					else
-						this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Lang");
-				}
-				else {
-					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Search");
-					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Index");
-					this.request.getInterface().kill(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Lang");
-				}
-				
-				if ((oldIdxValue != null) && this.request.getInterface().isSet(did, DB_GLOBAL_INDEX_SUB, tableschema.name, fname, oldIdxValue, id, sid)) {
+
+				if ((idxValue != null) && this.request.getInterface().isSet(did, DB_GLOBAL_INDEX, tableschema.name, fname, idxValue, id)) {
 					// decrement index count for the old value
 					// remove the old index value
-					this.request.getInterface().dec(did, DB_GLOBAL_INDEX_SUB, tableschema.name, fname, oldIdxValue);
-					this.request.getInterface().kill(did, DB_GLOBAL_INDEX_SUB, tableschema.name, fname, oldIdxValue, id, sid);
+					this.request.getInterface().dec(did, DB_GLOBAL_INDEX, tableschema.name, fname, idxValue);
+					this.request.getInterface().kill(did, DB_GLOBAL_INDEX, tableschema.name, fname, idxValue, id);
 				}
-				
-				// don't bother with the indexes if not configured
-				// or if there is a newer value for this field already set
-				if (schema.isIndexed() && (newIdxValue != null)) {
-					BigDateTime from = Struct.objectToBigDateTime(this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "From"));
-					BigDateTime to = Struct.objectToBigDateTime(this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "To"));
-					
-					// increment index count
-					// set the new index new
-					String range = null;
-					
-					if (from != null)
-						range = from.toString();
-					
-					if (to != null) {
-						if (range == null)
-							range = ":" + to.toString();
-						else
-							range += ":" + to.toString();
+
+				return;
+			}
+
+			// --------------------------------------
+			//
+			// Handling for other types
+			//
+			// StaticList handling
+			//   fields([field name],sid,"Data") = [value]
+			//   fields([field name],sid,"Lang") = [value]
+			//   fields([field name],sid,"Tags") = [value]			|value1|value2|etc...
+			//   fields([field name],sid,"Retired") = [value]			|value1|value2|etc...
+			//
+			// DynamicScalar handling
+			//   fields([field name],sid,"Data") = [value]
+			//   fields([field name],sid,"Lang") = [value]
+			//   fields([field name],sid,"From") = [value]			null means always was
+			//   fields([field name],sid,"Tags") = [value]
+			//   fields([field name],sid,"Retired") = [value]			|value1|value2|etc...
+			//
+			// DynamicList handling
+			//   fields([field name],sid,"Data") = [value]
+			//   fields([field name],sid,"Lang") = [value]
+			//   fields([field name],sid,"From") = [value]			null means always was
+			//   fields([field name],sid,"To") = [value]				null means always will be
+			//   fields([field name],sid,"Tags") = [value]
+			//   fields([field name],sid,"Retired") = [value]			|value1|value2|etc...
+			// --------------------------------------
+			// find the first, newest, stamp
+
+			byte[] subraw = this.request.getInterface().nextPeerKey( did, DB_GLOBAL_RECORD, tableschema.name, id, fname, null);
+
+			while (subraw != null) {
+				String sid = Struct.objectToString(ByteUtil.extractValue(subraw));
+
+				// error
+				if (sid == null)
+					return;
+
+				// STAY IN LOOP until we run out of sub ids
+
+				// find the first, newest, stamp
+				byte[] stampraw = this.request.getInterface().nextPeerKey(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, null);
+
+				if (stampraw != null) {
+					BigDecimal stamp = Struct.objectToDecimal(ByteUtil.extractValue(stampraw));
+
+					if (stamp != null) {
+						// try to get the data if any - note retired fields have no data
+						boolean isRetired = this.request.getInterface().getAsBooleanOrFalse(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Retired");
+
+						if (! isRetired) {
+							Object idxValue = this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Index");
+
+							if (idxValue == null) {
+								Object value = this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Data");
+
+								if (value != null) {
+									String lang = locale.getDefaultLocale();
+
+									if (this.request.getInterface().isSet(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Lang"))
+										lang = Struct.objectToString(this.request.getInterface().get(did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid, stamp, "Lang"));
+
+									idxValue = dtype.toIndex(value, lang);
+								}
+							}
+
+							if ((idxValue != null) && this.request.getInterface().isSet(did, DB_GLOBAL_INDEX_SUB, tableschema.name, fname, idxValue, id, sid)) {
+								// decrement index count for the old value
+								// remove the old index value
+								this.request.getInterface().dec(did, DB_GLOBAL_INDEX_SUB, tableschema.name, fname, idxValue);
+								this.request.getInterface().kill(did, DB_GLOBAL_INDEX_SUB, tableschema.name, fname, idxValue, id, sid);
+							}
+						}
 					}
-					
-					this.request.getInterface().inc(did, DB_GLOBAL_INDEX_SUB, tableschema.name, fname, newIdxValue);
-					this.request.getInterface().set(did, DB_GLOBAL_INDEX_SUB, tableschema.name, fname, newIdxValue, id, sid, range);
 				}
-				
+
 				subraw = this.request.getInterface().nextPeerKey( did, DB_GLOBAL_RECORD, tableschema.name, id, fname, sid);
 			}
 		}
@@ -848,6 +1033,7 @@ public class TablesAdapter {
 			Logger.error("Error indexing field: " + fname);
 		}
 	}
+	*/
 
 	public boolean setStaticScalar(String table, String id, String field, Object data) throws OperatingContextException {
 		RecordStruct fields = new RecordStruct()
@@ -985,28 +1171,26 @@ public class TablesAdapter {
 	 ;
 	}	
 	 */
-	
-	public boolean isDeleted(String table, String id) throws OperatingContextException {
+
+	public boolean isPresent(String table, String id) throws OperatingContextException {
 		try {
-			return this.request.getInterface().getAsBooleanOrFalse(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, "Deleted");
-		} 
+			if (this.request.getInterface().hasAny(this.request.getTenant(), DB_GLOBAL_RECORD, table, id))
+				return true;
+		}
 		catch (DatabaseException x) {
 			// TODO logger
 		}
-		
+
 		return false;
 	}
-	
+
 	public boolean isRetired(String table, String id) throws OperatingContextException {
 		try {
-			if (!this.request.getInterface().hasAny(this.request.getTenant(), DB_GLOBAL_RECORD, table, id))
+			if (! this.request.getInterface().hasAny(this.request.getTenant(), DB_GLOBAL_RECORD, table, id))
 				return true;
-			
-			if (this.request.getInterface().getAsBooleanOrFalse(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, "Deleted"))
-				return true;
-			
+
 			if (Struct.objectToBooleanOrFalse(this.getStaticScalar(table, id, "Retired")))
-					return true;
+				return true;
 		} 
 		catch (DatabaseException x) {
 			// TODO logger
@@ -1597,7 +1781,47 @@ public class TablesAdapter {
 		
 		return ret;
 	}
-	
+
+	// retire means disable
+	public void retireRecord(String table, String id) throws OperatingContextException {
+		if (! this.isRetired(table, id)) {
+			this.setStaticScalar(table, id, "Retired", true);
+			
+			this.executeTrigger(table, id,"AfterRetire");
+		}
+	}
+
+	public void reviveRecord(String table, String id) throws OperatingContextException {
+		if (this.isRetired(table, id)) {
+			this.setStaticScalar(table, id, "Retired", false);
+			
+			this.executeTrigger(table, id, "AfterRevive");
+		}
+	}
+
+	/* TODO
+	public void deleteRecord(String table, String id) throws OperatingContextException {
+		if (! this.isRetired(table, id)) {
+
+			// TODO add db tigger option
+			//d runFilter("Retire") quit:Errors  ; if any violations in filter then do not proceed
+
+			SchemaResource schema = ResourceHub.getResources().getSchema();
+			DbTable schemaTbl = schema.getDbTable(table);
+
+			// needs to support clearing ForeignKey fields as well
+			this.clearIndexField(schemaTbl, id);
+
+			try {
+				this.request.getInterface().kill(this.request.getTenant(), DB_GLOBAL_RECORD, table, id);
+			}
+			catch (DatabaseException x) {
+				Logger.error("remove record error: " + x);
+			}
+		}
+	}
+	*/
+
 	/* TODO something like this...
 	 ; check to see if value is current with the given when+historical settings
 	has(value,table,id,field,when,format,historical) i (table="")!(id="")!(field="") quit 0
@@ -1615,10 +1839,7 @@ public class TablesAdapter {
 	 ;
 */
 	
-	public boolean checkSelect(String table, String id, RecordStruct where) throws OperatingContextException {
-		if (! this.isCurrent(table, id))
-			return false;
-		
+	public boolean checkSelect(RecordScope scope, String table, String id, RecordStruct where) throws OperatingContextException {
 		if (where == null)
 			return true;
 		
@@ -1632,7 +1853,7 @@ public class TablesAdapter {
 			return false;
 		}
 	
-		return expression.check(this, id).accepted;
+		return expression.check(this, scope, table, id).accepted;
 	}
 	
 	public void traverseSubIds(String table, String id, String fname, Function<Object,Boolean> out) throws OperatingContextException {
@@ -1656,7 +1877,7 @@ public class TablesAdapter {
 		}
 	}
 
-	public void traverseRecords(String table, IFilter out) throws OperatingContextException {
+	public void traverseRecords(IVariableAware scope, String table, IFilter out) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		try {
@@ -1664,39 +1885,35 @@ public class TablesAdapter {
 			
 			while (id != null) {
 				Object oid = ByteUtil.extractValue(id);
-				
-				if (this.isCurrent(table, oid.toString())) {
-					ExpressionResult filterResult = out.check(this, oid);
-					
-					if (! filterResult.resume)
-						return;
-				}
-				
+
+				if (! out.check(this, scope, table, oid).resume)
+					return;
+
 				id = this.request.getInterface().nextPeerKey(did, DB_GLOBAL_RECORD, table, oid);
 			}
 		}
 		catch (Exception x) {
-			Logger.error("getDynamicList error: " + x);
+			Logger.error("traverseRecords error: " + x);
 		}
 	}
 	
-	public void traverseIndex(String table, String fname, Object val, IFilter out) throws OperatingContextException {
-		this.traverseIndex(table, fname, val, null, out);
+	public IFilter traverseIndex(IVariableAware scope, String table, String fname, Object val, IFilter out) throws OperatingContextException {
+		return this.traverseIndex(scope, table, fname, val, null, out);
 	}
 	
-	public void traverseIndex(String table, String fname, Object val, String subid, IFilter out) throws OperatingContextException {
+	public IFilter traverseIndex(IVariableAware scope, String table, String fname, Object val, String subid, IFilter out) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		SchemaResource schema = ResourceHub.getResources().getSchema();
 		DbField ffdef = schema.getDbField(table, fname);
 		
 		if (ffdef == null)
-			return;
+			return out;
 
 		DataType dtype = schema.getType(ffdef.getTypeId());
 
 		if (dtype == null)
-			return;
+			return out;
 
 		val = dtype.toIndex(val, "eng");	// TODO increase locale support
 
@@ -1706,68 +1923,68 @@ public class TablesAdapter {
 			while (recid != null) {
 				Object rid = ByteUtil.extractValue(recid);
 
-				if (this.isCurrent(table, rid.toString())) {
-					if (ffdef.isStaticScalar()) {
-						ExpressionResult filterResult = out.check(this, rid);
-						
-						if (! filterResult.resume)
-							return;
-					}
-					else {
-						byte[] recsid = request.getInterface().nextPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, null);
-						
-						while (recsid != null) {
-							Object rsid = ByteUtil.extractValue(recsid);
-							
-							if ((subid == null) || subid.equals(rsid)) {							
-								String range = request.getInterface().getAsString(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, rsid);
-								
-								if (StringUtil.isEmpty(range) || (when == null)) {
-									ExpressionResult filterResult = out.check(this, rid);
-									
-									if (! filterResult.resume)
-										return;
+				if (ffdef.isStaticScalar()) {
+					ExpressionResult filterResult = out.check(this, scope, table, rid);
+
+					if (! filterResult.resume)
+						return out;
+				}
+				else {
+					byte[] recsid = request.getInterface().nextPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, null);
+
+					while (recsid != null) {
+						Object rsid = ByteUtil.extractValue(recsid);
+
+						if ((subid == null) || subid.equals(rsid)) {
+							String range = request.getInterface().getAsString(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, rsid);
+
+							if (StringUtil.isEmpty(range) || (when == null)) {
+								ExpressionResult filterResult = out.check(this, scope, table, rid);
+
+								if (! filterResult.resume)
+									return out;
+							}
+							else {
+								int pos = range.indexOf(':');
+
+								BigDateTime from = null;
+								BigDateTime to = null;
+
+								if (pos == -1) {
+									from = BigDateTime.parse(range);
+								}
+								else if (pos == 0) {
+									to = BigDateTime.parse(range.substring(1));
 								}
 								else {
-									int pos = range.indexOf(':');
-									
-									BigDateTime from = null;
-									BigDateTime to = null;
-									
-									if (pos == -1) {
-										from = BigDateTime.parse(range);
-									}
-									else if (pos == 0) {
-										to = BigDateTime.parse(range.substring(1));
-									}
-									else {
-										from = BigDateTime.parse(range.substring(0, pos));
-										to = BigDateTime.parse(range.substring(pos + 1));
-									}
-									
-									if (((from == null) || (when.compareTo(from) >= 0)) && ((to == null) || (when.compareTo(to) < 0))) {
-										ExpressionResult filterResult = out.check(this, rid);
-										
-										if (! filterResult.resume)
-											return;
-									}
+									from = BigDateTime.parse(range.substring(0, pos));
+									to = BigDateTime.parse(range.substring(pos + 1));
+								}
+
+								if (((from == null) || (when.compareTo(from) >= 0)) && ((to == null) || (when.compareTo(to) < 0))) {
+									ExpressionResult filterResult = out.check(this, scope, table, rid);
+
+									if (! filterResult.resume)
+										return out;
 								}
 							}
-							
-							recsid = request.getInterface().nextPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, rsid);
 						}
+
+						recsid = request.getInterface().nextPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, rsid);
 					}
 				}
-				
+
 				recid = request.getInterface().nextPeerKey(did, ffdef.getIndexName(), table, fname, val, rid);
 			}
 		}
 		catch (Exception x) {
 			Logger.error("traverseIndex error: " + x);
 		}
+		
+		return out;
 	}
 	
-	public Object firstInIndex(String table, String fname, Object val) throws OperatingContextException {
+	public Object firstInIndex(String table, String fname, Object val, boolean checkcurrent) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		SchemaResource schema = ResourceHub.getResources().getSchema();
@@ -1789,7 +2006,7 @@ public class TablesAdapter {
 			while (recid != null) {
 				Object rid = ByteUtil.extractValue(recid);
 				
-				if (this.isCurrent(table, rid.toString())) {
+				if (! checkcurrent || this.isCurrent(table, rid.toString())) {
 	
 					if (ffdef.isStaticScalar()) 
 						return rid;
@@ -1838,7 +2055,7 @@ public class TablesAdapter {
 	}	
 	
 	// traverse the values
-	public void traverseIndexValRange(String table, String fname, Object fromval, Object toval, IFilter out) throws OperatingContextException {
+	public void traverseIndexValRange(IVariableAware scope, String table, String fname, Object fromval, Object toval, IFilter out) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		SchemaResource schema = ResourceHub.getResources().getSchema();
@@ -1867,7 +2084,7 @@ public class TablesAdapter {
 				
 				Object val = ByteUtil.extractValue(valb);
 				
-				ExpressionResult filterResult = out.check(this, val);
+				ExpressionResult filterResult = out.check(this, scope, table, val);
 				
 				if (! filterResult.resume)
 					return;
@@ -1881,7 +2098,7 @@ public class TablesAdapter {
 	}	
 	
 	// traverse the record ids
-	public void traverseIndexRange(String table, String fname, Object fromval, Object toval, IFilter out) throws OperatingContextException {
+	public void traverseIndexRange(IVariableAware scope, String table, String fname, Object fromval, Object toval, IFilter out) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		SchemaResource schema = ResourceHub.getResources().getSchema();
@@ -1915,57 +2132,55 @@ public class TablesAdapter {
 				while (recid != null) {
 					Object rid = ByteUtil.extractValue(recid);
 
-					if (this.isCurrent(table, rid.toString())) {
-						if (ffdef.isStaticScalar()) {
-							ExpressionResult filterResult = out.check(this, rid);
-							
-							if (! filterResult.resume)
-								return;
-						}
-						else {
-							byte[] recsid = request.getInterface().nextPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, null);
-							
-							while (recsid != null) {
-								Object rsid = ByteUtil.extractValue(recsid);
-								
-								String range = request.getInterface().getAsString(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, rsid);
-								
-								if (StringUtil.isEmpty(range) || (when == null)) {
-									ExpressionResult filterResult = out.check(this, rid);
-									
+					if (ffdef.isStaticScalar()) {
+						ExpressionResult filterResult = out.check(this, scope, table, rid);
+
+						if (! filterResult.resume)
+							return;
+					}
+					else {
+						byte[] recsid = request.getInterface().nextPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, null);
+
+						while (recsid != null) {
+							Object rsid = ByteUtil.extractValue(recsid);
+
+							String range = request.getInterface().getAsString(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, rsid);
+
+							if (StringUtil.isEmpty(range) || (when == null)) {
+								ExpressionResult filterResult = out.check(this, scope, table, rid);
+
+								if (! filterResult.resume)
+									return;
+							}
+							else {
+								int pos = range.indexOf(':');
+
+								BigDateTime from = null;
+								BigDateTime to = null;
+
+								if (pos == -1) {
+									from = BigDateTime.parse(range);
+								}
+								else if (pos == 0) {
+									to = BigDateTime.parse(range.substring(1));
+								}
+								else {
+									from = BigDateTime.parse(range.substring(0, pos));
+									to = BigDateTime.parse(range.substring(pos + 1));
+								}
+
+								if (((from == null) || (this.when.compareTo(from) >= 0)) && ((to == null) || (this.when.compareTo(to) < 0))) {
+									ExpressionResult filterResult = out.check(this, scope, table, rid);
+
 									if (! filterResult.resume)
 										return;
 								}
-								else {
-									int pos = range.indexOf(':');
-									
-									BigDateTime from = null;
-									BigDateTime to = null;
-									
-									if (pos == -1) {
-										from = BigDateTime.parse(range);
-									}
-									else if (pos == 0) {
-										to = BigDateTime.parse(range.substring(1));
-									}
-									else {
-										from = BigDateTime.parse(range.substring(0, pos));
-										to = BigDateTime.parse(range.substring(pos + 1));
-									}
-									
-									if (((from == null) || (this.when.compareTo(from) >= 0)) && ((to == null) || (this.when.compareTo(to) < 0))) {
-										ExpressionResult filterResult = out.check(this, rid);
-										
-										if (! filterResult.resume)
-											return;
-									}
-								}
-								
-								recsid = request.getInterface().nextPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rsid);
 							}
+
+							recsid = request.getInterface().nextPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rsid);
 						}
 					}
-					
+
 					recid = request.getInterface().nextPeerKey(did, ffdef.getIndexName(), table, fname, val, rid);
 				}
 				
@@ -1978,7 +2193,7 @@ public class TablesAdapter {
 	}
 	
 	// traverse the record ids, going backwards in values and ids
-	public void traverseIndexReverseRange(String table, String fname, Object fromval, Object toval, IFilter out) throws OperatingContextException {
+	public void traverseIndexReverseRange(IVariableAware scope, String table, String fname, Object fromval, Object toval, IFilter out) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		SchemaResource schema = ResourceHub.getResources().getSchema();
@@ -2012,57 +2227,55 @@ public class TablesAdapter {
 				while (recid != null) {
 					Object rid = ByteUtil.extractValue(recid);
 					
-					if (this.isCurrent(table, rid.toString())) {
-						if (ffdef.isStaticScalar()) {
-							ExpressionResult filterResult = out.check(this, rid);
-							
-							if (! filterResult.resume)
-								return;
-						}
-						else {
-							byte[] recsid = request.getInterface().prevPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, null);
-							
-							while (recsid != null) {
-								Object rsid = ByteUtil.extractValue(recsid);
-								
-								String range = request.getInterface().getAsString(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, rsid);
-								
-								if (StringUtil.isEmpty(range) || (when == null)) {
-									ExpressionResult filterResult = out.check(this, rid);
-									
+					if (ffdef.isStaticScalar()) {
+						ExpressionResult filterResult = out.check(this, scope, table, rid);
+
+						if (! filterResult.resume)
+							return;
+					}
+					else {
+						byte[] recsid = request.getInterface().prevPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, null);
+
+						while (recsid != null) {
+							Object rsid = ByteUtil.extractValue(recsid);
+
+							String range = request.getInterface().getAsString(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rid, rsid);
+
+							if (StringUtil.isEmpty(range) || (when == null)) {
+								ExpressionResult filterResult = out.check(this, scope, table, rid);
+
+								if (! filterResult.resume)
+									return;
+							}
+							else {
+								int pos = range.indexOf(':');
+
+								BigDateTime from = null;
+								BigDateTime to = null;
+
+								if (pos == -1) {
+									from = BigDateTime.parse(range);
+								}
+								else if (pos == 0) {
+									to = BigDateTime.parse(range.substring(1));
+								}
+								else {
+									from = BigDateTime.parse(range.substring(0, pos));
+									to = BigDateTime.parse(range.substring(pos + 1));
+								}
+
+								if (((from == null) || (this.when.compareTo(from) >= 0)) && ((to == null) || (this.when.compareTo(to) < 0))) {
+									ExpressionResult filterResult = out.check(this, scope, table, rid);
+
 									if (! filterResult.resume)
 										return;
 								}
-								else {
-									int pos = range.indexOf(':');
-									
-									BigDateTime from = null;
-									BigDateTime to = null;
-									
-									if (pos == -1) {
-										from = BigDateTime.parse(range);
-									}
-									else if (pos == 0) {
-										to = BigDateTime.parse(range.substring(1));
-									}
-									else {
-										from = BigDateTime.parse(range.substring(0, pos));
-										to = BigDateTime.parse(range.substring(pos + 1));
-									}
-									
-									if (((from == null) || (this.when.compareTo(from) >= 0)) && ((to == null) || (this.when.compareTo(to) < 0))) {
-										ExpressionResult filterResult = out.check(this, rid);
-										
-										if (! filterResult.resume)
-											return;
-									}
-								}
-								
-								recsid = request.getInterface().prevPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rsid);
 							}
+
+							recsid = request.getInterface().prevPeerKey(did, DB_GLOBAL_INDEX_SUB, table, fname, val, rsid);
 						}
 					}
-					
+
 					recid = request.getInterface().prevPeerKey(did, ffdef.getIndexName(), table, fname, val, rid);
 				}
 				
@@ -2074,7 +2287,7 @@ public class TablesAdapter {
 		}
 	}
 	
-	public void executeTrigger(String table, String op, ICallContext task) {
+	public void executeTrigger(String table, String id, String op) {
 		SchemaResource schema = ResourceHub.getResources().getSchema();
 		List<DbTrigger> trigs = schema.getDbTriggers(table, op);
 		
@@ -2083,11 +2296,11 @@ public class TablesAdapter {
 			
 			try {
 				Class<?> spclass = Class.forName(spname);				
-				IStoredProc sp = (IStoredProc) spclass.newInstance();
-				sp.execute(task, task.getOutcome());
+				ITrigger sp = (ITrigger) spclass.newInstance();
+				sp.execute(this, table, id);
 			} 
 			catch (Exception x) {
-				Logger.error("Unable to load/start tigger class: " + x);
+				Logger.error("Unable to load/start trigger class: " + x);
 			}
 		}
 	}

@@ -54,7 +54,7 @@ public class Var extends OperationsInstruction {
 				var = ResourceHub.getResources().getSchema().getType(def).create();
 			
 			if (this.hasNotEmptyAttribute("SetTo")) {
-				Struct var3 = StackUtil.refFromSource(state, "SetTo");
+				Struct var3 = StackUtil.refFromSource(state, "SetTo", true);
 				
 				if (var3 == null) {
 					Logger.errorTr(522);
@@ -64,7 +64,8 @@ public class Var extends OperationsInstruction {
 				if (var3 instanceof ScalarStruct) {
 					if (var == null)
 						var = var3.getType().create();
-					
+
+					// TODO fix - bug, var may not be scalar
 					((ScalarStruct) var).adaptValue(var3);
 				}
 				else {

@@ -22,12 +22,23 @@ import dcraft.log.Logger;
 import dcraft.schema.DataType;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
+import dcraft.util.io.CharSequenceReader;
 import dcraft.xml.XElement;
 import dcraft.xml.XmlReader;
 
 public class ScriptHub {
+	static public XmlReader instructionsReader() {
+		XmlReader xr = new XmlReader(null, true, true);
+		
+		xr.setTagMap(ResourceHub.getResources().getScripts().getParseMap());
+		xr.setDefaultTag(Base.class);
+		
+		return xr;
+	}
+	
 	// TODO optimize by reusing element map if one is in the OpCtx
 	static public XElement parseInstructions(CharSequence src) {
 		return XmlReader.parse(src, true, true, ResourceHub.getResources().getScripts().getParseMap(), Base.class);
@@ -45,7 +56,7 @@ public class ScriptHub {
 	}
 	*/
 
-	static public ReturnOption operation(IParentAwareWork stack, Struct target, XElement code) throws OperatingContextException {
+	static public ReturnOption operation(StackWork stack, Struct target, XElement code) throws OperatingContextException {
 		if (target == null) {
 			Logger.error("Operation missing target");
 			return ReturnOption.CONTINUE;
@@ -64,7 +75,10 @@ public class ScriptHub {
 			}
 		}
 		*/
-		
+
+		if (stack.checkIsContinue())
+			return ReturnOption.CONTINUE;
+
 		// fall back on the default operation handler for the target type
 		return target.operation(stack, code);
 	}

@@ -25,6 +25,7 @@ import dcraft.schema.RootType;
 import dcraft.schema.SchemaHub;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
+import dcraft.script.work.StackWork;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
@@ -84,7 +85,7 @@ public class BigIntegerStruct extends ScalarStruct {
 	}
 	
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		// we are loose on the idea of null/zero.  operations always perform on 0, except Validate
 		if ((this.value == null) && ! "Validate".equals(code.getName()))
 			this.value = BigInteger.ZERO;
@@ -99,8 +100,8 @@ public class BigIntegerStruct extends ScalarStruct {
 		}
 		else if ("Set".equals(code.getName())) {
 			Struct sref = code.hasAttribute("Value")
-					? StackUtil.refFromElement(stack, code, "Value")
-					: StackUtil.resolveReference(stack, code.getText());
+					? StackUtil.refFromElement(stack, code, "Value", true)
+					: StackUtil.resolveReference(stack, code.getText(), true);
 			
 			this.adaptValue(sref);
 			
@@ -108,8 +109,8 @@ public class BigIntegerStruct extends ScalarStruct {
 		}
 		else if ("Add".equals(code.getName())) {
 			Struct sref = code.hasAttribute("Value")
-					? StackUtil.refFromElement(stack, code, "Value")
-					: StackUtil.resolveReference(stack, code.getText());
+					? StackUtil.refFromElement(stack, code, "Value", true)
+					: StackUtil.resolveReference(stack, code.getText(), true);
 
 			try {
 				this.value = this.value.add(Struct.objectToBigInteger(sref));			
@@ -122,8 +123,8 @@ public class BigIntegerStruct extends ScalarStruct {
 		}
 		else if ("Subtract".equals(code.getName())) {
 			Struct sref = code.hasAttribute("Value")
-					? StackUtil.refFromElement(stack, code, "Value")
-					: StackUtil.resolveReference(stack, code.getText());
+					? StackUtil.refFromElement(stack, code, "Value", true)
+					: StackUtil.resolveReference(stack, code.getText(), true);
 
 			try {
 				this.value = this.value.subtract(Struct.objectToBigInteger(sref));			
@@ -136,8 +137,8 @@ public class BigIntegerStruct extends ScalarStruct {
 		}
 		else if ("Multiply".equals(code.getName())) {
 			Struct sref = code.hasAttribute("Value")
-					? StackUtil.refFromElement(stack, code, "Value")
-					: StackUtil.resolveReference(stack, code.getText());
+					? StackUtil.refFromElement(stack, code, "Value", true)
+					: StackUtil.resolveReference(stack, code.getText(), true);
 
 			try {
 				this.value = this.value.multiply(Struct.objectToBigInteger(sref));			
@@ -150,8 +151,8 @@ public class BigIntegerStruct extends ScalarStruct {
 		}
 		else if ("Divide".equals(code.getName())) {
 			Struct sref = code.hasAttribute("Value")
-					? StackUtil.refFromElement(stack, code, "Value")
-					: StackUtil.resolveReference(stack, code.getText());
+					? StackUtil.refFromElement(stack, code, "Value", true)
+					: StackUtil.resolveReference(stack, code.getText(), true);
 
 			try {
 				this.value = this.value.divide(Struct.objectToBigInteger(sref));			
@@ -164,8 +165,8 @@ public class BigIntegerStruct extends ScalarStruct {
 		}
 		else if ("Min".equals(code.getName())) {
 			Struct sref = code.hasAttribute("Value")
-					? StackUtil.refFromElement(stack, code, "Value")
-					: StackUtil.resolveReference(stack, code.getText());
+					? StackUtil.refFromElement(stack, code, "Value", true)
+					: StackUtil.resolveReference(stack, code.getText(), true);
 
 			try {
 				this.value = this.value.min(Struct.objectToBigInteger(sref));			
@@ -178,8 +179,8 @@ public class BigIntegerStruct extends ScalarStruct {
 		}
 		else if ("Max".equals(code.getName())) {
 			Struct sref = code.hasAttribute("Value")
-					? StackUtil.refFromElement(stack, code, "Value")
-					: StackUtil.resolveReference(stack, code.getText());
+					? StackUtil.refFromElement(stack, code, "Value", true)
+					: StackUtil.resolveReference(stack, code.getText(), true);
 		
 			try {
 				this.value = this.value.max(Struct.objectToBigInteger(sref));			

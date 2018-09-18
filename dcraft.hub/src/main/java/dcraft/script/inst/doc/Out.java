@@ -29,7 +29,7 @@ public class Out extends Base {
 	
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
-		state.getStore().with("Original", AnyStruct.of(this.deepCopy()));
+		state.getStore().with("Original", this.deepCopy());
 		
 		// setup params
 		for (XElement pel : this.selectAll("Param")) {
@@ -54,6 +54,7 @@ public class Out extends Base {
 	public void renderAfterChildren(InstructionWork state) throws OperatingContextException {
 		// copy current content up into the document
 		String forid = StackUtil.stringFromSource(state,"For");
+		String name = StackUtil.stringFromSource(state,"Name");
 		
 		if (StringUtil.isNotEmpty(forid)) {
 			Base root = this.getRoot(state);
@@ -69,6 +70,20 @@ public class Out extends Base {
 				// TODO what if is null
 			}
 		}
+		/*
+		else if (StringUtil.isNotEmpty(name)) {
+			//XElement template = this.deepCopy();
+			
+			// so that Base doesn't make a VAR from this
+			//template.removeAttribute("Name");
+			
+			System.out.println("dfsfddf");
+			
+			//Struct var = AnyStruct.of(this);
+			
+			//StackUtil.addVariable(state.getParent(), name, var);
+		}
+		*/
 		else {
 			IParentAwareWork pw = state.getParent();
 			XElement posel = this;
@@ -98,7 +113,7 @@ public class Out extends Base {
 		}
 		
 		// reset so next run is clean (if in a loop)
-		this.replace((XElement) state.getStore().getFieldAsAny("Original"));
+		this.replace((XElement) state.getStore().getFieldAsComposite("Original"));
 		
 		//ystem.out.println("> " + this.hashCode());
 	}

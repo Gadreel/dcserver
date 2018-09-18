@@ -148,6 +148,10 @@ public class Memory implements IReader {
         if (value < 0) 
         	value = 0;
 
+        // TODO testing, not correct
+        //if (value == 0)
+        //	this.buffers.get(0).setPosition(0);
+        
         this.setCapacity(value);   // if needed, grow capacity to accommodate position
         
         this.position = value;

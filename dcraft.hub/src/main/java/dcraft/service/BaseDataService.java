@@ -14,7 +14,7 @@ import dcraft.struct.Struct;
 
 /**
  */
-abstract public class BaseDataService extends BaseService {
+public class BaseDataService extends BaseService {
 	@Override
 	public boolean handle(ServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
 		String proccall = request.getName() + "." + request.getFeature() + "." + request.getOp();

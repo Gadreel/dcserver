@@ -22,6 +22,7 @@ import io.netty.handler.ssl.*;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -29,8 +30,11 @@ import java.security.KeyStore;
 import java.security.KeyStore.Entry;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -40,6 +44,12 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManager;
 
 import io.netty.handler.ssl.util.SelfSignedCertificate;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.DEREncodableVector;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
@@ -208,6 +218,10 @@ public class SslEntry {
 				  
 				  this.keynames.add(scn);
 				  
+				  for (String alt : SslEntry.getSubjectAlternativeNames(cert)) {
+				  	this.keynames.add(alt);
+				  }
+				  
 					  /*
 					  if ((key instanceof PrivateKey) && "PKCS#8".equals(key.getFormat())) {
 						// Most PrivateKeys use this format, but check for safety.
@@ -249,4 +263,60 @@ public class SslEntry {
             Logger.error("Failed to initialize the SSLContext: " + x);
         }    	
     }
+	
+    // TODO move to library
+	public static List<String> getSubjectAlternativeNames(X509Certificate certificate) {
+		List<String> identities = new ArrayList<>();
+		
+		try {
+			Collection<List<?>> altNames = certificate.getSubjectAlternativeNames();
+			
+			if (altNames == null)
+				return identities;
+			
+			for (List item : altNames) {
+				Integer type = (Integer) item.get(0);
+				
+				if (type == 0 || type == 2) {
+					if (item.toArray()[1] instanceof String) {
+						identities.add((String) item.toArray()[1]);
+						continue;
+					}
+					
+					/*
+					try {
+						if(item.toArray()[1] instanceof byte[]) {
+							ASN1InputStream decoder = new ASN1InputStream((byte[]) item.toArray()[1]);
+							
+							ASN1Primitive encoded = decoder.readObject();
+							
+							// problems here
+							DEREncodableVector encoded = decoder.readObject();
+							encoded = ((DERSequence) encoded).getObjectAt(1);
+							encoded = ((DERTaggedObject) encoded).getObject();
+							encoded = ((DERTaggedObject) encoded).getObject();
+							
+							String identity = ((DERUTF8String) encoded).getString();
+							identities.add(identity);
+						}
+					}
+					catch (UnsupportedEncodingException e) {
+						Logger.error("Error decoding subjectAltName" + e.getLocalizedMessage());
+					}
+					catch (Exception e) {
+						Logger.error("Error decoding subjectAltName" + e.getLocalizedMessage());
+					}
+					*/
+				}
+				else{
+					Logger.warn("SubjectAltName of invalid type found: " + certificate);
+				}
+			}
+		}
+		catch (CertificateParsingException e) {
+			Logger.error("Error parsing SubjectAltName in certificate: " + certificate + "\r\nerror:" + e.getLocalizedMessage());
+		}
+		
+		return identities;
+	}
 }

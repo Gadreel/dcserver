@@ -5,6 +5,7 @@ import dcraft.db.proc.IExpression;
 import dcraft.db.request.schema.Query;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.util.ByteUtil;
+import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.time.BigDateTime;
@@ -43,7 +44,7 @@ public class Contains implements IExpression {
 	}
 	
 	@Override
-	public ExpressionResult check(TablesAdapter adapter, String id) throws OperatingContextException {
+	public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, String id) throws OperatingContextException {
 		List<byte[]> data = adapter.getRaw(table, id, this.fieldInfo.field.getName(), this.fieldInfo.subid, "Search");
 		
 		if ((this.values == null) && (data == null))

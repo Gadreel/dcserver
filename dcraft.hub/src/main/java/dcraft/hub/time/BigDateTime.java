@@ -345,6 +345,50 @@ public class BigDateTime implements Comparable<BigDateTime> {
 		return res;
 	}
 
+	public ZonedDateTime toDateTime() {
+		if (this.year == null)
+			return null;
+		
+		int zdyear = (int) (this.year - 50000000000L);
+		
+		if (this.month != null) {
+			
+			if (this.day != null) {
+				
+				if (this.hour != null) {
+					
+					if (this.minute != null) {
+						
+						if (this.second != null) {
+							return ZonedDateTime.of(zdyear, this.month.intValue(), this.day.intValue(),
+									this.hour.intValue(), this.minute.intValue(), this.second.intValue(), 0, ZoneId.of("UTC"));
+						}
+						else {
+							return ZonedDateTime.of(zdyear, this.month.intValue(), this.day.intValue(),
+									this.hour.intValue(), this.minute.intValue(), 0, 0, ZoneId.of("UTC"));
+						}
+					}
+					else {
+						return ZonedDateTime.of(zdyear, this.month.intValue(), this.day.intValue(),
+								this.hour.intValue(), 0, 0, 0, ZoneId.of("UTC"));
+					}
+				}
+				else {
+					return ZonedDateTime.of(zdyear, this.month.intValue(), this.day.intValue(),
+							0, 0, 0, 0, ZoneId.of("UTC"));
+				}
+			}
+			else {
+				return ZonedDateTime.of(zdyear, this.month.intValue(), 1,
+						0, 0, 0, 0, ZoneId.of("UTC"));
+			}
+		}
+		else {
+			return ZonedDateTime.of(zdyear, 1, 1,
+					0, 0, 0, 0, ZoneId.of("UTC"));
+		}
+	}
+
 	@Override
 	public int compareTo(BigDateTime o) {
 		if (o == null)

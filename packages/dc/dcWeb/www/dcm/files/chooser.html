@@ -1,11 +1,11 @@
-<dc.Html Badges="Editor,Admin">
-	<Meta Name="Title"> 
-		<Tr Locale="en" Value="Files Chooser" />
+<dc.Html Badges="User">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Files Chooser" />
 	</Meta>
 
 	<Require Script="/js/dc.transfer.js" />
 	<Require Script="/js/vendor/jquery.fileDownload.js" />
-	
+
 	<dc.Body class="dcuiWide">
 		<dc.PagePanel>
 			<dcf.Form>
@@ -16,54 +16,54 @@
 					<dc.Button Click="DoClose" Label="Close" Scope="Primary" />
 				</dcf.FormButtons>
 			</dcf.Form>
-			
+
 			<h4 id="lblDepFcPath" />
-			
+
 			<h3>Folders</h3>
-			
+
 			<div id="lstDepFcFolders" class="dcm-file-list" />
-			
+
 			<h3>Files</h3>
-			
+
 			<div id="lstDepFcFiles" class="dcm-file-list" />
 		</dc.PagePanel>
 	</dc.Body>
 	<Function Name="Load"><![CDATA[
 			var entry = this;
-			
+
 			if (!this.Store.Path) {
 				if (this.Params.Path)
 					entry.Store.Path = this.Params.Path;
 				else
 					entry.Store.Path = '/';
 			}
-			
+
 			var npos = entry.Name.lastIndexOf('/');
 			var nname = entry.Name.substr(npos + 1);
-			
+
 			if (this.Params.Vault)
 				entry.Store.Vault = this.Params.Vault;
 			else if (nname != 'chooser')
 				entry.Store.Vault = nname;
 			else
 				entry.Store.Vault = 'Files';
-			
+
 			/* TODO add menu for delete and download */
-			
+
 			this.callPageFunc('LoadList');
 	]]></Function>
 	<Function Name="LoadList"><![CDATA[
 			var entry = this;
-			
+
 			$('#lblDepFcPath').text('Path: ' + entry.Store.Path);
-		
+
 			$('#lstDepFcFiles,#lstDepFcFolders').empty();
-			
-			dc.comm.sendMessage({ 
+
+			dc.comm.sendMessage({
 				Service: 'dcCoreServices',
 				Feature: 'Vaults',
 				Op: 'ListFiles',
-				Body: { 
+				Body: {
 					Vault: entry.Store.Vault,
 					Path: entry.Store.Path
 				}
@@ -72,96 +72,96 @@
 					dc.pui.Popup.alert(resp.Message);
 					return;
 				}
-				
+
 				var items = resp.Body;
 				var sfield = entry.Store.SortField ? entry.Store.SortField : 'FileName';
-				
+
 				// sort
 				items.sort(dc.util.List.sortObjects(sfield));
-				
+
 				// ########## FOLDERS ##########
-				
+
 				var flist = $('#lstDepFcFolders');
-				
+
 				// add parent folder
 				if (entry.Store.Path.length > 1) {
 					var litm = $('<a href="#" class="dcm-folder"><div class="dcm-file-title">.. [parent]</div></a>');
-					
+
 					litm.click(item, function(e) {
 						var curr = entry.Store.Path;
-						
+
 						if (curr.length == 1)
 							return;
-							
+
 						var path = curr.substr(0, curr.lastIndexOf('/'));
-						
+
 						if (!path)
 							path = '/';
-							
+
 						entry.Store.Path = path;
 						entry.callPageFunc('LoadList');
-						
+
 						e.preventDefault();
 						return false;
 					});
-					
+
 					flist.append(litm);
 				}
-				
+
 				// display
 				for (var i = 0; i < items.length; i++) {
 					var item = items[i];
-					
+
 					if (entry.Params.Chained || ! item.IsFolder)
 						continue;
-						
+
 					var litm = $('<a href="#" class="dcm-folder"></a>');
-					
+
 					var itmtitle = $('<div class="dcm-file-title"></div>');
 					itmtitle.text(item.FileName);
-					
+
 					litm.append(itmtitle);
-					
+
 					litm.click(item, function(e) {
 						var path = '/' + e.data.FileName;
-					
+
 						if (entry.Store.Path.length > 1)
 							path = entry.Store.Path + '/' + e.data.FileName;
-								
+
 						entry.Store.Path = path;
 						entry.callPageFunc('LoadList');
-						
+
 						e.preventDefault();
 						return false;
 					});
-					
+
 					flist.append(litm);
 				}
-				
+
 				// ########## FILES ##########
-				
+
 				var flist = $('#lstDepFcFiles');
-				
+
 				// display
 				for (var i = 0; i < items.length; i++) {
 					var item = items[i];
-					
+
 					if (item.IsFolder)
 						continue;
-					
+
 					var litm = $('<a href="#" class="dcm-file"></a>');
-						
+
 					var path = '/files/' + item.FileName;
-				
+
 					if (entry.Store.Path.length > 1)
 						path = '/files' + entry.Store.Path + '/' + item.FileName;
-					
+
 					litm.attr('href', path);
-					
+
 					if (item.FileName.indexOf('.') != -1) {
 						var fext = item.FileName.substr(item.FileName.indexOf('.')).toLowerCase();
 						var icon = '/imgs/ext-unk.png';
-						
+
 						if ((fext == '.png') || (fext == '.jpg') || (fext == '.jpeg') || (fext == '.gif')) {
 							icon = path;
 						}
@@ -180,23 +180,23 @@
 						else if (fext == '.zip') {
 							icon = '/imgs/ext-zip.png';
 						}
-						
+
 						if (icon) {
 							var imgel = $('<img />');
 							imgel.attr('src', icon);
 							litm.append(imgel);
 						}
 					}
-					
+
 					litm.click(item, function(e) {
 						var path = '/' + e.data.FileName;
-					
+
 						if (entry.Store.Path.length > 1)
 							path = entry.Store.Path + '/' + e.data.FileName;
-								
+
 						if (entry.Params.Callback) {
 							entry.Layer.back();
-							
+
 							entry.Params.Callback( [ {
 								FileName: e.data.FileName,
 								FullPath: path
@@ -207,36 +207,36 @@
 
 							// TODO $('#puFileOpts').popup('open', { positionTo: e.currentTarget });
 						}
-						
+
 						e.preventDefault();
 						return false;
 					});
-					
+
 					var itmtitle = $('<div class="dcm-file-title"></div>');
 					itmtitle.text(item.FileName);
-					
+
 					litm.append(itmtitle);
-					
+
 					/*
 					litm.append('<td>' + dc.transfer.fmtFileSize(item.Size) + '</td>');
-				
+
 					litm.append('<td>' + dc.util.Date.formatZLocalMedium(item.LastModified) + '</td>');
 					*/
-					
+
 					flist.append(litm);
 				}
-			});	
+			});
 	]]></Function>
 	<Function Name="DoDownload"><![CDATA[
 			$('#puFileOpts').popup('close');
-			
+
 			//console.log('dl: ' + this.Store.PopPath);
-		
+
 			// TODO move all this to dcm.download.FUNC
-			
+
 			dc.util.Cookies.deleteCookie('fileDownload');
-			
-			var tmsg = { 
+
+			var tmsg = {
 				Service: 'dcCoreServices',
 				Feature: 'Vaults',
 				Op: 'StartDownload',
@@ -245,9 +245,9 @@
 					FilePath: this.Store.PopPath
 				}
 			};
-			
+
 			/*
-			var cmsg = { 
+			var cmsg = {
 				Service: 'Session',
 				Feature: 'DataChannel',
 				Op: 'Establish',
@@ -257,13 +257,13 @@
 				}
 			};
 			*/
-			
+
 			dc.comm.sendMessage(tmsg, function(rmsg) {
-				if (rmsg.Result == 0) { 
+				if (rmsg.Result == 0) {
 					var binding = rmsg.Body;
-					
+
 					$.fileDownload('/dcdyn/xfer/' + binding.Channel, {
-						httpMethod: 'GET', 
+						httpMethod: 'GET',
 						successCallback: function(url) {
 							// only means that it started, not finished
 							console.log('download worked!');
@@ -273,23 +273,23 @@
 						}
 					});
 				}
-				else {			
+				else {
 					dc.pui.Popup.alert('Error requesting upload channel.');
 				}
 			});
 	]]></Function>
 	<Function Name="DoDelete"><![CDATA[
 			var page = this;
-			
+
 			$('#puFileOpts').popup('close');
-			
+
 			console.log('im: ' + page.Store.PopPath);
-			
+
 			dc.pui.Popup.confirm('Are you sure you want to remove this file?', function(confirm) {
 				if (! confirm)
 					return;
-					
-				dc.comm.sendMessage({ 
+
+				dc.comm.sendMessage({
 					Service: 'dcCoreServices',
 					Feature: 'Vaults',
 					Op: 'DeleteFile',
@@ -298,11 +298,11 @@
 						FilePath: page.Store.PopPath
 					}
 				}, function(resp) {
-					if (resp.Result > 0) 
+					if (resp.Result > 0)
 						dc.pui.Popup.alert(resp.Message);
 					else
 						page.callPageFunc('LoadList');
-				});	
+				});
 			});
 	]]></Function>
 	<Function Name="DoRefresh"><![CDATA[
@@ -310,25 +310,27 @@
 	]]></Function>
 	<Function Name="DoClose"><![CDATA[
 			var entry = this;
-			
+
 			entry.Layer.back();
 	]]></Function>
 	<Function Name="DoAddFolder"><![CDATA[
 			var entry = this;
-			
-			dc.pui.Dialog.loadPage('/dcm/cms/files/AddFolder', { 
-				Path: this.Store.Path,
+
+			dc.pui.Dialog.loadPage('/dcm/files/add-folder', {
+				Vault: entry.Store.Vault,
+				Path: entry.Store.Path,
 				Callback: function(path) {
 					entry.Store.Path = path;
-					
+
 					entry.callPageFunc('LoadList');
 				}
-			});	
+			});
 	]]></Function>
 	<Function Name="DoUpload"><![CDATA[
 			var entry = this;
-			
-			dc.pui.Dialog.loadPage('/dcm/cms/files/UploadFile', { 
+
+			dc.pui.Dialog.loadPage('/dcm/files/upload-file', {
+				Vault: entry.Store.Vault,
 				Path: this.Store.Path,
 				Callback: function(files) {
 					if (entry.Params.Callback) {
@@ -336,9 +338,14 @@
 						entry.Params.Callback(files);
 					}
 					else {
+						$('#lstDepFcFolders,#lstDepFcFiles').empty().dcappend(
+							$('<i>')
+								.attr('class', 'fa fa-spinner fa-pulse fa-lg')
+						);
+
 						entry.callPageFunc('LoadList');
 					}
 				}
-			});	
+			});
 	]]></Function>
 </dc.Html>

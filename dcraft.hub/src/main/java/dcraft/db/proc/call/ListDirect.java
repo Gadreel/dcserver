@@ -3,13 +3,13 @@ package dcraft.db.proc.call;
 import dcraft.db.proc.BasicFilter;
 import dcraft.db.proc.ExpressionResult;
 import dcraft.db.proc.IFilter;
+import dcraft.db.proc.RecordScope;
+import dcraft.db.proc.filter.CurrentRecord;
 import dcraft.db.proc.filter.Unique;
 import dcraft.db.ICallContext;
 import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
-import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationMarker;
-import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.hub.op.*;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.struct.ListStruct;
@@ -82,7 +82,8 @@ public class ListDirect extends LoadRecord {
 		// TODO support collector
 		*/
 		
-		
+		IVariableAware scope = OperationContext.getOrThrow();
+
 		ICompositeBuilder out = new ObjectBuilder();
 		
 		try (OperationMarker om = OperationMarker.create()) {
@@ -90,27 +91,30 @@ public class ListDirect extends LoadRecord {
 			
 			
 			IFilter filter = Unique.unique()
-					.withNested(new BasicFilter() {
-						@Override
-						public ExpressionResult check(TablesAdapter adapter, Object id) throws OperatingContextException {
-							if (adapter.checkSelect(table, id.toString(), where)) {
-								try {
-									TableUtil.writeField(out, db, table, id.toString(),
-											select.getItemAsRecord(0), compact);
+					.withNested(new CurrentRecord()
+						.withNested(new BasicFilter() {
+							@Override
+							public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, Object id) throws OperatingContextException {
+								RecordScope rscope =  RecordScope.of(scope);
+
+								if (adapter.checkSelect(rscope, table, id.toString(), where)) {
+									try {
+										TableUtil.writeField(out, db, rscope, table, id.toString(),
+												select.getItemAsRecord(0), compact);
+									} catch (BuilderStateException x) {
+										return ExpressionResult.halt();
+									}
+
+									return ExpressionResult.accepted();
 								}
-								catch (BuilderStateException x) {
-									return ExpressionResult.halt();
-								}
-								
-								return ExpressionResult.accepted();
+
+								return ExpressionResult.rejected();
 							}
-							
-							return ExpressionResult.rejected();
-						}
-					});
+						})
+					);
 			
 			
-			db.traverseRecords(table, filter);
+			db.traverseRecords(scope, table, filter);
 	
 			out.endList();
 			

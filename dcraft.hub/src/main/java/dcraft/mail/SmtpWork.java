@@ -251,18 +251,21 @@ public class SmtpWork extends StateWork {
 	}
 
 	public StateWorkStep addAttach(TaskContext trun) throws OperatingContextException {
-		RecordStruct req = (RecordStruct) trun.getParams();
-
 		if (this.currattach >= this.attachcnt)
 			return StateWorkStep.NEXT;
 
-		ListStruct attachments = req.getFieldAsList("Attachments");
+		ListStruct attachments = this.params.getFieldAsList("Attachments");
 
 		RecordStruct attachment = attachments.getItemAsRecord(this.currattach);
 
 		// add the attachment parts, if any
 		String name = attachment.getFieldAsString("Name");
 		String mime = attachment.getFieldAsString("Mime");
+		
+		if (StringUtil.isEmpty(mime))
+			mime = ResourceHub.getResources().getMime().getMimeTypeForName(name).getType();
+		
+		String fmime = mime;
 		
 		Consumer<Memory> addAttach = new Consumer<Memory>() {
 			@Override
@@ -289,7 +292,7 @@ public class SmtpWork extends StateWork {
 
 					@Override
 					public String getContentType() {
-						return mime;
+						return fmime;
 					}
 				};
 
@@ -314,6 +317,7 @@ public class SmtpWork extends StateWork {
 		Struct fobj = attachment.getField("File");
 
 		if (smem != null) {
+			smem.setPosition(0);
 			addAttach.accept(smem);
 		}
 		else if (fobj instanceof StringStruct) {

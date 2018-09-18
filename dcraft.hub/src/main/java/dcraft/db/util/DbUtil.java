@@ -102,4 +102,23 @@ public class DbUtil {
 
 		return true;
 	}
+
+	// TODO remove after transitioning CoreServices to use proper StoredProcedures
+	// do not use unless you have to
+	static public DbServiceRequest fakeRequest() {
+		return DbUtil.fakeRequest("default");
+	}
+
+	static public DbServiceRequest fakeRequest(String dbname) {
+		IConnectionManager conn = ResourceHub.getResources().getDatabases().getDatabase(dbname);
+
+		if (conn == null) {
+			Logger.error("Missing database: " + dbname);
+			return null;
+		}
+
+		return DbServiceRequest.of("dcdbFake")
+				.withInterface(conn.allocateAdapter())
+				.withStamp(conn.allocateStamp(0));
+	}
 }

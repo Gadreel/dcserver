@@ -9,7 +9,9 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.log.Logger;
+import dcraft.schema.DbField;
 import dcraft.schema.DbTable;
+import dcraft.schema.TableView;
 import dcraft.task.IWork;
 import dcraft.task.TaskContext;
 
@@ -42,8 +44,8 @@ public class IndexTenant implements IWork {
 			return;
 		}
 		
-		for (DbTable table : ResourceHub.getResources().getSchema().getDbTables()) {
-			Logger.info("Indexing Table: " + table.name);
+		for (TableView table : ResourceHub.getResources().getSchema().getTables()) {
+			Logger.info("Indexing Table: " + table.getName());
 			
 			/*
 			boolean hasIndex = false;
@@ -59,7 +61,15 @@ public class IndexTenant implements IWork {
 				continue;;
 			*/
 			
-			adapter.indexCleanRecords(table);
+			adapter.indexCleanRecords(taskctx, table);
+			
+			/*
+			System.out.println("Table: " + table.getName());
+			
+			for (DbField fld : table.getFields()) {
+				System.out.println("  - " + fld.getName());
+			}
+			*/
 		}
 		
 		taskctx.returnEmpty();

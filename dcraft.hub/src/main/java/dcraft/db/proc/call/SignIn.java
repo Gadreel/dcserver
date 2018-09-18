@@ -43,7 +43,14 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 		TablesAdapter db = TablesAdapter.ofNow(request);
 		
 		String password = params.getFieldAsString("Password");
-		String uname = params.getFieldAsString("Username");
+		
+		if (StringUtil.isNotEmpty(password))
+			password = password.trim();
+		
+		String uname = params.getFieldAsString("Username").toLowerCase();
+		
+		if (StringUtil.isNotEmpty(uname))
+			uname = uname.trim();
 		
 		// TODO part of Trust monitoring -- boolean suspect = 
 		//if (AddUserRequest.meetsPasswordPolicy(password, true).hasLogLevel(DebugLevel.Warn))
@@ -78,7 +85,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 		
 		String uid = null;
 		
-		Object userid = db.firstInIndex("dcUser", "dcUsername", uname);
+		Object userid = db.firstInIndex("dcUser", "dcUsername", uname, false);
 		
 		if (userid != null) 
 			uid = userid.toString();
@@ -139,8 +146,6 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 		boolean confirmed = Struct.objectToBooleanOrFalse(confirmedobj);
 		
 		if (StringUtil.isNotEmpty(password)) {
-			password = password.trim();
-			
 			// only confirmed users can login with their password - user's can always login with a validate confirm code
 			if (confirmed) {
 				Object fndpass = db.getStaticScalar("dcUser", uid, "dcPassword");
@@ -229,8 +234,35 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 	}
 	
 	public void signIn(ICallContext task, TablesAdapter db, String uid) throws OperatingContextException {
-		ICompositeBuilder out = new ObjectBuilder();
 		RecordStruct params = task.getDataAsRecord();
+		
+		OperationContext ctx = OperationContext.getOrThrow();
+		UserContext uc = ctx.getUserContext();
+		
+		String token = SignIn.signIn(task,db, uid, ! task.isReplicating());
+		
+		if (token == null) {
+			task.getOutcome().returnEmpty();
+			return;
+		}
+		
+		if (! task.isReplicating()) {
+			params.with("Token", token);
+			params.with("Uid", uid);
+		}
+
+		// done with replication stuff
+		if (task.isReplicating()) {
+			task.getOutcome().returnEmpty();
+			return;
+		}
+			
+		task.getOutcome().returnValue(uc.deepCopyFields("UserId", "Username", "FirstName", "LastName", "Email",
+				"Locale", "Chronology", "Badges"));
+	}
+	
+	
+	static public String signIn(ICallContext task, TablesAdapter db, String uid, boolean updatecontext) throws OperatingContextException {
 		String did = task.getTenant();
 		DatabaseAdapter conn = task.getInterface();
 		
@@ -242,33 +274,16 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 		try (OperationMarker om = OperationMarker.create()) {
 			if (StringUtil.isEmpty(uid)) {
 				Logger.errorTr(123);
-				task.getOutcome().returnEmpty();
-				return;
+				return null;
 			}
 			
 			if (! db.isCurrent("dcUser", uid)) {
 				Logger.errorTr(123);
-				task.getOutcome().returnEmpty();
-				return;
+				return null;
 			}
 			
-			if (! task.isReplicating())
-				token = SessionHub.nextSessionId();
-			
-			/* TODO specific concern here?
-			if (log.hasErrors()) {
-				task.complete();
-				return;
-			}
-			*/
-
-			// replication will need these later
-			if (! task.isReplicating()) {
-				params.with("Token", token);
-				params.with("Uid", uid);
-			}
-
 			// both isReplicating and normal store the token
+			token = SessionHub.nextSessionId();
 			
 			conn.set("root", "dcSession", token, "LastAccess", task.getStamp());
 			conn.set("root", "dcSession", token, "User", uid);
@@ -276,15 +291,35 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 			
 			db.setStaticScalar("dcUser", uid, "dcLastLogin", ZonedDateTime.now());
 			
-			// TODO create some way to track last login that doesn't take up db space
-			// or make last login an audit thing...track all logins in StaticList?
-			
 			// if signed in then we trust it
 			conn.kill("root", "dcIPTrust", OperationContext.getOrThrow().getOrigin());
 			
 			// done with replication stuff
-			if (task.isReplicating()) {
-				task.getOutcome().returnEmpty();
+			if (! updatecontext) {
+				return token;
+			}
+			
+			uc.withAuthToken(token);
+			
+			SignIn.updateContext(db, uid);
+			
+			db.executeTrigger("dcUser", uid, "AfterSignIn");
+			
+			return token;
+		}
+		catch (Exception x) {
+			Logger.error("SignIn: Unable to create resp: " + x);
+			return null;
+		}
+	}
+	
+	static public void updateContext(TablesAdapter db, String uid) throws OperatingContextException {
+		OperationContext ctx = OperationContext.getOrThrow();
+		UserContext uc = ctx.getUserContext();
+		
+		try (OperationMarker om = OperationMarker.create()) {
+			if (! db.isCurrent("dcUser", uid)) {
+				Logger.errorTr(123);
 				return;
 			}
 			
@@ -317,21 +352,15 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 					.withEmail(email != null ? email.toString() : null)
 					.withLocale(locales)
 					.withChronology(chronos)
-					.withBadges(badges)
-					.withAuthToken(token);
+					.withBadges(badges);
 			
 			Session sess = ctx.getSession();
 			
 			if (sess != null)
 				sess.userChanged();
-			
-			task.getOutcome().returnValue(uc.deepCopyFields("UserId", "Username", "FirstName", "LastName", "Email",
-				"Locale", "Chronology", "Badges"));
 		}
 		catch (Exception x) {
 			Logger.error("SignIn: Unable to create resp: " + x);
 		}
-		
-		task.getOutcome().returnEmpty();
 	}
 }

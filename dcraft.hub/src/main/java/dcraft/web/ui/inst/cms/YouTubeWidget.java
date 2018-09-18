@@ -4,13 +4,14 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.inst.doc.Base;
+import dcraft.web.ui.UIUtil;
 import dcraft.web.ui.inst.W3;
 import dcraft.xml.XElement;
 
 public class YouTubeWidget extends Base {
 	static public YouTubeWidget tag() {
 		YouTubeWidget el = new YouTubeWidget();
-		el.setName("dcm.ImageWidget");
+		el.setName("dcm.YouTubeWidget");
 		return el;
 	}
 	
@@ -34,6 +35,8 @@ public class YouTubeWidget extends Base {
 						.withAttribute("allowfullscreen", "allowfullscreen")
 				)
 		);
+		
+		UIUtil.markIfEditable(state, this);
 	}
 	
 	@Override

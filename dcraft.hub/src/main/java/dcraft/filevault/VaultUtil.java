@@ -10,6 +10,7 @@ import dcraft.stream.StreamFragment;
 import dcraft.stream.StreamWork;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.BooleanStruct;
 import dcraft.task.Task;
 import dcraft.task.TaskContext;
 import dcraft.task.TaskHub;
@@ -18,10 +19,11 @@ import dcraft.task.TaskObserver;
 import java.util.HashMap;
 
 public class VaultUtil {
-	static public void transfer(String vname, FileStoreFile upfile, CommonPath destpath, OperationOutcomeStruct callback) throws OperatingContextException {
+	static public void transfer(String vname, FileStoreFile upfile, CommonPath destpath, String token, OperationOutcomeStruct callback) throws OperatingContextException {
 		ServiceHub.call(VaultServiceRequest.ofStartUpload(vname)
 				.withPath(destpath)
 				.withSize(upfile.getSize())
+				.withToken(token)
 				.withOverwrite(true)
 				.withOutcome(new OperationOutcomeStruct() {
 					@Override
@@ -138,5 +140,9 @@ public class VaultUtil {
 		return lhs;
 	}
 	
-	
+	static public void setSessionToken(String token) throws OperatingContextException {
+		HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
+		
+		scache.put(token, BooleanStruct.of(true));
+	}
 }

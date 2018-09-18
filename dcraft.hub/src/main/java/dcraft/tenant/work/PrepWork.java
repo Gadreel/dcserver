@@ -5,7 +5,9 @@ import dcraft.db.request.query.LoadRecordRequest;
 import dcraft.db.request.query.SelectFields;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.local.LocalStore;
+import dcraft.filestore.local.LocalStoreFile;
 import dcraft.hub.ResourceHub;
+import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.resource.*;
@@ -28,8 +30,14 @@ import dcraft.util.IOUtil;
 import dcraft.util.ISettingsObfuscator;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
+import dcraft.util.TimeUtil;
 import dcraft.util.pgp.KeyRingCollection;
 import dcraft.web.HtmlMode;
+import dcraft.web.IOutputWork;
+import dcraft.web.IOutputWorkBuilder;
+import dcraft.web.adapter.ScriptCacheOutputAdapter;
+import dcraft.web.adapter.StyleCacheOutputAdapter;
+import dcraft.web.adapter.WizardOutputAdapter;
 import dcraft.xml.XElement;
 import dcraft.xml.XmlReader;
 
@@ -38,7 +46,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class PrepWork extends StateWork {
 	protected Tenant tenant = null;
@@ -57,6 +67,7 @@ public class PrepWork extends StateWork {
 				.withStep(StateWorkStep.of("Load Schema", this::loadSchema))
 				.withStep(StateWorkStep.of("Load Packages", this::loadPackages))
 				.withStep(StateWorkStep.of("Load Script", this::loadScript))
+				.withStep(StateWorkStep.of("Load Services", this::loadServices))
 				.withStep(StateWorkStep.of("Load Sites", this::loadSites))
 				//.withStep(StateWorkStep.of("Load Schedules", this::loadSchedule))
 		;
@@ -214,14 +225,34 @@ public class PrepWork extends StateWork {
 		// --- load tenant level schema, if any ---
 
 		try {
+			SchemaResource sm = null;
+
 			Path shpath = cpath.resolve("schema.xml");
 
 			if (Files.exists(shpath)) {
-				SchemaResource sm = resources.getOrCreateTierSchema();
+				sm = resources.getOrCreateTierSchema();
 
 				Logger.trace("Loading schema: " + shpath.toAbsolutePath());
 				sm.loadSchema(shpath);
 
+			}
+
+			Path shsubpath = cpath.resolve("schema");
+
+			if (Files.exists(shsubpath)) {
+				sm = resources.getOrCreateTierSchema();
+
+				SchemaResource fsm = sm;
+
+				try (Stream<Path> strm = Files.list(shsubpath)) {
+					strm.forEach(entry -> {
+						Logger.trace("Loading schema: " + entry.toAbsolutePath());
+						fsm.loadSchema(entry);
+					});
+				}
+			}
+
+			if (sm != null) {
 				sm.compile();
 			}
 		}
@@ -307,6 +338,11 @@ public class PrepWork extends StateWork {
 			
 			if (Files.exists(spath))
 				resources.getOrCreateTierScripts().withPath(spath);
+
+			spath = pkg.getPath().resolve("email");
+
+			if (Files.exists(spath))
+				resources.getOrCreateTierScripts().withPath(spath);
 		}
 
 		// --- load tenant level script paths, if any ---
@@ -316,9 +352,56 @@ public class PrepWork extends StateWork {
 		if (Files.exists(spath))
 			resources.getOrCreateTierScripts().withPath(spath);
 
+		spath = this.tenant.resolvePath("emails");
+
+		if (Files.exists(spath))
+			resources.getOrCreateTierScripts().withPath(spath);
+		
+		ConfigResource config = resources.getOrCreateTierConfig();
+		
+		for (XElement lel : config.getTagListLocal("Formatters/Definition")) {
+			resources.getOrCreateTierScripts().loadFormatter(lel);
+		}
+		
 		return StateWorkStep.NEXT;
 	}
-	
+
+	public StateWorkStep loadServices(TaskContext trun) throws OperatingContextException {
+		if (Logger.isDebug())
+			Logger.debug("Starting tenant load script for: " + this.tenant.getAlias());
+
+		ResourceTier resources = this.tenant.getTierResources();
+
+		ConfigResource config = resources.getOrCreateTierConfig();
+
+		List<XElement> services = config.getTagListLocal("Service");
+
+		if (services.size() > 0) {
+			// TODO make sure services are stopped when site/tenant reload
+
+			ServiceResource srres = resources.getOrCreateTierServices();
+
+			for (XElement el : services) {
+				try {
+					String name = el.getAttribute("Name");
+
+					if (StringUtil.isNotEmpty(name)) {
+						IService srv = (IService) resources.getClassLoader().getInstance(el.getAttribute("RunClass", "dcraft.service.BaseDataService"));
+
+						if (srv != null) {
+							srv.init(name, el, resources);
+							srres.registerTierService(name, srv);
+						}
+					}
+				} catch (Exception x) {
+					Logger.error("Unable to load serivce: " + el);
+				}
+			}
+		}
+
+		return StateWorkStep.NEXT;
+	}
+
 	public StateWorkStep loadSites(TaskContext trun) throws OperatingContextException {
 		if (Logger.isDebug())
 			Logger.debug("Starting tenant load sites for: " + this.tenant.getAlias());
@@ -423,6 +506,11 @@ public class PrepWork extends StateWork {
 					
 					if (Files.exists(spath))
 						site.getResourcesOrCreate(resources).getOrCreateTierScripts().withPath(spath);
+
+					spath = site.resolvePath("emails");
+
+					if (Files.exists(spath))
+						site.getResourcesOrCreate(resources).getOrCreateTierScripts().withPath(spath);
 				}
 				
 				for (XElement del : sconfig.getTagListLocal("Domain")) {
@@ -523,6 +611,22 @@ public class PrepWork extends StateWork {
 							}
 						}
 					}
+					
+					// load standard cert
+					{
+						Path certpath = scpath.resolve("certs.jks");
+						
+						if (Files.exists(certpath)) {
+							SslEntry entry = SslEntry.ofJks(trustres, certpath,null, new String(ResourceHub.getResources().getKeyRing().getPassphrase()));
+							
+							if (entry == null) {
+								Logger.error("Unable to load default certificate");
+							}
+							else {
+								trustres.withSsl(entry, false);
+							}
+						}
+					}
 				
 					// TODO make sure services are stopped when site/tenant reload
 					
@@ -533,7 +637,7 @@ public class PrepWork extends StateWork {
 							String name = el.getAttribute("Name");
 							
 							if (StringUtil.isNotEmpty(name)) {
-								IService srv = (IService) site.getResources().getClassLoader().getInstance(el.getAttribute("RunClass"));
+								IService srv = (IService) site.getResources().getClassLoader().getInstance(el.getAttribute("RunClass", "dcraft.service.BaseDataService"));
 								
 								if (srv != null) {
 									srv.init(name, el, site.getResources());
@@ -545,6 +649,10 @@ public class PrepWork extends StateWork {
 							Logger.error("Unable to load serivce: " + el);
 						}
 					}
+				}
+				
+				for (XElement lel : sconfig.getTagListLocal("Formatters/Definition")) {
+					site.getResourcesOrCreate(resources).getOrCreateTierScripts().loadFormatter(lel);
 				}
 				
 				this.loadWeb(site, sconfig);
@@ -623,9 +731,13 @@ public class PrepWork extends StateWork {
 		// collect a list of the packages names enabled for this domain
 		//HashSet<String> packagenames = new HashSet<>();
 		
+		site.setWebVersion(DateTimeFormatter.ofPattern("yyMMddHHmm").format(TimeUtil.now()));
+		
 		if (Logger.isDebug())
 			Logger.debug("Checking web domain settings from domain: " + site.getTenant().getAlias() +
 					" : " + site.getAlias());
+		
+		site.setScriptCache(ApplicationHub.isProduction());
 		
 		if (webconfig != null) {
 			String indexurl = webconfig.getAttribute("IndexUrl");
@@ -646,9 +758,58 @@ public class PrepWork extends StateWork {
 				site.setHomePath(new CommonPath(webconfig.getAttribute("HomePath")));
 			else if ((site.getHtmlMode() == HtmlMode.Static) || (site.getHtmlMode() == HtmlMode.Ssi))
 				site.setHomePath(Site.PATH_INDEX);
+			
+			if (webconfig.getAttributeAsBooleanOrFalse("AlwaysCache"))
+				site.setScriptCache(true);
 		}
 		
 		site.setWebGlobals(sconfig.getTagListDeepFirst("Web.Global"));
+		
+		site.addDynamicAdapater("/css/dc.cache.css", new IOutputWorkBuilder() {
+			@Override
+			public IOutputWork buildAdapter(Site site, Path file, CommonPath loc, String view) throws OperatingContextException {
+				IOutputWork work = new StyleCacheOutputAdapter();
+				work.init(site, file, loc, view);
+				return work;
+			}
+		});
+		
+		site.addDynamicAdapater("/js/dc.cache.js", new IOutputWorkBuilder() {
+			@Override
+			public IOutputWork buildAdapter(Site site, Path file, CommonPath loc, String view) throws OperatingContextException {
+				IOutputWork work = new ScriptCacheOutputAdapter();
+				work.init(site, file, loc, view);
+				return work;
+			}
+		});
+
+		site.addDynamicAdapater("/dcm/forms/loadwiz.js", new IOutputWorkBuilder() {
+			@Override
+			public IOutputWork buildAdapter(Site site, Path file, CommonPath loc, String view) throws OperatingContextException {
+				IOutputWork work = new WizardOutputAdapter();
+				work.init(site, file, loc, view);
+				return work;
+			}
+		});
+
+		for (XElement adaptor : sconfig.getTagListDeepFirst("Web.DynamicAdapter")) {
+			String classname = adaptor.getAttribute("Class");
+			String path = adaptor.getAttribute("Path");
+
+			if (StringUtil.isEmpty(classname) || StringUtil.isEmpty(path))
+				continue;
+
+			IOutputWorkBuilder workBuilder = null;
+
+			try {
+				workBuilder = (IOutputWorkBuilder) site.getResources().getClassLoader().getInstance(classname);
+
+				site.addDynamicAdapater(path, workBuilder);
+			}
+			catch (Exception x) {
+				Logger.error("Bad Dynamic Adapater: " + x);
+			}
+		}
 
 		// TODO enable the web cache Work
 		//if (((this.htmlmode == HtmlMode.Dynamic) || (this.htmlmode == HtmlMode.Strict))
@@ -663,7 +824,7 @@ public class PrepWork extends StateWork {
 		for (Package pkg : tier.getOrCreateTierPackages().getTierList()) {
 			Path sdir = pkg.getPath().resolve("schema");
 			
-			Logger.traceTr(0, "Checking for schemas in: " + sdir.toAbsolutePath());
+			Logger.trace("Checking for schemas in: " + sdir.toAbsolutePath());
 			
 			if (Files.exists(sdir)) {
 				// TODO make sure that we get in canonical order
@@ -671,13 +832,13 @@ public class PrepWork extends StateWork {
 				try {
 					Files.walk(sdir).forEach(sf -> {
 						if (sf.getFileName().toString().endsWith(".xml")) {
-							Logger.traceTr(0, "Loading schema: " + sf.toAbsolutePath());
+							Logger.trace( "Loading schema: " + sf.toAbsolutePath());
 							sm.loadSchema(sf);
 						}
 					});
 				}
 				catch (IOException x) {
-					Logger.warn("Unabled to get folder listing: " + x);
+					Logger.warn("Unable to get folder listing: " + x);
 				}
 			}
 		}
@@ -686,7 +847,8 @@ public class PrepWork extends StateWork {
 		
 		return sm;
 	}
-	
+
+	/*
 	// see Html class also - if scripts ever change
 	public void buildScriptStyleCache(Site site) throws OperatingContextException {
 		//System.out.println("Script Style Cache for: " + this.getSite().getTenant().getAlias() +
@@ -750,6 +912,7 @@ public class PrepWork extends StateWork {
 		
 		TaskHub.submit(buildcache);
 	}
+	*/
 	
 	/* 
 	 * 

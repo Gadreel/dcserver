@@ -259,7 +259,7 @@ public class Processor {
         line = line.next;
         while(line != null)
         {
-            LineType t = line.getLineType();
+            LineType t = line.getLineType(this.ctx);
             if((t == LineType.OLIST || t == LineType.ULIST)
                     || (!line.isEmpty && (line.prevEmpty && line.leading == 0 && !(t == LineType.OLIST || t == LineType.ULIST))))
             {
@@ -284,8 +284,8 @@ public class Processor {
 
         if(listMode)
         {
-            root.removeListIndent();
-            if(root.lines != null && root.lines.getLineType() != LineType.CODE)
+            root.removeListIndent(this.ctx);
+            if(root.lines != null && root.lines.getLineType(this.ctx) != LineType.CODE)
             {
                 root.id = root.lines.stripID();
             }
@@ -297,7 +297,7 @@ public class Processor {
             return;
 
         while(line != null) {
-            LineType type = line.getLineType();
+            LineType type = line.getLineType(this.ctx);
             switch(type)
             {
             case OTHER:
@@ -305,7 +305,7 @@ public class Processor {
                 boolean wasEmpty = line.prevEmpty;
                 while(line != null && !line.isEmpty)
                 {
-                    LineType t = line.getLineType();
+                    LineType t = line.getLineType(this.ctx);
                     
                     // removed  || t == LineType.XML
                     if (t == LineType.OLIST || t == LineType.ULIST || t == LineType.CODE 
@@ -354,7 +354,7 @@ public class Processor {
                 break;
             case BQUOTE:
                 while(line != null) {
-                    if(!line.isEmpty && (line.prevEmpty && line.leading == 0 && line.getLineType() != LineType.BQUOTE))
+                    if(!line.isEmpty && (line.prevEmpty && line.leading == 0 && line.getLineType(this.ctx) != LineType.BQUOTE))
                         break;
                     
                     line = line.next;
@@ -391,7 +391,7 @@ public class Processor {
                 line = line.next;
                 
                 while(line != null) {
-                    if(line.getLineType() == LineType.FENCED_CODE)
+                    if(line.getLineType(this.ctx) == LineType.FENCED_CODE)
                         break;
                     // TODO ... is this really necessary? Maybe add a special
                     // flag?
@@ -405,7 +405,7 @@ public class Processor {
                 block.type = BlockType.FENCED_CODE;
                 block.meta = Utils.getMetaFromFence(block.lines.value);
                 block.lines.setEmpty();
-                if(block.lineTail.getLineType() == LineType.FENCED_CODE)
+                if(block.lineTail.getLineType(this.ctx) == LineType.FENCED_CODE)
                     block.lineTail.setEmpty();
                 block.removeSurroundingEmptyLines();
                 break;
@@ -415,7 +415,7 @@ public class Processor {
 	                line = line.next;
 	                
 	                while(line != null) {
-	                    if(line.getLineType() == LineType.PLUGIN)
+	                    if(line.getLineType(this.ctx) == LineType.PLUGIN)
 	                        break;
 	                    // TODO ... is this really necessary? Maybe add a special
 	                    // flag?
@@ -435,7 +435,7 @@ public class Processor {
                 
                 block.lines.setEmpty();
                 
-                if (block.lineTail.getLineType() == LineType.PLUGIN)
+                if (block.lineTail.getLineType(this.ctx) == LineType.PLUGIN)
                     block.lineTail.setEmpty();
                 
                 block.removeSurroundingEmptyLines();
@@ -463,7 +463,7 @@ public class Processor {
             case OLIST:
             case ULIST:
                 while(line != null) {
-                    LineType t = line.getLineType();
+                    LineType t = line.getLineType(this.ctx);
                     if(!line.isEmpty
                             && (line.prevEmpty && line.leading == 0 && !(t == LineType.OLIST || t == LineType.ULIST)))
                         break;

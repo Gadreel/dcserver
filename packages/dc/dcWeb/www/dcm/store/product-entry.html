@@ -1,4 +1,4 @@
-<dc.Html AuthTags="Clerk,Admin">
+<dc.Html Badges="Clerk,Admin">
 	<Require Script="/js/vendor/speakingurl-5.0.1.min.js" />
 
 	<Meta Name="Title">
@@ -119,6 +119,7 @@
 				e.Data = {
 					ShipCost: 'Regular',
 					ShowInStore: true,
+					VariablePrice: false,
 					TrLocale: page.Store.Locale,
 					Delivery: [ 'Ship', 'Pickup' ]
 				};
@@ -291,6 +292,11 @@
 	]]></Function>
 	<Function Name="DoCats"><![CDATA[
 			var page = this;
+
+			if (! page.Store.Slug) {
+				dc.pui.Popup.alert('Please save the product before editing categories.');
+				return;
+			}
 
 			dc.pui.Dialog.loadPage('/dcm/store/category-chooser-multi', {
 				Selected: page.Store.Categories,

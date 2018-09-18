@@ -14,12 +14,10 @@
 	<Function Name="Load"><![CDATA[
 			var entry = this;
 
-			var grecover = dc.util.Web.getFromParams(dc.pui.Loader.OriginHash, 'code');
-			var user = dc.util.Web.getFromParams(dc.pui.Loader.OriginHash, 'user');
+			var grecover = dc.util.Web.getQueryParam('code');
+			var user = dc.util.Web.getQueryParam('user');
 
 			if (grecover && user) {
-				dc.pui.Loader.OriginHash = null;
-
 				dc.user.signin(user, grecover, false, function() {
 					if (dc.user.isVerified()) {
 						dc.pui.Dialog.loadPage('/dcw/user/edit-password', {

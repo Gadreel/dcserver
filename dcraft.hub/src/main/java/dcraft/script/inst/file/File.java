@@ -18,10 +18,13 @@ package dcraft.script.inst.file;
 
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileStoreFile;
+import dcraft.filestore.mem.MemoryStoreFile;
 import dcraft.filevault.Vault;
+import dcraft.filevault.VaultUtil;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcome;
+import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.OperationsInstruction;
@@ -29,10 +32,15 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.OperationsWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.RecordStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.BinaryStruct;
 import dcraft.struct.scalar.NullStruct;
 import dcraft.struct.scalar.StringStruct;
+import dcraft.task.Task;
+import dcraft.task.TaskHub;
+import dcraft.util.Memory;
 import dcraft.xml.XElement;
 
 public class File extends OperationsInstruction {
@@ -53,8 +61,11 @@ public class File extends OperationsInstruction {
 		if (state.getState() == ExecuteState.READY) {
 			String name = StackUtil.stringFromSource(state, "Name");
 
-			if (this.hasNotEmptyAttribute("In")) {
+			if (this.hasNotEmptyAttribute("In") || this.hasNotEmptyAttribute("Of")) {
 				Struct var3 = StackUtil.refFromSource(state, "In");
+				
+				if (var3 == null)
+					var3 = StackUtil.refFromSource(state, "Of");
 				
 				// TODO support FileSystemDriver, FileSystemFile too
 				
@@ -78,6 +89,8 @@ public class File extends OperationsInstruction {
 						@Override
 						public void callback(FileStoreFile result) throws OperatingContextException {
 							StackUtil.addVariable(state, name, result);
+							
+							((OperationsWork) state).setTarget(result);
 
 							state.getStore().with("Second", true);
 							state.setState(ExecuteState.RESUME);
@@ -87,6 +100,22 @@ public class File extends OperationsInstruction {
 					});
 					
 					return ReturnOption.AWAIT;
+				}
+				else if (var3 instanceof BinaryStruct) {
+					String path = StackUtil.stringFromSource(state, "Path", "/temp.bin");
+
+					Memory mem = ((BinaryStruct)var3).getValue();
+					mem.setPosition(0);
+
+					MemoryStoreFile result = MemoryStoreFile.of(CommonPath.from(path))
+							.with(mem);
+					
+					StackUtil.addVariable(state, name, result);
+					
+					((OperationsWork) state).setTarget(result);
+					
+					state.getStore().with("Second", true);
+					return ReturnOption.CONTINUE;
 				}
 			}
 

@@ -8,7 +8,7 @@ import dcraft.task.TaskContext;
 public class StandardQueueStop extends CoreCleanerWork {
 	@Override
 	public void shutdown(TaskContext taskctx, ResourceTier tier) {
-		Logger.debugTr(0, "Stopping Task Queue");
+		Logger.debug("Stopping Task Queue");
 		
 		// TODO stop
 		

@@ -1,42 +1,45 @@
-<dc.Html Title="Confirm">
+<dc.Html Title="{$_Tr.dcwConfirmTitle}">
 	<dc.Body>
 		<dc.PagePanel id="panDcwAlert">
 			<div id="panDcwMessage" />
-			
+
 			<dcf.FormButtons>
-				<dc.Button Label="No" Click="onDeny" />
-				<dc.Button Label="Yes" Click="onApprove" />
+				<dc.Button Label="{$_Tr.dcwConfirmNo}" Click="onBack" />
+				<dc.Button Label="{$_Tr.dcwConfirmYes}" Click="onApprove" />
 			</dcf.FormButtons>
 		</dc.PagePanel>
 	</dc.Body>
 	<Function Name="Load">
 				var entry = this;
-			
+
 				if (entry.Params.Title)
 					entry.callTagFunc('#panDcwAlert', 'setTitle', entry.Params.Title);
-			
+
 				if (entry.Params.Message)
 					$('#panDcwMessage').html(entry.Params.Message);
 	</Function>
 	<Function Name="onApprove">
 				var entry = this;
-			
-				entry.Store.Called = true;
-				
+
+				entry.Layer.back();
+
 				if (entry.Params.Callback)
 					entry.Params.Callback.call(entry, true);
-					
-				entry.Layer.back();
 	</Function>
-	<Function Name="onDeny">
+	<Function Name="onBack">
 				var entry = this;
-					
+
 				entry.Layer.back();
+
+				if (entry.Params.Callback)
+					entry.Params.Callback.call(entry, false);
 	</Function>
-	<Function Name="onDestroy">
+	<Function Name="onClose">
 				var entry = this;
-			
-				if (entry.Params.Callback && ! entry.Store.Called)
+
+				entry.Layer.close();
+
+				if (entry.Params.Callback)
 					entry.Params.Callback.call(entry, false);
 	</Function>
 </dc.Html>

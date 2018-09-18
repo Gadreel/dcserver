@@ -408,6 +408,39 @@ public class HubUtil implements ILocalCommandLine {
 				
 				case 6: {
 					System.out.println("Restore Database");
+					
+					/*
+					ConnectionManager db = this.getDatabase(scan,true);
+					
+					if (db == null) {
+						System.out.println("Database missing or bad!");
+						break;
+					}
+					
+					try {
+						List<BackupInfo> list = db.dbBackup().getBackupInfo();
+						
+						for (BackupInfo info : list) {
+							System.out.println("Backup: " + info.backupId() + " size: " + info.size() + " stamp: " + info.timestamp());
+						}
+					}
+					catch (Exception x) {
+						System.out.println("Error on database: " + x);
+					}
+					
+					
+					try {
+						db.();
+						System.out.println("Database backed up!");
+					}
+					catch (Exception x) {
+						System.out.println("Error backing up database: " + x);
+					}
+					finally {
+						db.stop();
+					}
+					*/
+					
 					/*
 					Path dbpath = this.getDbPath(scan);
 					

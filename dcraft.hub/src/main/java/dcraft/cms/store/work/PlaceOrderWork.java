@@ -57,6 +57,7 @@ public class PlaceOrderWork extends StateWork {
 
 	@Override
 	public void prepSteps(TaskContext trun) throws OperatingContextException {
+		/*
 		this
 				.withStep(StateWorkStep.of("Sanitise Order", this::sanitise))
 				.withStep(insertstep = StateWorkStep.of("Insert Order", this::insert))
@@ -65,10 +66,12 @@ public class PlaceOrderWork extends StateWork {
 				.withStep(depositstep = StateWorkStep.of("Create Deposit", this::deposit))
 				.withStep(noticestep = StateWorkStep.of("Send Notices", this::notices))
 				.withStep(donestep = StateWorkStep.of("Complete", this::done));
+				*/
 		
 		this.failOnErrors = false;
 	}
-	
+
+	/*
 	public StateWorkStep sanitise(TaskContext trun) throws OperatingContextException {
 		RecordStruct order = trun.selectAsRecord("Params.Order");
 		
@@ -262,7 +265,7 @@ public class PlaceOrderWork extends StateWork {
 									    	/*
 											<Field Name="dcmWasUsed" Type="Boolean" />
 											<Field Name="dcmAmountUsed" Type="Decimal" />
-									    	*/
+									    	* /
 		return StateWorkStep.NEXT;
 	}
 	
@@ -309,4 +312,5 @@ public class PlaceOrderWork extends StateWork {
 		
 		return StateWorkStep.NEXT;
 	}
+	*/
 }

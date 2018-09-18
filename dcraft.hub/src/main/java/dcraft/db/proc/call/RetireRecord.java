@@ -1,6 +1,7 @@
 package dcraft.db.proc.call;
 
 import dcraft.db.ICallContext;
+import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.proc.IUpdatingStoredProc;
 import dcraft.hub.op.OperatingContextException;
@@ -14,14 +15,11 @@ public class RetireRecord implements IUpdatingStoredProc {
 		
 		String table = params.getFieldAsString("Table");
 		String id = params.getFieldAsString("Id");
-		
-		// TODO add db filter option
-		//d runFilter("Retire") quit:Errors  ; if any violations in filter then do not proceed
-		
+
 		TablesAdapter db = TablesAdapter.ofNow(request);
 
-		db.setStaticScalar(table, id, "Retired", true);
-		
+		TableUtil.retireRecord(db, table, id);
+
 		callback.returnEmpty();
 	}
 }

@@ -1,18 +1,35 @@
 package dcraft.web.ui.inst.cms;
 
+import dcraft.cms.feed.db.HistoryFilter;
+import dcraft.cms.util.FeedUtil;
+import dcraft.db.DbServiceRequest;
+import dcraft.db.proc.BasicFilter;
+import dcraft.db.proc.ExpressionResult;
+import dcraft.db.proc.IFilter;
+import dcraft.db.proc.filter.CurrentRecord;
+import dcraft.db.proc.filter.Unique;
+import dcraft.db.tables.TablesAdapter;
+import dcraft.db.util.DbUtil;
+import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.OperationMarker;
 import dcraft.log.Logger;
 import dcraft.script.ScriptHub;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.AnyStruct;
+import dcraft.struct.scalar.BooleanStruct;
+import dcraft.struct.scalar.StringStruct;
+import dcraft.task.IParentAwareWork;
 import dcraft.util.IOUtil;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.inst.doc.Out;
 import dcraft.util.StringUtil;
+import dcraft.web.ui.UIUtil;
 import dcraft.web.ui.inst.Band;
 import dcraft.web.ui.inst.Region;
 import dcraft.web.ui.inst.W3;
@@ -25,7 +42,7 @@ import java.util.Map;
 public class IncludeFeed extends Base {
 	static public IncludeFeed tag() {
 		IncludeFeed el = new IncludeFeed();
-		el.setName("dc.IncludeFeed");
+		el.setName("dcm.IncludeFeed");
 		return el;
 	}
 	
@@ -76,6 +93,57 @@ public class IncludeFeed extends Base {
 			if (layout instanceof Base) {
 				Base blayout = (Base) layout;
 				
+				// TODO refine when this is possible - include feed inline also
+				// if in edit mode, apply draft/schedule
+				if (OperationContext.getOrThrow().getUserContext().isTagged("Admin", "Editor")) {
+					String cmsmode = Struct.objectToString(StackUtil.queryVariable(null, "_Controller.Request.Cookies.dcmMode"));
+					
+					if (StringUtil.isEmpty(cmsmode))
+						cmsmode = "now";
+					
+					// TODO add support for dates as well - look into future for schedules when selected
+
+					if (cmsmode.equals("now")) {
+						CommonPath epath = CommonPath.from("/" + OperationContext.getOrThrow().getSite().getAlias() + fpath.substring(0, fpath.length() - 5));
+						
+						// may reconsider later
+						DbServiceRequest request = DbUtil.fakeRequest();
+						
+						TablesAdapter db = TablesAdapter.ofNow(request);
+						
+						
+						Unique collector = (Unique) db.traverseIndex(OperationContext.getOrThrow(), "dcmFeedHistory", "dcmPath", epath.toString(), Unique.unique().withNested(
+								CurrentRecord.current().withNested(HistoryFilter.forDraft())));
+						
+						String hid = collector.isEmpty() ? null : collector.getOne().toString();
+						
+						if (StringUtil.isNotEmpty(hid)) {
+							// there should only be one "accepted" entry, that would be an "edit mode" entry (no schedule)
+							
+							for (String key : db.getStaticListKeys("dcmFeedHistory", hid, "dcmModifications")) {
+								RecordStruct command = Struct.objectToRecord(db.getStaticList("dcmFeedHistory", hid, "dcmModifications", key));
+								
+								// check null, modification could be retired
+								if (command != null) {
+									try (OperationMarker om = OperationMarker.create()) {
+										FeedUtil.applyCommand(epath, layout, command, false);
+										
+										if (om.hasErrors()) {
+											// TODO break/skip
+										}
+									}
+									catch (Exception x) {
+										Logger.error("OperationMarker error - applying history");
+										// TODO break/skip
+									}
+								}
+							}
+							
+							IncludeFeed.this.withAttribute("data-cms-draft", "true");
+						}
+					}
+				}
+				
 				// TODO merge with meta or not
 				
 				// pull out the merge parts
@@ -111,19 +179,8 @@ public class IncludeFeed extends Base {
 				}
 				*/
 				
+				// TODO refine when this is possible - inline also
 				if (OperationContext.getOrThrow().getUserContext().isTagged("Admin", "Editor")) {
-					this.add(0,
-							Band.tag()
-								.withClass("dcuiCmsi")
-								.withAttribute("Width", "Narrow")
-								.withAttribute("Pad", "Small")
-								.with(
-										Region.tag()
-											.attr("Label","CMS - Edit Page Properties")
-											.with(EditButton.tag().attr("title", "CMS - edit page properties"))
-								)
-					);
-					
 					String realpath = OperationContext.getOrThrow().getSite().relativize(cfile);
 
 					// into /feeds
@@ -136,6 +193,10 @@ public class IncludeFeed extends Base {
 							.withAttribute("data-cms-editable", "true")
 							.withAttribute("data-cms-feed", feed)
 							.withAttribute("data-cms-path", realpath);
+					
+					UIUtil.setEditBadges(state, this);
+					
+					StackUtil.addVariable(state, "_CMSEditable", BooleanStruct.of(true));
 				}
 			}
 			else {

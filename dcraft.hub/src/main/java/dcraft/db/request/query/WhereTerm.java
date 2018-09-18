@@ -46,4 +46,14 @@ public class WhereTerm extends WhereExpression {
 		this.withParam("A", new RecordStruct().with("Value", flds));
 		return this;
 	}
+
+	public WhereTerm withFields(WhereField... fields) {
+		ListStruct flds = ListStruct.list();
+
+		for (WhereField f : fields)
+			flds.with(f.getParams());
+
+		this.withParam("A", new RecordStruct().with("Value", flds));
+		return this;
+	}
 }

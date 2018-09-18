@@ -3,6 +3,7 @@ package dcraft.db.proc.expression;
 import dcraft.db.proc.ExpressionResult;
 import dcraft.db.request.query.WhereLessThan;
 import dcraft.db.tables.TablesAdapter;
+import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.time.BigDateTime;
 
@@ -23,7 +24,7 @@ public class LessThan extends TwoExpression {
 		*/
 	
 	@Override
-	public ExpressionResult check(TablesAdapter adapter, String id) throws OperatingContextException {
+	public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, String id) throws OperatingContextException {
 		return (this.compare(adapter, id) == -1) ? ExpressionResult.ACCEPTED : ExpressionResult.REJECTED;
 	}
 }

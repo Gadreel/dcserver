@@ -27,6 +27,10 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 public class JoinStream extends TransformFileStream {
+	static public JoinStream of(String name) {
+		return new JoinStream().withNameHint(name);
+	}
+
 	protected FileDescriptor jfile = null;
 	protected String namehint = null;
 	protected boolean dashnummod = true;
@@ -71,10 +75,11 @@ public class JoinStream extends TransformFileStream {
 			
 				String bpath = cpath.substring(0, idx) + cpath.substring(idx2);
 				*/
-				
+
+				// join can be used for things other than split files, so don't require the -
 				int idx = cpath.lastIndexOf('-');
 				
-				String bpath = cpath.substring(0, idx);
+				String bpath = (idx != -1) ? cpath.substring(0, idx) : cpath;
 			
 				this.jfile.withPath(bpath);
 			}

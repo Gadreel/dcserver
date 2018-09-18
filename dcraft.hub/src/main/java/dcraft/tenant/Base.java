@@ -65,7 +65,7 @@ abstract public class Base extends RecordStruct implements IVariableProvider {
 
 	abstract public Path getPath();
 	//abstract public GCompClassLoader getScriptLoader();
-	abstract Vault getVault(String name);
+	abstract Vault getVault(String name) throws OperatingContextException;
 
 	protected Base() {
 		this.with("Variables", RecordStruct.record());

@@ -149,9 +149,9 @@ public class KeyRingCollection {
 			kpg.init(new RSAKeyGenerationParameters(BigInteger.valueOf(0x10001), RndUtil.random, keysize, 12));
 	
 			// First create the master (signing) key with the generator.
-			PGPKeyPair rsakp_sign = new BcPGPKeyPair(PGPPublicKey.RSA_SIGN, kpg.generateKeyPair(), new Date());
+			PGPKeyPair rsakp_sign = new BcPGPKeyPair(PGPPublicKey.RSA_GENERAL, kpg.generateKeyPair(), new Date());
 			// Then an encryption subkey.
-			PGPKeyPair rsakp_enc = new BcPGPKeyPair(PGPPublicKey.RSA_ENCRYPT, kpg.generateKeyPair(), new Date());
+			PGPKeyPair rsakp_enc = new BcPGPKeyPair(PGPPublicKey.RSA_GENERAL, kpg.generateKeyPair(), new Date());
 	
 			// Add a self-signature on the id
 			PGPSignatureSubpacketGenerator signhashgen = new PGPSignatureSubpacketGenerator();
@@ -197,7 +197,7 @@ public class KeyRingCollection {
 				sha1Calc,
 				signhashgen.generate(),
 				null,
-				new BcPGPContentSignerBuilder(rsakp_sign.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA1),
+				new BcPGPContentSignerBuilder(rsakp_sign.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA256),
 				pske
 		   );
 	

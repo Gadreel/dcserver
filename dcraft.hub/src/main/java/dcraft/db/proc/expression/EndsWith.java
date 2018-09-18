@@ -3,6 +3,7 @@ package dcraft.db.proc.expression;
 import dcraft.db.proc.ExpressionResult;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.util.ByteUtil;
+import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.time.BigDateTime;
 import dcraft.struct.RecordStruct;
@@ -11,7 +12,7 @@ import java.util.List;
 
 public class EndsWith extends TwoExpression {
 	@Override
-	public ExpressionResult check(TablesAdapter adapter, String id) throws OperatingContextException {
+	public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, String id) throws OperatingContextException {
 		List<byte[]> data = adapter.getRaw(table, id, this.fieldInfo.field.getName(), this.fieldInfo.subid, "Index");
 		
 		if ((this.values == null) && (data == null))

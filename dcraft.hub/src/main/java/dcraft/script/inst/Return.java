@@ -41,7 +41,7 @@ public class Return extends Instruction {
 		IResultAwareWork resultAwareWork = StackUtil.queryResultAware(state);
 		
         if (this.hasAttribute("Result")) {
-        	Struct target = StackUtil.refFromElement(state, this, "Result");
+        	Struct target = StackUtil.refFromElement(state, this, "Result", true);
         	resultAwareWork.setResult(target);
         }
         

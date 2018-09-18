@@ -15,6 +15,8 @@
  */
 package dcraft.web.md.process;
 
+import dcraft.web.md.ProcessContext;
+
 /**
  * This class represents a block of lines.
  * 
@@ -101,14 +103,14 @@ public class Block {
     /**
      * Used for nested lists. Removes list markers and up to 4 leading spaces.
      */
-    public void removeListIndent()
+    public void removeListIndent(ProcessContext ctx)
     {
         Line line = this.lines;
         while(line != null)
         {
             if(!line.isEmpty)
             {
-                switch(line.getLineType())
+                switch(line.getLineType(ctx))
                 {
                 case ULIST:
                     line.value = line.value.substring(line.leading + 2);

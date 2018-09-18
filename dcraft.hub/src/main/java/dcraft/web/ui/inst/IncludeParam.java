@@ -30,18 +30,23 @@ public class IncludeParam extends Out {
 		this.clearChildren();
 		
 		Struct funcwrap = StackUtil.queryVariable(state, StackUtil.stringFromSource(state, "Name"));
-		
-		if ((funcwrap == null) || ! (funcwrap instanceof AnyStruct)) {
-			Logger.error("Did not find UI parameter");
-			return;
+
+		XElement pel = null;
+
+		if (funcwrap instanceof XElement) {
+			pel = (XElement) funcwrap;
 		}
-		
-		XElement pel = ((XElement) ((AnyStruct) funcwrap).getValue());
-		
+		else if (funcwrap instanceof AnyStruct) {
+			pel = ((XElement) ((AnyStruct) funcwrap).getValue());
+		}
+
 		if (pel != null) {
 			this.replace(pel.deepCopy());
 			
 			// /examples/simple/simple-2
+		}
+		else {
+			Logger.error("Did not find UI parameter");
 		}
 	}
 }

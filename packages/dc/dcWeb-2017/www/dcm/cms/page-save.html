@@ -1,0 +1,82 @@
+<dc.Html Badges="Editor,Admin" NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Save Page Edits" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.TextArea Name="Note" Label="Note" />
+				<dcf.YesNo Name="Publish" Label="Publish Changes" />
+
+				<dcf.FormButtons>
+					<dc.Button Label="Discard Changes" Click="OnDiscard" />
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load" Params="e"><![CDATA[
+			var page = this;
+
+			page.Store.Return = null;
+	]]></Function>
+	<Function Name="LoadRecord" Params="e">
+			var page = this;
+
+			e.Message = {
+				Service: 'dcmServices',
+				Feature: 'Feed',
+				Op: 'LoadCommandHistory',
+				Body: {
+					Feed: page.Params.Feed,
+					Path: page.Params.Path
+				}
+			};
+	</Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Data.Feed = page.Params.Feed;
+			e.Data.Path = page.Params.Path;
+
+			e.Message = {
+				Service: 'dcmServices',
+				Feature: 'Feed',
+				Op: 'SaveCommandHistory',
+				Body: e.Data
+			};
+
+			page.Store.Return = 'save';
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback(page.Store.Return);
+	]]></Function>
+	<Function Name="OnDiscard" Params="e"><![CDATA[
+			var page = this;
+
+			dc.comm.sendMessage({
+				Service: 'dcmServices',
+				Feature: 'Feed',
+				Op: 'DiscardCommandHistory',
+				Body: {
+					Feed: page.Params.Feed,
+					Path: page.Params.Path
+				}
+			}, function(resp) {
+				if (resp.Result > 0) {
+					dc.pui.Popup.alert(resp.Message);
+					return;
+				}
+
+				page.Store.Return = 'discard';
+
+				page.callPageFunc('AfterSave');
+			});
+	]]></Function>
+</dc.Html>

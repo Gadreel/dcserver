@@ -1,15 +1,12 @@
 <dc.Html Badges="Admin,Editor">
 	<Meta Name="Title">
-		<Tr Locale="en" Value="Image Widget Properties" />
+		<Tr Locale="eng" Value="Image Properties" />
 	</Meta>
 
 	<dc.Body>
 		<dc.PagePanel>
 			<dcf.Form>
-				<dcf.FormButtons Hint="form options">
-					<dcf.SubmitButton Label="Save" />
-				</dcf.FormButtons>
-
+				<!-- TODO select gallery -->
 				<dc.Region Hint="Image Properties form">
 					<dcf.Text Label="Image">
 						<Input Name="Path" Required="true" />
@@ -18,80 +15,96 @@
 					<dcf.Text Name="Variant" Label="Variant" placeholder="image variant" />
 					<dcf.Text Name="Class" Label="CSS Classes" placeholder="custom styling for this section" />
 				</dc.Region>
+
+				<dcf.FormButtons Hint="form options">
+					<!-- dc.Button Label="Save" Click="DoSaveOnly" / -->
+					<dc.Button Label="Save and Preview" Click="DoSave" Scope="Primary" />
+				</dcf.FormButtons>
 			</dcf.Form>
 		</dc.PagePanel>
 	</dc.Body>
 	<Function Name="Load"><![CDATA[
 			var entry = this;
-
-			entry.Store.Params = dc.pui.App.Context.Params;
     ]]></Function>
 	<Function Name="LoadRecord" Params="e"><![CDATA[
 			var entry = this;
 
 			e.Message = {
-				Service: 'dcCoreServices',
-				Feature: 'Vaults',
-				Op: 'Custom',
+				Service: 'dcmServices',
+				Feature: 'Feed',
+				Op: 'LoadPart',
 				Body: {
-					Vault: 'Feeds',
-					Command: 'LoadPart',
-					Path: '/' + entry.Store.Params.Feed + entry.Store.Params.Path,
-					Params: {
-						PartId: entry.Store.Params.Id
-					}
+					Feed: entry.Params.Feed,
+					Path: entry.Params.Path,
+					PartId: entry.Params.Id
 				}
 			};
     ]]></Function>
 	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
 			var entry = this;
 
-			var widget = entry.Store.Params.Widget = e.Data.Extra;
-
-			var attrs = entry.Store.Params.Content = widget.attributes;
-
-			if (! attrs)
-				attrs = { };
+			// <dcm.ImageWidget Variant="full" Path="/services/coparenting" id="imgCoparenting" class=""/>
+			var widget = entry.Store.Widget = dc.util.Xml.toJQuery(e.Data.Part);
 
 			e.Data = {
-				Path: attrs.Path ? attrs.Path : '',
-				Variant: attrs.Variant ? attrs.Variant : '',
-				Class: attrs.class ? attrs.class : ''
+				Path: widget.attr('Path'),
+				Variant: widget.attr('Variant'),
+				Class: widget.attr('class')
 			};
+	]]></Function>
+	<Function Name="DoSaveOnly"><![CDATA[
+		var entry = this;
+
+		entry.Params.Preview = false;
+
+		entry.form().submit();
+	]]></Function>
+	<Function Name="DoSave"><![CDATA[
+		var entry = this;
+
+		entry.Params.Preview = true;
+
+		entry.form().submit();
 	]]></Function>
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 			var entry = this;
 
-			var widget = entry.Store.Params.Widget;
-
-			if (! widget.attributes)
-				widget.attributes = { };
+			var widget = entry.Store.Widget;
 
 			if (e.Data.hasOwnProperty('Class'))
-				widget.attributes['class'] = e.Data.Class;
+				widget.attr('class', e.Data.Class);
 
 			if (e.Data.hasOwnProperty('Path'))
-				widget.attributes['Path'] = e.Data.Path;
+				widget.attr('Path', e.Data.Path);
 
 			if (e.Data.hasOwnProperty('Variant'))
-				widget.attributes['Variant'] = e.Data.Variant;
+				widget.attr('Variant', e.Data.Variant);
 
 			e.Message = {
-				Service: 'dcCoreServices',
-				Feature: 'Vaults',
-				Op: 'Custom',
+				Service: 'dcmServices',
+				Feature: 'Feed',
+				Op: 'AddCommandHistory',
 				Body: {
-					Vault: 'Feeds',
-					Command: 'SavePart',
-					Path: '/' + entry.Store.Params.Feed + entry.Store.Params.Path,
-					Params: {
-						PartId: entry.Store.Params.Id,
-						Part: widget
-					}
+					Feed: entry.Params.Feed,
+					Path: entry.Params.Path,
+					Commands: [
+						{
+							Command: 'SavePart',
+							Params: {
+								PartId: entry.Params.Id,
+								Part: dc.util.Xml.toString(widget)
+							}
+						}
+					]
 				}
 			};
     ]]></Function>
 	<Function Name="AfterSave"><![CDATA[
+		var entry = this;
+
+		if (entry.Params.Preview)
+			dc.pui.Loader.MainLayer.refreshPage();
+		else
 			dc.pui.Popup.alert('Saved');
 	]]></Function>
 	<Function Name="DoSelectImage"><![CDATA[
@@ -112,6 +125,9 @@
 						var fh = res.Images[0];
 
 						entry.form().setValue('Path', fh.FullPath.substr(0, fh.FullPath.indexOf('.v')));
+
+						// TODO don't know - in IPC we set the variant in the template and that worked well
+						//entry.form().setValue('Variant', fh.FullPath.substring(fh.FullPath.indexOf('.v') + 3, fh.FullPath.lastIndexOf('.'));
 					}
 				}
 			});

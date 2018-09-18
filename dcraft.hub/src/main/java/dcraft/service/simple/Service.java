@@ -5,6 +5,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.resource.ConfigResource;
 import dcraft.log.Logger;
+import dcraft.service.BaseDataService;
 import dcraft.service.base.Vaults;
 import dcraft.service.BaseService;
 import dcraft.service.ServiceRequest;
@@ -28,7 +29,7 @@ import java.util.stream.Stream;
 
 /**
  */
-public class Service extends BaseService {
+public class Service extends BaseDataService {
 	protected CoreDatabase db = new CoreDatabase();
 	
 	@Override
@@ -94,14 +95,18 @@ public class Service extends BaseService {
 	
 	@Override
 	public boolean handle(ServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
-		if ("Users".equals(request.getFeature()))
-			return Users.handle(request, callback, this.db);
+		if ("Users".equals(request.getFeature())) {
+			if (Users.handle(request, callback, this.db))
+				return true;
+		}
 		
 		if ("Tenants".equals(request.getFeature()))
-			return Tenants.handle(request, callback, this.db);
+			if (Tenants.handle(request, callback, this.db))
+				return true;
 		
 		if ("Authentication".equals(request.getFeature()))
-			return Authentication.handle(request, callback, this.db);
+			if (Authentication.handle(request, callback, this.db))
+				return true;
 		
 		if ("Vaults".equals(request.getFeature()))
 			return Vaults.handle(request, callback);
@@ -118,7 +123,7 @@ public class Service extends BaseService {
 			}
 		}
 		
-		return false;
+		return super.handle(request, callback);
 	}
 	
 	public void handleUpdateTenants(ServiceRequest request, OperationOutcomeStruct callback) {

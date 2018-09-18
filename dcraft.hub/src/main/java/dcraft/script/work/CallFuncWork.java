@@ -91,8 +91,14 @@ public class CallFuncWork extends InstructionWork implements IResultAwareWork, I
 	}
 	
 	@Override
-	public void setResult(Struct v) {
+	public void setResult(Struct v) throws OperatingContextException {
 		this.value = v;
+
+		String result = StackUtil.stringFromSource(this, "Result");
+
+		if (StringUtil.isNotEmpty(result)) {
+			StackUtil.addVariable(this.parent, result, v);
+		}
 	}
 	
 	/**
@@ -105,7 +111,7 @@ public class CallFuncWork extends InstructionWork implements IResultAwareWork, I
 	public void setExitCode(long code, String msg) throws OperatingContextException {
 		if (StringUtil.isNotEmpty(msg))
 			OperationContext.getOrThrow().log(DebugLevel.Info, code, msg, "Exit");
-		else
+		else if (this.getParent() == null)
 			OperationContext.getOrThrow().boundary("Code", code + "", "Exit");
 		
 		this.exitcode = code;
@@ -113,7 +119,7 @@ public class CallFuncWork extends InstructionWork implements IResultAwareWork, I
 		
 		if (StringUtil.isNotEmpty(msg))
 			HubLog.log(OperationContext.getOrThrow().getController().getSeqNumber(), DebugLevel.Info, code, msg);
-		else
+		else if (this.getParent() == null)
 			HubLog.boundary(OperationContext.getOrThrow().getController().getSeqNumber(), 0, "Code", code + "", "Exit");
 	}
 	

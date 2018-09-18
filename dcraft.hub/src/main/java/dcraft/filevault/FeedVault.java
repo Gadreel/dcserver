@@ -1,11 +1,13 @@
 package dcraft.filevault;
 
+import dcraft.cms.util.FeedUtil;
 import dcraft.db.request.DataRequest;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileStore;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.local.LocalStore;
 import dcraft.filestore.mem.MemoryStoreFile;
+import dcraft.hub.ResourceHub;
 import dcraft.hub.op.*;
 import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
@@ -72,7 +74,7 @@ public class FeedVault extends Vault {
 	@Override
 	public void listFiles(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
 		// check bucket security
-		if (checkAuth && ! this.checkReadAccess()) {
+		if (checkAuth && ! this.checkReadAccess("ListFiles", request)) {
 			Logger.errorTr(434);
 			fcb.returnEmpty();
 			return;
@@ -150,7 +152,7 @@ public class FeedVault extends Vault {
 	@Override
 	public void executeCustom(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
 		// check bucket security
-		if (checkAuth && ! this.checkWriteAccess()) {
+		if (checkAuth && ! this.checkWriteAccess("Custom", request)) {
 			Logger.errorTr(434);
 			fcb.returnEmpty();
 			return;
@@ -159,7 +161,7 @@ public class FeedVault extends Vault {
 		String cmd = request.getFieldAsString("Command");
 		
 		// TODO check security
-		if ("AddPage".equals(cmd)) {
+		if ("AddFeed".equals(cmd)) {
 			this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
 				@Override
 				public void callback(FileStoreFile result) throws OperatingContextException {
@@ -226,6 +228,13 @@ public class FeedVault extends Vault {
 												return;
 											}
 
+											RecordStruct def = FeedUtil.getFeedDefinition(fi.getPathAsCommon().getName(0));
+
+											// feeds use site default
+											String defloc = OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale();
+
+											String currloc = request.selectAsString("Params.TrLocale", ResourceHub.getResources().getLocale().getDefaultLocale());
+
 											ListStruct fields = request.selectAsList("Params.SetFields");
 
 											if (fields != null) {
@@ -233,10 +242,13 @@ public class FeedVault extends Vault {
 													if (fld instanceof RecordStruct) {
 														RecordStruct recfld = (RecordStruct) fld;
 
-														root.add(0,
-															XElement.tag("Meta")
-																.attr("Name", recfld.getFieldAsString("Name"))
-																.attr("Value", recfld.getFieldAsString("Value"))
+														FeedUtil.updateField(
+																def,
+																recfld.getFieldAsString("Name"),
+																recfld.getFieldAsString("Value"),
+																root,
+																currloc,
+																defloc
 														);
 													}
 												}
@@ -245,7 +257,7 @@ public class FeedVault extends Vault {
 											MemoryStoreFile msource = MemoryStoreFile.of(CommonPath.from(temppath))
 												.with(root.toPrettyString());
 
-											VaultUtil.transfer("Feeds", msource, fi.getPathAsCommon(),
+											VaultUtil.transfer("Feeds", msource, fi.getPathAsCommon(), null,
 													new OperationOutcomeStruct() {
 														@Override
 														public void callback(Struct result) throws OperatingContextException {
@@ -261,7 +273,9 @@ public class FeedVault extends Vault {
 																					return;
 																				}
 
-																				VaultUtil.transfer("Web", wwwsource, fi.getPathAsCommon().subpath(1), fcb);
+																				CommonPath sitepath = CommonPath.from("/www").resolve(fi.getPathAsCommon().subpath(1));
+
+																				VaultUtil.transfer("SiteFiles", wwwsource, sitepath, null, fcb);
 																			}
 																		});
 															}
@@ -370,7 +384,7 @@ public class FeedVault extends Vault {
 		}
 		
 		// TODO check security
-		if ("SavePart".equals(cmd)) {
+		if ("SavePart".equals(cmd) || "SaveMeta".equals(cmd) || "Reorder".equals(cmd)) {
 			this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
 				@Override
 				public void callback(FileStoreFile result) throws OperatingContextException {
@@ -406,108 +420,25 @@ public class FeedVault extends Vault {
 									return;
 								}
 								
-								XElement part = root.findId(request.selectAsString("Params.PartId"));
-								
-								if (part == null) {
-									Logger.error("Feed file missing part");
-									fcb.returnEmpty();
-									return;
-								}
-
-								// TODO check to see if authorized to edit this part
-								// using a new security method on the UI element
-								
-								String partpath = request.selectAsString("Params.PartPath", "=");
-								
-								if (! ("=".equals(partpath) || "_".equals(partpath))) {
-									part = part.selectFirst(partpath);
-								}
-								
-								if (part == null) {
-									Logger.error("Feed file missing part path");
-									fcb.returnEmpty();
-									return;
-								}
-
-								String loadmode = request.selectAsString("Params.Mode", "json");
-								XElement newel = null;
-
-								if ("json".equals(loadmode)) {
-									RecordStruct newpart = null;
+								try (OperationMarker om = OperationMarker.create()) {
+									FeedUtil.applyCommand(fi.getPathAsCommon(), root, request, true);
 									
-									if ("_".equals(partpath)) {
-										ListStruct extra = request.selectAsList("Params.Part");
-										
-										newpart = RecordStruct.record()
-												.with("type", "element")
-												.with("name", "dummy")
-												.with("children", extra);
-									}
-									else {
-										newpart = request.selectAsRecord("Params.Part");
-									}
-									
-									if (newpart == null) {
-										Logger.error("Missing new part content");
+									if (om.hasErrors()) {
 										fcb.returnEmpty();
 										return;
 									}
-
-									// TODO use UI parser
-									newel = JsonToXml.convertJson(newpart);
 								}
-								else if ("text".equals(loadmode)) {
-									String newpart = request.selectAsString("Params.Part");
-
-									if (newpart == null) {
-										Logger.error("Missing new part content");
-										fcb.returnEmpty();
-										return;
-									}
-									
-									if ("_".equals(partpath)) {
-										newpart = "<dummy>" + newpart + "</dummy>";
-									}
-									
-									// TODO use UI parser
-									newel = XmlReader.parse(newpart, true, true);
-								}
-								else {
-									Logger.error("Invalid save mode");
+								catch (Exception x) {
+									Logger.error("OperationMarker error");
 									fcb.returnEmpty();
 									return;
 								}
-
-								if (newel == null) {
-									Logger.error("New part content is not valid xml");
-									fcb.returnEmpty();
-									return;
-								}
-
-								// TODO check that the changes made are allowed - e.g. on TextWidget
-								// an Editor cannot change to Unsafe mode
-
-								if ("_".equals(partpath)) {
-									part.replaceChildren(newel);
-								}
-								else {
-									part.replace(newel);
-								}
-
+								
 								// save part as deposit
 								MemoryStoreFile msource = MemoryStoreFile.of(fi.getPathAsCommon())
 										.with(root.toPrettyString());
 
-								VaultUtil.transfer(FeedVault.this.name, msource, fi.getPathAsCommon(), fcb);
-
-								/*
-								fi.writeAllText(root.toPrettyString(), new OperationOutcomeEmpty() {
-									@Override
-									public void callback() {
-										fcb.returnEmpty();
-									}
-								});
-								*/
+								VaultUtil.transfer(FeedVault.this.name, msource, fi.getPathAsCommon(), null, fcb);
 							}
 							else {
 								fcb.returnEmpty();
@@ -556,16 +487,9 @@ public class FeedVault extends Vault {
 									return;
 								}
 								
-								XElement metas = XElement.tag("dummy");
+								RecordStruct info = FeedUtil.metaToInfo(fi.getPathAsCommon().getName(0), request.selectAsString("Params.TrLocale"), root);
 								
-								for (XElement meta : root.selectAll("Meta"))
-									metas.add(meta);
-								
-								RecordStruct prt = XmlToJson.convertXml(metas, true);
-								
-								fcb.returnValue(RecordStruct.record()
-										.with("Extra", prt.getFieldAsList("children"))
-								);
+								fcb.returnValue(RecordStruct.record().with("Extra", info));
 							}
 							else {
 								fcb.returnEmpty();
@@ -578,121 +502,7 @@ public class FeedVault extends Vault {
 			return;
 		}
 		
-		// TODO check security
-		if ("SaveMeta".equals(cmd)) {
-			this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
-				@Override
-				public void callback(FileStoreFile result) throws OperatingContextException {
-					if (this.hasErrors()) {
-						fcb.returnEmpty();
-						return;
-					}
-					
-					if (this.isEmptyResult()) {
-						Logger.error("Your request appears valid but does not map to a folder.  Unable to complete.");
-						fcb.returnEmpty();
-						return;
-					}
-					
-					FileStoreFile fi = this.getResult();
-					
-					if (!fi.exists()) {
-						Logger.error("Your request appears valid but does not map to a folder.  Unable to complete.");
-						fcb.returnEmpty();
-						return;
-					}
-					
-					fi.readAllText(new OperationOutcome<String>() {
-						@Override
-						public void callback(String result) throws OperatingContextException {
-							if (this.isNotEmptyResult()) {
-								// TODO parse as UI
-								XElement root = XmlReader.parse(result, true, true);
-								
-								if (root == null) {
-									Logger.error("Feed file not well formed XML");
-									fcb.returnEmpty();
-									return;
-								}
-
-								ListStruct metalist = request.selectAsList("Params.Meta");
-								
-								if (metalist == null) {
-									Logger.error("Missing meta content");
-									fcb.returnEmpty();
-									return;
-								}
-								
-								// TODO use UI parser
-								XElement newel = JsonToXml.convertJson(RecordStruct.record()
-										.with("type", "element")
-										.with("name", "dummy")
-										.with("children", metalist));
-								
-								if (newel == null) {
-									Logger.error("New part content is not valid xml");
-									fcb.returnEmpty();
-									return;
-								}
-
-								// determine where to add Meta tags into document
-								int idxlastmeta = 0;
-								
-								for (int i = 0; i < root.getChildCount(); i++) {
-									XNode node = root.getChild(i);
-									
-									if ((node instanceof XElement) && "Meta".equals(((XElement)node).getName()))
-										idxlastmeta = i;
-								}
-								
-								for (XElement newmeta : newel.selectAll("Meta")) {
-									String name = newmeta.getAttribute("Name");
-									
-									if (StringUtil.isEmpty(name))
-										continue;
-									
-									boolean fnd = false;
-									
-									for (XElement oldmeta : root.selectAll("Meta")) {
-										if (name.equals(oldmeta.getAttribute("Name"))) {
-											oldmeta.replace(newmeta);
-											fnd = true;
-											break;
-										}
-									}
-									
-									if (! fnd) {
-										root.add(idxlastmeta, newmeta);
-										idxlastmeta++;
-									}
-								}
-
-								// save part as deposit
-								MemoryStoreFile msource = MemoryStoreFile.of(fi.getPathAsCommon())
-										.with(root.toPrettyString());
-
-								VaultUtil.transfer(FeedVault.this.name, msource, fi.getPathAsCommon(), fcb);
-
-								/*
-								fi.writeAllText(root.toPrettyString(), new OperationOutcomeEmpty() {
-									@Override
-									public void callback() {
-										fcb.returnEmpty();
-									}
-								});
-								*/
-							}
-							else {
-								fcb.returnEmpty();
-							}
-						}
-					});
-				}
-			});
-			
-			return;
-		}
-		
+		/* review
 		// TODO check security
 		if ("IndexFolder".equals(cmd)) {
 			this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
@@ -733,9 +543,10 @@ public class FeedVault extends Vault {
 					});
 				}
 			});
-			
+		
 			return;
 		}
+			*/
 		
 		super.executeCustom(request, checkAuth, fcb);
 	}

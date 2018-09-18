@@ -115,6 +115,9 @@ public class LocaleUtil {
 	}
 
 	static public String toIndex(List<IndexInfo> tokens) {
+		if (tokens == null)
+			return null;
+		
 		StringBuilder sb = new StringBuilder();
 
 		for (IndexInfo token : tokens) {

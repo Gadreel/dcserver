@@ -33,8 +33,8 @@ public class SocialMediaIcon extends Link {
 			if (! this.hasAttribute("Icon"))
 				this.withAttribute("Icon", "fa-" + formedia.toLowerCase());
 			
-			if (! this.hasAttribute("title"))
-				this.withAttribute("title", "Visit us on " + formedia);		// TODO locale, get from settings
+			if (! this.hasAttribute("aria-label"))
+				this.withAttribute("aria-label", "{$_Tr.dcwTagSocialIcon} " + formedia);		// TODO locale, get from settings
 		}
 
 		super.renderBeforeChildren(state);

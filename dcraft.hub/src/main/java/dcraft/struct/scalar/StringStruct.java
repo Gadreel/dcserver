@@ -26,9 +26,14 @@ import dcraft.schema.RootType;
 import dcraft.schema.SchemaHub;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
+import dcraft.script.work.StackWork;
+import dcraft.struct.DataUtil;
+import dcraft.struct.ListStruct;
+import dcraft.struct.PathPart;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
+import dcraft.util.HexUtil;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
@@ -88,6 +93,18 @@ public class StringStruct extends ScalarStruct {
 		this.value = v; 
 	}
 	
+	public void append(String v) {
+		if (this.value == null)
+			this.value = new StringBuilder();
+		
+		if (this.value instanceof StringBuilder) {
+			((StringBuilder)this.value).append(v);
+		}
+		else {
+			this.value = this.value + v;
+		}
+	}
+	
 	@Override
 	public boolean isEmpty() {
 		return StringUtil.isEmpty(this.value);
@@ -99,7 +116,20 @@ public class StringStruct extends ScalarStruct {
 	}
 	
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
+	public Struct select(PathPart... path) {
+		if (path.length == 1) {
+			PathPart part = path[0];
+			
+			if (part.isField() && "@Length".equals(part.getField())) {
+				return IntegerStruct.of((this.value != null) ? this.value.length() : 0);
+			}
+		}
+		
+		return super.select(path);
+	}
+	
+	@Override
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		if ("Lower".equals(code.getName())) {
 			if (StringUtil.isNotEmpty(this.value))
 				this.value = this.value.toString().toLowerCase();
@@ -127,22 +157,8 @@ public class StringStruct extends ScalarStruct {
 					: StackUtil.resolveReference(stack, code.getText());
 
 			String pat = StackUtil.stringFromElement(stack, code, "Pattern");
-					
-			try {
-				if (sref instanceof DateTimeStruct)
-					this.value = DateTimeFormatter.ofPattern(pat).format(((DateTimeStruct)sref).getValue());			
-				else if (sref instanceof DateStruct)
-					this.value = DateTimeFormatter.ofPattern(pat).format(((DateStruct)sref).getValue());			
-				else if (sref instanceof TimeStruct)
-					this.value = DateTimeFormatter.ofPattern(pat).format(((TimeStruct)sref).getValue());			
-				else if (sref instanceof DecimalStruct)
-					this.value = new DecimalFormat(pat).format(((DecimalStruct)sref).getValue());			
-				else if (sref instanceof IntegerStruct || sref instanceof BigIntegerStruct)		
-					this.value = String.format(pat, ((ScalarStruct)sref).getGenericValue());			
-			}
-			catch (Exception x) {
-				Logger.error("Error doing " + code.getName() + ": " + x);
-			}
+			
+			this.value = Struct.objectToString(DataUtil.format(sref, pat));
 			
 			return ReturnOption.CONTINUE;
 		}
@@ -253,10 +269,48 @@ public class StringStruct extends ScalarStruct {
 			
 			return ReturnOption.CONTINUE;
 		}
-		
+		else if ("Split".equals(code.getName())) {
+			String delim = StackUtil.stringFromElement(stack, code, "Delim", ",");
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+			
+			if (StringUtil.isNotEmpty(result)) {
+				ListStruct res = ListStruct.list();
+				
+				if ( StringUtil.isNotEmpty(this.value)) {
+					res.with(this.value.toString().split(delim));
+				}
+				
+				StackUtil.addVariable(stack, result, res);
+			}
+			
+			return ReturnOption.CONTINUE;
+		}
+		else if ("IndexOf".equals(code.getName())) {
+			String find = StackUtil.stringFromElement(stack, code, "Find", ",");
+			long from = StackUtil.intFromElement(stack, code, "From", 0);
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+
+			if (StringUtil.isNotEmpty(result)) {
+				IntegerStruct res = IntegerStruct.of(-1);
+
+				if ( StringUtil.isNotEmpty(this.value)) {
+					res.adaptValue(this.value.toString().indexOf(find, (int) from));
+				}
+
+				StackUtil.addVariable(stack, result, res);
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+		else if ("HexEncode".equals(code.getName())) {
+			if (StringUtil.isNotEmpty(this.value))
+				this.value = HexUtil.encodeHex(this.value.toString().trim());
+
+			return ReturnOption.CONTINUE;
+		}
+
 		/*
 		// TODO also implement
-		 *  <Join List="$var" With="delim" />
 		// <Piece Delim="str" Index="num" />
 		// <Align Size="num" Pad="left|right" PadChar="c" />
 		 */
@@ -318,7 +372,11 @@ public class StringStruct extends ScalarStruct {
 		if (xv == null)
 			return -1;
 
-		return xv.compareTo(yv);
+		int cv = xv.compareTo(yv);
+
+		//System.out.println("a: " + xv + " - b: " + yv + " x: " + cv);
+
+		return cv;
 	}
 	
 	@Override
@@ -334,7 +392,21 @@ public class StringStruct extends ScalarStruct {
 	            isok = caseinsensitive ? this.value.toString().toLowerCase().contains(other.toLowerCase()) : this.value.toString().contains(other);
 	            condFound = true;
 	        }
-			
+			if (! condFound && source.hasAttribute("In")) {
+				Struct other = StackUtil.refFromElement(stack, source, "In");
+
+				if ((other instanceof StringStruct) && ! other.isEmpty()) {
+					String[] options = other.toString().split(",");
+
+					for (String opt : options) {
+						if (caseinsensitive ? this.value.toString().equalsIgnoreCase(opt) : this.value.toString().equals(opt))
+							return true;
+					}
+				}
+
+				return false;
+			}
+
 			if (!condFound && source.hasAttribute("StartsWith")) {
 				String other = StackUtil.stringFromElement(stack, source, "StartsWith");
 	            isok = caseinsensitive ? this.value.toString().toLowerCase().startsWith(other.toLowerCase()) : this.value.toString().startsWith(other);

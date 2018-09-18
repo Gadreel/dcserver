@@ -2,10 +2,80 @@
 	<Locale Id="eng">
 		<Entry Token="_code_60000" Value="Open menu" />
 		<Entry Token="_code_60001" Value="Close menu" />
+		<Entry Token="_code_60002" Value="primary" />
+		<Entry Token="_code_60003" Value="duplicate" />
+		<Entry Token="dcwPage" Value="page" />
+		<Entry Token="dcwPageHeader" Value="page header" />
+		<Entry Token="dcwPageNavigation" Value="navigation" />
+		<Entry Token="dcwPageBody" Value="page body" />
+		<Entry Token="dcwPageFooter" Value="page footer" />
+		<Entry Token="dcwPageSecondaryNavigation" Value="Secondary" />
+		<Entry Token="dcwPagePrevious" Value="Previous Form" />
+		<Entry Token="dcwPageOpenMenu" Value="Open Menu" />
+		<Entry Token="dcwPageHelp" Value="Help" />
+		<Entry Token="dcwPageClose" Value="Close" />
+		<Entry Token="dcwDialogMessage" Value="Message" />
+		<Entry Token="dcwDialogClose" Value="Close dialog window" />
+
+		<Entry Token="dcwConfirmTitle" Value="Confirm" />
+		<Entry Token="dcwConfirmYes" Value="Yes" />
+		<Entry Token="dcwConfirmNo" Value="No" />
+
+		<Entry Token="dcwFormOptions" Value="Form options" />
+		<Entry Token="dcwTagSocialIcon" Value="Visit us on" />
+
+		<Entry Token="_enum_dcmOrderStatusEnum_Pending" Value="Pending" />
+		<Entry Token="_enum_dcmOrderStatusEnum_AwaitingPayment" Value="Awaiting Payment" />
+		<Entry Token="_enum_dcmOrderStatusEnum_AwaitingFulfillment" Value="Awaiting Fulfillment" />
+		<Entry Token="_enum_dcmOrderStatusEnum_AwaitingShipment" Value="Awaiting Shipment" />
+		<Entry Token="_enum_dcmOrderStatusEnum_AwaitingPickup" Value="Awaiting Pickup" />
+		<Entry Token="_enum_dcmOrderStatusEnum_PartiallyCompleted" Value="Partially Completed" />
+		<Entry Token="_enum_dcmOrderStatusEnum_Completed" Value="Completed" />
+		<Entry Token="_enum_dcmOrderStatusEnum_Canceled" Value="Canceled" />
+		<Entry Token="_enum_dcmOrderStatusEnum_VerificationRequired" Value="Verification Required" />
+
+		<Entry Token="_enum_dcmItemStatusEnum_AwaitingFulfillment" Value="Awaiting Fulfillment" />
+		<Entry Token="_enum_dcmItemStatusEnum_AwaitingShipment" Value="Awaiting Shipment" />
+		<Entry Token="_enum_dcmItemStatusEnum_AwaitingPickup" Value="Awaiting Pickup" />
+		<Entry Token="_enum_dcmItemStatusEnum_Completed" Value="Completed" />
+		<Entry Token="_enum_dcmItemStatusEnum_Canceled" Value="Canceled" />
 	</Locale>
+
 	<!-- TODO separate out languages -->
 	<Locale Id="spa">
-		<Entry Token="_code_60000" Value="Menú abierto" />
-		<Entry Token="_code_60001" Value="Cerrar el menú" />
+		<Entry Token="_code_60000" Value="menú abierto" />
+		<Entry Token="_code_60001" Value="cerrar el menú" />
+		<Entry Token="_code_60002" Value="primero" />
+		<Entry Token="_code_60003" Value="duplicado" />
+		<Entry Token="dcwPage" Value="página" />
+		<Entry Token="dcwPageHeader" Value="encabezado de página" />
+		<Entry Token="dcwPageNavigation" Value="navegación de página" />
+		<Entry Token="dcwPageBody" Value="cuerpo de página" />
+		<Entry Token="dcwPageFooter" Value="pie de página" />
+		<Entry Token="dcwPageSecondaryNavigation" Value="secundaria" />
+		<Entry Token="dcwPagePrevious" Value="formulario anterior" />
+		<Entry Token="dcwPageOpenMenu" Value="menú abierto" />
+		<Entry Token="dcwPageHelp" Value="ayuda" />
+		<Entry Token="dcwPageClose" Value="Cerrar" />
+		<Entry Token="dcwDialogMessage" Value="Mensaje" />
+
+		<Entry Token="dcwConfirmTitle" Value="Constatar" />  <!-- TODO fix -->
+		<Entry Token="dcwConfirmYes" Value="Sí" />
+		<Entry Token="dcwConfirmNo" Value="No" />
+
+		<Entry Token="dcwDialogClose" Value="Cerrar cuadro de diálogo" />
+		<Entry Token="dcwFormOptions" Value="Opciones de forma" />
+		<Entry Token="dcwTagSocialIcon" Value="Visítanos en" />
+	</Locale>
+
+	<Locale Id="hmn">
+		<Entry Token="dcwPageClose" Value="Kaw" />
+		<Entry Token="dcwDialogMessage" Value="Tsab xov" />
+		<Entry Token="dcwDialogClose" Value="Kaw Kev Sib Tham" />
+		<Entry Token="dcwDialogMessage" Value="Zaj Lus" />
+
+		<Entry Token="dcwConfirmTitle" Value="Pom zoo" />
+		<Entry Token="dcwConfirmYes" Value="Xav" />
+		<Entry Token="dcwConfirmNo" Value="Tsis Xav" />
 	</Locale>
 </Dictionary>

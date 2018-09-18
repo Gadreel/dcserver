@@ -23,6 +23,7 @@ import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
 import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.service.IServiceRequestBuilder;
 import dcraft.service.ServiceRequest;
 import dcraft.stream.StreamFragment;
@@ -116,7 +117,7 @@ abstract public class ApiSession extends RecordStruct implements AutoCloseable {
 	abstract public void stopped();
 	
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		if ("Stop".equals(code.getName())) {
 			this.stop();
 			

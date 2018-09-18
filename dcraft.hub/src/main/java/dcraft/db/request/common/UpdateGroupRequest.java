@@ -20,6 +20,7 @@ import dcraft.db.request.update.ConditionalValue;
 import dcraft.db.request.update.UpdateRecordRequest;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.ListStruct;
+import dcraft.struct.RecordStruct;
 
 /**
  * Update a group record.  Name is required.
@@ -62,7 +63,7 @@ public class UpdateGroupRequest extends UpdateRecordRequest {
 	}
 	
 	@Override
-	public CompositeStruct buildParams() {
+	public RecordStruct buildParams() {
 		this.withSetField("dcName", this.name);
 		this.withSetField("dcDescription", this.desc);
 

@@ -18,11 +18,12 @@ package dcraft.cms.store;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.service.BaseDataService;
 import dcraft.service.BaseService;
 import dcraft.service.ServiceRequest;
 import dcraft.struct.RecordStruct;
 
-public class Service extends BaseService {
+public class Service extends BaseDataService {
 	@Override
 	public void start() {
 		super.start();
@@ -57,9 +58,21 @@ public class Service extends BaseService {
 		//  store orders
 		// =========================================================
 		
-		if ("Orders".equals(feature))
-			return Orders.handle(request, callback);
-		
+		if ("Orders".equals(feature)) {
+			if (Orders.handle(request, callback))
+				return true;
+
+			return super.handle(request, callback);
+		}
+
+		// =========================================================
+		//  payment handler
+		// =========================================================
+
+		if ("Payment".equals(feature)) {
+			return super.handle(request, callback);
+		}
+
 		// =========================================================
 		//  gift registry
 		// =========================================================

@@ -26,7 +26,7 @@ html {
 	-ms-text-size-adjust: 100%; /* 2 */
 	-webkit-text-size-adjust: 100%; /* 2 */
 
-	font-size: 62.5%;			// 10px equivalent
+	font-size: 62.5%;			/* 10px equivalent */
 }
 
 /**
@@ -37,7 +37,7 @@ body {
  	margin: 0;
 	position: relative;
 
-	font-size: 1.6rem;		// 16px approx
+	font-size: 1.6rem;		/* 16px approx */
 }
 
 /* HTML5 display definitions
@@ -99,6 +99,15 @@ template {
   display: none;
 }
 
+/* outline any focusable element */
+*:focus {
+	outline: 3px solid #94BFF9;
+}
+
+button::-moz-focus-inner {
+	border: 0;
+}
+
 /* Links
    ========================================================================== */
 
@@ -109,15 +118,6 @@ template {
 a {
   background-color: transparent;
   text-decoration: none;
-}
-
-/**
- * Improve readability when focused and also mouse hovered in all browsers.
- */
-
-a:active,
-a:hover {
-  outline: 0;
 }
 
 /* Text-level semantics
@@ -704,7 +704,7 @@ th {
 .pure-button {
     display: inline-block;
     line-height: normal;
-    white-space: nowrap;
+    /* white-space: nowrap; */
     vertical-align: middle;
     text-align: center;
     cursor: pointer;
@@ -749,9 +749,7 @@ th {
     background-image: -o-linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
     background-image: linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
 }
-.pure-button:focus {
-    outline: 0;
-}
+
 .pure-button-active,
 .pure-button:active {
     box-shadow: 0 0 0 1px rgba(0,0,0, 0.15) inset, 0 0 6px rgba(0,0,0, 0.20) inset;
@@ -823,7 +821,7 @@ so we can ignore the csslint warning.
 .pure-form textarea {
     padding: 0.8rem 1rem;
     display: inline-block;
-    border: 1px solid #ccc;
+    border: .2rem solid #ccc;
     box-shadow: inset 0 1px 3px #ddd;
     border-radius: 4px;
     vertical-align: middle;
@@ -855,20 +853,20 @@ so we can ignore the csslint warning.
 .pure-form input[type="color"]:focus,
 .pure-form select:focus,
 .pure-form textarea:focus {
-    outline: 0;
-    border-color: #129FEA;
+	 outline: 0;
+	 border-color: #129FEA;
 }
 
 .pure-form input[type="file"]:focus,
 .pure-form input[type="radio"]:focus,
 .pure-form input[type="checkbox"]:focus {
-    outline: thin solid #129FEA;
-    outline: 1px auto #129FEA;
+	 outline: thin solid #129FEA;
+	 outline: 1px auto #129FEA;
 }
 .pure-form .pure-checkbox,
 .pure-form .pure-radio {
-    margin: 0.8rem 0;
-    display: block;
+	 margin: 0.8rem 0;
+	 display: block;
 }
 
 .pure-form input[type="text"][disabled],
@@ -888,54 +886,54 @@ so we can ignore the csslint warning.
 .pure-form select[disabled],
 .pure-form textarea[disabled],
 .pure-form input:not([type])[disabled] {
-    cursor: not-allowed;
-    background-color: #eaeded;
-    color: #cad2d3;
+	 cursor: not-allowed;
+	 background-color: #eaeded;
+	 color: #cad2d3;
 }
 
 .pure-form input[readonly],
 .pure-form select[readonly],
 .pure-form textarea[readonly] {
-    background-color: #eee; /* menu hover bg color */
-    color: #777; /* menu text color */
-    border-color: #ccc;
+	 background-color: #eee; /* menu hover bg color */
+	 color: #777; /* menu text color */
+	 border-color: #ccc;
 }
 
 .pure-form input:focus:invalid,
 .pure-form textarea:focus:invalid,
 .pure-form select:focus:invalid {
-    color: #b94a48;
-    border-color: #e9322d;
+	 color: #b94a48;
+	 border-color: #e9322d;
 }
 .pure-form input[type="file"]:focus:invalid:focus,
 .pure-form input[type="radio"]:focus:invalid:focus,
 .pure-form input[type="checkbox"]:focus:invalid:focus {
-    outline-color: #e9322d;
+	 outline-color: #e9322d;
 }
 .pure-form select {
-    /* Normalizes the height; padding is not sufficient. */
-    height: 2.25rem;
-    border: 1px solid #ccc;
-    background-color: white;
+	 /* Normalizes the height; padding is not sufficient. */
+	 height: 2.25rem;
+	 border: .2rem solid #ccc;
+	 background-color: white;
 }
 .pure-form select[multiple] {
-    height: auto;
+	 height: auto;
 }
 .pure-form label:not(.pure-button) {
-    margin: 0.8rem 0 0.32rem;
+	 margin: 0.8rem 0 0.32rem;
 }
 .pure-form fieldset {
-    margin: 0;
-    padding: 0.55rem 0 1.2rem;
-    border: 0;
+	margin: 0;
+	padding: 0.55rem 0 1.2rem;
+	border: 0;
 }
 .pure-form legend {
-    display: block;
-    width: 100%;
-    padding: 0.5rem 0;
-    margin-bottom: 0.5rem;
-    color: #333;
-    border-bottom: 1px solid #e5e5e5;
+	display: block;
+	width: 100%;
+	padding: 0.5rem 0;
+	margin-bottom: 0.5rem;
+	color: #333;
+	border-bottom: .2rem solid #e5e5e5;
 }
 
 .pure-form-stacked input[type="text"],
@@ -990,7 +988,7 @@ so we can ignore the csslint warning.
 .pure-form input.pure-input-rounded,
 .pure-form .pure-input-rounded {
     border-radius: 3.2rem;
-    padding: 0.8em 1.6rem;
+    padding: 0.8rem 1.6rem;
 }
 
 /* Grouped Inputs */
@@ -1200,7 +1198,7 @@ code {
 	padding: .9rem 1.4rem;
 	margin-bottom: 1.4rem;
 	background-color: #f7f7f9;
-	border: 1px solid #e1e1e8;
+	border: .2rem solid #e1e1e8;
 	border-radius: 4px;
 }
 
@@ -1223,18 +1221,25 @@ code {
 .dc-field input:not([type]),
 .dc-field input[type="text"],
 .dc-field input[type="password"],
+.dc-field input[type="number"],
 .dc-field select,
 .dc-field textarea {
-    padding: .8rem .9rem;
-    display: inline-block;
-    border: 1px solid #ccc;
-    box-shadow: inset 0 1px 3px #ddd;
-    border-radius: 4px;
-    vertical-align: middle;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
-    border-radius: 4px;
+	display: inline-block;
+	border: .2rem solid #ccc;
+	box-shadow: inset 0 1px 3px #ddd;
+	border-radius: 4px;
+	vertical-align: middle;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+.dc-field input:not([type]),
+.dc-field input[type="text"],
+.dc-field input[type="password"],
+.dc-field input[type="number"],
+.dc-field textarea {
+	padding: .8rem .9rem;
 }
 
 .dc-field:not(.dc-field-multi) .dc-control input:not([type]),
@@ -1245,51 +1250,75 @@ code {
     width: 100%;
 }
 
+.dc-field:not(.dc-field-multi) .dc-control input[type="range"] {
+	width: 90%;
+	margin-top: 1rem;
+}
+
+.dc-field:not(.dc-field-multi) .dc-control input[type="number"] {
+	width: 100%;
+	margin-top: 1rem;
+}
+
+.dc-field .dc-control .dc-message p:first-child,
+.dc-field .dc-control label p:first-child {
+	margin-top: 0;
+}
+
+.dc-field .dc-control .dc-message p:last-child,
+.dc-field .dc-control label p:last-child {
+	margin-bottom: 0;
+}
+
 .dc-field input:not([type]):focus,
 .dc-field input[type="text"]:focus,
 .dc-field input[type="password"]:focus,
+.dc-field input[type="range"]:focus,
+.dc-field input[type="number"]:focus,
 .dc-field select:focus,
 .dc-field textarea:focus {
-    outline: 0;
-    border-color: #129FEA;
+	outline: 0;
+	border: .2rem solid #129FEA;
 }
 
 .dc-field input[type="file"]:focus,
 .dc-field input[type="radio"]:focus,
 .dc-field input[type="checkbox"]:focus {
-    outline: thin solid #129FEA;
-    outline: 1px auto #129FEA;
+	outline: thin solid #129FEA;
+	outline: 1px auto #129FEA;
 }
 
 .dc-field .pure-checkbox,
 .dc-field .pure-radio {
-    margin: .8rem 0;
-    display: block;
+	margin: .8rem 0;
+	display: block;
 }
 
 .dc-field input[type="text"][disabled],
 .dc-field input[type="password"][disabled],
+.dc-field input[type="range"][disabled],
+.dc-field input[type="number"][disabled],
 .dc-field select[disabled],
 .dc-field textarea[disabled],
 .dc-field input:not([type])[disabled] {
-    cursor: not-allowed;
-    background-color: #eaeded;
-    color: #cad2d3;
+	cursor: not-allowed;
+	background-color: #eaeded;
+	color: #cad2d3;
 }
 
 .dc-field input[readonly],
 .dc-field select[readonly],
 .dc-field textarea[readonly] {
-    background-color: #eee;
-    color: #777;
-    border-color: #ccc;
+	background-color: #eee;
+	color: #777;
+	border-color: #ccc;
 }
 
 .dc-field select {
-    /* Normalizes the height; padding is not sufficient. */
-    height: 3.6rem;
-    border: 1px solid #ccc;
-    background-color: white;
+	/* Normalizes the height; padding is not sufficient. */
+	height: 3.6rem;
+	border: .2rem solid #ccc;
+	background-color: white;
 }
 
 .dc-field select[multiple] {
@@ -1308,16 +1337,22 @@ code {
 	width: 100%;
 }
 
-.dc-field.dc-form-buttons .dc-control {
+.dc-form-buttons {
+	text-align: right;
+	padding: .9rem 1.4rem;
+	margin-bottom: 1.4rem;
+}
+
+.dc-form-buttons {
 	text-align: right;
 }
 
-.dc-field.dc-form-buttons .dc-control .pure-button {
-    margin-top: .9rem;
+.dc-form-buttons .pure-button {
+	margin-top: .9rem;
 }
 
-.dc-field.dc-form-buttons .dc-control .pure-button:not(:last-of-type) {
-    margin-right: .9rem;
+.dc-form-buttons .pure-button:not(:last-of-type) {
+	margin-right: .9rem;
 }
 
 .dc-textarea {
@@ -1400,7 +1435,7 @@ code {
     text-decoration: none;
     display: inline-block;
     line-height: normal;
-    white-space: nowrap;
+    /* white-space: nowrap; */
     vertical-align: middle;
     text-align: center;
     cursor: pointer;
@@ -1414,22 +1449,24 @@ code {
     box-sizing: border-box;
 }
 
-.dc-input-button:hover,
-.dc-input-button:focus,
-.dc-addon-button:hover,
-.dc-addon-button:focus {
-    background-image: -webkit-gradient(linear, 0 0, 0 100%, from(transparent), color-stop(40%, rgba(0,0,0, 0.05)), to(rgba(0,0,0, 0.10)));
-    background-image: -webkit-linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
-    background-image: -moz-linear-gradient(top, rgba(0,0,0, 0.05) 0%, rgba(0,0,0, 0.10));
-    background-image: -o-linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
-    background-image: linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
-    outline: 0;
+.dc-addon-button {
+	white-space: nowrap;
 }
 
+.dc-input-button:hover,
+.dc-input-button:focus,
 .dc-input-button:active,
-.dc-addon-button:active {
-    box-shadow: 0 0 0 1px rgba(0,0,0, 0.15) inset, 0 0 6px rgba(0,0,0, 0.20) inset;
-    border-color: #000\9;
+input:active + label.dc-input-button,
+input:focus + label.dc-input-button,
+.dc-addon-button:active,
+.dc-addon-button:hover,
+.dc-addon-button:focus {
+	background-image: -webkit-gradient(linear, 0 0, 0 100%, from(transparent), color-stop(40%, rgba(0,0,0, 0.05)), to(rgba(0,0,0, 0.10)));
+	background-image: -webkit-linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
+	background-image: -moz-linear-gradient(top, rgba(0,0,0, 0.05) 0%, rgba(0,0,0, 0.10));
+	background-image: -o-linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
+	background-image: linear-gradient(transparent, rgba(0,0,0, 0.05) 40%, rgba(0,0,0, 0.10));
+	outline: #129FEA solid .2rem;
 }
 
 .dc-input-button[disabled],
@@ -1461,7 +1498,7 @@ code {
 }
 
 .dc-addon-button {
-    border: 1px solid #ccc;
+    border: .2rem solid #ccc;
 }
 
 .dc-addon-glyph-button {
@@ -1473,7 +1510,7 @@ code {
     text-align: center;
     background-color: #f7f7f9;
     vertical-align: middle;
-    border: 1px solid #ccc;
+    border: .2rem solid #ccc;
     white-space: nowrap;
     -webkit-user-drag: none;
     -webkit-user-select: none;
@@ -1489,8 +1526,8 @@ code {
     color: #555;
     text-align: center;
     vertical-align: middle;
-    border-top: 1px solid #ccc;
-    border-bottom: 1px solid #ccc;
+    border-top: .2rem solid #ccc;
+    border-bottom: .2rem solid #ccc;
     width: 3.2rem;
     background-color: white;
     white-space: nowrap;
@@ -1517,11 +1554,11 @@ code {
 }
 
 .dc-addon-glyph:first-child {
-    border-left: 1px solid #ccc;
+    border-left: .2rem solid #ccc;
 }
 
 .dc-addon-glyph:last-child {
-    border-right: 1px solid #ccc;
+    border-right: .2rem solid #ccc;
 }
 
 .dc-input-group-addon:first-child {
@@ -1598,6 +1635,22 @@ code {
 }
 
 .dc-full-pad-extra {
+	padding: 2.4rem;
+}
+
+.dc-simple-pad-small {
+	padding: .6rem;
+}
+
+.dc-simple-pad-medium {
+	padding: 1.2rem;
+}
+
+.dc-simple-pad-large {
+	padding: 1.8rem;
+}
+
+.dc-simple-pad-extra {
 	padding: 2.4rem;
 }
 
@@ -1768,156 +1821,167 @@ code {
     background-color: #d9534f;
 }
 
-.dc-panel {
-    background-color: #fff;
-    border: 1px solid transparent;
-    border-radius: 9px;
-    overflow: hidden;
-    -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.05);
-    box-shadow: 0 1px 1px rgba(0,0,0,.05);
-}
-
-.dc-panel:not(:last-child) {
-    margin-bottom: 2rem;
-}
-
 .dc-panel-heading {
     padding: 1rem 1.5rem .5rem;
-    border-bottom: 1px solid transparent;
-    border-top-left-radius: 3px;
-    border-top-right-radius: 3px;
 }
 
-.dc-panel-default {
-    border-color: #ddd;
+@media screen {
+	.dc-panel {
+	    background-color: #fff;
+	    border: 1px solid transparent;
+	    border-radius: 9px;
+	    overflow: hidden;
+	    -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.05);
+	    box-shadow: 0 1px 1px rgba(0,0,0,.05);
+	}
+
+	.dc-panel:not(:last-child) {
+	    margin-bottom: 2rem;
+	}
+
+	.dc-panel-heading {
+	    border-bottom: 1px solid transparent;
+	    border-top-left-radius: 3px;
+	    border-top-right-radius: 3px;
+	}
+
+	.dc-panel-default {
+	    border-color: #ddd;
+	}
+
+	.dc-panel-default > .dc-panel-heading {
+	    color: #333;
+	    background-color: #f5f5f5;
+	    border-color: #ddd;
+	}
+
+	.dc-panel-primary {
+	    border-color: #337ab7;
+	}
+
+	.dc-panel-primary > .dc-panel-heading {
+	    color: #fff;
+	    background-color: #337ab7;
+	    border-color: #337ab7;
+	}
+
+	.dc-panel-success {
+	    border-color: #d6e9c6;
+	}
+
+	.dc-panel-success > .dc-panel-heading {
+	    color: #3c763d;
+	    background-color: #dff0d8;
+	    border-color: #d6e9c6;
+	}
+
+	.dc-panel-info {
+	    border-color: #bce8f1;
+	}
+
+	.dc-panel-info > .dc-panel-heading {
+	    color: #31708f;
+	    background-color: #d9edf7;
+	    border-color: #bce8f1;
+	}
+
+	.dc-panel-warning {
+	    border-color: #faebcc;
+	}
+
+	.dc-panel-warning > .dc-panel-heading {
+	    color: #8a6d3b;
+	    background-color: #fcf8e3;
+	    border-color: #faebcc;
+	}
+
+	.dc-panel-danger {
+	    border-color: #ebccd1;
+	}
+
+	.dc-panel-danger > .dc-panel-heading {
+	    color: #a94442;
+	    background-color: #f2dede;
+	    border-color: #ebccd1;
+	}
+
+	.dc-panel-heading h1,
+	.dc-panel-heading h2 {
+	    float: left;
+	    margin: 0;
+	    font-size: 1.7rem;
+	}
+
+	/* so floated buttons don't collapse header */
+	.dc-panel-heading::after {
+	   content: " ";
+	   display: block;
+	   height: 0;
+	   clear: both;
+	}
+
+	.dc-panel-heading ul {
+		list-style: none;
+	    padding: 0;
+	    margin: 0;
+		display: block;
+		float: right;
+	}
+
+	.dc-panel-heading li {
+		display: inline-block;
+	}
+
+	.dc-panel-heading a.dc-panel-header-btn {
+		margin: 0 1.2rem;
+	    font-size: 2.4rem;
+	}
+
+	.dc-panel-heading a.dc-panel-header-btn,
+	.dc-panel-heading a.dc-panel-header-btn:visited {
+		color: white;
+	}
+
+	.dc-panel-heading a.dc-panel-header-btn:focus,
+	.dc-panel-heading a.dc-panel-header-btn:hover {
+		color: gray;
+	}
+
+	.dc-panel-group {
+	    margin-bottom: 2rem;
+	}
+
+	.dc-panel-group .dc-panel {
+	    margin-bottom: 0;
+	    border-radius: 4px;
+	}
+
+	.dc-panel-group .dc-panel+.dc-panel {
+	    margin-top: .5rem;
+	}
+
+	.dc-panel-body {
+	    padding: 1.5rem;
+	}
+
+	.dc-panel-body.dc-panel-body-tucked {
+	    padding: 0;
+	}
+
+	.dc-panel-page,
+	.dc-panel-page > .dc-panel-body {
+		height: 100%;
+	}
 }
 
-.dc-panel-default > .dc-panel-heading {
-    color: #333;
-    background-color: #f5f5f5;
-    border-color: #ddd;
-}
-
-.dc-panel-primary {
-    border-color: #337ab7;
-}
-
-.dc-panel-primary > .dc-panel-heading {
-    color: #fff;
-    background-color: #337ab7;
-    border-color: #337ab7;
-}
-
-.dc-panel-success {
-    border-color: #d6e9c6;
-}
-
-.dc-panel-success > .dc-panel-heading {
-    color: #3c763d;
-    background-color: #dff0d8;
-    border-color: #d6e9c6;
-}
-
-.dc-panel-info {
-    border-color: #bce8f1;
-}
-
-.dc-panel-info > .dc-panel-heading {
-    color: #31708f;
-    background-color: #d9edf7;
-    border-color: #bce8f1;
-}
-
-.dc-panel-warning {
-    border-color: #faebcc;
-}
-
-.dc-panel-warning > .dc-panel-heading {
-    color: #8a6d3b;
-    background-color: #fcf8e3;
-    border-color: #faebcc;
-}
-
-.dc-panel-danger {
-    border-color: #ebccd1;
-}
-
-.dc-panel-danger > .dc-panel-heading {
-    color: #a94442;
-    background-color: #f2dede;
-    border-color: #ebccd1;
-}
-
-.dc-panel-heading h1,
-.dc-panel-heading h2 {
-    float: left;
-    margin: 0;
-    font-size: 1.7rem;
-}
-
-/* so floated buttons don't collapse header */
-.dc-panel-heading::after {
-   content: " ";
-   display: block;
-   height: 0;
-   clear: both;
-}
-
-.dc-panel-heading ul {
-	list-style: none;
-    padding: 0;
-    margin: 0;
-	display: block;
-	float: right;
-}
-
-.dc-panel-heading li {
-	display: inline-block;
-}
-
-.dc-panel-heading a.dc-panel-header-btn {
-	margin: 0 1.2rem;
-    font-size: 2.4rem;
-}
-
-.dc-panel-heading a.dc-panel-header-btn,
-.dc-panel-heading a.dc-panel-header-btn:visited {
-	color: white;
-}
-
-.dc-panel-heading a.dc-panel-header-btn:focus,
-.dc-panel-heading a.dc-panel-header-btn:hover {
-	color: gray;
-}
-
-.dc-panel-group {
-    margin-bottom: 2rem;
-}
-
-.dc-panel-group .dc-panel {
-    margin-bottom: 0;
-    border-radius: 4px;
-}
-
-.dc-panel-group .dc-panel+.dc-panel {
-    margin-top: .5rem;
-}
-
-.dc-panel-body {
-    padding: 1.5rem;
-}
-
-.dc-panel-body.dc-panel-body-tucked {
-    padding: 0;
-}
-
-.dc-panel-page,
-.dc-panel-page .dc-panel-body {
-	height: 100%;
+@media print {
+	.dc-panel-heading ul {
+		display: none;
+	}
 }
 
 @media only screen and (max-width : 639px) {
-	.dc-field:not(.dc-form-buttons) {
+	.dc-field {
 		padding: .9rem 1.4rem;
 		margin-bottom: 1.4rem;
 		background-color: #f7f7f9;
@@ -2180,6 +2244,7 @@ ol.dc-listview > li img:first-child + * ~ * {
 	text-align: left;
 	padding: .7rem .8rem;
 	vertical-align:top;
+	position: relative;
 }
 .dc-table th .dc-button,
 .dc-table td .dc-button {
@@ -2238,6 +2303,10 @@ ol.dc-listview > li img:first-child + * ~ * {
 	font-weight: normal;
 }
 
+.dc-table-reflow tr.dc-table-divider {
+	display: table-row;
+}
+
 @media screen and (min-width: 560px), print {
 	.dc-table-reflow.dc-table-break-std td,
 	.dc-table-reflow.dc-table-break-std th,
@@ -2250,6 +2319,10 @@ ol.dc-listview > li img:first-child + * ~ * {
 
 	.dc-table-reflow.dc-table-break-std td .dc-table-cell-label,
 	.dc-table-reflow.dc-table-break-std th .dc-table-cell-label {
+		display: none;
+	}
+
+	.dc-table-reflow.dc-table-break-std tr.dc-table-divider {
 		display: none;
 	}
 }
@@ -2268,6 +2341,10 @@ ol.dc-listview > li img:first-child + * ~ * {
 	.dc-table-reflow.dc-table-break-wide th .dc-table-cell-label {
 		display: none;
 	}
+
+	.dc-table-reflow.dc-table-break-wide tr.dc-table-divider {
+		display: none;
+	}
 }
 
 @media screen and (min-width: 780px), print {
@@ -2284,10 +2361,15 @@ ol.dc-listview > li img:first-child + * ~ * {
 	.dc-table-reflow.dc-table-break-extra th .dc-table-cell-label {
 		display: none;
 	}
+
+	.dc-table-reflow.dc-table-break-extra tr.dc-table-divider {
+		display: none;
+	}
 }
 
 /* default to 1600 x 560 image */
-.dcm-widget-carousel {
+.dcm-widget-carousel,
+.dcm-widget-banner {
     height: 560px;
     height: 35vw;
     max-height: 560px;
@@ -2326,221 +2408,274 @@ ol.dc-listview > li img:first-child + * ~ * {
 	layer layout
 ----------------------------------------------- */
 
-#dcuiMain {
-	overflow-x: hidden;
-	overflow-y: auto;
-	height: 100%;
-	-webkit-overflow-scrolling: touch;
-	/*
-	position: fixed;
-	left: 0;
-	top: 0;
-	bottom: 0;
-	right: 0;
-	z-index: 0;
-	*/
+@media screen {
+	.dc-hide-scroll {
+		overflow-x: hidden;
+		overflow-y: hidden;
+	}
+
+	#dcuiMain {
+		min-height: 100%;
+		overflow-x: hidden;
+		/*
+		overflow-x: hidden;
+		overflow-y: auto;
+		height: 100%;
+		-webkit-overflow-scrolling: touch;
+		*/
+		/*
+		position: fixed;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		right: 0;
+		z-index: 0;
+		*/
+	}
+
+	#dcuiDialog,
+	#dcuiSimpleApp {
+		position: fixed;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		right: 0;
+		background-color: rgba(90,90,90,0.8);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		overflow-x: hidden;
+		overflow-y: auto;
+		z-index: 700;
+	}
+
+	#dcuiSimpleApp {
+		z-index: 400;
+	}
+
+	#dcuiDialog > a.dcuiCloseButton,
+	#dcuiSimpleApp > a.dcuiCloseButton {
+		position: absolute;
+	    right: 18px;
+	    top: 18px;
+		z-index: 50;
+	}
+
+	#dcuiDialog > a.dcuiCloseButton,
+	#dcuiDialog > a.dcuiCloseButton:visited,
+	#dcuiSimpleApp > a.dcuiCloseButton,
+	#dcuiSimpleApp > a.dcuiCloseButton:visited {
+	    color: white;
+	}
+
+	#dcuiDialog > a.dcuiCloseButton:hover,
+	#dcuiDialog > a.dcuiCloseButton:focus,
+	#dcuiSimpleApp > a.dcuiCloseButton:hover,
+	#dcuiSimpleApp > a.dcuiCloseButton:focus {
+	    color: #337ab7;
+	}
+
+	#dcuiDialogPane,
+	#dcuiSimpleAppPane {
+		flex: 0 1 748px;
+		max-height: 100vh;
+	    max-width: 748px;
+	}
+
+	#dcuiDialogPane.dcuiWide,
+	#dcuiSimpleAppPane.dcuiWide {
+		flex: 0 1 1200px;
+	    max-width: 1200px;
+	}
+
+	#dcuiDialogPane.dcuiExtraWide,
+	#dcuiSimpleAppPane.dcuiExtraWide {
+		flex: 0 1 2000px;
+	    max-width: 2000px;
+	}
+
+	#dcuiAlert {
+		position: fixed;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		right: 0;
+		background-color: rgba(90,90,90,0.8);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		overflow-x: hidden;
+		overflow-y: auto;
+		z-index: 900;
+	}
+
+	#dcuiAlert > a.dcuiCloseButton {
+		position: absolute;
+	    right: 18px;
+	    top: 18px;
+		z-index: 50;
+	}
+
+	#dcuiAlert > a.dcuiCloseButton,
+	#dcuiAlert > a.dcuiCloseButton:visited {
+	    color: white;
+	}
+
+	#dcuiAlert > a.dcuiCloseButton:hover,
+	#dcuiAlert > a.dcuiCloseButton:focus {
+	    color: #337ab7;
+	}
+
+	#dcuiAlertPane {
+		flex: 0 1 748px;
+		max-height: 100vh;
+	}
+
+	#dcuiAlertPane.menu {
+		flex: 0 1 280px;
+	}
+
+	#dcuiAlertPane.menu a {
+		display: block;
+		border-bottom: 1px solid gray;
+	}
+
+	.dcuiCmsButton.dc-link {
+		position: absolute;
+		top: 0;
+		right: 0;
+		font-size: 1.4rem !important;
+		z-index: 100;
+		width: 2rem;
+	}
+
+	.dcuiCmsButton.dc-link .dc-icon-background {
+		color: rgba(255,165,0,0.66) !important;
+	}
+
+	.dcuiCmsButton.dc-link .dc-icon-foreground {
+		color: white !important;
+	}
+
+	.dcuiCmsi.dc-band {
+		background-color: black !important;
+		min-height: 4rem;
+	}
+
+	.dcuiCmsi.dc-band h2 {
+		font-family: Lucida Console, Andale Mono, monospace !important;
+		font-size: 2.3rem !important;
+		color: white !important;
+		text-align: left !important;
+		margin: 1rem !important;
+	}
+
+	#dcuiAppTab {
+		position: fixed;
+		top: 240px;
+		left: 0;
+		width: 28px;
+		height: 28px;
+		background-color: rgba(255,165,0,0.66);
+		z-index: 50;
+		padding: 7px;
+		line-height: 0;
+		overflow: hidden;
+		border-radius: 0px 8px 8px 0px;
+	}
+
+	#dcuiAppTab:hover {
+		color: white;
+		cursor: pointer;
+	}
+
+	#dcuiCmsSaveTab {
+		display: none;
+		position: fixed;
+		top: 280px;
+		left: 0;
+		width: 28px;
+		height: 28px;
+		background-color: rgba(255,165,0,0.66);
+		z-index: 50;
+		padding: 7px;
+		line-height: 0;
+		overflow: hidden;
+		border-radius: 0px 8px 8px 0px;
+	}
+
+	#dcuiCmsSaveTab:hover {
+		color: white;
+		cursor: pointer;
+	}
+
+	#dcuiApp {
+		position: fixed;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background-color: rgba(90,90,90,0.5);
+		z-index: 300;
+		overflow: hidden;
+		display: -webkit-flex;
+		display: flex;
+		-webkit-flex-direction: row;
+		flex-direction: row;
+		padding: 0;
+	}
+
+	#dcuiApp .dc-panel-page > .dc-panel-body {
+		height: calc(100vh - 85px);
+	}
+
+	#dcuiAppPane {
+		-webkit-flex: 1 1 auto;
+		flex: 1 1 auto;
+		background: white;
+		margin: 0;
+		overflow: hidden;
+		border-radius: 10px 10px 10px 10px;
+	}
+
+	/* each individual pane fills full */
+	#dcuiAppPane > section {
+	    position: absolute;
+	    top: 0;
+	    left: 0;
+	    bottom: 0;
+	    right: 0;
+		overflow-x: hidden;
+		overflow-y: auto;
+	}
+
+	#dcuiAppMenu {
+		display: none;
+	}
+
+	ul#dcuiFastMenu,
+	#dcuiAppMenu ul {
+		list-style: none;
+	    padding: 0;
+	    margin: 0;
+	}
+
+	#dcuiAppMenu ul li a {
+		width: 100%;
+		margin-bottom: 1px;
+	}
 }
 
-#dcuiDialog {
-	position: fixed;
-	left: 0;
-	top: 0;
-	bottom: 0;
-	right: 0;
-	background-color: rgba(90,90,90,0.8);
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	overflow-x: hidden;
-	overflow-y: auto;
-	z-index: 700;
+@media print {
+	body.dc-hide-scroll #dcuiMain,
+	#dcuiMain header,
+	#dcuiMain footer,
+	.dc-noprint {
+		display: none;
+	}
 }
 
-#dcuiDialog > a.dcuiCloseButton {
-	position: absolute;
-    right: 18px;
-    top: 18px;
-	z-index: 50;
-}
-
-#dcuiDialog > a.dcuiCloseButton,
-#dcuiDialog > a.dcuiCloseButton:visited {
-    color: white;
-}
-
-#dcuiDialog > a.dcuiCloseButton:hover,
-#dcuiDialog > a.dcuiCloseButton:focus {
-    color: #337ab7;
-}
-
-#dcuiDialogPane {
-	flex: 0 1 748px;
-	max-height: 100vh;
-    max-width: 748px;
-}
-
-#dcuiDialogPane.dcuiWide {
-	flex: 0 1 1200px;
-    max-width: 1200px;
-}
-
-#dcuiDialogPane.dcuiExtraWide {
-	flex: 0 1 2000px;
-    max-width: 2000px;
-}
-
-#dcuiAlert {
-	position: fixed;
-	left: 0;
-	top: 0;
-	bottom: 0;
-	right: 0;
-	background-color: rgba(90,90,90,0.8);
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	overflow-x: hidden;
-	overflow-y: auto;
-	z-index: 900;
-}
-
-#dcuiAlert > a.dcuiCloseButton {
-	position: absolute;
-    right: 18px;
-    top: 18px;
-	z-index: 50;
-}
-
-#dcuiAlert > a.dcuiCloseButton,
-#dcuiAlert > a.dcuiCloseButton:visited {
-    color: white;
-}
-
-#dcuiAlert > a.dcuiCloseButton:hover,
-#dcuiAlert > a.dcuiCloseButton:focus {
-    color: #337ab7;
-}
-
-#dcuiAlertPane {
-	flex: 0 1 748px;
-	max-height: 100vh;
-}
-
-#dcuiAlertPane.menu {
-	flex: 0 1 280px;
-}
-
-#dcuiAlertPane.menu a {
-	display: block;
-	border-bottom: 1px solid gray;
-}
-
-.dcuiCmsButton.dc-link {
-	position: absolute;
-	top: 0;
-	right: 0;
-	font-size: 1.4rem !important;
-	z-index: 100;
-	width: 2rem;
-}
-
-.dcuiCmsButton.dc-link .dc-icon-background {
-	color: rgba(255,165,0,0.66) !important;
-}
-
-.dcuiCmsButton.dc-link .dc-icon-foreground {
-	color: white !important;
-}
-
-.dcuiCmsi.dc-band {
-	background-color: black !important;
-	min-height: 4rem;
-}
-
-.dcuiCmsi.dc-band h2 {
-	font-family: Lucida Console, Andale Mono, monospace !important;
-	font-size: 2.3rem !important;
-	color: white !important;
-	text-align: left !important;
-	margin: 1rem !important;
-}
-
-#dcuiAppTab {
-	position: fixed;
-	top: 240px;
-	left: 0;
-	width: 28px;
-	height: 28px;
-	background-color: rgba(255,165,0,0.66);
-	z-index: 50;
-	padding: 7px;
-	line-height: 0;
-	overflow: hidden;
-	border-radius: 0px 8px 8px 0px;
-}
-
-#dcuiAppTab:hover {
-	color: white;
-	cursor: pointer;
-}
-
-#dcuiApp {
-	position: fixed;
-	top: 0;
-	bottom: 0;
-	left: 0;
-	right: 0;
-	background-color: rgba(90,90,90,0.5);
-	z-index: 300;
-	overflow: hidden;
-	display: -webkit-flex;
-	display: flex;
-	-webkit-flex-direction: row;
-	flex-direction: row;
-	padding: 0;
-}
-
-#dcuiApp .dc-panel-page .dc-panel-body {
-	height: calc(100vh - 85px);
-}
-
-#dcuiAppPane {
-	-webkit-flex: 1 1 auto;
-	flex: 1 1 auto;
-	background: white;
-	margin: 0;
-	overflow: hidden;
-	border-radius: 10px 10px 10px 10px;
-}
-
-/* each individual pane fills full */
-#dcuiAppPane > section {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-	overflow-x: hidden;
-	overflow-y: auto;
-}
-
-#dcuiAppMenu {
-	display: none;
-}
-
-ul#dcuiFastMenu,
-#dcuiAppMenu ul {
-	list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-#dcuiAppMenu ul li a {
-	width: 100%;
-	margin-bottom: 1px;
-}
-
-@media all and (min-width: 960px) {
+@media screen and (min-width: 960px) {
 	#dcuiApp {
 		padding: 8px;
 	}
@@ -2576,94 +2711,95 @@ ul#dcuiFastMenu,
 	}
 }
 
+@media screen {
+	#dcuiFullScreen {
+		position: fixed;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background-color: rgba(90,90,90,0.5);
+		z-index: 500;
+		padding: 0;
+	}
 
-#dcuiFullScreen {
-	position: fixed;
-	top: 0;
-	bottom: 0;
-	left: 0;
-	right: 0;
-	background-color: rgba(90,90,90,0.5);
-	z-index: 500;
-	padding: 0;
-}
+	#dcuiFullScreen > a.dcuiCloseButton {
+		position: absolute;
+	    right: 18px;
+	    top: 18px;
+		z-index: 50;
+	}
 
-#dcuiFullScreen > a.dcuiCloseButton {
-	position: absolute;
-    right: 18px;
-    top: 18px;
-	z-index: 50;
-}
+	#dcuiFullScreen > a.dcuiCloseButton,
+	#dcuiFullScreen > a.dcuiCloseButton:visited {
+	    color: white;
+	}
 
-#dcuiFullScreen > a.dcuiCloseButton,
-#dcuiFullScreen > a.dcuiCloseButton:visited {
-    color: white;
-}
-
-#dcuiFullScreen > a.dcuiCloseButton:hover,
-#dcuiFullScreen > a.dcuiCloseButton:focus {
-    color: #337ab7;
-}
+	#dcuiFullScreen > a.dcuiCloseButton:hover,
+	#dcuiFullScreen > a.dcuiCloseButton:focus {
+	    color: #337ab7;
+	}
 
 
-.dcuiLayerShell:not(.dcuiMenu) .dcui-pagepanel-menu {
-	display: none;
-}
+	.dcuiLayerShell:not(.dcuiMenu) .dcui-pagepanel-menu {
+		display: none;
+	}
 
-.dcuiContentLayer:not(.dcuiHistory) .dcui-pagepanel-back {
-	display: none;
-}
+	.dcuiContentLayer:not(.dcuiHistory) .dcui-pagepanel-back {
+		display: none;
+	}
 
-#dcuiAlertPane.dcuiContentLayer .dcui-pagepanel-help {
-	display: none;
-}
+	#dcuiAlertPane.dcuiContentLayer .dcui-pagepanel-help {
+		display: none;
+	}
 
-#panDcwFullClose {
-	position: absolute;
-	top: 24px;
-	right: 24px;
-}
+	#panDcwFullClose {
+		position: absolute;
+		top: 24px;
+		right: 24px;
+	}
 
-#panDcwFullLeft {
-	position: absolute;
-	top: 45%;
-	left: 16px;
-	display: none;
-}
+	#panDcwFullLeft {
+		position: absolute;
+		top: 45%;
+		left: 16px;
+		display: none;
+	}
 
-#panDcwFullRight {
-	position: absolute;
-	top: 45%;
-	right: 16px;
-	display: none;
-}
+	#panDcwFullRight {
+		position: absolute;
+		top: 45%;
+		right: 16px;
+		display: none;
+	}
 
-#panDcwFullClose svg,
-#panDcwFullLeft svg,
-#panDcwFullRight svg {
-	width: 40px;
-	height: 40px;
-}
+	#panDcwFullClose svg,
+	#panDcwFullLeft svg,
+	#panDcwFullRight svg {
+		width: 40px;
+		height: 40px;
+	}
 
-#panDcwMediaPane {
-    height: 100%;
-    background-color: rgba(0,0,0,0.66);
-	background-image: url(/imgs/load-dots.svg);
-	background-repeat: no-repeat;
-    background-position: center;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+	#panDcwMediaPane {
+	    height: 100%;
+	    background-color: rgba(0,0,0,0.66);
+		background-image: url(/imgs/load-dots.svg);
+		background-repeat: no-repeat;
+	    background-position: center;
+	    text-align: center;
+	    display: flex;
+	    align-items: center;
+	    justify-content: center;
+	}
 
-#panDcwMediaViewer > * {
-    max-width: 100vw;
-    max-height: 100vh;
-	display: block;
-}
+	#panDcwMediaViewer > * {
+	    max-width: 100vw;
+	    max-height: 100vh;
+		display: block;
+	}
 
-#panDcwMediaViewer > iframe {
-    width: calc(100vh / 9 * 16);
-    height: 100vh;
+	#panDcwMediaViewer > iframe {
+	    width: calc(100vh / 9 * 16);
+	    height: 100vh;
+	}
 }

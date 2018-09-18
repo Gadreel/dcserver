@@ -1,14 +1,18 @@
 package dcraft.web.ui.inst;
 
 import dcraft.filestore.CommonPath;
+import dcraft.hub.op.IVariableAware;
+import dcraft.hub.op.IVariableProvider;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
 import dcraft.script.ScriptHub;
 import dcraft.script.StackUtil;
+import dcraft.script.work.BlockWork;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.inst.doc.Out;
+import dcraft.struct.FieldStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.tenant.WebFindResult;
 import dcraft.util.IOUtil;
@@ -48,7 +52,7 @@ public class IncludeFragmentInline extends Out {
 			
 			WebFindResult ppath = OperationContext.getOrThrow().getSite().webFindFilePath(pp, OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
 			
-			if ((ppath != null) && Files.exists(ppath.file)) {
+			if ((ppath != null) && (ppath.file != null) && Files.exists(ppath.file)) {
 				XElement layout = ScriptHub.parseInstructions(IOUtil.readEntireFile(ppath.file));
 				
 				if (layout instanceof Base) {
@@ -67,6 +71,28 @@ public class IncludeFragmentInline extends Out {
 				}
 				else {
 					Logger.warn("Unable to merge include, root must be an advanced UI tag.");
+				}
+			}
+		}
+	}
+	
+	@Override
+	public void renderAfterChildren(InstructionWork state) throws OperatingContextException {
+		super.renderAfterChildren(state);
+		
+		// migrate my vars up
+		if (state instanceof BlockWork) {
+			IVariableProvider src = (IVariableProvider) state;
+			
+			IVariableProvider dest = StackUtil.queryVarProvider(state.getParent());
+			
+			if ((src != null) && (dest != null)) {
+				RecordStruct vars = src.variables();
+				
+				if (vars != null) {
+					for (FieldStruct fld : vars.getFields()) {
+						dest.addVariable(fld.getName(), fld.getValue());
+					}
 				}
 			}
 		}

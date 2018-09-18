@@ -26,6 +26,7 @@ import dcraft.hub.op.*;
 import dcraft.log.Logger;
 import dcraft.schema.SchemaHub;
 import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
@@ -103,7 +104,7 @@ public class AwsStore extends FileStore {
 	}
 	
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		// TODO add script support
 		
 		return super.operation(stack, code);

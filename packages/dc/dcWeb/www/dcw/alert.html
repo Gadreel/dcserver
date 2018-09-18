@@ -1,21 +1,35 @@
-<dc.Html Title="Message">
+<dc.Html Title="{$_Tr.dcwDialogMessage}">
 	<dc.Body>
 		<dc.PagePanel id="panDcwAlert">
 			<div id="panDcwMessage" />
+
+			<dcf.FormButtons Hint="{$_Tr.dcwFormOptions}">
+				<dc.Button Click="onBack" Label="{$_Tr.dcwPageClose}" aria-label="{$_Tr.dcwDialogClose}" />
+			</dcf.FormButtons>
 		</dc.PagePanel>
 	</dc.Body>
 	<Function Name="Load">
 				var entry = this;
-			
+
 				if (entry.Params.Title)
 					entry.callTagFunc('#panDcwAlert', 'setTitle', entry.Params.Title);
-			
+
 				if (entry.Params.Message)
 					$('#panDcwMessage').html(entry.Params.Message);
 	</Function>
-	<Function Name="onDestroy">
+	<Function Name="onBack">
 				var entry = this;
-			
+
+				entry.Layer.back();
+
+				if (entry.Params.Callback)
+					entry.Params.Callback.call(entry);
+	</Function>
+	<Function Name="onClose">
+				var entry = this;
+
+				entry.Layer.close();
+
 				if (entry.Params.Callback)
 					entry.Params.Callback.call(entry);
 	</Function>

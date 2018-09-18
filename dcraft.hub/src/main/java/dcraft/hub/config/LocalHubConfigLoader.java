@@ -81,11 +81,13 @@ public class LocalHubConfigLoader extends LocalConfigLoader {
 		//   load app config from local files
 		// -----------------------------------
 		
+		System.out.println("Start local hub loader work");
+		
 		ConfigResource configres = resources.getOrCreateTierConfig();
 		
-		Logger.infoTr(0, "Loading hub resources");
+		Logger.info( "Loading hub resources");
 		
-		Logger.traceTr(0, "Loading shared config");
+		//Logger.trace( "Loading shared config");
 		
 		this.addConfigIfPresent(configres, this.resolvePath(Paths.get("config.xml")));				// the more internal aspects of config
 		
@@ -99,6 +101,7 @@ public class LocalHubConfigLoader extends LocalConfigLoader {
 		// then over write
 		//this.config.find("Clock").replace(parsed awssource);
 		
+		// global log level set after this
 		this.initResources(taskctx, resources);
 		
 		taskctx.returnEmpty();

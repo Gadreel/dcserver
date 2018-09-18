@@ -22,6 +22,7 @@ import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.ListStruct;
+import dcraft.struct.RecordStruct;
 import dcraft.util.StringUtil;
 
 /**
@@ -31,6 +32,10 @@ import dcraft.util.StringUtil;
  *
  */
 public class UpdateUserRequest extends UpdateRecordRequest {
+	static public UpdateUserRequest of(String id) {
+		return new UpdateUserRequest(id);
+	}
+	
 	protected ConditionalValue username = new ConditionalValue();
 	protected ConditionalValue firstname = new ConditionalValue();
 	protected ConditionalValue lastname = new ConditionalValue();
@@ -130,7 +135,7 @@ public class UpdateUserRequest extends UpdateRecordRequest {
 	}
 	
 	@Override
-	public CompositeStruct buildParams() {		
+	public RecordStruct buildParams() {
 		if (this.username.isSet())
 			this.withSetField("dcUsername", ((String) this.username.getValue()).trim().toLowerCase());
 		

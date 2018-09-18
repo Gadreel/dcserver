@@ -3,6 +3,7 @@ package dcraft.interchange.authorize;
 import java.io.DataOutputStream;
 import java.math.BigDecimal;
 import java.net.URL;
+import java.text.DecimalFormat;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -94,7 +95,7 @@ public class AuthUtil {
 	    XElement txreq = XElement.tag("transactionRequest")
 				.with(
 					XElement.tag("transactionType").withText("authCaptureTransaction"),		// or authOnlyTransaction
-					XElement.tag("amount").withText(total.toPlainString()),
+					XElement.tag("amount").withText(new DecimalFormat("0.00").format(total)),
 					XElement.tag("payment")
 						.with(
 							XElement.tag("creditCard")
@@ -115,11 +116,11 @@ public class AuthUtil {
 			for (Struct i : items.items()) {
 				RecordStruct itm = (RecordStruct) i;
 				
-				String price = itm.isFieldEmpty("SalePrice") 
-						? itm.getFieldAsString("Price") : itm.getFieldAsString("SalePrice");
+				BigDecimal price = itm.isFieldEmpty("SalePrice")
+						? itm.getFieldAsDecimal("Price") : itm.getFieldAsDecimal("SalePrice");
 						
-				if (StringUtil.isEmpty(price))
-					price = "0";
+				if (price == null)
+					price = BigDecimal.ZERO;
 				
 				String title = itm.getFieldAsString("Title");
 				
@@ -145,7 +146,7 @@ public class AuthUtil {
 				iline.with(XElement.tag("name").withText(ASCIIFoldingFilter.foldToASCII(title)));
 				//iline.add(new XElement("description").withText(desc));
 				iline.with(XElement.tag("quantity").withText(itm.getFieldAsString("Quantity")));
-				iline.with(XElement.tag("unitPrice").withText(price));
+				iline.with(XElement.tag("unitPrice").withText(new DecimalFormat("0.00").format(price)));
 				
 				ilist.with(iline);
 			}
@@ -156,7 +157,7 @@ public class AuthUtil {
 		txreq.with(
 			XElement.tag("tax")
 				.with(
-					XElement.tag("amount").withText(tax.toPlainString()),
+					XElement.tag("amount").withText(new DecimalFormat("0.00").format(tax)),
 					XElement.tag("name").withText(billinginfo.getFieldAsString("State"))
 				)
 		);
@@ -165,7 +166,7 @@ public class AuthUtil {
 			txreq.with(
 					XElement.tag("shipping")
 							.with(
-									XElement.tag("amount").withText(ship.toPlainString()),
+									XElement.tag("amount").withText(new DecimalFormat("0.00").format(ship)),
 									XElement.tag("name").withText(shipinfo.getFieldAsString("State"))
 							)
 			);

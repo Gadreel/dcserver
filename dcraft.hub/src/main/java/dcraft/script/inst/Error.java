@@ -50,7 +50,7 @@ public class Error extends Instruction {
 			Object[] oparams = new Object[params.size()];
 			
 			for (int i = 0; i < params.size(); i++) 
-				oparams[i] = StackUtil.refFromElement(state, params.get(i), "Value").toString();
+				oparams[i] = StackUtil.refFromElement(state, params.get(i), "Value", true).toString();
 			
 			output = ResourceHub.tr("_code_" + code, oparams);
 		}

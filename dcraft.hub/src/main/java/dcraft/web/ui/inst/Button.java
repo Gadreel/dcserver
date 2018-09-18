@@ -37,10 +37,13 @@ public class Button extends Base {
 				.withAttribute("href", StringUtil.isNotEmpty(page) ? page : to);
 		
 		if (StringUtil.isNotEmpty(label))
-			this.withText(label);
+			this.withText(label).attr("dc-title", label);
 		else if (StringUtil.isNotEmpty(icon))
-			this.with(W3.tag("i").withAttribute("class", "fa " + icon));
-		
+			this.with(W3.tag("i").withAttribute("class", "fa " + icon)
+				.withAttribute("aria-hidden","true")
+			);
+
+
 		// Default, Primary, Selected (TODO Success, Info, Warning, Danger)
 		String scope = StackUtil.stringFromSource(state,"Scope", "Default").toLowerCase();
 		
@@ -60,6 +63,8 @@ public class Button extends Base {
 	public void renderAfterChildren(InstructionWork state) {
 		this
 				.withClass("pure-button", "dc-button")
+				.withAttribute("role", "button")
+				.withAttribute("tabindex", "0")
 				.withAttribute("data-dc-enhance", "true")
 				.withAttribute("data-dc-tag", this.getName());
 		

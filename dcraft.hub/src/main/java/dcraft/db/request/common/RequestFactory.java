@@ -81,7 +81,7 @@ public class RequestFactory {
 	 */
 	static public DataRequest initiateRecoveryRequest(String username) {
 		return DataRequest.of("dcInitiateConfirm")
-				.withParam("Username", username);
+				.withParam("Username", username.toLowerCase());
 	}
 	
 	static public DataRequest removeFromSet(String table, String field, String id, ListStruct values) {

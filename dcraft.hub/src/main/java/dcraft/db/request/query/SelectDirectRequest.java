@@ -21,6 +21,7 @@ import java.time.ZonedDateTime;
 import dcraft.db.request.DataRequest;
 import dcraft.hub.time.BigDateTime;
 import dcraft.struct.CompositeStruct;
+import dcraft.struct.RecordStruct;
 
 public class SelectDirectRequest extends DataRequest {
 	static public SelectDirectRequest of(String table) {
@@ -111,7 +112,7 @@ public class SelectDirectRequest extends DataRequest {
 	}
 	
 	@Override
-	public CompositeStruct buildParams() {
+	public RecordStruct buildParams() {
 		// default in When
 		if (! this.parameters.hasField("When"))
 			this.withParam("When", BigDateTime.nowDateTime());

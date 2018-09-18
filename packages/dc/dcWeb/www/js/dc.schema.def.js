@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-dc.schema.Manager.load([ 
+dc.schema.Manager.load([
       { "CoreType" : { "RootType" : 1 },
         "Id" : "Date",
         "Kind" : 1
@@ -85,7 +85,7 @@ dc.schema.Manager.load([
         "Id" : "BigDateTime",
         "Kind" : 1
       },
-      
+
       { "CoreType" : { "DataRestrictions" : [ { "Pattern" : "^(0[1-9]|1[012])\\/(0[1-9]|[12][0-9]|3[01])\\/\\d{4}$" } ],
             "RootType" : 1
           },
@@ -208,23 +208,23 @@ dc.schema.Manager.load([
         "Kind" : 1
       }
     ]);
-	
+
 /* TODO support JSON validation
 $.validator.addMethod('dcJson', function(value, element, param) {
 	if (dc.util.Struct.isEmpty(value))
 		return this.optional(element);
-		
-	try { 
-		JSON.parse(value); 
-		return true; 
-	} 
-	catch (x) { } 
-	
+
+	try {
+		JSON.parse(value);
+		return true;
+	}
+	catch (x) { }
+
 	return false;
 }, 'Invalid JSON.');
 */
-	
-dc.lang.Dict.load( [ 
+
+dc.lang.Dict.load( [
 	{ Token: "_code_400", Value: "Expected a BigDecimal, got: {$1}" },
 	{ Token: "_code_401", Value: "Expected a Decimal, got: {$1}" },
 	{ Token: "_code_402", Value: "Expected a BigInteger, got: {$1}" },
@@ -268,4 +268,16 @@ dc.lang.Dict.load( [
 	{ Token: "_code_440", Value: "No data type options match.  Could not validate: {$1}" },
 	{ Token: "_code_447", Value: "Value does not match pattern" }
 	] );
-	
+
+var lang = $('html').attr('lang');
+
+if (lang == 'spa')
+	dc.lang.Dict.load( [
+		{ Token: "_code_424", Value: "Valor obligatorio para el campo: {$2}" },
+		{ Token: "_code_447", Value: "El valor no coincide con el modelo" }
+	]);
+else if (lang == 'hmn')
+	dc.lang.Dict.load( [
+		{ Token: "_code_424", Value: "Yuav tsum tau xaiv ib qho rau qhov no: {$2}" },
+		{ Token: "_code_447", Value: "Ntaus tsis thwj tus qauv" }
+	]);

@@ -1,6 +1,6 @@
-<dc.Html Badges="Editor,Admin">
+<dc.Html Badges="User">
 	<Meta Name="Title">
-		<Tr Locale="en" Value="Files Browser" />
+		<Tr Locale="eng" Value="Files Browser" />
 	</Meta>
 
 	<Require Script="/js/dc.transfer.js" />
@@ -205,7 +205,32 @@
 							entry.Store.PopPath = path;
 
 							// TODO $('#puFileOpts').popup('open', { positionTo: e.currentTarget });
-							entry.callPageFunc('DoDownload');
+							//entry.callPageFunc('DoDownload');
+
+							var files = [ ];
+							var startpos = 0;
+
+							for (var i = 0; i < items.length; i++) {
+								var item = items[i];
+
+								if (item.IsFolder)
+									continue;
+
+								if (item == e.data)
+									startpos = files.length;
+
+								files.push(item.FileName);
+							}
+
+							var show = {
+								Path: window.location.origin + '/files' + ((entry.Store.Path.length > 1) ? entry.Store.Path : ''),
+								StartPos: startpos,
+								Files: files
+							};
+
+							dc.pui.FullScreen.loadPage('/dcw/view-preview', {
+								View: show
+							});
 						}
 
 						e.preventDefault();

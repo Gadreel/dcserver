@@ -20,8 +20,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import dcraft.hub.resource.ResourceBase;
 import dcraft.hub.resource.ResourceTier;
@@ -108,31 +110,36 @@ public class SchemaResource extends ResourceBase {
 		
 		return parent.hasTable(table);
 	}
-		
-	public List<DbTable> getDbTables() {
-		List<DbTable> t = this.db.getTables();
-		
-		if (t == null)
-			t = new ArrayList<DbTable>();
+	
+	// collect a list of all the tables names available to this tier and parents
+	public Set<String> getTableNames() {
+		Set<String> tableNames = this.db.getTableNames();
 		
 		SchemaResource parent = this.getParentResource();
-
-		if (parent == null)
-			return t;
 		
-		List<DbTable> t2 = parent.getDbTables();
+		if (parent != null)
+			tableNames.addAll(parent.getTableNames());
 		
-		if (t2 != null)
-			t.addAll(t2);
+		return tableNames;
+	}
 		
-		return t;
+	public List<TableView> getTables() {
+		Set<String> tableNames = this.getTableNames();
+		
+		List<TableView> views = new ArrayList<>();
+		
+		for (String name : tableNames)
+			views.add(this.getTableView(name));
+		
+		return views;
 	}
 	
+	/*
 	public List<DbField> getDbFields(String table) {
 		List<DbField> t = this.db.getFields(table);
 		
 		if (t == null)
-			t = new ArrayList<DbField>();
+			t = new ArrayList<>();
 		
 		SchemaResource parent = this.getParentResource();
 
@@ -146,19 +153,36 @@ public class SchemaResource extends ResourceBase {
 		
 		return t;
 	}
+	*/
 	
-	public DbTable getDbTable(String table) {
-		DbTable t = this.db.getTable(table);
-		
-		if (t != null)
-			return t;
-		
+	/*
+	 * Goal here is to get a unified table view, loo[ all schema and build a composite view of the table
+	 */
+	public TableView getTableView(String table) {
 		SchemaResource parent = this.getParentResource();
+
+		DbTable def = this.db.getTable(table);
 		
-		if (parent == null)
-			return null;
+		if (parent != null) {
+			TableView view = parent.getTableView(table);
+			
+			if (view == null) {
+				if (def != null)
+					return TableView.table(def);
+			}
+			else {
+				if (def != null)
+					view.mergeWith(def);	// overrides fields
+				
+				return view;
+			}
+		}
+		else {
+			if (def != null)
+				return TableView.table(def);
+		}
 		
-		return parent.getDbTable(table);
+		return null;
 	}
 	
 	public DbField getDbField(String table, String field) {
@@ -215,6 +239,20 @@ public class SchemaResource extends ResourceBase {
 			return null;
 		
 		return parent.getDbComposer(name);
+	}
+	
+	public DbFilter getDbFilter(String name) {
+		DbFilter t = this.db.getFilter(name);
+		
+		if (t != null)
+			return t;
+		
+		SchemaResource parent = this.getParentResource();
+
+		if (parent == null)
+			return null;
+		
+		return parent.getDbFilter(name);
 	}
 	
 	public DbCollector getDbCollector(String name) {
@@ -400,7 +438,7 @@ public class SchemaResource extends ResourceBase {
 		XElement schema = XmlReader.loadFile(fl, false, true);
 		
 		if (schema == null) {
-			Logger.errorTr(110, "Unable to apply schema file, missing xml");
+			Logger.errorTr(110, "Unable to apply schema file, missing xml: " + fl);
 			return;
 		}
 

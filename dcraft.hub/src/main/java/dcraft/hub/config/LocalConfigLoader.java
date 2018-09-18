@@ -28,6 +28,7 @@ import dcraft.hub.resource.lib.Bundle;
 import dcraft.locale.Dictionary;
 import dcraft.locale.LocaleResource;
 import dcraft.locale.LocaleUtil;
+import dcraft.log.HubLog;
 import dcraft.log.Logger;
 import dcraft.schema.SchemaResource;
 import dcraft.struct.Struct;
@@ -55,6 +56,19 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 	
 	public void initResources(TaskContext tctx, ResourceTier resources) {
 		ConfigResource configres = resources.getOrCreateTierConfig();
+		
+		// change to overrides if find config
+		XElement logger = configres.getTag("Logger");
+		
+		// prepare the logger - use files, use custom log writer
+		if (! HubLog.init(logger)) {
+			Logger.error("Unable to initialize Logger");
+			return;
+		}
+		
+		tctx.withDebugLevel(HubLog.getGlobalLevel());
+		
+		Logger.trace("Start init resources work");
 		
 		// -----------------------------------
 		//   apply config minimally
@@ -123,8 +137,15 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 				
 				if (Files.exists(spath))
 					resources.getOrCreateTierScripts().withPath(spath);
+
+				spath = hpackage.getPath().resolve("emails");
+
+				if (Files.exists(spath))
+					resources.getOrCreateTierScripts().withPath(spath);
 			}
 		}
+		
+		Logger.trace("After packages");
 		
 		// make sure top level class loader is present
 		ClassResource cr = this.getClasses(resources);
@@ -169,6 +190,10 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 		}
 		*/
 		
+		for (XElement lel : configres.getTagListLocal("Formatters/Definition")) {
+			resources.getOrCreateTierScripts().loadFormatter(lel);
+		}
+		
 		Logger.trace( "Packages loaded: " + packres);
 		
 		// -----------------------------------
@@ -181,7 +206,7 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 		
 		lr.setDefaultLocale(LocaleUtil.normalizeCode(configres.getAttribute("Locale", "eng")));
 		
-		Logger.trace( "Loaded locale settomgs");
+		Logger.trace( "Loaded locale settings");
 		
 		// -----------------------------------
 		//   load dict from local files
@@ -295,7 +320,7 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 		if (Logger.isTrace())
 			Logger.trace("Default MD plugins: " + mdc.getPlugins().size());
 		
-		Logger.infoTr(0, "Hub resources loaded");
+		Logger.info( "Hub resources loaded");
 	}
 	
 	public ClassResource getClasses(ResourceTier tier) {
@@ -309,13 +334,13 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 		for (Package pkg : tier.getOrCreateTierPackages().getTierList()) {
 			Path sdir = pkg.getPath().resolve("lib");
 			
-			Logger.traceTr(0, "Checking for libs in: " + sdir.toAbsolutePath());
+			Logger.trace("Checking for libs in: " + sdir.toAbsolutePath());
 			
 			if (Files.exists(sdir)) {
 				try {
 					Files.walk(sdir).forEach(sf -> {
 						if (sf.getFileName().toString().endsWith(".jar")) {
-							Logger.traceTr(0, "Loading lib: " + sf.toAbsolutePath());
+							Logger.trace("Loading lib: " + sf.toAbsolutePath());
 							bundle.loadJarLibrary(sf);
 						}
 					});
@@ -336,7 +361,7 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 		for (Package pkg : tier.getOrCreateTierPackages().getTierList()) {
 			Path sdir = pkg.getPath().resolve("schema");
 			
-			Logger.traceTr(0, "Checking for schemas in: " + sdir.toAbsolutePath());
+			Logger.trace("Checking for schemas in: " + sdir.toAbsolutePath());
 			
 			if (Files.exists(sdir)) {
 				// TODO make sure that we get in canonical order
@@ -344,7 +369,7 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 				try {
 					Files.walk(sdir).forEach(sf -> {
 						if (sf.getFileName().toString().endsWith(".xml")) {
-							Logger.traceTr(0, "Loading schema: " + sf.toAbsolutePath());
+							Logger.trace("Loading schema: " + sf.toAbsolutePath());
 							sm.loadSchema(sf);
 						}
 					});
@@ -367,7 +392,7 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 		for (Package pkg : tier.getOrCreateTierPackages().getTierList()) {
 			Path sdir = pkg.getPath().resolve("dictionary");
 			
-			Logger.traceTr(0, "Checking for dictionary in: " + sdir.toAbsolutePath());
+			Logger.trace("Checking for dictionary in: " + sdir.toAbsolutePath());
 			
 			if (Files.exists(sdir)) {
 				// TODO make sure that we get in canonical order
@@ -375,7 +400,7 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 				try {
 					Files.walk(sdir).forEach(sf -> {
 						if (sf.getFileName().toString().endsWith(".xml")) {
-							Logger.traceTr(0, "Loading dictionary: " + sf.toAbsolutePath());
+							Logger.trace("Loading dictionary: " + sf.toAbsolutePath());
 							loc.load(sf);
 						}
 					});
@@ -386,7 +411,7 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 			}
 		}
 
-		Logger.traceTr(0, "Finished loading dictionaries");
+		Logger.trace("Finished loading dictionaries");
 		
 		return loc;
 	}

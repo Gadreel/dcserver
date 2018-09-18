@@ -16,6 +16,11 @@
 ************************************************************************ */
 package dcraft.xml;
 
+import dcraft.hub.op.OperatingContextException;
+import dcraft.struct.CompositeStruct;
+import dcraft.struct.IPartSelector;
+import dcraft.struct.Struct;
+import dcraft.task.IParentAwareWork;
 import dcraft.util.Memory;
 
 /**
@@ -24,7 +29,7 @@ import dcraft.util.Memory;
  * @author Andy
  *
  */
-public abstract class XNode {
+public abstract class XNode extends CompositeStruct {
 	protected int line = 0;
 	protected int col = 0;
 	
@@ -94,63 +99,6 @@ public abstract class XNode {
 		return this.col;
 	}
 
-  /**
-   * quotes a string according to XML rules. When attributes and text elements
-   * are written out special characters have to be quoted.
-   * 
-   * @param string
-   *            the string to process
-   * @return the string with quoted special characters
-   */
-	public static String quote(String string) {
-		if (string == null)
-			return null;
-		
-		StringBuilder sb = new StringBuilder();
-	    
-	    for (int i = 0; i < string.length(); i++) {
-	      char ch = string.charAt(i);
-	      switch (ch) {
-	        case '&':
-	          sb.append("&amp;");
-	          break;
-	        case '<':
-	          sb.append("&lt;");
-	          break;
-	        case '>':
-	          sb.append("&gt;");
-	          break;
-	        case '"':
-	          sb.append("&quot;");
-	          break;
-	        case '\'':
-	          sb.append("&#39;");
-	          break;
-	        default:
-	          sb.append(ch);
-	      }
-	    }
-	    
-	    return sb.toString();
-   }
-
-	public static String quote(char ch) {
-      switch (ch) {
-		case '&':
-			return "&amp;";
-		case '<':
-			return "&lt;";
-		case '>':
-			return "&gt;";
-		case '"':
-			return "&quot;";
-		case '\'':
-			return "&#39;";
-		default:
-			return ch + "";
-      }
-   }
-
 	  /**
 	   * Returns formatted or unformatted XML source.
 	   * 
@@ -167,75 +115,148 @@ public abstract class XNode {
 	}
 	
 	abstract protected void toMemory(Memory sb, boolean formatted, int level);
-
+	
+	@Override
+	protected void doCopy(Struct n) {
+		super.doCopy(n);
+		
+		XNode copy = (XNode) n;
+		
+		copy.line = this.line;
+		copy.col = this.col;
+	}
+	
+	@Override
+	public boolean checkLogic(IParentAwareWork stack, XElement source) {
+		return false;
+	}
+	
+	@Override
 	abstract public XNode deepCopy();
-
-  /**
-   * quotes a string according to XML rules. When attributes and text elements
-   * are written out special characters have to be quoted.
-   * 
-   * @param string
-   *            the string to process
-   * @return the string with quoted special characters
-   */
-  public static String unquote(String string) {
-	if (string == null)
-		return null;
-	  
-    StringBuffer sb = new StringBuffer();
-    boolean inQuote = false;
-    StringBuffer quoteBuf = new StringBuffer();
-    
-    for (int i = 0; i < string.length(); i++) {
-      char ch = string.charAt(i);
-      
-      if (inQuote) {
-        if (ch == ';') {
-          String quote = quoteBuf.toString();
-          
-          if (quote.equals("lt"))
-            sb.append('<');
-          else if (quote.equals("gt"))
-            sb.append('>');
-          else if (quote.equals("amp"))
-            sb.append('&');
-          else if (quote.equals("quot"))
-            sb.append('"');
-          else if (quote.equals("apos"))
-            sb.append('\'');
-          else if (quote.startsWith("#x"))
-            sb.append((char)Integer.parseInt(quote.substring(2), 16));
-          else if (quote.startsWith("#"))
-            sb.append((char)Integer.parseInt(quote.substring(1)));
-          else
-            sb.append(quoteBuf);
-          
-          inQuote = false;
-          quoteBuf.setLength(0);
-        }
-        else if (ch == ' ') {
-            sb.append('&');
-            sb.append(quoteBuf);
-            sb.append(' ');
-            
-            inQuote = false;
-            quoteBuf.setLength(0);
-          }
-        else {
-          quoteBuf.append(ch);
-        }
-      }
-      else {
-        if (ch == '&')
-          inQuote = true;
-        else
-          sb.append(ch);
-      }
-    }
-    
-    if (inQuote)
-      sb.append(quoteBuf);
-    
-    return sb.toString();
-  }
+	
+	/**
+	 * quotes a string according to XML rules. When attributes and text elements
+	 * are written out special characters have to be quoted.
+	 *
+	 * @param string
+	 *            the string to process
+	 * @return the string with quoted special characters
+	 */
+	public static String quote(CharSequence string) {
+		if (string == null)
+			return null;
+		
+		StringBuilder sb = new StringBuilder();
+		
+		for (int i = 0; i < string.length(); i++) {
+			char ch = string.charAt(i);
+			switch (ch) {
+				case '&':
+					sb.append("&amp;");
+					break;
+				case '<':
+					sb.append("&lt;");
+					break;
+				case '>':
+					sb.append("&gt;");
+					break;
+				case '"':
+					sb.append("&quot;");
+					break;
+				case '\'':
+					sb.append("&#39;");
+					break;
+				default:
+					sb.append(ch);
+			}
+		}
+		
+		return sb.toString();
+	}
+	
+	public static String quote(char ch) {
+		switch (ch) {
+			case '&':
+				return "&amp;";
+			case '<':
+				return "&lt;";
+			case '>':
+				return "&gt;";
+			case '"':
+				return "&quot;";
+			case '\'':
+				return "&#39;";
+			default:
+				return ch + "";
+		}
+	}
+	
+	/**
+	* quotes a string according to XML rules. When attributes and text elements
+	* are written out special characters have to be quoted.
+	*
+	* @param string
+	*            the string to process
+	* @return the string with quoted special characters
+	*/
+	static public String unquote(CharSequence string) {
+		if (string == null)
+			return null;
+		 
+		StringBuffer sb = new StringBuffer();
+		boolean inQuote = false;
+		StringBuffer quoteBuf = new StringBuffer();
+		
+		for (int i = 0; i < string.length(); i++) {
+		  char ch = string.charAt(i);
+		  
+		  if (inQuote) {
+			if (ch == ';') {
+			  String quote = quoteBuf.toString();
+			  
+			  if (quote.equals("lt"))
+				sb.append('<');
+			  else if (quote.equals("gt"))
+				sb.append('>');
+			  else if (quote.equals("amp"))
+				sb.append('&');
+			  else if (quote.equals("quot"))
+				sb.append('"');
+			  else if (quote.equals("apos"))
+				sb.append('\'');
+			  else if (quote.startsWith("#x"))
+				sb.append((char)Integer.parseInt(quote.substring(2), 16));
+			  else if (quote.startsWith("#"))
+				sb.append((char)Integer.parseInt(quote.substring(1)));
+			  else
+				sb.append(quoteBuf);
+			  
+			  inQuote = false;
+			  quoteBuf.setLength(0);
+			}
+			else if (ch == ' ') {
+				sb.append('&');
+				sb.append(quoteBuf);
+				sb.append(' ');
+				
+				inQuote = false;
+				quoteBuf.setLength(0);
+			  }
+			else {
+			  quoteBuf.append(ch);
+			}
+		  }
+		  else {
+			if (ch == '&')
+			  inQuote = true;
+			else
+			  sb.append(ch);
+		  }
+		}
+		
+		if (inQuote)
+		  sb.append(quoteBuf);
+		
+		return sb.toString();
+	}
 }

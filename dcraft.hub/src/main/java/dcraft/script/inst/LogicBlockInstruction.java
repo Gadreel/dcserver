@@ -33,7 +33,7 @@ abstract public class LogicBlockInstruction extends BlockInstruction {
         	source = this;
       
         Struct target = source.hasAttribute("Target")
-        		? StackUtil.refFromElement(stack, source, "Target")
+        		? StackUtil.refFromElement(stack, source, "Target", true)
         	    : StackUtil.queryVariable(stack, "_LastResult");
 
         return LogicBlockInstruction.checkLogic(stack, target, source);
@@ -54,37 +54,37 @@ abstract public class LogicBlockInstruction extends BlockInstruction {
         		ScalarStruct starget = (ScalarStruct) target;
 
 				if (!condFound && source.hasAttribute("Equal")) {
-					Struct other = StackUtil.refFromElement(stack, source, "Equal");
+					Struct other = StackUtil.refFromElement(stack, source, "Equal", true);
 					isok = (starget.compareTo(other) == 0);  //  (var == iv);
 					condFound = true;
 				}
 
 				if (!condFound && source.hasAttribute("Equals")) {
-					Struct other = StackUtil.refFromElement(stack, source, "Equals");
+					Struct other = StackUtil.refFromElement(stack, source, "Equals", true);
 					isok = (starget.compareTo(other) == 0);  //  (var == iv);
 					condFound = true;
 				}
 
 				if (!condFound && source.hasAttribute("LessThan")) {
-					Struct other = StackUtil.refFromElement(stack, source, "LessThan");
+					Struct other = StackUtil.refFromElement(stack, source, "LessThan", true);
 					isok = (starget.compareTo(other) < 0);  //  (var < iv);
 					condFound = true;
 				}
 
 				if (!condFound && source.hasAttribute("GreaterThan")) {
-					Struct other = StackUtil.refFromElement(stack, source, "GreaterThan");
+					Struct other = StackUtil.refFromElement(stack, source, "GreaterThan", true);
 					isok = (starget.compareTo(other) > 0);  //  (var > iv);
 					condFound = true;
 				}
 
 				if (!condFound && source.hasAttribute("LessThanOrEqual")) {
-					Struct other = StackUtil.refFromElement(stack, source, "LessThanOrEqual");
+					Struct other = StackUtil.refFromElement(stack, source, "LessThanOrEqual", true);
 					isok = (starget.compareTo(other) <= 0);  //  (var <= iv);
 					condFound = true;
 				}
 
 				if (!condFound && source.hasAttribute("GreaterThanOrEqual")) {
-					Struct other = StackUtil.refFromElement(stack, source, "GreaterThanOrEqual");
+					Struct other = StackUtil.refFromElement(stack, source, "GreaterThanOrEqual", true);
 					isok = (starget.compareTo(other) >= 0);  //  (var >= iv);
 					condFound = true;
 				}

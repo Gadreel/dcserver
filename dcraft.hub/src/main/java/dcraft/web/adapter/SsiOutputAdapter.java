@@ -66,8 +66,7 @@ public class SsiOutputAdapter extends ChainWork implements IOutputWork {
 	public Path file = null;
 	protected MimeInfo mime = null;
 	protected boolean runonce = false;
-	
-	@Override
+
 	public Path getFile() {
 		return this.file;
 	}
@@ -86,13 +85,18 @@ public class SsiOutputAdapter extends ChainWork implements IOutputWork {
 	
 	@Override
 	public void run(TaskContext ctx) throws OperatingContextException {
+		if (! this.init) {
+			super.init(ctx);
+			this.init = true;
+		}
+
 		if (this.runonce) {
 			super.run(ctx);
 			return;
 		}
-		
+
 		this.runonce = true;
-		
+
 		WebController wctrl = (WebController) ctx.getController();
 		
 		try {

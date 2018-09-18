@@ -33,6 +33,7 @@ import dcraft.log.Logger;
 import dcraft.schema.SchemaHub;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
+import dcraft.script.work.StackWork;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
@@ -169,7 +170,7 @@ public class LocalStore extends FileStore {
 	}
 
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement codeEl) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement codeEl) throws OperatingContextException {
 		// connect and close in super
 		
 		if ("AllocateTempDir".equals(codeEl.getName())) {

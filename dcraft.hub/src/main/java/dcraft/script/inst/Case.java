@@ -52,12 +52,8 @@ public class Case extends LogicBlockInstruction {
 			
 			if (var == null)
 				Logger.trace( "Case has no variable to compare with, missing Target");
-			else if (! (var instanceof ScalarStruct)) {
-				Logger.trace( "Case has no variable to compare with, Target is not a scalar");
-				var = null;
-			}
 			
-			if ((var == null) || ! this.checkLogic(state, (ScalarStruct) var, this))
+			if ((var == null) || ! this.checkLogic(state, var, this))
 				state.setState(ExecuteState.DONE);
 			else if (this.gotoTop(state))
 				return ReturnOption.CONTINUE;

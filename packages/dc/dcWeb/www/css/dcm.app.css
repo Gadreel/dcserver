@@ -38,7 +38,8 @@
 }
 
 .dcm-widget-carousel .dcm-widget-carousel-fader,
-.dcm-widget-carousel .dcm-widget-carousel-img {
+.dcm-widget-carousel .dcm-widget-carousel-img,
+.dcm-widget-banner .dcm-widget-banner-img {
 	height: 100%;
     position: absolute;
 }
@@ -47,7 +48,8 @@
 	z-index: 0;
 }
 
-.dcm-widget-carousel .dcm-widget-carousel-img {
+.dcm-widget-carousel .dcm-widget-carousel-img,
+.dcm-widget-banner .dcm-widget-banner-img {
 	z-index: 4;
 }
 
@@ -66,12 +68,6 @@
 
 .dcm-widget-social-media .dc-link {
 	margin: 0 .1rem 0 .1rem;
-}
-
-/* hide internal CMS buttons before CMS is loaded */
-
-.dcm-cms-editable:not(.dcuiCms) .dcuiCmsi {
-	display: none !important;
 }
 
 ul.dc-list-control {

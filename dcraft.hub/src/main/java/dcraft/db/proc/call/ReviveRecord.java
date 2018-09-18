@@ -15,12 +15,9 @@ public class ReviveRecord implements IUpdatingStoredProc {
 		String table = params.getFieldAsString("Table");
 		String id = params.getFieldAsString("Id");
 		
-		// TODO add db filter option
-		//d runFilter("Retire") quit:Errors  ; if any violations in filter then do not proceed
-		
 		TablesAdapter db = TablesAdapter.ofNow(request);
 
-		db.setStaticScalar(table, id, "Retired", false);
+		db.reviveRecord(table, id);
 		
 		callback.returnEmpty();
 	}

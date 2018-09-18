@@ -9,6 +9,7 @@ import java.time.ZonedDateTime;
 import dcraft.db.util.ByteUtil;
 import dcraft.hub.time.BigDateTime;
 import dcraft.struct.Struct;
+import dcraft.util.HexUtil;
 
 abstract public class DatabaseAdapter {
 	public void set(Object... list) throws DatabaseException {
@@ -19,6 +20,19 @@ abstract public class DatabaseAdapter {
 		byte[] val = ByteUtil.buildValue(list[list.length - 1]);
 		
 		this.put(key, val);
+	}
+	
+	public void setDebug(Object... list) throws DatabaseException {
+		if ((list == null) || (list.length < 2))
+			throw new IllegalArgumentException("SET list missing or too small");
+		
+		byte[] key = ByteUtil.buildKey(list, 0, list.length - 1);
+		byte[] val = ByteUtil.buildValue(list[list.length - 1]);
+		
+		this.put(key, val);
+		
+		System.out.println("key: " + HexUtil.bufferToHex(key));
+		System.out.println("val: " + HexUtil.bufferToHex(val));
 	}
 	
 	public void set(byte[] key, Object value) throws DatabaseException {

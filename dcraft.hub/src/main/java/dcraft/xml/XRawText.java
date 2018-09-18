@@ -24,17 +24,17 @@ public class XRawText extends XText {
 	}
 	
 	@Override
-	public void setValue(String value) {
+	public void setValue(CharSequence value) {
 		super.setRawValue(value);
 	}
 	
 	@Override
-	public void setValue(String value, boolean cdata) {
+	public void setValue(CharSequence value, boolean cdata) {
 		super.setRawValue(value, cdata);
 	}
 	
 	@Override
-	public XText withValue(String value) {
+	public XText withValue(CharSequence value) {
 		return super.withRawValue(value);
 	}
 }

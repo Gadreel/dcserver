@@ -60,6 +60,27 @@ public class InputControl extends Base {
 			
 			if (StringUtil.isNotEmpty(icon))
 				ret.withClass("dc-addon-glyph-button");
+
+			String to = input.getAttribute("To", "#");
+			String click = input.getAttribute("Click");
+			String page = input.getAttribute("Page");
+
+			ret
+					.attr("href", StringUtil.isNotEmpty(page) ? page : to)
+					.attr("tabindex", "0")
+					.attr("role", "button");
+
+			if (input.hasEmptyAttribute("data-dc-enhance"))
+				ret
+						.attr("data-dc-enhance", "true")
+						.attr("data-dc-tag", "dc.Button");
+
+			if (StringUtil.isNotEmpty(click))
+				ret.attr("data-dc-click", click);
+			else if (StringUtil.isNotEmpty(page))
+				ret.attr("data-dc-page", page);
+			else if (StringUtil.isNotEmpty(to))
+				ret.attr("data-dc-to", to);
 		}
 		else if ("Info".equals(gtype)) {
 			ret.withClass("dc-addon-info");
@@ -77,30 +98,10 @@ public class InputControl extends Base {
 		else if (StringUtil.isNotEmpty(label))
 			ret.withText(label);
 
-		String to = input.getAttribute("To", "#");
-		String click = input.getAttribute("Click");
-		String page = input.getAttribute("Page");
-		
-		ret
-			.withAttribute("href", StringUtil.isNotEmpty(page) ? page : to);
-		
-		if (! input.hasNotEmptyAttribute("data-dc-enhance"))
+		if (input.hasNotEmptyAttribute("aria-label"))
 			ret
-				.withAttribute("data-dc-enhance", "true")
-				.withAttribute("data-dc-tag", "dc.Button");
+					.withAttribute("aria-label", input.getAttribute("aria-label"));
 
-		if (input.hasNotEmptyAttribute("title"))
-			ret
-					.withAttribute("title", input.getAttribute("title"));
-
-		if (StringUtil.isNotEmpty(page))
-			ret.withAttribute("data-dc-page", page);
-		
-		if (StringUtil.isNotEmpty(click))
-			ret
-					.withAttribute("data-dc-click", click)
-					.withAttribute("tabindex", "0");
-		
 		return ret;
 	}
 	
@@ -108,21 +109,36 @@ public class InputControl extends Base {
 		InputControl ic = (input instanceof InputControl) ? (InputControl) input : InputControl.tag();
 		
 		//Form frm = fld.getForm();
-		
+		ic.setName(fld.getName());
+
 		if ("dcf.Password".equals(fld.getName())) {
 			ic.withAttribute("type", "password");
 		}
+		/*
 		else if ("dcf.Label".equals(fld.getName())) {
-			ic.setName("dcf.Label");					// TODO enhance so this works with glyphs
+			// TODO enhance so this works with glyphs
 		}
 		else if ("dcf.Select".equals(fld.getName())) {
-			ic.setName("dcf.Select");					// TODO enhance so this works with glyphs
+			// TODO enhance so this works with glyphs
 		}
 		else if ("dcf.TextArea".equals(fld.getName())) {
 			ic.setName("dcf.TextArea");					
 		}
+		*/
 		else if ("dcf.Hidden".equals(fld.getName())) {
 			ic.withAttribute("type", "hidden");		// is otherwise just like a text field
+		}
+		else if ("dcf.Range".equals(fld.getName())) {
+			ic.withAttribute("type", "range");		// is otherwise just like a text field
+		}
+		else if ("dcf.Number".equals(fld.getName())) {
+			ic.withAttribute("type", "number");		// is otherwise just like a text field
+			
+			if (! input.hasNotEmptyAttribute("min") && fld.hasNotEmptyAttribute("min"))
+				ic.withAttribute("min", fld.getAttribute("min"));
+			
+			if (! input.hasNotEmptyAttribute("max") && fld.hasNotEmptyAttribute("max"))
+				ic.withAttribute("max", fld.getAttribute("max"));
 		}
 		else if (! input.hasNotEmptyAttribute("type")) {
 			ic.withAttribute("type", "text");
@@ -165,6 +181,12 @@ public class InputControl extends Base {
 		if (! input.hasNotEmptyAttribute("placeholder") && fld.hasNotEmptyAttribute("placeholder"))
 			ic.withAttribute("placeholder", fld.getAttribute("placeholder"));
 		
+		if (! input.hasNotEmptyAttribute("min") && fld.hasNotEmptyAttribute("min"))
+			ic.withAttribute("min", fld.getAttribute("min"));
+		
+		if (! input.hasNotEmptyAttribute("max") && fld.hasNotEmptyAttribute("max"))
+			ic.withAttribute("max", fld.getAttribute("max"));
+		
 		if (input.hasNotEmptyAttribute("Name"))
 			ic.withAttribute("data-dcf-name", input.getAttribute("Name"));
 		else if (fld.hasNotEmptyAttribute("Name"))
@@ -180,8 +202,10 @@ public class InputControl extends Base {
 		else if (fld.hasNotEmptyAttribute("Required"))
 			ic.withAttribute("data-dcf-required", fld.getAttribute("Required"));
 		
-		if ("true".equals(ic.getAttribute("data-dcf-required")))
+		if ("true".equals(ic.getAttribute("data-dcf-required"))) {
 			fld.withClass("dc-required");
+			ic.attr("aria-required", "true");
+		}
 		
 		if (input.hasNotEmptyAttribute("DataType"))
 			ic.withAttribute("data-dcf-data-type", input.getAttribute("DataType"));

@@ -7,6 +7,7 @@ import dcraft.db.DbServiceRequest;
 import dcraft.db.proc.IComposer;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.ResourceHub;
+import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
@@ -20,7 +21,7 @@ import dcraft.util.StringUtil;
 
 public class Concat implements IComposer {
 	@Override
-	public void writeField(ICompositeBuilder out, TablesAdapter db, String table, String id,
+	public void writeField(ICompositeBuilder out, TablesAdapter db, IVariableAware scope, String table, String id,
 						   RecordStruct field, boolean compact) throws OperatingContextException
 	{	
 		try {

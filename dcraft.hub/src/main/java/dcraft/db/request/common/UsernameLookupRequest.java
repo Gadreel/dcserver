@@ -55,7 +55,7 @@ public class UsernameLookupRequest extends DataRequest {
 	 * @see dcraft.db.IDatabaseRequest#getDatabaseParams()
 	 */
 	@Override
-	public CompositeStruct buildParams() {
+	public RecordStruct buildParams() {
 		this.parameters
 				.with("Username", (this.name != null) ? this.name.trim().toLowerCase() : null);
 		

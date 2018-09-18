@@ -19,7 +19,9 @@ package dcraft.schema;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import dcraft.util.StringUtil;
 import dcraft.xml.XAttribute;
@@ -30,6 +32,7 @@ public class DatabaseSchema {
 	protected HashMap<String, DbProc> procs = new HashMap<>();
 	protected HashMap<String, DbExpression> expressions = new HashMap<>();
 	protected HashMap<String, DbComposer> composers = new HashMap<>();
+	protected HashMap<String, DbFilter> filters = new HashMap<>();
 	protected HashMap<String, DbCollector> collectors = new HashMap<>();
 	protected HashMap<String, List<DbTrigger>> triggers = new HashMap<>();
 	protected HashMap<String, DbTable> tables = new HashMap<>();
@@ -44,6 +47,10 @@ public class DatabaseSchema {
 	
 	public Collection<DbComposer> getComposers() {
 		return this.composers.values();
+	}
+	
+	public Collection<DbFilter> getFilters() {
+		return this.filters.values();
 	}
 	
 	public Collection<DbCollector> getCollectors() {
@@ -159,6 +166,21 @@ public class DatabaseSchema {
 			this.composers.put(sname, opt);
 		}
 		
+		for (XElement procel : db.selectAll("Filter")) {
+			String sname = procel.getAttribute("Name");
+			
+			if (StringUtil.isEmpty(sname))
+				continue;
+			
+			DbFilter opt = new DbFilter();
+			opt.name = sname;
+			opt.execute = procel.getAttribute("Execute");
+			//opt.securityTags = procel.hasNotEmptyAttribute("Badges")
+			//		? procel.getAttribute("Badges").split(",") : new String[] { "Guest", "User" };
+			
+			this.filters.put(sname, opt);
+		}
+		
 		for (XElement procel : db.selectAll("Collector")) {
 			String sname = procel.getAttribute("Name");
 			
@@ -248,6 +270,11 @@ public class DatabaseSchema {
 		return new ArrayList<>(this.tables.values());
 	}
 	
+	// returns a copy list, you (caller) can own the list
+	public Set<String> getTableNames() {
+		return new HashSet<>(this.tables.keySet());
+	}
+	
 	// returns a copy list, you (caller) can own the list 
 	public List<DbField> getFields(String table) {
 		if (StringUtil.isEmpty(table))
@@ -275,11 +302,19 @@ public class DatabaseSchema {
 		
 		return this.expressions.get(name);
 	}
+	
 	public DbComposer getComposer(String name) {
 		if (StringUtil.isEmpty(name))
 			return null;
 		
 		return this.composers.get(name);
+	}
+	
+	public DbFilter getFilter(String name) {
+		if (StringUtil.isEmpty(name))
+			return null;
+		
+		return this.filters.get(name);
 	}
 	
 	public DbCollector getCollector(String name) {

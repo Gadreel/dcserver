@@ -13,6 +13,7 @@ import dcraft.schema.DataType;
 import dcraft.schema.SchemaHub;
 import dcraft.script.StackUtil;
 import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
 import dcraft.web.ui.inst.Html;
 import dcraft.xml.XElement;
@@ -217,6 +218,9 @@ public class JsonPrinter extends XmlToJsonPrinterOld {
 			
 			if ((body != null) && body.hasNotEmptyAttribute("class"))
 				this.jsb.field("PageClass", valueMacro(body.getAttribute("class"), doc));
+			
+			if (doc.hasNotEmptyAttribute("NoCache") && ! "Server".equalsIgnoreCase(doc.getAttribute("NoCache")))
+				this.jsb.field("NoCache", Struct.objectIsBoolean(valueMacro(doc.getAttribute("NoCache"), doc)));
 			
 			this.jsb.field("Meta", page);
 

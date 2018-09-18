@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import dcraft.db.ICallContext;
+import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.proc.IUpdatingStoredProc;
 import dcraft.hub.op.OperatingContextException;
@@ -18,6 +19,10 @@ import dcraft.util.StringUtil;
 public class UpdateRecord implements IUpdatingStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
+
+		// TODO switch to
+		// TableUtil.updateRecord();
+
 		boolean isUpdate = request.getOp().equals("dcUpdateRecord");
 
 		RecordStruct params = request.getDataAsRecord();
@@ -40,15 +45,15 @@ public class UpdateRecord implements IUpdatingStoredProc {
 			}
 		}
 		
+		// it is possible for Id to be set by trigger (e.g. with domains)
+		String id = params.getFieldAsString("Id");
+		
 		// ===========================================
 		//  run before trigger
 		// ===========================================
-		db.executeTrigger(table, isUpdate ? "BeforeUpdate" : "BeforeInsert", request);
+		db.executeTrigger(table, id, isUpdate ? "BeforeUpdate" : "BeforeInsert");
 		
 		// TODO maybe check for errors here?
-		
-		// it is possible for Id to be set by trigger (e.g. with domains)
-		String id = params.getFieldAsString("Id");
 		
 		// TODO add db filter option
 		//d runFilter("Insert" or "Update") quit:Errors  ; if any violations in filter then do not proceed
@@ -135,7 +140,7 @@ public class UpdateRecord implements IUpdatingStoredProc {
 		// ===========================================
 		//  run after trigger
 		// ===========================================
-		db.executeTrigger(table, isUpdate ? "AfterUpdate" : "AfterInsert", request);
+		db.executeTrigger(table, id, isUpdate ? "AfterUpdate" : "AfterInsert");
 		
 		// TODO maybe check for errors here? originally exited on errors
 		

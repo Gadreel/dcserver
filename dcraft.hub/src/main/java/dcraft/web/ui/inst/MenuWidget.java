@@ -2,10 +2,14 @@ package dcraft.web.ui.inst;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.InstructionWork;
 import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
+import dcraft.struct.scalar.AnyStruct;
+import dcraft.util.RndUtil;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
@@ -30,6 +34,22 @@ public class MenuWidget extends Base {
 		// None, Open, Close, Both
 		String ctrls = StackUtil.stringFromSource(state, "Controls", "None").toLowerCase();
 		
+		// include a Param if menu was built separately
+		Struct funcwrap = StackUtil.queryVariable(state, StackUtil.stringFromSource(state, "Include"));
+
+		XElement pel = null;
+
+		if (funcwrap instanceof XElement) {
+			pel = (XElement) funcwrap;
+		}
+		else if (funcwrap instanceof AnyStruct) {
+			pel = ((XElement) ((AnyStruct) funcwrap).getValue());
+		}
+
+		if (pel != null) {
+			this.mergeDeep(pel, false);
+		}
+
 		List<XElement> links = this.selectAll("dc.Link");
 		
 		this.children = new ArrayList<>();
@@ -45,7 +65,7 @@ public class MenuWidget extends Base {
 							.withClass("dc-menu-list-item", "dc-menu-display-narrow")
 							.with(Link.tag()
 									.withClass("dc-menu-open")
-									.attr("title", OperationContext.getOrThrow().tr("_code_60000"))
+									.attr("aria-label", OperationContext.getOrThrow().tr("_code_60000"))
 									.withAttribute("Icon", "fa-bars")
 									.withAttribute("IconSize", "2x")
 							)
@@ -101,7 +121,7 @@ public class MenuWidget extends Base {
 							.withClass("dc-menu-list-item", "dc-menu-display-narrow")
 							.with(Link.tag()
 									.withClass("dc-menu-close")
-									.attr("title", OperationContext.getOrThrow().tr("_code_60001"))
+									.attr("aria-label", OperationContext.getOrThrow().tr("_code_60001"))
 									.withAttribute("Icon", "fa-chevron-up")
 									.withAttribute("IconSize", "2x")
 							)
@@ -109,6 +129,30 @@ public class MenuWidget extends Base {
 		}
 		
 		this.with(ul);
+
+		if (this.hasEmptyAttribute("aria-labelledby") && this.hasEmptyAttribute("aria-label")) {
+			String label = StackUtil.stringFromSource(state, "Label", "{$_Tr.dcwPageNavigation}");
+
+			if (StringUtil.isNotEmpty(label)) {
+				boolean ariaOnly = StackUtil.boolFromSource(state, "AriaOnly", true);
+
+				String id = StackUtil.stringFromSource(state,"id");
+
+				if (StringUtil.isEmpty(id)) {
+					id = "gen" + RndUtil.nextUUId();
+					this.withAttribute("id", id);
+				}
+
+				this.add(0, W3.tag("h3")
+						.withClass(ariaOnly ? "dc-element-hidden" : "")
+						.attr("id", id + "Header")
+						.attr("tabindex", "-1")
+						.with(
+								W3.tag("span").withText(label)
+						)
+				);
+			}
+		}
 	}
 	
 	@Override

@@ -18,12 +18,16 @@ import dcraft.task.ChainWork;
 import dcraft.task.IWork;
 import dcraft.task.TaskContext;
 import dcraft.tenant.Site;
+import dcraft.util.Memory;
+import dcraft.util.StringUtil;
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 
 import javax.management.monitor.CounterMonitor;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -85,6 +89,8 @@ public class RequestWork extends ChainWork {
 			return;
 		}
 
+		boolean superun = true;
+
 		if (this.firstrun) {
 			this.firstrun = false;
 
@@ -97,7 +103,7 @@ public class RequestWork extends ChainWork {
 			Session sess = taskctx.getSession();
 			
 			if (sess == null) {
-				wctrl.sendRequestBad();
+				wctrl.sendRequestBadRead();
 				taskctx.returnEmpty();
 				return;
 			}
@@ -127,6 +133,8 @@ public class RequestWork extends ChainWork {
 			// rpc request
 			// --------------------------------------------
 
+			String method = req.getFieldAsString("Method");
+
 			// TODO configure how requests are logged
 			if (Logger.isDebug())
 				Logger.debug("Web request for host: " + host +  " url: "
@@ -147,7 +155,7 @@ public class RequestWork extends ChainWork {
 				}
 				else if (reqpath.getName(1).equals(ServerHandler.TRANSFER_PATH)) {
 					String channel = reqpath.getName(2);
-					String method = wctrl.getFieldAsRecord("Request").getFieldAsString("Method");
+					String attach = reqpath.getName(3);
 
 					// collect fragment for upload or download
 					Session session = taskctx.getSession();
@@ -159,7 +167,7 @@ public class RequestWork extends ChainWork {
 
 					if ((centry == null) || ! (centry instanceof RecordStruct)) {
 						Logger.error("Invalid channel number, unable to transfer.");
-						wctrl.sendRequestBad();
+						wctrl.sendRequestBadRead();
 
 						taskctx.returnEmpty();
 						return;
@@ -169,7 +177,7 @@ public class RequestWork extends ChainWork {
 
 					if ((so == null) || ! (so instanceof StreamFragment)) {
 						Logger.error("Invalid channel number, not a stream, unable to transfer.");
-						wctrl.sendRequestBad();
+						wctrl.sendRequestBadRead();
 
 						taskctx.returnEmpty();
 						return;
@@ -188,12 +196,17 @@ public class RequestWork extends ChainWork {
 
 							@Override
 							public void release() throws OperatingContextException {
-								wctrl.sendRequestBad();
+								wctrl.sendRequestBadRead();
 								taskctx.returnEmpty();
 							}
 						});
 
-						fragment.withAppend(HttpDestStream.dest());
+						HttpDestStream destStream = HttpDestStream.dest();
+
+						if (StringUtil.isNotEmpty(attach) && "standard".equals(attach))
+							destStream.withAsAttachment(false);
+
+						fragment.withAppend(destStream);
 
 						// the stream work should happen after `resume` in decoder above
 						this.then(StreamWork.of(fragment));
@@ -221,40 +234,103 @@ public class RequestWork extends ChainWork {
 				}
 			}
 			else {
-				wctrl.setDecoder(new IContentDecoder() {
-					@Override
-					public void offer(HttpContent chunk) {
-						if (chunk instanceof LastHttpContent)
-							wctrl.getChannel().read();
-					}
-
-					@Override
-					public void release() {
-
-					}
-				});
-
-				if (Logger.isDebug())
-					Logger.debug("Web server request j");
-
 				// --------------------------------------------
 				// regular path/file request
 				// --------------------------------------------
+				
+				// TODO switch the following so it goes into the OutputAdapter
+				// each adapter can handle it's own decoder needs and limit it's own METHODs
+				// thought: have a common adapter with a decoder that can be set to skip request content, or read up to max
+				// only Dynamic would accept POST and POST - all the rest are GET only
 
-				if (Logger.isDebug())
-					Logger.debug("Request posted to web domain: " + taskctx.getSessionId());
+				Long clength = wctrl.getFieldAsRecord("Request").getFieldAsInteger("ContentLength");
+				// POST must have length and must be under 64KB
+				boolean skipdata = ((clength == null) || (clength == 0) || (clength > 65536) || ! "POST".equals(method));
 
-				IWork xwork = this.worker(taskctx, wctrl);
+				if ("GET".equals(method) || skipdata) {
+					wctrl.setDecoder(new IContentDecoder() {
+						@Override
+						public void offer(HttpContent chunk) {
+							if (chunk instanceof LastHttpContent)
+								wctrl.getChannel().read();
+						}
 
-				// no errors starting page processing, return
-				if (xwork == null)
-					wctrl.sendNotFound();
-				else
-					this.then(xwork);
+						@Override
+						public void release() {
+
+						}
+					});
+
+					if (Logger.isDebug())
+						Logger.debug("Request get from web domain: " + taskctx.getSessionId());
+
+					IWork xwork = this.worker(taskctx, wctrl);
+
+					// no errors starting page processing, return
+					if (xwork == null)
+						wctrl.sendNotFoundRead();
+					else
+						this.then(xwork);
+				}
+				else if ("POST".equals(method)) {
+					wctrl.setDecoder(new IContentDecoder() {
+						Memory postdata = new Memory();
+
+						@Override
+						public void offer(HttpContent chunk) {
+							ByteBuf buf = chunk.content();
+
+							if (buf != null) {
+								for (ByteBuffer bbuf : buf.nioBuffers())
+									this.postdata.write(bbuf);
+							}
+
+							if (chunk instanceof LastHttpContent) {
+								OperationContext.set(taskctx);
+
+								req.with("PostData", postdata);
+
+								if (Logger.isDebug())
+									Logger.debug("Request data collected");
+
+								try {
+									IWork xwork = RequestWork.this.worker(taskctx, wctrl);
+
+									// no errors starting page processing, return
+									if (xwork == null)
+										wctrl.sendNotFoundRead();
+									else
+										RequestWork.this.then(xwork);
+
+									RequestWork.super.run(taskctx);
+								}
+								catch (OperatingContextException x) {
+									Logger.error("Bad POST context: " + x);
+									wctrl.sendInternalError();
+								}
+							}
+
+							wctrl.getChannel().read();
+						}
+
+						@Override
+						public void release() {
+
+						}
+					});
+
+					if (Logger.isDebug())
+						Logger.debug("Request post on web domain: " + taskctx.getSessionId());
+
+					superun = false;
+
+					wctrl.getChannel().read();
+				}
 			}
 		}
 
-		super.run(taskctx);
+		if (superun)
+			super.run(taskctx);
 	}
 	
 	public IWork worker(TaskContext taskctx, WebController wctrl) throws OperatingContextException {

@@ -9,14 +9,20 @@ import java.util.regex.Pattern;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.UserContext;
 import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
+import dcraft.script.inst.doc.Base;
 import dcraft.script.work.InstructionWork;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
+import dcraft.struct.scalar.BooleanStruct;
 import dcraft.util.StringUtil;
 import dcraft.util.web.DateParser;
 import dcraft.web.md.MarkdownUtil;
+import dcraft.web.ui.inst.ICMSAware;
 import dcraft.xml.XElement;
 import dcraft.xml.XNode;
 
@@ -69,7 +75,10 @@ public class UIUtil {
 	static public XElement translate(InstructionWork state, XElement source, boolean issafe) throws OperatingContextException {
 		String locale = OperationContext.getOrThrow().getLocale();
 		String deflocale = OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale();
-		
+
+		// TODO try switching to
+		// FeedUtil.bestMatch(catalog.selectFirst("EmailMessage"), defloc, defloc);
+
 		XElement bestmatch = null;
 		XElement firstmatch = null;
 
@@ -77,7 +86,7 @@ public class UIUtil {
 			XNode cn = source.getChild(i);
 			
 			if (! (cn instanceof XElement))
-				continue;;
+				continue;
 			
 			XElement cel = (XElement) cn;
 			
@@ -169,4 +178,61 @@ public class UIUtil {
 		return null;
 	}
 	*/
+	
+	static public void setEditBadges(InstructionWork state, XElement element) throws OperatingContextException {
+		String badges = StackUtil.stringFromElement(state, element,"EditBadges");
+		
+		if (StringUtil.isEmpty(badges))
+			return;
+		
+		String[] blist = badges.split(",");
+		ListStruct bvar = ListStruct.list();
+		
+		for (int i = 0; i < blist.length; i++) {
+			bvar.with(blist[i].trim());
+		}
+		
+		StackUtil.addVariable(state, "_CMSEditBadges", bvar);
+		
+		if (element instanceof ICMSAware)
+			((ICMSAware) element).canonicalize();
+	}
+	
+	static public boolean markIfEditable(InstructionWork state, XElement element) throws OperatingContextException {
+		UIUtil.setEditBadges(state, element);
+		
+		boolean editable = UIUtil.canEdit(state, element);
+		
+		if (editable)
+			element.withAttribute("data-cms-editable", "true");
+		
+		return editable;
+	}
+	
+	static public boolean canEdit(InstructionWork state, XElement element) throws OperatingContextException {
+		Struct editable = StackUtil.resolveReference(state, "$_CMSEditable", true);
+		
+		if (! Struct.objectToBooleanOrFalse(editable))
+			return false;
+		
+		if (element.hasEmptyAttribute("id"))
+			return false;
+		
+		UserContext userContext = OperationContext.getOrThrow().getUserContext();
+		
+		ListStruct editBadges = Struct.objectToList(StackUtil.resolveReference(state, "$_CMSEditBadges", true));
+
+		if (editBadges == null)
+			return userContext.isTagged("Admin", "Editor");
+		
+		for (int i = 0; i < editBadges.size(); i++) {
+			if (userContext.isTagged(editBadges.getItemAsString(i)))
+				return true;
+		}
+		
+		if (element instanceof ICMSAware)
+			return ((ICMSAware) element).canEdit(state);
+		
+		return false;
+	}
 }

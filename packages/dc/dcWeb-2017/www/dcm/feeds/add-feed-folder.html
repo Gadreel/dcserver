@@ -1,0 +1,86 @@
+<dc.Html Badges="Editor,Admin" NoCache="true">
+	<dcs.Var Name="Alias" Type="String" />
+	<dcs.Var Name="FeedPos" Type="Integer" SetTo="-1" />
+
+	<dcs.If Target="$Page.OriginalPathParts.3" IsEmpty="false">
+		<dcs.With Target="$Alias" SetTo="$Page.OriginalPathParts.3" />
+	</dcs.If>
+
+	<dcs.With Target="$_Resources.Config">
+	  <GetTagDeep Path="Feeds/Definition" Result="Feeds" />
+	</dcs.With>
+
+	<dcs.For Name="Cnt" From="0" To="$Feeds.Last">
+		<dcs.If Target="$Feeds.$Cnt.@Alias" Equal="$Alias">
+			<dcs.With Target="$FeedPos" SetTo="$Cnt" />
+		</dcs.If>
+	</dcs.For>
+
+	<!-- TODO what to do if -1 still -->
+
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Add {$Feeds.$FeedPos.@Title} Folder" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.Text Name="Path" Label="Name" Required="true" Pattern="[\w-]+"
+					placeholder="folder name, no spaces - use dash instead of space" />
+
+				<dcf.FormButtons>
+					<dcf.SubmitButton Label="Add" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var entry = this;
+
+			this.form().query('Path').focus();
+
+			if (! this.Store.Path) {
+				if (this.Params.Path)
+					entry.Store.Path = this.Params.Path;
+				else
+					entry.Store.Path = '/{$Alias}}';
+			}
+
+			entry.Store.Vault = 'Feeds';
+	]]></Function>
+	<Function Name="LoadRecord" Params="e">
+			e.AsNew = true;
+			e.Data = {
+				Path: ''
+			};
+	</Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			if (e.Data.Path.indexOf('/') != 0)
+				e.Data.Path = '/' + e.Data.Path;
+
+			if (entry.Params.Path && (entry.Params.Path != '/'))
+				e.Data.Path = entry.Params.Path + e.Data.Path;
+
+			entry.Params.Path = e.Data.Path;
+
+			e.Message = {
+				Service: 'dcCoreServices',
+				Feature: 'Vaults',
+				Op: 'AddFolder',
+				Body: {
+					Vault: entry.Store.Vault,
+					Path: e.Data.Path
+				}
+			};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var entry = this;
+
+			entry.Layer.back();
+
+			if (entry.Params.Callback)
+				entry.Params.Callback( entry.Params.Path );
+	]]></Function>
+</dc.Html>

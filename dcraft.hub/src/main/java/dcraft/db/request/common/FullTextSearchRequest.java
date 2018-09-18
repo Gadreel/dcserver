@@ -74,7 +74,7 @@ public class FullTextSearchRequest extends DataRequest {
 	}
 	
 	@Override
-	public CompositeStruct buildParams() {
+	public RecordStruct buildParams() {
 		if (this.sources.size() > 0) {
 			RecordStruct stables = new RecordStruct();
 			RecordStruct ftables = new RecordStruct();

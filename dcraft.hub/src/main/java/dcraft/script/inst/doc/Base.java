@@ -15,6 +15,7 @@ import dcraft.struct.Struct;
 import dcraft.struct.scalar.AnyStruct;
 import dcraft.task.IParentAwareWork;
 import dcraft.util.StringUtil;
+import dcraft.web.ui.inst.Html;
 import dcraft.web.ui.inst.W3;
 import dcraft.web.ui.inst.form.Form;
 import dcraft.xml.XElement;
@@ -115,18 +116,20 @@ public class Base extends BlockInstruction {
 
 		this.renderAfterChildren(state);
 		
-		String name = StackUtil.stringFromSource(state, "Name");
-		
-		if (StringUtil.isNotEmpty(name)) {
-			Struct var = AnyStruct.of(this);
+		if (! (this instanceof Template)) {
+			String name = StackUtil.stringFromSource(state, "Name");
 			
-			StackUtil.addVariable(state.getParent(), name, var);
-			
-			// TODO switch target? -- ((OperationsWork) state).setTarget(var);
-			
-			// if this is a regular html/xml tag then remove extra attribute
-			if (Character.isLowerCase(this.tagName.charAt(0)) && ! this.tagName.contains("."))
-				this.removeAttribute("Name");
+			if (StringUtil.isNotEmpty(name)) {
+				Struct var = AnyStruct.of(this);
+				
+				StackUtil.addVariable(state.getParent(), name, var);
+				
+				// TODO switch target? -- ((OperationsWork) state).setTarget(var);
+				
+				// if this is a regular html/xml tag then remove extra attribute
+				if (Character.isLowerCase(this.tagName.charAt(0)) && !this.tagName.contains("."))
+					this.removeAttribute("Name");
+			}
 		}
 		
 		return ReturnOption.DONE;
@@ -253,6 +256,9 @@ public class Base extends BlockInstruction {
 			if (usemeta && "Meta".equals(tname))
 				root.add(el);
 		}
+
+		// meta becomes a variable always
+		Html.mergePageVariables(state, this);
 	}
 	
 	public Form getForm(InstructionWork state) {

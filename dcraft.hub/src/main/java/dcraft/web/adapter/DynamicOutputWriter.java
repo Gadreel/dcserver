@@ -12,6 +12,7 @@ import dcraft.task.TaskContext;
 import dcraft.web.WebController;
 import dcraft.web.ui.HtmlPrinter;
 import dcraft.web.ui.JsonPrinter;
+import dcraft.xml.XElement;
 import dcraft.xml.XmlPrinter;
 
 import java.io.PrintStream;
@@ -40,9 +41,14 @@ public class DynamicOutputWriter implements IWork {
 			wctrl.getResponse().setHeader("Content-Type", "text/html; charset=utf-8");
 			wctrl.getResponse().setHeader("X-UA-Compatible", "IE=Edge,chrome=1");
 		}
-		
-		wctrl.getResponse().setHeader("Cache-Control", "no-cache");
-		
+
+		XElement doc = this.script.getXml();
+
+		if ("Server".equalsIgnoreCase(doc.getAttribute("NoCache")))
+			wctrl.getResponse().setHeader("Cache-Control", "private, no-store, max-age=0, no-cache, must-revalidate, post-check=0, pre-check=0");
+		else
+			wctrl.getResponse().setHeader("Cache-Control", "no-cache");
+
 		PrintStream ps = wctrl.getResponse().getPrintStream();
 		
 		XmlPrinter prt = isDynamic ? new JsonPrinter() : new HtmlPrinter();
@@ -50,7 +56,7 @@ public class DynamicOutputWriter implements IWork {
 		try {
 			prt.setFormatted(true);
 			prt.setOut(ps);
-			prt.print(this.script.getXml());
+			prt.print(doc);
 		}
 		catch (OperatingContextException x) {
 			Logger.warn("output restricted: " + x);

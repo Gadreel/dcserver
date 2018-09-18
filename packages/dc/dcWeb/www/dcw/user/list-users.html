@@ -1,35 +1,60 @@
 <dc.Html Badges="Admin">
 	<Meta Name="Title">
-		<Tr Locale="en" Value="List Users" />
+		<Tr Locale="eng" Value="Search Users" />
 	</Meta>
 
 	<dc.Body>
 		<dc.PagePanel>
-			<dcf.Form>
-				<dcf.HorizCheckGroup Label="Badges" Name="Badges">
-					<Checkbox Label="Staff" Value="Staff" />
-					<Checkbox Label="Editor" Value="Editor" />
-					<Checkbox Label="Clerk" Value="Clerk" />
-					<Checkbox Label="Admin" Value="Admin" />
-					<Checkbox Label="Developer" Value="Developer" />
-				</dcf.HorizCheckGroup>
+			<dc.Region Hint="Search Form">
+				<dc.FullLayout Pad="Large">
+					<dcf.Form>
+						<dcf.Text Label="Keywords" Name="Term" />
 
-				<dcf.FormButtons>
-					<dc.Button Click="DoSearch" Label="Search" />
-					<dc.Button Click="DoAddUser" Label="Add User" />
-				</dcf.FormButtons>
-			</dcf.Form>
+						<dcs.With Target="$_Resources.Config">
+							<GetTagDeep Path="Badges/Definition" Result="Badges" />
+						</dcs.With>
 
-			<h3>Users</h3>
+						<dc.Template Name="BadgeOpts">
+							<dcs.ForEach Name="Badge" In="$Badges">
+								<dc.Out>
+									<Checkbox Label="{$Badge.@Label}" Value="{$Badge.@Value}" />
+								</dc.Out>
+							</dcs.ForEach>
+						</dc.Template>
 
-			<div id="lstDcwLUUsers" class="dcm-file-list" />
+						<dcf.HorizCheckGroup Label="Badges" Name="Badges" FieldParams="BadgeOpts" />
+
+						<dcf.FormButtons>
+							<dc.Button Click="DoSearch" Label="Search" Scope="Primary" />
+							<dc.Button Click="DoAddUser" Label="Add User" />
+						</dcf.FormButtons>
+					</dcf.Form>
+				</dc.FullLayout>
+			</dc.Region>
+
+			<dc.Region Label="Search Results">
+				<table class="dc-table-break-std dc-table dc-table-reflow dc-table-stripe">
+					<thead>
+						<tr>
+							<th>Username</th>
+							<th>Name</th>
+							<th>Email</th>
+							<th>Phone</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody id="lstSearch">
+						<tr>
+							<td colspan="5">Start a search.</td>
+						</tr>
+					</tbody>
+				</table>
+			</dc.Region>
 		</dc.PagePanel>
 	</dc.Body>
 
 	<Function Name="Load"><![CDATA[
 			var entry = this;
-
-			this.callPageFunc('LoadList');
 	]]></Function>
 	<Function Name="LoadRecord" Params="e"><![CDATA[
 			var page = this;
@@ -39,24 +64,26 @@
 				Badges: [ 'Staff' ]
 			};
 	]]></Function>
-	<Function Name="LoadList"><![CDATA[
+	<Function Name="DoSearch"><![CDATA[
 			var entry = this;
-			var badges = entry.form().getValues().Badges;
+			var values = entry.form().getValues();
 
-			$('#lstDcwLUUsers')
-				.empty()
-				.append('<h3><i class="fa fa-spinner fa-spin"></i></h3>');
+			$('#lstSearch').empty().dcappend(
+				$('<tr>').dcappend(
+					$('<td>')
+						.attr('colspan', '5')
+						.dcappend($('<i class="fa fa-spinner fa-pulse fa-lg"></i>'))
+				)
+			);
 
 			dc.comm.sendMessage({
 				Service: 'dcCoreServices',
 				Feature: 'Users',
 				Op: 'Search',
-				Body: {
-					Badges: badges
-				}
+				Body: values
 			}, function(resp) {
 				if (resp.Result > 0) {
-					dc.pui.Popup.alert('Unable to load users: ' + resp.Message);
+					dc.pui.Popup.alert('Unable to search users: ' + resp.Message);
 					return;
 				}
 
@@ -68,7 +95,19 @@
 
 				// ########## USERS ##########
 
-				var flist = $('#lstDcwLUUsers');
+				var editUser = function(e) {
+					dc.pui.Dialog.loadPage('/dcw/user/edit-user', {
+						Id: e.data.Id,
+						Callback: function(g) {
+							entry.callPageFunc('DoSearch');
+						}
+					});
+
+					e.preventDefault();
+					return false;
+				};
+
+				var flist = $('#lstSearch');
 
 				flist.empty();
 
@@ -76,6 +115,7 @@
 				for (var i = 0; i < items.length; i++) {
 					var item = items[i];
 
+					/* TODO restore image
 					var litm = $('<a>')
 						.attr('href', '#')
 						.attr('class', 'dcm-file');
@@ -104,7 +144,7 @@
 						dc.pui.Dialog.loadPage('/dcw/user/edit-user', {
 							Id: e.data.Id,
 							Callback: function(g) {
-								entry.callPageFunc('LoadList');
+								entry.callPageFunc('DoSearch');
 							}
 						});
 
@@ -116,8 +156,23 @@
 					itmtitle.text(item.FirstName + ' ' + item.LastName);
 
 					litm.append(itmtitle);
+					*/
 
-					flist.append(litm);
+					flist.dcappend(
+						$('<tr>').dcappend(
+							$('<td>').text(item.Username),
+							$('<td>').text(item.FirstName + ' ' + item.LastName),
+							$('<td>').text(item.Email),
+							$('<td>').text(item.Phone),
+							$('<td>').dcappend(
+								$('<a>')
+									.attr('href', '#')
+									.attr('class', 'pure-button-default pure-button dc-button')
+									.click(item, editUser)
+									.text('Edit')
+							)
+						)
+					);
 				}
 			});
 	]]></Function>
@@ -126,7 +181,7 @@
 
 			dc.pui.Dialog.loadPage('/dcw/user/edit-user', {
 				Callback: function() {
-					entry.callPageFunc('LoadList');
+					entry.callPageFunc('DoSearch');
 				}
 			});
 	]]></Function>

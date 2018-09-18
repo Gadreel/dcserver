@@ -33,10 +33,12 @@ import dcraft.schema.SchemaHub;
 import dcraft.schema.TypeOptionsList;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
+import dcraft.script.work.StackWork;
 import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.scalar.IntegerStruct;
 import dcraft.struct.scalar.NullStruct;
+import dcraft.struct.scalar.StringStruct;
 import dcraft.task.IParentAwareWork;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
@@ -114,6 +116,9 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		
 		if ("Length".equals(fld))
 			return IntegerStruct.of((long)this.items.size());
+		
+		if ("Last".equals(fld))
+			return IntegerStruct.of((long)this.items.size() - 1);
 		
 		if (fld != null) {
 			Logger.warnTr(501, this);
@@ -541,15 +546,28 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 	@Override
 	public boolean checkLogic(IParentAwareWork stack, XElement source) throws OperatingContextException {
 		if (source.hasAttribute("Contains")) {
-			Struct other = StackUtil.refFromElement(stack, source, "Contains");
-			return  (this.items.contains(other));
+			Struct other = StackUtil.refFromElement(stack, source, "Contains", true);
+
+			if (this.items.contains(other))
+				return true;
+
+			if ((other instanceof StringStruct) && ! other.isEmpty()) {
+				String[] options = other.toString().split(",");
+
+				for (String opt : options) {
+					if (this.items.contains(StringStruct.of(opt)))
+						return true;
+				}
+			}
+
+			return false;
 		}
 
 		return false;
 	}
 
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		if ("Set".equals(code.getName())) {
 			this.clear();
 			
@@ -567,7 +585,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("AddItem".equals(code.getName())) {
-			Struct sref = StackUtil.refFromElement(stack, code, "Value");
+			Struct sref = StackUtil.refFromElement(stack, code, "Value", true);
 			this.withItem(sref);
 			return ReturnOption.CONTINUE;
 		}
@@ -586,8 +604,33 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		}
 		else if ("Sort".equals(code.getName())) {
 			String field = StackUtil.stringFromElement(stack, code, "ByField");
+			boolean descending = StackUtil.boolFromElement(stack, code, "Desc", false);
 
-			this.sortRecords(field);
+			this.sortRecords(field, descending);
+			
+			return ReturnOption.CONTINUE;
+		}
+		else if ("Join".equals(code.getName())) {
+			String delim = StackUtil.stringFromElement(stack, code, "Delim", ",");
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+			
+			if (StringUtil.isNotEmpty(result)) {
+				StringStruct res = StringStruct.ofEmpty();
+				
+				boolean first = true;
+				
+				for (Struct o : this.items) {
+					if (first)
+						first = false;
+					else
+						res.append(delim);
+					
+					if (o != null)
+						res.append(Struct.objectToString(o));
+				}
+				
+				StackUtil.addVariable(stack, result, res);
+			}
 			
 			return ReturnOption.CONTINUE;
 		}
@@ -623,25 +666,32 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		this.items.sort(comparator);
 	}
 	
-	public void sortRecords(String field) {
+	public void sortRecords(String field, boolean descending) {
+		if (StringUtil.isEmpty(field))
+			return;
+		
 		this.items.sort(new Comparator<Struct>() {
 			@Override
 			public int compare(Struct o1, Struct o2) {
-				if (StringUtil.isNotEmpty(field)) {
-					Struct fld1 = ((RecordStruct)o1).getField(field);
-					Struct fld2 = ((RecordStruct)o2).getField(field);
+				Struct fld1 = ((RecordStruct)o1).getField(field);
+				Struct fld2 = ((RecordStruct)o2).getField(field);
+				
+				if ((fld1 == null) && (fld2 == null))
+					return 0;
+				
+				if (fld1 == null)
+					return descending ? -1 : 1;
+				
+				if (fld2 == null)
+					return descending ? 1 : -1;
+				
+				if ((fld1 instanceof ScalarStruct) && (fld2 instanceof ScalarStruct)) {
+					int cp = ((ScalarStruct) fld1).compareTo(fld2);
 					
-					if ((fld1 == null) && (fld2 == null))
-						return 0;
+					if (descending)
+						cp = -cp;
 					
-					if (fld1 == null)
-						return 1;
-					
-					if (fld2 == null)
-						return -1;
-					
-					if (fld1 instanceof ScalarStruct && fld2 instanceof ScalarStruct)
-						return ((ScalarStruct)fld1).compareTo(fld2);
+					return cp;
 				}
 				
 				return 0;

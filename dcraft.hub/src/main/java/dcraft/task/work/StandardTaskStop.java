@@ -19,13 +19,13 @@ public class StandardTaskStop extends StateWork {
 	}
 	
 	public StateWorkStep prepTask(TaskContext trun) throws OperatingContextException {
-		Logger.debugTr(0, "Stopping Task Hub");
+		Logger.debug("Stopping Task Hub");
 		
 		return StateWorkStep.NEXT;
 	}
 	
 	public StateWorkStep stopTask(TaskContext trun) throws OperatingContextException {
-		Logger.debugTr(0, "Stopped Task Hub");
+		Logger.debug("Stopped Task Hub");
 		
 		return StateWorkStep.NEXT;
 	}

@@ -5,7 +5,7 @@ import dcraft.script.work.InstructionWork;
 import dcraft.web.ui.inst.W3;
 import dcraft.xml.XElement;
 
-public class YesNo extends RadioGroup {
+public class YesNo extends HorizRadioGroup {
 	static public YesNo tag() {
 		YesNo el = new YesNo();
 		el.setName("dcf.YesNo");
@@ -18,7 +18,7 @@ public class YesNo extends RadioGroup {
 	}
 	
 	@Override
-	public void addControl() {
+	public void addControl(InstructionWork state) throws OperatingContextException {
 		this.withAttribute("DataType", "Boolean");		//	always
 		
 		this.fieldinfo.with(
@@ -38,7 +38,7 @@ public class YesNo extends RadioGroup {
 				</dcf.RadioGroup>
 		*/		
 		
-		super.addControl();
+		super.addControl(state);
 	}
 	
 	@Override

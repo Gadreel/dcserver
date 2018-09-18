@@ -1,9 +1,14 @@
 package dcraft.filestore;
 
+import dcraft.log.Logger;
+import dcraft.struct.IPartSelector;
+import dcraft.struct.PathPart;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.StringStruct;
 
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 
 public class FileDescriptor extends RecordStruct {
 	static public FileDescriptor of(String path) {
@@ -71,7 +76,20 @@ public class FileDescriptor extends RecordStruct {
 		
 		return this.getPathAsCommon().getParent().resolve(path);
 	}
-	
+
+	@Override
+	public Struct select(PathPart... path) {
+		if (path.length == 1) {
+			PathPart part = path[0];
+
+			if (part.isField() && "Name".equals(part.getField())) {
+				return StringStruct.of(this.getName());
+			}
+		}
+
+		return super.select(path);
+	}
+
 	@Override
 	public FileDescriptor deepCopy() {
 		FileDescriptor cp = new FileDescriptor();

@@ -21,14 +21,27 @@ public class MultiInputField extends CoreField {
 	}
 	
 	@Override
-	public void addControl() {
+	public void addControl(InstructionWork state) throws OperatingContextException {
 		Base grp = W3.tag("div")
 			.withClass("dc-control", "dc-input-multi");
 		
+		/*
 		List<XElement> inputs = this.fieldinfo.selectAll("Input");
 		
 		for (XElement el : inputs) 
 			grp.with(InputControl.fromField(this, el));
+		*/
+		
+		for (XElement el : this.fieldinfo.selectAll("*")) {
+			String ename = el.getName();
+			
+			if ("Glyph".equals(ename) || "Info".equals(ename) || "Button".equals(ename)) {
+				grp.with(InputControl.fromGylph(el));
+			}
+			else if ("Input".equals(ename)) {
+				grp.with(InputControl.fromField(this, el));
+			}
+		}
 
 		this.with(grp);
 		

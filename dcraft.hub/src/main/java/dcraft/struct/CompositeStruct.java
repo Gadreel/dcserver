@@ -18,6 +18,7 @@ package dcraft.struct;
 
 import dcraft.hub.time.BigDateTime;
 import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.task.IParentAwareWork;
 import io.netty.buffer.ByteBuf;
 
@@ -54,43 +55,13 @@ import dcraft.xml.XElement;
  * @author Andy
  *
  */
-abstract public class CompositeStruct extends Struct implements ICompositeOutput, IPartSelector {
+abstract public class CompositeStruct extends Struct implements ICompositeOutput {
 	public CompositeStruct() {
 	}
 	
 	public CompositeStruct(DataType type) {
 		super(type);
 	}
-	
-	/**
-	 * A way to select a child or sub child structure similar to XPath but lightweight.
-	 * Can select composites and scalars.  Use a . or / delimiter.
-	 * 
-	 * For example: "Toys.3.Name" called on "Person" Record means return the (Struct) name of the 
-	 * 4th toy in this person's Toys list.
-	 * 
-	 * Cannot go up levels, or back to root.  Do not start with a dot or slash as in ".People".
-	 * 
-	 * @param path string holding the path to select
-	 * @return selected structure if any, otherwise null
-	 */
-	public Struct select(String path) {
-		return this.select(PathPart.parse(path));
-	} 
-	
-	/** _Tr
-	 * A way to select a child or sub child structure similar to XPath but lightweight.
-	 * Can select composites and scalars.  Use a . or / delimiter.
-	 * 
-	 * For example: "Toys.3.Name" called on "Person" Record means return the (Struct) name of the 
-	 * 4th toy in this person's Toys list.
-	 * 
-	 * Cannot go up levels, or back to root.  Do not start with a dot or slash as in ".People".
-	 * 
-	 * @param path parts of the path holding a list index or a field name
-	 * @return selected structure if any, otherwise null
-	 */
-	abstract public Struct select(PathPart... path);
 	
 	public BigDateTime selectAsBigDateTime(String name) {
 		return Struct.objectToBigDateTime(this.select(name));
@@ -293,7 +264,7 @@ abstract public class CompositeStruct extends Struct implements ICompositeOutput
 	}
 	
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		if ("Clear".equals(code.getName())) {
 			this.clear();
 			return ReturnOption.CONTINUE;

@@ -66,7 +66,7 @@ public class FullTextIndexRequest extends DataRequest {
 	}
 	
 	@Override
-	public CompositeStruct buildParams() {
+	public RecordStruct buildParams() {
 		if (this.fields.size() > 0) {
 			RecordStruct pfields = new RecordStruct();
 			

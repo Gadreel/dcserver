@@ -15,7 +15,7 @@ import dcraft.xml.XElement;
 public class StandardSchedulerStart extends CoreLoaderWork {
 	@Override
 	public void firstload(TaskContext taskctx, ResourceTier tier) {
-		Logger.debugTr(0, "Initializing Task Scheduler");
+		Logger.debug("Initializing Task Scheduler");
 		
 		XElement config = tier.getConfig().getTag("Scheduler");
 		

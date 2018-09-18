@@ -1,17 +1,17 @@
-<dc.Html Badge="Editor,Admin">
-	<Meta Name="Title"> 
+<dc.Html Badges="Editor,Admin">
+	<Meta Name="Title">
 		<Tr Locale="en" Value="Upload Image" />
 	</Meta>
 
 	<Require Script="/js/dc.transfer.js" />
-	
+
 	<Require Script="/js/dc.image.js" />
 	<Require Script="/js/vendor/blueimp/load-image-meta.js" />
 	<Require Script="/js/vendor/blueimp/load-image-orientation.js" />
 	<Require Script="/js/vendor/blueimp/load-image-exif.js" />
 	<Require Script="/js/vendor/blueimp/load-image-exif-map.js" />
 	<Require Script="/js/vendor/blueimp/canvas-to-blob.min.js" />
-	
+
 	<dc.Body>
 		<dc.PagePanel>
 			<dcf.Form>
@@ -19,13 +19,13 @@
 					<dc.Button Label="Close" Click="AfterSave" />
 					<dcf.SubmitButton Label="Upload" />
 				</dcf.FormButtons>
-				
+
 				<!--  Variation description here -->
 				<div id="lblDepQUsizing" />
 
 				<dcf.Uploader Label="Attachments" Name="Attachments" Required="true" />
-				
-				<!-- TODO support renaming 
+
+				<!-- TODO support renaming
 				<dcf.Text Name="FileName" Label="File Name:" Required="true"  Pattern="[\w-\.]+">
 					<Instructions>Give your file a useful name, no spaces, no file extension.</Instructions>
 				</dcf.Text>
@@ -33,30 +33,30 @@
 			</dcf.Form>
 		</dc.PagePanel>
 	</dc.Body>
-				
-	<Function Name="Load"><![CDATA[	
+
+	<Function Name="Load"><![CDATA[
 				var page = this;
-				
+
 				page.Store.Gallery = page.Params.Gallery;
-				
+
 				// TODO load gallery if not passed
-				
+
 				// set the image description in an instruction block above the file chooser
 				if (page.Params.Variation)
 					$('#lblDepQUsizing').text("Target image size: " + page.Store.Gallery.formatVariation(page.Params.Variation));
-	
+
 				page.Store.File = null;
 	]]></Function>
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 				var page = this;
-				
+
 				e.Wait = true;
-	
+
 				var file = page.form().input('Attachments').Files[0];
-				
+
 				// TODO support alternatives to jpg
 				page.Store.File = page.Params.Path + '.v/' + page.Params.Variation + '.jpg';
-			
+
 				page.Store.Transfer = new dc.transfer.Vault({
 					Vault: 'Galleries',
 					Progress: function(amt, title) {
@@ -64,21 +64,21 @@
 					},
 					Callback: function(e2) {
 						//console.log('callback done!');
-						
+
 						delete page.Store.Transfer;
 
 						e.Task.resume();
 					}
 				});
-				
+
 				page.Store.Transfer.upload(file, page.Store.File, null, true);
 	]]></Function>
 	<Function Name="AfterSave"><![CDATA[
 				var page = this;
-					
+
 				page.Layer.back();
-				
+
 				if (page.Params.Callback)
 					page.Params.Callback(page.Store.File);
-	]]></Function>	
+	]]></Function>
 </dc.Html>

@@ -244,6 +244,32 @@ abstract public class DbRecordRequest extends DataRequest {
 		
 		return this;
 	}
+	
+	public DbRecordRequest withUpdateField(String name, String subkey, Object value, BigDateTime from) {
+		if (value instanceof ConditionalValue) {
+			if (!((ConditionalValue)value).set)
+				return this;
+			
+			value = ((ConditionalValue)value).value;
+		}
+		
+		SchemaResource schema = ResourceHub.getResources().getSchema();
+		dcraft.schema.DbField fld = schema.getDbField(this.table, name);
+		
+		if ((fld == null) || !fld.isDynamic())
+			return this;
+		
+		FieldRequest dfld = new FieldRequest()
+				.withName(name)
+				.withValue(value)
+				.withSubKey(subkey)
+				.withFrom(from)
+				.withUpdateOnly();
+		
+		this.withFields(dfld);
+		
+		return this;
+	}
 
 	public DbRecordRequest withSetField(String name, String subkey, Object value, BigDateTime from, BigDateTime to) {
 		if (value instanceof ConditionalValue) {
@@ -265,6 +291,33 @@ abstract public class DbRecordRequest extends DataRequest {
 			.withSubKey(subkey)
 			.withFrom(from)
 			.withTo(to);
+		
+		this.withFields(dfld);
+		
+		return this;
+	}
+	
+	public DbRecordRequest withUpdateField(String name, String subkey, Object value, BigDateTime from, BigDateTime to) {
+		if (value instanceof ConditionalValue) {
+			if (!((ConditionalValue)value).set)
+				return this;
+			
+			value = ((ConditionalValue)value).value;
+		}
+		
+		SchemaResource schema = ResourceHub.getResources().getSchema();
+		dcraft.schema.DbField fld = schema.getDbField(this.table, name);
+		
+		if ((fld == null) || !fld.isDynamic() || !fld.isList())
+			return this;
+		
+		FieldRequest dfld = new FieldRequest()
+				.withName(name)
+				.withValue(value)
+				.withSubKey(subkey)
+				.withFrom(from)
+				.withTo(to)
+				.withUpdateOnly();
 		
 		this.withFields(dfld);
 		
@@ -354,7 +407,7 @@ abstract public class DbRecordRequest extends DataRequest {
 	}
 	
 	@Override
-	public CompositeStruct buildParams() {
+	public RecordStruct buildParams() {
 		RecordStruct flds = new RecordStruct();
 		
 		for (FieldRequest fld : this.fields)

@@ -16,17 +16,26 @@
 ************************************************************************ */
 package dcraft.filestore;
 
+import dcraft.filevault.VaultUtil;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeEmpty;
+import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.script.StackUtil;
+import dcraft.script.work.ExecuteState;
 import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.stream.IStreamDest;
 import dcraft.stream.IStreamSource;
 import dcraft.stream.file.FileSlice;
 import dcraft.stream.file.IFileStreamDest;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
+import dcraft.task.Task;
+import dcraft.task.TaskHub;
 import dcraft.util.*;
 import dcraft.xml.XElement;
 
@@ -67,7 +76,7 @@ abstract public class FileStoreFile extends FileDescriptor {
     }
 	
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		/* TODO review
 		if ("Hash".equals(code.getName())) {
 			String meth = stack.stringFromElement(code, "Method");
@@ -187,6 +196,65 @@ abstract public class FileStoreFile extends FileDescriptor {
 			return;
 		}
 		*/
+
+		if ("List".equals(code.getName())) {
+			if (stack.getStore().hasField("AwaitFlag")) {
+				stack.getStore().removeField("AwaitFlag");
+
+				return ReturnOption.CONTINUE;
+			}
+			else {
+				String name = StackUtil.stringFromElement(stack, code, "Result");
+
+				if (this.isFolder() && StringUtil.isNotEmpty(name)) {
+					this.getFolderListing(new OperationOutcome<List<FileStoreFile>>() {
+						@Override
+						public void callback(List<FileStoreFile> result) throws OperatingContextException {
+							stack.getStore().with("AwaitFlag", true);
+							stack.setState(ExecuteState.RESUME);
+
+							ListStruct list = ListStruct.list();
+
+							for (FileStoreFile f : result)
+								list.with(f);
+
+							StackUtil.addVariable(stack, name, list);
+
+							OperationContext.getAsTaskOrThrow().resume();
+						}
+					});
+
+					return ReturnOption.AWAIT;
+				}
+
+				return ReturnOption.CONTINUE;
+			}
+		}
+
+		if ("Transfer".equals(code.getName())) {
+			if (stack.getStore().hasField("AwaitFlag")) {
+				stack.getStore().removeField("AwaitFlag");
+				
+				return ReturnOption.CONTINUE;
+			}
+			else {
+				String vault = StackUtil.stringFromElement(stack, code, "Vault");
+				String folder = StackUtil.stringFromElement(stack, code, "Folder");
+				String token = StackUtil.stringFromElement(stack, code, "Token");
+				
+				VaultUtil.transfer(vault, this, CommonPath.from(folder).resolve(this.getName()), token, new OperationOutcomeStruct() {
+					@Override
+					public void callback(Struct result) throws OperatingContextException {
+						stack.getStore().with("AwaitFlag", true);
+						stack.setState(ExecuteState.RESUME);
+						
+						OperationContext.getAsTaskOrThrow().resume();
+					}
+				});
+				
+				return ReturnOption.AWAIT;
+			}
+		}
 		
 		return super.operation(stack, code);
 	}

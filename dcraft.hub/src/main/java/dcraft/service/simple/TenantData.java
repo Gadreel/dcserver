@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import dcraft.db.Constants;
+import dcraft.db.request.DataRequest;
 import dcraft.db.request.common.RequestFactory;
 import dcraft.db.request.query.LoadRecordRequest;
 import dcraft.db.request.query.SelectFields;
@@ -165,7 +166,7 @@ public class TenantData {
 			callback.returnEmpty();
 		}
 	}
-	
+
 	public void updateContext(XElement usr, String username, String token) throws OperatingContextException {
 		String uid = usr.getAttribute("Id");
 		

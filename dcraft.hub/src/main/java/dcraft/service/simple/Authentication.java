@@ -61,7 +61,7 @@ public class Authentication {
 		if ("SignIn".equals(op)) {
 			RecordStruct rec = request.getDataAsRecord();
 			
-			String uname = rec.getFieldAsString("Username");
+			String uname = rec.getFieldAsString("Username").toLowerCase();
 			String passwd = rec.getFieldAsString("Password");
 			
 			du.verifyCreds(uname, passwd, callback);
@@ -74,7 +74,7 @@ public class Authentication {
 
 			return true;
 		}
-		
+
 		return false;
 	}
 }

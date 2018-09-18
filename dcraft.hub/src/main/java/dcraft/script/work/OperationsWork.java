@@ -63,7 +63,7 @@ public class OperationsWork extends InstructionWork {
 			// is treated as for the entry and not the instruction
 			ReturnOption ret = this.inst.run(this);
 
-			// that which returns AWAIT must set RESUME in state
+			// that which returns AWAIT must set RESUME/DONE in state
 			if (ret == ReturnOption.AWAIT)
 				return ret;
 

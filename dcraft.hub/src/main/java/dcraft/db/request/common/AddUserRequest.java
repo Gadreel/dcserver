@@ -23,6 +23,7 @@ import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.ListStruct;
+import dcraft.struct.RecordStruct;
 import dcraft.util.StringUtil;
 
 /**
@@ -144,7 +145,7 @@ public class AddUserRequest extends InsertRecordRequest {
 	}
 	
 	@Override
-	public CompositeStruct buildParams() {
+	public RecordStruct buildParams() {
 		String uname = this.username.isSet() ? ((String) this.username.getValue()).trim().toLowerCase() : null;
 		
 		if (StringUtil.isEmpty(uname) || "guest".equals(uname)) {
@@ -244,7 +245,8 @@ public class AddUserRequest extends InsertRecordRequest {
 				 "jesus".equals(pass) || "michael".equals(pass) || "ninja".equals(pass) || "mustang".equals(pass))
 			return true;
 		
-		if ("password1".equals(pass) || "temp123".equals(pass) || "a1s2d3f4".equals(pass) || "a1s2d3".equals(pass))
+		if ("root".equals(pass) || "temp123".equals(pass) || "a1s2d3f4".equals(pass) || "a1s2d3".equals(pass) ||
+				"password1".equals(pass) || "password2".equals(pass) || "password3".equals(pass) || "password4".equals(pass))
 			return true;
 		
 		return false;		

@@ -123,6 +123,9 @@ public class ByteUtil {
 	
 	// key contains a part at offset
 	static public boolean dataContains(byte[] key, byte[] part) {
+		if ((key == null) || (part == null))
+			return false;
+		
 		if (part.length > key.length)
 			return false;
 		
@@ -152,7 +155,48 @@ public class ByteUtil {
 		
 		return false;
 	}
-	
+
+	// count key contains a part at offset
+	static public int dataContainsCount(byte[] key, byte[] part) {
+		if ((key == null) || (part == null))
+			return 0;
+
+		if (part.length > key.length)
+			return 0;
+
+		// make sure we are comparing same data type
+		if (key[0] != part[0])
+			return 0;
+
+		int matches = 0;
+
+		// try from every position in key
+		for (int i = 1; i < key.length; i++) {
+			boolean match = true;
+
+			for (int i2 = 1; i2 < part.length; i2++) {
+				if (i + i2 - 1 >= key.length) {
+					match = false;
+					break;
+				}
+
+				if (key[i + i2 - 1] != part[i2]) {
+					match = false;
+					break;
+				}
+			}
+
+			if (match) {
+				matches++;
+
+				// start after match
+				i += part.length;
+			}
+		}
+
+		return matches;
+	}
+
 	// key contains a part at offset
 	static public boolean arrayContains(byte[] key, int offset, byte[] part, int len) {
 		if (len + offset > key.length)
@@ -291,6 +335,10 @@ public class ByteUtil {
 		if (type == Constants.DB_TYPE_NUMBER) {
 			mlen = 18;
 		}
+		else if (type == Constants.DB_TYPE_BOOLEAN) {
+			mlen = 2;
+		}
+		// TODO may need to support composite differently if it could ever contain a 00 it would get cut short by below code
 		else {
 			int b = val.readByte();
 			

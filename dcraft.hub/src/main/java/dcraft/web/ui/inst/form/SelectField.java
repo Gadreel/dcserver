@@ -1,5 +1,7 @@
 package dcraft.web.ui.inst.form;
 
+import dcraft.hub.op.OperatingContextException;
+import dcraft.script.work.InstructionWork;
 import dcraft.web.ui.inst.W3;
 import dcraft.xml.XElement;
 
@@ -16,7 +18,7 @@ public class SelectField extends CoreField {
 	}
 	
 	@Override
-	public void addControl() {
+	public void addControl(InstructionWork state) throws OperatingContextException {
 		InputControl input = InputControl.fromField(this, InputControl.tag());
 		
 		// copy the options over into the control

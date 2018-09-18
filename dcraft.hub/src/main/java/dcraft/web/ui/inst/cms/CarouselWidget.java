@@ -16,6 +16,7 @@ import dcraft.util.IOUtil;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
 import dcraft.script.inst.doc.Base;
+import dcraft.web.ui.UIUtil;
 import dcraft.web.ui.inst.W3;
 import dcraft.web.ui.inst.W3Closed;
 import dcraft.xml.XElement;
@@ -75,7 +76,7 @@ public class CarouselWidget extends Base {
 		
 		RecordStruct meta = (RecordStruct) GalleryUtil.getMeta(gallery, OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
 		
-		RecordStruct vdata = GalleryUtil.findVariation(meta, variname);
+		//RecordStruct vdata = GalleryUtil.findVariation(meta, variname);
 		
 		RecordStruct showmeta = GalleryUtil.findShow(meta, alias);
 		
@@ -86,13 +87,16 @@ public class CarouselWidget extends Base {
 				Base viewer = W3Closed.tag("img");
 				
 				viewer
-					.withClass("dcm-widget-carousel-img");
+					.withClass("dcm-widget-carousel-img")
+					.attr("alt","")
+					.attr("aria-hidden","true");
 				
 				Base fader = W3Closed.tag("img");
 				
 				fader
-					.withClass("dcm-widget-carousel-fader");
-				
+					.withClass("dcm-widget-carousel-fader")
+					.attr("alt","")
+					.attr("aria-hidden","true");
 				
 				// TODO add a randomize option
 				
@@ -117,6 +121,8 @@ public class CarouselWidget extends Base {
 				String ext = meta.getFieldAsString("Extension", "jpg");
 				
 				Base list = W3.tag("div").withClass("dcm-widget-carousel-list");
+				
+				list.withAttribute("role", "list");
 				
 				for (Struct simg : images.items()) {
 					String img = simg.toString();
@@ -147,7 +153,9 @@ public class CarouselWidget extends Base {
 					Base iel = W3Closed.tag("img");
 					
 					iel
+							.withAttribute("role", "listitem")
 						.withAttribute("src", "/galleries" + gallery + "/" + img + ".v/" + variname + "." + ext)
+						.withAttribute("alt", data.selectAsString("Description"))
 						.withAttribute("data-dc-image-data", data.toString());
 					
 					list.with(iel);
@@ -155,15 +163,9 @@ public class CarouselWidget extends Base {
 				
 				this.with(fader).with(viewer).with(list);
 			}
-			
-			// TODO edit is conditional to user
-			/* TODO
-			this.with(Button.tag("dcmi.GalleryButton")
-					.withClass("dcuiPartButton", "dcuiCmsi")
-					.withAttribute("Icon", "fa-pencil")
-				);
-				*/
 		}
+		
+		UIUtil.markIfEditable(state, this);
 	}
 	
 	@Override

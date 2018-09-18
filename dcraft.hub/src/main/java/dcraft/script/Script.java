@@ -36,7 +36,7 @@ public class Script implements IWorkBuilder {
 	static public Script of(CommonPath path) {
 		return ResourceHub.getResources().getScripts().loadScript(path);
 	}
-	
+
 	static public Script of(Path path) {
 		try {
 			CharSequence src = IOUtil.readEntireFile(path);

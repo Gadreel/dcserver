@@ -27,6 +27,16 @@ import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
 public class Vault {
+	static public Vault of(Base tenancy, XElement vaultdef) throws OperatingContextException {
+		Vault b = vaultdef.hasNotEmptyAttribute("VaultClass")
+				? (Vault) OperationContext.getOrThrow().getResources().getClassLoader().getInstance(vaultdef.getAttribute("VaultClass"))
+				: new Vault();
+
+		b.init(tenancy, vaultdef, null);
+
+		return b;
+	}
+
 	protected String name = null;
 	protected FileStore fsd = null;
 	protected VaultMode mode = VaultMode.Expand;		// TODO currently no support for any of the SHared modes
@@ -107,7 +117,7 @@ public class Vault {
 		return this.minEvidence;
 	}
 	
-	public boolean checkReadAccess() throws OperatingContextException {
+	public boolean checkReadAccess(String op, RecordStruct request) throws OperatingContextException {
 		UserContext uctx = OperationContext.getOrThrow().getUserContext();
 		
 		if (this.readauthlist == null)
@@ -116,7 +126,7 @@ public class Vault {
 		return uctx.isTagged(this.readauthlist);
 	}
 	
-	public boolean checkWriteAccess() throws OperatingContextException {
+	public boolean checkWriteAccess(String op, RecordStruct request) throws OperatingContextException {
 		UserContext uctx = OperationContext.getOrThrow().getUserContext();
 		
 		if (this.writeauthlist == null)
@@ -323,7 +333,7 @@ public class Vault {
 	public void getFileDetail(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
 		try {
 			// check bucket security
-			if (checkAuth && ! this.checkReadAccess()) {
+			if (checkAuth && ! this.checkReadAccess("FileDetail", request)) {
 				Logger.errorTr(434);
 				fcb.returnEmpty();
 				return;
@@ -390,7 +400,7 @@ public class Vault {
 	public void deleteFile(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
 		try {
 			// check bucket security
-			if (checkAuth && ! this.checkWriteAccess()) {
+			if (checkAuth && ! this.checkWriteAccess("DeleteFile", request)) {
 				Logger.errorTr(434);
 				fcb.returnValue(null);
 				return;
@@ -450,7 +460,7 @@ public class Vault {
 	public void addFolder(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
 		try {
 			// check bucket security
-			if (checkAuth && ! this.checkWriteAccess()) {
+			if (checkAuth && ! this.checkWriteAccess("AddFolder", request)) {
 				Logger.errorTr(434);
 				fcb.returnResult();
 				return;
@@ -502,7 +512,7 @@ public class Vault {
 	public void listFiles(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
 		try {
 			// check bucket security
-			if (checkAuth && ! this.checkReadAccess()) {
+			if (checkAuth && ! this.checkReadAccess("ListFiles", request)) {
 				Logger.errorTr(434);
 				fcb.returnEmpty();
 				return;
@@ -574,7 +584,7 @@ public class Vault {
 	public void executeCustom(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
 		try {
 			// check bucket security
-			if (checkAuth && ! this.checkWriteAccess()) {
+			if (checkAuth && ! this.checkWriteAccess("Custom", request)) {
 				Logger.errorTr(434);
 				fcb.returnEmpty();
 				return;
@@ -602,11 +612,16 @@ public class Vault {
 			return;
 		
 		try {
-			String token = RndUtil.nextUUId();  // token is protected by session - session id is secure random
+			RecordStruct params = request.getFieldAsRecord("Params");
 			
-			HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
+			String token = null;
 			
-			scache.put(token, BooleanStruct.of(true));
+			if ((params != null) && params.isNotFieldEmpty("Token"))
+				token = params.getFieldAsString("Token");
+			else
+				token = RndUtil.nextUUId();  // token is protected by session - session id is secure random
+			
+			VaultUtil.setSessionToken(token);
 			
 			resp.with("Token", token);
 			
@@ -652,7 +667,7 @@ public class Vault {
 	public void startUpload(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
 		try {
 			// check bucket security
-			if (checkAuth && ! this.checkWriteAccess() && ! this.uploadtoken) {
+			if (checkAuth && ! this.checkWriteAccess("StartUpload", request) && ! this.uploadtoken) {
 				Logger.errorTr(434);
 				fcb.returnEmpty();
 				return;
@@ -928,7 +943,7 @@ public class Vault {
 	public void startDownload(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
 		try {
 			// check bucket security
-			if (checkAuth && ! this.checkReadAccess()) {
+			if (checkAuth && ! this.checkReadAccess("StartDownload", request)) {
 				Logger.errorTr(434);
 				fcb.returnEmpty();
 				return;

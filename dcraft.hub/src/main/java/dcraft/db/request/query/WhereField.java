@@ -63,7 +63,12 @@ public class WhereField implements IWhereField {
 		this.column.with("Format", format);
 		return this;
 	}
-	
+
+	public WhereField withValue(Struct value) {
+		this.column.with("Value", value);
+		return this;
+	}
+
 	@Override
 	public Struct getParams() {
 		return this.column;

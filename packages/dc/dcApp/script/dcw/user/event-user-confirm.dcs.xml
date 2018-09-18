@@ -10,7 +10,7 @@
 	<text Name="textEmail">
 ## {$_Site.Title}
 
-A confirmation code has been requested for your online account {$User.Username}. If you did not request this then please ignore this email.  If you did request a confirmation code, please [follow this link to sign in]({$_Site.IndexUrl}/confirm-account#code={$User.Code}&user={$User.Username}) or enter this code manually as your password: {$User.Code}
+A confirmation code has been requested for your online account {$User.Username}. If you did not request this then please ignore this email.  If you did request a confirmation code, please [follow this link to sign in]({$_Site.IndexUrl}/confirm-account?code={$User.Code}&amp;user={$User.Username}) or enter this code manually as your password: {$User.Code}
 
 This code will expire shortly, please confirm account soon.
 

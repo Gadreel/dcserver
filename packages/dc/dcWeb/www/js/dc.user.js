@@ -22,13 +22,13 @@ dc.user = {
 	 * Here is the structure for that data.
 	 *
 	 *	{
-	 *		Credentials: object,		// only if RememberMe - possible security hole use with care
 	 *		UserId: string,
 	 *		Username: string,
 	 *		FirstName: string,
 	 *		LastName: string,
 	 *		Email: string,
-	 *		RememberMe: boolean,
+	 *		Tenant: string,
+	 *		Site: string,
 	 *		Locale: array of string,
 	 *		Chronology: array of string,
 	 *		Verified: boolean,			// logged in
@@ -40,42 +40,29 @@ dc.user = {
 	_info: { },
 	_signinhandler: null,
 
-	// fairly unsafe, use RemberMe only on trusted computer
-	loadRememberedUser : function() {
-		dc.user._info = { };
+	// check to see see if the user info was remembered
+	// this is not so secure as we use a hard coded key for that, but at least it is
+	// encrypted on disk.  'Remember' should only be used on devices with personal
+	// accounts - never shared accounts or public devices.
+	loadRemembered : function() {
+		var plain = localStorage.getItem("dc.info.remember");
 
-		try {
-			var plain = localStorage.getItem("dc.info.remember");
-
-			if (plain) {
-				dc.user._info = JSON.parse(plain);
-				delete dc.user._info.Verified;
-				return true;
-			}
-		}
-		catch (x) {
-		}
+		if (plain)
+			return JSON.parse(plain);
 
 		return false;
 	},
 
 	/**
-	 *  If RememberMe is true then store the current user info.  If not, make sure it is not present on disk and that Credentials are not in memory (much safer approach).
+	 *  If remember is true then store the current user info.  If not, make sure it is not present on disk.
 	 */
-	saveRememberedUser : function() {
-		try {
-			if (!dc.user._info || !dc.user._info.RememberMe) {
-				if (dc.user._info)
-					delete dc.user._info.Credentials;
-
-				localStorage.removeItem("dc.info.remember");
-				return;
-			}
-
-			var plain = JSON.stringify( dc.user._info );
-			localStorage.setItem("dc.info.remember", plain);
+	saveRemembered : function(remember, creds) {
+		if (! remember) {
+			localStorage.removeItem("dc.info.remember");
 		}
-		catch (x) {
+		else {
+			var plain = JSON.stringify(creds);
+			localStorage.setItem("dc.info.remember", plain);
 		}
 	},
 
@@ -106,6 +93,23 @@ dc.user = {
 	},
 
 	getUserInfo : function() {
+		return dc.user._info;
+	},
+
+	setUserInfo : function(info) {
+		// copy only select fields for security reasons
+		dc.user._info = {
+			Verified: ("00000_000000000000002" != info.UserId),	// guest is not treated as verified in client
+			UserId: info.UserId,
+			Username: info.Username,
+			FirstName: info.FirstName,
+			LastName: info.LastName,
+			Email: info.Email,
+			Badges: info.Badges,
+			Locale: info.Locale,
+			Chronology: info.Chronology
+		};
+
 		return dc.user._info;
 	},
 
@@ -149,31 +153,50 @@ dc.user = {
 
 		dc.comm.sendMessage(msg, function(rmsg) {
 			if (rmsg.Result == 0) {
-				var resdata = rmsg.Body;
-
-				// copy only select fields for security reasons
-				var uinfo = {
-					Verified: ("00000_000000000000002" != resdata.UserId),	// guest is not treated as verified in client
-					UserId: resdata.UserId,
-					Username: resdata.Username,
-					FirstName: resdata.FirstName,
-					LastName: resdata.LastName,
-					Email: resdata.Email,
-					Badges: resdata.Badges,
-					Locale: resdata.Locale,
-					Chronology: resdata.Chronology
-				}
-
-				if (remember) {
-					uinfo.Credentials = creds;
-					uinfo.RememberMe = remember;
-				}
-
-				dc.user._info = uinfo;
+				dc.user.setUserInfo(rmsg.Body);
 
 				// failed login will not wipe out remembered user (could be a server issue or timeout),
 				// only set on success - successful logins will save or wipe out depending on Remember
-				dc.user.saveRememberedUser();
+				dc.user.saveRemembered(remember, creds);
+
+				if (dc.user._signinhandler)
+					dc.user._signinhandler.call(dc.user._info);
+			}
+
+			if (callback)
+				callback();
+		});
+	},
+
+	facebookSignin : function(token, callback) {
+		if (! dc.comm.isSecure()) {
+			dc.pui.Popup.alert('May not sign in on an insecure connection');
+
+			if (callback)
+				callback(null);
+
+			return;
+		}
+
+		dc.user._info = { };
+
+		// we take what ever Credentials are supplied, so custom Credentials may be used
+		var msg = {
+			Service: 'dcCoreServices',
+			Feature: 'Authentication',
+			Op: 'FacebookSignIn',
+			Body: {
+				Token: token
+			}
+		};
+
+		dc.comm.sendMessage(msg, function(rmsg) {
+			if (rmsg.Result == 0) {
+				dc.user.setUserInfo(rmsg.Body);
+
+				// failed login will not wipe out remembered user (could be a server issue or timeout),
+				// only set on success - successful logins will save or wipe out depending on Remember
+				dc.user.saveRemembered(false);
 
 				if (dc.user._signinhandler)
 					dc.user._signinhandler.call(dc.user._info);
@@ -188,175 +211,18 @@ dc.user = {
 		return dc.util.Cookies.getCookie('dcLang');
 	},
 
-	/* TODO
-	 *
-	 * check dc.comm.isSecure()
-	 *
-	signinFacebook: function(page, callback) {
-		if (dc.user.isVerified()) {
-			callback();
-			return;
-		}
+	/* TODO - for facebook review dcServer 2016 */
 
-		var fbsignin = function(auth) {
-			dc.comm.sendMessage({
-					Service: 'dcAuth',
-					Feature: 'Authentication',
-					Op: 'SignInFacebook',
-					Body: {
-						AccessToken: auth.accessToken
-						//UserId: auth.userID
-					}
-				},
-				function(rmsg) {
-					if (rmsg.Result > 0)
-						callback();
-					else
-						dc.user.updateUser(false, callback);
-				});
-		};
-
-		var lstatus = function(response) {
-			if (response.status === 'connected') {
-				fbsignin(response.authResponse);
-			}
-			else if (page && dc.handler && dc.handler.settings && dc.handler.settings.fbAppId) {
-				window.location = 'https://www.facebook.com/dialog/oauth?state=signin&client_id='
-					+ dc.handler.settings.fbAppId + '&response_type=token&scope=public_profile,email&redirect_uri='
-					+ window.location.origin + page
-			}
-			else {
-				FB.login(function(response2) {
-						if (response2.status === 'connected')
-							fbsignin(response2.authResponse);
-						else
-							callback();
-					},
-					{ scope: 'public_profile,email' }
-				);
-			}
-		};
-
-		dc.util.SocialMedia.withFacebook(function() {
-			FB.getLoginStatus(lstatus);
-		});
-	},
-
-	signinFacebookToken: function(accessToken, callback) {
-		if (dc.user.isVerified()) {
-			callback();
-			return;
-		}
-
-		dc.comm.sendMessage({
-				Service: 'dcAuth',
-				Feature: 'Authentication',
-				Op: 'SignInFacebook',
-				Body: {
-					AccessToken: accessToken
-				}
-			},
-			function(rmsg) {
-				if (rmsg.Result > 0)
-					callback();
-				else
-					dc.user.updateUser(false, callback);
-			});
-	},
-
-	linkFacebook: function(page, callback) {
-		if (!dc.user.isVerified()) {
-			callback(false);
-			return;
-		}
-
-		var fblink = function(auth) {
-			dc.comm.sendMessage({
-					Service: 'dcAuth',
-					Feature: 'Facebook',
-					Op: 'LinkAccount',
-					Body: {
-						AccessToken: auth.accessToken
-						//UserId: auth.userID
-					}
-				},
-				function(rmsg) {
-					callback(rmsg.Result == 0);
-				});
-		};
-
-		var lstatus = function(response) {
-			if (response.status === 'connected') {
-				fblink(response.authResponse);
-			}
-			else if (page && dc.handler && dc.handler.settings && dc.handler.settings.fbAppId) {
-				window.location = 'https://www.facebook.com/dialog/oauth?state=link&client_id='
-					+ dc.handler.settings.fbAppId + '&response_type=token&scope=public_profile,email&redirect_uri='
-					+ window.location.origin + page
-			}
-			else {
-				FB.login(function(response2) {
-						if (response2.status === 'connected')
-							fblink(response2.authResponse);
-						else
-							callback(false);
-					},
-					{ scope: 'public_profile,email' }
-				);
-			}
-		};
-
-		dc.util.SocialMedia.withFacebook(function() {
-			FB.getLoginStatus(lstatus);
-		});
-	},
-	*/
-
-	updateUser : function(remember, callback, reload) {
-		if (!remember)
-			remember = dc.user._info.RememberMe;
-
-		var cred = dc.user._info.Credentials;
-
+	updateUser : function(callback) {
 		dc.user._info = { };
 
-		var msg = {
+		dc.comm.sendMessage({
 			Service: 'dcSessions',
 			Feature: 'Session',
-			Op: reload ? 'ReloadMe' : 'LoadMe'
-		};
-
-		dc.comm.sendMessage(msg, function(rmsg) {
-			if (rmsg.Result == 0) {
-				var resdata = rmsg.Body;
-
-				// copy only select fields for security reasons
-				var uinfo = {
-					Verified: ("00000_000000000000002" != resdata.UserId),	// guest is not treated as verified in client
-					UserId: resdata.UserId,
-					Username: resdata.Username,
-					FirstName: resdata.FirstName,
-					LastName: resdata.LastName,
-					Email: resdata.Email,
-					Badges: resdata.Badges,
-					Locale: resdata.Locale,
-					Chronology: resdata.Chronology
-				}
-
-				if (remember) {
-					uinfo.RememberMe = remember;
-					uinfo.Credentials = creds;
-				}
-
-				dc.user._info = uinfo;
-
-				// failed login will not wipe out remembered user (could be a server issue or timeout),
-				// only set on success - successful logins will save or wipe out depending on Remember
-				dc.user.saveRememberedUser();
-
-				//if (dc.user._signinhandler)
-				//	dc.user._signinhandler.call(dc.user._info);
-			}
+			Op: 'LoadMe'
+		}, function(rmsg) {
+			if (rmsg.Result == 0)
+				var uinfo = dc.user.setUserInfo(rmsg.Body);
 
 			if (callback)
 				callback();
@@ -366,7 +232,7 @@ dc.user = {
 	/**
 	 *  Sign out the current user, kill session on server
 	 */
-	signout : function() {
+	signout : function(callback) {
 		dc.user._info = { };
 		localStorage.removeItem("dc.info.remember");
 
@@ -375,6 +241,8 @@ dc.user = {
 			Feature: 'Authentication',
 			Op: 'SignOut'
 		}, function() {
+			if (callback)
+				callback();
 		},
 		1000);
 	}

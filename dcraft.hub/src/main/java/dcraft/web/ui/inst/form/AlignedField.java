@@ -21,7 +21,7 @@ public class AlignedField extends CoreField {
 	}
 	
 	@Override
-	public void addControl() {
+	public void addControl(InstructionWork state) throws OperatingContextException {
 		this.with(W3.tag("div")
 			.withClass("dc-control")
 			.withAll(this.fieldinfo.getChildren())
@@ -60,15 +60,5 @@ public class AlignedField extends CoreField {
 				);
 			}
 		}
-	}
-	
-	@Override
-	public void renderAfterChildren(InstructionWork state) throws OperatingContextException {
-		if ("dcf.FormButtons".equals(this.getName()))
-			this.withClass("dc-form-buttons", "dc-field-stacked");
-		
-		// TODO if FormButtons add a <noscript> explaining JS needs to be enabled
-		
-		super.renderAfterChildren(state);
 	}
 }

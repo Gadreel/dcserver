@@ -1,32 +1,32 @@
 <dc.MixIn Badges="Admin,Editor">
-	<Meta Name="Title"> 
+	<Meta Name="Title">
 		<Tr Locale="en" Value="Image Properties" />
 	</Meta>
 
 	<dc.Fragment>
 		<dc.PagePanel>
 			<dcf.Form>
+				<dcf.Text Name="Title" Label="Title" />
+				<dcf.TextArea Name="Description" Label="Description" />
+
+				<dc.IncludeParam Name="ExtraProps" />
+
 				<dcf.FormButtons>
-					<dc.Button Click="DoDelete" Label="Delete" />
+					<dc.Button Click="DoRemove" Label="Remove From Show" />
 					<dc.Button Click="AfterSave" Label="Close" />
 					<dcf.SubmitButton Label="Save" />
 				</dcf.FormButtons>
-
-				<dcf.Text Name="Title" Label="Title" />
-				<dcf.TextArea Name="Description" Label="Description" />
-				
-				<dc.IncludeParam Name="ExtraProps" />
 			</dcf.Form>
 		</dc.PagePanel>
 	</dc.Fragment>
 	<Function Name="LoadRecord" Params="e"><![CDATA[
 			var entry = this;
-	    
-			e.Message = { 
+
+			e.Message = {
 				Service: 'dcCoreServices',
 				Feature: 'Vaults',
 				Op: 'Custom',
-				Body: { 
+				Body: {
 					Vault: 'Galleries',
 					Command: 'LoadMeta',
 					Path: entry.Params.Gallery.Path + '/' + entry.Params.Image + '.v'
@@ -35,42 +35,42 @@
     ]]></Function>
 	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
 			var entry = this;
-			
+
 			var meta = entry.Store.Meta = e.Data.Extra;
-			
-			if (! meta || ! meta.en)
+
+			if (! meta || ! meta.eng)
 				return;
-			
+
 			// TODO find locale
-			
+
 			e.Data = { };
-		
+
 			// copy properties into form
-			Object.getOwnPropertyNames(meta.en).forEach(function(name) {
-				e.Data[name] = meta.en[name];
+			Object.getOwnPropertyNames(meta.eng).forEach(function(name) {
+				e.Data[name] = meta.eng[name];
 			});
 	]]></Function>
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 			var entry = this;
-			
+
 			var meta = entry.Store.Meta;
-			
+
 			if (! meta)
 				meta = entry.Store.Meta = { };
-				
-			if (! meta.en)
-				meta.en = { };
-			
+
+			if (! meta.eng)
+				meta.eng = { };
+
 			// copy properties into image
 			Object.getOwnPropertyNames(e.Data).forEach(function(name) {
-				meta.en[name] = e.Data[name];
+				meta.eng[name] = e.Data[name];
 			});
-	    
-			e.Message = { 
+
+			e.Message = {
 				Service: 'dcCoreServices',
 				Feature: 'Vaults',
 				Op: 'Custom',
-				Body: { 
+				Body: {
 					Vault: 'Galleries',
 					Command: 'SaveMeta',
 					Path: entry.Params.Gallery.Path + '/' + entry.Params.Image + '.v',
@@ -80,31 +80,31 @@
 	]]></Function>
 	<Function Name="AfterSave"><![CDATA[
 			var entry = this;
-			
+
 			entry.Layer.back();
-			
+
 			if (entry.Params.Callback)
 				entry.Params.Callback();
 	]]></Function>
-	<Function Name="DoDelete"><![CDATA[
+	<Function Name="DoRemove"><![CDATA[
 			var entry = this;
-			
+
 			for (var i = 0; i < entry.Params.Show.Images.length; i++) {
 				var img = entry.Params.Show.Images[i];
-				
-				if (img == entry.Params.Image.Alias) {
+
+				if (img == entry.Params.Image) {
 					entry.Params.Show.Images.splice(i, 1);
 					break;
 				}
 			}
-			
+
 			entry.Params.Gallery.save(function(resp) {
 				if (resp.Result > 0) {
 					dc.pui.Popup.alert(resp.Message);
 				}
 				else {
 					entry.Layer.back();
-					
+
 					if (entry.Params.Callback)
 						entry.Params.Callback();
 				}

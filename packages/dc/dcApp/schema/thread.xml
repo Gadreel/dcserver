@@ -17,7 +17,7 @@
 			<Field Name="dcmTargetDate" Type="DateTime" />
 			<Field Name="dcmEndDate" Type="DateTime" />
 			<!-- if set, this message can be archived automatically after this date -->
-			<Field Name="dcmExpireDate" Type="DateTime" />
+			<Field Name="dcmExpireDate" Type="DateTime" Indexed="True" />
 
 			<Field Name="dcmLabels" Type="dcMetaString" />
 			<Field Name="dcmSharedAttributes" Type="AnyRecord" />
@@ -38,7 +38,24 @@
 			<Field Name="dcmContentSource" Type="String" List="True" />
 			<!-- specific to content -->
 			<Field Name="dcmContentAttributes" Type="AnyRecord" List="True" />
+
+			<!-- for ManagedForm -->
+			<Field Name="dcmManagedFormName" Type="dcMetaString" />
+			<Field Name="dcmManagedFormToken" Type="dcMetaString" />
+
+			<!-- for Store -->
+			<Field Name="dcmOrderData" Type="dcmOrderInfoSubmit" />
+			<Field Name="dcmOrderId" Type="Id" />
+			<Field Name="dcmPaymentAmount" Type="Decimal" />
+			<Field Name="dcmPaymentVerified" Type="Boolean" />
+			<Field Name="dcmPaymentTx" Type="dcMetaString" Indexed="True" />
 		</Table>
+
+		<Collector Name="dcmScanThread" Execute="dcraft.cms.thread.db.Scan" />
+
+		<Procedure Name="dcmServices.Thread.Deliver" Execute="dcraft.cms.thread.db.Deliver" />
+		<Procedure Name="dcmServices.Thread.AddContent" Execute="dcraft.cms.thread.db.AddContent" />
+		<Procedure Name="dcmServices.Thread.ChangeFolder" Execute="dcraft.cms.thread.db.ChangeFolder" />
 	</Database>
 
 	<Shared>
@@ -240,5 +257,49 @@
 			</Field>
 			<Field Name="Party" Type="dcmThread:dcmParty" />
 		</Record>
+
+		<Record Id="dcmThreadObject" Class="dcraft.cms.thread.schema.ThreadObject" />
 	</Shared>
+
+	<Services>
+		<Service Name="dcmServices">
+			<Feature Name="Thread">
+				<Secure Badges="Admin,Developer">
+					<Op Name="Deliver">
+						<Description>
+							Send a message, trigger notices.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+							<Field Name="Uuid" Type="dcMetaString" />
+						</RecordRequest>
+					</Op>
+					<Op Name="AddContent">
+						<Description>
+							Add content to message.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+							<Field Name="Uuid" Type="dcMetaString" />
+							<Field Name="Content" Type="String" Required="True" />
+							<Field Name="ContentType" Type="dcMetaString" />
+							<Field Name="Originator" Type="Id" />
+						</RecordRequest>
+					</Op>
+					<Op Name="ChangeFolder">
+						<Description>
+							Change folder for a party to a thread.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+							<Field Name="Uuid" Type="dcMetaString" />
+							<Field Name="Party" Type="dcMetaString" Required="True" />
+							<Field Name="Folder" Type="dcMetaString" Required="True" />
+							<Field Name="Read" Type="Boolean" />
+						</RecordRequest>
+					</Op>
+				</Secure>
+			</Feature>
+		</Service>
+	</Services>
 </Schema>

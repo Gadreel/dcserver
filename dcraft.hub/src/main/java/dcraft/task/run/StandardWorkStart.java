@@ -11,7 +11,7 @@ import dcraft.xml.XElement;
 public class StandardWorkStart extends CoreLoaderWork {
 	@Override
 	public void firstload(TaskContext taskctx, ResourceTier tier) {
-		Logger.debugTr(0, "Initializing Work Hub");
+		Logger.debug("Initializing Work Hub");
 		
 		XElement config = tier.getConfig().getTag("WorkHub");
 		

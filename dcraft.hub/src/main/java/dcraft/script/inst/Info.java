@@ -36,7 +36,7 @@ public class Info extends Instruction {
 	
 	@Override
 	public XElement newNode() {
-		return Main.tag();
+		return Info.tag();
 	}
 	
 	@Override
@@ -55,6 +55,8 @@ public class Info extends Instruction {
 		}		
 		
 		Logger.info(code, output);
+		
+		
 		
 		return ReturnOption.CONTINUE;
 	}

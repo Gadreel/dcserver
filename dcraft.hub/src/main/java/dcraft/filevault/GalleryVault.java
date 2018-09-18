@@ -2,6 +2,8 @@ package dcraft.filevault;
 
 import java.util.List;
 
+import dcraft.cms.util.GalleryUtil;
+import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.mem.MemoryStoreFile;
 import dcraft.hub.op.*;
@@ -14,7 +16,7 @@ public class GalleryVault extends Vault {
 	@Override
 	public void listFiles(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
 		// check bucket security
-		if (checkAuth && ! this.checkReadAccess()) {
+		if (checkAuth && ! this.checkReadAccess("ListFiles", request)) {
 			Logger.errorTr(434);
 			fcb.returnEmpty();
 			return;
@@ -91,7 +93,7 @@ public class GalleryVault extends Vault {
 	@Override
 	public void executeCustom(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
 		// check bucket security
-		if (checkAuth && ! this.checkWriteAccess()) {
+		if (checkAuth && ! this.checkWriteAccess("Custom", request)) {
 			Logger.errorTr(434);
 			fcb.returnEmpty();
 			return;
@@ -100,66 +102,7 @@ public class GalleryVault extends Vault {
 		String cmd = request.getFieldAsString("Command");
 		
 		if ("LoadMeta".equals(cmd)) {
-			this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
-				@Override
-				public void callback(FileStoreFile result) throws OperatingContextException {
-					if (this.hasErrors()) {
-						fcb.returnEmpty();
-						return;
-					}
-					
-					if (this.isEmptyResult()) {
-						Logger.error("Your request appears valid but does not map to a folder.  Unable to complete.");
-						fcb.returnEmpty();
-						return;
-					}
-					
-					FileStoreFile fi = this.getResult();
-					
-					if (!fi.exists()) {
-						Logger.error("Your request appears valid but does not map to a folder.  Unable to complete.");
-						fcb.returnEmpty();
-						return;
-					}
-					
-					GalleryVault.this.fsd.getFileDetail(fi.getPathAsCommon().resolve("meta.json"), new OperationOutcome<FileStoreFile>() {
-						@Override
-						public void callback(FileStoreFile result) throws OperatingContextException {
-							if (this.hasErrors() || this.isEmptyResult()) {
-								fcb.returnEmpty();
-								return;
-							}
-
-							FileStoreFile mfi = this.getResult();
-							
-							if (! mfi.exists()) {
-								if (fi.getPathAsCommon().isRoot()) {
-									fcb.returnEmpty();
-									return;
-								}
-
-								request.with("Path", fi.getPathAsCommon().getParent().toString());
-
-								GalleryVault.this.executeCustom(request, checkAuth, fcb);
-								return;
-							}
-							
-							mfi.readAllText(new OperationOutcome<String>() {
-								@Override
-								public void callback(String result) throws OperatingContextException {
-									if (this.isNotEmptyResult())
-										fcb.returnValue(new RecordStruct()
-											.with("Extra", Struct.objectToComposite(this.getResult()))
-										);
-									else
-										fcb.returnEmpty();
-								}
-							});
-						}
-					});
-				}
-			});
-			
+			this.loadMeta(request, checkAuth, fcb);
 			return;
 		}
 		
@@ -201,7 +144,7 @@ public class GalleryVault extends Vault {
 							MemoryStoreFile msource = MemoryStoreFile.of(mfi.getPathAsCommon())
 									.with(request.getFieldAsRecord("Params").toPrettyString());
 
-							VaultUtil.transfer(GalleryVault.this.name, msource, mfi.getPathAsCommon(), fcb);
+							VaultUtil.transfer(GalleryVault.this.name, msource, mfi.getPathAsCommon(), null, fcb);
 
 							/*
 							mfi.writeAllText(request.getFieldAsRecord("Params").toPrettyString(), new OperationOutcomeEmpty() {
@@ -311,5 +254,82 @@ public class GalleryVault extends Vault {
 		}
 		
 		super.executeCustom(request, checkAuth, fcb);
+	}
+	
+	public void loadMeta(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
+		this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
+			@Override
+			public void callback(FileStoreFile result) throws OperatingContextException {
+				if (this.hasErrors()) {
+					fcb.returnEmpty();
+					return;
+				}
+				
+				if (this.isEmptyResult()) {
+					Logger.error("Your request appears valid but does not map to a folder.  Unable to complete.");
+					fcb.returnEmpty();
+					
+					return;
+				}
+				
+				FileStoreFile fi = this.getResult();
+				
+				if (! fi.exists()) {
+					if (request.selectAsBooleanOrFalse("Params.Search")) {
+						RecordStruct meta = (RecordStruct) GalleryUtil.getMeta(CommonPath.from(request.selectAsString("Path")).getParent().toString(),
+								request.getFieldAsString("Params.View"));
+						
+						if (meta != null)
+							fcb.returnValue(new RecordStruct()
+									.with("Extra", meta)
+							);
+						else
+							fcb.returnEmpty();
+					}
+					else {
+						Logger.error("Your request appears valid but does not map to a folder.  Unable to complete.");
+						fcb.returnEmpty();
+					}
+					
+					return;
+				}
+				
+				GalleryVault.this.fsd.getFileDetail(fi.getPathAsCommon().resolve("meta.json"), new OperationOutcome<FileStoreFile>() {
+					@Override
+					public void callback(FileStoreFile result) throws OperatingContextException {
+						if (this.hasErrors() || this.isEmptyResult()) {
+							fcb.returnEmpty();
+							return;
+						}
+						
+						FileStoreFile mfi = this.getResult();
+						
+						if (! mfi.exists()) {
+							if (fi.getPathAsCommon().isRoot()) {
+								fcb.returnEmpty();
+								return;
+							}
+							
+							request.with("Path", fi.getPathAsCommon().getParent().toString());
+							
+							GalleryVault.this.executeCustom(request, checkAuth, fcb);
+							return;
+						}
+						
+						mfi.readAllText(new OperationOutcome<String>() {
+							@Override
+							public void callback(String result) throws OperatingContextException {
+								if (this.isNotEmptyResult())
+									fcb.returnValue(new RecordStruct()
+											.with("Extra", Struct.objectToComposite(this.getResult()))
+									);
+								else
+									fcb.returnEmpty();
+							}
+						});
+					}
+				});
+			}
+		});
 	}
 }

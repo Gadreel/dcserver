@@ -20,7 +20,9 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeEmpty;
+import dcraft.script.work.ExecuteState;
 import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.struct.RecordStruct;
 import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
@@ -42,11 +44,13 @@ abstract public class FileStore extends RecordStruct {
 	abstract public void addFolder(CommonPath path, OperationOutcome<FileStoreFile> callback);
 	
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		if ("Connect".equals(code.getName())) {
 			this.connect(null, new OperationOutcomeEmpty() {
 				@Override
 				public void callback() throws OperatingContextException {
+					stack.setState(ExecuteState.DONE);
+					
 					OperationContext.getAsTaskOrThrow().resume();
 				}
 			});
@@ -58,6 +62,8 @@ abstract public class FileStore extends RecordStruct {
 			this.close(new OperationOutcomeEmpty() {
 				@Override
 				public void callback() throws OperatingContextException {
+					stack.setState(ExecuteState.DONE);
+					
 					OperationContext.getAsTaskOrThrow().resume();
 				}
 			});

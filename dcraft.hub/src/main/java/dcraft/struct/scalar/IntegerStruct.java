@@ -23,6 +23,7 @@ import dcraft.schema.RootType;
 import dcraft.schema.SchemaHub;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
+import dcraft.script.work.StackWork;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
@@ -33,6 +34,12 @@ public class IntegerStruct extends ScalarStruct {
 	static public IntegerStruct of(Long v) {
 		IntegerStruct struct = new IntegerStruct();
 		struct.value = v;
+		return struct;
+	}
+
+	static public IntegerStruct of(int v) {
+		IntegerStruct struct = new IntegerStruct();
+		struct.value = Long.valueOf(v);
 		return struct;
 	}
 
@@ -83,7 +90,7 @@ public class IntegerStruct extends ScalarStruct {
 	}
 	
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		// we are loose on the idea of null/zero.  operations always perform on 0, except Validate
 		if ((this.value == null) && !"Validate".equals(code.getName()))
 			this.value = 0L;

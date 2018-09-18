@@ -2,9 +2,11 @@ package dcraft.db.proc.call;
 
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
+import dcraft.db.proc.RecordScope;
 import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.time.BigDateTime;
@@ -27,7 +29,7 @@ public class StartSession implements IStoredProc {
 		
 		String token = null;
 		String uid = params.getFieldAsString("UserId");
-		String uname = params.getFieldAsString("Username");
+		String uname = params.getFieldAsString("Username").toLowerCase();
 		
 		try (OperationMarker om = OperationMarker.create()) {
 			if (request.isReplicating()) {
@@ -36,7 +38,7 @@ public class StartSession implements IStoredProc {
 			}
 			else {
 				if (StringUtil.isEmpty(uid)) {
-					Object userid = db.firstInIndex("dcUser", "dcUsername", uname);
+					Object userid = db.firstInIndex("dcUser", "dcUsername", uname, false);
 					
 					if (userid != null) 
 						uid = userid.toString();
@@ -119,7 +121,7 @@ public class StartSession implements IStoredProc {
 						.with("Name", "AuthToken")
 			);		
 			
-			TableUtil.writeRecord(out, db, "dcUser",
+			TableUtil.writeRecord(out, db, RecordScope.of(OperationContext.getOrThrow()), "dcUser",
 					uid, select, true, false);
 			
 			if (! om.hasErrors()) {

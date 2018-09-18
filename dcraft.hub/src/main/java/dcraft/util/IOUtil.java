@@ -87,7 +87,7 @@ public class IOUtil {
             return sb;
         } 
         catch (IOException x) {
-        	Logger.error("Unabled to read stream, error: " + x);
+        	Logger.error("Unable to read stream, error: " + x);
             
             return null;
 		} 

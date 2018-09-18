@@ -2,15 +2,18 @@ package dcraft.web.ui.inst;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.locale.LocaleUtil;
+import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.inst.doc.Base;
+import dcraft.util.StringUtil;
+import dcraft.web.md.MarkdownUtil;
 import dcraft.web.ui.UIUtil;
-import dcraft.web.ui.inst.cms.EditButton;
-import dcraft.web.ui.inst.misc.SocialMediaIcon;
 import dcraft.xml.XElement;
+import dcraft.xml.XNode;
 
-public class TextWidget extends Base {
+public class TextWidget extends Base implements ICMSAware {
 	static public TextWidget tag() {
 		TextWidget el = new TextWidget();
 		el.setName("dc.TextWidget");
@@ -39,14 +42,7 @@ public class TextWidget extends Base {
 			// TODO add warning if guest, add symbol if CMS
 		}
 		
-		// TODO check for parent with data-cms-feed
-		if (this.hasNotEmptyAttribute("id") && OperationContext.getOrThrow().getUserContext().isTagged("Admin", "Editor")) {
-			this
-					.withAttribute("data-cms-editable", "true")
-					.with(
-							EditButton.tag().attr("title", "CMS - edit previous text area")
-					);
-		}
+		UIUtil.markIfEditable(state, this);
 	}
 	
 	@Override
@@ -57,4 +53,26 @@ public class TextWidget extends Base {
 		
 		this.setName("div");
     }
+	
+	@Override
+	public void canonicalize() throws OperatingContextException {
+		String deflocale = OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale();
+		
+		for (int i = 0; i < this.getChildren().size(); i++) {
+			XNode cn = this.getChild(i);
+			
+			if (! (cn instanceof XElement))
+				continue;
+			
+			XElement cel = (XElement) cn;
+			
+			if (! "Tr".equals(cel.getName()))
+				continue;
+			
+			String locale = LocaleUtil.normalizeCode(cel.getAttribute("Locale"));
+			
+			if (StringUtil.isEmpty(locale))
+				cel.attr("Locale", deflocale);
+		}
+	}
 }

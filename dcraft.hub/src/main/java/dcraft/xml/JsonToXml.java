@@ -2,6 +2,7 @@ package dcraft.xml;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.log.Logger;
+import dcraft.script.ScriptHub;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
@@ -15,7 +16,7 @@ import java.util.Map.Entry;
 
 public class JsonToXml {
 	static public XElement convertJson(RecordStruct root) throws OperatingContextException {
-		XmlReader reader = new XmlReader(null, true, true);
+		XmlReader reader = ScriptHub.instructionsReader();
 		
 		JsonToXml tool = new JsonToXml();
 		tool.reader = reader;
@@ -61,7 +62,10 @@ public class JsonToXml {
 			
 			if (attrs != null) {
 				for (FieldStruct fld : attrs.getFields()) {
-					amap.put(fld.getName(), Struct.objectToString(fld.getValue()));
+					if (fld.getValue() != null)
+						amap.put(fld.getName(), Struct.objectToString(fld.getValue()));
+					else
+						amap.put(fld.getName(), "");
 				}
 			}
 			

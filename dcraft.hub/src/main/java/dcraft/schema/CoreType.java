@@ -352,14 +352,11 @@ public class CoreType {
 	}
 
 	public boolean isSearchable() {
+		if (this.def.hasAttribute("Searchable"))
+			return this.def.getAttributeAsBooleanOrFalse("Searchable");
+
 		boolean pass = true;
 
-		if (this.def.hasAttribute("Searchable"))
-			pass = this.def.getAttributeAsBooleanOrFalse("Searchable");
-
-		if (! pass)
-			return false;
-		
 		if (this.root == RootType.String) {
 			for (IDataRestriction dr : this.restrictions) {
 				if (dr instanceof StringRestriction) {

@@ -16,6 +16,10 @@
 ************************************************************************ */
 package dcraft.xml;
 
+import dcraft.struct.PathPart;
+import dcraft.struct.Struct;
+import dcraft.struct.builder.BuilderStateException;
+import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
 
@@ -24,13 +28,13 @@ import dcraft.util.StringUtil;
  * {@link XElement}.
  */
 public class XText extends XNode {
-	static public XText of(String value) {
+	static public XText of(CharSequence value) {
 		XText text = new XText();
 		text.setValue(value);
 		return  text;
 	}
 	
-	static public XText ofRaw(String value) {
+	static public XText ofRaw(CharSequence value) {
 		XText text = new XText();
 		text.setRawValue(value);
 		return  text;
@@ -57,7 +61,7 @@ public class XText extends XNode {
 	/**
 	 * @param string text content to associate with this node
 	 */
-	public XText(String string) {
+	public XText(CharSequence string) {
 		this.setValue(string);
 	}
 
@@ -98,16 +102,25 @@ public class XText extends XNode {
 	 * @param cdata flag to indicate that this text was stored within a CDATA section
 	 * @param string text content to associate with this node
 	 */
-	public XText(boolean cdata, String string) {
+	public XText(boolean cdata, CharSequence string) {
 		this.setValue(string, cdata);
 	}
 	
 	@Override
-	public XNode deepCopy() {
-		XText copy = new XText();
+	protected void doCopy(Struct n) {
+		super.doCopy(n);
+		
+		XText copy = (XText) n;
 		
 		copy.cdata = this.cdata;
 		copy.content = this.content;
+	}
+	
+	@Override
+	public XText deepCopy() {
+		XText copy = new XText();
+		
+		this.doCopy(copy);
 		
 		return copy;
 	}
@@ -117,7 +130,7 @@ public class XText extends XNode {
 	 * 
 	 * @param value the value to store 
 	 */
-	public void setValue(String value) {
+	public void setValue(CharSequence value) {
 		this.content = XNode.quote(value);
 		this.cdata = false;
 	}
@@ -127,34 +140,34 @@ public class XText extends XNode {
 	 * 
 	 * @param value the value to store 
 	 */
-	public void setValue(String value, boolean cdata) {
+	public void setValue(CharSequence value, boolean cdata) {
 		if (cdata)
-			this.content = value;
+			this.content = (value != null) ? value.toString() : null;
 		else
 			this.content = XNode.quote(value);
 		
 		this.cdata = cdata;
 	}
 
-	public void setRawValue(String str) {
-		this.content = str;
+	public void setRawValue(CharSequence str) {
+		this.content = (str != null) ? str.toString() : null;
 		this.cdata = false;
 	}
 	
-	public void setRawValue(String str, boolean cdata) {
-		this.content = str;
+	public void setRawValue(CharSequence str, boolean cdata) {
+		this.content = (str != null) ? str.toString() : null;
 		this.cdata = cdata;
 	}
 	
-	public XText withValue(String value) {
+	public XText withValue(CharSequence value) {
 		this.content = XNode.quote(value);
 		this.cdata = false;
 
 		return this;
 	}
 	
-	public XText withRawValue(String str) {
-		this.content = str;
+	public XText withRawValue(CharSequence str) {
+		this.content = (str != null) ? str.toString() : null;
 		this.cdata = false;
 		
 		return this;
@@ -286,19 +299,46 @@ public class XText extends XNode {
 			sb.write(XNode.quote(this.content));
 	}
 
-	public static XText raw(String v) {
+	public static XText raw(CharSequence v) {
 		XText t = new XText();
 		t.setRawValue(v);
 		return t;
 	}
 
-	public static XText cdata(String v) {
+	public static XText cdata(CharSequence v) {
 		XText t = new XText(true, v);
 		return t;
 	}
 
-	public static XText escape(String v) {
+	public static XText escape(CharSequence v) {
 		XText t = new XText(false, v);
 		return t;
+	}
+	
+	@Override
+	public boolean isEmpty() {
+		if (StringUtil.isNotEmpty(this.content)) {
+			return ((this.buffered == null) || (this.buffered.length() == 0));
+		}
+		
+		return false;
+	}
+	
+	@Override
+	public void clear() {
+		this.buffered = null;
+		this.content = null;
+	}
+	
+	@Override
+	public void toBuilder(ICompositeBuilder builder) {
+		// TODO
+	}
+	
+	@Override
+	public Struct select(PathPart... path) {
+		// TODO
+		
+		return null;
 	}
 }

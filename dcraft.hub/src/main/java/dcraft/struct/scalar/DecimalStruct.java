@@ -25,6 +25,7 @@ import dcraft.schema.RootType;
 import dcraft.schema.SchemaHub;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
+import dcraft.script.work.StackWork;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
@@ -34,6 +35,12 @@ public class DecimalStruct extends ScalarStruct {
 	static public DecimalStruct of(BigDecimal v) {
 		DecimalStruct struct = new DecimalStruct();
 		struct.value = v;
+		return struct;
+	}
+
+	static public DecimalStruct of(double v) {
+		DecimalStruct struct = new DecimalStruct();
+		struct.value = BigDecimal.valueOf(v);
 		return struct;
 	}
 
@@ -84,7 +91,7 @@ public class DecimalStruct extends ScalarStruct {
 	}
 	
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		// we are loose on the idea of null/zero.  operations always perform on 0, except Validate
 		if ((this.value == null) && ! "Validate".equals(code.getName()))
 			this.value = BigDecimal.ZERO;
@@ -99,8 +106,8 @@ public class DecimalStruct extends ScalarStruct {
 		}
 		else if ("Set".equals(code.getName())) {
 			Struct sref = code.hasAttribute("Value")
-					? StackUtil.refFromElement(stack, code, "Value")
-					: StackUtil.resolveReference(stack, code.getText());
+					? StackUtil.refFromElement(stack, code, "Value", true)
+					: StackUtil.resolveReference(stack, code.getText(), true);
 			
 			this.adaptValue(sref);			
 			
@@ -108,8 +115,8 @@ public class DecimalStruct extends ScalarStruct {
 		}
 		else if ("Add".equals(code.getName())) {
 			Struct sref = code.hasAttribute("Value")
-					? StackUtil.refFromElement(stack, code, "Value")
-					: StackUtil.resolveReference(stack, code.getText());
+					? StackUtil.refFromElement(stack, code, "Value", true)
+					: StackUtil.resolveReference(stack, code.getText(), true);
 
 			try {
 				this.value = this.value.add(Struct.objectToDecimal(sref));			
@@ -122,8 +129,8 @@ public class DecimalStruct extends ScalarStruct {
 		}
 		else if ("Subtract".equals(code.getName())) {
 			Struct sref = code.hasAttribute("Value")
-					? StackUtil.refFromElement(stack, code, "Value")
-					: StackUtil.resolveReference(stack, code.getText());
+					? StackUtil.refFromElement(stack, code, "Value", true)
+					: StackUtil.resolveReference(stack, code.getText(), true);
 
 			try {
 				this.value = this.value.subtract(Struct.objectToDecimal(sref));			
@@ -136,8 +143,8 @@ public class DecimalStruct extends ScalarStruct {
 		}
 		else if ("Multiply".equals(code.getName())) {
 			Struct sref = code.hasAttribute("Value")
-					? StackUtil.refFromElement(stack, code, "Value")
-					: StackUtil.resolveReference(stack, code.getText());
+					? StackUtil.refFromElement(stack, code, "Value", true)
+					: StackUtil.resolveReference(stack, code.getText(), true);
 
 			try {
 				this.value = this.value.multiply(Struct.objectToDecimal(sref));			
@@ -150,11 +157,11 @@ public class DecimalStruct extends ScalarStruct {
 		}
 		else if ("Divide".equals(code.getName())) {
 			Struct sref = code.hasAttribute("Value")
-					? StackUtil.refFromElement(stack, code, "Value")
-					: StackUtil.resolveReference(stack, code.getText());
+					? StackUtil.refFromElement(stack, code, "Value", true)
+					: StackUtil.resolveReference(stack, code.getText(), true);
 
 			try {
-				this.value = this.value.divide(Struct.objectToDecimal(sref));			
+				this.value = this.value.divide(Struct.objectToDecimal(sref), 6, BigDecimal.ROUND_HALF_EVEN);
 			}
 			catch (Exception x) {
 				Logger.error("Error doing " + code.getName() + ": " + x);
@@ -164,11 +171,11 @@ public class DecimalStruct extends ScalarStruct {
 		}
 		else if ("Min".equals(code.getName())) {
 			Struct sref = code.hasAttribute("Value")
-					? StackUtil.refFromElement(stack, code, "Value")
-					: StackUtil.resolveReference(stack, code.getText());
+					? StackUtil.refFromElement(stack, code, "Value", true)
+					: StackUtil.resolveReference(stack, code.getText(), true);
 
 			try {
-				this.value = this.value.min(Struct.objectToDecimal(sref));			
+				this.value = this.value.min(Struct.objectToDecimal(sref));
 			}
 			catch (Exception x) {
 				Logger.error("Error doing " + code.getName() + ": " + x);
@@ -178,8 +185,8 @@ public class DecimalStruct extends ScalarStruct {
 		}
 		else if ("Max".equals(code.getName())) {
 			Struct sref = code.hasAttribute("Value")
-					? StackUtil.refFromElement(stack, code, "Value")
-					: StackUtil.resolveReference(stack, code.getText());
+					? StackUtil.refFromElement(stack, code, "Value", true)
+					: StackUtil.resolveReference(stack, code.getText(), true);
 		
 			try {
 				this.value = this.value.max(Struct.objectToDecimal(sref));			
@@ -231,7 +238,7 @@ public class DecimalStruct extends ScalarStruct {
 	
 	@Override
 	public String toString() {
-		return (this.value == null) ? "null" : this.value.toString();
+		return (this.value == null) ? "null" : this.value.toPlainString();
 	}
 
 	@Override

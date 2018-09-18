@@ -9,6 +9,10 @@ import dcraft.struct.builder.JsonStreamBuilder;
 public class XmlToJsonPrinterOld extends XmlPrinter {
 	protected JsonStreamBuilder jsb = null;
 	
+	public JsonStreamBuilder getStream() {
+		return this.jsb;
+	}
+	
 	@Override
 	public void setOut(PrintStream v) {
 		super.setOut(v);

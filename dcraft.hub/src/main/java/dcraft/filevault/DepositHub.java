@@ -502,8 +502,10 @@ public class DepositHub {
 		return null;
 	}
 	
-	static public AwsStore getCloudStore() {
-		XElement depositsettings = ApplicationHub.getCatalogSettings("Deposit-Storage");
+	static public AwsStore getCloudStore(String alternative, String mode) {
+		XElement depositsettings = StringUtil.isEmpty(mode)
+				? ApplicationHub.getCatalogSettings("Deposit-Storage", alternative)
+				: ApplicationHub.getCatalogSettings("Deposit-Storage", alternative, mode);
 		
 		if (depositsettings == null) {
 			//System.out.println("Missing settings Interchange-Aws");
@@ -554,7 +556,7 @@ public class DepositHub {
 	static public class PeriodicRemoteWork implements IWork {
 		@Override
 		public void run(TaskContext taskctx) throws OperatingContextException {
-			AwsStore store = DepositHub.getCloudStore();
+			AwsStore store = DepositHub.getCloudStore(null, null);
 			
 			if (store != null) {
 				// TODO improve, this currently checks only 1 file per pass - could get all new per pass

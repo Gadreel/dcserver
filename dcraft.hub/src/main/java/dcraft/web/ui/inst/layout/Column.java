@@ -4,6 +4,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.inst.doc.Base;
+import dcraft.web.ui.UIUtil;
 import dcraft.xml.XElement;
 
 public class Column extends Base {
@@ -16,6 +17,11 @@ public class Column extends Base {
 	@Override
 	public XElement newNode() {
 		return Column.tag();
+	}
+	
+	@Override
+	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
+		UIUtil.setEditBadges(state, this);
 	}
 	
 	@Override

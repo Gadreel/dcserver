@@ -79,9 +79,9 @@ public class ScheduleHub {
 	
 	static public void setActive(boolean v) {
 		if (v)
-			Logger.debugTr(0, "Scheduler Hub active");
+			Logger.debug("Scheduler Hub active");
 		else
-			Logger.debugTr(0, "Scheduler Hub inactive");
+			Logger.debug("Scheduler Hub inactive");
 		
 		ScheduleHub.active = v;
 	}

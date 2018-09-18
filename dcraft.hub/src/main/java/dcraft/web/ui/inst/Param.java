@@ -35,7 +35,7 @@ public class Param extends Base {
 			String name = StackUtil.stringFromSource(state,"Name");
 			
 			if (StringUtil.isNotEmpty(name)) {
-				Struct val = StackUtil.refFromSource(state,"Value");
+				Struct val = StackUtil.refFromSource(state,"Value", true);
 				
 				if (val != null) {
 					StackUtil.addVariable(state.getParent(), name, val);

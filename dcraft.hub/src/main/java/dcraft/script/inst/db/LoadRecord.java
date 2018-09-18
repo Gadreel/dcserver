@@ -55,23 +55,26 @@ public class LoadRecord extends OperationsInstruction {
 				Logger.errorTr(520);
 				return ReturnOption.DONE;
 			}
-			
-			if (this.hasNotEmptyAttribute("Id"))
-				this.add(0, XElement.tag("SetField")
-						.withAttribute("Name", "Id")
-						.withAttribute("Value", this.getAttribute("Id"))
-				);
-			
-			if (this.hasNotEmptyAttribute("Table"))
-				this.add(0, XElement.tag("SetField")
-						.withAttribute("Name", "Table")
-						.withAttribute("Value", this.getAttribute("Table"))
-				);
-			
-			if (this.hasNotEmptyAttribute("Result"))
-				this.with(XElement.tag("Execute")
-						.withAttribute("Result", this.getAttribute("Result"))
-				);
+
+			// in a loop this instruction may be run again, fresh and READY - check to see if so and then skip op prep
+			if (this.find("Execute") == null) {
+				if (this.hasNotEmptyAttribute("Id"))
+					this.add(0, XElement.tag("SetField")
+							.withAttribute("Name", "Id")
+							.withAttribute("Value", this.getAttribute("Id"))
+					);
+
+				if (this.hasNotEmptyAttribute("Table"))
+					this.add(0, XElement.tag("SetField")
+							.withAttribute("Name", "Table")
+							.withAttribute("Value", this.getAttribute("Table"))
+					);
+
+				if (this.hasNotEmptyAttribute("Result"))
+					this.with(XElement.tag("Execute")
+							.withAttribute("Result", this.getAttribute("Result"))
+					);
+			}
 			
 			StackUtil.addVariable(state, name, var);
 			

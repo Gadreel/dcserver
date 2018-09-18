@@ -42,15 +42,7 @@ public class Orders {
 		
 		RecordStruct rec = request.getDataAsRecord();
 		
-		if ("Calculate".equals(op)) {
-			OrderUtil.santitizeAndCalculateOrder(rec, callback);
-			return true;
-		}
-		else if ("Submit".equals(op)) {
-			OrderUtil.processAuthOrder(rec, callback);
-			return true;
-		}
-		else if ("ListMy".equals(op)) {
+		if ("ListMy".equals(op)) {
 			Orders.handleListMy(request, callback);
 			return true;
 		}
@@ -62,6 +54,7 @@ public class Orders {
 			Orders.handleLoad(request, callback);
 			return true;
 		}
+		/*
 		else if ("UpdateStatus".equals(op)) {
 			Orders.handleUpdateStatus(request, callback);
 			return true;
@@ -70,6 +63,7 @@ public class Orders {
 			Orders.handleUpdateItems(request, callback);
 			return true;
 		}
+		*/
 		else if ("AddComment".equals(op)) {
 			Orders.handleAddComment(request, callback);
 			return true;
@@ -139,6 +133,7 @@ public class Orders {
 						.with("dcmItemStatus", "ItemStatus", null,true)
 						.with("dcmItemUpdated", "ItemUpdated", null,true)
 						.with("dcmItemShipment", "ItemShipment", null,true)
+						.with("dcmShipmentInfo", "Shipments")
 						.with("dcmShippingInfo", "ShippingInfo")
 						.with("dcmBillingInfo", "BillingInfo")
 						.with("dcmComment", "Comment")
@@ -155,6 +150,17 @@ public class Orders {
 			public void callback(Struct result) throws OperatingContextException {
 				if (! this.hasErrors() && this.isNotEmptyResult()) {
 					RecordStruct rec = Struct.objectToRecord(result);
+
+					ListStruct shipments = rec.getFieldAsList("Shipments");
+
+					if (shipments != null) {
+						for (Struct smnt : shipments.items()) {
+							RecordStruct smntrec = Struct.objectToRecord(smnt);
+
+							// don't show actual cost to customer
+							smntrec.removeField("Cost");
+						}
+					}
 
 					if (OperationContext.getOrThrow().getUserContext().getUserId().equals(rec.getFieldAsString("Customer"))) {
 						ListStruct finallist = ListStruct.list();
@@ -432,6 +438,7 @@ public class Orders {
 		}));
 	}
 
+	/*
 	// TODO move to stored proc
 	static public void handleUpdateStatus(ServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
@@ -469,13 +476,16 @@ public class Orders {
 						return;
 					}
 
+					ZonedDateTime now = TimeUtil.now();
+
 					RecordStruct rec = Struct.objectToRecord(result);
 
 					for (Struct xentry : rec.getFieldAsList("ItemStatus").items()) {
 						RecordStruct xrec = Struct.objectToRecord(xentry);
 
 						upreq
-								.withUpdateField("dcmItemStatus", xrec.getFieldAsString("SubId"), "Completed");
+								.withUpdateField("dcmItemStatus", xrec.getFieldAsString("SubId"), "Completed")
+								.withUpdateField("dcmOrder", xrec.getFieldAsString("SubId"), now);
 					}
 					
 					audit.with("Comment", "Order status updated - customer notified");
@@ -491,8 +501,9 @@ public class Orders {
 											.withTimeout(10)		// TODO this should be graduated - 10 minutes moving up to 30 minutes if fails too many times
 											.withParams(RecordStruct.record()
 													.with("Id", id)
+													.with("UpdatedItems", changedItems)
 											)
-											.withScript(CommonPath.from("/dcm/store/event-order-placed.dcs.xml")));
+											.withScript(CommonPath.from("/dcm/store/event-order-updated.dcs.xml")));
 									
 									callback.returnValue(upresult);
 								}
@@ -523,6 +534,7 @@ public class Orders {
 		
 		ServiceHub.call(record, callback);
 	}
+	*/
 
 	static public void handleAddComment(ServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();

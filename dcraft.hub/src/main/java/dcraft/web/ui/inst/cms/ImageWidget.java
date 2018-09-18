@@ -10,10 +10,13 @@ import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
 import dcraft.script.inst.doc.Base;
+import dcraft.web.ui.UIUtil;
+import dcraft.web.ui.inst.ICMSAware;
 import dcraft.web.ui.inst.W3;
 import dcraft.xml.XElement;
+import dcraft.xml.XNode;
 
-public class ImageWidget extends Base {
+public class ImageWidget extends Base implements ICMSAware {
 	static public ImageWidget tag() {
 		ImageWidget el = new ImageWidget();
 		el.setName("dcm.ImageWidget");
@@ -108,39 +111,34 @@ public class ImageWidget extends Base {
 			this.attr("data-dc-expanded", xvari);
 		
 		StackUtil.addVariable(state, "Image", img);
-		
-		boolean fndtemplate = false;
-		
-		// look for a template, if found then skip default
-		if (this.children != null) {
-			for (int i = 0; i < this.children.size(); i++) {
-				if (this.children.get(i) instanceof XElement) {
-					fndtemplate = true;
-					break;
-				}
-			}
+
+		this.canonicalize();
+
+		XElement template = this.selectFirst("Template");
+
+		if (template != null) {
+			this.remove(template);
+
+			for (XNode node : template.getChildren())
+				this.with(node);
 		}
-		
-		if (! fndtemplate) {
+
+		UIUtil.markIfEditable(state, this);
+	}
+
+	@Override
+	public void canonicalize() throws OperatingContextException {
+		XElement template = this.selectFirst("Template");
+
+		if (template == null) {
 			// set default
-			
-			this
-					.withClass("dc-media-box", "dc-media-image")
-					.with(W3.tag("img")
+			this.with(Base.tag("Template").with(
+					W3.tag("img")
 							.withClass("pure-img-inline")
 							.withAttribute("alt", "{$Image.Description}")
 							.withAttribute("src", "{$Image.Path}")
-							.withAttribute("srcset", usesrcset ? "{$Image.SourceSet}" : null)
-					);
-		}
-		
-		// TODO check for parent with data-cms-feed
-		if (this.hasNotEmptyAttribute("id") && OperationContext.getOrThrow().getUserContext().isTagged("Admin", "Editor")) {
-			this
-					.withAttribute("data-cms-editable", "true")
-					.with(
-							EditButton.tag().attr("title", "CMS - edit previous image")
-					);
+							//.withAttribute("srcset", usesrcset ? "{$Image.SourceSet}" : null)
+			));
 		}
 	}
 	
@@ -148,6 +146,7 @@ public class ImageWidget extends Base {
 	public void renderAfterChildren(InstructionWork state) {
 		this
 				.withClass("dc-widget", "dc-widget-image")
+				.withClass("dc-media-box", "dc-media-image")
 				.withAttribute("data-dc-enhance", "true")
 				.withAttribute("data-dc-tag", this.getName());
 		

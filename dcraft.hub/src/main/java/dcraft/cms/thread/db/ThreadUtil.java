@@ -1,26 +1,45 @@
 package dcraft.cms.thread.db;
 
+import dcraft.cms.util.FeedUtil;
 import dcraft.db.DatabaseException;
 import dcraft.db.IRequestContext;
 import dcraft.db.proc.ExpressionResult;
 import dcraft.db.proc.IFilter;
+import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.util.ByteUtil;
+import dcraft.filestore.CommonPath;
 import dcraft.hub.ResourceHub;
+import dcraft.hub.app.ApplicationHub;
+import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
+import dcraft.mail.SmtpWork;
 import dcraft.schema.DataType;
 import dcraft.schema.DbField;
 import dcraft.schema.SchemaResource;
+import dcraft.script.StackUtil;
+import dcraft.script.inst.*;
+import dcraft.script.inst.doc.Base;
+import dcraft.script.inst.ext.SendEmail;
+import dcraft.script.inst.ext.SendText;
+import dcraft.script.work.ExecuteState;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.AnyStruct;
+import dcraft.struct.scalar.BinaryStruct;
+import dcraft.task.Task;
+import dcraft.task.TaskContext;
+import dcraft.task.TaskHub;
+import dcraft.task.TaskObserver;
 import dcraft.util.HashUtil;
 import dcraft.util.RndUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
+import dcraft.xml.XElement;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -43,25 +62,32 @@ public class ThreadUtil {
 	static public String getThreadId(TablesAdapter db, RecordStruct params) throws OperatingContextException {
 		String tid = params.getFieldAsString("Id");
 
-		if (StringUtil.isEmpty(tid) && !params.isFieldEmpty("Uuid")) {
+		if (StringUtil.isNotEmpty(tid) && db.isCurrent("dcmThread", tid))
+			return tid;
+
+		if (StringUtil.isEmpty(tid) && ! params.isFieldEmpty("Uuid")) {
 			String uuid = params.getFieldAsString("Uuid");
 
-			Object oid = db.firstInIndex("dcmThread", "dcmUuid", uuid);
+			Object oid = db.firstInIndex("dcmThread", "dcmUuid", uuid, true);
 
 			if (oid != null)
 				tid = oid.toString();
 		}
 
-		if (StringUtil.isEmpty(tid) && !params.isFieldEmpty("Hash")) {
+		if (StringUtil.isEmpty(tid) && ! params.isFieldEmpty("Hash")) {
 			String hash = params.getFieldAsString("Hash");
 
-			Object oid = db.firstInIndex("dcmThread", "dcmHash", hash);
+			Object oid = db.firstInIndex("dcmThread", "dcmHash", hash, true);
 
 			if (oid != null)
 				tid = oid.toString();
 		}
 
 		return tid;
+	}
+
+	static public String getThreadId(TablesAdapter db, String uuid) throws OperatingContextException {
+		return Struct.objectToString(db.firstInIndex("dcmThread", "dcmUuid", uuid, true));
 	}
 
 	/*
@@ -141,8 +167,8 @@ public class ThreadUtil {
 		return ThreadUtil.addContent(db, id, content, null, null, null, null);
 	}
 
-	public static String addContent(TablesAdapter db, String id, String content, String contentType, String originator) throws OperatingContextException {
-		return ThreadUtil.addContent(db, id, content, contentType, originator, null, null);
+	public static String addContent(TablesAdapter db, String id, String content, String contentType) throws OperatingContextException {
+		return ThreadUtil.addContent(db, id, content, contentType, null, null, null);
 	}
 
 	public static String addContent(TablesAdapter db, String id, String content, String contentType, String originator, String source, RecordStruct attributes) throws OperatingContextException {
@@ -151,7 +177,7 @@ public class ThreadUtil {
 
 		String stamp = TimeUtil.stampFmt.format(TimeUtil.now());
 
-		originator = StringUtil.isNotEmpty(originator) ? originator : OperationContext.getOrThrow().getUserContext().getUserId();
+		originator = StringUtil.isNotEmpty(originator) ? originator : Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmOriginator"));
 
 		db.updateStaticList("dcmThread", id, "dcmContent", stamp, content);
 		db.updateStaticList("dcmThread", id, "dcmContentHash", stamp, HashUtil.getSha256(content));
@@ -167,8 +193,27 @@ public class ThreadUtil {
 		return stamp;
 	}
 
+	public static void buildContentAndDeliver(String id) throws OperatingContextException {
+		// TODO queue instead?
+		TaskHub.submit(Task.ofSubtask("Thread message builder", "THREAD")
+				.withParams(RecordStruct.record()
+						.with("Id", id)
+				)
+				.withScript("/dcm/threads/build-message-deliver"));
+	}
+	
 	public static void deliver(TablesAdapter db, String id, ZonedDateTime deliver) throws OperatingContextException {
+		ThreadUtil.deliver(db, id, deliver, false);
+	}
+
+	public static void deliver(TablesAdapter db, String id, ZonedDateTime deliver, boolean indexonly) throws OperatingContextException {
 		try {
+
+			if (! db.isCurrent("dcmThread", id)) {
+				Logger.error("Thread not found: " + id);
+				return;
+			}
+
 			String tenant = OperationContext.getOrThrow().getTenant().getAlias();
 
 			db.updateStaticScalar("dcmThread", id, "dcmModified", deliver);				// we show threads ordered by modified, when new content is added modified changes
@@ -183,15 +228,238 @@ public class ThreadUtil {
 
 				db.getRequest().getInterface().set(tenant, "dcmThreadA", party, folder, revmod, id, isread);
 			}
+
+			if (! indexonly)
+				ThreadUtil.deliveryNotice(db, id);
 		}
 		catch (DatabaseException x) {
 			Logger.error("Unable to deliver thread: " + x);
 		}
 	}
-	
-	public static void deliveryNotice(TablesAdapter db, String id) throws OperatingContextException {
-		// TODO
+
+	public static XElement getMessageTypeDef(String type) {
+		List<XElement> types = ResourceHub.getResources().getConfig().getTagListDeep("Threads/Type");
+
+		for (XElement typedef : types) {
+			if (type.equals(typedef.getAttribute("Name"))) {
+				return typedef;
+			}
+		}
+
+		return null;
 	}
+
+	public static XElement getChannelDefFromParty(String party) {
+		List<XElement> channels = ResourceHub.getResources().getConfig().getTagListDeep("Threads/Channel");
+
+		String channel = ThreadUtil.partyToPrefix(party);
+
+		for (XElement chandef : channels) {
+			if (channel.equals(chandef.getAttribute("Prefix"))) {
+				return chandef;
+			}
+		}
+
+		return null;
+	}
+	
+	static public String partyToPrefix(String party) {
+		party = party.substring(1);
+		
+		int pos = party.indexOf('/');
+		
+		if (pos != -1)
+			party = party.substring(0, pos);
+		
+		return party;
+	}
+
+	public static void deliveryNotice(TablesAdapter db, String id) throws OperatingContextException {
+		List<XElement> channels = ResourceHub.getResources().getConfig().getTagListDeep("Threads/Channel");
+
+		ZonedDateTime deliver = Struct.objectToDateTime(db.getStaticScalar("dcmThread", id, "dcmModified"));
+
+		// no notices for future messages, there is no support given at this level for future message notices
+		// must handle separately - most likely do an updateDeliver in future with a (now) current date
+		if (deliver.isAfter(TimeUtil.now()))
+			return;
+
+		String type = Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmMessageType"));
+
+		XElement typedef = ThreadUtil.getMessageTypeDef(type);
+
+		if (typedef != null) {
+			String notices = typedef.getAttribute("Notices", "default");
+
+			if ("no".equals(notices))
+				return;
+
+			List<String> parties = db.getStaticListKeys("dcmThread", id, "dcmParty");
+
+			for (String party : parties) {
+				String folder = Struct.objectToString(db.getStaticList("dcmThread", id, "dcmFolder", party));
+
+				// currently only notices on InBox are supported
+				if (! "/InBox".equals(folder))
+					continue;
+
+				String channel = ThreadUtil.partyToPrefix(party);
+				
+				for (XElement chandef : channels) {
+					if (channel.equals(chandef.getAttribute("Prefix"))) {
+						String notices2 = chandef.getAttribute("Notices", "no");
+
+						// if neither is yes then next party
+						if (! "yes".equals(notices2) && ! "yes".equals(notices))
+							break;
+
+						ThreadUtil.sendDeliveryNotice(db, id, party, chandef, typedef);
+
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	public static void sendDeliveryNotice(TablesAdapter db, String id, String party, XElement chandef, XElement typedef) throws OperatingContextException {
+		//Main main = Main.tag();
+
+		List<String> stamps = db.getStaticListKeys("dcmThread", id, "dcmContent");
+		String beststamp = "";
+
+		for (String stamp : stamps) {
+			if (stamp.compareTo(beststamp) > 0)
+				beststamp = stamp;
+		}
+
+		if (StringUtil.isEmpty(beststamp))
+			return;
+
+		String originator = Struct.objectToString(db.getStaticList("dcmThread", id, "dcmContentOriginator", beststamp));
+
+		// don't notify sender
+		if ("users".equals(chandef.attr("Alias")) && party.endsWith(originator))
+			return;
+
+		// TODO should be Queued but fix Channel and Type params if so
+		TaskHub.submit(Task.ofSubtask("Thread notice sender", "THREAD")
+				.withTopic("Batch")
+				.withMaxTries(5)
+				.withTimeout(10)        // TODO this should be graduated - 10 minutes moving up to 30 minutes if fails too many times
+				.withParams(RecordStruct.record()
+						.with("Id", id)
+						.with("Stamp", beststamp)
+						.with("Party", party)
+						.with("Channel", chandef)
+						.with("Type", typedef)
+				)
+				.withScript("/dcm/threads/message-notify"));
+
+
+		/*
+
+		boolean usetext = false;
+
+		// TODO handle other message content types someday
+		String content = Struct.objectToString(db.getStaticList("dcmThread", id, "dcmContent", beststamp));
+
+		Instruction sendNotice = SendEmail.tag();
+
+		if (party.startsWith("/Usr/")) {
+			String uid = party.substring(5);
+
+			String origin = Struct.objectToString(db.getStaticList("dcmThread", id, "dcmContentOriginator", beststamp));
+
+			// don't notify the sender
+			if (uid.equals(origin))
+				return;
+
+			String notices = Struct.objectToString(db.getStaticScalar("dcUser", uid, "dcNotices"));
+
+			if ("text".equals(notices)) {
+				usetext = true;
+				sendNotice = SendText.tag();
+
+				String phone = Struct.objectToString(db.getStaticScalar("dcUser", uid, "dcPhone"));
+
+				if (StringUtil.isEmpty(phone))
+					return;
+
+				sendNotice.attr("To", phone);
+			}
+			else {
+				String email = Struct.objectToString(db.getStaticScalar("dcUser", uid, "dcEmail"));
+
+				if (StringUtil.isEmpty(email))
+					return;
+
+				sendNotice.attr("To", email);
+			}
+		}
+		else if (chandef.hasNotEmptyAttribute("EmailList")) {
+			sendNotice.attr("ToList", chandef.getAttribute("EmailList"));
+		}
+		else if (chandef.hasNotEmptyAttribute("SMS")) {
+			usetext = true;
+			sendNotice = SendText.tag();
+
+			sendNotice.attr("To", chandef.getAttribute("SMS"));
+		}
+		else {
+			// no other method currently supported
+			return;
+		}
+
+		XElement catalog = ApplicationHub.getCatalogSettings("Thread-Notice-" + typedef.getAttribute("Name"));
+
+		if (catalog == null)
+			catalog = ApplicationHub.getCatalogSettings("Thread-Notice-Default");
+
+		if (catalog == null)
+			return;
+
+		sendNotice.attr("Subject", Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmTitle")));
+
+		String defloc = OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale();
+
+		// TODO try to take the recipient's preferred locale into consideration
+		XElement wrapper = null;
+
+		if (usetext)
+			wrapper = FeedUtil.bestMatch(catalog.selectFirst("TextMessage"), defloc, defloc);
+
+		if (wrapper == null)
+			wrapper = FeedUtil.bestMatch(catalog.selectFirst("EmailMessage"), defloc, defloc);
+
+		if (wrapper == null)
+			return;
+
+		// we don't want to run this if server is not configured with a wrapper/script
+		// by default (in packages) /Usr and /NoticesPool will send notices, except they don't have a wrapper
+		// so that is all that turns off notices by default - don't enable unless server/tenant expects it
+
+		main.with(
+				Var.tag()
+						.attr("Name", "Message")
+						.attr("SetTo", content),
+				Base.tag("text")
+						.attr("Name", "TextEmail")
+						.withText(wrapper.getValue()),
+				sendNotice
+						.attr("TextMessage", "$TextEmail")
+		);
+
+		TaskHub.submit(Task.ofSubtask("Thread notice trigger", "THREAD")
+				.withParams(RecordStruct.record()
+						.with("Id", id)
+						.with("Party", party)
+				)
+				.withWork(StackUtil.of(main))
+		);
+		*/
+	}
+
 	
 	/*
 		section modify existing threads
@@ -221,6 +489,8 @@ public class ThreadUtil {
 					db.getRequest().getInterface().set(tenant, "dcmThreadA", party, folder, revmod, id, isread);
 				}
 			}
+
+			ThreadUtil.deliveryNotice(db, id);
 		}
 		catch (DatabaseException x) {
 			Logger.error("Unable to deliver thread: " + x);
@@ -271,14 +541,14 @@ public class ThreadUtil {
 				db.getRequest().getInterface().kill(tenant, "dcmThreadA", party, folder, oldrevmod, id);
 			}
 
-			db.setStaticScalar("dcmThread", id, "Retired", true);
+			TableUtil.retireRecord(db,"dcmThread", id);
 		}
 		catch (DatabaseException x) {
 			Logger.error("Unable to deliver thread: " + x);
 		}
 	}
 
-	static public void traverseThreadIndex(IRequestContext request, TablesAdapter db, String party, String folder, IFilter out) throws OperatingContextException {
+	static public void traverseThreadIndex(IRequestContext request, TablesAdapter db, IVariableAware scope, String party, String folder, IFilter out) throws OperatingContextException {
 		String did = request.getTenant();
 
 		if (StringUtil.isEmpty(party) || StringUtil.isEmpty(folder))
@@ -298,9 +568,9 @@ public class ThreadUtil {
 				while (recid != null) {
 					Object rid = ByteUtil.extractValue(recid);
 
-					ExpressionResult filterResult = out.check(db, rid);
+					ExpressionResult filterResult = out.check(db, scope,"dcmThread", rid);
 
-					if (! filterResult.resume)
+					if (!filterResult.resume)
 						return;
 
 					recid = request.getInterface().nextPeerKey(did, "dcmThreadA", party, folder, vid, rid);

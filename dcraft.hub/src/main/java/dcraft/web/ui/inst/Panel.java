@@ -26,7 +26,17 @@ public class Panel extends Base {
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
 		// the children will move into the body, so clear out our child list
-		List<XNode> hiddenchildren = this.children;
+		List<XNode> bodychildren = new ArrayList<>();
+		List<XElement> btnchildren = new ArrayList<>();
+		
+		for (XNode node : this.children) {
+			if ((node instanceof XElement) && (((XElement)node).getName().equals("Button"))) {
+				btnchildren.add((XElement) node);
+			}
+			else {
+				bodychildren.add(node);
+			}
+		}
 		
 		this.children = new ArrayList<>();
 		
@@ -38,13 +48,77 @@ public class Panel extends Base {
 		
 		this.withClass("dc-panel", "dc-panel-" + scope);
 		
-		this.with(W3.tag("div")
+		XElement heading = W3.tag("div")
 				.withAttribute("class", "dc-panel-heading")
 				.with(W3.tag("h2")
 						.withClass("dc-control")
 						.withText(title)
-				)
+				);
+		
+		this.with(heading);
+		
+		if (btnchildren.size() > 0) {
+			XElement nav = Base.tag("ul");
+			
+			for (XElement btn : btnchildren) {
+				Base ret = Link.tag();
+				
+				ret.mergeDeep(btn, false);
+				
+				ret.withClass("dc-panel-header-btn");
+				
+				if (ret.hasNotEmptyAttribute("Icon"))
+					ret.withClass("dc-panel-header-icon");
+
+				if (ret.hasEmptyAttribute("IconType"))
+					ret.withAttribute("IconType", "simple");
+				
+				/*
+				String label = btn.getAttribute("Label");
+				String icon = btn.getAttribute("Icon");
+				
+				String to = btn.getAttribute("To", "#");
+				String click = btn.getAttribute("Click");
+				String page = btn.getAttribute("Page");
+				
+				ret
+						.attr("href", StringUtil.isNotEmpty(page) ? page : to)
+						.attr("tabindex", "0")
+						.attr("role", "button");
+				
+				if (btn.hasEmptyAttribute("data-dc-enhance"))
+					ret
+							.attr("data-dc-enhance", "true")
+							.attr("data-dc-tag", "dc.Button");
+				
+				if (StringUtil.isNotEmpty(click))
+					ret.attr("data-dc-click", click);
+				else if (StringUtil.isNotEmpty(page))
+					ret.attr("data-dc-page", page);
+				else if (StringUtil.isNotEmpty(to))
+					ret.attr("data-dc-to", to);
+				
+				
+				if (StringUtil.isNotEmpty(icon))
+					ret.with(W3.tag("i").withAttribute("class", "fa fa-fw " + icon));
+				else if (StringUtil.isNotEmpty(label))
+					ret.withText(label);
+				
+				if (btn.hasNotEmptyAttribute("aria-label"))
+					ret.withAttribute("aria-label", btn.getAttribute("aria-label"));
+				*/
+				
+				nav.with(
+						W3.tag("li")
+							.with(ret)
+				);
+			}
+			
+			heading.with(Base.tag("nav")
+					.attr("aria-label", "Panel options")
+					.with(nav)
 			);
+		}
 		
 		XElement bodyui = W3.tag("div")
 				.withAttribute("class", "dc-panel-body");
@@ -52,8 +126,8 @@ public class Panel extends Base {
 		if (StringUtil.isNotEmpty(id))
 			bodyui.withAttribute("id", id + "Body");
 
-		if (hiddenchildren != null) {
-			for (XNode n : hiddenchildren)
+		if (bodychildren != null) {
+			for (XNode n : bodychildren)
 				bodyui.add(n);
 		}
 		

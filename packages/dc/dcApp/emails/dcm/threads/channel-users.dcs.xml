@@ -1,0 +1,21 @@
+<dcs.Library>
+	<dcs.Var Name="UserId" SetTo="$Data.Party">
+		<Substring From="5" />
+	</dcs.Var>
+
+	<dcdb.LoadRecord Table="dcUser" Id="$UserId" Result="TheUser">
+		<Select Field="dgaDisplayName" As="DisplayName" />
+		<Select Field="dcFirstName" As="FirstName" />
+		<Select Field="dcLastName" As="LastName" />
+		<Select Field="dcEmail" As="Email" />
+		<Select Field="dcPhone" As="Phone" />
+		<Select Field="dcNotices" As="Notices" />
+	</dcdb.LoadRecord>
+
+	<dcs.With Target="$Data">
+		<SetField Name="PartyName" Value="{$TheUser.FirstName} {$TheUser.LastName}" />
+		<SetField Name="PartyEmail" Value="{$TheUser.Email}" />
+		<SetField Name="PartyPhone" Value="{$TheUser.Phone}" />
+		<SetField Name="PartyNotices" Value="{$TheUser.Notices}" />
+	</dcs.With>
+</dcs.Library>

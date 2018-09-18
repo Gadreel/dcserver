@@ -29,6 +29,7 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.util.List;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.time.BigDateTime;
@@ -37,6 +38,7 @@ import dcraft.schema.DataType;
 import dcraft.schema.IDataExposer;
 import dcraft.schema.SchemaHub;
 import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.scalar.AnyStruct;
 import dcraft.struct.scalar.BigDateTimeStruct;
@@ -58,7 +60,7 @@ import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
 import dcraft.xml.XmlReader;
 
-abstract public class Struct {
+abstract public class Struct implements IPartSelector {
 	protected DataType explicitType = null;
 	
 	// override this to return implicit type if no explicit exists
@@ -81,7 +83,44 @@ abstract public class Struct {
 	public Struct(DataType type) {
 		this.explicitType = type;
 	}
-
+	
+	/**
+	 * A way to select a child or sub child structure similar to XPath but lightweight.
+	 * Can select composites and scalars.  Use a . or / delimiter.
+	 *
+	 * For example: "Toys.3.Name" called on "Person" Record means return the (Struct) name of the
+	 * 4th toy in this person's Toys list.
+	 *
+	 * Cannot go up levels, or back to root.  Do not start with a dot or slash as in ".People".
+	 *
+	 * @param path string holding the path to select
+	 * @return selected structure if any, otherwise null
+	 */
+	@Override
+	public Struct select(String path) {
+		return this.select(PathPart.parse(path));
+	}
+	
+	/** _Tr
+	 * A way to select a child or sub child structure similar to XPath but lightweight.
+	 * Can select composites and scalars.  Use a . or / delimiter.
+	 *
+	 * For example: "Toys.3.Name" called on "Person" Record means return the (Struct) name of the
+	 * 4th toy in this person's Toys list.
+	 *
+	 * Cannot go up levels, or back to root.  Do not start with a dot or slash as in ".People".
+	 *
+	 * @param path parts of the path holding a list index or a field name
+	 * @return selected structure if any, otherwise null
+	 */
+	@Override
+	public Struct select(PathPart... path) {
+		if (path.length == 0)
+			return this;
+		
+		return null;
+	}
+	
 	// just a reminder of the things to override in types
 	
 	@Override
@@ -183,6 +222,15 @@ abstract public class Struct {
 	}
 
 	abstract public boolean checkLogic(IParentAwareWork stack, XElement source) throws OperatingContextException;
+	
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
+		if ("Validate".equals(code.getName()))
+			this.validate();
+		else
+			Logger.error("operation failed, op name not recoginized: " + code.getName());
+		
+		return ReturnOption.CONTINUE;
+	}
 
 	// static utility
 
@@ -611,7 +659,10 @@ abstract public class Struct {
 		
 		if (o instanceof LocalDate)
 			return (LocalDate)o;
-		
+
+		if (o instanceof ZonedDateTime)
+			return ((ZonedDateTime)o).toLocalDate();
+
 		if (o instanceof java.sql.Timestamp)
 			return LocalDate.from(((java.sql.Timestamp)o).toInstant());
 		
@@ -650,7 +701,10 @@ abstract public class Struct {
 		
 		if (o instanceof LocalTime)
 			return (LocalTime)o;
-		
+
+		if (o instanceof ZonedDateTime)
+			return ((ZonedDateTime)o).toLocalTime();
+
 		if (o instanceof CharSequence) {
 			try {
 				return LocalTime.parse(o.toString()); 	//, TimeUtil.parseTimeFormat);
@@ -832,7 +886,7 @@ abstract public class Struct {
 		}
 		
 		if (o instanceof BigDecimal)
-			return ((BigDecimal)o).toString();
+			return ((BigDecimal)o).toPlainString();
 		
 		if (o instanceof BigInteger)
 			return ((BigInteger)o).toString();
@@ -1081,9 +1135,13 @@ abstract public class Struct {
 			return svalue;
 		}
 		
-		if (o instanceof XElement) {
-			svalue = StringStruct.ofAny(o);
-			return svalue;
+		if (o instanceof List) {
+			ListStruct list = ListStruct.list();
+			
+			for (Object v : (List) o)
+				list.with(v);
+			
+			return list;
 		}
 		
 		// TODO add some other obvious types - List, Array, Map?, etc 
@@ -1203,23 +1261,4 @@ abstract public class Struct {
 		return false;
 	}
 	
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
-		if ("Validate".equals(code.getName()))
-			this.validate();
-		else
-			Logger.error("operation failed, op name not recoginized: " + code.getName());
-		
-		return ReturnOption.CONTINUE;
-	}
-
-	/*
-	public void operation(StackEntry stack, XElement code) throws OperatingContextException {
-		if ("Validate".equals(code.getName())) 
-			this.validate();
-		else 
-			Logger.error("operation failed, op name not recoginized: " + code.getName());
-
-		stack.resume();
-	}
-	*/
 }

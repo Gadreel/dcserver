@@ -9,7 +9,7 @@ import dcraft.xml.XElement;
 public class StandardQueueStart extends CoreLoaderWork {
 	@Override
 	public void firstload(TaskContext taskctx, ResourceTier tier) {
-		Logger.debugTr(0, "Initializing Task Queue");
+		Logger.debug("Initializing Task Queue");
 		
 		XElement config = tier.getConfig().getTag("WorkQueue");
 		

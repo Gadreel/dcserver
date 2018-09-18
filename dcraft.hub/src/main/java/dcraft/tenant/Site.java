@@ -8,7 +8,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import dcraft.filestore.CollectionSourceStream;
 import dcraft.filestore.CommonPath;
+import dcraft.filestore.FileCollection;
+import dcraft.filestore.local.LocalStoreFile;
+import dcraft.filestore.mem.MemoryStoreFile;
 import dcraft.filevault.FeedVault;
 import dcraft.filevault.GalleryVault;
 import dcraft.filevault.Vault;
@@ -16,9 +20,12 @@ import dcraft.filestore.local.LocalStore;
 import dcraft.filevault.SiteVault;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.locale.LocaleDefinition;
 import dcraft.log.Logger;
+import dcraft.service.base.Vaults;
+import dcraft.stream.StreamUtil;
 import dcraft.struct.CompositeParser;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.RecordStruct;
@@ -27,12 +34,14 @@ import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.web.HtmlMode;
 import dcraft.web.IOutputWork;
+import dcraft.web.IOutputWorkBuilder;
 import dcraft.web.WebController;
 import dcraft.web.adapter.DynamicOutputAdapter;
 import dcraft.web.adapter.MarkdownOutputAdapter;
 import dcraft.web.adapter.SsiOutputAdapter;
 import dcraft.web.adapter.StaticOutputAdapter;
 import dcraft.web.ui.UIUtil;
+import dcraft.web.ui.inst.W3;
 import dcraft.xml.XElement;
 import dcraft.xml.XmlReader;
 import io.netty.handler.ssl.SslHandler;
@@ -73,6 +82,9 @@ public class Site extends Base {
 	protected String[] specialExtensions = Site.EXTENSIONS_STD;
 	protected boolean srcptstlcache = false;
 	protected List<XElement> webglobals = null;
+	protected String webversion = "7001010000";		// YYMMDDhhmm
+	
+	protected Map<String,IOutputWorkBuilder> dynadapaters = new HashMap<>();
 
 	public HtmlMode getHtmlMode() {
 		return this.htmlmode;
@@ -99,7 +111,19 @@ public class Site extends Base {
 	public void setScriptCache(boolean v) {
 		this.srcptstlcache = v;
 	}
-
+	
+	public void setWebVersion(String v) {
+		this.webversion = v;
+	}
+	
+	public String getWebVersion() {
+		return this.webversion;
+	}
+	
+	public void addDynamicAdapater(String name, IOutputWorkBuilder builder) {
+		this.dynadapaters.put(name, builder);
+	}
+	
 	public CommonPath getNotFound() {
 		if (this.homepath != null)
 			return this.homepath;
@@ -274,334 +298,258 @@ public class Site extends Base {
 		return IOUtil.readEntireFile(fpath).toString();
 	}
 	
-	public Collection<Vault> getVaults() {
-		// prime the collection TODO remove priming when we load from config/package
-		this.getVault("Galleries");
-		this.getVault("Files");
-		this.getVault("Feeds");
-		this.getVault("SiteFiles");
+	public Collection<Vault> getVaults() throws OperatingContextException {
+		List<XElement> vaults = this.getResources().getConfig().getTagListDeep("Vaults/Site");
 
-		/*
-		this.getVault("Web");
-		this.getVault("Templates");
-		this.getVault("Emails");
-		this.getVault("Config");
-		*/
+		for (XElement bucket : vaults) {
+			String alias = bucket.getAttribute("Id");
 
-		this.getVault("StoreOrders");
-		this.getVault("ManagedForms");
+			if (StringUtil.isEmpty(alias) || this.vaults.containsKey(alias))
+				continue;
+
+			Vault b = Vault.of(this, bucket);
+
+			if (b != null)
+				this.vaults.put(alias, b);
+		}
+
+		List<Vault> copy = new ArrayList<>();
+
+		copy.addAll(this.vaults.values());
+
+		copy.addAll(this.getTenant().getVaults());
 
 		return this.vaults.values();
 	}
 
 	@Override
-	public Vault getVault(String name) {
-		if ("Galleries".equals(name)) {
-			if (! this.vaults.containsKey(name)) {
-				XElement vconfig = this.getResources().getConfig().findId("Vault", name);
-				
-				if (vconfig == null)
-					vconfig = XElement.tag("Vault").withAttribute("Id", "Galleries")
-							.withAttribute("ReadAuthTags", "Editor,Admin")
-							.withAttribute("WriteAuthTags", "Editor,Admin")
-							.withAttribute("RootFolder", "/galleries");
-				
-				Vault vault = vconfig.hasNotEmptyAttribute("VaultClass")
-						? (Vault) this.getResources().getClassLoader().getInstance(vconfig.getAttribute("VaultClass"))
-						: new GalleryVault();
+	public Vault getVault(String alias) throws OperatingContextException {
+		// like tenant database - this is shared data
+		Vault b = this.vaults.get(alias);
 
-				vault.init(this, vconfig, null);
+		if (b == null) {
+			XElement bucket = this.getResources().getConfig().findId("Vaults/Site", alias);
 
-				this.vaults.put(name, vault);
+			if (bucket != null) {
+				b = Vault.of(this, bucket);
+
+				if (b != null)
+					this.vaults.put(alias, b);
 			}
-			
-			return this.vaults.get(name);
-		}
-		
-		if ("Files".equals(name)) {
-			if (! this.vaults.containsKey(name)) {
-				XElement vconfig = this.getResources().getConfig().findId("Vault", name);
-				
-				if (vconfig == null)
-					vconfig = XElement.tag("Vault").withAttribute("Id", "Files")
-							.withAttribute("ReadAuthTags", "Editor,Admin")
-							.withAttribute("WriteAuthTags", "Editor,Admin")
-							.withAttribute("RootFolder", "/files");
-
-				Vault vault = vconfig.hasNotEmptyAttribute("VaultClass")
-						? (Vault) this.getResources().getClassLoader().getInstance(vconfig.getAttribute("VaultClass"))
-						: new Vault();
-
-				vault.init(this, vconfig, null);
-
-				this.vaults.put(name, vault);
-			}
-
-			return this.vaults.get(name);
 		}
 
-		if ("Feeds".equals(name)) {
-			if (! this.vaults.containsKey(name)) {
-				XElement vconfig = this.getResources().getConfig().findId("Vault", name);
+		if (b != null)
+			return b;
 
-				if (vconfig == null)
-					vconfig = XElement.tag("Vault").withAttribute("Id", "Feeds")
-							.withAttribute("ReadAuthTags", "Editor,Admin")
-							.withAttribute("WriteAuthTags", "Editor,Admin")
-							.withAttribute("RootFolder", "/feeds");
-
-				Vault vault = vconfig.hasNotEmptyAttribute("VaultClass")
-						? (Vault) this.getResources().getClassLoader().getInstance(vconfig.getAttribute("VaultClass"))
-						: new FeedVault();
-
-				vault.init(this, vconfig, null);
-
-				this.vaults.put(name, vault);
-			}
-
-			return this.vaults.get(name);
-		}
-
-		if ("SiteFiles".equals(name)) {
-			if (! this.vaults.containsKey(name)) {
-				XElement vconfig = this.getResources().getConfig().findId("Vault", name);
-
-				if (vconfig == null)
-					vconfig = XElement.tag("Vault").withAttribute("Id", "SiteFiles")
-							.withAttribute("ReadAuthTags", "Developer")
-							.withAttribute("WriteAuthTags", "Developer")
-							.withAttribute("RootFolder", "/");
-
-				Vault vault = vconfig.hasNotEmptyAttribute("VaultClass")
-						? (Vault) this.getResources().getClassLoader().getInstance(vconfig.getAttribute("VaultClass"))
-						: new SiteVault();
-
-				vault.init(this, vconfig, null);
-
-				this.vaults.put(name, vault);
-			}
-
-			return this.vaults.get(name);
-		}
-
-		/*
-		if ("Web".equals(name)) {
-			if (! this.vaults.containsKey(name)) {
-				XElement vconfig = this.getResources().getConfig().findId("Vault", name);
-
-				if (vconfig == null)
-					vconfig = XElement.tag("Vault").withAttribute("Id", "Web")
-							.withAttribute("ReadAuthTags", "Developer")
-							.withAttribute("WriteAuthTags", "Developer")
-							.withAttribute("RootFolder", "/www");
-
-				Vault vault = vconfig.hasNotEmptyAttribute("VaultClass")
-						? (Vault) this.getResources().getClassLoader().getInstance(vconfig.getAttribute("VaultClass"))
-						: new Vault();
-
-				vault.init(this, vconfig, null);
-
-				this.vaults.put(name, vault);
-			}
-
-			return this.vaults.get(name);
-		}
-
-		if ("Templates".equals(name)) {
-			if (! this.vaults.containsKey(name)) {
-				XElement vconfig = this.getResources().getConfig().findId("Vault", name);
-
-				if (vconfig == null)
-					vconfig = XElement.tag("Vault").withAttribute("Id", "Templates")
-							.withAttribute("ReadAuthTags", "Developer")
-							.withAttribute("WriteAuthTags", "Developer")
-							.withAttribute("RootFolder", "/templates");
-
-				Vault vault = vconfig.hasNotEmptyAttribute("VaultClass")
-						? (Vault) this.getResources().getClassLoader().getInstance(vconfig.getAttribute("VaultClass"))
-						: new Vault();
-
-				vault.init(this, vconfig, null);
-
-				this.vaults.put(name, vault);
-			}
-
-			return this.vaults.get(name);
-		}
-
-		if ("Emails".equals(name)) {
-			if (! this.vaults.containsKey(name)) {
-				XElement vconfig = this.getResources().getConfig().findId("Vault", name);
-
-				if (vconfig == null)
-					vconfig = XElement.tag("Vault").withAttribute("Id", "Emails")
-							.withAttribute("ReadAuthTags", "Developer")
-							.withAttribute("WriteAuthTags", "Developer")
-							.withAttribute("RootFolder", "/emails");
-
-				Vault vault = vconfig.hasNotEmptyAttribute("VaultClass")
-						? (Vault) this.getResources().getClassLoader().getInstance(vconfig.getAttribute("VaultClass"))
-						: new Vault();
-
-				vault.init(this, vconfig, null);
-
-				this.vaults.put(name, vault);
-			}
-
-			return this.vaults.get(name);
-		}
-
-		if ("Config".equals(name)) {
-			if (! this.vaults.containsKey(name)) {
-				XElement vconfig = this.getResources().getConfig().findId("Vault", name);
-
-				if (vconfig == null)
-					vconfig = XElement.tag("Vault").withAttribute("Id", "Config")
-							.withAttribute("ReadAuthTags", "Developer")
-							.withAttribute("WriteAuthTags", "Developer")
-							.withAttribute("RootFolder", "/config");
-
-				Vault vault = vconfig.hasNotEmptyAttribute("VaultClass")
-						? (Vault) this.getResources().getClassLoader().getInstance(vconfig.getAttribute("VaultClass"))
-						: new Vault();
-
-				vault.init(this, vconfig, null);
-
-				this.vaults.put(name, vault);
-			}
-
-			return this.vaults.get(name);
-		}
-		*/
-
-		// TODO move into config, really all these should be in config
-		if ("StoreOrders".equals(name)) {
-			if (! this.vaults.containsKey(name)) {
-				XElement vconfig = this.getResources().getConfig().findId("Vault", name);
-
-				if (vconfig == null)
-					vconfig = XElement.tag("Vault").withAttribute("Id", "StoreOrders")
-							.withAttribute("ReadAuthTags", "Developer")
-							.withAttribute("WriteAuthTags", "Developer");
-
-				Vault vault = vconfig.hasNotEmptyAttribute("VaultClass")
-						? (Vault) this.getResources().getClassLoader().getInstance(vconfig.getAttribute("VaultClass"))
-						: new Vault();
-
-				vault.init(this, vconfig, null);
-
-				this.vaults.put(name, vault);
-			}
-
-			return this.vaults.get(name);
-		}
-		
-		if ("ManagedForms".equals(name)) {
-			if (! this.vaults.containsKey(name)) {
-				XElement vconfig = this.getResources().getConfig().findId("Vault", name);
-				
-				if (vconfig == null)
-					vconfig = XElement.tag("Vault").withAttribute("Id", "ManagedForms")
-							.withAttribute("ReadAuthTags", "Admin")
-							.withAttribute("WriteAuthTags", "Admin");
-				
-				Vault vault = vconfig.hasNotEmptyAttribute("VaultClass")
-						? (Vault) this.getResources().getClassLoader().getInstance(vconfig.getAttribute("VaultClass"))
-						: new Vault();
-				
-				vault.init(this, vconfig, null);
-				
-				this.vaults.put(name, vault);
-			}
-			
-			return this.vaults.get(name);
-		}
-		
-		return this.getTenant().getVault(name);
+		return this.getTenant().getVault(alias);
 	}
-	
-	/*
-	@Override
-	public GCompClassLoader getScriptLoader() {
-		if (this.scriptloader == null) {
-			this.scriptloader = new GCompClassLoader();
-			this.scriptloader.init(this.resolvePath("cache"), this.resolvePath("glib"));
+
+	public List<XElement> webGlobalStyles(boolean cachmode) throws OperatingContextException {
+		List<XElement> ret = new ArrayList<>();
+		
+		// something is wrong
+		if (this.webglobals == null)
+			return ret;
+
+		for (XElement gel : this.webglobals) {
+			if (gel.hasNotEmptyAttribute("Style")) {
+				String surl = gel.getAttribute("Style");
+
+				if (! UIUtil.urlLooksLocal(surl))
+					ret.add(W3.tag("link")
+							.withAttribute("type", "text/css")
+							.withAttribute("rel", "stylesheet")
+							.attr("href", surl)
+					);
+			}
 		}
 		
-		return this.scriptloader;
-	}
-	*/
-
-	public List<String> webGlobalStyles(boolean includeWebRemote, boolean cachmode) {
-		List<String> ret = new ArrayList<>();
-
-		if (this.webglobals != null) {
-			if (includeWebRemote) {
-				for (XElement gel : this.webglobals) {
-					if (gel.hasNotEmptyAttribute("Style")) {
-						String surl = gel.getAttribute("Style");
-
-						if (! UIUtil.urlLooksLocal(surl))
-							ret.add(surl);
-					}
-				}
-			}
-
-			if (cachmode) {
-				ret.add("/css/dc-cache.min.css");
-				return ret;
-			}
-
+		if (cachmode) {
+			ret.add(W3.tag("link")
+					.withAttribute("type", "text/css")
+					.withAttribute("rel", "stylesheet")
+					.attr("href", "/css/dc.cache.css?_dcver=" + OperationContext.getOrThrow().getSite().getWebVersion())
+			);
+		}
+		else {
 			for (XElement gel : this.webglobals) {
 				if (gel.hasNotEmptyAttribute("Style")) {
 					String surl = gel.getAttribute("Style");
-
+					
 					if (UIUtil.urlLooksLocal(surl))
-						ret.add(surl);
+						ret.add(W3.tag("link")
+								.withAttribute("type", "text/css")
+								.withAttribute("rel", "stylesheet")
+								.attr("href", surl)
+						);
 				}
 			}
+			
+			ret.add(W3.tag("link")
+					.withAttribute("type", "text/css")
+					.withAttribute("rel", "stylesheet")
+					.attr("href", "/css/main.css")
+			);        // site specifics and overrides
 		}
 		
-		ret.add("/css/main.css");        // site specifics and overrides
-
 		return ret;
 	}
-
-	public List<String> webGlobalScripts(boolean includeWebRemote, boolean cachmode) {
-		List<String> ret = new ArrayList<>();
-
+	
+	public CollectionSourceStream webCacheStyles() throws OperatingContextException {
+		FileCollection collection = new FileCollection();
+		
 		if (this.webglobals != null) {
-			if (includeWebRemote) {
-				for (XElement gel : this.webglobals) {
-					if (gel.hasNotEmptyAttribute("Script")) {
-						String surl = gel.getAttribute("Script");
-
-						if (! UIUtil.urlLooksLocal(surl))
-							ret.add(surl);
+			// local global scripts
+			for (XElement gel : this.webglobals) {
+				if (gel.hasNotEmptyAttribute("Style")) {
+					String surl = gel.getAttribute("Style");
+					
+					if (UIUtil.urlLooksLocal(surl)) {
+						WebFindResult glb = this.webFindFilePath(CommonPath.from(surl), null);
+						
+						if (glb != null)
+							collection.withFiles(
+									MemoryStoreFile.of(CommonPath.from(surl + ".txt"))
+											.with("\n\n/* \n *\n * START: " + surl + "\n *\n */\n\n"),
+									StreamUtil.localFile(glb.file)
+							);
 					}
 				}
 			}
-
-			if (cachmode) {
-				ret.add("/js/dc-cache.min.js");
-				return ret;
-			}
 			
+			// site specifics and overrides
+			WebFindResult main = this.webFindFilePath(CommonPath.from("/css/main.css"), null);
+			
+			if (main != null)
+				collection.withFiles(
+						MemoryStoreFile.of(CommonPath.from("/css/main.css.txt"))
+								.with("\n\n/* \n *\n * START: /css/main.css\n *\n */\n\n"),
+						StreamUtil.localFile(main.file)
+				);
+		}
+		
+		return CollectionSourceStream.of(collection);
+	}
+
+	public List<XElement> webGlobalScripts(boolean cachmode) throws OperatingContextException {
+		List<XElement> ret = new ArrayList<>();
+
+		if (this.webglobals == null)
+			return ret;
+		
+		// external non-async
+		for (XElement gel : this.webglobals) {
+			if (gel.hasNotEmptyAttribute("Script")) {
+				String surl = gel.getAttribute("Script");
+
+				if (! UIUtil.urlLooksLocal(surl) && ! gel.getAttributeAsBooleanOrFalse("Async"))
+					ret.add(
+							W3.tag("script")
+									.attr("defer", "defer")
+									.attr("src", surl)
+					);
+			}
+		}
+
+		if (cachmode) {
+			ret.add(
+					W3.tag("script")
+						.attr("defer", "defer")
+						.attr("src", "/js/dc.cache.js?_dcver=" + OperationContext.getOrThrow().getSite().getWebVersion())
+			);
+		}
+		else {
 			for (XElement gel : this.webglobals) {
 				if (gel.hasNotEmptyAttribute("Script")) {
 					String surl = gel.getAttribute("Script");
-
-					if (UIUtil.urlLooksLocal(surl))
-						ret.add(surl);
+					
+					if (UIUtil.urlLooksLocal(surl)) {
+						ret.add(
+								W3.tag("script")
+										.attr("defer", "defer")
+										.attr("src", surl)
+						);
+					}
 				}
 			}
+			
+			// site specifics and overrides
+			ret.add(
+					W3.tag("script")
+							.attr("defer", "defer")
+							.attr("src", "/js/main.js")
+			);
+			
+			// start the UI scripts
+			ret.add(
+					W3.tag("script")
+							.attr("defer", "defer")
+							.attr("src", "/js/dc.go.js")
+			);
+		}
 
-			ret.add("/js/main.js");        // site specifics and overrides
-
-			ret.add("/js/dc.go.js");        // start the UI scripts
+		// finally external, async
+		for (XElement gel : this.webglobals) {
+			if (gel.hasNotEmptyAttribute("Script")) {
+				String surl = gel.getAttribute("Script");
+				
+				if (! UIUtil.urlLooksLocal(surl) && gel.getAttributeAsBooleanOrFalse("Async"))
+					ret.add(
+							W3.tag("script")
+									.attr("defer", "defer")
+									.attr("async", "async")
+									.attr("src", surl)
+					);
+			}
 		}
 
 		return ret;
+	}
+	
+	public CollectionSourceStream webCacheScripts() throws OperatingContextException {
+		FileCollection collection = new FileCollection();
+		
+		if (this.webglobals != null) {
+			// local global scripts
+			for (XElement gel : this.webglobals) {
+				if (gel.hasNotEmptyAttribute("Script")) {
+					String surl = gel.getAttribute("Script");
+					
+					if (UIUtil.urlLooksLocal(surl)) {
+						WebFindResult glb = this.webFindFilePath(CommonPath.from(surl), null);
+						
+						if (glb != null)
+							collection.withFiles(
+									MemoryStoreFile.of(CommonPath.from(surl + ".txt"))
+										.with("\n\n/* \n *\n * START: " + surl + "\n *\n */\n\n"),
+									StreamUtil.localFile(glb.file)
+							);
+					}
+				}
+			}
+			
+			// site specifics and overrides
+			WebFindResult main = this.webFindFilePath(CommonPath.from("/js/main.js"), null);
+			
+			if (main != null)
+				collection.withFiles(
+						MemoryStoreFile.of(CommonPath.from("/js/main.js.txt"))
+								.with("\n\n/* \n *\n * START: /js/main.js\n *\n */\n\n"),
+						StreamUtil.localFile(main.file)
+				);
+			
+			// start the UI scripts
+			WebFindResult go = this.webFindFilePath(CommonPath.from("/js/dc.go.js"), null);
+			
+			if (go != null)
+				collection.withFiles(
+						MemoryStoreFile.of(CommonPath.from("/js/dc.go.js.txt"))
+								.with("\n\n/* \n *\n * START: /js/dc.go.js\n *\n */\n\n"),
+						StreamUtil.localFile(go.file)
+				);
+		}
+		
+		return CollectionSourceStream.of(collection);
 	}
 
 	// TODO make sure all routing is done on lower case paths
@@ -672,6 +620,9 @@ public class Site extends Base {
 		// if we have an extension then we don't have to do the search below
 		// never go up a level past a file (or folder) with an extension
 		if (path.hasFileExtension()) {
+			if (this.dynadapaters.containsKey(path.toString()))
+				return this.dynadapaters.get(path.toString()).buildAdapter(this, null, path, view);
+			
 			WebFindResult wpath = this.webFindFilePath(path, view);
 
 			if (wpath != null)
@@ -789,7 +740,13 @@ public class Site extends Base {
 			
 			pdepth--;
 		}
-		
+
+		// for no extension
+		WebFindResult result = WebFindResult.of(this.findSectionFile(sect, path.toString(), view), path);
+
+		if (result != null)
+			return result;
+
 		Logger.errorTr(150007);
 		return null;
 	}

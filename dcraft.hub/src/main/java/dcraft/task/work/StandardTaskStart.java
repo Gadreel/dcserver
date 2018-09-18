@@ -19,13 +19,13 @@ public class StandardTaskStart extends StateWork {
 	}
 	
 	public StateWorkStep prepTask(TaskContext trun) throws OperatingContextException {
-		Logger.debugTr(0, "Starting Task Hub");
+		Logger.debug("Starting Task Hub");
 		
 		return StateWorkStep.NEXT;
 	}
 	
 	public StateWorkStep startTask(TaskContext trun) throws OperatingContextException {
-		Logger.debugTr(0, "Started Task Hub");
+		Logger.debug("Started Task Hub");
 		
 		return StateWorkStep.NEXT;
 	}

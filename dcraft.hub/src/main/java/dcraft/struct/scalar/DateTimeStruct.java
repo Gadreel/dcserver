@@ -17,9 +17,11 @@
 package dcraft.struct.scalar;
 
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
+import dcraft.script.work.StackWork;
 import dcraft.task.IParentAwareWork;
 import org.threeten.extra.PeriodDuration;
 
@@ -87,14 +89,17 @@ public class DateTimeStruct extends ScalarStruct {
 	}
 	
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		String op = code.getName();
 		
 		// we are loose on the idea of null/zero.  operations always perform on now, except Validate
 		if ((this.value == null) && ! "Validate".equals(op))
 			this.value = ZonedDateTime.now();
 		
-		if ("Inc".equals(op)) {
+		if ("Now".equals(op)) {
+			return ReturnOption.CONTINUE;
+		}
+		else if ("Inc".equals(op)) {
 			this.value = this.value.plusDays(1);
 			return ReturnOption.CONTINUE;
 		}
@@ -225,7 +230,8 @@ public class DateTimeStruct extends ScalarStruct {
 		if (xv == null)
 			return -1;
 
-		return xv.compareTo(yv);
+		// TODO review, not perfect
+		return (int) - ChronoUnit.DAYS.between(xv, yv);
 	}
 	
 	@Override

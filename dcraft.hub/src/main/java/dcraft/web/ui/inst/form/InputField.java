@@ -3,6 +3,8 @@ package dcraft.web.ui.inst.form;
 import java.util.ArrayList;
 import java.util.List;
 
+import dcraft.hub.op.OperatingContextException;
+import dcraft.script.work.InstructionWork;
 import dcraft.struct.Struct;
 import dcraft.web.ui.inst.W3;
 import dcraft.xml.XElement;
@@ -20,7 +22,7 @@ public class InputField extends CoreField {
 	}
 	
 	@Override
-	public void addControl() {
+	public void addControl(InstructionWork state) throws OperatingContextException {
 		if (Struct.objectToBooleanOrFalse(this.fieldinfo.getAttribute("ValidateButton")))
 			this.fieldinfo.with(W3.tag("Button")
 				.withAttribute("Icon", "fa-info-circle")

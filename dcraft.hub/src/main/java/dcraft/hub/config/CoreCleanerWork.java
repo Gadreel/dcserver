@@ -11,7 +11,7 @@ import dcraft.task.TaskContext;
 abstract public class CoreCleanerWork implements IWork {
 	@Override
 	public void run(TaskContext taskctx) throws OperatingContextException {
-		ResourceTier tier = (ResourceTier) taskctx.getTask().getParamsAsRecord().getFieldAsAny("OldTier");
+		ResourceTier tier = (ResourceTier) taskctx.getTask().getParamsAsRecord().getFieldAsComposite("OldTier");
 		
 		// if new tier is present this is just a cleanup
 		if (taskctx.getTask().getParamsAsRecord().hasField("Tier"))

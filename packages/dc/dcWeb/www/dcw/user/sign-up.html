@@ -1,0 +1,184 @@
+<dc.Html>
+	<dcs.With Target="$_Resources.Config">
+		<GetTag Path="Users" Result="UserConfig" />
+	</dcs.With>
+
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Account Sign Up" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcs.If Target="$UserConfig.@SignUpEnabled" Not="true" Equal="true">
+				<dc.Out>
+					<p>Account Sign Up is not enabled for this website.</p>
+				</dc.Out>
+			</dcs.If>
+			<dcs.Else>
+				<dc.Out>
+					<dcf.Form>
+						<dcs.If Target="$UserConfig.@UserNameMode" Not="true" Equal="email">
+							<dc.Out>
+								<dcf.Text Name="Username" Label="User Name" Required="true" />
+							</dc.Out>
+						</dcs.If>
+
+						<dcf.Text Name="FirstName" Label="First Name" Required="true" />
+						<dcf.Text Name="LastName" Label="Last Name" Required="true" />
+						<dcf.Text Name="Email" Label="Email" Required="true" />
+						<dcf.Text Name="Phone" Label="Phone" />
+
+						<dcs.If Target="$UserConfig.@SignUpAddress" Equal="true">
+							<dc.Out>
+								<dcf.Text Name="Address" Label="Address" />
+								<dcf.Text Name="Address2" Label="Address 2"  />
+								<dcf.Text Name="City" Label="City" />
+								<dcf.Select Name="State" Label="State">
+									<option value="NULL">Select One...</option>
+									<option value="AL">Alabama</option>
+									<option value="AZ">Arizona</option>
+									<option value="AR">Arkansas</option>
+									<option value="CA">California</option>
+									<option value="CO">Colorado</option>
+									<option value="CT">Connecticut</option>
+									<option value="DE">Delaware</option>
+									<option value="DC">District of Columbia</option>
+									<option value="FL">Florida</option>
+									<option value="GA">Georgia</option>
+									<option value="ID">Idaho</option>
+									<option value="IL">Illinois</option>
+									<option value="IN">Indiana</option>
+									<option value="IA">Iowa</option>
+									<option value="KS">Kansas</option>
+									<option value="KY">Kentucky</option>
+									<option value="LA">Louisiana</option>
+									<option value="ME">Maine</option>
+									<option value="MD">Maryland</option>
+									<option value="MA">Massachusetts</option>
+									<option value="MI">Michigan</option>
+									<option value="MN">Minnesota</option>
+									<option value="MS">Mississippi</option>
+									<option value="MO">Missouri</option>
+									<option value="MT">Montana</option>
+									<option value="NE">Nebraska</option>
+									<option value="NV">Nevada</option>
+									<option value="NH">New Hampshire</option>
+									<option value="NJ">New Jersey</option>
+									<option value="NM">New Mexico</option>
+									<option value="NY">New York</option>
+									<option value="NC">North Carolina</option>
+									<option value="ND">North Dakota</option>
+									<option value="OH">Ohio</option>
+									<option value="OK">Oklahoma</option>
+									<option value="OR">Oregon</option>
+									<option value="PA">Pennsylvania</option>
+									<option value="RI">Rhode Island</option>
+									<option value="SC">South Carolina</option>
+									<option value="SD">South Dakota</option>
+									<option value="TN">Tennessee</option>
+									<option value="TX">Texas</option>
+									<option value="UT">Utah</option>
+									<option value="VT">Vermont</option>
+									<option value="VA">Virginia</option>
+									<option value="WA">Washington</option>
+									<option value="WV">West Virginia</option>
+									<option value="WI">Wisconsin</option>
+									<option value="WY">Wyoming</option>
+								</dcf.Select>
+								<dcf.Text Name="Zip" Label="Zip" DataType="dcUsaZip" />
+							</dc.Out>
+						</dcs.If>
+
+						<dcs.If Target="$UserConfig.@SignUpConfirm" Equal="true">
+							<dc.Out>
+								<dcf.Instructions>
+									<Tr><![CDATA[
+You will get an confirmation email. Please confirm the account by following the link. Your account will not be activated until you do.
+									]]></Tr>
+								</dcf.Instructions>
+							</dc.Out>
+						</dcs.If>
+						<dcs.Else>
+							<dc.Out>
+								<dcf.Password Name="Password" Label="Password" autocomplete="new-password" Required="true" />
+								<dcf.Password Name="ConfirmPassword" Label="Confirm Password" autocomplete="new-password" Required="true" />
+							</dc.Out>
+						</dcs.Else>
+
+						<dc.Recaptcha id="recaptcha" Func="DoSubmit" />
+
+						<dcf.FormButtons>
+							<dc.Button Label="Sign Up" Scope="Primary" Click="DoRecaptcha" />
+						</dcf.FormButtons>
+					</dcf.Form>
+				</dc.Out>
+			</dcs.If>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			// init
+	]]></Function>
+	<Function Name="DoRecaptcha" Params="e"><![CDATA[
+		var page = this;
+
+		var vres = page.form().validate();
+
+		if (vres.Pass) {
+			var p1 = page.form().getValue('Password');
+			var p2 = page.form().getValue('ConfirmPassword');
+
+			if (p1 != p2) {
+				dc.pui.Popup.alert("Passwords don't match");
+				return;
+			}
+
+			page.callTagFunc('#recaptcha', 'execute');
+		}
+		else {
+			page.form().updateMessages(vres);
+		}
+	]]></Function>
+	<Function Name="DoSubmit" Params="e"><![CDATA[
+			var page = this;
+
+			page.form().submit();
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			e.Data.Captcha = $('#recaptcha').attr('data-response');
+
+			delete e.Data.ConfirmPassword;
+
+			e.Message = {
+				Service: 'dcCoreServices',
+				Feature: 'Users',
+				Op: 'SignUp',
+				Body: e.Data
+			};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var entry = this;
+
+			var p1 = entry.form().getValue('Password');
+
+			// if there is a password then we are not in "confirm" mode so reload
+			if (p1) {
+				if (entry.Params.Callback) {
+					entry.Layer.back();
+					entry.Params.Callback();
+				}
+				else {
+					window.location.reload(true);
+				}
+
+				return;
+			}
+
+			dc.pui.Popup.alert("Sign up submitted, an email should arrive shortly.", function() {
+				entry.Layer.back();
+
+				if (entry.Params.Callback)
+					entry.Params.Callback();
+			});
+	]]></Function>
+</dc.Html>

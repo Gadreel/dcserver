@@ -1,17 +1,26 @@
 package dcraft.db.tables;
 
-import dcraft.db.proc.BasicFilter;
-import dcraft.db.proc.ExpressionResult;
-import dcraft.db.proc.IComposer;
+import dcraft.db.DatabaseAdapter;
+import dcraft.db.ICallContext;
+import dcraft.db.IRequestContext;
+import dcraft.db.proc.*;
 import dcraft.db.request.query.SelectFields;
+import dcraft.db.request.update.DbRecordRequest;
 import dcraft.db.util.ByteUtil;
 import dcraft.hub.ResourceHub;
+import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.schema.DataType;
 import dcraft.schema.DbComposer;
 import dcraft.schema.DbField;
+import dcraft.schema.DbFilter;
 import dcraft.schema.SchemaResource;
+import dcraft.schema.TableView;
+import dcraft.struct.DataUtil;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -19,16 +28,148 @@ import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.builder.ObjectBuilder;
 import dcraft.util.StringUtil;
+import dcraft.util.TimeUtil;
 
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
+
+import static dcraft.db.Constants.DB_GLOBAL_INDEX_SUB;
 
 public class TableUtil {
 
-	static public RecordStruct getRecord(TablesAdapter db, String table, String id, SelectFields select) throws OperatingContextException {
+	static public void retireRecord(TablesAdapter db, String table, String id) throws OperatingContextException {
+		db.retireRecord(table, id);
+	}
+
+	static public String updateRecord(TablesAdapter db, DbRecordRequest request) throws OperatingContextException {
+		RecordStruct params = request.buildParams();
+
+		String table = params.getFieldAsString("Table");
+
+		// ===========================================
+		//  verify the fields
+		// ===========================================
+
+		RecordStruct fields = params.getFieldAsRecord("Fields");
+		BigDateTime when = params.getFieldAsBigDateTime("When");
+
+		// ===========================================
+		//  run before trigger
+		// ===========================================
+
+		// it is possible for Id to be set by trigger (e.g. with domains)
+		String id = params.getFieldAsString("Id");
+
+		boolean isUpdate = StringUtil.isNotEmpty(id);
+
+		// TODO db.executeTrigger(table, isUpdate ? "BeforeUpdate" : "BeforeInsert", request);
+
+		// TODO maybe check for errors here?
+
+		// it is possible for Id to be set by trigger (e.g. with domains)
+		id = params.getFieldAsString("Id");
+
+		// TODO add db filter option
+		//d runFilter("Insert" or "Update") quit:Errors  ; if any violations in filter then do not proceed
+
+		// ===========================================
+		//  create new id
+		// ===========================================
+
+		// don't create a new id during replication - not even for dcInsertRecord
+		if (StringUtil.isEmpty(id)) {
+			id = db.createRecord(table);
+
+			if (StringUtil.isEmpty(id)) {
+				return null;
+			}
+
+			params.with("Id", id);
+		}
+
+		// ===========================================
+		//  do the data update
+		// ===========================================
+		db.setFields(table, id, fields);
+
+		// ===========================================
+		//  and set fields
+		// ===========================================
+
+		// TODO move to tables interface
+		if (params.hasField("Sets")) {
+			ListStruct sets = params.getFieldAsList("Sets");
+
+			for (Struct set : sets.items()) {
+				RecordStruct rset = (RecordStruct) set;
+
+				String field = rset.getFieldAsString("Field");
+
+				// make a copy
+				List<String> lsubids = rset.getFieldAsList("Values").toStringList();
+				List<String> othersubids = new ArrayList<>();
+
+				db.traverseSubIds(table, id, field, new Function<Object,Boolean>() {
+					@Override
+					public Boolean apply(Object msub) {
+						String suid = msub.toString();
+
+						// if a value is already set, don't set it again
+						if (! lsubids.remove(suid))
+							othersubids.add(suid);
+
+						return true;
+					}
+				});
+
+				// Retire non matches
+				for (String suid : othersubids) {
+					// if present in our list then retire it
+					db.setFields(table, id, new RecordStruct()
+							.with(field, new RecordStruct()
+									.with(suid, new RecordStruct()
+											.with("Retired", true)
+									)
+							)
+					);
+				}
+
+				// add any remaining - unmatched - suids
+				for (String suid : lsubids) {
+					// if present in our list then retire it
+					db.setFields(table, id, new RecordStruct()
+							.with(field, new RecordStruct()
+									.with(suid, new RecordStruct()
+											.with("Data", suid)
+									)
+							)
+					);
+				}
+			}
+		}
+
+		// TODO make a record of everything for replication? or just let it figure it out?
+
+		// ===========================================
+		//  run after trigger
+		// ===========================================
+		// TODO db.executeTrigger(table, isUpdate ? "AfterUpdate" : "AfterInsert", request);
+
+		// TODO maybe check for errors here? originally exited on errors
+
+		return id;
+	}
+
+	static public RecordStruct getRecord(TablesAdapter db, IVariableAware scope, String table, String id, SelectFields select) throws OperatingContextException {
 		try {
 			ICompositeBuilder out = new ObjectBuilder();
 
-			TableUtil.writeRecord(out, db, table, id, select.getFields(), true, false);
+			TableUtil.writeRecord(out, db, RecordScope.of(scope), table, id, select.getFields(), true, false);
 
 			return (RecordStruct) out.toLocal();
 		}
@@ -40,17 +181,24 @@ public class TableUtil {
 	}
 
 	static public void writeRecord(ICompositeBuilder out,
-							TablesAdapter db, String table, String id, ListStruct select,
+							TablesAdapter db, RecordScope scope, String table, String id, ListStruct select,
 							boolean compact, boolean skipWriteRec) throws OperatingContextException, BuilderStateException
 	{
-		if (!db.isCurrent(table, id))
+		if (! db.isPresent(table, id))
 			return;
 
 		SchemaResource schema = ResourceHub.getResources().getSchema();
+		
+		TableView tableView = schema.getTableView(table);
+		
+		if (tableView == null) {
+			Logger.error("Table does not exist: " + table);
+			return;
+		}
 
 		// if select none then select all
 		if (select.size() == 0) {
-			for (DbField entry : schema.getDbFields(table))
+			for (DbField entry : tableView.getFields())
 				select.withItem(new RecordStruct().with("Field", entry.getName()));
 		}
 
@@ -62,23 +210,23 @@ public class TableUtil {
 
 			out.field(fld.isFieldEmpty("Name") ? fld.getFieldAsString("Field") : fld.getFieldAsString("Name"));
 
-			TableUtil.writeField(out, db, table, id, fld, compact);
+			TableUtil.writeField(out, db, scope, table, id, fld, compact);
 		}
 
 		if (!skipWriteRec)
 			out.endRecord();
 	}
 
-	static public void writeField(ICompositeBuilder out, TablesAdapter db, String table, String id,
+	static public void writeField(ICompositeBuilder out, TablesAdapter db, RecordScope scope, String table, String id,
 						   String field, boolean compact) throws BuilderStateException, OperatingContextException
 	{
 		RecordStruct fld = new RecordStruct()
 				.with("Field", field);
 
-		TableUtil.writeField(out, db, table, id, fld, compact);
+		TableUtil.writeField(out, db, scope, table, id, fld, compact);
 	}
 
-	static public void writeField(ICompositeBuilder out, TablesAdapter db, String table, String id,
+	static public void writeField(ICompositeBuilder out, TablesAdapter db, RecordScope scope, String table, String id,
 						   RecordStruct field, boolean compact) throws BuilderStateException, OperatingContextException
 	{
 		// some fields may request full details even if query is not in general
@@ -102,11 +250,30 @@ public class TableUtil {
 			if (sp == null)
 				out.value(null);
 			else
-				sp.writeField(out, db, table, id, field, myCompact);
+				sp.writeField(out, db, scope, table, id, field, myCompact);
 
 			return;
 		}
-
+		
+		
+		if (! field.isFieldEmpty("Filter")) {
+			DbFilter proc = schema.getDbFilter(field.getFieldAsString("Filter"));
+			
+			if (proc == null) {
+				out.value(null);
+				return;
+			}
+			
+			IFilter sp = proc.getFilter();
+			
+			if (sp == null)
+				out.value(null);
+			else
+				out.value(sp.check(db, scope, table, id).accepted);
+			
+			return;
+		}
+		
 		if (! field.isFieldEmpty("Value")) {
 			out.value(field.getFieldAsAny("Value"));
 			return;
@@ -141,14 +308,17 @@ public class TableUtil {
 			@Override
 			public Boolean apply(Object fid) {
 				try {
-					if (fid == null)
+					if (fid == null) {
 						out.value(null);
-					else if (sfield != null)
+					}
+					else if (sfield != null) {
 						// if a single field the write out the field out "inlined"
-						TableUtil.writeField(out, db, fktable, fid.toString(), sfield, myCompact);
-					else
+						TableUtil.writeField(out, db, scope, fktable, fid.toString(), sfield, myCompact);
+					}
+					else {
 						// otherwise write the field out as a record within the list
-						TableUtil.writeRecord(out, db, fktable, fid.toString(), subselect, myCompact, false);
+						TableUtil.writeRecord(out, db, RecordScope.of(scope), fktable, fid.toString(), subselect, myCompact, false);
+					}
 
 					return true;
 				}
@@ -171,9 +341,9 @@ public class TableUtil {
 			else {
 				// write all records in reverse index within a List
 				out.startList();
-				db.traverseIndex(fktable, field.getFieldAsString("KeyField"), id, new BasicFilter() {
+				db.traverseIndex(scope, fktable, field.getFieldAsString("KeyField"), id, new BasicFilter() {
 					@Override
-					public ExpressionResult check(TablesAdapter adapter, Object id) throws OperatingContextException {
+					public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, Object id) throws OperatingContextException {
 						if (foreignSink.apply(id))
 							return ExpressionResult.accepted();
 
@@ -207,16 +377,38 @@ public class TableUtil {
 				public Boolean apply(Object subid) {
 					try {
 						// don't output null values in this list - Extended might return null data but otherwise no nulls
-						if (subselect != null) {
-							Object value = db.getDynamicList(table, id, fname, subid.toString(), format);
+						// GROUP
+						if (field.hasField("KeyName")) {
+							ListStruct subselect = TableUtil.buildSubquery(field, table);
+							
+							// every field in subselect should be a list item, part of the group
+							for (int f = 0; f < subselect.size(); f++) {
+								RecordStruct frec = subselect.getItemAsRecord(f);
+								frec.with("SubId", subid);
+							}
+							
+							out.startRecord();
+							
+							out.field(field.getFieldAsString("KeyName"), subid);
 
+							// don't create a new scope, this is still the same record
+							TableUtil.writeRecord(out, db, scope, table, id, subselect, true, true);
+							
+							out.endRecord();
+							
+							return true;
+						}
+						// SUBQUERY
+						else if (subselect != null) {
+							Object value = db.getDynamicList(table, id, fname, subid.toString(), format);
+							
 							if (value != null) {
 								foreignSink.apply(value);
 								return true;
 							}
 						}
 						else if (myCompact) {
-							Object value = db.getDynamicList(table, id, fname, subid.toString());
+							Object value = db.getDynamicList(table, id, fname, subid.toString(), format);
 
 							if (value != null) {
 								out.value(value);
@@ -289,7 +481,7 @@ public class TableUtil {
 		return subselect;
 	}
 	
-	static public Object normalizeFormatRaw(String table, String id, String field, byte[] data, String format) {
+	static public Object normalizeFormatRaw(String table, String id, String field, byte[] data, String format) throws OperatingContextException {
 		if (data == null)
 			return null;
 		
@@ -308,49 +500,35 @@ public class TableUtil {
 		return TableUtil.formatField(table, id, field, out, format);
 	}
 	
-	static public Object formatField(String table, String id, String field, Object value, String format) {
-		if ("Tr".equals(format)) {
-			// TODO translate $$tr^dcStrUtil("_enum_"_table_"_"_field_"_"_val)
-		}
-		
-		// TODO format date/time to chrono
-		
-		// TODO format numbers to locale
-		
-		// TODO split? pad? custom format function?
-		
-		return value;
+	static public Object formatField(String table, String id, String field, Object value, String format) throws OperatingContextException {
+		return DataUtil.format(value, format);
 	}
 	
-
-	/*
-		  ;
-		  ;
-		 format(table,field,val,format) i (table'["#")&(Domain'="") s table=table_"#"_Domain     ; support table instances
-		  quit:format="" $$getTypeFor(^dcSchema($p(table,"#"),"Fields",field,"Type"))_val
-		  quit:format="Tr" ScalarStr_$$tr^dcStrUtil("_enum_"_table_"_"_field_"_"_val)
-		  ; TODO support date and number formatting, maybe str padding
-		  quit ScalarStr_$$format^dcStrUtil(val,format)
-		  ;
-		  ;
-		  ;
-		 getTypeFor(type) quit:type="Time" ScalarTime
-		  quit:type="Date" ScalarDate
-		  quit:type="DateTime" ScalarDateTime
-		  quit:type="Id" ScalarId
-		  quit:type="Integer" ScalarInt
-		  quit:type="Json" ScalarJson
-		  quit:type="Decimal" ScalarDec
-		  quit:type="BigInteger" ScalarBigInt
-		  quit:type="BigDecimal" ScalarBigDec
-		  quit:type="Number" ScalarNum
-		  quit:type="Boolean" ScalarBool
-		  quit:type="Binary" ScalarBin
-		  quit:type="BigDateTime" ScalarBigDateTime
-		  quit ScalarStr
-		  ;
-		  ;
-
-*/
-
+	static public long countIndex(IRequestContext request, BigDateTime when, String table, String fname, Object val) throws OperatingContextException {
+		String did = request.getTenant();
+		
+		long count = 0;
+		
+		SchemaResource schema = ResourceHub.getResources().getSchema();
+		DbField ffdef = schema.getDbField(table, fname);
+		
+		if (ffdef == null)
+			return count;
+		
+		DataType dtype = schema.getType(ffdef.getTypeId());
+		
+		if (dtype == null)
+			return count;
+		
+		val = dtype.toIndex(val, "eng");	// TODO increase locale support
+		
+		try {
+			return request.getInterface().getAsInteger(did, ffdef.getIndexName(), table, fname, val);
+		}
+		catch (Exception x) {
+			Logger.error("traverseIndex error: " + x);
+		}
+		
+		return count;
+	}
 }

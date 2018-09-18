@@ -25,10 +25,22 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.task.TaskContext;
+import dcraft.xml.XElement;
 
 import java.util.concurrent.ScheduledFuture;
 
 public class Sleep extends Instruction {
+	static public Sleep tag() {
+		Sleep el = new Sleep();
+		el.setName("dcs.Sleep");
+		return el;
+	}
+	
+	@Override
+	public XElement newNode() {
+		return Sleep.tag();
+	}
+	
 	@Override
 	public ReturnOption run(InstructionWork state) throws OperatingContextException {
 		if (state.getState() == ExecuteState.READY) {

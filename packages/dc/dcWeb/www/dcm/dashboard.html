@@ -1,25 +1,133 @@
-<dc.Html Badges="Editor,Admin">
+<dc.Html Badges="Editor,Admin" NoCache="true">
 	<Meta Name="Title">
-		<Tr Locale="en" Value="CMS Dashboard" />
+		<Tr Locale="eng" Value="CMS Dashboard" />
 	</Meta>
 
 	<dc.Body>
 		<dc.PagePanel>
+			<h2>CMS Mode</h2>
+
+			<p>Widget Editor Enabled</p>
+
 			<!--
 			<dcf.FormButtons>
 				<dc.Button Label="Close" Click="DoClose" />
 			</dcf.FormButtons>
 			-->
 
-			<p>
-				Coming soon - notices, status...
-			</p>
+			<h2>Alerts</h2>
+
+			<p>Currently no alerts</p>
+
+			<h2>Managed Forms</h2>
+
+			<p>[Coming soon - recently submitted form]</p>
+
+			<h2>Published Feeds</h2>
+
+			<dcs.With Target="$_Resources.Config">
+			  <GetTagDeep Path="Feeds/Definition" Result="Feeds" />
+			</dcs.With>
+
+			<dcs.Var Name="FeedFound" Type="Boolean" />
+
+			<dcs.For Name="Cnt" From="0" To="$Feeds.Last">
+				<dcs.If Target="$Feeds.$Cnt.@Highlight">
+					<dcs.With Target="$FeedFound" SetTo="true" />
+				</dcs.If>
+			</dcs.For>
+
+			<dcs.If Target="$FeedFound">
+				<dc.Out>
+					<table id="lstHours" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+						<thead>
+							<tr>
+								<th scope="col">Feed</th>
+								<th scope="col">Last Entry</th>
+								<th scope="col">Edited On</th>
+								<th scope="col">Actions</th>
+							</tr>
+						</thead>
+						<tbody id="lstHoursBody">
+							<dcs.For Name="Cnt" From="0" To="$Feeds.Last">
+								<dcs.If Target="$Feeds.$Cnt.@Highlight">
+									<dcs.Var Name="query4" Type="dcdbQuery">
+										<SetField Name="Table" Value="dcmFeed" />
+
+										<Select Field="dcmModified" As="Modified" />
+										<Select Field="dcmPublishAt" As="Published" />
+										<Select Field="dcmAlias" As="Alias" />
+										<Select Field="dcmPath" As="Path" />
+										<Select Field="dcmLocalPath" As="LocalPath" />
+										<Select Field="dcmTags" As="Tags" />
+
+										<Select Composer="dcmFeedFields" As="Fields" />
+
+										<Collector Func="dcmScanFeed" Feed="{$Feeds.$Cnt.@Alias}" Max="1" From="+" To="now" />
+
+										<Execute Result="LastFeed" />
+									</dcs.Var>
+
+									<dc.Out>
+										<tr>
+											<td>{$Feeds.$Cnt.@Title}</td>
+											<td><dc.Link Click="OnEditFeed" data-alias="{$Feeds.$Cnt.@Alias}"  data-path="{$LastFeed.0.LocalPath}">{$LastFeed.0.Fields.Title}</dc.Link></td>
+											<td>{$LastFeed.0.Modified|dt:MMM dd yyyy, hh:mm a}</td>
+											<td>
+												<dc.Button Icon="fa-plus" Click="OnAddFeed" data-alias="{$Feeds.$Cnt.@Alias}" />
+												<dc.Button Icon="fa-list" Click="OnListFeed" data-alias="{$Feeds.$Cnt.@Alias}" />
+											</td>
+										</tr>
+									</dc.Out>
+								</dcs.If>
+							</dcs.For>
+						</tbody>
+					</table>
+				</dc.Out>
+			</dcs.If>
+			<dcs.Else>
+				<dc.Out>
+					<p>No feeds to highlight.</p>
+				</dc.Out>
+			</dcs.Else>
+
 		</dc.PagePanel>
 	</dc.Body>
 
 	<Function Name="Load"><![CDATA[
 			var page = this;
 
+	]]></Function>
+	<Function Name="OnAddFeed" Params="e"><![CDATA[
+			var entry = this;
+
+			var alias = $(e.currentTarget).attr('data-alias');
+
+			dc.pui.Dialog.loadPage('/dcm/feeds/add-feed/' + alias, {
+				Path: '/' + alias,
+				Callback: function(path) {
+					entry.Layer.refreshPage();
+				}
+			});
+	]]></Function>
+	<Function Name="OnEditFeed" Params="e"><![CDATA[
+			var entry = this;
+
+			var path = $(e.currentTarget).attr('data-path');
+
+			window.location = path;
+	]]></Function>
+	<Function Name="OnListFeed" Params="e"><![CDATA[
+			var entry = this;
+
+			var alias = $(e.currentTarget).attr('data-alias');
+
+			dc.pui.Dialog.loadPage('/dcm/feeds/list-feed/' + alias, {
+				Path: '/' + alias,
+				xCallback: function(path) {
+					entry.Layer.refreshPage();
+				}
+			});
 	]]></Function>
 	<Function Name="DoClose"><![CDATA[
 			var page = this;

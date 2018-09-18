@@ -25,6 +25,7 @@ import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.log.Logger;
 import dcraft.schema.SchemaHub;
 import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.stream.IStreamSource;
 import dcraft.stream.file.IFileStreamDest;
 import dcraft.stream.file.MemorySourceStream;
@@ -162,7 +163,7 @@ public class MemoryStoreFile extends FileStoreFile {
 	}
 	
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		return super.operation(stack, code);
 	}
 		

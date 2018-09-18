@@ -7,6 +7,7 @@ import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.util.StringUtil;
 import dcraft.script.inst.doc.Base;
+import dcraft.web.ui.UIUtil;
 import dcraft.xml.XElement;
 
 public class RowLayout extends Base {
@@ -33,6 +34,8 @@ public class RowLayout extends Base {
 		if (StringUtil.isNotEmpty(colpad)) {
 			this.withClass("dc-layout-row-pad-" + colpad);
 		}
+		
+		UIUtil.markIfEditable(state, this);
 	}
 	
 	@Override

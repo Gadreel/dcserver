@@ -1,0 +1,91 @@
+<dc.MixIn Badges="Admin,Editor">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Image Properties" />
+	</Meta>
+
+	<dc.Fragment>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.Text Name="Title" Label="Title" />
+				<dcf.TextArea Name="Description" Label="Description" />
+
+				<dc.IncludeParam Name="ExtraProps" />
+
+				<dcf.FormButtons>
+					<dc.Button Click="AfterSave" Label="Close" />
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Fragment>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			// TODO if there is no meta in image folder currently then this will
+			// load from the parent folder, we don't want that so fix to be direct for this case
+
+			e.Message = {
+				Service: 'dcCoreServices',
+				Feature: 'Vaults',
+				Op: 'Custom',
+				Body: {
+					Vault: 'Galleries',
+					Command: 'LoadMeta',
+					Path: entry.Params.Gallery.Path + '/' + entry.Params.Image + '.v'
+				}
+			};
+	]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			var meta = entry.Store.Meta = e.Data.Extra;
+
+			if (! meta || ! meta.eng)
+				return;
+
+			// TODO find locale
+
+			e.Data = { };
+
+			// copy properties into form
+			Object.getOwnPropertyNames(meta.eng).forEach(function(name) {
+				e.Data[name] = meta.eng[name];
+			});
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			var meta = entry.Store.Meta;
+
+			if (! meta)
+				meta = entry.Store.Meta = { };
+
+			if (! meta.eng)
+				meta.eng = { };
+
+			// copy properties into image
+			Object.getOwnPropertyNames(e.Data).forEach(function(name) {
+				meta.eng[name] = e.Data[name];
+			});
+
+			e.Message = {
+				Service: 'dcCoreServices',
+				Feature: 'Vaults',
+				Op: 'Custom',
+				Body: {
+					Vault: 'Galleries',
+					Command: 'SaveMeta',
+					Path: entry.Params.Gallery.Path + '/' + entry.Params.Image + '.v',
+					Params: meta
+				}
+			};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var entry = this;
+
+			entry.Layer.back();
+
+			if (entry.Params.Callback)
+				entry.Params.Callback();
+	]]></Function>
+</dc.MixIn>

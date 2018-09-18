@@ -5,12 +5,14 @@
 
 	<dc.Body>
 		<dc.PagePanel>
-			<!--
+			<dcf.Text id="txtFeed" Label="Feed Alias" Name="Feed" />
+
 			<dcf.FormButtons>
-				<dc.Button Label="Reindex Tenant" Click="DoReindex" />
+				<dc.Button Label="Reindex Feeds" Click="DoReindex" />
+				<!--
 				<dc.Button Label="Reindex All" Click="DoReindexAll" />
-			</dcf.FormButtons>
 			-->
+			</dcf.FormButtons>
 
 			<p>
 				Coming soon - notices, status...
@@ -24,5 +26,21 @@
 	]]></Function>
 	<Function Name="DoReindex"><![CDATA[
 			var page = this;
+
+			dc.comm.sendMessage({
+				Service: 'dcmServices',
+				Feature: 'Feed',
+				Op: 'Reindex',
+				Body: {
+					Feed: $('#txtFeed').val()
+				}
+			}, function(rmsg) {
+				if (rmsg.Result > 0) {
+					dc.pui.Popup.alert('Unable to complete indexing: ' + rmsg.Message);
+				}
+				else {
+					dc.pui.Popup.alert('Indexing Completed');
+				}
+			});
 	]]></Function>
 </dc.Html>

@@ -20,12 +20,17 @@ import dcraft.hub.time.BigDateTime;
 import dcraft.schema.DataType;
 import dcraft.schema.RootType;
 import dcraft.schema.SchemaHub;
+import dcraft.struct.IPartSelector;
+import dcraft.struct.PathPart;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
+import dcraft.xml.XNode;
 
-public class AnyStruct extends ScalarStruct {
+import java.util.Arrays;
+
+public class AnyStruct extends ScalarStruct implements IPartSelector {
 	static public AnyStruct of(Object v) {
 		AnyStruct struct = new AnyStruct();
 		struct.value = v;
@@ -132,5 +137,43 @@ public class AnyStruct extends ScalarStruct {
 	@Override
 	public boolean checkLogic(IParentAwareWork stack, XElement source) {
 		return Struct.objectToBooleanOrFalse(this.value);
+	}
+	
+	
+	/**
+	 * A way to select a child or sub child structure similar to XPath but lightweight.
+	 * Can select composites and scalars.  Use a . or / delimiter.
+	 *
+	 * For example: "Toys.3.Name" called on "Person" Record means return the (Struct) name of the
+	 * 4th toy in this person's Toys list.
+	 *
+	 * Cannot go up levels, or back to root.  Do not start with a dot or slash as in ".People".
+	 *
+	 * @param path string holding the path to select
+	 * @return selected structure if any, otherwise null
+	 */
+	@Override
+	public Struct select(String path) {
+		return this.select(PathPart.parse(path));
+	}
+	
+	/** _Tr
+	 * A way to select a child or sub child structure similar to XPath but lightweight.
+	 * Can select composites and scalars.  Use a . or / delimiter.
+	 *
+	 * For example: "Toys.3.Name" called on "Person" Record means return the (Struct) name of the
+	 * 4th toy in this person's Toys list.
+	 *
+	 * Cannot go up levels, or back to root.  Do not start with a dot or slash as in ".People".
+	 *
+	 * @param path parts of the path holding a list index or a field name
+	 * @return selected structure if any, otherwise null
+	 */
+	@Override
+	public Struct select(PathPart... path) {
+		if (this.value instanceof IPartSelector)
+			return ((IPartSelector)this.value).select(path);
+		
+		return null;
 	}
 }

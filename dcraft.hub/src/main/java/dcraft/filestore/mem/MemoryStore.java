@@ -29,6 +29,7 @@ import dcraft.log.Logger;
 import dcraft.schema.SchemaHub;
 import dcraft.script.StackUtil;
 import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.struct.RecordStruct;
 import dcraft.task.IParentAwareWork;
 import dcraft.util.FileUtil;
@@ -76,7 +77,7 @@ public class MemoryStore extends FileStore {
 	}
 
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement codeEl) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement codeEl) throws OperatingContextException {
 		// connect and close in super
 
 		return super.operation(stack, codeEl);

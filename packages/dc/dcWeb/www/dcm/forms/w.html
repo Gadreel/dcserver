@@ -1,0 +1,157 @@
+<dc.Html>
+	<dcs.Var Name="TabForm" Type="String" />
+	<dcs.Var Name="TabPage" Type="String" />
+	<dcs.Var Name="TabTitle" Type="String" />
+
+	<dcs.If Target="$Page.OriginalPathParts.3" IsEmpty="false">
+		<dcs.With Target="$TabForm" SetTo="$Page.OriginalPathParts.3" />
+	</dcs.If>
+
+	<dcs.If Target="$Page.OriginalPathParts.4" IsEmpty="false">
+		<dcs.With Target="$TabPage" SetTo="$Page.OriginalPathParts.4" />
+	</dcs.If>
+
+	<dcs.CatalogSettings Id="CMS-ManagedForm-{$TabForm}" Result="FormSettings" />
+
+	<dcs.Var Name="FormDef" Type="Record">
+		<!--  Wizard -> collection of Wizard, 0 -> first in collection, # -> text  -->
+		<Set>{$FormSettings.Wizard.0.#}</Set>
+	</dcs.Var>
+
+	<dcs.Var Name="TabIndex" Type="Integer" SetTo="0" />
+
+	<dcs.For Name="Cnt" From="0" To="$FormDef.Tabs.Last">
+		<dcs.If Target="$FormDef.Tabs.$Cnt.Alias" Equal="$TabPage">
+			<dcs.With Target="$TabIndex" SetTo="$Cnt" />
+		</dcf.If>
+	</dcs.For>
+
+	<dcs.Var Name="StepNumber" Type="Integer" SetTo="$TabIndex">
+		<Inc />
+	</dcs.Var>
+
+	<dc.IncludeFragmentInline Path="/forms/{$TabForm}/{$TabPage}" />
+
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Step {$StepNumber}: {$TabTitle}" />
+	</Meta>
+
+	<dcs.Var Name="PreviousTabIdx" Type="Integer" SetTo="$TabIndex" />
+
+	<dcs.If Target="$PreviousTabIdx" GreaterThan="0">
+		<dcs.With Target="$PreviousTabIdx">
+			<Dec />
+		</dcs.With>
+	</dcs.If>
+
+	<dcs.Var Name="NextTabIdx" Type="Integer" SetTo="$TabIndex" />
+
+	<dcs.If Target="$NextTabIdx" LessThan="$FormDef.Tabs.Last">
+		<dcs.With Target="$NextTabIdx">
+			<Inc />
+		</dcs.With>
+	</dcs.If>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form RecordType="{$FormDef.Tabs.$TabIndex.DataType}" AlwaysNew="true">
+				<dc.IncludeParam Name="Form" />
+
+				<dcf.FormButtons Hint="Form options">
+					<dc.IncludeParam Name="FormButtons" />
+
+					<dcs.If Target="$TabIndex" GreaterThan="0">
+						<dcs.If Target="$FormDef.Tabs.Last" GreaterThan="0">
+							<dc.Out>
+								<dc.Button Label="Previous" Click="DoPrevious" />
+							</dc.Out>
+						</dcs.If>
+					</dcs.If>
+
+					<dcs.If Target="$TabIndex" LessThan="$FormDef.Tabs.Last">
+						<dc.Out>
+							<dcf.SubmitButton Label="Next" />
+						</dc.Out>
+					</dcs.If>
+					<dcs.Else>
+						<dc.Out>
+							<dc.Button id="dcbtnWSubmit" Label="{$FormDef.SubmitTitle}" Click="DoSubmit" Scope="Primary" />
+						</dc.Out>
+					</dcs.Else>
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			e.Data = dc.pui.FormManager.getForm('{$FormDef.Alias}').getSection('{$FormDef.Tabs.$TabIndex.DataName}');
+
+			this.callPageFunc('TabLoadRecord', e);
+	]]></Function>
+	<Function Name="Freeze"><![CDATA[
+			e = {
+				Data: this.form().getValues()
+			};
+
+			this.callPageFunc('TabFreeze', e);
+
+			dc.pui.FormManager.getForm('{$FormDef.Alias}').setSection('{$FormDef.Tabs.$TabIndex.DataName}', e.Data);
+	]]></Function>
+	<Function Name="AfterSave" Params="e"><![CDATA[
+			dc.pui.App.loadTab('{$FormDef.Tabs.$NextTabIdx.Alias}');
+	]]></Function>
+	<Function Name="DoPrevious" Params="e"><![CDATA[
+			dc.pui.App.loadTab('{$FormDef.Tabs.$PreviousTabIdx.Alias}');
+	]]></Function>
+	<Function Name="ValidateTabs"><![CDATA[
+			return dc.pui.FormManager.getForm('{$FormDef.Alias}').validate();
+	]]></Function>
+	<Function Name="SendManagedForm" Params="captcha,title,message,attachments"><![CDATA[
+		var page = this;
+
+		var form = dc.pui.FormManager.getForm('{$FormDef.Alias}');
+
+		dc.comm.sendMessage({
+			"Service":"dcCoreServices",
+			"Feature":"ManagedForm",
+			"Op":"Submit",
+			Body: {
+				Form: '{$FormDef.Alias}',
+				Captcha: captcha,
+				Title: title,
+				Data: form.Data
+			}
+		}, function(resp) {
+			if (resp.Result > 0) {
+				dc.pui.Popup.alert('Error submitting form: ' + resp.Message);
+				return;
+			}
+
+			var uuid = resp.Body.Uuid;
+
+			// TODO support attachments
+
+			dc.comm.sendMessage({
+				Service: "dcCoreServices",
+				Feature: "ManagedForm",
+				Op: "Complete",
+				Body: {
+					Form: '{$FormDef.Alias}',
+					Uuid: uuid
+				}
+			},
+			function (e) {
+				if (e.Result != 0) {
+					dc.pui.Popup.alert('Error submitting form: ' + e.Message);
+					return;
+				}
+
+				form.clear();
+
+				dc.pui.Popup.alert(message ? message : 'Form Submitted', function() {
+					page.Layer.close();
+				});
+			});
+		});
+	]]></Function>
+</dc.Html>

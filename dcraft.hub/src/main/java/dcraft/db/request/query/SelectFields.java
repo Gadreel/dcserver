@@ -180,7 +180,19 @@ public class SelectFields {
 		this.fields.withItem(sub.getParams());
 		
 		return this;
-	}	
+	}
+	
+	public SelectFields withGroup(String field, String name, String keyname, SelectFields flds) {
+		SelectGroup sub = new SelectGroup()
+				.withName(name)
+				.withKeyName(keyname)
+				.with(field)
+				.withSelect(flds);
+		
+		this.fields.withItem(sub.getParams());
+		
+		return this;
+	}
 	
 	/**
 	 * @param field name of foreign key field

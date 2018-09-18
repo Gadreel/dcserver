@@ -1,6 +1,6 @@
 <dc.Html Badges="Admin,Editor">
 	<Meta Name="Title">
-		<Tr Locale="en" Value="Edit Text Widget" />
+		<Tr Locale="eng" Value="Text Content" />
 	</Meta>
 
 	<Require Script="/js/vendor/ace-1.1.8/ace.js" />
@@ -13,11 +13,12 @@
 				<dc.Button Click="DoSelectFile" Label="Link File" />
 				<dc.Button Click="DoSelectPage" Label="Link Page" />
 				<dc.Button Click="DoHelp" Label="Help"  />
-				<dc.Button Click="DoSave" Label="Save" Scope="Primary" />
+				<!-- dc.Button Label="Save" Click="DoSaveOnly" / -->
+				<dc.Button Label="Save and Preview" Click="DoSave" Scope="Primary" />
 			</dcf.FormButtons>
 
-			<!-- TODO create editor control -->
-			<div id="sectDepEscEdit" style="position: absolute; top: 10rem; left: 0; right: 0; bottom: 0;" />
+			<!-- TODO create editor control, add Accessibility -->
+			<div id="sectDepEscEdit" style="min-height: 240px;" />
 		</dc.PagePanel>
 	</dc.Body>
 	<Function Name="Load">
@@ -26,7 +27,6 @@
 			entry.Store.Changed = false;
 			entry.Store.SetMode = false;
 			entry.Store.Editor = ace.edit('sectDepEscEdit');
-			entry.Store.Params = dc.pui.App.Context.Params;
 
 			var editor = entry.Store.Editor;
 
@@ -42,39 +42,45 @@
 					entry.Store.Changed = true;
 			});
 
-			if (dc.pui.App.Context.IsNew || entry.Store.Params.Content) {
+			if (entry.Params.Content) {
 				entry.Store.SetMode = true;
 
-				if (entry.Store.Params.Content)
-					editor.setValue(entry.Store.Params.Content, -1);
+				if (entry.Params.Content)
+					editor.setValue(entry.Params.Content, -1);
 
 				entry.Store.SetMode = false;
 
 				//entry.Store.Editor.focus();
 			}
 			else {
-				dc.comm.sendMessage({
-					Service: 'dcCoreServices',
-					Feature: 'Vaults',
-					Op: 'Custom',
+				var request = {
+					Service: 'dcmServices',
+					Feature: 'Feed',
+					Op: 'LoadPart',
 					Body: {
-						Vault: 'Feeds',
-						Command: 'LoadPart',
-						Path: '/' + entry.Store.Params.Feed + entry.Store.Params.Path,
-						Params: {
-							PartId: entry.Store.Params.Id
-						}
+						Feed: entry.Params.Feed,
+						Path: entry.Params.Path,
+						PartId: entry.Params.Id
 					}
-				}, function(rmsg) {
+				};
+
+				dc.comm.sendMessage(request, function(rmsg) {
 					if (rmsg.Result != 0) {
 						dc.pui.Popup.alert(rmsg.Message);
 						return;
 					}
 
-					var widget = entry.Store.Params.Widget = rmsg.Body.Extra;
+					var widget = entry.Store.Widget = dc.util.Xml.toJQuery(rmsg.Body.Part);
 
-					// TODO scan for the correct Tr element instead of assuming
-					var content = entry.Store.Params.Content = widget.children[0].children[0].content.trim() + '\n';
+					// TODO support locale selection
+					var locale = $('html').attr('lang');
+
+					var value = widget.find('Tr[Locale="' + locale + '"]').dcvalue();
+
+					if (! value)
+						value = '';
+
+					var content = entry.Params.Content = value.trim() + '\n';
 
 					entry.Store.SetMode = true;
 
@@ -90,35 +96,59 @@
 			var entry = this;
 
 			if (entry.Store.Editor)
-				entry.Store.Params.Content = entry.Store.Editor.getValue();
+				entry.Params.Content = entry.Store.Editor.getValue();
 	</Function>
-	<Function Name="DoSave">
+	<Function Name="DoSaveOnly"><![CDATA[
+		var entry = this;
+
+		entry.Params.Preview = false;
+
+		entry.callPageFunc('DoSave2');
+	]]></Function>
+	<Function Name="DoSave"><![CDATA[
+		var entry = this;
+
+		entry.Params.Preview = true;
+
+		entry.callPageFunc('DoSave2');
+	]]></Function>
+	<Function Name="DoSave2">
 			var entry = this;
 
 			// remember the content
-			var content = entry.Store.Params.Content = entry.Store.Editor.getValue();
+			var content = entry.Params.Content = entry.Store.Editor.getValue().trim();
 
-			var widget = entry.Store.Params.Widget;
+			var widget = entry.Store.Widget;
 
-			// TODO scan for the correct Tr element instead of assuming
-			widget.children[0].children[0].content = content;
+			// TODO support locale selection
+			var locale = $('html').attr('lang');
 
-			dc.comm.sendMessage({
-				Service: 'dcCoreServices',
-				Feature: 'Vaults',
-				Op: 'Custom',
+			widget.find('Tr[Locale="' + locale + '"]').attr('Value', null).empty().cdata(content);
+
+			var request = {
+				Service: 'dcmServices',
+				Feature: 'Feed',
+				Op: 'AddCommandHistory',
 				Body: {
-					Vault: 'Feeds',
-					Command: 'SavePart',
-					Path: '/' + entry.Store.Params.Feed + entry.Store.Params.Path,
-					Params: {
-						PartId: entry.Store.Params.Id,
-						Part: widget
-					}
+					Feed: entry.Params.Feed,
+					Path: entry.Params.Path,
+					Commands: [
+						{
+							Command: 'SavePart',
+							Params: {
+								PartId: entry.Params.Id,
+								Part: dc.util.Xml.toString(widget)
+							}
+						}
+					]
 				}
-			}, function(rmsg) {
+			};
+
+			dc.comm.sendMessage(request, function(rmsg) {
 				if (rmsg.Result != 0)
 					dc.pui.Popup.alert(rmsg.Message);
+				else if (entry.Params.Preview)
+					dc.pui.Loader.MainLayer.refreshPage();
 				else
 					dc.pui.Popup.alert('Saved');
 			});
@@ -159,6 +189,7 @@
 			var entry = this;
 
 		    dc.pui.Dialog.loadPage('/dcm/feeds/list-feed/pages', {
+				 Select: true,
 				Callback: function(files) {
 					if (files) {
 						for (var i = 0; i < files.length; i++)

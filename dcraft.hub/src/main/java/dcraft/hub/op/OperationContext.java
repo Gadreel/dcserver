@@ -384,7 +384,10 @@ public class OperationContext extends RecordStruct implements IVariableProvider 
 	 * Operating Chronology
 	 */
 	public String getChronology() {
-		return this.getFieldAsString("Chronology");
+		if (this.isNotFieldEmpty("Chronology"))
+			return this.getFieldAsString("Chronology");
+		
+		return this.getResources().getLocale().getDefaultChronology();
 	}
 	
 	public void setChronology(String v) {
@@ -525,6 +528,9 @@ public class OperationContext extends RecordStruct implements IVariableProvider 
 
 		if ("_Tenant".equals(name))
 			return this.getTenant();
+		
+		if ("_Resources".equals(name))
+			return this.getResources();
 		
 		if ("_Node".equals(name))
 			return ApplicationHub.getVariables();

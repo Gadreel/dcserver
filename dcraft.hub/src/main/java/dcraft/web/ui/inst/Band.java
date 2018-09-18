@@ -5,6 +5,7 @@ import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.inst.doc.Base;
 import dcraft.util.StringUtil;
+import dcraft.web.ui.UIUtil;
 import dcraft.xml.XElement;
 import dcraft.xml.XNode;
 
@@ -52,6 +53,8 @@ public class Band extends Base {
 		}
 		
 		this.with(bodyui);
+		
+		UIUtil.markIfEditable(state, this);
 	}
 	
 	@Override

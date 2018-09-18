@@ -8,7 +8,7 @@ import dcraft.task.TaskContext;
 public class StandardSchedulerStop extends CoreCleanerWork {
 	@Override
 	public void shutdown(TaskContext taskctx, ResourceTier tier) {
-		Logger.debugTr(0, "Stopping Task Scheduler");
+		Logger.debug("Stopping Task Scheduler");
 		
 		ScheduleHub.active = false;
 		

@@ -2,6 +2,7 @@ package dcraft.db.proc;
 
 import dcraft.db.request.query.WhereExpression;
 import dcraft.db.tables.TablesAdapter;
+import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.time.BigDateTime;
 import dcraft.struct.RecordStruct;
@@ -10,7 +11,7 @@ import dcraft.xml.XElement;
 
 abstract public class BasicFilter implements IFilter {
 	protected IFilter nested = null;
-	
+
 	public BasicFilter withNested(IFilter v) {
 		this.nested = v;
 		return this;
@@ -23,9 +24,9 @@ abstract public class BasicFilter implements IFilter {
 		return this;
 	}
 	
-	public ExpressionResult nestOrAccept(TablesAdapter adapter, Object val) throws OperatingContextException {
+	public ExpressionResult nestOrAccept(TablesAdapter adapter, IVariableAware scope, String table, Object val) throws OperatingContextException {
 		if (this.nested != null)
-			return this.nested.check(adapter, val);
+			return this.nested.check(adapter, scope, table, val);
 		
 		return ExpressionResult.ACCEPTED;
 	}

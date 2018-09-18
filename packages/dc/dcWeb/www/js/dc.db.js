@@ -212,6 +212,27 @@ dc.db.database = {
 				console.table(resp.Body);
 		});
 	},
+	Load: function(params, cb) {
+		if (! params.Select)
+			params.Select = [ ];  // select all
+
+		dc.comm.sendMessage({
+			Service: 'dcDatabase',
+			Feature: 'ExecuteProc',
+			Op: 'dcLoadRecord',
+			Body: params
+		}, function(resp) {
+			if (resp.Result > 0) {
+				console.log('error: ' + resp.Message);
+				return;
+			}
+
+			if (cb)
+				cb.callback(resp.Body);
+			else
+				console.log(JSON.stringify(resp.Body, null, '\t'));
+		});
+	},
 	Insert: function(params, cb) {
 
 		/*

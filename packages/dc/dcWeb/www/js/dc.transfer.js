@@ -262,13 +262,50 @@ dc.transfer = {
 						successCallback: function(url) {
 							// only means that it started, not finished
 							console.log('download worked!');
-							buck.settings.Callback(buck.data.path);
+							if (buck.settings.Callback)
+								buck.settings.Callback(buck.data.path);
 						},
 						failCallback: function(html, url) {
 							console.log('download failed!');
-							buck.settings.Callback(buck.data.path);
+							if (buck.settings.Callback)
+								buck.settings.Callback(buck.data.path);
 						}
 					});
+				}
+				else {
+					dc.pui.Popup.alert('Error requesting download channel.');
+				}
+			});
+		};
+
+		this.prepDownload = function(path, token, params) {
+			console.log(new Date() + ': Requesting');
+
+			this.data.path = path;
+			this.data.token = token;
+			this.data.params = params;
+
+			dc.util.Cookies.deleteCookie('fileDownload');
+
+			var tmsg = {
+				Service: this.settings.Service,
+				Feature: this.settings.Feature,
+				Op: 'StartDownload',
+				Body: {
+					Vault: this.settings.Vault,
+					Path: this.data.path,
+					Token: this.data.token,
+					Params: this.data.params
+				}
+			};
+
+			var buck = this;
+
+			dc.comm.sendMessage(tmsg, function(rmsg) {
+				if (rmsg.Result == 0) {
+					var binding = rmsg.Body;
+
+					buck.settings.Callback('/dcdyn/xfer/' + binding.Channel, binding);
 				}
 				else {
 					dc.pui.Popup.alert('Error requesting download channel.');
@@ -354,7 +391,7 @@ dc.transfer = {
 	},
 
 	Util: {
-		uploadFiles: function(files, vault, token, callback) {
+		uploadFiles: function(files, vault, token, callback, ovrwrt, params) {
 			var steps = [ ];
 
 			for (var i = 0; i < files.length; i++) {
@@ -374,7 +411,9 @@ dc.transfer = {
 					Params: {
 						File: file.File,
 						Path: file.Path,
-						FileName: file.Name
+						FileName: file.Name,
+						Overwrite: ovrwrt,
+						Params: params
 					},
 					Func: function(step) {
 						var task = this;
@@ -407,7 +446,7 @@ dc.transfer = {
 						// start/resume upload (basic token service requires that token be in the path)
 						step.Store.Transfer.upload(step.Params.File,
 								path + '/' + step.Params.FileName,
-								task.Store.Token);
+								task.Store.Token, step.Params.Overwrite, step.Params.Params);
 					}
 				});
 			}
@@ -422,6 +461,110 @@ dc.transfer = {
 			};
 
 			return uploadtask;
+		},
+		directSaveData: function(fileName, data) {
+			var	blob = new Blob([data], {type: "octet/stream"});
+			var url = window.URL.createObjectURL(blob);
+
+			var a = document.createElement("a");
+			a.style = "display: none";
+			a.href = url;
+			a.download = fileName;
+
+			document.body.appendChild(a);
+
+			a.click();
+
+			window.URL.revokeObjectURL(url);
+		},
+
+		sendDownloadMessage : function(msg, fileName, options) {
+			dc.comm.sendMessage(msg, function(res) {
+				console.log('Result: '); // + JSON.stringify(res));
+				console.dir(res);
+
+				if (dc.util.Struct.isList(res.Body))
+					dc.transfer.CVS.writeRecordsToCSV(fileName, res.Body, options);
+				else
+					dc.transfer.CVS.writeRecordsToCSV(fileName, [ res.Body ], options);
+			});
+		}
+	},
+
+	CVS: {
+		writeRecordsToCSV: function(fileName, recs, options) {
+			if (options.Sort)
+				recs.sort(dc.util.List.sortObjects(options.Sort));
+
+			var rows = [ ];
+
+			var mhdr = options.Headers ? options.Headers : options.Order;
+
+			var morder = options.Order;
+
+		 	// build the rows
+
+			rows.push(mhdr);
+
+			for (var i = 0; i < recs.length; i++) {
+				var row = recs[i];
+				var cols = [ ];
+
+				for (var h = 0; h < morder.length; h++) {
+					var v = row[morder[h]];
+
+					if (dc.util.Struct.isEmpty(v))
+						v = '';
+
+					if (dc.util.Struct.isList(v))
+						v = v.join(', ');
+
+					cols.push(v);
+				}
+
+				rows.push(cols);
+			}
+
+			dc.transfer.CVS.writeCSV(fileName, rows);
+		},
+		writeCSV: function(fileName, rows) {
+			var esc = dc.transfer.CVS.createFormatter();
+			var data = '';
+
+			for (var i = 0; i < rows.length; i++) {
+				data += esc(rows[i]) + '\n';
+			}
+
+			dc.transfer.Util.directSaveData(fileName, data);
+		},
+		createFormatter: function(options) {
+			options = options || {};
+
+			var delimiter = options.delimiter || ",",
+			QUOTE = options.quote || '"',
+			ESCAPE = options.escape || '"',
+			REPLACE_REGEXP = new RegExp(QUOTE, "g");
+
+			function escapeField(field, index) {
+				field = field.replace(/\0/g, '');
+
+				if (field.indexOf(QUOTE) !== -1)
+				field = field.replace(REPLACE_REGEXP, ESCAPE + QUOTE);
+
+				return QUOTE + field + QUOTE;
+			}
+
+			return function escapeFields(fields) {
+				var ret = [];
+
+				for (var i = 0; i < fields.length; i++) {
+					var field = fields[i];
+					field = (dc.util.Struct.isEmpty(field) ? "" : field) + "";
+					ret.push(escapeField(field, i));
+				}
+
+				return ret.join(delimiter);
+			};
 		}
 	}
 }

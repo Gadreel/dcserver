@@ -53,6 +53,7 @@
 			<Definition Ext="xml" Type="text/xml" Compress="True" />
 			<Definition Ext="txt" Type="text/plain" Compress="True" />
 			<Definition Ext="jpg" Type="image/jpeg" />
+			<Definition Ext="jpeg" Type="image/jpeg" />
 			<Definition Ext="png" Type="image/png" />
 			<Definition Ext="gif" Type="image/gif" />
 			<Definition Ext="css" Type="text/css" Compress="True" />
@@ -64,26 +65,148 @@
 			<Definition Ext="cur" Type="image/vnd.microsoft.icon" />
 			<Definition Ext="ico" Type="image/vnd.microsoft.icon" />
 			<Definition Ext="svg" Type="image/svg+xml" />
+			<Definition Ext="svgz" Type="image/svg+xml" />
 			<Definition Ext="pdf" Type="application/pdf" />
+
+			<Definition Ext="aac" Note="AAC audio" Type="audio/aac" />
+			<Definition Ext="abw" Note="AbiWord document" Type="application/x-abiword" />
+			<Definition Ext="arc" Note="Archive document (multiple files embedded)" Type="application/octet-stream" />
+			<Definition Ext="avi" Note="AVI: Audio Video Interleave" Type="video/x-msvideo" />
+			<Definition Ext="azw" Note="Amazon Kindle eBook format" Type="application/vnd.amazon.ebook" />
+			<Definition Ext="bin" Note="Any kind of binary data" Type="application/octet-stream" />
+			<Definition Ext="bmp" Note="Bitmap Graphics" Type="image/bmp" />
+			<Definition Ext="bz" Note="BZip archive" Type="application/x-bzip" />
+			<Definition Ext="bz2" Note="BZip2 archive" Type="application/x-bzip2" />
+			<Definition Ext="csh" Note="C-Shell script" Type="application/x-csh" />
+			<Definition Ext="csv" Note="Comma-separated values (CSV)" Type="text/csv" />
+			<Definition Ext="doc" Note="Microsoft Word" Type="application/msword" />
+			<Definition Ext="docx" Note="Microsoft Word (OpenXML)" Type="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+			<Definition Ext="eot" Note="MS Embedded OpenType fonts" Type="application/vnd.ms-fontobject" />
+			<Definition Ext="epub" Note="Electronic publication (EPUB)" Type="application/epub+zip" />
+			<Definition Ext="es" Note="ECMAScript RFC 4329 Section 8.2" Type="application/ecmascript" />
+			<Definition Ext="htm" Note="HyperText Markup Language (HTML)" Type="text/html" />
+			<Definition Ext="ics" Note="iCalendar format" Type="text/calendar" />
+			<Definition Ext="jar" Note="Java Archive (JAR)" Type="application/java-archive" />
+			<Definition Ext="mid" Note="Musical Instrument Digital Interface (MIDI)" Type="audio/midi" />
+			<Definition Ext="midi" Note="Musical Instrument Digital Interface (MIDI)" Type="audio/midi" />
+			<Definition Ext="mpeg" Note="MPEG Video" Type="video/mpeg" />
+			<Definition Ext="mpkg" Note="Apple Installer Package" Type="application/vnd.apple.installer+xml" />
+			<Definition Ext="odp" Note="OpenDocument presentation document" Type="application/vnd.oasis.opendocument.presentation" />
+			<Definition Ext="ods" Note="OpenDocument spreadsheet document" Type="application/vnd.oasis.opendocument.spreadsheet" />
+			<Definition Ext="odt" Note="OpenDocument text document" Type="application/vnd.oasis.opendocument.text" />
+			<Definition Ext="oga" Note="OGG audio" Type="audio/ogg" />
+			<Definition Ext="ogv" Note="OGG video" Type="video/ogg" />
+			<Definition Ext="ogx" Note="OGG" Type="application/ogg" />
+			<Definition Ext="otf" Note="OpenType font" Type="font/otf" />
+			<Definition Ext="ppt" Note="Microsoft PowerPoint" Type="application/vnd.ms-powerpoint" />
+			<Definition Ext="pptx" Note="Microsoft PowerPoint (OpenXML)" Type="application/vnd.openxmlformats-officedocument.presentationml.presentation" />
+			<Definition Ext="rar" Note="RAR archive" Type="application/x-rar-compressed" />
+			<Definition Ext="rtf" Note="Rich Text Format (RTF)" Type="application/rtf" />
+			<Definition Ext="sh" Note="Bourne shell script" Type="application/x-sh" />
+			<Definition Ext="swf" Note="Small web format or Adobe Flash document" Type="application/x-shockwave-flash" />
+			<Definition Ext="tar" Note="Tape Archive (TAR)" Type="application/x-tar" />
+			<Definition Ext="tif" Note="Tagged Image File Format (TIFF)" Type="image/tiff" />
+			<Definition Ext="tiff" Note="Tagged Image File Format (TIFF)" Type="image/tiff" />
+			<Definition Ext="ts" Note="Typescript file" Type="application/typescript" />
+			<Definition Ext="ttc" Note="TrueType Font" Type="application/x-font-ttf" />
+			<Definition Ext="ttf" Note="TrueType Font" Type="font/ttf" />
+			<Definition Ext="vsd" Note="Microsoft Visio" Type="application/vnd.visio" />
+			<Definition Ext="wav" Note="Waveform Audio Format" Type="audio/wav" />
+			<Definition Ext="weba" Note="WEBM audio" Type="audio/webm" />
+			<Definition Ext="webm" Note="WEBM video" Type="video/webm" />
+			<Definition Ext="webp" Note="WEBP image" Type="image/webp" />
+			<Definition Ext="xhtml" Note="XHTML" Type="application/xhtml+xml" />
+			<Definition Ext="xls" Note="Microsoft Excel" Type="application/vnd.ms-excel" />
+			<Definition Ext="xlsx" Note="Microsoft Excel (OpenXML)" Type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+			<Definition Ext="xul" Note="XUL" Type="application/vnd.mozilla.xul+xml" />
+			<Definition Ext="zip" Note="ZIP archive" Type="application/zip" />
+			<Definition Ext="3gp" Note="3GPP audio/video container" Type="video/3gpp" />
+			<Definition Ext="3g2" Note="3GPP2 audio/video container" Type="video/3gpp2" />
+			<Definition Ext="7z" Note="7-zip archive" Type="application/x-7z-compressed" />
+
+			<Definition Note="Adobe Illustrator file" Type="application/postscript" Ext="ai" />
+			<Definition Note="postscript file" Type="application/postscript" Ext="eps" />
+			<Definition Note="postscript file" Type="application/postscript" Ext="ps" />
+
+			<Definition Note="MPEG-2 audio file" Type="video/mpeg" Ext="mp2" />
+			<Definition Note="MPEG-2 audio file" Type="video/mpeg" Ext="mpa" />
+			<Definition Note="MPEG movie file" Type="video/mpeg" Ext="mpe" />
+			<Definition Note="MPEG movie file" Type="video/mpeg" Ext="mpeg" />
+			<Definition Note="MPEG movie file" Type="video/mpeg" Ext="mpg" />
+			<Definition Note="MPEG-2 video stream" Type="video/mpeg" Ext="mpv2" />
+			<Definition Note="MPEG-4" Type="video/mp4" Ext="mp4" />
+			<Definition Note="MPEG-4" Type="video/mp4" Ext="mv4" />
+			<Definition Note="Apple QuickTime movie" Type="video/quicktime" Ext="mov" />
+			<Definition Note="Apple QuickTime movie" Type="video/quicktime" Ext="qt" />
+			<Definition Note="Logos library system file" Type="video/x-la-asf" Ext="lsf" />
+			<Definition Note="streaming media shortcut" Type="video/x-la-asf" Ext="lsx" />
+			<Definition Note="advanced systems format file" Type="video/x-ms-asf" Ext="asf" />
+			<Definition Note="ActionScript remote document" Type="video/x-ms-asf" Ext="asr" />
+			<Definition Note="Microsoft ASF redirector file" Type="video/x-ms-asf" Ext="asx" />
+			<Definition Note="audio video interleave file" Type="video/x-msvideo" Ext="avi" />
+
+			<Definition Note="audio file" Type="audio/basic" Ext="au" />
+			<Definition Note="sound file" Type="audio/basic" Ext="snd" />
+			<Definition Note="midi file" Type="audio/mid" Ext="mid" />
+			<Definition Note="media processing server studio" Type="audio/mid" Ext="rmi" />
+			<Definition Note="MP3 file" Type="audio/mpeg" Ext="mp3" />
+			<Definition Note="audio interchange file format" Type="audio/x-aiff" Ext="aif" />
+			<Definition Note="compressed audio interchange file" Type="audio/x-aiff" Ext="aifc" />
+			<Definition Note="audio interchange file format" Type="audio/x-aiff" Ext="aiff" />
+			<Definition Note="media playlist file" Type="audio/x-mpegurl" Ext="m3u" />
+			<Definition Note="Real Audio file" Type="audio/x-pn-realaudio" Ext="ra" />
+			<Definition Note="Real Audio metadata file" Type="audio/x-pn-realaudio" Ext="ram" />
+			<Definition Note="WAVE audio file" Type="audio/x-wav" Ext="wav" />
+
+			<Definition Note="aTeX source document" Type="application/x-tex" Ext="tex" />
+			<Definition Note="LaTeX info document" Type="application/x-texinfo" Ext="texi" />
+			<Definition Note="LaTeX info document" Type="application/x-texinfo" Ext="texinfo" />
+
+			<Definition Note="H.323 internet telephony file" Type="text/h323" Ext="323" />
+			<Definition Note="Exchange streaming media file" Type="text/html" Ext="stm" />
+			<Definition Note="NetMeeting user location service file" Type="text/iuls" Ext="uls" />
+			<Definition Note="BASIC source code file" Type="text/plain" Ext="bas" />
+			<Definition Note="C/C++ source code file" Type="text/plain" Ext="c" />
+			<Definition Note="C/C++/Objective C header file" Type="text/plain" Ext="h" />
+			<Definition Note="rich text file" Type="text/richtext" Ext="rtx" />
+			<Definition Note="Scitext continuous tone file" Type="text/scriptlet" Ext="sct" />
+			<Definition Note="tab separated values file" Type="text/tab-separated-values" Ext="tsv" />
+			<Definition Note="hypertext template file" Type="text/webviewhtml" Ext="htt" />
+			<Definition Note="HTML component file" Type="text/x-component" Ext="htc" />
+			<Definition Note="TeX font encoding file" Type="text/x-setext" Ext="etx" />
+			<Definition Note="vCard file" Type="text/x-vcard" Ext="vcf" />
+
+			<Definition Type="application/rar" Ext="rar" />
+			<Definition Type="application/rdf+xml" Ext="rdf" />
+			<Definition Type="application/rss+xml" Ext="rss" />
+			<Definition Type="application/pgp-keys" Ext="key" />
+			<Definition Type="application/pgp-signature" Ext="pgp" />
+			<Definition Type="application/ogg" Ext="ogg" />
+
+			<Definition Type="text/plain" Ext="asc" />
+			<Definition Type="text/plain" Ext="text" />
+			<Definition Type="text/plain" Ext="diff" />
+			<Definition Type="text/plain" Ext="pot" />
+			<Definition Type="image/x-coreldraw" Ext="cdr" />
+
+			<Definition Type="psd" Ext="application/x-photoshop" />
+			<Definition Type="raw" Ext="image/x-dcraw" Note="should cover all raw formats (Canon, Panasonic, Sony, etc..) per Ben" />
+
+			<Definition Type="keynote" Ext="application/x-iwork-keynote-sffkey" />
+			<Definition Type="pages" Ext="application/x-iwork-pages-sffpages" />
+			<Definition Type="numbers" Ext="application/x-iwork-numbers-sffnumbers" />
 		</Mime>
 
-		<!-- TODO cleanup
-		<FileView Name="WebGallery" RootFolder="/galleries"
-			ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" />
-
-		<FileView Name="WebFile" RootFolder="/files"
-			ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" />
-
-		<FileView Name="SiteFile" RootFolder="/"
-			ReadBadges="Developer" WriteBadges="Developer" />
-
-		<FileView Name="ManagedForm" RootFolder="/buckets/ManagedForm" UploadToken="true"
-			ReadBadges="Admin,Staff" WriteBadges="Guest,User" />
-		-->
+		<Badges>
+			<Definition Label="Staff" Value="Staff" />
+			<Definition Label="Admin" Value="Admin" />
+			<Definition Label="Developer" Value="Developer" />
+		</Badges>
 
 		<Instructions>
 			<Tag Name="dcs.Break" Class="dcraft.script.inst.Break" />
 			<Tag Name="dcs.CallFunc" Class="dcraft.script.inst.CallFunction" />
+			<Tag Name="dcs.CallService" Class="dcraft.script.inst.CallService" />
 			<Tag Name="dcs.Case" Class="dcraft.script.inst.Case" />
 			<Tag Name="dcs.Console" Class="dcraft.script.inst.Console" />
 			<Tag Name="dcs.Continue" Class="dcraft.script.inst.Continue" />
@@ -98,6 +221,8 @@
 			<Tag Name="dcs.Function" Class="dcraft.script.inst.Function" />
 			<Tag Name="dcs.Global" Class="dcraft.script.inst.Global" />
 			<Tag Name="dcs.If" Class="dcraft.script.inst.If" />
+			<Tag Name="dcs.IfErrored" Class="dcraft.script.inst.IfErrored" />
+			<Tag Name="dcs.Include" Class="dcraft.script.inst.Include" />
 			<Tag Name="dcs.Info" Class="dcraft.script.inst.Info" />
 			<Tag Name="dcs.Main" Class="dcraft.script.inst.Main" />
 			<Tag Name="dcs.Out" Class="dcraft.script.inst.doc.Out" />
@@ -116,10 +241,48 @@
 
 			<Tag Name="dcdb.Query" Class="dcraft.script.inst.db.Query" />
 			<Tag Name="dcdb.LoadRecord" Class="dcraft.script.inst.db.LoadRecord" />
+			<Tag Name="dcdb.LoadTenant" Class="dcraft.script.inst.db.LoadTenant" />
+			<Tag Name="dcdb.UpdateRecord" Class="dcraft.script.inst.db.UpdateRecord" />
+			<Tag Name="dcdb.InsertRecord" Class="dcraft.script.inst.db.InsertRecord" />
 
 			<Tag Name="dcs.SendEmail" Class="dcraft.script.inst.ext.SendEmail" />
+			<Tag Name="dcs.SendText" Class="dcraft.script.inst.ext.SendText" />
+
+			<Tag Name="dcs.CatalogSettings" Class="dcraft.script.inst.ext.CatalogSettings" />
+
 			<Tag Name="dcs.File" Class="dcraft.script.inst.file.File" />
+
+			<Tag Name="dcs.TranslationTemplate" Class="dcraft.script.inst.doc.TranslationTemplate" />
 		</Instructions>
+
+		<Formatters>
+			<Definition Code="dec" Class="dcraft.struct.format.DecimalFormatter" />
+			<Definition Code="dt" Class="dcraft.struct.format.DateTimeFormatter" />
+			<Definition Code="ld" Class="dcraft.struct.format.LocalDateFormatter" />
+			<Definition Code="lt" Class="dcraft.struct.format.LocalTimeFormatter" />
+			<Definition Code="yn" Class="dcraft.struct.format.YesNoFormatter" />
+			<Definition Code="tf" Class="dcraft.struct.format.TrueFalseFormatter" />
+			<Definition Code="xmlescape" Class="dcraft.struct.format.XmlEscapeFormatter" />
+			<Definition Code="xmlunescape" Class="dcraft.struct.format.XmlUnescapeFormatter" />
+			<Definition Code="substr" Class="dcraft.struct.format.SubstringFormatter" />
+			<Definition Code="tostr" Class="dcraft.struct.format.ToStringFormatter" />
+			<Definition Code="tre" Class="dcraft.struct.format.EnumFormatter" />
+			<Definition Code="notempty" Class="dcraft.struct.format.NotEmptyFormatter" />
+			<Definition Code="empty" Class="dcraft.struct.format.EmptyFormatter" />
+			<Definition Code="ifempty" Class="dcraft.struct.format.IfEmptyFormatter" />
+			<Definition Code="join" Class="dcraft.struct.format.JoinFormatter" />
+			<Definition Code="decodejson" Class="dcraft.struct.format.DecodeJsonFormatter" />
+			<Definition Code="decrypt" Class="dcraft.struct.format.Decrypt" />
+			<Definition Code="encrypt" Class="dcraft.struct.format.Encrypt" />
+
+			<!--
+			// TODO format date/time to chrono
+
+			// TODO format numbers to locale
+
+			// TODO split? pad? custom format function?
+			-->
+		</Formatters>
 
 		<Catalog Name="Security-Policy-Http">
 			<Settings>

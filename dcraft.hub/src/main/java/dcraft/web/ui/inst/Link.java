@@ -1,9 +1,11 @@
 package dcraft.web.ui.inst;
 
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.inst.doc.Base;
+import dcraft.script.work.StackWork;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
@@ -38,7 +40,7 @@ public class Link extends Base {
 		String page = StackUtil.stringFromSource(state,"Page");
 		
 		if (StringUtil.isNotEmpty(label)) {
-			this.withText(label).withAttribute("title", label);
+			this.withText(label).attr("dc-title", label);
 		}
 		else if (StringUtil.isNotEmpty(icon)) {
 			if ("none".equals(icontype) || "empty".equals(icontype)) {
@@ -101,6 +103,17 @@ public class Link extends Base {
 				.withAttribute("data-dc-enhance", "true")
 				.withAttribute("data-dc-tag", this.getName());
 		
-		this.setName("a");
+		String badgelist = StackUtil.stringFromSource(state, "Badges");
+		
+		if (StringUtil.isNotEmpty(badgelist)) {
+			String[] badges = badgelist.split(",");
+			
+			if (badges.length > 0) {
+				this.setName(OperationContext.getOrThrow().getUserContext().isTagged(badges) ? "a" : "Ignore");
+			}
+		}
+		else {
+			this.setName("a");
+		}
     }
 }

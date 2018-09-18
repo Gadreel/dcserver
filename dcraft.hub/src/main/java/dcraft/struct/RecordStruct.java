@@ -19,6 +19,7 @@ package dcraft.struct;
 import dcraft.hub.ResourceHub;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
+import dcraft.script.work.StackWork;
 import dcraft.task.IParentAwareWork;
 
 import java.math.BigDecimal;
@@ -210,7 +211,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 				}
 				
 				if (svalue == null) 
-					svalue = Struct.objectToStruct(value); 
+					svalue = Struct.objectToStruct(value);
 				
 				f.setValue(svalue);
 				f.prepped = true;
@@ -760,14 +761,20 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 	}
 
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		if ("Set".equals(code.getName())) {
 			this.clear();
 			
 			String json = StackUtil.resolveValueToString(stack, code.getText());
 			
 			if (StringUtil.isNotEmpty(json)) {
-				RecordStruct pjson = (RecordStruct) CompositeParser.parseJson(" { " + json + " } ");
+				json = json.trim();
+
+				if (! json.startsWith("{")) {
+					json = "{ " + json + " }";
+				}
+
+				RecordStruct pjson = (RecordStruct) CompositeParser.parseJson(json);
 
 				this.copyFields(pjson);
 			}
@@ -790,9 +797,9 @@ import org.codehaus.groovy.runtime.InvokerHelper;
             	var = ResourceHub.getResources().getSchema().getType(def).create();
 
 			if (code.hasAttribute("Value")) {
-		        Struct var3 = StackUtil.refFromElement(stack, code, "Value");
+		        Struct var3 = StackUtil.refFromElement(stack, code, "Value", true);
 		        
-				if (var == null) 
+				if ((var == null) && (var3 != null))
 	            	var = var3.getType().create();
 				
 				if (var instanceof ScalarStruct) 
@@ -800,11 +807,9 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 				else
 					var = var3;
 			}
-            
-			if (var == null)
-				Logger.errorTr(520);
-			else
-				this.with(name, var);
+
+			// not an error if null
+			this.with(name, var);
 			
 			return ReturnOption.CONTINUE;
 		}

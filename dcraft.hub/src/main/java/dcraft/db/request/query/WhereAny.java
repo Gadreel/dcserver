@@ -29,7 +29,14 @@ public class WhereAny extends WhereExpression {
 		expression.withValueTwo(ListStruct.list(value));
 		return expression;
 	}
-	
+
+	static public WhereAny of(String field, ListStruct value) {
+		WhereAny expression = new WhereAny();
+		expression.withFieldOne(field);
+		expression.withValueTwo(value);
+		return expression;
+	}
+
 	public WhereAny() {
 		super("Any");
 	}

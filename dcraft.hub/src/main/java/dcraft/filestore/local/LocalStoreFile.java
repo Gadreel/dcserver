@@ -29,8 +29,10 @@ import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.log.Logger;
 import dcraft.schema.SchemaHub;
+import dcraft.script.work.ExecuteState;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
+import dcraft.script.work.StackWork;
 import dcraft.stream.IStreamSource;
 import dcraft.stream.file.IFileStreamDest;
 import dcraft.struct.RecordStruct;
@@ -263,11 +265,11 @@ public class LocalStoreFile extends FileStoreFile {
 	}
 	
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		if ("Hash".equals(code.getName())) {
 			String meth = StackUtil.stringFromElement(stack, code, "Method");
 			
-	        Struct var = StackUtil.refFromElement(stack, code, "Target");
+	        Struct var = StackUtil.refFromElement(stack, code, "Target", true);
 
 			if (var instanceof ScalarStruct) { 				
 				try {
@@ -275,6 +277,8 @@ public class LocalStoreFile extends FileStoreFile {
 						@Override
 						public void callback(String result) throws OperatingContextException {
 							((ScalarStruct)var).adaptValue(result);
+							
+							stack.setState(ExecuteState.DONE);
 							
 							OperationContext.getAsTaskOrThrow().resume();
 						}
@@ -324,8 +328,8 @@ public class LocalStoreFile extends FileStoreFile {
 			String text = code.getText();
 			
 	        Struct content = StringUtil.isNotEmpty(text) 
-	        		? StackUtil.resolveReference(stack, text)
-	        		: StackUtil.refFromElement(stack, code, "Target");
+	        		? StackUtil.resolveReference(stack, text, true)
+	        		: StackUtil.refFromElement(stack, code, "Target", true);
 	        
 	        if (content != null) {
 	        	IOUtil.saveEntireFile(this.localpath, Struct.objectToString(content));
@@ -341,12 +345,12 @@ public class LocalStoreFile extends FileStoreFile {
 		// used by NCC provisioning
 		if ("ReadText".equals(code.getName())) {
 			if (this.getFieldAsBooleanOrFalse("Exists")) {
-		        Struct var = StackUtil.refFromElement(stack, code, "Target");
+		        Struct var = StackUtil.refFromElement(stack, code, "Target", true);
 	
 		        //System.out.println("e: " + var);
 		        
-				if (var instanceof NullStruct) {					
-			        String handle = StackUtil.stringFromElement(stack, code, "Handle");
+				if ((var == null) || (var instanceof NullStruct)) {
+			        String handle = StackUtil.stringFromElement(stack, code, "Result");
 
 					if (handle != null) 
 			            StackUtil.addVariable(stack, handle, StringStruct.of(IOUtil.readEntireFile(this.localpath)));

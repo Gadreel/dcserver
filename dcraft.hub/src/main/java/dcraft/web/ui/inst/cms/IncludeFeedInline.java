@@ -7,9 +7,11 @@ import dcraft.script.ScriptHub;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.struct.RecordStruct;
+import dcraft.struct.scalar.BooleanStruct;
 import dcraft.util.IOUtil;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.inst.doc.Out;
+import dcraft.web.ui.UIUtil;
 import dcraft.xml.XElement;
 
 import java.nio.file.Files;
@@ -18,7 +20,7 @@ import java.nio.file.Path;
 public class IncludeFeedInline extends Out {
 	static public IncludeFeedInline tag() {
 		IncludeFeedInline el = new IncludeFeedInline();
-		el.setName("dc.IncludeFeedInline");
+		el.setName("dcm.IncludeFeedInline");
 		return el;
 	}
 	
@@ -39,6 +41,9 @@ public class IncludeFeedInline extends Out {
 		boolean usemeta = StackUtil.boolFromSource(state, "Meta", false);
 		String feed = StackUtil.stringFromSource(state, "Name", "pages");
 		String path = StackUtil.stringFromSource(state, "Path", page.getFieldAsString("Path"));
+		
+		// set before merge so we don't lose the EditBadges attribute
+		UIUtil.setEditBadges(state, this);
 		
 		Path cfile = OperationContext.getOrThrow().getSite().findSectionFile("feeds", "/" + feed + path + ".html", OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
 		
@@ -67,16 +72,22 @@ public class IncludeFeedInline extends Out {
 				}
 				*/
 				
+				// TODO refine when this is possible
 				if (OperationContext.getOrThrow().getUserContext().isTagged("Admin", "Editor")) {
-					/* TODO
-					this.with(
-							EditButton.tag()
-					);
-					*/
+					String realpath = OperationContext.getOrThrow().getSite().relativize(cfile);
+					
+					// into /feeds
+					realpath = realpath.substring(realpath.indexOf('/', 1));
+					
+					// into feed folder
+					realpath = realpath.substring(realpath.indexOf('/', 1));
 					
 					this
+							.withAttribute("data-cms-editable", "true")
 							.withAttribute("data-cms-feed", feed)
-							.withAttribute("data-cms-path", path);
+							.withAttribute("data-cms-path", realpath);
+					
+					StackUtil.addVariable(state, "_CMSEditable", BooleanStruct.of(true));
 				}
 			}
 			else {

@@ -19,7 +19,7 @@ public class SiteVault extends Vault {
 	@Override
 	public void listFiles(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
 		// check bucket security
-		if (checkAuth && ! this.checkReadAccess()) {
+		if (checkAuth && ! this.checkReadAccess("ListFiles", request)) {
 			Logger.errorTr(434);
 			fcb.returnEmpty();
 			return;

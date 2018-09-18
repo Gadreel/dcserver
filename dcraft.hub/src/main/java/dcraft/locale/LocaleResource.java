@@ -35,7 +35,7 @@ public class LocaleResource extends ResourceBase {
 			return;
 		}
 
-		Logger.traceTr(0, "Dictionary loaded");
+		Logger.trace( "Dictionary loaded");
 	}
 	
 	public LocaleResource getParentResource() {

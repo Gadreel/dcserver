@@ -61,7 +61,7 @@ public class DataRequest implements IServiceRequestBuilder, IWorkBuilder {
 		return this;
 	}
 	
-	public CompositeStruct buildParams() {
+	public RecordStruct buildParams() {
 		this.parameters
 			.with("_Database", this.database)
 			.with("_ForTenant", this.forTenant);

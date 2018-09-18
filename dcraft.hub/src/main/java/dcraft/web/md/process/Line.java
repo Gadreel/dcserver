@@ -17,6 +17,7 @@ package dcraft.web.md.process;
 
 import java.util.LinkedList;
 
+import dcraft.web.md.ProcessContext;
 import dcraft.web.md.process.Line;
 import dcraft.web.md.process.LineType;
 import dcraft.web.md.process.Utils;
@@ -247,11 +248,9 @@ public class Line
     /**
      * Gets this line's type.
      * 
-     * @param extendedMode
-     *            Whether extended profile is enabled or not
      * @return The LineType.
      */
-    public LineType getLineType()
+    public LineType getLineType(ProcessContext ctx)
     {
         if(this.isEmpty)
             return LineType.EMPTY;
@@ -308,7 +307,7 @@ public class Line
         }
 
         if (this.value.charAt(this.leading) == '<') {
-            if(this.checkHTML())
+            if(this.checkHTML(ctx))
                 return LineType.XML;
         }
 
@@ -463,8 +462,8 @@ public class Line
      * 
      * @return <code>true</code> if it is a valid block.
      */
-    protected boolean checkHTML() {
-        LinkedList<String> tags = new LinkedList<String>();
+    protected boolean checkHTML(ProcessContext ctx) {
+        LinkedList<String> tags = new LinkedList<>();
         StringBuilder temp = new StringBuilder();
         int pos = this.leading;
         
@@ -476,7 +475,7 @@ public class Line
                 return true;
         }
         
-        pos = Utils.readXML(temp, this.value, this.leading, false);
+        pos = Utils.readXML(temp, this.value, this.leading, ctx.getConfig().getSafeMode());
         String element, tag;
         
         if (pos > -1) {

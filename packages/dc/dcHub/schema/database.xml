@@ -38,9 +38,22 @@
 			<Field Name="When" Type="BigDateTime" />
 		</Record>
 
+		<Record Id="dcdbDataField">
+			<Field Name="Tags">
+				<List Type="dcMetaString" />
+			</Field>
+			<Field Name="Retired" Type="Boolean" />
+			<Field Name="UpdateOnly" Type="Boolean" />
+			<Field Name="Lang" Type="dcMetaString" />
+			<Field Name="From" Type="BigDateTime" />
+			<Field Name="To" Type="BigDateTime" />
+			<Field Name="Data" Type="AnyType" />
+		</Record>
+
 		<Record Id="dcdbSelectField">
 			<Field Name="Field" Type="dcMetaString" />
 			<Field Name="Name" Type="dcMetaString" />
+			<Field Name="KeyName" Type="dcMetaString" />
 			<Field Name="Format" Type="dcMetaString" />
 			<Field Name="Select">
 				<List Type="dcdbSelectField" />
@@ -49,6 +62,7 @@
 			<Field Name="SubId" Type="dcMetaString" />
 			<Field Name="ForeignField" Type="dcMetaString" />
 			<Field Name="Composer" Type="dcMetaString" />
+			<Field Name="Filter" Type="dcMetaString" />
 			<Field Name="Table" Type="dcMetaString" />
 			<Field Name="KeyField" Type="dcMetaString" />
 			<Field Name="Params" Type="AnyRecord" />
@@ -59,6 +73,7 @@
 			<Field Name="SubId" Type="dcTinyString" />
 			<Field Name="Format" Type="dcSmallString" />
 			<Field Name="Composer" Type="dcTinyString" />
+			<Field Name="Filter" Type="dcMetaString" />
 			<Field Name="Value" Type="Any" />
 		</Record>
 
@@ -122,6 +137,7 @@
 			<Field Name="Where" Type="dcdbWhereClause" />
 			<Field Name="Collector" Type="dcQueryCollector" />
 			<Field Name="Historical" Type="Boolean" />
+			<Field Name="Compact" Type="Boolean" />
 		</RecordRequest>
 
 		<Record Id="dcdbLoadRecord" Inherits="dcdbCall" Class="dcraft.db.request.schema.Load">
@@ -131,6 +147,41 @@
 			</Field>
 			<Field Name="Historical" Type="Boolean" />
 			<Field Name="Compact" Type="Boolean" />
+		</RecordRequest>
+
+		<Record Id="dcdbLoadTenant" Inherits="dcdbCall" Class="dcraft.db.request.schema.LoadTenant">
+			<Field Name="Select">
+				<List Type="dcdbSelectField" />
+			</Field>
+			<Field Name="Historical" Type="Boolean" />
+			<Field Name="Compact" Type="Boolean" />
+		</RecordRequest>
+
+		<Record Id="dcdbUpdateRecord" Inherits="dcdbCall" Class="dcraft.db.request.schema.Update">
+			<Field Name="Id" Type="Id" />
+			<!--
+				Fields contains either:
+			 		[field name]: dcdbDataField
+				Or
+					[field name]:
+					 	[subid]: dcdbDataField
+					 	[subid]: dcdbDataField
+		 	-->
+			<Field Name="Fields" Type="Record" />
+			<Field Name="When" Type="BigDateTime" />
+		</RecordRequest>
+
+		<Record Id="dcdbInsertRecord" Inherits="dcdbCall" Class="dcraft.db.request.schema.Insert">
+			<!--
+				Fields contains either:
+			 		[field name]: dcdbDataField
+				Or
+					[field name]:
+					 	[subid]: dcdbDataField
+					 	[subid]: dcdbDataField
+		 	-->
+			<Field Name="Fields" Type="Record" />
+			<Field Name="When" Type="BigDateTime" />
 		</RecordRequest>
 
 		<Record Id="dcDollarORequest">
@@ -240,6 +291,7 @@
 			<Field Name="dcState" Type="dcUsaState" />
 			<Field Name="dcZip" Type="dcUsaZip" />
 			<Field Name="dcPhone" Type="dcTinyString" />
+			<Field Name="dcNotices" Type="dcUserNoticeEnum" />
 
 			<!-- geocoded address -->
 			<Field Name="dcLocation" Type="dcMetaString" />
@@ -248,13 +300,19 @@
 
 			<Field Name="dcExternalId" Type="dcSmallString" List="True" />
 
+			<Field Name="dcCreated" Type="DateTime" />
 			<Field Name="dcLastLogin" Type="DateTime" Audit="False" />
 			<Field Name="dcConfirmed" Type="Boolean" />
 			<Field Name="dcConfirmCode" Type="dcSmallString" />
 			<Field Name="dcRecoverAt" Type="DateTime" />
 
 			<Field Name="dcBadges" Type="dcMetaString" List="True" Indexed="True" />
+			<Field Name="dcBadgesRetired" Type="AnyList" Audit="False" />
 		</Table>
+
+		<Trigger Table="dcUser" Operation="AfterCreate" Execute="dcraft.db.proc.trigger.AfterUserCreate" />
+		<Trigger Table="dcUser" Operation="AfterRetire" Execute="dcraft.db.proc.trigger.AfterUserRetire" />
+		<Trigger Table="dcUser" Operation="AfterRevive" Execute="dcraft.db.proc.trigger.AfterUserRevive" />
 
 		<Table Id="dcState">
 			<Field Name="dcCode" Type="dcMetaString" Indexed="True" Required="True" Unique="True" />
@@ -288,11 +346,25 @@
 		<Procedure Name="dcKeyKill" Execute="dcraft.db.proc.call.KeyKill" />
 		<Procedure Name="dcLoadTenants" Execute="dcraft.db.proc.call.LoadTenants" />
 		<Procedure Name="dcLoadTenant" Execute="dcraft.db.proc.call.LoadTenant" />
+		<Procedure Name="dcSetGlobalPassword" Execute="dcraft.db.proc.call.SetGlobalPassword" />
+		<Procedure Name="dcIndexValueCounter" Execute="dcraft.db.proc.call.IndexValueCounter" />
+
+		<Procedure Name="dcCoreServices.Authentication.FacebookSignIn" Execute="dcraft.core.db.auth.FacebookSignIn" />
+		<Procedure Name="dcCoreServices.Authentication.LinkFacebookAccount" Execute="dcraft.core.db.auth.LinkFacebookAccount" />
+
+		<Procedure Name="dcCoreServices.Users.LoadSelf" Execute="dcraft.core.db.user.LoadSelf" />
+		<Procedure Name="dcCoreServices.Users.UpdateSelf" Execute="dcraft.core.db.user.UpdateSelf" />
+		<Procedure Name="dcCoreServices.Users.Load" Execute="dcraft.core.db.user.Load" />
+		<Procedure Name="dcCoreServices.Users.Update" Execute="dcraft.core.db.user.Update" />
+		<Procedure Name="dcCoreServices.Users.Add" Execute="dcraft.core.db.user.Add" />
+		<Procedure Name="dcCoreServices.Users.Search" Execute="dcraft.core.db.user.Search" />
+		<Procedure Name="dcCoreServices.Users.SignUp" Execute="dcraft.core.db.user.SignUp" />
 
 		<Composer Name="dcListCounter" Execute="dcraft.db.proc.comp.ListCounter" Badges="Admin" />
-		<Composer Name="dcIndexValueCounter" Execute="dcraft.db.proc.comp.IndexValueCounter" Badges="Admin" />
 		<Composer Name="dcConcat" Execute="dcraft.db.proc.comp.Concat" />
 		<Composer Name="dcTranslate" Execute="dcraft.db.proc.comp.Translate" />
+		<Composer Name="dcMoneyFormat" Execute="dcraft.db.proc.comp.MoneyFormat" />
+		<Composer Name="dcTermScore" Execute="dcraft.db.proc.comp.TermScore" />
 
 		<Collector Name="dcCollectorGeneral" Execute="dcraft.db.proc.collect.General" />
 
@@ -624,6 +696,31 @@
 								<List Type="dcString" />
 							</Field>
 						</RecordRequest>
+					</Op>
+					<Op Name="dcSetGlobalPassword">
+						<Description>
+							Change the root password for all tenants.
+						</Description>
+						<RecordRequest Inherits="dcdbCallBasic">
+							<Field Name="Password" Required="True" Type="dcTenant:dcGlobalPassword" />
+						</RecordRequest>
+					</Op>
+					<Op Name="dcIndexValueCounter">
+						<Description>
+							Lookup index counts for a given table and field. Empty Values means use all.
+						</Description>
+						<RecordRequest Inherits="dcdbCall">
+							<Field Name="Field" Required="True" Type="dcMetaString" />
+							<Field Name="Values">
+								<List Type="dcMetaString" />
+							</Fields>
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Value" Type="dcMetaString" />
+								<Field Name="Count" Type="Integer" />
+							</Record>
+						</ListResponse>
 					</Op>
 					<Op Name="dcLoadTenants">
 						<Description>

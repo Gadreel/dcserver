@@ -2,12 +2,19 @@ package dcraft.db.proc.expression;
 
 import dcraft.db.proc.ExpressionResult;
 import dcraft.db.tables.TablesAdapter;
+import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.time.BigDateTime;
 
 public class IsNot extends Is {
 	@Override
-	public ExpressionResult check(TablesAdapter adapter, String id) throws OperatingContextException {
-		return super.check(adapter, id);
+	public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, String id) throws OperatingContextException {
+		ExpressionResult res = super.check(adapter, scope, table, id);
+		
+		ExpressionResult newres = res.accepted ? ExpressionResult.rejected() : ExpressionResult.accepted();
+		
+		newres.resume = res.resume;
+		
+		return newres;
 	}
 }

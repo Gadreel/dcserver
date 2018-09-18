@@ -64,9 +64,8 @@ public class OperationWork extends StackWork {
 		
 		ReturnOption ret = ScriptHub.operation(this, target, this.op);
 		
-		// always mark done - operations cannot be resumed
-		//if (ret != ReturnOption.AWAIT)
-		this.setState(ExecuteState.DONE);
+		if (ret != ReturnOption.AWAIT)
+			this.setState(ExecuteState.DONE);
 		
 		return ret;
 	}

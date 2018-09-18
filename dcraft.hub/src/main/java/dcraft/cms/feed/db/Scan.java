@@ -12,6 +12,7 @@ import dcraft.db.proc.filter.Max;
 import dcraft.db.ICallContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.util.ByteUtil;
+import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.time.BigDateTime;
@@ -26,7 +27,7 @@ import org.threeten.extra.PeriodDuration;
 
 public class Scan implements ICollector {
 	@Override
-	public void collect(IRequestContext task, TablesAdapter db, String table, RecordStruct collector, IFilter filter) throws OperatingContextException {
+	public void collect(IRequestContext task, TablesAdapter db, IVariableAware scope, String table, RecordStruct collector, IFilter filter) throws OperatingContextException {
 		RecordStruct extras = collector.getFieldAsRecord("Extras");
 		
 		// TODO verify fields
@@ -46,6 +47,8 @@ public class Scan implements ICollector {
 				fromdate = ZonedDateTime.of(1, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC"));
 			else if ("+".equals(frominfo))
 				fromdate = ZonedDateTime.of(3000, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC"));
+			else if ("now".equals(frominfo))
+				fromdate = TimeUtil.now();
 
 			if (fromdate == null) {
 				fromdate = collector.getFieldAsDateTime("From");
@@ -85,6 +88,8 @@ public class Scan implements ICollector {
 				todate = ZonedDateTime.of(1, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC"));
 			else if ("+".equals(toinfo))
 				todate = ZonedDateTime.of(3000, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC"));
+			else if ("now".equals(toinfo))
+				todate = TimeUtil.now();
 
 			if (todate == null) {
 				todate = collector.getFieldAsDateTime("To");
@@ -108,8 +113,12 @@ public class Scan implements ICollector {
 				totime = task.getInterface().inverseTime(todate);
 		}
 
-		if (totime == null)
-			totime = task.getInterface().inverseTime(ZonedDateTime.of(3000, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")));
+		if (totime == null) {
+			if (extras.getFieldAsBooleanOrFalse("Reverse"))
+				totime = task.getInterface().inverseTime(ZonedDateTime.of(1900, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")));
+			else
+				totime = task.getInterface().inverseTime(ZonedDateTime.of(3000, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC")));
+		}
 		
 		boolean reverse = (totime.compareTo(lasttime) < 0);
 		
@@ -141,7 +150,7 @@ public class Scan implements ICollector {
 						continue;
 					}
 					
-					ExpressionResult filterResult = filter.check(db, lastid);
+					ExpressionResult filterResult = filter.check(db, scope,"dcmFeed", lastid);
 					
 					if (! filterResult.resume)
 						break;
@@ -161,7 +170,7 @@ public class Scan implements ICollector {
 						continue;
 					}
 					
-					ExpressionResult filterResult = filter.check(db, lastid);
+					ExpressionResult filterResult = filter.check(db, scope,"dcmFeed", lastid);
 					
 					if (! filterResult.resume)
 						break;
@@ -177,13 +186,13 @@ public class Scan implements ICollector {
 	public RecordStruct parse(IParentAwareWork state, XElement code) throws OperatingContextException {
 		return RecordStruct.record()
 				.with("Func", "dcmScanFeed")
-				//.with("Reverse", StackUtil.refFromElement(state, code, "Reverse"))
-				.with("Max", StackUtil.refFromElement(state, code, "Max"))
-				.with("From", StackUtil.refFromElement(state, code, "From"))
-				.with("To", StackUtil.refFromElement(state, code, "To"))
+				.with("Max", StackUtil.refFromElement(state, code, "Max", true))
+				.with("From", StackUtil.refFromElement(state, code, "From", true))
+				.with("To", StackUtil.refFromElement(state, code, "To", true))
 				.with("Extras", RecordStruct.record()
+						.with("Reverse", StackUtil.refFromElement(state, code, "Reverse", true))
 						.with("Feed", StackUtil.stringFromElement(state, code, "Feed", "pages"))
-						.with("LastId", StackUtil.refFromElement(state, code, "LastId"))
+						.with("LastId", StackUtil.refFromElement(state, code, "LastId", true))
 				);
 	}
 }

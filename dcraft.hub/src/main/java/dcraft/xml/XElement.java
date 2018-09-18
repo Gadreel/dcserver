@@ -22,23 +22,30 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import dcraft.hub.resource.ResourceBase;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.struct.CompositeParser;
 import dcraft.struct.CompositeStruct;
+import dcraft.struct.IPartSelector;
+import dcraft.struct.ListStruct;
+import dcraft.struct.PathPart;
 import dcraft.struct.Struct;
+import dcraft.struct.builder.ICompositeBuilder;
+import dcraft.struct.scalar.AnyStruct;
+import dcraft.struct.scalar.StringStruct;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
 
@@ -191,35 +198,46 @@ public class XElement extends XNode {
 	 *            the value of the attribute to be set
 	 */
 	public void setAttribute(String name, String value) {
-		if (StringUtil.isEmpty(name) || StringUtil.isEmpty(value))
+		if (StringUtil.isEmpty(name))  // || StringUtil.isEmpty(value))
 			return;
 		
 		if (this.attributes == null)
-			this.attributes = new ConcurrentHashMap<String, String>();
+			this.createAttrHash();
 
 		this.attributes.put(name, XNode.quote(value));
 	}
 	
 	public void setRawAttribute(String name, String value) {
-		if (StringUtil.isEmpty(name) || StringUtil.isEmpty(value))
+		if (StringUtil.isEmpty(name))  // || StringUtil.isEmpty(value))
 			return;
 		
 		if (this.attributes == null)
-			this.attributes = new ConcurrentHashMap<String, String>();
+			this.createAttrHash();
 
 		this.attributes.put(name, value);
 	}
 	
 	public XElement withAttribute(String name, String value) {
-		if (StringUtil.isEmpty(name) || StringUtil.isEmpty(value))
+		if (StringUtil.isEmpty(name))  // || StringUtil.isEmpty(value))
 			return this;
 		
 		if (this.attributes == null)
-			this.attributes = new ConcurrentHashMap<String, String>();
+			this.createAttrHash();
 
 		this.attributes.put(name, XNode.quote(value));
 		
 		return this;
+	}
+
+	protected void createAttrHash() {
+		synchronized (this) {
+			if (this.attributes == null)
+				this.attributes = new HashMap<>();
+		}
+	}
+
+	public String attr(String name) {
+		return this.getAttribute(name);
 	}
 
 	public XElement attr(String name, String value) {
@@ -379,7 +397,7 @@ public class XElement extends XNode {
 	 * @return whether this element has any attributes
 	 */
 	public boolean hasAttributes() {
-		return this.attributes != null && !this.attributes.isEmpty();
+		return this.attributes != null && ! this.attributes.isEmpty();
 	}
 
 	/**
@@ -389,7 +407,7 @@ public class XElement extends XNode {
 	 */
 	public Map<String, String> getAttributes() {
 		if (this.attributes == null)
-			this.attributes = new ConcurrentHashMap<String, String>();
+			this.createAttrHash();
 
 		return this.attributes;
 	}
@@ -437,7 +455,7 @@ public class XElement extends XNode {
 			this.children = new ArrayList<>();
 		
 		if (this.attributes != null)
-			this.attributes = new HashMap<>();
+			this.createAttrHash();
 	}
 
 	/**
@@ -637,7 +655,10 @@ public class XElement extends XNode {
 	}
 	
 	public void replaceAttributes(XElement source) {
-		this.attributes = new ConcurrentHashMap<>();
+		synchronized (this) {
+			// always replace
+			this.attributes = new HashMap<>();
+		}
 
 		if (source.hasAttributes()) 
 			this.attributes.putAll(source.attributes);
@@ -691,22 +712,7 @@ public class XElement extends XNode {
 	public XElement deepCopy() {
 		XElement copy = this.newNode();
 		
-		copy.line = this.line;
-		copy.col = this.col;
-		
-		if (this.attributes != null) {
-			copy.attributes = new ConcurrentHashMap<>();
-			
-			for (Entry<String, String> entry : this.attributes.entrySet()) 
-				copy.attributes.put(entry.getKey(), entry.getValue());
-		}
-		
-		if (this.children != null) {
-			copy.children = new CopyOnWriteArrayList<XNode>();
-			
-			for (XNode entry : this.children) 
-				copy.children.add(entry.deepCopy());
-		}
+		this.doCopy(copy);
 		
 		return copy;
 	}
@@ -812,7 +818,7 @@ public class XElement extends XNode {
 	 * @return list of all matching elements, or empty list if no match
 	 */
 	public List<XElement> selectAll(String path) {
-		List<XElement> matches = new ArrayList<XElement>();
+		List<XElement> matches = new ArrayList<>();
 		this.selectAll(path, matches);
 		return matches;
 	}
@@ -1021,6 +1027,58 @@ public class XElement extends XNode {
 		return -1;
 	}
 	
+	/** _Tr
+	 * A way to select a child or sub child structure similar to XPath but lightweight.
+	 * Can select composites and scalars.  Use a . or / delimiter.
+	 *
+	 * For example: "Toys.3.Name" called on "Person" Record means return the (Struct) name of the
+	 * 4th toy in this person's Toys list.
+	 *
+	 * Cannot go up levels, or back to root.  Do not start with a dot or slash as in ".People".
+	 *
+	 * @param path parts of the path holding a list index or a field name
+	 * @return selected structure if any, otherwise null
+	 */
+	@Override
+	public Struct select(PathPart... path) {
+		if (path.length == 0)
+			return this;
+		
+		PathPart part = path[0];
+		
+		if (part.isField()) {
+			String partField = part.getField();
+			
+			if (partField.startsWith("@")) {
+				return StringStruct.of(this.getAttribute(partField.substring(1)));
+			}
+			
+			if (partField.equals("#"))
+				return StringStruct.of(this.getText());
+			
+			ListStruct nodes = ListStruct.list();
+			
+			nodes.withCollection(this.selectAll(partField));
+			
+			if (path.length == 1)
+				return nodes;
+			
+			return nodes.select(Arrays.copyOfRange(path, 1, path.length));
+		}
+		else if (this.children != null) {
+			int partIndex = part.getIndex();
+			
+			XNode node = this.children.get(partIndex);
+			
+			if (path.length == 1)
+				return node;
+			
+			return node.select(Arrays.copyOfRange(path, 1, path.length));
+		}
+		
+		return null;
+	}
+	
 	/**
 	 * sets the list of children of this element. This method replaces the
 	 * current children.
@@ -1038,7 +1096,7 @@ public class XElement extends XNode {
 	 * 
 	 * @return the List containing the children of this element
 	 */
-	public Collection<XNode> getChildren() {
+	public List<XNode> getChildren() {
 		if (this.children == null)
 			this.children = new CopyOnWriteArrayList<XNode>();
 		
@@ -1089,17 +1147,17 @@ public class XElement extends XNode {
 		}
 	}
 
-	// TODO return false if only white space
 	public boolean hasText() {
 		if (!this.hasChildren())
 			return false;
 		
-		// TODO improve to support multiple CDATA sections in one element
-		XNode f = this.children.get(0);
-		
-		if (f instanceof XText)
-			return true;
-		
+		for (int i = 0; i < this.children.size(); i++) {
+			XNode f = this.children.get(i);
+
+			if ((f instanceof XText) && ((XText)f).isNotEmpty())
+				return true;
+		}
+
 		return false;
 	}
 	
@@ -1122,6 +1180,11 @@ public class XElement extends XNode {
 		this.clearChildren();
 		this.removeAttribute("Value");
 		
+	}
+
+	public XElement value(String v) {
+		this.setValue(v);
+		return this;
 	}
 	
 	public void setValue(String v) {
@@ -1357,5 +1420,40 @@ public class XElement extends XNode {
 			// Now put the closing tag out
 			sb.write("</" + this.tagName + "> ");
 		}
+	}
+	
+	@Override
+	public boolean isEmpty() {
+		if ((this.children == null) || (this.children.size() == 0)) {
+			return ((this.attributes == null) || (this.children.size() == 0));
+		}
+		
+		return false;
+	}
+	
+	@Override
+	protected void doCopy(Struct n) {
+		super.doCopy(n);
+		
+		XElement copy = (XElement) n;
+		
+		if (this.attributes != null) {
+			copy.attributes = new HashMap<>();
+			
+			for (Entry<String, String> entry : this.attributes.entrySet())
+				copy.attributes.put(entry.getKey(), entry.getValue());
+		}
+		
+		if (this.children != null) {
+			copy.children = new CopyOnWriteArrayList<>();
+			
+			for (XNode entry : this.children)
+				copy.children.add(entry.deepCopy());
+		}
+	}
+	
+	@Override
+	public void toBuilder(ICompositeBuilder builder) {
+		// TODO ?
 	}
 }

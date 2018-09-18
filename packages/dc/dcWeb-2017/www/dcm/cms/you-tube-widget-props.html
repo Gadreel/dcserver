@@ -1,0 +1,128 @@
+<dc.Html Badges="Admin,Editor">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="YouTube Widget Properties" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.FormButtons Hint="form options">
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+
+				<dc.Region Hint="YouTube Properties form">
+					<dcf.Text Label="Image" Name="VideoId" Required="true" />
+					<dcf.Text Name="Ratio" Label="Ratio" placeholder="video ratio 19by9 or 4by3" />
+					<dcf.Text Name="Class" Label="CSS Classes" placeholder="custom styling for this section" />
+				</dc.Region>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var entry = this;
+
+			entry.Store.Params = dc.pui.App.Context.Params;
+    ]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			e.Message = {
+				Service: 'dcCoreServices',
+				Feature: 'Vaults',
+				Op: 'Custom',
+				Body: {
+					Vault: 'Feeds',
+					Command: 'LoadPart',
+					Path: '/' + entry.Store.Params.Feed + entry.Store.Params.Path,
+					Params: {
+						PartId: entry.Store.Params.Id
+					}
+				}
+			};
+
+			if (dc.handler.dcmVersion == '2018') {
+				e.Message = {
+					Service: 'dcmServices',
+					Feature: 'Feed',
+					Op: 'LoadPart',
+					Body: {
+						Feed: entry.Store.Params.Feed,
+						Path: entry.Store.Params.Path,
+						PartId: entry.Store.Params.Id
+					}
+				};
+			}
+    ]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			var widget = entry.Store.Params.Widget = (dc.handler.dcmVersion == '2018') ? e.Data.Part : e.Data.Extra;
+
+			var attrs = entry.Store.Params.Content = widget.attributes;
+
+			if (! attrs)
+				attrs = { };
+
+			e.Data = {
+				VideoId: attrs.VideoId ? attrs.VideoId : '',
+				Ratio: attrs.Ratio ? attrs.Ratio : '',
+				Class: attrs.class ? attrs.class : ''
+			};
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			var widget = entry.Store.Params.Widget;
+
+			if (! widget.attributes)
+				widget.attributes = { };
+
+			if (e.Data.hasOwnProperty('Class'))
+				widget.attributes['class'] = e.Data.Class;
+
+			if (e.Data.hasOwnProperty('VideoId'))
+				widget.attributes['VideoId'] = e.Data.VideoId;
+
+			if (e.Data.hasOwnProperty('Ratio'))
+				widget.attributes['Ratio'] = e.Data.Ratio;
+
+			e.Message = {
+				Service: 'dcCoreServices',
+				Feature: 'Vaults',
+				Op: 'Custom',
+				Body: {
+					Vault: 'Feeds',
+					Command: 'SavePart',
+					Path: '/' + entry.Store.Params.Feed + entry.Store.Params.Path,
+					Params: {
+						PartId: entry.Store.Params.Id,
+						Part: widget
+					}
+				}
+			};
+
+			if (dc.handler.dcmVersion == '2018') {
+				e.Message = {
+					Service: 'dcmServices',
+					Feature: 'Feed',
+					Op: 'AddCommandHistory',
+					Body: {
+						Feed: entry.Store.Params.Feed,
+						Path: entry.Store.Params.Path,
+						Commands: [
+							{
+								Command: 'SavePart',
+								Params: {
+									PartId: entry.Store.Params.Id,
+									Part: widget
+								}
+							}
+						]
+					}
+				};
+			}
+    ]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			dc.pui.Popup.alert('Saved');
+	]]></Function>
+</dc.Html>

@@ -1,0 +1,64 @@
+<dcs.Script Title="Build Message and Deliver Thread">
+	<dcs.Info>Building thread: {$_Param.Id}!</dcs.Info>
+
+	<dcs.Var Name="ThreadId" Type="String" SetTo="{$_Param.Id}" />
+
+	<dcdb.LoadRecord Table="dcmThread" Id="{$_Param.Id}" Result="Data">
+		<Select Field="Id" />
+		<Select Field="dcmUuid" As="Uuid" />
+		<Select Field="dcmTitle" As="Title" />
+		<Select Field="dcmMessageType" As="MessageType" />
+		<Select Field="dcmCreated" As="Created" />
+		<Select Field="dcmModified" As="Modified" />
+		<Select Field="dcmOriginator" As="ThreadOriginator" />
+		<Select Field="dcmSharedAttributes" As="SharedAttributes" />
+	</dcdb.LoadRecord>
+
+	<dcdb.LoadRecord Table="dcUser" Id="$Data.ThreadOriginator" Result="TheOriginator">
+		<Select Field="dcFirstName" As="FirstName" />
+		<Select Field="dcLastName" As="LastName" />
+	</dcdb.LoadRecord>
+
+	<dcs.With Target="$Data">
+		<SetField Name="ThreadOriginatorName" Value="{$TheOriginator.FirstName} {$TheOriginator.LastName}" />
+	</dcs.With>
+
+	<dcs.Var Name="Thread" Type="dcmThreadObject">
+		<SetField Name="Id" Value="{$Data.Id}" />
+	</dcs.Var>
+
+	<dcs.Include Path="/dcm/threads/{$Data.MessageType}" />
+
+	<!-- BuildMessage function overrides entire process -->
+	<dcs.If Target="$BuildMessage" IsEmpty="false">
+		<dcs.CallFunc Name="BuildMessage" Arg="$Data" />
+	</dcs.If>
+	<dcs.Else>
+		<dcs.If Target="$BuildData" IsEmpty="false">
+			<dcs.CallFunc Name="BuildData" Arg="$Data" Result="Data" />
+
+			<dcs.Info>BuildData: {$Data}</dcs.Info>
+		</dcs.If>
+
+		<dcs.With Target="$Title">
+			<Translate Result="TrTitle" />
+		</dcs.With>
+
+		<dcs.With Target="$TextMessage">
+			<Translate Result="TrTextMessage" />
+		</dcs.With>
+
+		<dcs.Info>Out: {$TrTitle} - {$TrTextMessage}</dcs.Info>
+
+		<!-- TODO if $HtmlMessage then inline and run -->
+
+		<dcs.With Target="$Thread">
+			<SetTitle Value="{$TrTitle}" />
+			<AddContent Value="{$TrTextMessage}" />
+		</dcs.With>
+	</dcs.Else>
+
+	<dcs.With Target="$Thread">
+		<Deliver />
+	</dcs.With>
+</dcs.Script>

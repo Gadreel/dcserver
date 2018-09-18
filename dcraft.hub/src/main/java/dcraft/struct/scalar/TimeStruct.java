@@ -22,6 +22,7 @@ import java.time.temporal.ChronoUnit;
 
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
+import dcraft.script.work.StackWork;
 import dcraft.task.IParentAwareWork;
 import org.threeten.extra.PeriodDuration;
 
@@ -89,7 +90,7 @@ public class TimeStruct extends ScalarStruct {
 	}
 	
 	@Override
-	public ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException {
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		String op = code.getName();
 		
 		// we are loose on the idea of null/zero.  operations always perform on now, except Validate

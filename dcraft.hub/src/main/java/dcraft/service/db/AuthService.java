@@ -515,46 +515,5 @@ public class AuthService extends BaseService {
 		sess.clearToGuest();
 		OperationContext.switchUser(ctx, sess.getUser());
 	}
-	
-	// TODO move to another class
-	static public RecordStruct fbSignIn(String token, String secret) {
-        try {
-        	URL url = null;
-        	
-        	if (StringUtil.isEmpty(secret)) {
-				url = new URL("https://graph.facebook.com/v2.2/me?access_token=" + URLEncoder.encode(token, "UTF-8"));
-        	}
-        	else {
-	            Mac mac = Mac.getInstance("HmacSHA256");
-	            
-	            mac.init(new SecretKeySpec(secret.getBytes(), "HmacSHA256"));
-	            
-	            String verify = HexUtil.bufferToHex(mac.doFinal(token.getBytes())); 
-	            
-				//System.out.println("verify: " + verify);
-				
-				url = new URL("https://graph.facebook.com/v2.2/me?access_token=" + URLEncoder.encode(token, "UTF-8")
-						+ "&appsecret_proof=" + URLEncoder.encode(verify, "UTF-8"));					
-				
-				//System.out.println("url: " + url);
-        	}
-        	
-			HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
-			 
-			con.setRequestProperty("User-Agent", "DivConq/1.0 (Language=Java/8)");
-	 
-			int responseCode = con.getResponseCode();
-	 
-			if (responseCode == 200) 
-				return (RecordStruct) CompositeParser.parseJson(con.getInputStream());
-			
-			Logger.error("FB Response Code : " + responseCode);
-        } 
-        catch (Exception x) {
-        	Logger.error("FB error: " + x);
-        }
-        
-        return null;
-	}
 	*/
 }

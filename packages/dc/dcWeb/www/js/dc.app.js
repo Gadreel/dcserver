@@ -82,35 +82,6 @@ dc.pui.layer.Base.prototype = {
 		if (! options || ! options.Name)
 			return;
 
-		// get and store focus on the current exposed layer
-		/*
-		var maxz = -1;
-		var maxidx = -1;
-
-		for (var i = 0; i < dc.pui.Loader.Layers.length; i++) {
-			var l = dc.pui.Loader.Layers[i];
-
-			// skip if hidden or empty
-			if (! l.Current)
-				continue;
-
-			var z = $(l.ContentShell).css('z-index');
-
-			if (z == 'auto')
-				z = 0;
-
-			if (z > maxz) {
-				maxz = z;
-				maxidx = i;
-			}
-		}
-
-		if (maxidx > -1)
-			dc.pui.Loader.Layers[maxidx].LastFocus = $(dc.pui.Loader.Layers[maxidx].Content).find(':focus');
-		else
-			dc.pui.Loader.MainLayer.LastFocus = $(dc.pui.Loader.MainLayer.Content).find(':focus');
-		*/
-
 		// layer history
 		var oldentry = this.Current;
 
@@ -127,7 +98,7 @@ dc.pui.layer.Base.prototype = {
 		loader.LoadPageId = entry.Id;
 
 		// if page is already loaded then show it
-		if (loader.Pages[options.Name] && ! loader.StalePages[options.Name]) {
+		if (loader.Pages[options.Name] && ! loader.Pages[options.Name].NoCache && ! loader.StalePages[options.Name]) {
 			loader.resumePageLoad();
 			return;
 		}
@@ -142,7 +113,7 @@ dc.pui.layer.Base.prototype = {
 		document.head.appendChild(script);
 	},
 
-	manifestPage: function(entry) {
+	manifestPage: function(entry, frompop) {
 		var layer = this;
 		var loader = dc.pui.Loader;
 
@@ -178,6 +149,20 @@ dc.pui.layer.Base.prototype = {
 
 			layer.enhancePage(false);
 
+			if (! frompop) {
+				// use window.location.pathname so that a Refresh loads the current page, not the dialog/app
+				if (entry.ReplaceState)
+					history.replaceState(
+						{ Id: loader.LoadPageId, Params: entry.Params },
+						page.Meta.Title,
+						window.location.pathname);
+				else
+					history.pushState(
+						{ Id: loader.LoadPageId, Params: entry.Params },
+						page.Meta.Title,
+						window.location.pathname);
+			}
+
 			Object.getOwnPropertyNames(layer.Observers).forEach(function(name) {
 				layer.Observers[name]();
 			});
@@ -186,6 +171,15 @@ dc.pui.layer.Base.prototype = {
 
 	enhancePage: function(firstload) {
 		var layer = this;
+		var loader = dc.pui.Loader;
+
+		if (firstload) {
+			var page = loader.Pages[layer.Current.Name];
+
+			var lclass = page.PageClass + ' dcuiContentLayer';
+
+			$(layer.Content).attr('class', lclass);
+		}
 
 		$(layer.Content + ' *[data-dc-enhance="true"]').each(function() {
 			var tag = $(this).attr('data-dc-tag');
@@ -200,6 +194,21 @@ dc.pui.layer.Base.prototype = {
 			if (layer.Current.Callback)
 				layer.Current.Callback.call(layer.Current);
 		});
+	},
+
+	refreshPage: function() {
+		var options = this.Current;
+
+		options.Loaded = false;
+
+		delete dc.pui.Loader.StalePages[options.Name];		// no longer stale
+
+		var script = document.createElement('script');
+		script.src = options.Name + '?_dcui=dyn&nocache=' + dc.util.Crypto.makeSimpleKey();
+		script.id = 'page' + options.Name.replace(/\//g,'.');
+		script.async = false;
+
+		document.head.appendChild(script);
 	},
 
 	query: function(selector) {
@@ -279,9 +288,11 @@ dc.pui.layer.Base.prototype = {
 
 			$(this.ContentShell).show().css('visibility', 'visible');
 			$(dc.pui.Loader.MainLayer.Content).css('visibility', 'hidden');
+			$('body').addClass('dc-hide-scroll');
 		}
 		else {
 			$(this.Content).css('visibility', 'visible');
+			$('body').removeClass('dc-hide-scroll');
 		}
 
 		//if (this.LastFocus)
@@ -359,16 +370,31 @@ dc.pui.layer.Main.prototype.loadPageAdv = function(options) {
 	if (! options || ! options.Name)
 		return;
 
-	// really old browsers simply navigate again, rather than do the advanced page view
-	if (! history.pushState) {
-		if (window.location.pathname != options.Name)
-			window.location = options.Name;
+	var loader = dc.pui.Loader;
 
-		return;
-	}
+	// clear Layers so that destroy does not get into infinite loop
+	var dlayers = loader.Layers;
+	loader.Layers = [ ];
 
-	dc.pui.layer.Base.prototype.loadPageAdv.call(this, options);
+	// signal all layers
+	for (var i = 0; i < dlayers.length; i++)
+		dlayers[i].onDestroy({ Clear: true });
+
+	if (options.ReplaceState)
+		window.location.replace(options.Name);
+	else
+		window.location.assign(options.Name);
 };
+
+dc.pui.layer.Main.prototype.initPage = function() {
+	var entry = new dc.pui.PageEntry({
+		Name: window.location.pathname,
+		Layer: this
+	});
+
+	dc.pui.Loader.LoadPageId = entry.Id;
+	dc.pui.Loader.resumePageLoad();
+},
 
 dc.pui.layer.Main.prototype.manifestPage = function(entry, frompop) {
 	var layer = this;
@@ -379,36 +405,16 @@ dc.pui.layer.Main.prototype.manifestPage = function(entry, frompop) {
 
 	var page = loader.Pages[entry.Name];
 
-	if (!frompop) {		 //  && !this.FirstLoad) {
-		if (entry.ReplaceState)
-			history.replaceState(
-				{ Id: loader.LoadPageId, Params: entry.Params },
-				page.Meta.Title,
-				entry.Name);
-		else
-			history.pushState(
-				{ Id: loader.LoadPageId, Params: entry.Params },
-				page.Meta.Title,
-				entry.Name);
+	if (page.NoCache) {
+		jQuery(window).bind("unload", function() {
+			// forces the page to reload from server after clicking back
+			console.log('unloaded');
+		});
 	}
 
-	// remove all layers
-	for (var i = 0; i < loader.Layers.length; i++)
-		loader.Layers[i].onDestroy({ Clear: true });
-
-	loader.Layers = [ ];
-
-	if (this.FirstLoad) {
-		this.FirstLoad = false;
-		layer.Current = entry;
-		layer.enhancePage(true);
-
-		page.Layout = $('#dcuiMain').html();
-
-		return;
-	}
-
-	dc.pui.layer.Base.prototype.manifestPage.call(this, entry);
+	layer.FirstLoad = false;
+	layer.Current = entry;
+	layer.enhancePage(true);
 };
 
 dc.pui.layer.Main.prototype.enhancePage = function(firstload) {
@@ -427,23 +433,10 @@ dc.pui.layer.Main.prototype.enhancePage = function(firstload) {
 
 		ga('send', 'pageview');
 	}
-
-	if (page.Meta && page.Meta.Title)
-		document.title = dc.util.Web.unescapeHtml(page.Meta.Title);
 };
 
 dc.pui.layer.Main.prototype.refreshPage = function() {
-	var layer = this;
-	var loader = dc.pui.Loader;
-
-	var entry = layer.Current;
-	var top = $(layer.Content).scrollTop();
-
-	loader.clearPageCache(window.location.pathname);
-
-	layer.loadPage(window.location.pathname, entry.Params, true, function() {
-		$(layer.Content).scrollTop(top);
-	});
+	window.location.reload(true);
 };
 
 
@@ -755,6 +748,27 @@ dc.pui.layer.App.prototype.clearHistory = function() {
 dc.pui.App = new dc.pui.layer.App();
 
 
+dc.pui.layer.SimpleApp = function() {
+	this.init('#dcuiSimpleApp', '#dcuiSimpleAppPane');
+};
+
+dc.pui.layer.SimpleApp.prototype = new dc.pui.layer.Base();
+
+dc.pui.layer.SimpleApp.prototype.open = function() {
+	var dialog = this;
+	var del = $('#dcuiSimpleApp');
+
+	if (! del.length) {
+		$('body').append('<div id="dcuiSimpleApp" class="dcuiLayerShell"><div id="dcuiSimpleAppPane"></div></div>');
+	}
+
+	dc.pui.layer.Base.prototype.open.call(this);
+};
+
+// Dialog feature (singleton)
+dc.pui.SimpleApp = new dc.pui.layer.SimpleApp();
+
+
 dc.pui.layer.FullScreen = function() {
 	this.init('#dcuiFullScreen', '#dcuiFullScreen');
 };
@@ -789,9 +803,6 @@ dc.pui.Loader = {
 	Libs: { },		// TODO fill this with all "Global" scripts on first load
 	Styles: { },		// TODO fill this with all "Global" styles on first load
 	RequireCallback: null,
-	OriginPage: null,
-	OriginHash: null,
-	OriginSearch: null,
 	FrameRequest: false,
 	MainLayer: null,
 	Layers: [],
@@ -811,41 +822,11 @@ dc.pui.Loader = {
 
 		loader.MainLayer = new dc.pui.layer.Main();
 
-		loader.OriginPage = location.pathname;
-		loader.OriginHash = location.hash;
-		loader.OriginSearch = location.search;
-
 		$(window).on('popstate', function(e) {
-			//console.log("pop - location: " + document.location + ", state: " + JSON.stringify(e.originalEvent.state));
-
-			var state = e.originalEvent.state;
-
-			var id = state ? state.Id : null;
-
-			if (loader.MainLayer == dc.pui.Loader.currentLayer()) {
-				if (id) {
-					loader.LoadPageId = id;
-
-					if (loader.Ids[id])
-						loader.MainLayer.manifestPage(loader.Ids[id], true);
-					else
-						loader.MainLayer.loadPage(document.location.pathname, state.Params);
-				}
+			if (e.originalEvent.state != null) {
+				dc.pui.Loader.currentLayer().back();
 			}
-			else {
-				e.preventDefault();
-				//history.go(1);
-
-				if (loader.Ids[loader.LoadPageId]) {
-					var entry = dc.pui.Loader.MainLayer.Current;
-
-					history.pushState(state, loader.Pages[entry.Name].Meta.Title,
-					entry.Name);
-
-					dc.pui.Loader.currentLayer().back();
-				}
-			}
-	    });
+		});
 
 		// watch for orientation change or resize events
 		$(window).on('orientationchange resize', function (e) {
@@ -885,28 +866,32 @@ dc.pui.Loader = {
 			if (dc.util.Web.isTouchDevice())
 				$('html > head').append('<style>#dcuiDialogPane { margin-top: 36px; }</style>');
 
-			var info = dc.user.getUserInfo();
-
-			if (info.Credentials) {
-				dc.user.signin(info.Credentials.Username, info.Credentials.Password, info.RememberMe, function(msg) {
-					dc.pui.Loader.loadPage(dc.pui.Loader.OriginPage);
-				});
-			}
-			else {
-				// load user from current server session
-				dc.user.updateUser(false, function() {
-					dc.pui.Loader.loadPage(dc.pui.Loader.OriginPage);
-				});
+			if (dc.user.isVerified()) {
+				dc.pui.Loader.MainLayer.initPage();
+				return;
 			}
 
-			//dc.pui.Loader.loadPage(dc.pui.Loader.OriginPage);
+			var creds = dc.user.loadRemembered();
+
+			if (! creds) {
+				dc.pui.Loader.MainLayer.initPage();
+ 				return;
+			}
+
+			dc.user.signin(creds.Username, creds.Password, true, function(msg) {
+				if (dc.user.isVerified()) {
+					window.location.reload(true);
+				}
+				else {
+					dc.pui.Loader.MainLayer.initPage();
+				}
+			});
 		});
 	},
 	signout: function() {
-		dc.user.signout();
-		dc.user.saveRememberedUser();
-
-		window.location = '/';
+		dc.user.signout(function() {
+			window.location = '/';
+		});
 	},
 	loadPage: function(page, params, replaceState, callback) {
 		this.MainLayer.loadPage(page, params, replaceState, callback);
@@ -942,7 +927,8 @@ dc.pui.Loader = {
 				if (loader.Styles[path])
 					continue;
 
-				$('head').append('<link rel="stylesheet" type="text/css" href="' + path + '?nocache=' + dc.util.Crypto.makeSimpleKey() + '" />');
+				//$('head').append('<link rel="stylesheet" type="text/css" href="' + path + '?nocache=' + dc.util.Crypto.makeSimpleKey() + '" />');
+				$('head').append('<link rel="stylesheet" type="text/css" href="' + path + '" />');
 
 				loader.Styles[path] = true;		// not really yet, but as good as we can reasonably get
 				needWait = true;
@@ -957,7 +943,7 @@ dc.pui.Loader = {
 					continue;
 
 				var script = document.createElement('script');
-				script.src = path + '?nocache=' + dc.util.Crypto.makeSimpleKey();
+				script.src = path;  // + '?nocache=' + dc.util.Crypto.makeSimpleKey();
 				script.id = 'req' + path.replace(/\//g,'.');
 				script.async = false;  	// needed when loading additional libraries, we can inject a final fake script that echos
 										// a param (e.g. ?opid=3345) to us saying that it is loaded and hence all preceding scripts are also loaded
@@ -1028,7 +1014,7 @@ dc.pui.Loader = {
 				continue;
 
 			var script = document.createElement('script');
-			script.src = path + '?nocache=' + dc.util.Crypto.makeSimpleKey();
+			script.src = path;  // + '?nocache=' + dc.util.Crypto.makeSimpleKey();
 			script.id = 'req' + path.replace(/\//g,'.');
 			script.async = false;  	// needed when loading additional libraries, we can inject a final fake script that echos
 									// a param (e.g. ?opid=3345) to us saying that it is loaded and hence all preceding scripts are also loaded
@@ -1068,7 +1054,8 @@ dc.pui.Loader = {
 			if (loader.Styles[path])
 				continue;
 
-			$('head').append('<link rel="stylesheet" type="text/css" href="' + path + '?nocache=' + dc.util.Crypto.makeSimpleKey() + '" />');
+			//$('head').append('<link rel="stylesheet" type="text/css" href="' + path + '?nocache=' + dc.util.Crypto.makeSimpleKey() + '" />');
+			$('head').append('<link rel="stylesheet" type="text/css" href="' + path + '" />');
 
 			loader.Styles[path] = true;		// not really yet, but as good as we can reasonably get
 			needWait = true;
@@ -1103,7 +1090,7 @@ dc.pui.Loader = {
 
 		loader.FrameRequest = false;
 
-		var entry = loader.Current;
+		var entry = loader.currentLayer().Current;
 
 		if (entry)
 			entry.onFrame(e);
@@ -1166,7 +1153,7 @@ dc.pui.Loader = {
 			var cs = $(layer.ContentShell).get(0);
 			var x = cs.scrollLeft, y = cs.scrollTop;
 			layer.Current.LastFocus.focus();
-			cs.scrollTo(x, y);
+			$(cs).scrollTop(y);
 		}
 
 		/*
@@ -1189,9 +1176,9 @@ dc.pui.Apps = {
 	Busy: false,				// dcui is busy and not accepting new clicks right now - especially for submits
 
 	sessionChanged: function() {
-		dc.user.updateUser(false, function() {
+		dc.user.updateUser(function() {
 			// TODO maybe change page if not auth tags? or if became guest
-		}, true);
+		});
 
 		if (dc.handler && dc.handler.sessionChanged)
 			dc.handler.sessionChanged();
@@ -1372,16 +1359,18 @@ dc.pui.PageEntry.prototype = {
 				var cs = $(entry.Layer.ContentShell).get(0);
 				var x = cs.scrollLeft, y = cs.scrollTop;
 
-				if (entry.LastFocus)
+				if (entry.LastFocus) {
 					try {
 						entry.LastFocus.focus();
 					}
 					catch (x) {
 					}
-				else
+				}
+				else if (entry.Layer.Content != '#dcuiMain') {
 					entry.query('main').focus();
+				}
 
-				cs.scrollTo(x, y);
+				$(cs).scrollTop(y);
 
 				this.resume();
 			}
@@ -1421,6 +1410,11 @@ dc.pui.PageEntry.prototype = {
 	reload: function() {
 		this.Loaded = false;
 		this.onLoad();
+	},
+
+	hasPageFunc: function(method) {
+		var page = dc.pui.Loader.Pages[this.Name];
+		return (page && page.Functions[method]);
 	},
 
 	callPageFunc: function(method) {
@@ -1639,6 +1633,7 @@ dc.pui.Form = function(pageEntry, node) {
 			AsNew: { },
 			AlwaysNew: false,
 			Managed: false,
+			Loaded: false,
 			Focus: null,
 			TitleFields: [ ],
 			FreezeInfo: null		//  { [recordname]: { Originals: { [fld]: [value] }, Values: { [fld]: [value] } }, [records]... }
@@ -1711,6 +1706,8 @@ dc.pui.Form.prototype = {
 		if (form.Inputs[field]) {
 			if (this.PageEntry.Frozen)
 				return form.FreezeInfo[form.Inputs[field].Record].Values[field];
+			//else if (! form.Loaded)
+			//	return form.Inputs[field].DefaultValue;
 			else
 				return form.Inputs[field].getValue();
 		}
@@ -1724,6 +1721,8 @@ dc.pui.Form.prototype = {
 		if (form.Inputs[field]) {
 			if (this.PageEntry.Frozen)
 				form.FreezeInfo[form.Inputs[field].Record].Values[field] = value;
+			//else if (! form.Loaded)
+			//	form.Inputs[field].DefaultValue = value;
 			else
 				form.Inputs[field].setValue(value);
 		}
@@ -1750,7 +1749,8 @@ dc.pui.Form.prototype = {
 		var form = this;
 
 		if(!form.RecordOrder) {
-			callback();
+			if (callback)
+				callback();
 			return;
 		}
 
@@ -1977,7 +1977,8 @@ dc.pui.Form.prototype = {
 
 		var loadtask = new dc.lang.Task(steps, function(res) {
 			//console.log('observer: ' + res.Code);
-			callback();
+			if (callback)
+				callback();
 		});
 
 		loadtask.Store = {
@@ -2025,7 +2026,8 @@ dc.pui.Form.prototype = {
 		var form = this;
 
 		if(!form.RecordOrder) {
-			callback();
+			if (callback)
+				callback();
 			return;
 		}
 
@@ -2171,7 +2173,8 @@ dc.pui.Form.prototype = {
 			//console.log('observer: ' + res.Code);
 			form.FreezeInfo = null;
 
-			callback();
+			if (callback)
+				callback();
 		});
 
 		thawtask.Store = {
@@ -2234,6 +2237,37 @@ dc.pui.Form.prototype = {
 		});
 	},
 
+	loadInSession: function() {
+		var form = this;
+
+		var vstr = sessionStorage.getItem('dcFormStore-' + form.PageEntry.Name);
+
+		if (! vstr)
+			return false;
+
+		var fnd = false;
+		var values = JSON.parse(vstr);
+
+		Object.getOwnPropertyNames(form.Inputs).forEach(function(name) {
+			var iinfo = form.Inputs[name];
+
+			if (values.hasOwnProperty(iinfo.Field)) {
+				iinfo.setValue(values[iinfo.Field]);
+				fnd = true;
+			}
+		});
+
+		return fnd;
+	},
+
+	storeInSession: function() {
+		var form = this;
+
+		var values = form.getValues();
+
+		sessionStorage.setItem('dcFormStore-' + form.PageEntry.Name, JSON.stringify(values));
+	},
+
 	save: function(callback) {
 		var form = this;
 
@@ -2294,7 +2328,7 @@ dc.pui.Form.prototype = {
 						AfterFlag: false
 					};
 
-					if (! task.Store.Form.isChanged(step.Params.Record)) {
+					if (! task.Store.Form.isChanged(step.Params.Record) && ! task.Store.AnyChanged) {
 						task.resume();
 						return;
 					}
@@ -2326,11 +2360,12 @@ dc.pui.Form.prototype = {
 
 						// form the save message
 						event.Message = {
-							"Service":"dcmCore",
+							"Service":"dcCoreServices",
 							"Feature":"ManagedForm",
 							"Op":"Submit",
 							Body: {
 								Form: task.Store.Form.Name,
+								Captcha: task.Store.Captcha,
 								Title: title,
 								Data: event.Data
 							}
@@ -2354,6 +2389,8 @@ dc.pui.Form.prototype = {
 					task.Store.Current.Data = event.Data;
 
 					if (event.Alert) {
+						dc.pui.Apps.Busy = false;
+
 						dc.pui.Popup.alert(event.Alert, function() {
 							task.kill();
 						});
@@ -2364,6 +2401,8 @@ dc.pui.Form.prototype = {
 					if (event.Message) {
 						dc.comm.sendMessage(event.Message, function (e) {
 							if (e.Result != 0) {
+								dc.pui.Apps.Busy = false;
+
 								dc.pui.Popup.alert(e.Message);
 								task.kill();
 								return;
@@ -2425,6 +2464,8 @@ dc.pui.Form.prototype = {
 					task.Store.Current.AfterData = event.Data;
 
 					if (event.Alert) {
+						dc.pui.Apps.Busy = false;
+
 						dc.pui.Popup.alert(event.Alert, function() {
 							task.kill();
 						});
@@ -2492,16 +2533,18 @@ dc.pui.Form.prototype = {
 						}
 
 						dc.comm.sendMessage({
-							Service: "dcmCore",
+							Service: "dcCoreServices",
 							Feature: "ManagedForm",
 							Op: "Complete",
 							Body: {
 								Form: task.Store.Form.Name,
-								Token: task.Store.Current.AfterData.Token
+								Uuid: task.Store.Current.AfterData.Uuid
 							}
 						},
 						function (e) {
 							if (e.Result != 0) {
+								dc.pui.Apps.Busy = false;
+
 								dc.pui.Popup.alert(e.Message);
 								task.kill();
 								return;
@@ -2558,6 +2601,8 @@ dc.pui.Form.prototype = {
 				};
 
 				if (event.Alert) {
+					dc.pui.Apps.Busy = false;
+
 					dc.pui.Popup.alert(event.Alert, function() {
 						task.kill();
 					});
@@ -2566,6 +2611,8 @@ dc.pui.Form.prototype = {
 				}
 
 				if (event.DefaultSaved) {
+					dc.pui.Apps.Busy = false;
+
 					dc.pui.Popup.alert(task.Store.AnyChanged
 						? 'Saved' : 'No changes, nothing to save.', function()
 					{
@@ -2608,7 +2655,7 @@ dc.pui.Form.prototype = {
 			var iinfo = form.Inputs[name];
 
 			if (iinfo.Record == recname) {
-				iinfo.setValue(null);
+				iinfo.setValue(iinfo.DefaultValue);
 				iinfo.OriginalValue = iinfo.DefaultValue;
 			}
 		});
@@ -2637,7 +2684,8 @@ dc.pui.Form.prototype = {
 			return true;
 
 		var event = {
-			Changed: false
+			Changed: false,
+			Record: recname
 		};
 
 		form.raiseEvent('IsRecordChanged', event);
@@ -2800,6 +2848,11 @@ dc.pui.TagCache = { };   // place to cache data that spans instances of a tag
 
 //place to add functions to tags
 dc.pui.TagFuncs = {
+	'dcf.Range': {
+		'update': function(entry, node) {
+			$(node).closest('div').find('.dc-addon-info').text(node.value);
+		}
+	},
 	'dc.MenuWidget': {
 		'toggleShow': function(entry, node) {
 			$(node).find('.dc-menu-list').toggleClass('dc-menu-mobile-disable');
@@ -2814,6 +2867,34 @@ dc.pui.TagFuncs = {
 		'setTitle': function(entry, node, title) {
 			$(node).find('> div:first-child h2').text(title);
 		}
+	},
+	'dc.Recaptcha': {
+		'execute': function(entry, node) {
+			// TODO for now assume Google, later add other types
+			/*
+			var widgetid = $(node).attr('data-widgetid');
+
+			if (! widgetid)
+				return;
+
+			grecaptcha.execute(widgetid);
+			*/
+
+			grecaptcha.execute();
+		},
+		'reset': function(entry, node) {
+			// TODO for now assume Google, later add other types
+
+			/*
+			var widgetid = $(node).attr('data-widgetid');
+
+			if (! widgetid)
+				return;
+
+			grecaptcha.reset(widgetid);
+			*/
+			grecaptcha.reset();
+		}
 	}
 };
 
@@ -2823,11 +2904,19 @@ dc.pui.Tags = {
 			var processed = false;
 
 			if ($(this).hasClass('dcui-pagepanel-close')) {
-				entry.Layer.close();
+				if (entry.hasPageFunc('onClose'))
+					entry.callPageFunc('onClose', e);
+				else
+					entry.Layer.close();
+
 				processed = true;
 			}
 			else if ($(this).hasClass('dcui-pagepanel-back')) {
-				entry.Layer.back();
+				if (entry.hasPageFunc('onBack'))
+					entry.callPageFunc('onBack', e);
+				else
+					entry.Layer.back();
+
 				processed = true;
 			}
 			/* TODO restore
@@ -2868,19 +2957,35 @@ dc.pui.Tags = {
 			$(node).attr('target', '_blank');
 
 		if (click || page) {
-			$(node).click(function(e) {
+			var clickfunc = function(e, ctrl) {
 				if (! $(node).hasClass('pure-button-disabled') && ! dc.pui.Apps.busyCheck()) {
 					entry.LastFocus = $(node);
 
 					if (click)
-						entry.callPageFunc(click, e, this);
+						entry.callPageFunc(click, e, ctrl);
 					else if (page)
 						entry.Layer.loadPage(page);
 				}
+			};
+
+			$(node).click(function(e) {
+				clickfunc(e, this);
 
 				e.preventDefault();
 				return false;
 			});
+
+			if (node.nodeName == 'SPAN') {
+				$(node).keypress(function(e) {
+					var keycode = (e.keyCode ? e.keyCode : e.which);
+					if (keycode == '13') {
+						clickfunc(e, this);
+
+						e.preventDefault();
+						return false;
+					}
+				});
+			}
 		}
 		else if (link && (link.length > 1) && (link.charAt(0) == '#')) {
 			$(node).click(link, function(e) {
@@ -2997,9 +3102,24 @@ dc.pui.Tags = {
 		// input self registers so don't do anything with it
 		var input = new dc.pui.controls.TextInput(entry, node);
 	},
+	'dcf.Password': function(entry, node) {
+		// input self registers so don't do anything with it
+		var input = new dc.pui.controls.TextInput(entry, node);
+	},
 	'dcf.TextArea': function(entry, node) {
 		// input self registers so don't do anything with it
 		var input = new dc.pui.controls.TextInput(entry, node);
+	},
+	'dcf.MultiText': function(entry, node) {
+		// input self registers so don't do anything with it
+		var input = new dc.pui.controls.TextInput(entry, node);
+	},
+	'dcf.Number': function(entry, node) {
+		// input self registers so don't do anything with it
+		var input = new dc.pui.controls.TextInput(entry, node);
+	},
+	'dcf.Range': function(entry, node) {
+		var input = new dc.pui.controls.Range(entry, node);
 	},
 	'dcf.Hidden': function(entry, node) {
 		// input self registers so don't do anything with it
@@ -3087,6 +3207,62 @@ dc.pui.Tags = {
 			return false;
 		});
 	},
+	'dc.Recaptcha': function(entry, node) {
+		var key = $(node).attr('data-sitekey');
+
+		if (! key)
+			return;
+
+		// TODO for now assume Google, later add other types
+
+		window.dcRecaptchaCallback = function() {
+			var skey = $(node).attr('data-sitekey');
+
+			if (! skey)
+				return;
+
+			var rfunc = $(node).attr('data-ready-func');
+
+			if (rfunc) {
+				entry.callPageFunc(rfunc);
+			}
+
+			var widgetid = grecaptcha.render(node, {
+				sitekey: skey,
+				hl: (dc.util.Cookies.getCookie('dcLang') == 'spa') ? 'es' : 'en',
+				callback: function(response) {
+					$(node).attr('data-response', response);
+
+					var func = $(node).attr('data-func');
+
+					if (func) {
+						entry.callPageFunc(func, response);
+					}
+					else {
+						console.log('Recaptcha: ' + response);
+					}
+
+					// TODO reset captcha
+				}
+			});
+
+			$(node).attr('data-widgetid', widgetid);
+		};
+
+		var rpath = 'https://www.google.com/recaptcha/api.js';
+
+		if (dc.pui.Loader.Libs[rpath]) {
+			dcRecaptchaCallback();
+			return;
+		}
+
+		var script = document.createElement('script');
+		script.src = rpath + '?onload=dcRecaptchaCallback&render=explicit';
+		script.async = true;
+		script.defer = true;
+
+		document.head.appendChild(script);
+	},
 	'dc.GalleryThumbs': function(entry, node) {
 		dc.pui.Tags['dc.GallerySection'](entry, node);
 	},
@@ -3154,10 +3330,13 @@ dc.pui.Tags = {
 				dc.pui.FullScreen.loadPage('/dcw/view-image', {
 					View: show
 				});
+
+				// only prevent if expanded
+				e.preventDefault();
+				return false;
 			}
 
-			e.preventDefault();
-			return false;
+			return true;
 		});
 	},
 	'dc.MediaSection': function(entry, node) {
@@ -3258,6 +3437,13 @@ dc.pui.controls.Input.prototype = {
 
 		this.Id = id;
 
+		var val = $(node).attr('value');
+
+		if (! dc.util.String.isEmpty(val))
+			this.DefaultValue = val;
+
+		this.Id = id;
+
 		var fname = $(node).attr('data-dcf-name');
 
 		if (!fname)
@@ -3310,7 +3496,8 @@ dc.pui.controls.Input.prototype = {
 			this.Required = true;
 
 		if (this.Required)
-			$(node).closest('div.dc-field').addClass('dc-required');
+			$(node).closest('div.dc-field')
+				.addClass('dc-required');
 
 		$(node).on('focusin', this, function(e) {
 			entry.LastFocus = $(this);
@@ -3395,6 +3582,38 @@ dc.pui.controls.TextInput.prototype.init = function(entry, node) {
 };
 
 
+dc.pui.controls.Range = function(entry, node) {
+	this.init(entry, node);
+};
+
+dc.pui.controls.Range.prototype = new dc.pui.controls.Input();
+
+dc.pui.controls.Range.prototype.init = function(entry, node) {
+	dc.pui.controls.Input.prototype.init.call(this, entry, node);
+
+	var input = this;
+
+	$(node).on("keyup", function(e) {
+		if ((e.keyCode || e.which) != '9') 		// don't validate on tab key
+			input.validate();
+	});
+
+	$(node).on('input change', function(e) {
+		$(this).closest('div').find('.dc-addon-info').text(this.value);
+	});
+};
+
+dc.pui.controls.Range.prototype.setValue = function(value) {
+	value = dc.util.String.toString(value);
+
+	if (!value)
+		value = '';
+
+	$('#' + this.Id).val(value);
+
+	$('#' + this.Id).closest('div').find('.dc-addon-info').text(value);
+};
+
 dc.pui.controls.LabelInput = function(entry, node) {
 	this.init(entry, node);
 };
@@ -3407,7 +3626,7 @@ dc.pui.controls.LabelInput.prototype.setValue = function(value) {
 	if (!value)
 		value = '';
 
-	$('#' + this.Id).text(value);
+	$('#' + this.Id).html(value);
 };
 
 dc.pui.controls.LabelInput.prototype.getValue = function() {
@@ -3488,7 +3707,7 @@ dc.pui.controls.Checkbox.prototype = new dc.pui.controls.Input();
 dc.pui.controls.Checkbox.prototype.init = function(entry, node) {
 	dc.pui.controls.Input.prototype.init.call(this, entry, node);
 
-	this.DefaultValue = false;
+	this.DefaultValue = dc.util.Boolean.toBoolean($(node).find('input').attr('data-checked'));
 
 	// override the default type
 	if (this.DataType == 'String') {
@@ -3502,7 +3721,7 @@ dc.pui.controls.Checkbox.prototype.init = function(entry, node) {
 dc.pui.controls.Checkbox.prototype.setValue = function(value) {
 	value = dc.util.Boolean.toBoolean(value);
 
-	$('#' + this.Id).find('input').prop('checked',value)
+	$('#' + this.Id).find('input').prop('checked',value);
 };
 
 dc.pui.controls.Checkbox.prototype.getValue = function() {
@@ -3515,6 +3734,12 @@ dc.pui.controls.YesNo = function(entry, node) {
 };
 
 dc.pui.controls.YesNo.prototype = new dc.pui.controls.Checkbox();
+
+dc.pui.controls.YesNo.prototype.init = function(entry, node) {
+	dc.pui.controls.Checkbox.prototype.init.call(this, entry, node);
+
+	this.DefaultValue = dc.util.Boolean.toBoolean($(node).closest('div.dc-field').attr('value'));
+};
 
 dc.pui.controls.YesNo.prototype.setValue = function(value) {
 	value = dc.util.Boolean.toBoolean(value) ? 'true' : 'false';
@@ -3535,6 +3760,8 @@ dc.pui.controls.RadioGroup.prototype = new dc.pui.controls.Input();
 
 dc.pui.controls.RadioGroup.prototype.init = function(entry, node) {
 	dc.pui.controls.Input.prototype.init.call(this, entry, node);
+
+	this.DefaultValue = $(node).find('input[data-checked="true"]').val();  // first
 
 	$(node).find('input').on("click focusout keyup", this, function(e) { e.data.validate(); });
 };
@@ -3807,8 +4034,121 @@ dc.pui.controls.Uploader.prototype.addFiles = function(values) {
 	}
 }
 
-
 // ------------------- end Controls -------------------------------------------------------
+
+dc.pui.FormManager = {
+	Forms: { },
+	openWizard: function(name) {
+		var script = document.createElement('script');
+		script.src = '/dcm/forms/loadwiz.js?form=' + name + '&nocache=' + dc.util.Crypto.makeSimpleKey();
+		script.id = 'wiz' + name.replace(/\//g,'.');
+		script.async = true;
+		document.head.appendChild(script);
+	},
+	registerForm: function(name, menu) {
+		var form = new dc.pui.FormStore();
+		form.init(name, menu);
+		this.Forms[name] = form;
+	},
+	getForm: function(name) {
+		return this.Forms[name];
+	}
+};
+
+dc.pui.FormStore = function(name) {
+	this.init(name);
+}
+
+dc.pui.FormStore.prototype = {
+	init: function(name, menu) {
+		$.extend(this, {
+			Name: name,
+			Loaded: false,
+			Menu: menu,
+			DataType: menu ? dc.pui.Apps.Menus[menu].DataType : null,
+			Data: { }
+		});
+
+		this.load();
+	},
+	getSection: function(name) {
+		return this.Data[name];
+	},
+	setSection: function(name, data) {
+		this.Data[name] = data;
+		this.save();
+	},
+	setData: function(data) {
+		this.Data = data;
+		this.save();
+	},
+	empty: function() {
+		this.Data = { };
+
+		return this.Data;
+	},
+
+	load: function() {
+		// load once per page
+		if (this.Loaded)
+			return;
+
+		this.empty();
+
+		// load from localStorage
+		try {
+			var plain = localStorage.getItem(this.Name);
+
+			if (plain) {
+				this.Data = JSON.parse(plain);
+			}
+		}
+		catch (x) {
+		}
+
+		this.Loaded = true;
+
+		return this.Data;
+	},
+
+	// store the cart info temporarily, used from page to page during session
+	save: function() {
+		try {
+			var plain = JSON.stringify( this.Data );
+			localStorage.setItem(this.Name, plain);
+		}
+		catch (x) {
+		}
+	},
+
+	// store the cart info temporarily, used from page to page during session
+	clear: function() {
+		this.empty();
+
+		try {
+			localStorage.removeItem(this.Name);
+		}
+		catch (x) {
+		}
+	},
+	validate: function() {
+		if (dc.schema.Manager.validate(this.Data, this.DataType).Code) {
+			dc.pui.Popup.alert('Missing or invalid data on form.');
+
+			/* TODO
+			dc.pui.Popup.alert('Missing or invalid data on ' + tabs[i].Title + ' form.', function() {
+				dc.pui.App.loadTab(tabs[i].Alias);
+			});
+			*/
+
+			return false;
+		}
+
+		return true;
+	}
+};
+
+// ------------------- end Forms -------------------------------------------------------
 
 function loadGA() {
 	GoogleAnalyticsObject = 'ga';

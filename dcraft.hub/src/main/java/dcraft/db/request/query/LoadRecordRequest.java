@@ -108,7 +108,7 @@ public class LoadRecordRequest extends DataRequest {
 	}
 	
 	@Override
-	public CompositeStruct buildParams() {
+	public RecordStruct buildParams() {
 		// default in When
 		if (! this.parameters.hasField("When"))
 			this.parameters.with("When", BigDateTime.nowDateTime());

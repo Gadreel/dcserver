@@ -3,6 +3,7 @@ package dcraft.filestore;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 
@@ -14,5 +15,5 @@ public interface IFileCollection {
 	IFileCollection withFilter(Predicate<FileStoreFile> v) throws OperatingContextException;
 	
 	// scripts
-	ReturnOption operation(IParentAwareWork stack, XElement code) throws OperatingContextException;
+	ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException;
 }

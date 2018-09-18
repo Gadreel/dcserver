@@ -1,6 +1,7 @@
 package dcraft.web.ui.inst.form;
 
 import dcraft.hub.op.OperatingContextException;
+import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.struct.Struct;
 import dcraft.util.RndUtil;
@@ -38,27 +39,27 @@ public class Form extends Base {
 			this.withAttribute("id", "gen" + RndUtil.nextUUId());
 		
 		if (this.hasNotEmptyAttribute("RecordOrder"))
-			this.withAttribute("data-dcf-record-order", this.getAttribute("RecordOrder"));
+			this.withAttribute("data-dcf-record-order", StackUtil.stringFromSource(state, "RecordOrder"));
 		
 		if (this.hasNotEmptyAttribute("RecordType")) {
-			this.withAttribute("data-dcf-record-type", this.getAttribute("RecordType"));
+			this.withAttribute("data-dcf-record-type", StackUtil.stringFromSource(state, "RecordType"));
 
 			// automatically require the form's data types
 			this.getRoot(state).with(XElement.tag("Require")
-					.withAttribute("Types", this.getAttribute("RecordType")));
+					.withAttribute("Types", StackUtil.stringFromSource(state, "RecordType")));
 		}
 
 		if (this.hasNotEmptyAttribute("Focus"))
-			this.withAttribute("data-dcf-focus", this.getAttribute("Focus"));
+			this.withAttribute("data-dcf-focus", StackUtil.stringFromSource(state, "Focus"));
 
 		if (this.hasNotEmptyAttribute("Prefix"))
-			this.withAttribute("data-dcf-prefix", this.getAttribute("Prefix"));
+			this.withAttribute("data-dcf-prefix", StackUtil.stringFromSource(state, "Prefix"));
 
 		if (this.hasNotEmptyAttribute("AlwaysNew"))
-			this.withAttribute("data-dcf-always-new", this.getAttribute("AlwaysNew").toLowerCase());
+			this.withAttribute("data-dcf-always-new", StackUtil.stringFromSource(state, "AlwaysNew").toLowerCase());
 		
 		if (this.hasNotEmptyAttribute("TitleFields"))
-			this.withAttribute("data-dcf-title-fields", this.getAttribute("TitleFields"));
+			this.withAttribute("data-dcf-title-fields", StackUtil.stringFromSource(state, "TitleFields"));
 	}
 	
 	@Override
@@ -69,7 +70,7 @@ public class Form extends Base {
 		
 		this.withClass("dc-form");
 		
-		if (Struct.objectToBooleanOrFalse(this.getAttribute("Stacked")))
+		if (StackUtil.boolFromSource(state, "Stacked", false))
 			this.withClass("dc-stacked-form");
 		
 		this.setName("form");

@@ -27,7 +27,6 @@ public class StaticOutputAdapter implements IOutputWork {
 	public Path file = null;
 	protected MimeInfo mime = null;
 
-	@Override
 	public Path getFile() {
 		return this.file;
 	}

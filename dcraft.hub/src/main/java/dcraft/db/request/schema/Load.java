@@ -11,7 +11,9 @@ import dcraft.log.Logger;
 import dcraft.schema.DbCollector;
 import dcraft.schema.DbExpression;
 import dcraft.script.StackUtil;
+import dcraft.script.work.ExecuteState;
 import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.service.ServiceHub;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
@@ -22,7 +24,7 @@ import dcraft.xml.XElement;
 
 public class Load extends RecordStruct {
 	@Override
-	public ReturnOption operation(IParentAwareWork state, XElement code) throws OperatingContextException {
+	public ReturnOption operation(StackWork state, XElement code) throws OperatingContextException {
 		// TODO add support for select classes - parse like Where does
 		if ("Select".equals(code.getName())) {
 			Load.addSelect(this, state, code);
@@ -36,12 +38,50 @@ public class Load extends RecordStruct {
 			return ReturnOption.CONTINUE;
 		}
 		
+		if ("SelectGroup".equals(code.getName())) {
+			Load.addSelect(this, state, code);
+			
+			return ReturnOption.CONTINUE;
+		}
+		
 		if ("Execute".equals(code.getName())) {
+			/*
+			if (state.getStore().hasField("AwaitFlag")) {
+				state.getStore().removeField("AwaitFlag");
+
+				System.out.println("await: " + code.toLocalString());
+
+				return ReturnOption.CONTINUE;
+			}
+			else {
+				String name = StackUtil.stringFromElement(state, code, "Result");
+
+				System.out.println("load: " + code.toLocalString());
+
+				ServiceHub.call(DbServiceRequest.of("dcLoadRecord")
+						.withData(this)
+						.withOutcome(
+								new OperationOutcomeStruct() {
+									@Override
+									public void callback(Struct result) throws OperatingContextException {
+										// not sure if this is useful
+										if (result == null)
+											result = NullStruct.instance;
+
+										StackUtil.addVariable(state, name, result);
+
+										state.getStore().with("AwaitFlag", true);
+										state.setState(ExecuteState.RESUME);
+
+										OperationContext.getAsTaskOrThrow().resume();
+									}
+								})
+				);
+			}
+			*/
+
 			String name = StackUtil.stringFromElement(state, code, "Result");
-			
-			//if (state instanceof StackWork)
-			//	((StackWork)state).setState(ExecuteState.DONE);
-			
+
 			ServiceHub.call(DbServiceRequest.of("dcLoadRecord")
 					.withData(this)
 					.withOutcome(
@@ -53,67 +93,18 @@ public class Load extends RecordStruct {
 									result = NullStruct.instance;
 								
 								StackUtil.addVariable(state, name, result);
+
+								state.withContinueFlag();
 								
 								OperationContext.getAsTaskOrThrow().resume();
 							}
 						})
 			);
-			
+
 			return ReturnOption.AWAIT;
 		}
 		
 		return super.operation(state, code);
-	}
-	
-	static public RecordStruct createWhereField(IParentAwareWork state, XElement code) throws OperatingContextException {
-		RecordStruct ret = RecordStruct.record()
-				.with("Field", StackUtil.stringFromElement(state, code, "Field"));
-		
-		if (code.hasNotEmptyAttribute("SubId"))
-			ret.with("SubId", StackUtil.stringFromElement(state, code,"SubId"));
-		
-		if (code.hasNotEmptyAttribute("Format"))
-			ret.with("Format", StackUtil.stringFromElement(state, code,"Format"));
-		
-		if (code.hasNotEmptyAttribute("Composer"))
-			ret.with("Composer", StackUtil.stringFromElement(state, code,"Composer"));
-		
-		return ret;
-	}
-	
-	static public RecordStruct createWhereValue(IParentAwareWork state, XElement code, String name) throws OperatingContextException {
-		return RecordStruct.record()
-				.with("Value", StackUtil.stringFromElement(state, code, name));
-	}
-	
-	static public void addWhere(ListStruct children, IParentAwareWork state, XElement code) throws OperatingContextException {
-		for (XElement child : code.selectAll("*")) {
-			DbExpression proc = ResourceHub.getResources().getSchema().getDbExpression(child.getName());
-			
-			if (proc == null) {
-				Logger.warn("Missing expression: " + proc);
-				continue;
-			}
-			
-			String spname = proc.execute;		// TODO find class name for request.getOp()
-			
-			IExpression sp = (IExpression) ResourceHub.getResources().getClassLoader().getInstance(spname);
-			
-			if (sp == null) {
-				Logger.warn("Cannot create expression: " + proc.name);
-				continue;
-			}
-			
-			RecordStruct clause = RecordStruct.record()
-					.with("Expression", proc.name);
-			
-			if (code.hasNotEmptyAttribute("Locale"))
-				clause.with("Locale", StackUtil.stringFromElement(state, code,"Locale"));
-			
-			sp.parse(state, child, clause);
-			
-			children.with(clause);
-		}
 	}
 	
 	static public void addSelect(RecordStruct target, IParentAwareWork state, XElement code) throws OperatingContextException {
@@ -125,9 +116,17 @@ public class Load extends RecordStruct {
 				target.with("Select", selects);
 			}
 			
-			RecordStruct field = RecordStruct.record()
-					.with("Field", StackUtil.stringFromElement(state, code,"Field"));
+			RecordStruct field = RecordStruct.record();
+
+			if (code.hasNotEmptyAttribute("Field"))
+				field.with("Field", StackUtil.stringFromElement(state, code,"Field"));
+
+			if (code.hasNotEmptyAttribute("Composer"))
+				field.with("Composer", StackUtil.stringFromElement(state, code,"Composer"));
 			
+			if (code.hasNotEmptyAttribute("Filter"))
+				field.with("Filter", StackUtil.stringFromElement(state, code,"Filter"));
+
 			if (code.hasNotEmptyAttribute("As"))
 				field.with("Name", StackUtil.stringFromElement(state, code,"As"));
 			
@@ -139,6 +138,18 @@ public class Load extends RecordStruct {
 			
 			if (code.hasNotEmptyAttribute("Full"))
 				field.with("Full", StackUtil.boolFromElement(state, code,"Full"));
+			
+			if (code.hasNotEmptyAttribute("ForeignField"))
+				field.with("ForeignField", StackUtil.stringFromElement(state, code,"ForeignField"));
+			
+			if (code.hasNotEmptyAttribute("Table"))
+				field.with("Table", StackUtil.stringFromElement(state, code,"Table"));
+			
+			if (code.hasNotEmptyAttribute("KeyField"))
+				field.with("KeyField", StackUtil.stringFromElement(state, code,"KeyField"));
+			
+			if (code.hasNotEmptyAttribute("Params"))
+				field.with("Params", StackUtil.refFromElement(state, code,"Params"));
 			
 			selects.with(field);
 			
@@ -158,6 +169,36 @@ public class Load extends RecordStruct {
 			
 			if (code.hasNotEmptyAttribute("As"))
 				field.with("Name", StackUtil.stringFromElement(state, code,"As"));
+			
+			if (code.hasNotEmptyAttribute("Table"))
+				field.with("Table", StackUtil.stringFromElement(state, code,"Table"));
+			
+			if (code.hasNotEmptyAttribute("KeyField"))
+				field.with("KeyField", StackUtil.stringFromElement(state, code,"KeyField"));
+			
+			for (XElement child : code.selectAll("*"))
+				Load.addSelect(field, state, child);
+			
+			selects.with(field);
+			
+			return;
+		}
+		
+		if ("SelectGroup".equals(code.getName())) {
+			ListStruct selects = target.getFieldAsList("Select");
+			
+			if (selects == null) {
+				selects = ListStruct.list();
+				target.with("Select", selects);
+			}
+			
+			RecordStruct field = RecordStruct.record()
+					.with("Field", StackUtil.stringFromElement(state, code,"Field"));
+			
+			if (code.hasNotEmptyAttribute("As"))
+				field.with("Name", StackUtil.stringFromElement(state, code,"As"));
+			
+			field.with("KeyName", StackUtil.stringFromElement(state, code,"Key", "SubId"));
 			
 			for (XElement child : code.selectAll("*"))
 				Load.addSelect(field, state, child);

@@ -249,7 +249,7 @@ public class WorkHub {
 		WorkHub.shutdown = true;
 		
 		// quickly let everyone know it is time to stop
-		Logger.traceTr(0, "Work Pool Stopping Nice");
+		Logger.trace( "Work Pool Stopping Nice");
 		
 		for (int i = 0; i < WorkHub.slots.length; i++) {
 			Worker w = WorkHub.slots[i];
@@ -258,7 +258,7 @@ public class WorkHub {
 				w.stopNice();
 		}
 		
-		Logger.traceTr(0, "Work Pool Waiting");
+		Logger.trace( "Work Pool Waiting");
 		
 		int remaincnt = 0;
 		
@@ -283,9 +283,9 @@ public class WorkHub {
 			}
 		}
 		
-		Logger.traceTr(0, "Work Pool Size: " + remaincnt);
+		Logger.trace( "Work Pool Size: " + remaincnt);
 		
-		Logger.traceTr(0, "Work Pool Interrupt Remaining Workers");
+		Logger.trace("Work Pool Interrupt Remaining Workers");
 		
 		for (int i = 0; i < WorkHub.slots.length; i++) {
 			Worker w = WorkHub.slots[i];
@@ -294,12 +294,12 @@ public class WorkHub {
 				w.stop();
 		}
 		
-		Logger.traceTr(0, "Work Pool Cleaning Topics");
+		Logger.trace("Work Pool Cleaning Topics");
 		
 		for (WorkTopic topic : WorkHub.topics.values())
 			topic.stop();
 		
-		Logger.traceTr(0, "Work Pool Stopped");
+		Logger.trace( "Work Pool Stopped");
 	}
 	
 	static public RecordStruct toStatusReport() {

@@ -33,6 +33,11 @@ public class SelectComposer implements ISelectField {
 		return this;
 	}
 	
+	public SelectComposer withFilter(String v) {
+		this.column.with("Filter", v);
+		return this;
+	}
+	
 	public SelectComposer withName(String v) {
 		this.column.with("Name", v);		
 		return this;

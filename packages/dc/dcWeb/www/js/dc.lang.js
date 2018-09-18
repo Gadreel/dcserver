@@ -197,7 +197,8 @@ var dc = {
 				return parseFloat(n);
 			},
 			formatMoney: function(total) {
-				return dc.util.Number.toNumberStrict(total).toFixed(2);
+				//return dc.util.Number.toNumberStrict(total).toFixed(2);
+				return numeral(dc.util.Number.toNumberStrict(total)).format('0,0.00')
 			}
 		},
 		String: {
@@ -275,6 +276,23 @@ var dc = {
 			},
 			escapeDoubleQuotes: function(v) {
 				return v.replace(/"/g,"\\\"");
+			},
+			trimSplit: function(str, delim) {
+				var ret = [ ];
+
+				if (! str)
+					return ret;
+
+				var ss = str.split(delim);
+
+				for (var i = 0; i < ss.length; i++) {
+					var s = dc.util.String.trim(ss[i]);
+
+					if (s)
+						ret.push(s);
+				}
+
+				return ret;
 			}
 		},
 		// TODO add support
@@ -520,14 +538,6 @@ var dc = {
 			    var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
 			    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
 			},
-			getHashParam : function(name) {
-			    var match = RegExp('[?&#]' + name + '=([^&]*)').exec(window.location.hash);
-			    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
-			},
-			getFromParams : function(params,name) {
-			    var match = RegExp('[?&#]' + name + '=([^&]*)').exec(params);
-			    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
-			},
 			urldecode: function(v) {
 				return decodeURIComponent(v.replace(/\+/g, '%20'));
 			},
@@ -585,7 +595,10 @@ var dc = {
 				return navigator.userAgent.indexOf('Chrome') > -1;
 			},
 			isExplorer: function() {
-				return navigator.userAgent.indexOf('MSIE') > -1;
+				return (navigator.userAgent.indexOf('MSIE') > -1) || (navigator.userAgent.indexOf('Trident') > -1);
+			},
+			isEdge: function() {
+				return navigator.userAgent.match(/Edge\/\d+/g) != null;
 			},
 			isFirefox: function() {
 				return navigator.userAgent.indexOf('Firefox') > -1;
@@ -604,6 +617,47 @@ var dc = {
 			},
 			isWindows: function() {
 				return navigator.userAgent.toLowerCase().indexOf("windows") > -1;
+			},
+			_markedStd: null,
+			markedStd: function(src) {
+				if (window.marked && ! dc.util.String.isEmpty(src)) {
+					if (dc.util.Web._markedStd == null) {
+						dc.util.Web._markedStd = {
+							gfm: true,
+							breaks: true
+						};
+					}
+
+					window.marked.setOptions(dc.util.Web._markedStd);
+
+					src = window.marked(src);
+				}
+
+				return src;
+			},
+			_markedExt: null,
+			markedExt: function(src) {
+				if (window.marked && ! dc.util.String.isEmpty(src)) {
+					if (dc.util.Web._markedExt == null) {
+						var renderer = new marked.Renderer();
+
+						renderer.link = function( href, title, text ) {
+							return '<a target="_blank" href="'+ href +'" title="' + title + '">' + text + '</a>';
+						}
+
+						dc.util.Web._markedExt = {
+							gfm: true,
+							breaks: true,
+							renderer: renderer
+						};
+					}
+
+					window.marked.setOptions(dc.util.Web._markedExt);
+
+					src = window.marked(src);
+				}
+
+				return src;
 			}
 		},
 		Image: {
@@ -859,6 +913,34 @@ var dc = {
 			  catch (err) {
 			    return String.fromCharCode(0xFFFD) // UTF 8 invalid char
 			  }
+			}
+		},
+		Xml: {
+			toJQuery: function(xmlstr) {
+				var xmlDoc = new DOMParser().parseFromString(xmlstr, "application/xml");
+
+				var doc = $(xmlDoc.documentElement);
+
+				if (doc.find('parsererror').length)
+					return null;
+
+				return doc;
+			},
+			// using jQuery to build a document, return a pretty string
+			// must load /js/vendor/vkbeautify.js first
+			// pretty string, from jquery object or DOM object
+			toPretty: function(xml) {
+				if (xml.constructor.name != 'Element')
+					xml = xml.get(0);
+
+				return vkbeautify.xml(new XMLSerializer().serializeToString(xml).replace(' xmlns="http://www.w3.org/1999/xhtml"', ''));
+			},
+			// compact string, from jquery object or DOM object
+			toString: function(xml) {
+				if (xml.constructor.name != 'Element')
+					xml = xml.get(0);
+
+				return new XMLSerializer().serializeToString(xml).replace(' xmlns="http://www.w3.org/1999/xhtml"', '');
 			}
 		},
 		Hex: {
@@ -1340,3 +1422,32 @@ $.fn.dcappend = function () {
 
 	return $(this).append.apply(this, arguments);
 };
+
+$.fn.cdata = function(text) {
+	for (var i = 0; i < this.length; i++) {
+		var node = this.get(i);
+
+		var cd = node.ownerDocument.createCDATASection(text);
+		$(node).append(cd);
+	}
+}
+
+$.fn.dcvalue = function() {
+	if (this.length > 0) {
+		var node = this.get(0);
+
+		var str = $(node).attr('value');
+
+		if (str)
+			return str;
+
+		var str = $(node).attr('Value');
+
+		if (str)
+			return str;
+
+		return $(node).text();
+	}
+
+	return null;
+}

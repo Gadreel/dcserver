@@ -406,7 +406,7 @@ public class ApplicationHub {
 						.of(configloader)
 						.then(ApplicationHub::standardStartChain)
 						.then(taskctx -> {
-							ResourceTier tier = (ResourceTier) taskctx.getTask().getParamsAsRecord().getFieldAsAny("Tier");
+							ResourceTier tier = (ResourceTier) taskctx.getTask().getParamsAsRecord().getFieldAsComposite("Tier");
 							
 							ResourceHub.setTopResources(tier);
 							
@@ -579,7 +579,16 @@ public class ApplicationHub {
 		
 		return null;
 	}
-	
+
+	static public XElement getCatalogSettings(String name, String alternate, String mode) {
+		XElement cat = ResourceHub.getResources().getConfig().getCatalog(name, alternate, mode);
+
+		if (cat != null)
+			return cat.find("Settings");
+
+		return null;
+	}
+
 	/* TODO
 	static public String getLibraryPath(String libraryName, String alias) {
 		if (Hub.libpaths == null) {

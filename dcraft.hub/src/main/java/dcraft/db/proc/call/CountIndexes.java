@@ -6,9 +6,7 @@ import dcraft.db.proc.IStoredProc;
 import dcraft.db.proc.filter.Max;
 import dcraft.db.ICallContext;
 import dcraft.db.tables.TablesAdapter;
-import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationMarker;
-import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.hub.op.*;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.struct.ListStruct;
@@ -31,12 +29,12 @@ public class CountIndexes implements IStoredProc {
 		
 		try (OperationMarker om = OperationMarker.create()) {
 			if ((values == null) || (values.size() == 0)) {
-				db.traverseIndexValRange(table, fname, null, null, new BasicFilter() {
+				db.traverseIndexValRange(OperationContext.getOrThrow(), table, fname, null, null, new BasicFilter() {
 					@Override
-					public ExpressionResult check(TablesAdapter adapter, Object val) throws OperatingContextException {
+					public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, Object val) throws OperatingContextException {
 						Max cnt = Max.max();
 						
-						db.traverseIndex(table, fname, val, cnt);
+						db.traverseIndex(scope, table, fname, val, cnt);
 						
 						out.with(RecordStruct.record()
 								.with("Name", val)
@@ -53,7 +51,7 @@ public class CountIndexes implements IStoredProc {
 					
 					Max cnt = Max.max();
 			
-					db.traverseIndex(table, fname, val, cnt);
+					db.traverseIndex(OperationContext.getOrThrow(), table, fname, val, cnt);
 					
 					out.with(RecordStruct.record()
 						.with("Name", val)

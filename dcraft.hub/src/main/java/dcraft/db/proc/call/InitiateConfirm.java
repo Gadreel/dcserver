@@ -27,15 +27,15 @@ public class InitiateConfirm implements IUpdatingStoredProc {
 			}
 			else {
 				boolean uisemail = false;
-				Object userid = db.firstInIndex("dcUser", "dcUsername", user);
+				Object userid = db.firstInIndex("dcUser", "dcUsername", user, true);
 				
 				if (userid == null) {
-					userid = db.firstInIndex("dcUser", "dcEmail", user);
+					userid = db.firstInIndex("dcUser", "dcEmail", user, true);
 					uisemail = true;		// true for email or backup email
 				}
 				
 				if (userid == null)	
-					userid = db.firstInIndex("dcUser", "dcBackupEmail", user);
+					userid = db.firstInIndex("dcUser", "dcBackupEmail", user, true);
 				
 				if (userid == null) {
 					Logger.error("Unable to complete recovery");

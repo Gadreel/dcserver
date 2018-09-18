@@ -61,7 +61,8 @@ public class StringUtil {
 	   */
 	  public static long parseInt(String value, long defvalue) {
 		  try {
-			  return Long.parseLong(value);
+		  	if (value != null)
+				  return Long.parseLong(value.trim());
 		  }
 		  catch (Exception x) {			  
 		  }

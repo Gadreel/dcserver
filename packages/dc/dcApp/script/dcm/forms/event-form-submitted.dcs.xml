@@ -1,0 +1,40 @@
+<dcs.Script Title="ManagedForm Submitted">
+	<dcs.Info>Just got a form submission: {$_Param.Id}!</dcs.Info>
+
+	<dcdb.LoadRecord Table="dcmThread" Id="{$_Param.Id}" Result="Thread">
+		<Select Field="dcmTitle" As="Title" />
+		<Select Field="dcmManagedFormName" As="Form" />
+		<Select Field="dcmUuid" As="Uuid" />
+		<Select Field="dcmManagedFormToken" As="Token" />
+	</dcdb.LoadRecord>
+
+	<dcs.File Name="datafile" Path="/{$Thread.Token}/data.json" In="ManagedForms" />
+
+	<dcs.If Not="true" Target="$datafile.Exists">
+		<text Name="textEmail"><![CDATA[
+Form submitted but data is missing.
+		]]></text>
+
+		<dcs.SendEmail ToList="ManagedForm-{$Thread.Form}" Subject="{$Thread.Title}" TextMessage="$textEmail" />
+	</dcs.If>
+	<dcs.Else>
+		<dcs.With Target="$datafile">
+			<ReadText Result="datastr" />
+		</dcs.With>
+
+		<dcs.Var Name="Form" Type="Record">
+			<Set>{$datastr}</Set>
+		</dcs.Var>
+
+		<text Name="textEmail"><![CDATA[
+Form submitted: {$Form}
+		]]></text>
+
+		<dcs.If Target="$Form.Data.Email" IsEmpty="false">
+			<dcs.SendEmail ToList="ManagedForm-{$Thread.Form}" ReplyTo="{$Form.Data.Email}" Subject="{$Thread.Title}" TextMessage="$textEmail" />
+		</dcs.If>
+		<dcs.Else>
+			<dcs.SendEmail ToList="ManagedForm-{$Thread.Form}" Subject="{$Thread.Title}" TextMessage="$textEmail" />
+		</dcs.Else>
+	</dcs.Else>
+</dcs.Script>

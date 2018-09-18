@@ -28,7 +28,7 @@ import dcraft.xml.XElement;
 public class ElseIf extends LogicBlockInstruction {
 	static public ElseIf tag() {
 		ElseIf el = new ElseIf();
-		el.setName("dcs.If");
+		el.setName("dcs.ElseIf");
 		return el;
 	}
 	

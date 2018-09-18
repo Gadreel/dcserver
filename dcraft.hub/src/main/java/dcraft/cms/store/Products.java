@@ -150,7 +150,7 @@ public class Products {
 			
 			ServiceHub.call(InsertRecordRequest.insert()
 					.withTable("dcmCategory")
-					.withConditionallySetFields(rec, "dcmTitle", "Alias", "dcmAlias", "Mode", "dcmMode", "Parent", "dcmParent",
+					.withConditionallySetFields(rec, "Alias", "dcmAlias", "Mode", "dcmMode", "Parent", "dcmParent",
 							"ShipAmount", "dcmShipAmount", "Image", "dcmImage", "ShowInStore", "dcmShowInStore"
 					)
 					.withConditionallyUpdateTrFields(rec, locale, "Title", "dcmTitle",
@@ -689,14 +689,19 @@ public class Products {
 									.with("dcmSku", "Sku")
 									.with("dcmPrice", "Price")
 									.with("dcmDescription", "Description")
-									.with("dcmImage", "Image")
+									.withComposer("dcmStoreImage", "Image")
+									.withComposer("dcTermScore", "Score")
 									.with("dcmVariablePrice", "VariablePrice")
 									.with("dcmDelivery", "Delivery")
 							)
 							.withWhere(WhereAnd.of(
 									WhereEqual.of("dcmShowInStore", true),
 									WhereTerm.term()
-										.withFields("dcmTitle", "dcmDescription")
+										.withFields(
+												WhereField.of("dcmTitle")
+														.withValue(RecordStruct.record().with("_RankMultiplier", 3)),
+												WhereField.of("dcmDescription")
+										)
 										.withValueTwo(rec.getFieldAsString("Term"))
 							))
 							.toServiceRequest()

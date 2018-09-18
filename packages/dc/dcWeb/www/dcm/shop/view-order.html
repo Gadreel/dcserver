@@ -3,6 +3,8 @@
 		<Tr Locale="en" Value="View Order" />
 	</Meta>
 
+	<Require Script="/js/vendor/marked.min.js" />
+
 	<dc.Body class="dcuiWide">
 		<dc.PagePanel>
 			<dcf.Form>
@@ -265,6 +267,30 @@
 
 			for (var i = 0; i < cart.Items.length; i++) {
 				var item = cart.Items[i];
+				var track = null;
+
+				if (item.Shipment) {
+					if (cart.Shipments && cart.Shipments.length) {
+						for (var s = 0; s < cart.Shipments.length; s++) {
+							var sm = cart.Shipments[s];
+
+							if (sm.EntryId == item.Shipment) {
+								if (sm.TrackLink) {
+									track = $('<a>')
+										.attr('href', sm.TrackLink)
+										.attr('target', '_blank')
+										.text('Tracking: ' + sm.TrackId)
+								}
+								else {
+									track = $('<span>')
+										.text('Tracking: ' + sm.TrackId)
+								}
+
+								break;
+							}
+						}
+					}
+				}
 
 				$tbl.dcappend(
 					$('<tr>').dcappend(
@@ -282,12 +308,15 @@
 							item.Title,
 							$('<br>'),
 							$('<br>'),
-							(item.Instructions ? item.Instructions : null)
+							$(dc.util.Web.markedExt(item.Instructions))
 						),
 						$('<td>').dcappend(
 							$('<b>').addClass('dc-table-cell-label').text('Status'),
 							' ',
-							item.Status
+							item.Status,
+							$('<br>'),
+							$('<br>'),
+							track
 						),
 						$('<td>').dcappend(
 							$('<b>').addClass('dc-table-cell-label').text('Quantity / Price'),

@@ -40,9 +40,6 @@
 
 			<Field Name="dcmPaymentId" Type="dcSmallString" />
 
-			<!-- sub = EntryId - TODO remove after Dec 15 -->
-			<Field Name="dcmItems" List="True" Type="dcmOrderItemInfo" />
-
 			<!-- dcmItems group - sub = EntryId -->
 			<Field Name="dcmItemEntryId" Group="dcmItems" List="True" Type="dcMetaString" />
 			<Field Name="dcmItemProduct" Group="dcmItems" List="True" ForeignKey="dcmProduct" />
@@ -90,6 +87,9 @@
 			<Field Name="dcmPrintingPin" Type="dcMetaString" />
 			<Field Name="dcmPrintPinExpiration" Type="DateTime" />
 			-->
+
+			<!-- for guest orders, need this code to view the order -->
+			<Field Name="dcmViewCode" Type="dcSmallString" />
 
 			<!-- need to rethink this one  -->
 
@@ -221,8 +221,17 @@
 			<Field Name="dcmProducts" List="True" ForeignKey="dcmProduct" />
 		</Table>
 
-		<Procedure Name="dcmRecordShipment" Execute="dcraft.cms.store.db.RecordShipment" />
-		<Procedure Name="dcmUpdateItems" Execute="dcraft.cms.store.db.UpdateItems" />
+		<Procedure Name="dcmRecordShipment" Execute="dcraft.cms.store.db.orders.RecordShipment" />
+		<Procedure Name="dcmUpdateItems" Execute="dcraft.cms.store.db.orders.UpdateItems" />
+
+		<Procedure Name="dcmStoreServices.Orders.CalcShipWeight" Execute="dcraft.cms.store.db.orders.CalcShipWeight" />
+		<Procedure Name="dcmStoreServices.Orders.Calculate" Execute="dcraft.cms.store.db.orders.Calculate" />
+		<Procedure Name="dcmStoreServices.Orders.Submit" Execute="dcraft.cms.store.db.orders.Submit" />
+		<Procedure Name="dcmStoreServices.Orders.UpdateItems" Execute="dcraft.cms.store.db.orders.UpdateItems" />
+		<Procedure Name="dcmStoreServices.Orders.UpdateStatus" Execute="dcraft.cms.store.db.orders.UpdateStatus" />
+
+		<Procedure Name="dcmStoreServices.Orders.Track" Execute="dcraft.cms.store.db.orders.Track" />
+		<Procedure Name="dcmStoreServices.Orders.PayPalStandard" Execute="dcraft.cms.store.db.orders.PayPalStandard" />
 
 		<Composer Name="dcmStoreImage" Execute="dcraft.cms.store.db.comp.StoreImage" />
 		<Composer Name="dcmProductPrice" Execute="dcraft.cms.store.db.comp.ProductPrice" />
@@ -262,7 +271,7 @@
 		</StringType>
 
 		<StringType Id="dcmPaymentMethodEnum">
-			<StringRestriction Enum="CreditCard,StoreCredit" />
+			<StringRestriction Enum="CreditCard,StoreCredit,PayPal,Manual" />
 		</StringType>
 
 		<StringType Id="dcmTargetUserEnum">
@@ -298,6 +307,7 @@
 			<Field Name="CatTitle" Type="dcmCategory:dcmTitle" />
 			<Field Name="CatAlias" Type="dcmCategory:dcmAlias" />
 			<Field Name="Image" Type="dcmProduct:dcmImage" />
+			<Field Name="ImagePath" Type="dcString" />
 
 			<!-- TODO
 			<Field Name="dcmCustomDisplayField">
@@ -333,6 +343,9 @@
 			<!-- if present and not logged in the create an account -->
 			<Field Name="Password" Type="dcSmallString" />
 			<Field Name="CustomerId" Type="dcUser:Id" />
+			<!-- tax exempt -->
+			<Field Name="TaxExempt" Type="Boolean" />
+			<Field Name="TaxExemptId" Type="dcMetaString" />
 		</Record>
 
 		<Record Id="dcmOrderShippingInfo" >
@@ -400,6 +413,9 @@
 			<Field Name="CardNumber" Type="dcTinyString" />
 			<Field Name="Expiration" Type="dcTinyString" />
 			<Field Name="Code" Type="dcTinyString" />
+			<!-- for tracking message -->
+			<Field Name="Uuid" Type="dcMetaString" />
+			<Field Name="PaymentTx" Type="dcMetaString" />
 		</Record>
 
 		<Record Id="dcmShipEstimateInfo">
@@ -435,6 +451,8 @@
 		</Record>
 
 		<Record Id="dcmOrderInfo" >
+			<Field Name="Captcha" Type="dcString" />
+
 			<Field Name="Items" Required="True">
 				<List Type="dcmOrderItemInfo" />
 			</Field>
@@ -443,9 +461,6 @@
 			<Field Name="BillingInfo" Type="AnyRecord" />
 			<Field Name="Delivery" Type="dcmDeliveryEnum" Required="True" />
 			<Field Name="Comment" Type="dcLargeString" />
-			<!-- TODO move into a table
-			<Field Name="Delivery" Type="dcmOrder:dcmOrderDelivery" Required="True" />
-			-->
 			<Field Name="CouponCodes">
 				<List Type="dcSmallString" /> 	<!-- we are trying to apply this code(s) (could be comma list)  -->
 			</Field>
@@ -530,6 +545,9 @@
 						<RecordResponse>
 							<Field Name="Id" Type="Id" />
 							<Field Name="Cart" Type="dcmOrderInfo" />
+							<Field Name="ViewCode" Type="dcSmallString" />
+							<Field Name="UploadToken" Type="dcTinyString" />
+							<Field Name="Uuid" Type="dcMetaString" />
 						</RecordResponse>
 					</Op>
 				</Secure>
@@ -550,6 +568,9 @@
 								<List Type="dcmOrderItemList" />
 							</Field>
 							<Field Name="ShippingInfo" Type="dcmOrderShippingInfo" />
+							<Field Name="Shipments">
+								<List Type="dcmOrderShipmentInfo" />
+							</Field>
 							<Field Name="BillingInfo" Type="dcmOrderBillingInfo" />
 							<Field Name="Comment" Type="dcLargeString" />
 							<Field Name="CouponCodes">
@@ -644,6 +665,21 @@
 							</Field>
 						</RecordRequest>
 					</Op>
+					<Op Name="CalcShipWeight">
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Items" Required="True">
+								<List Type="dcMetaString" />
+							</Field>
+						</RecordRequest>
+						<RecordResponse>
+							<!-- package shipped -->
+							<Field Name="Width" Type="Decimal" />
+							<Field Name="Height" Type="Decimal" />
+							<Field Name="Depth" Type="Decimal" />
+							<Field Name="Weight" Type="Decimal" />
+						</RecordResponse>
+					</Op>
 					<Op Name="ShipItems">
 						<RecordRequest Required="True">
 							<Field Name="Id" Type="Id" Required="True" />
@@ -669,10 +705,24 @@
 							</Record>
 						</ListResponse>
 					</Op>
+					<Op Name="PayPalStandard">
+						<Description>
+							Track a PayPal transaction.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Data" Type="dcString" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+							<Field Name="Cart" Type="dcmOrderInfo" />
+							<Field Name="ViewCode" Type="dcSmallString" />
+							<Field Name="UploadToken" Type="dcTinyString" />
+						</RecordResponse>
+					</Op>
 				</Secure>
 			</Feature>
 			<Feature Name="Category">
-				<Secure Badges="Admin">
+				<Secure Badges="Admin,Clerk">
 					<Op Name="Load">
 						<Description>
 							Load a category record.
@@ -798,7 +848,7 @@
 			</Feature>
 
 			<Feature Name="Product">
-				<Secure Badges="Admin">
+				<Secure Badges="Admin,Clerk">
 					<Op Name="Load">
 						<Description>
 							Load a product record.
@@ -987,6 +1037,7 @@
 								<Field Name="Delivery">
 									<List Type="dcmProduct:dcmDelivery" />
 								</Field>
+								<Field Name="Score" Type="Decimal" />
 							</Record>
 						</ListResponse>
 					</Op>
@@ -1019,7 +1070,7 @@
 			</Feature>
 
 			<Feature Name="Coupons">
-				<Secure Badges="Admin">
+				<Secure Badges="Admin,Clerk">
 					<Op Name="Load">
 						<Description>
 							Load a coupon record.

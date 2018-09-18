@@ -3,6 +3,8 @@
 		<Tr Locale="en" Value="Item Amount" />
 	</Meta>
 
+	<Require Script="/js/vendor/marked.min.js" />
+
 	<dc.Body>
 		<dc.PagePanel>
 			<dcf.Form>
@@ -82,8 +84,8 @@
 
 			e.Data = {
 				Title: page.Store.Product.Title,
-				Description: page.Store.Product.Description,
-				Instructions: page.Store.Product.Instructions,
+				Description: dc.util.Web.markedExt(page.Store.Product.Description),
+				Instructions: dc.util.Web.markedExt(page.Store.Product.Instructions),
 				Amount: page.Params.Product ? page.Params.Product.Price : 100
 			};
 	]]></Function>

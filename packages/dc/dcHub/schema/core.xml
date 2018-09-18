@@ -138,12 +138,16 @@
 			<StringRestriction MaxLength="64" />
 		</StringType>
 
-		<StringType Id="dcUsaState">
+		<StringType Id="dcUsaState" Searchable="True">
 			<StringRestriction Pattern="((A[LKZR])|(C[AOT])|(D[EC])|(FL)|(GA)|(HI)|(I[DLNA])|(K[SY])|(LA)|(M[EDAINSOT])|(N[EVHJMYCD])|(O[HKR])|(PA)|(RI)|(S[CD])|(T[NX])|(UT)|(V[TA])|(W[AVIY]))" />
 		</StringType>
 
-		<StringType Id="dcUsaZip">
-			<StringRestriction Pattern="\d{5}-\d{4}|\d{5}" />
+		<StringType Id="dcUsaZip" Searchable="True">
+			<StringRestriction Pattern="(\d{5}-\d{4}|\d{5})" />
+		</StringType>
+
+		<StringType Id="dcUserNoticeEnum">
+			<StringRestriction Enum="email,text,none" />
 		</StringType>
 
 		<!-- core composite types -->
@@ -347,6 +351,13 @@
 			<Field Name="AuditId" Type="Integer" />
 		</Record>
 		-->
+
+		<Record Id="dcsCallService" Class="dcraft.script.schema.CallService">
+			<Field Name="Service" Type="dcSmallString" />
+			<Field Name="Feature" Type="dcSmallString" />
+			<Field Name="Op" Type="dcSmallString" />
+			<Field Name="Params" Type="AnyType" />
+		</RecordRequest>
 	</Shared>
 
 	<Services>
@@ -631,7 +642,31 @@
 								<List Type="dcUser:dcChronology" />
 							</Field>
 							<Field Name="Badges">
-								<List Type="dcUser:dcBadgess" />
+								<List Type="dcUser:dcBadges" />
+							</Field>
+						</RecordResponse>
+					</Op>
+					<Op Name="FacebookSignIn">
+						<Description>
+							Verify credentials, start a session (AuthToken) indirectly as Verify is called implicitly.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Token" Type="dcString" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="UserId" Type="Id" />
+							<Field Name="Username" Type="dcUser:dcUsername" />
+							<Field Name="FirstName" Type="dcUser:dcFirstName" />
+							<Field Name="LastName" Type="dcUser:dcLastName" />
+							<Field Name="Email" Type="dcUser:dcEmail" />
+							<Field Name="Locale">
+								<List Type="dcUser:dcLocale" />
+							</Field>
+							<Field Name="Chronology">
+								<List Type="dcUser:dcChronology" />
+							</Field>
+							<Field Name="Badges">
+								<List Type="dcUser:dcBadges" />
 							</Field>
 						</RecordResponse>
 					</Op>
@@ -644,6 +679,16 @@
 						<Description>
 							Verify auth token if present - if not try credentials, start a new session (AuthToken).
 						</Description>
+					</Op>
+				</Secure>
+				<Secure Badges="User">
+					<Op Name="LinkFacebookAccount">
+						<Description>
+							Link a Facebook account to the current account (only one account supported, overwrites).
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Token" Type="dcString" />
+						</RecordRequest>
 					</Op>
 				</Secure>
 			</Feature>
@@ -675,6 +720,30 @@
 							<Field Name="Username" Type="dcSmallString" Required="True" />
 						</RecordRequest>
 					</Op>
+					<Op Name="SignUp">
+						<Description>
+							Verify credentials, start a session (AuthToken) indirectly as Verify is called implicitly.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Captcha" Type="dcString" />
+							<Field Name="Username" Type="dcUser:dcUsername" />
+							<Field Name="FirstName" Type="dcUser:dcFirstName" />
+							<Field Name="LastName" Type="dcUser:dcLastName" />
+							<Field Name="Email" Type="dcUser:dcEmail" />
+							<Field Name="Phone" Type="dcUser:dcPhone" />
+							<Field Name="Password" Type="dcUser:dcPassword" />
+							<Field Name="Address" Type="dcUser:dcAddress" />
+							<Field Name="Address2" Type="dcUser:dcAddress2" />
+							<Field Name="City" Type="dcUser:dcCity" />
+							<Field Name="State" Type="dcUser:dcState" />
+							<Field Name="Zip" Type="dcUser:dcZip" />
+							<Field Name="Extra" Type="AnyRecord" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Uuid" Type="dcString" />
+							<Field Name="UserId" Type="Id" />
+						</RecordResponse>
+					</Op>
 				</Secure>
 				<Secure Badges="User">
 					<Op Name="LoadSelf">
@@ -689,13 +758,15 @@
 							<Field Name="Email" Type="dcUser:dcEmail" />
 							<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
 							<Field Name="Phone" Type="dcUser:dcPhone" />
+							<Field Name="Address" Type="dcUser:dcAddress" />
+							<Field Name="Address2" Type="dcUser:dcAddress2" />
+							<Field Name="City" Type="dcUser:dcCity" />
+							<Field Name="State" Type="dcUser:dcState" />
+							<Field Name="Zip" Type="dcUser:dcZip" />
+							<!-- TODO add
 							<Field Name="Chronology" Type="dcUser:dcChronology" />
 							<Field Name="Locale" Type="dcUser:dcLocale" />
-							<Field Name="Description" Type="dcUser:dcDescription" />
-							<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
-							<Field Name="Badges">
-								<List Type="dcUser:dcBadges" />
-							</Field>
+							-->
 						</RecordResponse>
 					</Op>
 					<Op Name="UpdateSelf">
@@ -710,8 +781,15 @@
 							<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
 							<Field Name="Phone" Type="dcUser:dcPhone" />
 							<Field Name="Password" Type="dcUser:dcPassword" Required="IfPresent" />
+							<Field Name="Address" Type="dcUser:dcAddress" />
+							<Field Name="Address2" Type="dcUser:dcAddress2" />
+							<Field Name="City" Type="dcUser:dcCity" />
+							<Field Name="State" Type="dcUser:dcState" />
+							<Field Name="Zip" Type="dcUser:dcZip" />
+							<!-- TODO add
 							<Field Name="Chronology" Type="dcUser:dcChronology" />
 							<Field Name="Locale" Type="dcUser:dcLocale" />
+							-->
 						</RecordRequest>
 					</Op>
 					<Op Name="RetireSelf">
@@ -736,8 +814,15 @@
 							<Field Name="Email" Type="dcUser:dcEmail" />
 							<Field Name="Phone" Type="dcUser:dcPhone" />
 							<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
+							<Field Name="Address" Type="dcUser:dcAddress" />
+							<Field Name="Address2" Type="dcUser:dcAddress2" />
+							<Field Name="City" Type="dcUser:dcCity" />
+							<Field Name="State" Type="dcUser:dcState" />
+							<Field Name="Zip" Type="dcUser:dcZip" />
+							<!-- TODO
 							<Field Name="Chronology" Type="dcUser:dcChronology" />
 							<Field Name="Locale" Type="dcUser:dcLocale" />
+							-->
 							<Field Name="Description" Type="dcUser:dcDescription" />
 							<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
 							<!--
@@ -763,8 +848,15 @@
 							<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
 							<Field Name="Phone" Type="dcUser:dcPhone" />
 							<Field Name="Password" Type="dcUser:dcPassword" />
+							<Field Name="Address" Type="dcUser:dcAddress" />
+							<Field Name="Address2" Type="dcUser:dcAddress2" />
+							<Field Name="City" Type="dcUser:dcCity" />
+							<Field Name="State" Type="dcUser:dcState" />
+							<Field Name="Zip" Type="dcUser:dcZip" />
+							<!-- TODO
 							<Field Name="Chronology" Type="dcUser:dcChronology" />
 							<Field Name="Locale" Type="dcUser:dcLocale" />
+							-->
 							<Field Name="Description" Type="dcUser:dcDescription" />
 							<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
 							<Field Name="Badges">
@@ -783,9 +875,16 @@
 							<Field Name="Email" Type="dcUser:dcEmail" />
 							<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
 							<Field Name="Phone" Type="dcUser:dcPhone" />
+							<Field Name="Address" Type="dcUser:dcAddress" />
+							<Field Name="Address2" Type="dcUser:dcAddress2" />
+							<Field Name="City" Type="dcUser:dcCity" />
+							<Field Name="State" Type="dcUser:dcState" />
+							<Field Name="Zip" Type="dcUser:dcZip" />
 							<Field Name="Password" Type="dcUser:dcPassword" />
+							<!-- TODO
 							<Field Name="Chronology" Type="dcUser:dcChronology" />
 							<Field Name="Locale" Type="dcUser:dcLocale" />
+							-->
 							<Field Name="Description" Type="dcUser:dcDescription" />
 							<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
 							<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
@@ -863,6 +962,7 @@
 							<Field Name="UserId" Type="dcUser:Id" />
 						</RecordResponse>
 					</Op>
+					<!--
 					<Op Name="ListUsers">
 						<Description>
 							Load a list all user records, no matter how many.  Use with discretion.
@@ -877,12 +977,14 @@
 							</Record>
 						</ListResponse>
 					</Op>
+					-->
 					<Op Name="Search">
 						<Description>
 							Load a list all user records for the given badges.
 						</Description>
 						<RecordRequest Required="True">
-							<Field Name="Badges" Required="True">
+							<Field Name="Term" Type="dcSmallString" />
+							<Field Name="Badges">
 								<List Type="dcTinyString" />
 							</Field>
 						</RecordRequest>
@@ -893,6 +995,15 @@
 								<Field Name="FirstName" Type="dcUser:dcFirstName" />
 								<Field Name="LastName" Type="dcUser:dcLastName" />
 								<Field Name="Email" Type="dcUser:dcEmail" />
+								<Field Name="Phone" Type="dcUser:dcPhone" />
+								<Field Name="Address" Type="dcUser:dcAddress" />
+								<Field Name="City" Type="dcUser:dcCity" />
+								<Field Name="State" Type="dcUser:dcState" />
+								<Field Name="Zip" Type="dcUser:dcZip" />
+								<Field Name="Location" Type="dcUser:dcLocation" />
+								<Field Name="Badges">
+									<List Type="dcUser:dcBadges" />
+								</Field>
 							</Record>
 						</ListResponse>
 					</Op>

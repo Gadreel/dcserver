@@ -13,11 +13,18 @@
 	<Config>
 		<Service.Definition Id="dcm-store-simple" Name="dcmStoreServices" RunClass="dcraft.cms.store.Service" />
 
+		<Service.Definition Id="dcm-cms" Name="dcmServices" RunClass="dcraft.cms.Service" />
+
 		<Instructions>
 			<!-- general extended tags -->
 			<Tag Name="dc.Html" Class="dcraft.web.ui.inst.Html" />
 			<Tag Name="dc.Body" Class="dcraft.web.ui.inst.Body" />
+			<Tag Name="dc.Header" Class="dcraft.web.ui.inst.Header" />
+			<Tag Name="dc.Main" Class="dcraft.web.ui.inst.Main" />
+			<Tag Name="dc.Footer" Class="dcraft.web.ui.inst.Footer" />
+
 			<Tag Name="dc.Band" Class="dcraft.web.ui.inst.Band" />
+
 			<Tag Name="dc.CodeWidget" Class="dcraft.web.ui.inst.CodeWidget" />
 			<Tag Name="dc.TextWidget" Class="dcraft.web.ui.inst.TextWidget" />
 			<Tag Name="dc.Button" Class="dcraft.web.ui.inst.Button" />
@@ -27,12 +34,13 @@
 			<Tag Name="dc.PagePanel" Class="dcraft.web.ui.inst.PagePanel" />
 			<Tag Name="dc.Panel" Class="dcraft.web.ui.inst.Panel" />
 			<Tag Name="dc.Region" Class="dcraft.web.ui.inst.Region" />
-			<Tag Name="dc.Header" Class="dcraft.web.ui.inst.Header" />
-			<Tag Name="dc.Main" Class="dcraft.web.ui.inst.Main" />
-			<Tag Name="dc.Footer" Class="dcraft.web.ui.inst.Footer" />
+			<Tag Name="dc.Style" Class="dcraft.web.ui.inst.Style" />
+			<Tag Name="dc.Tag" Class="dcraft.web.ui.inst.Tag" />
+
 
 			<!-- special content tags -->
 			<Tag Name="dc.Out" Class="dcraft.script.inst.doc.Out" />
+			<Tag Name="dc.Template" Class="dcraft.script.inst.doc.Template" />
 			<Tag Name="dc.MixIn" Class="dcraft.web.ui.inst.MixIn" />
 			<Tag Name="dc.Fragment" Class="dcraft.web.ui.inst.Fragment" />
 			<Tag Name="dc.IncludeFragment" Class="dcraft.web.ui.inst.IncludeFragment" />
@@ -41,6 +49,7 @@
 			<Tag Name="dc.IncludeParam" Class="dcraft.web.ui.inst.IncludeParam" />
 
 			<!-- layout extended tags -->
+			<Tag Name="dc.SimpleLayout" Class="dcraft.web.ui.inst.layout.SimpleLayout" />
 			<Tag Name="dc.FullLayout" Class="dcraft.web.ui.inst.layout.FullLayout" />
 			<Tag Name="dc.RowLayout" Class="dcraft.web.ui.inst.layout.RowLayout" />
 			<Tag Name="dc.Column" Class="dcraft.web.ui.inst.layout.Column" />
@@ -86,35 +95,38 @@
 
 			<Tag Name="dcm.HoursWidget" Class="dcraft.web.ui.inst.store.HoursWidget" />
 
-			<Tag Name="dcmi.CmsLink" Class="dcraft.web.ui.inst.cms.EditButton" />
-
 			<!-- form extended tags -->
 			<Tag Name="dcf.Aligned" Class="dcraft.web.ui.inst.form.AlignedField" />
-			<Tag Name="dcf.FormButtons" Class="dcraft.web.ui.inst.form.AlignedField" />
+			<Tag Name="dcf.FormButtons" Class="dcraft.web.ui.inst.form.FormButtons" />
 			<Tag Name="dcf.AlignedInstructions" Class="dcraft.web.ui.inst.form.AlignedInstructions" />
 			<Tag Name="dcf.ButtonGroup" Class="dcraft.web.ui.inst.form.ButtonGroup" />
 			<Tag Name="dcf.CheckInput" Class="dcraft.web.ui.inst.form.CheckControl" />
-			<Tag Name="dcf.Checkbox" Class="dcraft.web.ui.inst.form.CheckGroup" />
+			<Tag Name="dcf.Checkbox" Class="dcraft.web.ui.inst.form.Checkbox" />
 			<Tag Name="dcf.CheckGroup" Class="dcraft.web.ui.inst.form.CheckGroup" />
 			<Tag Name="dcf.Custom" Class="dcraft.web.ui.inst.form.Custom" />
-			<Tag Name="dcf.HorizCheckGroup" Class="dcraft.web.ui.inst.form.CheckGroup" />
+			<Tag Name="dcf.HorizCheckGroup" Class="dcraft.web.ui.inst.form.HorizCheckGroup" />
 			<Tag Name="dcf.Form" Class="dcraft.web.ui.inst.form.Form" />
-			<Tag Name="dcf.Text" Class="dcraft.web.ui.inst.form.InputField" />
-			<Tag Name="dcf.Password" Class="dcraft.web.ui.inst.form.InputField" />
-			<Tag Name="dcf.Hidden" Class="dcraft.web.ui.inst.form.InputField" />
-			<Tag Name="dcf.Label" Class="dcraft.web.ui.inst.form.InputField" />
+			<Tag Name="dcf.Text" Class="dcraft.web.ui.inst.form.Text" />
+			<Tag Name="dcf.Password" Class="dcraft.web.ui.inst.form.Password" />
+			<Tag Name="dcf.Range" Class="dcraft.web.ui.inst.form.Range" />
+			<Tag Name="dcf.Number" Class="dcraft.web.ui.inst.form.Number" />
+			<Tag Name="dcf.Hidden" Class="dcraft.web.ui.inst.form.Hidden" />
+			<Tag Name="dcf.Label" Class="dcraft.web.ui.inst.form.Label" />
 			<Tag Name="dcf.InputControl" Class="dcraft.web.ui.inst.form.InputControl" />
 			<Tag Name="dcf.Instructions" Class="dcraft.web.ui.inst.form.Instructions" />
 			<Tag Name="dcf.ManagedForm" Class="dcraft.web.ui.inst.form.ManagedForm" />
 			<Tag Name="dcf.MultiText" Class="dcraft.web.ui.inst.form.MultiInputField" />
 			<Tag Name="dcf.RadioButton" Class="dcraft.web.ui.inst.form.RadioControl" />
 			<Tag Name="dcf.RadioGroup" Class="dcraft.web.ui.inst.form.RadioGroup" />
-			<Tag Name="dcf.HorizRadioGroup" Class="dcraft.web.ui.inst.form.RadioGroup" />
+			<Tag Name="dcf.HorizRadioGroup" Class="dcraft.web.ui.inst.form.HorizRadioGroup" />
 			<Tag Name="dcf.Select" Class="dcraft.web.ui.inst.form.SelectField" />
 			<Tag Name="dcf.SubmitButton" Class="dcraft.web.ui.inst.form.SubmitButton" />
 			<Tag Name="dcf.TextArea" Class="dcraft.web.ui.inst.form.TextArea" />
 			<Tag Name="dcf.Uploader" Class="dcraft.web.ui.inst.form.Uploader" />
 			<Tag Name="dcf.YesNo" Class="dcraft.web.ui.inst.form.YesNo" />
+
+			<!-- misc tags -->
+			<Tag Name="dc.Recaptcha" Class="dcraft.web.ui.inst.misc.Recaptcha" />
 
 			<!-- standard w3 tags -->
 			<Tag Name="a" Class="dcraft.web.ui.inst.W3" />
@@ -238,5 +250,39 @@
 			<Tag Name="frame" Class="dcraft.web.ui.inst.ClosedStandard" />
 			-->
 		</Instructions>
+
+		<Badges>
+			<Definition Label="Editor" Value="Editor" />
+			<Definition Label="Clerk" Value="Clerk" />
+		</Badges>
+
+		<Feeds>
+			<Definition Alias="pages" Title="Web Page"
+				LocaleFields="Title,Keywords,Description"
+				SharedFields="Image,PublishAt"
+			/>
+		</Feeds>
+
+		<Threads>
+			<!--
+			<Type Alias="nnn" Notices="yes|no|default for distribution" />
+
+			<Channel Alias="nnn" Prefix="nnn" ExtensionType="none|db|custom"   optional ExtensionDb="nnnn"  />
+			-->
+
+			<Type Name="ApproveUser" />
+
+			<Channel Alias="users" Prefix="Usr" ExtensionType="none" ExtensionDb="dcUser" Notices="yes" NoticeClass="dcraft.cms.thread.UserNotices" />
+			<Channel Alias="admin-notices" Prefix="NoticesPool" Notices="yes" EmailList="Admin" />
+		</Threads>
+
+		<Vaults>
+			<Site Id="Galleries" VaultClass="dcraft.filevault.GalleryVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/galleries"  />
+			<Site Id="Files" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/files"  />
+			<Site Id="Feeds" VaultClass="dcraft.filevault.FeedVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/feeds"  />
+			<Site Id="SiteFiles" VaultClass="dcraft.filevault.SiteVault" ReadBadges="Developer" WriteBadges="Developer" RootFolder="/"  />
+			<Tenant Id="StoreOrders" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />
+			<Tenant Id="ManagedForms" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />
+		</Vaults>
 	</Config>
 </Package>

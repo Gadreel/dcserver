@@ -1,5 +1,7 @@
 package dcraft.web.ui.inst.form;
 
+import dcraft.hub.op.OperatingContextException;
+import dcraft.script.work.InstructionWork;
 import dcraft.struct.Struct;
 import dcraft.web.ui.inst.W3;
 import dcraft.xml.XElement;
@@ -20,7 +22,7 @@ public class Custom extends CoreField {
 	}
 	
 	@Override
-	public void addControl() {
+	public void addControl(InstructionWork state) throws OperatingContextException {
 		this.fieldinfo
 				.withClass("dc-control", "dc-input-group")
 				.attr("id", this.fieldid + "Group")

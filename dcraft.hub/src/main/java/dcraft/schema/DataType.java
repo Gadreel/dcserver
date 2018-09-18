@@ -219,13 +219,8 @@ public class DataType {
 	}
 
 	public boolean isSearchable() {
-		boolean searchable = true;
-
 		if (this.definition.hasAttribute("Searchable"))
-			searchable = this.definition.getAttributeAsBooleanOrFalse("Searchable");
-
-		if (! searchable)
-			return false;
+			return this.definition.getAttributeAsBooleanOrFalse("Searchable");
 
 		if (this.kind == DataKind.Record) {
 			for (Field fld : this.fields.values()) {
@@ -746,7 +741,10 @@ public class DataType {
 			
 			Logger.errorTr(439, data);		
 			return null;
-		} 
+		}
+		
+		if ((this.core.root == RootType.Any) && (data instanceof Struct))
+			return (Struct) data;
 		
 		return this.core.normalize(this, data);
 	}

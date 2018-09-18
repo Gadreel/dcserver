@@ -37,31 +37,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import java.io.PrintStream;
 import java.nio.file.Path;
 
-public class DynamicOutputAdapter extends ChainWork implements IOutputWork {
+public class DynamicOutputAdapter extends SsiOutputAdapter implements IOutputWork {
 	protected Script script = null;
-	public CommonPath webpath = null;
-	public Path file = null;
-	protected MimeInfo mime = null;
-	protected boolean runonce = false;
-	
-	@Override
-	public Path getFile() {
-		return this.file;
-	}
-	
-	@Override
-	public CommonPath getPath() {
-		return this.webpath;
-	}
-	
-	@Override
-	public void init(Site site, Path file, CommonPath web, String view) {
-		this.webpath = web;
-		this.file = file;
-		this.mime = ResourceHub.getResources().getMime().getMimeTypeForPath(this.file);
-	}
-	
-	
+
 	public Script getSource() throws OperatingContextException {
 		if (this.script != null)
 			return this.script;
@@ -73,13 +51,16 @@ public class DynamicOutputAdapter extends ChainWork implements IOutputWork {
 
 	@Override
 	public void run(TaskContext ctx) throws OperatingContextException {
+		if (! this.init) {
+			super.init(ctx);
+			this.init = true;
+		}
+
 		if (this.runonce) {
 			super.run(ctx);
 			return;
 		}
-		
-		this.runonce = true;
-		
+
 		OperationContext wctx = OperationContext.getOrThrow();
 
 		CountHub.countObjects("dcWebOutDynamicCount-" + wctx.getTenant().getAlias(), this);
@@ -106,6 +87,8 @@ public class DynamicOutputAdapter extends ChainWork implements IOutputWork {
 			super.run(ctx);
 			return;
 		}
+
+		this.runonce = true;
 		
 		BooleanStruct isDynamic = (BooleanStruct) StackUtil.queryVariable(null, "_Controller.Request.IsDynamic");
 		
@@ -127,6 +110,7 @@ public class DynamicOutputAdapter extends ChainWork implements IOutputWork {
 				else {
 					wctrl.getResponse().setStatus(HttpResponseStatus.FOUND);
 					wctrl.getResponse().setHeader("Location", "/");
+					wctrl.getResponse().setHeader("Cache-Control", "no-cache");		// in case they login later, FireFox was using cache
 					wctrl.send();
 				}
 		
@@ -137,6 +121,13 @@ public class DynamicOutputAdapter extends ChainWork implements IOutputWork {
 		}
 		
 		RecordStruct req = wctrl.getFieldAsRecord("Request");
+		
+		String pathclass = req.getFieldAsString("Path").substring(1).replace('/', '-');
+		
+		if (pathclass.endsWith(".html"))
+			pathclass = pathclass.substring(0, pathclass.length() - 5);
+		
+		pathclass = pathclass.replace('.', '_');
 
 		// TODO cleanup everything about wctrl - including making this part more transparent
 		RecordStruct page = RecordStruct.record()
@@ -144,7 +135,7 @@ public class DynamicOutputAdapter extends ChainWork implements IOutputWork {
 				.with("PathParts", ListStruct.list((Object[]) req.getFieldAsString("Path").substring(1).split("/")))
 				.with("OriginalPath", req.getFieldAsString("OriginalPath"))
 				.with("OriginalPathParts", ListStruct.list((Object[]) req.getFieldAsString("OriginalPath").substring(1).split("/")))
-				.with("PageClass", req.getFieldAsString("Path").substring(1).replace('/', '-'));
+				.with("PageClass", pathclass);
 		
 		OperationContext.getOrThrow().getController().addVariable("Page", page);
 		

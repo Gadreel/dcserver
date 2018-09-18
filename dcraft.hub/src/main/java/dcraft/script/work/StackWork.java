@@ -24,6 +24,7 @@ abstract public class StackWork implements IParentAwareWork, IDebuggableWork, IC
 	protected ExecuteState state = ExecuteState.READY;
 	protected IParentAwareWork parent = null;
 	protected RecordStruct store = new RecordStruct();
+	protected boolean isContinue = false;
 	
 	protected StackWork() { }
 	
@@ -31,13 +32,25 @@ abstract public class StackWork implements IParentAwareWork, IDebuggableWork, IC
     public IParentAwareWork getParent() {
     	return this.parent;
     }
-	
+
 	@Override
 	public StackWork withParent(IParentAwareWork v) {
 		this.parent = v;
 		return this;
 	}
- 
+
+	public boolean checkIsContinue() {
+		boolean ret = this.isContinue;
+		this.isContinue = false;
+		return ret;
+	}
+
+	public StackWork withContinueFlag() {
+		this.isContinue = true;
+		this.state = ExecuteState.RESUME;
+		return this;
+	}
+
 	public RecordStruct getStore() {
 		return this.store;
 	}

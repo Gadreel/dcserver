@@ -21,21 +21,23 @@ import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
+import dcraft.log.count.CountHub;
 import dcraft.stream.IStreamDest;
 import dcraft.stream.ReturnOption;
 import dcraft.stream.file.BaseFileStream;
 import dcraft.stream.file.FileSlice;
 import dcraft.stream.file.IFileStreamDest;
+import dcraft.struct.RecordStruct;
 import dcraft.task.TaskContext;
+import dcraft.util.web.DateParser;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.DefaultLastHttpContent;
-import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.*;
 import io.netty.util.concurrent.GenericFutureListener;
 
+import java.nio.file.Files;
 import java.util.function.Consumer;
 
 public class HttpDestStream extends BaseFileStream implements IFileStreamDest, GenericFutureListener<ChannelFuture> {
@@ -45,8 +47,18 @@ public class HttpDestStream extends BaseFileStream implements IFileStreamDest, G
 	}
 
 	protected boolean headersent = false;
+	protected boolean asAttachment = true;
 
 	protected Consumer<FileDescriptor> tabulator = null;
+	
+	public void setHeaderSent(boolean v) {
+		this.headersent = v;
+	}
+
+	public HttpDestStream withAsAttachment(boolean v) {
+		this.asAttachment = v;
+		return this;
+	}
 
 	@Override
 	public IStreamDest<FileSlice> withTabulator(Consumer<FileDescriptor> v) throws OperatingContextException {
@@ -104,15 +116,34 @@ public class HttpDestStream extends BaseFileStream implements IFileStreamDest, G
 
 		WebController wctrl = (WebController) taskContext.getController();
 
+		Channel channel = wctrl.getChannel();
+
 		if (! this.headersent) {
 			this.headersent = true;
-			wctrl.sendDownloadHeaders(slice.getFile().getPath() != null ? slice.getFile().getPathAsCommon().getFileName() : null,
-					ResourceHub.getResources().getMime().getMimeTypeForPath(slice.getFile().getPathAsCommon()).getType());
+
+			long when = System.currentTimeMillis();
+
+			String mtype = ResourceHub.getResources().getMime().getMimeTypeForPath(slice.getFile().getPathAsCommon()).getType();
+
+			if (this.asAttachment) {
+				wctrl.sendDownloadHeaders(slice.getFile().getPath() != null ? slice.getFile().getPathAsCommon().getFileName() : null, mtype);
+			}
+			else {
+				HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+				
+				response.headers().set(HttpHeaderNames.CONTENT_TYPE, mtype);
+				response.headers().set("Date", new DateParser().convert(when));
+				response.headers().set("Last-Modified", new DateParser().convert(when));
+				response.headers().set("X-UA-Compatible", "IE=Edge,chrome=1");
+				response.headers().set("Cache-Control", "no-cache");
+				response.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
+
+				// Write the response.
+				channel.writeAndFlush(response);
+			}
 		}
 
 		if (slice.getData() != null) {
-			Channel channel = wctrl.getChannel();
-
 			HttpContent b = new DefaultHttpContent(Unpooled.copiedBuffer(slice.getData()));		// TODO not copied
 			ChannelFuture future = channel.writeAndFlush(b);
 

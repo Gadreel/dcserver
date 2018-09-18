@@ -16,6 +16,9 @@
 ************************************************************************ */
 package dcraft.xml;
 
+import dcraft.struct.PathPart;
+import dcraft.struct.Struct;
+import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
 
@@ -43,9 +46,17 @@ public class XComment extends XNode {
 	}
 	
 	@Override
+	protected void doCopy(Struct n) {
+		super.doCopy(n);
+		
+		XComment copy = (XComment) n;
+		copy.content = this.content;
+	}
+	
+	@Override
 	public XNode deepCopy() {
 		XComment copy = new XComment();
-		copy.content = this.content;
+		this.doCopy(copy);
 		return copy;
 	}
 	
@@ -117,5 +128,27 @@ public class XComment extends XNode {
 		sb.write("<!--");
 		sb.write(this.content);
 		sb.write("-->");
+	}
+	
+	@Override
+	public boolean isEmpty() {
+		return StringUtil.isNotEmpty(this.content);
+	}
+	
+	@Override
+	public void clear() {
+		this.content = null;
+	}
+	
+	@Override
+	public void toBuilder(ICompositeBuilder builder) {
+		// TODO
+	}
+	
+	@Override
+	public Struct select(PathPart... path) {
+		// TODO
+		
+		return null;
 	}
 }

@@ -2,7 +2,9 @@ package dcraft.web.ui.inst.form;
 
 import java.util.List;
 
+import dcraft.hub.op.OperatingContextException;
 import dcraft.script.inst.doc.Base;
+import dcraft.script.work.InstructionWork;
 import dcraft.web.ui.inst.W3;
 import dcraft.xml.XElement;
 
@@ -13,31 +15,20 @@ public class RadioGroup extends CoreField {
 		return el;
 	}
 	
-	static public RadioGroup tagHorz() {
-		RadioGroup el = new RadioGroup();
-		el.setName("dcf.HorizRadioGroup");
-		return el;
-	}
-	
 	@Override
 	public XElement newNode() {
 		return RadioGroup.tag();
 	}
 	
 	@Override
-	public void addControl() {
+	public void addControl(InstructionWork state) throws OperatingContextException {
 		Base grp = W3.tag("div")
-			.withClass("dc-control");
+			.withClass("dc-control", "dc-controlgroup-vertical");
 		
 		grp
 			.withAttribute("id", this.fieldid)
 			.withAttribute("data-dc-enhance", "true")
 			.withAttribute("data-dc-tag", this.getName());
-		
-		if ("dcf.HorizRadioGroup".equals(this.getName()) || "dcf.YesNo".equals(this.getName()))
-			grp.withClass("dc-controlgroup-horizontal");
-		else
-			grp.withClass("dc-controlgroup-vertical");
 		
 		RadioControl.enhanceField(this, grp);
 		

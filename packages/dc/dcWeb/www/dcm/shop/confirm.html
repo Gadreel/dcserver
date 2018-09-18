@@ -262,7 +262,7 @@
 				);
 			}
 	]]></Function>
-	<Function Name="DoSubmit"><![CDATA[
+	<Function Name="DoSubmit" Params="e"><![CDATA[
 			var page = this;
 
 			if (! page.Store.Pass) {
@@ -270,10 +270,14 @@
 				return;
 			}
 
-			dc.cms.cart.Cart.save();
+			var node = e.currentTarget;
+
+			$(node).addClass('pure-button-disabled');
 
 			dc.pui.Dialog.loadPage('/dcm/shop/submit', {
 				Callback: function(id) {
+					$(node).removeClass('pure-button-disabled');
+
 					if (id)
 						page.Layer.close();
 				}

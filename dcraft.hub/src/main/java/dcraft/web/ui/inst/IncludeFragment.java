@@ -68,7 +68,7 @@ public class IncludeFragment extends Base {
 			
 			WebFindResult ppath = OperationContext.getOrThrow().getSite().webFindFilePath(pp, OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
 			
-			if ((ppath != null) && Files.exists(ppath.file)) {
+			if ((ppath != null) && (ppath.file != null) && Files.exists(ppath.file)) {
 				XElement layout = ScriptHub.parseInstructions(IOUtil.readEntireFile(ppath.file));
 				
 				if (layout instanceof Base) {

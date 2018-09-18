@@ -1,0 +1,146 @@
+<dc.Html Badges="Editor,Admin" NoCache="true">
+	<Require Script="/js/vendor/speakingurl-5.0.1.min.js" />
+
+	<dcs.Var Name="Alias" Type="String" />
+	<dcs.Var Name="FeedPos" Type="Integer" SetTo="-1" />
+
+	<dcs.If Target="$Page.OriginalPathParts.3" IsEmpty="false">
+		<dcs.With Target="$Alias" SetTo="$Page.OriginalPathParts.3" />
+	</dcs.If>
+
+	<dcs.With Target="$_Resources.Config">
+	  <GetTagDeep Path="Feeds/Definition" Result="Feeds" />
+	</dcs.With>
+
+	<dcs.For Name="Cnt" From="0" To="$Feeds.Last">
+		<dcs.If Target="$Feeds.$Cnt.@Alias" Equal="$Alias">
+			<dcs.With Target="$FeedPos" SetTo="$Cnt" />
+		</dcs.If>
+	</dcs.For>
+
+	<!-- TODO what to do if -1 still -->
+
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Add {$Feeds.$FeedPos.@Title}" />
+	</Meta>
+
+	<dcs.File Name="templates" Path="/templates/{$Alias}" In="SiteFiles">
+		<List Result="templatelist" />
+	</dcs.File>
+
+	<dc.Template Name="TemplateOpts">
+		<option value="NULL">Select One...</option>
+
+		<dcs.ForEach Name="template" In="$templatelist">
+			<dc.Out>
+				<option value="{$template.Name}">{$template.Name}</option>
+			</dc.Out>
+		</dcs.ForEach>
+	</dc.Template>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.Text Name="Title" Label="Title" DataType="dcmPageTitle" Required="true" />
+				<dcf.Text Name="Path" Label="Slug Name" Required="true" Pattern="[\w-]+"
+					placeholder="{$Feeds.$FeedPos.@Title} name, no spaces - use dash instead of space" />
+				<dcf.Text Name="Keywords" Label="Keywords" DataType="dcmPageKeywords" />
+				<dcf.Text
+					Name="Image"
+					Label="Image"
+				>
+					<Input />
+					<Button Icon="fa-ellipsis-h" Click="DoSelectImage" />
+				</dcf.Text>
+				<dcf.Select Label="Template" Name="Template" FieldParams="TemplateOpts" Required="true" value="null" />
+				<dcf.TextArea Name="Description" Label="Description" DataType="dcmPageDescription" />
+				<dcf.Text Name="PublishAt" Label="Publish At" Pattern="\d\d\d\d-\d\d-\d\d(\s\d\d:\d\d\s[ap]m)?" placeholder="YYYY-MM-DD or YYYY-MM-DD hh:mm am (or pm)" />
+
+				<dc.IncludeFragmentInline Path="/dcm/feeds/{$Alias}-properties" Optional="true" />
+
+				<dcf.FormButtons>
+					<dcf.SubmitButton Label="Add" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load" Params="e"><![CDATA[
+			var page = this;
+
+			page.form().inputQuery('Title')
+				.focusout(function(e) {
+					var slug = page.form().getValue('Alias');
+
+					if (! slug) {
+						slug = getSlug(page.form().getValue('Title'));
+						page.form().setValue('Path', slug);
+					}
+				})
+				.focus();
+
+			page.Store.Vault = 'Feeds';
+	]]></Function>
+	<Function Name="LoadRecord" Params="e">
+			e.AsNew = true;
+			e.Data = {
+				Path: '',
+				Template: 'standard',
+				PublishAt: moment().format('YYYY-MM-DD')
+			};
+	</Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			var savedata = {
+				Command: 'AddFeed',
+				Vault: page.Store.Vault,
+				Path: page.Params.Path + '/' + e.Data.Path + '.html',
+				Params: {
+					Template: e.Data.Template,
+					SetFields: []
+				}
+			};
+
+			delete e.Data.Path;
+			delete e.Data.Template;
+
+			for (var fldname in e.Data) {
+				if (e.Data.hasOwnProperty(fldname)) {
+					savedata.Params.SetFields.push({
+						Name: fldname,
+						Value: e.Data[fldname]
+					});
+				}
+			}
+
+			page.callPageFunc('SaveRecordPlugin', e, savedata);
+
+			e.Message = {
+				Service: 'dcCoreServices',
+				Feature: 'Vaults',
+				Op: 'Custom',
+				Body: savedata
+			};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback( page.Params.Path );
+	]]></Function>
+	<Function Name="DoSelectImage"><![CDATA[
+			var page = this;
+
+		    dc.pui.Dialog.loadPage('/dcm/galleries/chooser', {
+				Callback: function(res) {
+					if (res.Images && res.Images.length) {
+						var fh = res.Images[0];
+
+						page.form().setValue('Image', '/galleries' + fh.FullPath);
+					}
+				}
+			});
+    ]]></Function>
+</dc.Html>

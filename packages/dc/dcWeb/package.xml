@@ -17,8 +17,9 @@
 		<Web.Global Script="/js/vendor/moment.min.js" />
 		<Web.Global Script="/js/vendor/numeral/numeral.min.js" />
 		<Web.Global Script="/js/vendor/numeral/languages.min.js" />
-		<!-- TODO only used by carousel, consider remove -->
+		<!-- TODO only used by carousel, consider remove
 		<Web.Global Script="/js/vendor/velocity.min.js" />
+		-->
 		<Web.Global Script="/js/dc.lang.js" />
 		<Web.Global Script="/js/dc.schema.js" />
 		<Web.Global Script="/js/dc.schema.def.js" />

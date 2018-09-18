@@ -3,6 +3,13 @@ package dcraft.hub.resource;
 import dcraft.filestore.CommonPath;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
+import dcraft.hub.op.OperatingContextException;
+import dcraft.script.StackUtil;
+import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
+import dcraft.struct.CompositeParser;
+import dcraft.struct.ListStruct;
+import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.FileUtil;
 import dcraft.util.MimeInfo;
@@ -46,7 +53,53 @@ public class ConfigResource extends ResourceBase {
 		if (v != null)
 			this.configlist.add(0, v);
 	}
+	
+	@Override
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
+		if ("GetTag".equals(code.getName())) {
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+			
+			if (StringUtil.isNotEmpty(result)) {
+				XElement el = this.getTag(StackUtil.stringFromElement(stack, code, "Path"));
+				StackUtil.addVariable(stack, result, el);
+			}
+			
+			return ReturnOption.CONTINUE;
+		}
+		
+		if ("GetTagDeep".equals(code.getName())) {
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+			
+			if (StringUtil.isNotEmpty(result)) {
+				ListStruct list = ListStruct.list();
+				List<XElement> el = this.getTagListDeep(StackUtil.stringFromElement(stack, code, "Path"));
+				list.withCollection(el);
+				StackUtil.addVariable(stack, result, list);
+			}
+			
+			return ReturnOption.CONTINUE;
+		}
 
+		if ("GetCatalog".equals(code.getName())) {
+			String name = StackUtil.stringFromElement(stack, code, "Name");
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+
+			if (StringUtil.isNotEmpty(result) && StringUtil.isNotEmpty(name)) {
+				String alternate = StackUtil.stringFromElement(stack, code, "Alternate");
+
+				XElement el = code.hasNotEmptyAttribute("Mode")
+					? this.getCatalog(name, alternate, StackUtil.stringFromElement(stack, code, "Mode"))
+					: this.getCatalog(name, alternate);
+
+				StackUtil.addVariable(stack, result, el);
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+
+		return super.operation(stack, code);
+	}
+	
 	public String getAttribute(String name) {
 		return this.getAttribute(name, null);
 	}
@@ -311,6 +364,27 @@ public class ConfigResource extends ResourceBase {
 		if (parent != null)
 			return parent.getCatalog(name, alternate);
 		
+		return null;
+	}
+
+	public XElement getCatalog(String name, String alternate, String mode) {
+		if (StringUtil.isEmpty(name))
+			return null;
+
+		String lname = StringUtil.isNotEmpty(alternate) ? name + "-" + alternate : name;
+
+		String mname = lname + "-" + mode;
+
+		XElement cat = this.findIdLocal("Catalog", mname);
+
+		if (cat != null)
+			return cat;
+
+		ConfigResource parent = this.getParentResource();
+
+		if (parent != null)
+			return parent.getCatalog(name, alternate, mode);
+
 		return null;
 	}
 }

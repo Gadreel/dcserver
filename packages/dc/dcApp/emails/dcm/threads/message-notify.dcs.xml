@@ -1,0 +1,76 @@
+<!--
+	Params: Id, Party, Channel (def), Type (def), Stamp (stamp of Content)
+-->
+<dcs.Script Title="Notify Thread Delivery">
+	<dcs.Info>Notify thread: {$_Param.Id} - party:  {$_Param.Party}!</dcs.Info>
+
+	<dcs.Var Name="ThreadId" Type="String" SetTo="{$_Param.Id}" />
+
+	<dcdb.LoadRecord Table="dcmThread" Id="{$_Param.Id}" Result="Data">
+		<Select Field="Id" />
+		<Select Field="dcmUuid" As="Uuid" />
+		<Select Field="dcmTitle" As="Title" />
+		<Select Field="dcmMessageType" As="MessageType" />
+		<Select Field="dcmCreated" As="Created" />
+		<Select Field="dcmModified" As="Modified" />
+		<Select Field="dcmOriginator" As="ThreadOriginator" />
+		<Select Field="dcmSharedAttributes" As="SharedAttributes" />
+		<Select Field="dcmContent" As="Messages" />
+		<Select Field="dcmContent" As="Message" SubId="{$_Param.Stamp}" />
+		<Select Field="dcmContentOriginator" As="Originator" SubId="{$_Param.Stamp}" />
+	</dcdb.LoadRecord>
+
+	<dcdb.LoadRecord Table="dcUser" Id="$Data.Originator" Result="TheOriginator">
+		<Select Field="dcFirstName" As="FirstName" />
+		<Select Field="dcLastName" As="LastName" />
+	</dcdb.LoadRecord>
+
+	<dcs.With Target="$Data">
+		<SetField Name="Party" Value="$_Param.Party" />
+		<SetField Name="OriginatorName" Value="{$TheOriginator.FirstName} {$TheOriginator.LastName}" />
+	</dcs.With>
+
+	<dcs.Var Name="Thread" Type="dcmThreadObject">
+		<SetField Name="Id" Value="{$Data.Id}" />
+	</dcs.Var>
+
+	<dcs.Include Path="/dcm/threads/{$Data.MessageType}" />
+
+	<!-- BuildMessage function overrides entire process -->
+	<dcs.If Target="$SendNotice" IsEmpty="false">
+		<dcs.CallFunc Name="SendNotice" Arg="$Data" />
+	</dcs.If>
+	<dcs.Else>
+		<!--
+			this will, optionally, add fields to Data
+
+			(BuildData can be defined in message type)
+		-->
+
+		<dcs.If Target="$BuildData" IsEmpty="false">
+			<dcs.CallFunc Name="BuildData" Arg="$Data" Result="Data" />
+		</dcs.If>
+
+		<!--
+			this will give us PartyName, PartyNotices, PartyEmail, PartyPhone, PartyEmailList
+		-->
+
+		<dcs.Include Path="/dcm/threads/channel-{$_Param.Channel.@Alias}" />
+
+		<!--
+			this will, optionally, adjust any of the PartyNNN fields as needed
+
+			(ChannelReview can be defined in message type)
+		-->
+
+		<dcs.If Target="$ChannelReview" IsEmpty="false">
+			<dcs.CallFunc Name="ChannelReview" Arg="$Data" Result="Data" />
+		</dcs.If>
+
+		<!--
+			this will send using the above info
+		-->
+
+		<dcs.Include Path="/dcm/threads/notifier-{$Data.PartyNotices}" />
+	</dcs.Else>
+</dcs.Script>

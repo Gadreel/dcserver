@@ -36,7 +36,7 @@ import dcraft.xml.XElement;
 public class ForEach extends BlockInstruction {
 	static public ForEach tag() {
 		ForEach el = new ForEach();
-		el.setName("dcs.For");
+		el.setName("dcs.ForEach");
 		return el;
 	}
 	
@@ -52,7 +52,7 @@ public class ForEach extends BlockInstruction {
 		// "_forindex"
 		String name = StackUtil.stringFromSource(state,"Name","_forvalue");
 
-		Struct source = StackUtil.refFromSource(state,"In");
+		Struct source = StackUtil.refFromSource(state,"In", true);
 
 		// TODO support more than just ListStruct someday
 		if (! (source instanceof ListStruct)) {

@@ -3,6 +3,8 @@
 		<Tr Locale="en" Value="Shopping Cart" />
 	</Meta>
 
+	<Require Script="/js/vendor/marked.min.js" />
+
 	<dc.Body>
 		<dc.PagePanel>
 			<dcf.FormButtons Hint="Cart options">
@@ -96,7 +98,7 @@
 								item.Title,
 								$('<br>'),
 								$('<br>'),
-								(item.Instructions ? item.Instructions : null)
+								$(dc.util.Web.markedExt(item.Instructions))
 							),
 							$('<td>').dcappend(
 								$('<b>').addClass('dc-table-cell-label').text('Price'),

@@ -2,15 +2,13 @@ package dcraft.db.proc.call;
 
 import java.util.function.Function;
 
-import dcraft.db.proc.BasicFilter;
-import dcraft.db.proc.ExpressionResult;
-import dcraft.db.proc.IComposer;
-import dcraft.db.proc.IStoredProc;
+import dcraft.db.proc.*;
 import dcraft.db.ICallContext;
 import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.time.BigDateTime;
@@ -45,8 +43,7 @@ public class LoadRecord implements IStoredProc {
 		ICompositeBuilder out = new ObjectBuilder();
 		
 		try (OperationMarker om = OperationMarker.create()) {
-
-			TableUtil.writeRecord(out, db, table, id, select, compact, false);
+			TableUtil.writeRecord(out, db, RecordScope.of(OperationContext.getOrThrow()), table, id, select, compact, false);
 			
 			if (! om.hasErrors()) {
 				callback.returnValue(out.toLocal());
@@ -59,6 +56,4 @@ public class LoadRecord implements IStoredProc {
 		
 		callback.returnEmpty();
 	}
-
-
 }

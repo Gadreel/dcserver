@@ -1,0 +1,13 @@
+<dcs.Library>
+	<!--
+		we have PartyName, PartyNotices, PartyEmail, PartyPhone, PartyEmailList
+	-->
+
+	<dcs.With Target="$TextNotice-Text">
+		<Translate Result="TrTextMessage" />
+	</dcs.With>
+
+	<dcs.If Target="$Data.PartyPhone" IsEmpty="false">
+		<dcs.SendText To="{$Data.PartyPhone}" Body="{$TrTextMessage}" />
+	</dcs.If>
+</dcs.Library>

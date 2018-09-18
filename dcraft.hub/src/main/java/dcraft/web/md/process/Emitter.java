@@ -330,7 +330,7 @@ public class Emitter {
         }
         else if (token == MarkToken.IMAGE) {
         	XElement img = W3Closed.tag("img")
-				.withAttribute("class", "inline-img " + (classes == null ? "" : classes))
+				.withAttribute("class", "pure-img-inline " + (classes == null ? "" : classes))
         		.withAttribute("src", link)
         		.withAttribute("alt", name);
         	
@@ -341,7 +341,7 @@ public class Emitter {
         }
         else {		// X_IMAGE a captioned image
         	XElement div = W3.tag("div")
-	    		.withAttribute("class", "inline-img " + (classes == null ? "" : classes));
+	    		.withAttribute("class", "pure-img-inline " + (classes == null ? "" : classes));
 	    		
 	    	div.add(W3.tag("img")
 	    		.withAttribute("src", link)
@@ -437,10 +437,24 @@ public class Emitter {
             if (pos > 0) {
             	String xml = in.substring(start, pos + 1);
 	
-				XElement xres = ScriptHub.parseInstructions(xml);
-            	
-            	if (xres != null)
-            		parent.with(xres);
+				if (this.ctx.getConfig().getSafeMode()) {
+					String[] lines = xml.split("\n");
+					
+					for (int i = 0; i < lines.length; i++) {
+						parent.with(XText.of(lines[i]));
+						
+						if (i < lines.length - 1)
+							parent.with(W3Closed.tag("br"));
+					}
+				}
+				else {
+					XElement xres = ScriptHub.parseInstructions(xml);
+					
+					if (xres != null)
+						parent.with(xres);
+					else
+						parent.with(XText.of(xml));
+				}
             }
             
             return pos;
@@ -777,7 +791,9 @@ public class Emitter {
             	
             	if (ch != '\n')
             		parent.append(ch);
-                
+            	else
+					parent.with(ScriptHub.parseInstructions("<br />"));
+             
             	break;
             }
             
@@ -926,7 +942,7 @@ public class Emitter {
                 in.append(line.value.substring(line.leading, line.value.length() - line.trailing));
             
             if(line.next != null) 
-                in.append("\n<br />");
+                in.append("\n");
             
             line = line.next;
         }

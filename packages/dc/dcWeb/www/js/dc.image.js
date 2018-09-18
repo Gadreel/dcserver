@@ -7,9 +7,9 @@ if (! dc.image)
 dc.image.Tasks = {
 	createVariationsTask: function(blob, variants, format, quality) {
 		var or = new dc.lang.OperationResult();
-		
+
 		var steps = [ ];
-		
+
 		steps.push({
 			Alias: 'MetaData',
 			Title: 'Collect Image MetaData',
@@ -21,12 +21,12 @@ dc.image.Tasks = {
 				// blueimp function
 				loadImage.parseMetaData(blob, function (mdata) {
 					task.Store.MetaData = mdata;	// ok if this fails, though ideally would not
-						
+
 					task.resume();
-				});					
+				});
 			}
-		});		
-		
+		});
+
 		for (var n = 0; n < variants.length; n++) {
 			steps.push({
 				Alias: 'Resize',
@@ -36,63 +36,63 @@ dc.image.Tasks = {
 				},
 				Func: function(step) {
 					var task = this;
-		
+
 					var options = {
 						//maxWidth: 152,
 						//maxHeight: 152,
 						canvas: true,
 						downsamplingRatio: 0.5
 					};
-					
-					if (task.Store.MetaData && task.Store.MetaData.exif) 
+
+					if (task.Store.MetaData && task.Store.MetaData.exif)
 						options.orientation = task.Store.MetaData.exif.get('Orientation');
-					
+
 					var sizing = step.Params.Sizing;
-					
+
 					if (sizing.ExactWidth) {
 						options.maxWidth = sizing.ExactWidth;
 						options.minWidth = sizing.ExactWidth;
 						options.crop = true;
 					}
-					
+
 					if (sizing.ExactHeight) {
 						options.maxHeight = sizing.ExactHeight;
 						options.minHeight = sizing.ExactHeight;
 						options.crop = true;
 					}
-					
+
 					if (sizing.MaxWidth) {
 						options.maxWidth = sizing.MaxWidth;
 					}
-					
+
 					if (sizing.MinWidth) {
 						options.minWidth = sizing.MinWidth;
 					}
-					
+
 					if (sizing.MaxHeight) {
 						options.maxHeight = sizing.MaxHeight;
 					}
-					
+
 					if (sizing.MinHeight) {
 						options.minHeight = sizing.MinHeight;
 					}
-					
+
 					// blueimp feature (modified)
 					loadImage(
 						blob,
 						function (can) {
-							if(can.type === "error") 
+							if(can.type === "error")
 								task.error('Unable to load as image.');
-							else 
+							else
 								task.Store.Canvas = can;
-							
+
 							task.resume();
 						},
 						options
-					);					
+					);
 				}
 			});
-			
+
 			steps.push({
 				Alias: 'Filter',
 				Title: 'Apply Image Filter',
@@ -101,22 +101,22 @@ dc.image.Tasks = {
 				},
 				Func: function(step) {
 					var task = this;
-					
+
 					var sizing = step.Params.Sizing;
-					
+
 					var ctx = task.Store.Canvas.getContext('2d');
-					
+
 					// OpacityFilter
-					
+
 					if (sizing.OpacityFilter) {
 						ctx.fillStyle = 'rgba(225, 225, 225,' + sizing.OpacityFilter + ')';
 						ctx.fillRect(0, 0, task.Store.Canvas.width, task.Store.Canvas.height);
 					}
-					
+
 					task.resume();
 				}
-			});	
-			
+			});
+
 			steps.push({
 				Alias: 'Format',
 				Title: 'Convert Image Format',
@@ -125,61 +125,104 @@ dc.image.Tasks = {
 				},
 				Func: function(step) {
 					var task = this;
-					
+
 					var sizing = step.Params.Sizing;
-					
+
 					var fmt = sizing.Format ? sizing.Format : format ? format : "image/jpeg";
 					var qual = sizing.Quality ? sizing.Quality : quality ? quality : 0.6;
-				
+
 					var fmt2 = 'jpg';
-					
+
 					if (fmt == 'image/gif')
 						fmt2 = 'gif';
 					else if (fmt == 'image/png')
 						fmt2 = 'png';
-					
+
 					task.Store.Canvas.toBlob(function(blob) {
-						if (!blob) 
+						if (!blob)
 							task.error('Image conversion failed.');
-				
+
 						task.Result.push({
-							Alias: sizing.Alias, 
-							FileName: sizing.Alias + '.' + fmt2, 
+							Alias: sizing.Alias,
+							FileName: sizing.Alias + '.' + fmt2,
 							Blob: blob
 						});
-						
+
 						task.Store.Canvas = null;
-						
+
 						task.resume();
 					}, fmt, qual);
 				}
-			});	
+			});
 		}
-		
+
 		var createtask = new dc.lang.Task(steps);
-		
+
 		createtask.Store = {
 			Canvas: null,
 			MetaData: null
 		};
-		
+
 		createtask.Result = [ ];
-		
+
 		or.Result = createtask;
-		
+
 		return or;
 	}
 };
 
+// send a div or p tag, or similar
+// height = 0 means autosize
+dc.image.htmlToImage = function(html, width, height, callback) {
+	var doc = document.implementation.createHTMLDocument('');
+
+	doc.write(html);
+
+	// You must manually set the xmlns if you intend to immediately serialize
+	// the HTML document to a string as opposed to appending it to a
+	// <foreignObject> in the DOM
+	doc.documentElement.setAttribute('xmlns', doc.documentElement.namespaceURI);
+
+	// Get well-formed markup for just the body
+	html = (new XMLSerializer()).serializeToString(doc.documentElement.getElementsByTagName('body')[0]);
+
+	// each char ~ 5 wide divide by available width = # lines * 14 for each line
+	if (height == 0)
+		height = Math.ceil(html.length * 6 / width * 20);
+
+	// create SVG with html
+	var canvas = document.createElement('canvas');
+	var ctx = canvas.getContext('2d');
+
+	var data = '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '">' +
+			'<foreignObject width="100%" height="100%">' +
+				'<div xmlns="http://www.w3.org/1999/xhtml" style="font-size: 16px">' +
+					html +
+				'</div>' +
+			'</foreignObject>' +
+		'</svg>';
+
+	data = encodeURIComponent(data);
+
+	// load svg into Image
+	var img = new Image();
+
+	img.onload = function() {
+		if (callback)
+			callback(img);
+	}
+
+	img.src = "data:image/svg+xml," + data;
+}
 
 
 /*
  * eTimeline - modification of Blue Imp's load-image.js
- * 
+ *
  * may wish to include /js/vendor/blueimp/* files
- * 
+ *
  * ----------------------------------------------------------
- * 
+ *
  * JavaScript Load Image
  * https://github.com/blueimp/JavaScript-Load-Image
  *
@@ -305,23 +348,23 @@ dc.image.Tasks = {
   ) {
   	// %%% APW
   	//console.log('render: ' + canvas.width + ',' + canvas.height + ' - '
-  	//	+ img.width + ',' + img.height + ' - ' 
+  	//	+ img.width + ',' + img.height + ' - '
   	//	+ sourceX + ',' + sourceY + ',' + sourceWidth + ',' + sourceHeight + ' - '
 	//	+ destX + ',' + destY + ',' + destWidth + ',' + destHeight);
-  
+
 	var ctx = canvas.getContext('2d');
-	
+
     // %%% APW fill back color
   	ctx.fillStyle = 'white';
 
 	//draw background / rect on entire canvas
 	ctx.fillRect(destX, destY, destWidth, destHeight);
-			
+
 	ctx.drawImage(
 		img, sourceX, sourceY, sourceWidth, sourceHeight,
 		destX, destY, destWidth, destHeight
 	);
-	
+
 	return canvas;
   }
 
@@ -338,7 +381,7 @@ dc.image.Tasks = {
   // object is passed as image, else the scaled image:
   loadImage.scale = function (img, options) {
   	//console.log('scale: ' + img.width + ',' + img.height + ' - ');  // %%% APW
-  
+
     options = options || {}
     var canvas = document.createElement('canvas')
     var useCanvas = img.getContext ||
@@ -447,7 +490,7 @@ dc.image.Tasks = {
             destWidth < sourceWidth && destHeight < sourceHeight) {
         while (sourceWidth * downsamplingRatio > destWidth) {
           //console.log('downsize');  // %%% APW
-          
+
           canvas.width = sourceWidth * downsamplingRatio;
           canvas.height = sourceHeight * downsamplingRatio;
           loadImage.renderImageToCanvas(
@@ -462,9 +505,9 @@ dc.image.Tasks = {
             canvas.width,
             canvas.height
           );
-          
+
           //console.log('copy');  // %%% APW
-          
+
           sourceWidth = canvas.width;
           sourceHeight = canvas.height;
           sourceX = 0;		// %%% May 4 APW

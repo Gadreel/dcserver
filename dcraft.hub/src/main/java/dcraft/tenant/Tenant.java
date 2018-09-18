@@ -17,16 +17,14 @@
 package dcraft.tenant;
 
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import dcraft.filestore.local.LocalStore;
 import dcraft.filestore.local.LocalStoreFile;
 import dcraft.filevault.GalleryVault;
 import dcraft.filevault.Vault;
 import dcraft.hub.ResourceHub;
+import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.util.ISettingsObfuscator;
 import dcraft.util.StringUtil;
@@ -162,52 +160,40 @@ public class Tenant extends Base {
 	
 	protected Tenant() {
 	}
-	
-	@Override
-	public Vault getVault(String name) {
-		/*
-		// these special vaults do not exist at the tenant level
-		if ("WebGallery".equals(name) || "WebFiles".equals(name) || "SiteFiles".equals(name))
-			return null;		// TODO return hub level vault??
-		
-		if ("TenantFiles".equals(name)) {
-			if (this.tenantfiles == null) {
-				XElement vconfig = this.getResources().getConfig().findId("Vault", name);
-				
-				if (vconfig == null)
-					vconfig = XElement.tag("Vault").withAttribute("Id", "TenantFiles")
-							.withAttribute("ReadAuthTags", "Developer")
-							.withAttribute("WriteAuthTags", "Developer")
-							.withAttribute("RootFolder", "/");
-				
-				this.tenantfiles = vconfig.hasNotEmptyAttribute("VaultClass")
-						? (Vault) this.getResources().getClassLoader().getInstance(vconfig.getAttribute("VaultClass"))
-						: new Vault();
-				
-				this.tenantfiles.init(this, vconfig, null);
-			}
-			
-			return this.tenantfiles;
-		}
-		*/
 
-		// all other values are tenant level, like tenant database - this is shared data
-		
-		Vault b = this.vaults.get(name);
+	public Collection<Vault> getVaults() throws OperatingContextException {
+		List<XElement> vaults = this.getResources().getConfig().getTagListDeep("Vaults/Tenant");
+
+		for (XElement bucket : vaults) {
+			String alias = bucket.getAttribute("Id");
+
+			if (StringUtil.isEmpty(alias) || this.vaults.containsKey(alias))
+				continue;
+
+			Vault b = Vault.of(this, bucket);
+
+			if (b != null)
+				this.vaults.put(alias, b);
+		}
+
+		return this.vaults.values();
+	}
+
+	@Override
+	public Vault getVault(String alias) throws OperatingContextException {
+		// like tenant database - this is shared data
+		Vault b = this.vaults.get(alias);
 		
 		if (b == null) {
-			XElement bucket = this.getResources().getConfig().findId("Vault", name);
-			
+			XElement bucket = this.getResources().getConfig().findId("Vaults/Tenant", alias);
+
 			if (bucket == null)
 				return null;
-			
-			b = bucket.hasNotEmptyAttribute("VaultClass")
-					? (Vault) this.getResources().getClassLoader().getInstance(bucket.getAttribute("VaultClass"))
-					: new Vault();
-			
-			b.init(this, bucket, null);
-			
-			this.vaults.put(name, b);
+
+			b = Vault.of(this, bucket);
+
+			if (b != null)
+				this.vaults.put(alias, b);
 		}
 		
 		return b;
