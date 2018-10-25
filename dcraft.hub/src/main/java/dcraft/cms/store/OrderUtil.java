@@ -592,10 +592,8 @@ public class OrderUtil {
 		//AtomicReference<BigDecimal> catshipcalc = new AtomicReference<>(BigDecimal.ZERO);
 		AtomicReference<BigDecimal> itemshipweight = new AtomicReference<>(BigDecimal.ZERO);
 
-		// TODO look up shipping
 		AtomicReference<BigDecimal> shipamt = new AtomicReference<>(BigDecimal.ZERO);
 
-		// TODO look up coupons, check them and apply them
 		AtomicReference<BigDecimal> itmdiscount = new AtomicReference<>(BigDecimal.ZERO);
 		AtomicReference<BigDecimal> shipdiscount = new AtomicReference<>(BigDecimal.ZERO);
 
@@ -755,6 +753,72 @@ public class OrderUtil {
 			}
 
 			shiptax = shipsettings.getAttributeAsBooleanOrFalse("Taxable");
+		}
+		
+		// discount calcs
+		
+		// TODO support Sale,GiftCertificate,Credit
+		String couponcode = null;
+		
+		if (order.isNotFieldEmpty("CouponCodes")) {
+			// TODO only one supported at this time
+			ListStruct codes = order.selectAsList("CouponCodes");
+
+			if (codes.size() > 0)
+				couponcode = codes.getItemAsString(0);
+		}
+		
+		if (StringUtil.isNotEmpty(couponcode)) {
+			Object dsv = db.firstInIndex("dcmDiscount", "dcmCode", couponcode.trim(), true);
+			
+			if (dsv != null) {
+				String discid = dsv.toString();
+				
+				if (Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmDiscount", discid, "dcmActive"))) {
+					ZonedDateTime start = Struct.objectToDateTime(db.getStaticScalar("dcmDiscount", discid, "dcmStart"));
+					ZonedDateTime expire = Struct.objectToDateTime(db.getStaticScalar("dcmDiscount", discid, "dcmExpire"));
+					
+					ZonedDateTime now = TimeUtil.now();
+					
+					if (((start == null) || start.isBefore(now)) && ((expire == null) || expire.isAfter(now))) {
+						BigDecimal min = Struct.objectToDecimal(db.getStaticScalar("dcmDiscount", discid, "dcmMinimumOrder"));
+						
+						if ((min == null) || (itmcalc.get().compareTo(min) >= 0)) {
+							// TODO ignore "dcmType" for now, if it has a code then it logically is a coupon
+							
+							// ignore FixedOffTotal for now, FixedOffProduct seems appropriate
+							
+							String mode = Struct.objectToString(db.getStaticScalar("dcmDiscount", discid, "dcmMode"));
+							BigDecimal amt = Struct.objectToDecimal(db.getStaticScalar("dcmDiscount", discid, "dcmAmount"));
+							
+							if ("FixedOffProduct".equals(mode))
+								itmdiscount.set(amt);
+							
+							// amount = % off as in 20 for 20% off
+							if ("PercentOffProduct".equals(mode))
+								itmdiscount.set(itmcalc.get().multiply(amt).divide(BigDecimal.valueOf(100), RoundingMode.HALF_UP));
+							
+							if ("FixedOffShipping".equals(mode))
+								shipdiscount.set(amt);
+							
+							// amount = % off as in 20 for 20% off
+							if ("PercentOffShipping".equals(mode))
+								shipdiscount.set(shipamt.get().multiply(amt).divide(BigDecimal.valueOf(100), RoundingMode.HALF_UP));
+							
+							if ("FlatShipping".equals(mode)) {
+								// even it out so that we add/subtract to a level
+								shipdiscount.set(shipamt.get().subtract(amt));
+								
+								if (shipdiscount.get().stripTrailingZeros().compareTo(BigDecimal.ZERO) < 0)
+									shipdiscount.set(shipdiscount.get().negate());
+							}
+							
+							if ("FreeShipping".equals(mode))
+								shipdiscount.set(shipamt.get());
+						}
+					}
+				}
+			}
 		}
 
 		BigDecimal itmtotal = itmcalc.get().add(itmdiscount.get().negate());

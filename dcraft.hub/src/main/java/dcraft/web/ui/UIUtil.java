@@ -226,13 +226,14 @@ public class UIUtil {
 			return userContext.isTagged("Admin", "Editor");
 		
 		for (int i = 0; i < editBadges.size(); i++) {
-			if (userContext.isTagged(editBadges.getItemAsString(i)))
+			if (userContext.isTagged(editBadges.getItemAsString(i))) {
+				if (element instanceof ICMSAware)
+					return ((ICMSAware) element).canEdit(state);
+
 				return true;
+			}
 		}
-		
-		if (element instanceof ICMSAware)
-			return ((ICMSAware) element).canEdit(state);
-		
+
 		return false;
 	}
 }

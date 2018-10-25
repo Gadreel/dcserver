@@ -278,6 +278,124 @@ public class ClearsignUtil {
 		}
 	}
 	
+	public static boolean readFile(InputStream in, KeyRingResource keyIn, StringBuilder content) {
+		try {
+			ArmoredInputStream aIn = new ArmoredInputStream(in);
+			
+			Memory mem = new Memory();
+			OutputStream out = new OutputWrapper(mem);
+			
+			
+			//
+			// write out signed section using the local line separator.
+			// note: trailing white space needs to be removed from the end of
+			// each line RFC 4880 Section 7.1
+			//
+			ByteArrayOutputStream lineOut = new ByteArrayOutputStream();
+			int lookAhead = readInputLine(lineOut, aIn);
+			byte[] lineSep = getLineSeparator();
+			
+			if (lookAhead != -1 && aIn.isClearText()) {
+				byte[] line = lineOut.toByteArray();
+				out.write(line, 0, getLengthWithoutSeparatorOrTrailingWhitespace(line));
+				out.write(lineSep);
+				
+				while (lookAhead != -1 && aIn.isClearText()) {
+					lookAhead = readInputLine(lineOut, lookAhead, aIn);
+					
+					line = lineOut.toByteArray();
+					out.write(line, 0, getLengthWithoutSeparatorOrTrailingWhitespace(line));
+					out.write(lineSep);
+				}
+			} else {
+				// a single line file
+				if (lookAhead != -1) {
+					byte[] line = lineOut.toByteArray();
+					out.write(line, 0, getLengthWithoutSeparatorOrTrailingWhitespace(line));
+					out.write(lineSep);
+				}
+			}
+			
+			out.close();
+			
+			//PGPPublicKeyRingCollection pgpRings = new PGPPublicKeyRingCollection(keyIn, new JcaKeyFingerprintCalculator());
+			
+			JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(aIn);
+			PGPSignatureList p3 = (PGPSignatureList) pgpFact.nextObject();
+			PGPSignature sig = p3.get(0);
+			
+			PGPPublicKey publicKey = keyIn.findPublicKey(sig.getKeyID());
+			
+			if (publicKey == null) {
+				Logger.error("Unable to verify, missing key: " + Long.toHexString(sig.getKeyID()));
+				return false;
+			}
+			
+			sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), publicKey);
+			
+			//
+			// read the input, making sure we ignore the last newline.
+			//
+			
+			mem.setPosition(0);
+			
+			content.append(mem.toString());
+			
+			mem.setPosition(0);
+			
+			InputStream sigIn = new BufferedInputStream(new InputWrapper(mem));
+			
+			lookAhead = readInputLine(lineOut, sigIn);
+			
+			processLine(sig, lineOut.toByteArray());
+			
+			if (lookAhead != -1) {
+				do {
+					lookAhead = readInputLine(lineOut, lookAhead, sigIn);
+					
+					sig.update((byte) '\r');
+					sig.update((byte) '\n');
+					
+					processLine(sig, lineOut.toByteArray());
+				}
+				while (lookAhead != -1);
+			}
+			
+			sigIn.close();
+			
+			/*
+			if (sig.verify()) {
+				Logger.info("signature verified.");
+				
+				if (sigvar != null)
+					sigvar.setValue(HexUtil.bufferToHex(sig.getSignature()));
+				
+				return true;
+			} else {
+				Logger.error("signature verification failed.");
+				return false;
+			}
+			*/
+			
+			return true;
+		}
+		catch (IOException x) {
+			Logger.error("unable to read sig: " + x);
+			Logger.error("signature verification failed.");
+			return false;
+		}
+		catch (PGPException x) {
+			Logger.error("unable to verify pgp: " + x);
+			Logger.error("signature verification failed.");
+			return false;
+		}
+		catch (SignatureException x) {
+			Logger.error("unable to verify sig: " + x);
+			Logger.error("signature verification failed.");
+			return false;
+		}
+	}
+	
 	private static byte[] getLineSeparator()
 	{
 		String nl = Strings.lineSeparator();

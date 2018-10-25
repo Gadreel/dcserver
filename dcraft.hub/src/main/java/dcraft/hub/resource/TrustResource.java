@@ -117,6 +117,14 @@ public class TrustResource extends ResourceBase {
 		return Arrays.asList(TrustResource.DEFAULT_CIPHERS);
 	}
 
+	public List<SslEntry> getSslCerts() {
+		return new ArrayList<>(this.sslcerts);
+	}
+
+	public List<TrustEntry> getTrustCerts() {
+		return new ArrayList<>(this.trustedcerts);
+	}
+
 	public List<TrustEntry> getAllTrustCerts() {
 		TrustResource p = this.getParentResource();
 		

@@ -61,6 +61,7 @@ public class ChainWork implements IChainAwareWork, ICancelAwareWork {
 			taskctx.complete();
 	}
 	
+	// essentially an abstract method - never add code here
 	protected void init(TaskContext taskctx) throws OperatingContextException {
 	}
 	

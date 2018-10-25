@@ -90,7 +90,9 @@
 				}
 	</Function>
 	<Function Name="onDone">
-				this.Layer.back();
+				var entry = this;
+
+				entry.Layer.back();
 
 				if (entry.Params.Callback)
 					entry.Params.Callback.call(entry);

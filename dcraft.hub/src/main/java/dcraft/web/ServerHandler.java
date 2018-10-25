@@ -76,6 +76,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 				return;
 			}
 			
+			if (Logger.isDebug())
+				Logger.debug("Web server request rrr");
+			
 			session.touch();
 			
 			((WebController) this.context.getController()).offerContent((HttpContent)msg);
@@ -366,7 +369,15 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 							.with("OriginalPath", path.subpath(1));
 				}
 			}
-			
+
+			// if not changing due to Path, check change due to params
+			if (! needredirect) {
+				String lvalue = req.selectAsString("Parameters._dclang.0");
+
+				if (StringUtil.isNotEmpty(lvalue))
+					locale = locales.getLocaleDefinition(lvalue);
+			}
+
 			String langcookie = req.isNotFieldEmpty("Cookies")
 					? req.getFieldAsRecord("Cookies").getFieldAsString("dcLang")
 					: null;
@@ -418,7 +429,8 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 
 			if (needredirect) {
 				wctrl.getResponse().setStatus(HttpResponseStatus.FOUND);	// not permanent
-				wctrl.getResponse().setHeader(HttpHeaderNames.LOCATION, req.getFieldAsString("OriginalPath"));
+				// TODO restore the other parameters too
+				wctrl.getResponse().setHeader(HttpHeaderNames.LOCATION, req.getFieldAsString("OriginalPath") + "?_dclang=" + locale.getName());
 				wctrl.getResponse().setHeader("Cache-Control", "no-cache");		// in case they login later, FireFox was using cache
 				wctrl.sendRead();
 				return;

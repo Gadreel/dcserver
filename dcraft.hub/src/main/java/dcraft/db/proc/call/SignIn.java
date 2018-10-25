@@ -24,6 +24,7 @@ import dcraft.struct.Struct;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.builder.ObjectBuilder;
 import dcraft.tenant.TenantHub;
+import dcraft.util.ISettingsObfuscator;
 import dcraft.util.StringUtil;
 
 public class SignIn extends LoadRecord implements IUpdatingStoredProc {

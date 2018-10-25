@@ -79,6 +79,7 @@ public class SslEntry {
 	
     protected KeyManagerFactory keyman = null;
     protected List<String> keynames = new ArrayList<>();
+    protected List<X509Certificate> issuedCerts = new ArrayList<>();
 
     public boolean keynameMatch(String name) {
     	for (String kname : this.keynames)
@@ -95,6 +96,10 @@ public class SslEntry {
     	
     	return false;
     }
+	
+	public List<X509Certificate> getIssuedCerts() {
+		return this.issuedCerts;
+	}
     
     public SslContextBuilder getServerBuilder(TrustResource trust) {
 		ApplicationProtocolConfig apn = new ApplicationProtocolConfig(
@@ -215,6 +220,8 @@ public class SslEntry {
 				  
 				  //Logger.info("Key: " + subject + " : " + thumbprint);
 				  Logger.debug("Key: " + alias + " Subject: " + subject + " Thumbprint: " + thumbprint);
+				  
+				  this.issuedCerts.add(cert);
 				  
 				  this.keynames.add(scn);
 				  

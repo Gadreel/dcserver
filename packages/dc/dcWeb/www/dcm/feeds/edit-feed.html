@@ -20,9 +20,9 @@
 
 	<!-- TODO what to do if -1 still -->
 
-	<Meta Name="Title">
-		<Tr Locale="eng" Value="Edit {$Feeds.$FeedPos.@Title}" />
-	</Meta>
+	<dcs.With Target="$Page">
+		<SetField Name="Title" Value="Edit {$Feeds.$FeedPos.@Title}" />
+	</dcs.With>
 
 	<dc.Body>
 		<dc.PagePanel>
@@ -37,9 +37,8 @@
 					<Button Icon="fa-ellipsis-h" Click="DoSelectImage" />
 				</dcf.Text>
 				<dcf.TextArea Name="Description" Label="Description" DataType="dcmPageDescription" />
-				<!-- added by plugin
+				<!-- added by plugin - TODO resolve this -->
 				<dcf.Text Name="PublishAt" Label="Publish At" Pattern="\d\d\d\d-\d\d-\d\d(\s\d\d:\d\d\s[ap]m)?" placeholder="YYYY-MM-DD or YYYY-MM-DD hh:mm am (or pm)" />
-				-->
 
 				<dc.IncludeFragmentInline Path="/dcm/feeds/{$Alias}-properties" Optional="true" />
 

@@ -20,9 +20,9 @@
 
 	<!-- TODO what to do if -1 still -->
 
-	<Meta Name="Title">
-		<Tr Locale="eng" Value="Add {$Feeds.$FeedPos.@Title}" />
-	</Meta>
+	<dcs.With Target="$Page">
+		<SetField Name="Title" Value="Add {$Feeds.$FeedPos.@Title}" />
+	</dcs.With>
 
 	<dcs.File Name="templates" Path="/templates/{$Alias}" In="SiteFiles">
 		<List Result="templatelist" />
@@ -80,21 +80,23 @@
 
 			page.Store.Vault = 'Feeds';
 	]]></Function>
-	<Function Name="LoadRecord" Params="e">
+	<Function Name="LoadRecord" Params="e"><![CDATA[
 			e.AsNew = true;
 			e.Data = {
 				Path: '',
 				Template: 'standard',
 				PublishAt: moment().format('YYYY-MM-DD')
 			};
-	</Function>
+	]]></Function>
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 			var page = this;
+
+			page.Store.NewPath = page.Params.Path + '/' + e.Data.Path;
 
 			var savedata = {
 				Command: 'AddFeed',
 				Vault: page.Store.Vault,
-				Path: page.Params.Path + '/' + e.Data.Path + '.html',
+				Path: page.Store.NewPath + '.html',
 				Params: {
 					Template: e.Data.Template,
 					SetFields: []
@@ -128,7 +130,7 @@
 			page.Layer.back();
 
 			if (page.Params.Callback)
-				page.Params.Callback( page.Params.Path );
+				page.Params.Callback( page.Store.NewPath );
 	]]></Function>
 	<Function Name="DoSelectImage"><![CDATA[
 			var page = this;

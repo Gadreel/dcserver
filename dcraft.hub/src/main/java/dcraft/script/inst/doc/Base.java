@@ -253,6 +253,7 @@ public class Base extends BlockInstruction {
 			if ("Function".equals(tname) || "Require".equals(tname))
 				root.add(el);
 			
+			// TODO review - usemeta may not even do anything, see below - perhaps remove
 			if (usemeta && "Meta".equals(tname))
 				root.add(el);
 		}

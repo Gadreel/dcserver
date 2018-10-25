@@ -111,6 +111,8 @@ public class SsiOutputAdapter extends ChainWork implements IOutputWork {
 			resp.setDateHeader("Last-Modified", when);
 			resp.setHeader("X-UA-Compatible", "IE=Edge,chrome=1");
 			resp.setHeader("Cache-Control", "no-cache");
+			//resp.setHeader("Access-Control-Allow-Origin", "*");		// needed for Edge 17 loading fonts
+			//resp.setHeader("Vary", "Accept-Encoding, Origin");		// needed for Edge 17 loading fonts
 			
 			// because of Macro support we need to rebuild this page every time it is requested
 			CharSequence content = this.processIncludes(wctrl, IOUtil.readEntireFile(this.file));

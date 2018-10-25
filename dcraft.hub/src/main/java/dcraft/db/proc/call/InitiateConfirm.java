@@ -20,8 +20,10 @@ public class InitiateConfirm implements IUpdatingStoredProc {
 		
 		RecordStruct params = request.getDataAsRecord();
 		String user = params.getFieldAsString("Username").trim().toLowerCase();		// switch to indexed value
-
-		try {			
+		
+		Logger.error("Password recovery requested: " + user);
+		
+		try {
 			if (request.isReplicating()) {
 				// TODO
 			}

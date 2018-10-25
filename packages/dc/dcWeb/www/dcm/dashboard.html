@@ -63,7 +63,7 @@
 
 										<Select Composer="dcmFeedFields" As="Fields" />
 
-										<Collector Func="dcmScanFeed" Feed="{$Feeds.$Cnt.@Alias}" Max="1" From="+" To="now" />
+										<Collector Func="dcmScanFeed" Feed="{$Feeds.$Cnt.@Alias}" Max="1" From="+" To="-" />
 
 										<Execute Result="LastFeed" />
 									</dcs.Var>
@@ -106,7 +106,7 @@
 			dc.pui.Dialog.loadPage('/dcm/feeds/add-feed/' + alias, {
 				Path: '/' + alias,
 				Callback: function(path) {
-					entry.Layer.refreshPage();
+					window.location = path;
 				}
 			});
 	]]></Function>
@@ -125,7 +125,7 @@
 			dc.pui.Dialog.loadPage('/dcm/feeds/list-feed/' + alias, {
 				Path: '/' + alias,
 				xCallback: function(path) {
-					entry.Layer.refreshPage();
+					// TODO entry.Layer.refreshPage();
 				}
 			});
 	]]></Function>

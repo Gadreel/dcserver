@@ -36,6 +36,13 @@ public class Sleep extends Instruction {
 		return el;
 	}
 	
+	static public Sleep tag(int seconds) {
+		Sleep el = new Sleep();
+		el.setName("dcs.Sleep");
+		el.withAttribute("Seconds", seconds + "");
+		return el;
+	}
+	
 	@Override
 	public XElement newNode() {
 		return Sleep.tag();

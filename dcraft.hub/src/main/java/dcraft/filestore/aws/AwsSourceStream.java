@@ -48,6 +48,7 @@ public class AwsSourceStream extends BaseFileStream implements IStreamSource {
 	protected InputStream in = null;
 	protected long insize = 0;
 	protected long inprog = 0;
+	protected boolean finalsent = false;
 	
 	protected AwsSourceStream() {
 	}
@@ -81,7 +82,11 @@ public class AwsSourceStream extends BaseFileStream implements IStreamSource {
 	 */
 	@Override
 	public void read() throws OperatingContextException {
+		if (this.finalsent)
+			return;
+		
 		if (this.currfile == null) {
+			this.finalsent = true;
 			this.consumer.handle(FileSlice.FINAL);
 			return;
 		}
@@ -97,6 +102,9 @@ public class AwsSourceStream extends BaseFileStream implements IStreamSource {
 	
 	// release data if error
 	public void readAwsFile() throws OperatingContextException {
+		if (this.finalsent)
+			return;
+		
 		if (this.in == null) {
 			this.insize = this.currfile.getSize();
 			
@@ -124,7 +132,7 @@ public class AwsSourceStream extends BaseFileStream implements IStreamSource {
 			}
 		}
 		
-		while (true) {
+		while (! this.finalsent) {
 			// TODO sizing?
 	        ByteBuf data = ApplicationHub.getBufferAllocator().heapBuffer(32768);
 	        
@@ -138,7 +146,11 @@ public class AwsSourceStream extends BaseFileStream implements IStreamSource {
 				data.release();
 				return;
 			}
-	
+			
+			// seems to happen though not clear why
+			if (this.finalsent)
+				break;
+			
 	        System.out.println("reading: " + this.currfile.getPath() + " from: " + this.inprog);
 	        
 	        FileSlice slice = FileSlice.allocate(this.currfile, data, 0, false);
@@ -174,6 +186,7 @@ public class AwsSourceStream extends BaseFileStream implements IStreamSource {
 	    		break;
 	    	
 	    	if (this.currfile == null) {
+	    		this.finalsent = true;
 				this.consumer.handle(FileSlice.FINAL);
 	    		break;
 	    	}

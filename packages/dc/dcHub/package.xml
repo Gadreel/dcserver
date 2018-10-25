@@ -60,8 +60,8 @@
 			<Definition Ext="json" Type="application/json" Compress="True" />
 			<Definition Ext="js" Type="application/javascript" Compress="True" />
 			<Definition Ext="yaml" Type="text/yaml" Compress="True" />
-			<Definition Ext="woff" Type="application/x-font-woff" />
-			<Definition Ext="woff2" Type="application/font-woff2" />
+			<Definition Ext="woff" Type="font/woff" />
+			<Definition Ext="woff2" Type="font/woff2" />
 			<Definition Ext="cur" Type="image/vnd.microsoft.icon" />
 			<Definition Ext="ico" Type="image/vnd.microsoft.icon" />
 			<Definition Ext="svg" Type="image/svg+xml" />

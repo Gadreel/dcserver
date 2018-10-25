@@ -3761,7 +3761,10 @@ dc.pui.controls.RadioGroup.prototype = new dc.pui.controls.Input();
 dc.pui.controls.RadioGroup.prototype.init = function(entry, node) {
 	dc.pui.controls.Input.prototype.init.call(this, entry, node);
 
-	this.DefaultValue = $(node).find('input[data-checked="true"]').val();  // first
+	this.DefaultValue = $(node).closest('div.dc-field').attr('value');
+
+	if (! this.DefaultValue)
+		this.DefaultValue = $(node).find('input[data-checked="true"]').val();  // first
 
 	$(node).find('input').on("click focusout keyup", this, function(e) { e.data.validate(); });
 };

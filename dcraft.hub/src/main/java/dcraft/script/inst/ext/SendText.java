@@ -71,7 +71,7 @@ public class SendText extends Instruction {
 			else if ((textdoc instanceof AnyStruct) && (((AnyStruct) textdoc).getValue() instanceof Base))
 				text = ((XElement) ((AnyStruct) textdoc).getValue()).getText();
 			else
-				text = this.hasText() ? StackUtil.resolveValueToString(stack, this.getText()) : StackUtil.stringFromSource(stack, "Body", "[under construction]");
+				text = this.hasText() ? this.getText() : StackUtil.stringFromSource(stack, "Body");
 
 			if (text != null)
 				text = StackUtil.resolveValueToString(stack, text,true);

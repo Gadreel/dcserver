@@ -51,6 +51,9 @@ public class Foreground {
 		
 		ApplicationHub.init(deployment, nodeid);
 		
+		if (args.length > 2)
+			ApplicationHub.setRole(args[2]);
+		
 		System.out.println("dcServer starting");
 		
 		if (ApplicationHub.startServer(LocalHubConfigLoader.local())) {

@@ -46,6 +46,10 @@ public class TableUtil {
 		db.retireRecord(table, id);
 	}
 
+	static public void reviveRecord(TablesAdapter db, String table, String id) throws OperatingContextException {
+		db.reviveRecord(table, id);
+	}
+
 	static public String updateRecord(TablesAdapter db, DbRecordRequest request) throws OperatingContextException {
 		RecordStruct params = request.buildParams();
 

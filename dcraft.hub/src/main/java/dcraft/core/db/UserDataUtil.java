@@ -72,7 +72,7 @@ public class UserDataUtil {
 		
 		DbRecordRequest req = InsertRecordRequest.insert()
 				.withTable("dcUser")
-				.withUpdateField("dcUsername", uname.toLowerCase())
+				.withUpdateField("dcUsername", uname.trim().toLowerCase())
 				.withUpdateField("dcConfirmed", confirmed)
 				.withConditionallySetFields(data, "FirstName", "dcFirstName",
 				"LastName", "dcLastName", "Email", "dcEmail", "BackupEmail", "dcBackupEmail", "Phone", "dcPhone",
@@ -131,7 +131,7 @@ public class UserDataUtil {
 						"State", "dcState", "Zip", "dcZip", "Notices", "dcNotices");
 
 		if (StringUtil.isNotEmpty(uname))
-			req.withSetField("dcUsername", uname.toLowerCase());
+			req.withSetField("dcUsername", uname.trim().toLowerCase());
 
 		if (data.hasField("Badges")) {
 			ListStruct badges = data.getFieldAsList("Badges");

@@ -80,7 +80,7 @@ public class SendEmail extends Instruction {
 			else
 				text = this.hasText()
 						? StackUtil.resolveValueToString(stack, this.getText(), true)
-						: StackUtil.resolveValueToString(stack, this.getAttribute("Body", "[under construction]"), true);
+						: StackUtil.resolveValueToString(stack, this.getAttribute("Body"), true);
 			
 			if (htmldoc instanceof Base)
 				html = ((XElement) htmldoc).toPrettyString();

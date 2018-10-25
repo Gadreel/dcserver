@@ -70,7 +70,7 @@ dc.cms.Loader = {
 					)
 					.click(function (e) {
 						// TODO support nested feeds, different feeds and different paths - for now just handle top pages feed
-						var pel = $('#dcuiMain div[data-dc-tag="dcm.IncludeFeed"][data-cms-editable="true"][data-cms-feed="pages"]').get(0);
+						var pel = $('#dcuiMain div[data-dc-tag="dcm.IncludeFeed"][data-cms-editable="true"][data-cms-feed]').get(0);
 
 						if (! pel)
 							return;
@@ -101,7 +101,7 @@ dc.cms.Loader = {
 
 							dc.pui.Dialog.loadPage('/dcm/cms/page-save', {
 								Path: $(pel).attr('data-cms-path'),
-								Feed: 'pages',
+								Feed: $(pel).attr('data-cms-feed'),
 								Callback: function(ret) {
 									entry.Layer.refreshPage();
 								}
@@ -115,7 +115,7 @@ dc.cms.Loader = {
 								Op: 'AddCommandHistory',
 								Body: {
 									Path: $(pel).attr('data-cms-path'),
-									Feed: 'pages',
+									Feed: $(pel).attr('data-cms-feed'),
 									Commands: commands
 								}
 							}, function(resp) {
@@ -137,7 +137,7 @@ dc.cms.Loader = {
 			);
 
 			// TODO support nested feeds, different feeds and different paths - for now just handle top pages feed
-			var pel = $('#dcuiMain div[data-dc-tag="dcm.IncludeFeed"][data-cms-editable="true"][data-cms-feed="pages"]').get(0);
+			var pel = $('#dcuiMain div[data-dc-tag="dcm.IncludeFeed"][data-cms-editable="true"][data-cms-feed]').get(0);
 
 			if (pel && ($(pel).attr('data-cms-draft') == 'true'))
 				$('#dcuiCmsSaveTab').show();

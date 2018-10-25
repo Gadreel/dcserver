@@ -61,6 +61,8 @@ public class StaticOutputAdapter implements IOutputWork {
 			resp.setDateHeader("Date", System.currentTimeMillis());
 			resp.setDateHeader("Last-Modified", when);
 			resp.setHeader("X-UA-Compatible", "IE=Edge,chrome=1");
+			resp.setHeader("Access-Control-Allow-Origin", "*");		// needed for Edge 17 loading fonts
+			resp.setHeader("Vary", "Origin");		// needed for Edge 17 loading fonts
 			
 			// TODO configure this someday
 			if ("text/css".equals(mtype) || "application/javascript".equals(mtype) || "application/json".equals(mtype))

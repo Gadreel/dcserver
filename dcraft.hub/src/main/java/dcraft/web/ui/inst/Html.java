@@ -30,6 +30,7 @@ import dcraft.script.work.*;
 import dcraft.script.inst.doc.Base;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
 import dcraft.struct.builder.JsonStreamBuilder;
 import dcraft.struct.scalar.BooleanStruct;
 import dcraft.struct.scalar.StringStruct;
@@ -57,16 +58,33 @@ public class Html extends Base {
 
 	static public void mergePageVariables(StackWork state, Base source) throws OperatingContextException {
 		RecordStruct page = (RecordStruct) StackUtil.queryVariable(state, "Page");
-		
+
+		/*
+		StackUtil.dumpVariableStack(state);
+
+		System.out.println("##################################");
+
+		RecordStruct vars = OperationContext.getOrThrow().getController();
+
+		if (vars != null) {
+			for (FieldStruct fld : vars.getFields()) {
+				System.out.println("    - " + fld.getName() + " = " + fld.getValue());
+			}
+		}
+		*/
+
 		// feeds use site default
 		String defloc = OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale();
 
 		String locale = OperationContext.getOrThrow().getLocale();
 
 		for (XElement meta : source.selectAll("Meta")) {
+			String name = meta.getAttribute("Name");
+
 			// Name and Locale must be constants, thus don't resolve from stack
-			if (meta.hasNotEmptyAttribute("Name"))
-				page.with(meta.getAttribute("Name"), StackUtil.resolveValueToString(state, FeedUtil.bestLocaleMatch(meta, locale, defloc)));
+			if (StringUtil.isNotEmpty(name)) { // && ! page.hasField(name)) {
+				page.with(name, StackUtil.resolveValueToString(state, FeedUtil.bestLocaleMatch(meta, locale, defloc)));
+			}
 		}
 	}
 	
@@ -89,6 +107,8 @@ public class Html extends Base {
 	
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
+		Html.mergePageVariables(state, this);
+		
 		String skeleton = StackUtil.stringFromSource(state, "Skeleton");
 		
 		if (StringUtil.isNotEmpty(skeleton)) {
@@ -103,19 +123,28 @@ public class Html extends Base {
 			return;
 		
 		super.cleanup(state);
-		
-		// add meta variables
-
-		Html.mergePageVariables(state, this);
 
 		RecordStruct page = (RecordStruct) StackUtil.queryVariable(state, "Page");
 
+		// fall back on Title attribute
 		if (page.isFieldEmpty("Title")) {
 			String title = StackUtil.stringFromSource(state, "Title");
 			
 			if (StringUtil.isNotEmpty(title))
 				page.with("Title", title);
 		}
+		
+		// make sure page variables are resolved (clean references)
+		for (FieldStruct fld : page.getFields()) {
+			Struct value = fld.getValue();
+			
+			if (value instanceof StringStruct) {
+				StringStruct svalue = (StringStruct) value;
+				
+				svalue.setValue(StackUtil.resolveValueToString(state, svalue.getValueAsString(), true));
+			}
+		}
+		
 		
 		// after cleanup the document will be turned in just body by Base
 		// we only want head and body in translated document

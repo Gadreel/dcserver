@@ -57,6 +57,13 @@ public class LoadDepositWork extends ChainWork {
 		return this;
 	}
 	
+	/*  #######################################
+	
+	!!!	TODO review CmsSyncWork and adopt steps
+	
+	####################################### */
+	
+	
 	@Override
 	public void run(TaskContext taskctx) throws OperatingContextException {
 		if (this.newrun) {

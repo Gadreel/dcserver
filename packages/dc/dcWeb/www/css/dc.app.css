@@ -1981,7 +1981,7 @@ input:focus + label.dc-input-button,
 }
 
 @media only screen and (max-width : 639px) {
-	.dc-field {
+	.dc-field:not(.dc-field-unstacked) {
 		padding: .9rem 1.4rem;
 		margin-bottom: 1.4rem;
 		background-color: #f7f7f9;

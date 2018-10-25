@@ -16,6 +16,8 @@ import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.builder.ObjectBuilder;
+import dcraft.tenant.TenantHub;
+import dcraft.util.ISettingsObfuscator;
 import dcraft.util.StringUtil;
 
 public class SetGlobalPassword implements IStoredProc {
@@ -25,9 +27,26 @@ public class SetGlobalPassword implements IStoredProc {
 
 		String password = params.getFieldAsString("Password");
 
+		//ISettingsObfuscator so = TenantHub.resolveTenant("root").getObfuscator();
+
+		//System.out.println("so 1: " + so.getConfiguration());
+
+		String hpassword = TenantHub.resolveTenant("root").getObfuscator().hashPassword(password);
+
+		/*
+		if (TenantHub.resolveTenant("root").getObfuscator().checkHashPassword(password, hpassword)) {
+			System.out.println("cool! " + hpassword);
+		}
+		else {
+			System.out.println("darn");
+		}
+		*/
+
 		TablesAdapter db = TablesAdapter.ofNow(request);
 
-		db.setStaticScalar("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD,"dcGlobalPassword", ApplicationHub.getClock().getObfuscator().hashPassword(password));
+		request.pushTenant("root");
+		db.setStaticScalar("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD,"dcGlobalPassword", hpassword);
+		request.popTenant();
 
 		callback.returnEmpty();
 	}

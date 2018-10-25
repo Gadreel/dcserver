@@ -127,7 +127,7 @@ public class SmtpWork extends StateWork {
 			String body = this.params.getFieldAsString("Html");
 			String textbody = this.params.getFieldAsString("Text");
 
-			if (StringUtil.isEmpty(body)) {
+			if (StringUtil.isEmpty(body) && StringUtil.isNotEmpty(textbody)) {
 				XElement root = MarkdownUtil.process(textbody, true);
 
 				if (root == null) {
@@ -206,18 +206,20 @@ public class SmtpWork extends StateWork {
 	        	this.email.setSubject(subject);
 	     
 	            // ALTERNATIVE TEXT/HTML CONTENT
-	            MimeMultipart cover = new MimeMultipart((textbody != null) ? "alternative" : "mixed");
+	            MimeMultipart cover = new MimeMultipart(StringUtil.isNotEmpty(textbody) ? "alternative" : "mixed");
 	            
-	            if (textbody != null) {
+	            if (StringUtil.isNotEmpty(textbody)) {
 		            MimeBodyPart txt = new MimeBodyPart();
 		            txt.setText(textbody);
 		            cover.addBodyPart(txt);
 	            }
 	        	
 	            // add the message part 
-	            MimeBodyPart html = new MimeBodyPart();
-	            html.setContent(body, "text/html");
-	            cover.addBodyPart(html);
+				if (StringUtil.isNotEmpty(body)) {
+					MimeBodyPart html = new MimeBodyPart();
+					html.setContent(body, "text/html");
+					cover.addBodyPart(html);
+				}
 	            
 	            ListStruct attachments = this.params.getFieldAsList("Attachments");
 	            

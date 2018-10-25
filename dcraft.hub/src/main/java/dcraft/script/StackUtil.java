@@ -10,9 +10,7 @@ import dcraft.schema.SchemaHub;
 import dcraft.script.inst.Instruction;
 import dcraft.script.inst.Main;
 import dcraft.script.work.InstructionWork;
-import dcraft.struct.DataUtil;
-import dcraft.struct.IPartSelector;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.struct.scalar.NullStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.*;
@@ -339,7 +337,43 @@ public class StackUtil {
 
 		return OperationContext.getOrThrow();
 	}
-	
+
+	static public void dumpVariableStack(IParentAwareWork stack) throws OperatingContextException {
+		while (stack != null) {
+			System.out.println("Level: " + stack.getClass().getCanonicalName() + "-" + stack);
+
+			if (stack instanceof IVariableProvider) {
+				IVariableProvider vp = (IVariableProvider) stack;
+
+				RecordStruct vars = vp.variables();
+
+				if (vars != null) {
+					for (FieldStruct fld : vars.getFields()) {
+						System.out.println("    - " + fld.getName() + " = " + fld.getValue());
+					}
+				}
+			}
+
+			System.out.println("---------------");
+
+			stack = stack.getParent();
+		}
+	}
+
+	static public void dumpVariableStack(IVariableProvider stack) throws OperatingContextException {
+		System.out.println("Level: " + stack.getClass().getCanonicalName() + "-" + stack);
+
+		RecordStruct vars = stack.variables();
+
+		if (vars != null) {
+			for (FieldStruct fld : vars.getFields()) {
+				System.out.println("    - " + fld.getName() + " = " + fld.getValue());
+			}
+		}
+
+		System.out.println("---------------");
+	}
+
 	static public IProgressAwareWork queryProgAware(IParentAwareWork stack) {
 		while (stack != null) {
 			if (stack instanceof IProgressAwareWork)
@@ -361,8 +395,7 @@ public class StackUtil {
 		
 		return null;
 	}
-	
-	
+
 	// Result Code and Value
 	
 	public void setExitCode(IParentAwareWork stack, Long code, String msg) throws OperatingContextException {

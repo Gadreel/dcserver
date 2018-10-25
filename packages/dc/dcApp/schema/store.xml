@@ -192,6 +192,7 @@
 			<Field Name="dcmTitle" Type="dcSmallString" />
 			<Field Name="dcmType" Type="dcmDiscountTypeEnum" Indexed="True" />
 			<Field Name="dcmMode" Type="dcmDiscountModeEnum" />
+			<Field Name="dcmActive" Type="Boolean" />
 
 			<Field Name="dcmAmount" Type="Decimal" />
 			<Field Name="dcmMinimumOrder" Type="Decimal" />
@@ -232,6 +233,13 @@
 
 		<Procedure Name="dcmStoreServices.Orders.Track" Execute="dcraft.cms.store.db.orders.Track" />
 		<Procedure Name="dcmStoreServices.Orders.PayPalStandard" Execute="dcraft.cms.store.db.orders.PayPalStandard" />
+
+		<Procedure Name="dcmStoreServices.Discounts.List" Execute="dcraft.cms.store.db.discounts.List" />
+		<Procedure Name="dcmStoreServices.Discounts.Load" Execute="dcraft.cms.store.db.discounts.Load" />
+		<Procedure Name="dcmStoreServices.Discounts.Update" Execute="dcraft.cms.store.db.discounts.Update" />
+		<Procedure Name="dcmStoreServices.Discounts.Add" Execute="dcraft.cms.store.db.discounts.Add" />
+		<Procedure Name="dcmStoreServices.Discounts.Retire" Execute="dcraft.cms.store.db.discounts.Retire" />
+		<Procedure Name="dcmStoreServices.Discounts.Revive" Execute="dcraft.cms.store.db.discounts.Revive" />
 
 		<Composer Name="dcmStoreImage" Execute="dcraft.cms.store.db.comp.StoreImage" />
 		<Composer Name="dcmProductPrice" Execute="dcraft.cms.store.db.comp.ProductPrice" />
@@ -1069,7 +1077,7 @@
 				</Secure>
 			</Feature>
 
-			<Feature Name="Coupons">
+			<Feature Name="Discounts">
 				<Secure Badges="Admin,Clerk">
 					<Op Name="Load">
 						<Description>
@@ -1085,6 +1093,7 @@
 							<Field Name="Code" Type="dcmDiscount:dcmCode" />
 							<Field Name="Type" Type="dcmDiscount:dcmType" />
 							<Field Name="Mode" Type="dcmDiscount:dcmMode" />
+							<Field Name="Active" Type="dcmDiscount:dcmActive" />
 							<Field Name="Amount" Type="dcmDiscount:dcmAmount" />
 							<Field Name="MinimumOrder" Type="dcmDiscount:dcmMinimumOrder" />
 							<Field Name="Start" Type="dcmDiscount:dcmStart" />
@@ -1103,6 +1112,7 @@
 							<Field Name="Title" Type="dcmDiscount:dcmTitle" Required="IfPresent" />
 							<Field Name="Type" Type="dcmDiscount:dcmType" />
 							<Field Name="Mode" Type="dcmDiscount:dcmMode" Required="IfPresent" />
+							<Field Name="Active" Type="dcmDiscount:dcmActive" />
 							<Field Name="Code" Type="dcmDiscount:dcmCode" />
 							<Field Name="Amount" Type="dcmDiscount:dcmAmount" />
 							<Field Name="MinimumOrder" Type="dcmDiscount:dcmMinimumOrder" />
@@ -1121,6 +1131,7 @@
 							<Field Name="Title" Type="dcmDiscount:dcmTitle" Required="True" />
 							<Field Name="Type" Type="dcmDiscount:dcmType" />
 							<Field Name="Mode" Type="dcmDiscount:dcmMode" Required="True" />
+							<Field Name="Active" Type="dcmDiscount:dcmActive" />
 							<Field Name="Code" Type="dcmDiscount:dcmCode" />
 							<Field Name="Amount" Type="dcmDiscount:dcmAmount" />
 							<Field Name="MinimumOrder" Type="dcmDiscount:dcmMinimumOrder" />
@@ -1161,10 +1172,12 @@
 						<ListResponse>
 							<Record>
 								<Field Name="Id" Type="dcmDiscount:Id" />
+								<Field Name="EntryDate" Type="dcmDiscount:dcmEntryDate" />
 								<Field Name="Title" Type="dcmDiscount:dcmTitle" />
 								<Field Name="Code" Type="dcmDiscount:dcmCode" />
 								<Field Name="Type" Type="dcmDiscount:dcmType" />
 								<Field Name="Mode" Type="dcmDiscount:dcmMode" />
+								<Field Name="Active" Type="dcmDiscount:dcmActive" />
 								<Field Name="Amount" Type="dcmDiscount:dcmAmount" />
 								<Field Name="MinimumOrder" Type="dcmDiscount:dcmMinimumOrder" />
 								<Field Name="Start" Type="dcmDiscount:dcmStart" />

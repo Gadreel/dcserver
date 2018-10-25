@@ -101,9 +101,9 @@ public class MenuWidget extends Base {
 			}
 
 			if (StringUtil.isNotEmpty(pagelink)) {
-				if ((ppath.length() > 1) && pagelink.startsWith(ppath))
+				if ((ppath.length() > 1) && ppath.startsWith(pagelink))
 					((Base)mnu).withClass("selected");
-				else if ((opath.length() > 1) && pagelink.startsWith(opath))
+				else if ((opath.length() > 1) && opath.startsWith(pagelink))
 					((Base)mnu).withClass("selected");
 			}
 
