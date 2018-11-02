@@ -133,7 +133,7 @@ public class SecurityPolicy {
 		XElement tls = ApplicationHub.getCatalogSettings("Security-Policy-Http");
 
 		if ((tls == null) || "Strict".equals(tls.getAttribute("Mode", "Strict"))) {
-	        engine.setEnabledProtocols(new String[] { "TLSv1.2" });
+	        engine.setEnabledProtocols(new String[] { "TLSv1.2" /*, "TLSv1.3" */ });
 	        
 	        engine.setEnabledCipherSuites(new String[] {
 	        		// AES 256 GCM SHA 384
@@ -168,7 +168,7 @@ public class SecurityPolicy {
 		}
 		else if ("Loose".equals(tls.getAttribute("Mode"))) {
 	        // TODO wind down TLSv1 - engine.setEnabledProtocols(new String[] { "TLSv1", "TLSv1.1", "TLSv1.2" });
-	        engine.setEnabledProtocols(new String[] { "TLSv1.1", "TLSv1.2" });
+	        engine.setEnabledProtocols(new String[] { "TLSv1.1", "TLSv1.2" /*, "TLSv1.3" */ });
 	        
 	        engine.setEnabledCipherSuites(new String[] {
 	        		// AES 256 GCM SHA 384

@@ -136,7 +136,7 @@ public class Http2DestStream extends BaseFileStream implements IStreamDest<FileS
 	        }
 	        catch (Throwable cause) {
 				OperationContext.getAsTaskOrThrow().kill("Problem writing destination file: " + cause);
-	        	this.conn.onError(this.ctx, cause);
+	        	this.conn.onError(this.ctx, true, cause);
 				
 	        	// hopefully the pipeline or onError will cleanup the slice, but in case not
 	        	try {

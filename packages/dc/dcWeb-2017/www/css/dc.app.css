@@ -15,12 +15,6 @@ Copyright (c) Nicolas Gallagher and Jonathan Neal
 */
 /*! normalize.css v3.0.2 | MIT License | git.io/normalize */
 
-:root {
-	--dcm-inline-background: rgba(64,64,64,.8);
-	--dcm-inline-link-color: white;
-	--dcm-inline-link-hover: papayawhip;
-}
-
 /**
  * 1. Set default font family to sans-serif.
  * 2. Prevent iOS text size adjust after orientation change, without disabling
@@ -2413,17 +2407,6 @@ ol.dc-listview > li img:first-child + * ~ * {
 /* -----------------------------------------------
 	layer layout
 ----------------------------------------------- */
-@keyframes dcui-cms-pulse-color {
-	0% {
-		color: white;
-	}
-	66% {
-		color: #FFA500;
-	}
-	100 {
-		color: #FF8C00;
-	}
-}
 
 @media screen {
 	.dc-hide-scroll {
@@ -2557,66 +2540,73 @@ ol.dc-listview > li img:first-child + * ~ * {
 		border-bottom: 1px solid gray;
 	}
 
-	#dcuiMain .dcuiCmsToolbar {
+	.dcuiCmsButton.dc-link {
 		position: absolute;
-		right: 0;
 		top: 0;
-		background: rgba(64,64,64,.8);
-		background: var(--dcm-inline-background);
-		border: 3px dotted black;
-		display: flex;
-		align-items: center;
-		justify-content: flex-end;
-		z-index: 1000;
+		right: 0;
+		font-size: 1.4rem !important;
+		z-index: 100;
+		width: 2rem;
 	}
 
-	#dcuiMain .dcuiCmsToolbarVert {
-		display: flex;
-		align-items: center;
-		justify-content: flex-end;
+	.dcuiCmsButton.dc-link .dc-icon-background {
+		color: rgba(255,165,0,0.66) !important;
 	}
 
-	#dcuiMain .dcuiCmsToolbar > div {
-		margin: 4px 9px;
-		display: inline-block;
-	}
-
-	#dcuiMain .dcuiCmsToolbar a {
-		font-size: 2.2rem !important;
-	}
-
-	#dcuiMain .dcuiCmsToolbar a,
-	#dcuiMain .dcuiCmsToolbar a:visited {
+	.dcuiCmsButton.dc-link .dc-icon-foreground {
 		color: white !important;
-		color: var(--dcm-inline-link-color) !important;
 	}
 
-	#dcuiMain .dcuiCmsToolbar a:hover,
-	#dcuiMain .dcuiCmsToolbar a:focus {
-		color: papayawhip !important;
-		color: var(--dcm-inline-link-hover) !important;
+	.dcuiCmsi.dc-band {
+		background-color: black !important;
+		min-height: 4rem;
 	}
 
-	#dcuiMain .dcuiCmsToolbarBottom {
-		top: initial;
-		bottom: 0;
+	.dcuiCmsi.dc-band h2 {
+		font-family: Lucida Console, Andale Mono, monospace !important;
+		font-size: 2.3rem !important;
+		color: white !important;
+		text-align: left !important;
+		margin: 1rem !important;
 	}
 
-	#dcuiMain #dcuiMainMenu {
+	#dcuiAppTab {
 		position: fixed;
-		flex-direction: column;
-		top: 175px;
-		right: initial;
+		top: 240px;
 		left: 0;
-		border-radius: 0px 14px 14px 0px;
+		width: 28px;
+		height: 28px;
+		background-color: rgba(255,165,0,0.66);
+		z-index: 50;
+		padding: 7px;
+		line-height: 0;
+		overflow: hidden;
+		border-radius: 0px 8px 8px 0px;
 	}
 
-	#dcuiMain .dcuiCmsToolbar #dcuiCmsTabSave {
+	#dcuiAppTab:hover {
+		color: white;
+		cursor: pointer;
+	}
+
+	#dcuiCmsSaveTab {
 		display: none;
+		position: fixed;
+		top: 280px;
+		left: 0;
+		width: 28px;
+		height: 28px;
+		background-color: rgba(255,165,0,0.66);
+		z-index: 50;
+		padding: 7px;
+		line-height: 0;
+		overflow: hidden;
+		border-radius: 0px 8px 8px 0px;
 	}
 
-	#dcuiCmsTabSave .dcuiCmsUnsaved {
-		animation: 1.8s dcui-cms-pulse-color infinite;
+	#dcuiCmsSaveTab:hover {
+		color: white;
+		cursor: pointer;
 	}
 
 	#dcuiApp {

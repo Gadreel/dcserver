@@ -34,6 +34,12 @@ public class OperationMarker implements AutoCloseable {
 		return OperationMarker.create(OperationContext.getOrNull());
 	}
 	
+	static public OperationMarker clearErrors() {
+		OperationMarker om = OperationMarker.create(OperationContext.getOrNull());
+		om.clearmode = true;
+		return om;
+	}
+	
 	static public OperationMarker create(OperationContext ctx) {
 		OperationMarker om = new OperationMarker();
 		
@@ -51,6 +57,7 @@ public class OperationMarker implements AutoCloseable {
 	protected String contextid = null;
 	protected int msgStart = 0;		// start of messages
 	protected int msgEnd = -1;		// all messages
+	protected boolean clearmode = false;
     
 	public int getMsgStart() {
 		return this.msgStart;
@@ -83,6 +90,9 @@ public class OperationMarker implements AutoCloseable {
     	OperationContext ctx = this.getOperationContext();
 		
 		this.msgEnd = ctx.getController().logMarker();		// end is exclusive, so size is right
+		
+		if (this.clearmode)
+			this.downgradeErrors();
     }
     	
 	/**
@@ -109,6 +119,10 @@ public class OperationMarker implements AutoCloseable {
 	 */
 	public boolean hasErrors() throws OperatingContextException {
 		return this.getOperationContext().getController().hasLevel(this.msgStart, this.msgEnd, DebugLevel.Error);
+	}
+
+	public void downgradeErrors() throws OperatingContextException {
+		this.getOperationContext().getController().downgradeErrors(this.msgStart, this.msgEnd);
 	}
 
 	/**

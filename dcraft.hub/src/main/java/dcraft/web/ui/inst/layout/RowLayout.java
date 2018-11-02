@@ -35,7 +35,7 @@ public class RowLayout extends Base {
 			this.withClass("dc-layout-row-pad-" + colpad);
 		}
 		
-		UIUtil.markIfEditable(state, this);
+		UIUtil.markIfEditable(state, this, "layout");
 	}
 	
 	@Override

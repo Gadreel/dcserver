@@ -118,36 +118,21 @@
 			// remember the content
 			var content = entry.Params.Content = entry.Store.Editor.getValue().trim();
 
-			var widget = entry.Store.Widget;
-
 			// TODO support locale selection
 			var locale = $('html').attr('lang');
 
-			widget.find('Tr[Locale="' + locale + '"]').attr('Value', null).empty().cdata(content);
-
-			var request = {
-				Service: 'dcmServices',
-				Feature: 'Feed',
-				Op: 'AddCommandHistory',
-				Body: {
-					Feed: entry.Params.Feed,
-					Path: entry.Params.Path,
-					Commands: [
-						{
-							Command: 'SavePart',
-							Params: {
-								PartId: entry.Params.Id,
-								Part: dc.util.Xml.toString(widget)
-							}
-						}
-					]
+			dc.cms.Loader.saveCommands(entry.Params.Feed, entry.Params.Path, [
+				{
+					Command: 'UpdatePart',
+					Params: {
+						PartId: entry.Params.Id,
+						Area: 'Content',
+						Content: content,
+						Locale: locale
+					}
 				}
-			};
-
-			dc.comm.sendMessage(request, function(rmsg) {
-				if (rmsg.Result != 0)
-					dc.pui.Popup.alert(rmsg.Message);
-				else if (entry.Params.Preview)
+			], function() {
+				if (entry.Params.Preview)
 					dc.pui.Loader.MainLayer.refreshPage();
 				else
 					dc.pui.Popup.alert('Saved');

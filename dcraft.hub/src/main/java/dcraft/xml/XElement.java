@@ -421,6 +421,12 @@ public class XElement extends XNode {
 		if (this.attributes != null)
 			this.attributes.remove(name);
 	}
+	
+	public void clearAttributes() {
+		// once attributes field is set they are always expected to be present, even after clear
+		if (this.attributes != null)
+			this.attributes = new HashMap<>();
+	}
 
 	/**
 	 * gets the number of child elements this element has

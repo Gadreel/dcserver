@@ -198,14 +198,14 @@ public class UIUtil {
 			((ICMSAware) element).canonicalize();
 	}
 	
-	static public boolean markIfEditable(InstructionWork state, XElement element) throws OperatingContextException {
+	static public boolean markIfEditable(InstructionWork state, XElement element, String cmstype) throws OperatingContextException {
 		UIUtil.setEditBadges(state, element);
 		
 		boolean editable = UIUtil.canEdit(state, element);
 		
 		if (editable)
-			element.withAttribute("data-cms-editable", "true");
-		
+			element.withAttribute("data-cms-type", cmstype);
+
 		return editable;
 	}
 	

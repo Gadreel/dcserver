@@ -87,7 +87,7 @@ public class IncludeFeed extends Base {
 
 		Path cfile = OperationContext.getOrThrow().getSite().findSectionFile("feeds", fpath, OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
 		
-		if (Files.exists(cfile)) {
+		if ((cfile != null) && Files.exists(cfile)) {
 			XElement layout = ScriptHub.parseInstructions(IOUtil.readEntireFile(cfile));
 			
 			if (layout instanceof Base) {
@@ -190,12 +190,15 @@ public class IncludeFeed extends Base {
 					realpath = realpath.substring(realpath.indexOf('/', 1));
 					
 					this
-							.withAttribute("data-cms-editable", "true")
+							.withAttribute("data-cms-type", "feed")
+							.withAttribute("data-cms-meta", usemeta ? "true" : "false")
 							.withAttribute("data-cms-feed", feed)
 							.withAttribute("data-cms-path", realpath);
-					
+
+					// if any badges indicated for this feed
 					UIUtil.setEditBadges(state, this);
-					
+
+					// indicates only that editing is possible, badges still are checked
 					StackUtil.addVariable(state, "_CMSEditable", BooleanStruct.of(true));
 				}
 			}

@@ -6,48 +6,92 @@
 	<dc.Body>
 		<dc.PagePanel>
 			<dcf.Form>
-				<dcf.TextArea Name="Note" Label="Note" />
-				<dcf.YesNo Name="Publish" Label="Publish Changes" />
+				<dcs.With Target="$_Resources.Config">
+				  <GetTagDeep Path="Feeds/Definition" Result="Feeds" />
+				</dcs.With>
+
+				<dcs.ForEach Name="Part" In="$_Controller.Request.Parameters.part">
+					<dcs.With Target="$Part">
+						<Split Result="SplitPart" />
+					</ds.With>
+
+					<dcs.Var Name="FeedName" Type="String" SetTo="$SplitPart.0" />
+					<dcs.Var Name="FeedHex" Type="String" SetTo="$Part">
+						<HexEncode />
+					</dcs.Var>
+
+					<dcs.For Name="Cnt" From="0" To="$Feeds.Last">
+						<dcs.If Target="$Feeds.$Cnt.@Alias" Equal="{$SplitPart.0}">
+							<dcs.With Target="$FeedName" SetTo="$Feeds.$Cnt.@Title" />
+						</dcs.If>
+					</dcs.For>
+
+					<dcs.Var Name="pdata" Type="Record">
+						<SetField Name="Feed" Value="$SplitPart.0" />
+						<SetField Name="Path" Value="$SplitPart.1" />
+					</dcs.Var>
+
+					<dcs.CallService Service="dcmServices" Feature="Feed" Op="LoadCommandHistory" Params="$pdata" Result="pres" />
+
+					<!-- TODO consider adding in Feed Title from database -->
+					<dc.Out>
+						<div class="feed-entry" data-feed="{$SplitPart.0}" data-path="{$SplitPart.1}">
+							<h2>{$FeedName} : {$SplitPart.1}</h2>
+
+							<br />
+
+							<dcf.HorizRadioGroup Label="Option" Name="Option-{$FeedHex}" value="Save">
+								<RadioButton Value="Save" Label="Save" />
+								<RadioButton Value="Publish" Label="Publish" />
+								<RadioButton Value="Discard" Label="Discard" />
+							</dcf.HorizRadioGroup>
+
+							<dcf.TextArea Name="Note-{$FeedHex}" Label="Note" value="{$pres.Note}" />
+						</div>
+
+						<br />
+						<hr />
+					</dc.Out>
+				</dcs.ForEach>
 
 				<dcf.FormButtons>
-					<dc.Button Label="Discard Changes" Click="OnDiscard" />
-					<dcf.SubmitButton Label="Save" />
+					<dcf.SubmitButton Label="Submit" />
 				</dcf.FormButtons>
 			</dcf.Form>
 		</dc.PagePanel>
 	</dc.Body>
 	<Function Name="Load" Params="e"><![CDATA[
 			var page = this;
-
-			page.Store.Return = null;
 	]]></Function>
-	<Function Name="LoadRecord" Params="e">
-			var page = this;
-
-			e.Message = {
-				Service: 'dcmServices',
-				Feature: 'Feed',
-				Op: 'LoadCommandHistory',
-				Body: {
-					Feed: page.Params.Feed,
-					Path: page.Params.Path
-				}
-			};
-	</Function>
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 			var page = this;
 
-			e.Data.Feed = page.Params.Feed;
-			e.Data.Path = page.Params.Path;
+			var $feeds = page.formQuery().find('.feed-entry');
+
+			var bdata = [ ];
+
+			for (var i = 0; i < $feeds.length; i++) {
+				var $fe = $($feeds.get(i));
+
+				bdata.push({
+					Feed: $fe.attr('data-feed'),
+					Path: $fe.attr('data-path'),
+					Option: $fe.find('input:checked[type="radio"]').val(),
+					Note: $fe.find('textarea').val()
+				});
+			}
+
+			console.log(JSON.stringify(bdata));
+
+			//e.Data.Feed = page.Params.Feed;
+			//e.Data.Path = page.Params.Path;
 
 			e.Message = {
 				Service: 'dcmServices',
 				Feature: 'Feed',
-				Op: 'SaveCommandHistory',
-				Body: e.Data
+				Op: 'BulkCommandHistory',
+				Body: bdata
 			};
-
-			page.Store.Return = 'save';
 	]]></Function>
 	<Function Name="AfterSave"><![CDATA[
 			var page = this;
@@ -55,10 +99,12 @@
 			page.Layer.back();
 
 			if (page.Params.Callback)
-				page.Params.Callback(page.Store.Return);
+				page.Params.Callback();
 	]]></Function>
 	<Function Name="OnDiscard" Params="e"><![CDATA[
 			var page = this;
+
+			// TODO confirm
 
 			dc.comm.sendMessage({
 				Service: 'dcmServices',
@@ -73,8 +119,6 @@
 					dc.pui.Popup.alert(resp.Message);
 					return;
 				}
-
-				page.Store.Return = 'discard';
 
 				page.callPageFunc('AfterSave');
 			});

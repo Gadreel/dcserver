@@ -1,13 +1,18 @@
 package dcraft.web.ui.inst.cms;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import dcraft.cms.util.GalleryUtil;
 import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.OperationMarker;
+import dcraft.log.Logger;
+import dcraft.script.ScriptHub;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
+import dcraft.struct.FieldStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -17,11 +22,12 @@ import dcraft.util.Memory;
 import dcraft.util.StringUtil;
 import dcraft.script.inst.doc.Base;
 import dcraft.web.ui.UIUtil;
+import dcraft.web.ui.inst.ICMSAware;
 import dcraft.web.ui.inst.W3;
 import dcraft.web.ui.inst.W3Closed;
 import dcraft.xml.XElement;
 
-public class CarouselWidget extends Base {
+public class CarouselWidget extends Base implements ICMSAware {
 	static public CarouselWidget tag() {
 		CarouselWidget el = new CarouselWidget();
 		el.setName("dcm.CarouselWidget");
@@ -150,6 +156,8 @@ public class CarouselWidget extends Base {
 					
 					RecordStruct data = (imgmeta != null) ? imgmeta : RecordStruct.record();
 					
+					// TODO use templates
+					
 					Base iel = W3Closed.tag("img");
 					
 					iel
@@ -165,18 +173,93 @@ public class CarouselWidget extends Base {
 			}
 		}
 		
-		UIUtil.markIfEditable(state, this);
+		UIUtil.markIfEditable(state, this, "widget");
 	}
 	
 	@Override
 	public void renderAfterChildren(InstructionWork state) throws OperatingContextException {
 		// TODO edit is conditional to user
 		this
-			.withClass("dc-widget", "dcm-widget-carousel", "dcm-cms-editable")
-			.withAttribute("data-dccms-edit", StackUtil.stringFromSource(state,"AuthTags", "Editor,Admin,Developer"))
+			.withClass("dc-widget", "dcm-widget-carousel")
 			.withAttribute("data-dc-enhance", "true")
 			.withAttribute("data-dc-tag", this.getName());
     	
 		this.setName("div");
     }
+	
+	
+	@Override
+	public void canonicalize() throws OperatingContextException {
+		XElement template = this.selectFirst("Template");
+		
+		if (template == null) {
+			// set default
+			/* create a template system
+			this.with(Base.tag("Template").with(
+					W3.tag("a")
+							.withAttribute("href", "#")
+							.withAttribute("data-image-alias", "{$Image.Alias}")
+							.withAttribute("data-image-info", "{$Image.Data}")
+							.with(
+									W3Closed.tag("img")
+											.withClass("pure-img-inline")
+											.withAttribute("src", "{$Image.Path}")
+									//.withAttribute("srcset", usesrcset ? "{$Image.SourceSet}" : null)
+							)
+			));
+			*/
+		}
+	}
+	
+	@Override
+	public boolean applyCommand(CommonPath path, XElement root, RecordStruct command) throws OperatingContextException {
+		String cmd = command.getFieldAsString("Command");
+		
+		if ("UpdatePart".equals(cmd)) {
+			// TODO check that the changes made are allowed - e.g. on TextWidget
+			RecordStruct params = command.getFieldAsRecord("Params");
+			String area = params.selectAsString("Area");
+			
+			if ("Props".equals(area)) {
+				RecordStruct props = params.getFieldAsRecord("Properties");
+				
+				if (props != null) {
+					for (FieldStruct fld : props.getFields()) {
+						this.attr(fld.getName(), Struct.objectToString(fld.getValue()));
+					}
+				}
+				
+				return true;
+			}
+			
+			if ("Template".equals(area)) {
+				this.canonicalize();    // so all Tr's have a Locale
+				
+				String targetcontent = params.getFieldAsString("Template");
+				
+				String template = "<Template>" + targetcontent + "</Template>";
+				
+				try (OperationMarker om = OperationMarker.clearErrors()) {
+					XElement txml = ScriptHub.parseInstructions(template);
+					
+					if (!om.hasErrors() && (txml != null)) {
+						XElement oldtemp = this.selectFirst("Template");
+						
+						if (oldtemp != null)
+							this.remove(oldtemp);
+						
+						this.with(txml);
+					} else {
+						Logger.warn("Keeping old template, new one is not valid.");
+					}
+				}
+				catch (Exception x) {
+				}
+				
+				return true;
+			}
+		}
+		
+		return false;
+	}
 }

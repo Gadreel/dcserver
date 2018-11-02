@@ -3,15 +3,26 @@ package dcraft.cms.feed.db;
 import dcraft.cms.util.FeedUtil;
 import dcraft.db.DatabaseAdapter;
 import dcraft.db.DatabaseException;
+import dcraft.db.proc.filter.CurrentRecord;
+import dcraft.db.proc.filter.Unique;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileStore;
+import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.local.LocalStore;
+import dcraft.filestore.mem.MemoryStoreFile;
 import dcraft.filevault.Vault;
+import dcraft.filevault.VaultUtil;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.OperationMarker;
+import dcraft.hub.op.OperationOutcome;
+import dcraft.hub.op.OperationOutcomeEmpty;
+import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
+import dcraft.script.ScriptHub;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
@@ -214,8 +225,8 @@ public class FeedUtilDb {
 		}
 
 		// validate, normalize and store
-		if (db.checkFields("dcmFeed", fields, oid)) {
-			db.setFields("dcmFeed", oid, fields);
+		if (db.checkFieldsInternal("dcmFeed", fields, oid)) {
+			db.setFieldsInternal("dcmFeed", oid, fields);
 
 			ZonedDateTime npubtime = Struct.objectToDateTime(db.getStaticScalar("dcmFeed", oid, "dcmPublishAt"));
 
@@ -264,5 +275,157 @@ public class FeedUtilDb {
 		}
 
 		db.retireRecord("dcmFeed", oid.toString());
+	}
+	
+	// Command History
+	
+	static public CommonPath toIndexPath(String feed, String path) throws OperatingContextException {
+		return CommonPath.from("/" + OperationContext.getOrThrow().getSite().getAlias() + "/" + feed + path.substring(0, path.length() - 5));
+	}
+	
+	static public String findHistory(DatabaseAdapter conn, TablesAdapter db, String feed, String path, boolean create, boolean audit) throws OperatingContextException {
+		CommonPath epath = FeedUtilDb.toIndexPath(feed, path);
+		
+		Unique collector = (Unique) db.traverseIndex(OperationContext.getOrThrow(), "dcmFeedHistory", "dcmPath", epath.toString(), Unique.unique().withNested(
+				CurrentRecord.current().withNested(HistoryFilter.forDraft())));
+		
+		String hid = collector.isEmpty() ? null : collector.getOne().toString();
+		
+		if (hid == null) {
+			if (create) {
+				hid = db.createRecord("dcmFeedHistory");
+				
+				db.setStaticScalar("dcmFeedHistory", hid, "dcmPath", epath);
+				db.setStaticScalar("dcmFeedHistory", hid, "dcmStartedAt", TimeUtil.now());
+				db.setStaticScalar("dcmFeedHistory", hid, "dcmStartedBy", OperationContext.getOrThrow().getUserContext().getUserId());
+			}
+		}
+		else {
+			if (audit) {
+				db.setStaticScalar("dcmFeedHistory", hid, "dcmModifiedAt", TimeUtil.now());
+				db.setStaticScalar("dcmFeedHistory", hid, "dcmModifiedBy", OperationContext.getOrThrow().getUserContext().getUserId());
+			}
+		}
+		
+		return hid;
+	}
+	
+	static public void addHistory(DatabaseAdapter conn, TablesAdapter db, String feed, String path, ListStruct commands) throws OperatingContextException {
+		String hid = FeedUtilDb.findHistory(conn, db, feed, path, true, true);
+		
+		if (commands != null) {
+			ZonedDateTime stamp = TimeUtil.now().minusSeconds(1);
+			
+			for (Struct cstruct : commands.items()) {
+				db.setStaticList("dcmFeedHistory", hid, "dcmModifications", TimeUtil.stampFmt.format(stamp), cstruct);
+				
+				// forward 1 ms
+				stamp = stamp.plusNanos(1000000);
+			}
+		}
+		
+		// TODO publish - if dcmScheduleAt then just set the dcmScheduled field to dcmScheduleAt, else do it now
+	}
+	
+	static public void discardHistory(DatabaseAdapter conn, TablesAdapter db, String feed, String path, RecordStruct data, OperationOutcomeStruct callback) throws OperatingContextException {
+		String hid = FeedUtilDb.findHistory(conn, db, feed, path, false, false);
+		
+		if (hid != null) {
+			db.setStaticScalar("dcmFeedHistory", hid, "dcmCancelled", true);
+			db.setStaticScalar("dcmFeedHistory", hid, "dcmCancelledAt", TimeUtil.now());
+			db.setStaticScalar("dcmFeedHistory", hid, "dcmCancelledBy", OperationContext.getOrThrow().getUserContext().getUserId());
+			
+			if ((data != null) && data.hasField("Note"))
+				db.setStaticScalar("dcmFeedHistory", hid, "dcmNote", data.getFieldAsString("Note"));
+		}
+		else {
+			Logger.warn("Could not find any feed history to discard");
+		}
+		
+		callback.returnEmpty();
+	}
+	
+	static public void saveHistory(DatabaseAdapter conn, TablesAdapter db, String feed, String path, RecordStruct data, boolean publish, OperationOutcomeStruct callback) throws OperatingContextException {
+		String hid = FeedUtilDb.findHistory(conn, db, feed, path, true, true);
+		
+		if ((data != null) && data.hasField("Note"))
+			db.setStaticScalar("dcmFeedHistory", hid, "dcmNote", data.getFieldAsString("Note"));
+		
+		if (publish) {
+			FeedUtilDb.publishHistory(conn, db, feed, path, hid, callback);
+		}
+		else {
+			callback.returnEmpty();
+		}
+		
+	}
+	
+	static public void publishHistory(DatabaseAdapter conn, TablesAdapter db, String feed, String path, String hid, OperationOutcomeStruct callback) throws OperatingContextException {
+		db.setStaticScalar("dcmFeedHistory", hid, "dcmPublished", true);
+		
+		Vault feedsvault = OperationContext.getOrThrow().getSite().getVault("Feeds");
+		
+		// TODO feedsvault.mapRequest ...
+		
+		FileStoreFile fileStoreFile = feedsvault.getFileStore().fileReference(
+				CommonPath.from("/" + feed + path));
+		
+		fileStoreFile.readAllText(new OperationOutcome<String>() {
+			@Override
+			public void callback(String result) throws OperatingContextException {
+				if (this.isNotEmptyResult()) {
+					XElement root = ScriptHub.parseInstructions(result);
+					
+					if (root == null) {
+						Logger.error("Feed file not well formed XML");
+						callback.returnEmpty();
+						return;
+					}
+					
+					CommonPath epath = FeedUtilDb.toIndexPath(feed, path);
+					
+					for (String key : db.getStaticListKeys("dcmFeedHistory", hid, "dcmModifications")) {
+						RecordStruct command = Struct.objectToRecord(db.getStaticList("dcmFeedHistory", hid, "dcmModifications", key));
+						
+						// check null, modification could be retired
+						if (command != null) {
+							try (OperationMarker om = OperationMarker.create()) {
+								FeedUtil.applyCommand(epath, root, command, false);
+								
+								if (om.hasErrors()) {
+									// TODO break/skip
+								}
+							}
+							catch (Exception x) {
+								Logger.error("OperationMarker error - applying history");
+								// TODO break/skip
+							}
+						}
+					}
+					
+					// save part as deposit
+					MemoryStoreFile msource = MemoryStoreFile.of(fileStoreFile.getPathAsCommon())
+							.with(root.toPrettyString());
+					
+					VaultUtil.transfer("Feeds", msource, fileStoreFile.getPathAsCommon(), null, new OperationOutcomeStruct() {
+						@Override
+						public void callback(Struct result) throws OperatingContextException {
+							if (! this.hasErrors()) {
+								db.setStaticScalar("dcmFeedHistory", hid, "dcmCompleted", true);
+								db.setStaticScalar("dcmFeedHistory", hid, "dcmCompletedAt", TimeUtil.now());
+								
+								// TODO publish - if dcmScheduleAt then just set the dcmScheduled field to dcmScheduleAt, else do it now
+							}
+							
+							callback.returnEmpty();
+						}
+					});
+				}
+				else {
+					Logger.error("Unable to publish to empty file");
+					callback.returnEmpty();
+				}
+			}
+		});
 	}
 }

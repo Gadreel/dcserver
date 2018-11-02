@@ -7,6 +7,10 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 public class ChainWork implements IChainAwareWork, ICancelAwareWork {
+	static public ChainWork chain() {
+		return new ChainWork();
+	}
+	
 	static public ChainWork of(IWork work) {
 		ChainWork chain = new ChainWork();
 		chain.workchain.addLast(work);

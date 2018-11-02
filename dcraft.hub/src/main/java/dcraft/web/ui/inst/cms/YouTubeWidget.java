@@ -1,14 +1,23 @@
 package dcraft.web.ui.inst.cms;
 
+import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
+import dcraft.locale.LocaleUtil;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.inst.doc.Base;
+import dcraft.struct.FieldStruct;
+import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
+import dcraft.util.StringUtil;
 import dcraft.web.ui.UIUtil;
+import dcraft.web.ui.inst.ICMSAware;
 import dcraft.web.ui.inst.W3;
 import dcraft.xml.XElement;
+import dcraft.xml.XNode;
 
-public class YouTubeWidget extends Base {
+public class YouTubeWidget extends Base implements ICMSAware {
 	static public YouTubeWidget tag() {
 		YouTubeWidget el = new YouTubeWidget();
 		el.setName("dcm.YouTubeWidget");
@@ -36,7 +45,7 @@ public class YouTubeWidget extends Base {
 				)
 		);
 		
-		UIUtil.markIfEditable(state, this);
+		UIUtil.markIfEditable(state, this, "widget");
 	}
 	
 	@Override
@@ -48,4 +57,29 @@ public class YouTubeWidget extends Base {
 		
 		this.setName("div");
     }
+	
+	@Override
+	public boolean applyCommand(CommonPath path, XElement root, RecordStruct command) throws OperatingContextException {
+		String cmd = command.getFieldAsString("Command");
+		
+		if ("UpdatePart".equals(cmd)) {
+			// TODO check that the changes made are allowed
+			RecordStruct params = command.getFieldAsRecord("Params");
+			String area = params.selectAsString("Area");
+			
+			if ("Props".equals(area)) {
+				RecordStruct props = params.getFieldAsRecord("Properties");
+				
+				if (props != null) {
+					for (FieldStruct fld : props.getFields()) {
+						this.attr(fld.getName(), Struct.objectToString(fld.getValue()));
+					}
+				}
+
+				return true;
+			}
+		}
+		
+		return false;
+	}
 }

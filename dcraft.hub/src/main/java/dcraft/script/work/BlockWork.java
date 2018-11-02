@@ -167,13 +167,23 @@ public class BlockWork extends InstructionWork implements IParentAwareWork, IVar
 		if (StringUtil.isEmpty(name))
 			return null;
 		
-		if (this.variables.hasField(name))
+		if (this.variables.hasField(name)) {
+			if (Logger.isTrace()) {
+				Logger.trace("Found variable: " + name + " at " + this.inst.toLocalString());
+			}
+
 			return this.variables.getField(name);
+		}
 
 		IVariableAware va = StackUtil.queryVarAware(this.parent);
 
-		if (va != null)
+		if (va != null) {
+			if (Logger.isTrace()) {
+				Logger.trace("Parent found variable: " + name + " at " + this.inst.toLocalString());
+			}
+
 			return va.queryVariable(name);
+		}
 
 		return OperationContext.getOrThrow().queryVariable(name);
 	}

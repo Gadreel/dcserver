@@ -114,7 +114,7 @@ public class SslEntry {
 		return SslContextBuilder.forServer(this.keyman)
 				//.ciphers(CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
 				.ciphers(trust.getCiphers())
-				.protocols(trust.getProtocol())
+				.protocols("TLSv1.2", "TLSv1.3") // TODO review trust.getProtocol())
 				.applicationProtocolConfig(apn)
 				.sslProvider(SslProvider.OPENSSL);
 	}

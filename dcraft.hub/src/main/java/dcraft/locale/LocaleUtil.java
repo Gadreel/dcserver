@@ -142,6 +142,10 @@ public class LocaleUtil {
 				break;
 		}
 
+		// empty strings are "null" in index
+		if (sb.length() == 0)
+			return null;
+
 		return sb.toString();
 	}
 

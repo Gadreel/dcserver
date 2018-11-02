@@ -101,10 +101,25 @@ public class MenuWidget extends Base {
 			}
 
 			if (StringUtil.isNotEmpty(pagelink)) {
-				if ((ppath.length() > 1) && ppath.startsWith(pagelink))
-					((Base)mnu).withClass("selected");
-				else if ((opath.length() > 1) && opath.startsWith(pagelink))
-					((Base)mnu).withClass("selected");
+				if ((ppath.length() > 1) && ppath.startsWith(pagelink)) {
+					((Base) mnu).withClass("selected");
+				}
+				else if ((opath.length() > 1) && opath.startsWith(pagelink)) {
+					((Base) mnu).withClass("selected");
+				}
+				else {
+					String[] pagelinks = StackUtil.stringFromElement(state, mnu, "AltSelects", "").split(",");
+
+					for (int i = 0; i < pagelinks.length; i++) {
+						if (StringUtil.isNotEmpty(pagelinks[i])) {
+							if ((ppath.length() > 1) && ppath.startsWith(pagelinks[i])) {
+								((Base) mnu).withClass("selected");
+							} else if ((opath.length() > 1) && opath.startsWith(pagelinks[i])) {
+								((Base) mnu).withClass("selected");
+							}
+						}
+					}
+				}
 			}
 
 			ul.with(

@@ -29,36 +29,40 @@ import dcraft.xml.XElement;
 public class CallService extends RecordStruct {
 	@Override
 	public ReturnOption operation(StackWork state, XElement code) throws OperatingContextException {
-		if ("Execute".equals(code.getName())) {
-			String name = StackUtil.stringFromElement(state, code, "Result");
-			
-			ServiceHub.call(ServiceRequest.of(
+		if (state.getState() == ExecuteState.READY) {
+			if ("Execute".equals(code.getName())) {
+				String name = StackUtil.stringFromElement(state, code, "Result");
+				
+				state.setState(ExecuteState.RESUME);
+				
+				ServiceHub.call(ServiceRequest.of(
 						this.getFieldAsString("Service"),
 						this.getFieldAsString("Feature"),
 						this.getFieldAsString("Op")
-					)
-					.withData(this.getField("Params"))
-					.withOutcome(
-						new OperationOutcomeStruct() {
-							@Override
-							public void callback(Struct result) throws OperatingContextException {
-								// not sure if this is useful
-								if (result == null)
-									result = NullStruct.instance;
-								
-								if (StringUtil.isNotEmpty(name))
-									StackUtil.addVariable(state, name, result);
-								
-								state.setState(ExecuteState.DONE);
-								
-								OperationContext.getAsTaskOrThrow().resume();
-							}
-						})
-			);
+						)
+								.withData(this.getField("Params"))
+								.withOutcome(
+										new OperationOutcomeStruct() {
+											@Override
+											public void callback(Struct result) throws OperatingContextException {
+												// not sure if this is useful
+												if (result == null)
+													result = NullStruct.instance;
+												
+												if (StringUtil.isNotEmpty(name))
+													StackUtil.addVariable(state, name, result);
+												
+												OperationContext.getAsTaskOrThrow().resume();
+											}
+										})
+				);
+				
+				return ReturnOption.AWAIT;
+			}
 			
-			return ReturnOption.AWAIT;
+			return super.operation(state, code);
 		}
 		
-		return super.operation(state, code);
+		return ReturnOption.CONTINUE;
 	}
 }

@@ -9,11 +9,11 @@
 				<dc.Region Hint="YouTube Properties form">
 					<dcf.Text Label="Image" Name="VideoId" Required="true" />
 					<dcf.Text Name="Ratio" Label="Ratio" placeholder="video ratio 19by9 or 4by3" />
-					<dcf.Text Name="Class" Label="CSS Classes" placeholder="custom styling for this section" />
+					<dcf.Text Name="class" Label="CSS Classes" placeholder="custom styling for this section" />
 				</dc.Region>
 
 				<dcf.FormButtons Hint="form options">
-					<dc.Button Label="Save" Click="DoSaveOnly" />
+					<!-- dc.Button Label="Save" Click="DoSaveOnly" / -->
 					<dc.Button Label="Save and Preview" Click="DoSave" Scope="Primary" />
 				</dcf.FormButtons>
 			</dcf.Form>
@@ -21,8 +21,6 @@
 	</dc.Body>
 	<Function Name="Load"><![CDATA[
 			var entry = this;
-
-			entry.Store.Params = dc.pui.App.Context.Params;
     ]]></Function>
 	<Function Name="LoadRecord" Params="e"><![CDATA[
 			var entry = this;
@@ -46,7 +44,7 @@
 			e.Data = {
 				VideoId: widget.attr('VideoId'),
 				Ratio: widget.attr('Ratio'),
-				Class: widget.attr('class')
+				class: widget.attr('class')
 			};
 	]]></Function>
 	<Function Name="DoSaveOnly"><![CDATA[
@@ -66,35 +64,20 @@
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 			var entry = this;
 
-			var widget = entry.Store.Widget;
+			e.Wait = true;
 
-			if (e.Data.hasOwnProperty('Class'))
-				widget.attr('class', e.Data.Class);
-
-			if (e.Data.hasOwnProperty('VideoId'))
-				widget.attr('VideoId', e.Data.VideoId);
-
-			if (e.Data.hasOwnProperty('Ratio'))
-				widget.attr('Ratio', e.Data.Ratio);
-
-			e.Message = {
-				Service: 'dcmServices',
-				Feature: 'Feed',
-				Op: 'AddCommandHistory',
-				Body: {
-					Feed: entry.Params.Feed,
-					Path: entry.Params.Path,
-					Commands: [
-						{
-							Command: 'SavePart',
-							Params: {
-								PartId: entry.Params.Id,
-								Part: dc.util.Xml.toString(widget)
-							}
-						}
-					]
+			dc.cms.Loader.saveCommands(entry.Params.Feed, entry.Params.Path, [
+				{
+					Command: 'UpdatePart',
+					Params: {
+						PartId: entry.Params.Id,
+						Area: 'Props',
+						Properties: e.Data
+					}
 				}
-			};
+			], function() {
+				e.Task.resume();
+			});
     ]]></Function>
 	<Function Name="AfterSave"><![CDATA[
 			var entry = this;

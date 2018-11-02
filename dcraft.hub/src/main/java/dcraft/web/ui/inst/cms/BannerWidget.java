@@ -5,34 +5,31 @@ import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationMarker;
-import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
 import dcraft.script.ScriptHub;
 import dcraft.script.StackUtil;
+import dcraft.script.inst.doc.Base;
 import dcraft.script.work.InstructionWork;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
-import dcraft.script.inst.doc.Base;
 import dcraft.web.ui.UIUtil;
 import dcraft.web.ui.inst.ICMSAware;
 import dcraft.web.ui.inst.W3;
 import dcraft.xml.XElement;
 import dcraft.xml.XNode;
-import dcraft.xml.XmlReader;
-import org.xml.sax.XMLReader;
 
-public class ImageWidget extends Base implements ICMSAware {
-	static public ImageWidget tag() {
-		ImageWidget el = new ImageWidget();
-		el.setName("dcm.ImageWidget");
+public class BannerWidget extends Base implements ICMSAware {
+	static public BannerWidget tag() {
+		BannerWidget el = new BannerWidget();
+		el.setName("dcm.BannerWidget");
 		return el;
 	}
 	
 	@Override
 	public XElement newNode() {
-		return ImageWidget.tag();
+		return BannerWidget.tag();
 	}
 	
 	@Override
@@ -86,6 +83,10 @@ public class ImageWidget extends Base implements ICMSAware {
 
 			// srcset="image-2x.png 2x, image-3x.png 3x, image-4x.png 4x"
 		}
+		
+		if (this.hasNotEmptyAttribute("Centering"))
+			this
+					.withAttribute("data-dcm-centering", StackUtil.stringFromSource(state, "Centering"));
 		
 		int apos = path.lastIndexOf('/') + 1;
 		
@@ -141,7 +142,7 @@ public class ImageWidget extends Base implements ICMSAware {
 			// set default
 			this.with(Base.tag("Template").with(
 					W3.tag("img")
-							.withClass("pure-img-inline")
+							.withClass("dcm-widget-banner-img")
 							.withAttribute("alt", "{$Image.Description}")
 							.withAttribute("src", "{$Image.Path}")
 							//.withAttribute("srcset", usesrcset ? "{$Image.SourceSet}" : null)
@@ -152,7 +153,7 @@ public class ImageWidget extends Base implements ICMSAware {
 	@Override
 	public void renderAfterChildren(InstructionWork state) {
 		this
-				.withClass("dc-widget", "dc-widget-image")
+				.withClass("dc-widget", "dcm-widget-banner")
 				.withClass("dc-media-box", "dc-media-image")
 				.withAttribute("data-dc-enhance", "true")
 				.withAttribute("data-dc-tag", this.getName());

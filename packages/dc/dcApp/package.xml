@@ -57,11 +57,11 @@
 
 			<!-- cms content extended tags -->
 			<Tag Name="dcm.IncludeFeed" Class="dcraft.web.ui.inst.cms.IncludeFeed" />
-			<Tag Name="dcm.IncludeFeedInline" Class="dcraft.web.ui.inst.cms.IncludeFeedInline" />
 
 			<!-- cms media extended tags -->
 			<Tag Name="dcm.CarouselWidget" Class="dcraft.web.ui.inst.cms.CarouselWidget" />
 			<Tag Name="dcm.ImageWidget" Class="dcraft.web.ui.inst.cms.ImageWidget" />
+			<Tag Name="dcm.BannerWidget" Class="dcraft.web.ui.inst.cms.BannerWidget" />
 			<Tag Name="dcm.YouTubeWidget" Class="dcraft.web.ui.inst.cms.YouTubeWidget" />
 			<Tag Name="dcm.GalleryWidget" Class="dcraft.web.ui.inst.cms.GalleryWidget" />
 
@@ -260,6 +260,9 @@
 			<Definition Alias="pages" Title="Web Page"
 				LocaleFields="Title,Keywords,Description"
 				SharedFields="Image,PublishAt"
+			/>
+			<Definition Alias="blocks" Title="Content Block"
+				LocaleFields="Title,Description"
 			/>
 		</Feeds>
 

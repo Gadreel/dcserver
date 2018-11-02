@@ -73,7 +73,10 @@ public class TableUtil {
 
 		// TODO db.executeTrigger(table, isUpdate ? "BeforeUpdate" : "BeforeInsert", request);
 
-		// TODO maybe check for errors here?
+		// check for errors here?
+		if (! db.checkFieldsInternal(table, fields, params.getFieldAsString("Id"))) {
+			return null;
+		}
 
 		// it is possible for Id to be set by trigger (e.g. with domains)
 		id = params.getFieldAsString("Id");
@@ -99,7 +102,9 @@ public class TableUtil {
 		// ===========================================
 		//  do the data update
 		// ===========================================
-		db.setFields(table, id, fields);
+		db.setFieldsInternal(table, id, fields);
+
+		// TODO don't want sets here at all if possible, they are not checked in checkFieldsInternal above and could ruin a create
 
 		// ===========================================
 		//  and set fields

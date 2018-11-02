@@ -51,7 +51,7 @@ dc.schema.Manager.load([
         "Id" : "TimeRange",
         "Kind" : 1
       },
-      { "CoreType" : { "DataRestrictions" : [ { "Pattern" : "^(([01]?[0-9]|2[0-3])(:[0-5][0-9])?|(24(:00)?))$" } ],
+      { "CoreType" : { "DataRestrictions" : [ { "Pattern" : "^(([01][0-9]|2[0-3])(:[0-5][0-9])|(24(:00)))$" } ],
             "RootType" : 1
           },
         "Id" : "TimeHHMM",

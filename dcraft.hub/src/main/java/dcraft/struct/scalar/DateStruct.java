@@ -17,12 +17,16 @@
 package dcraft.struct.scalar;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
+import dcraft.hub.ResourceHub;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
 import dcraft.script.work.StackWork;
+import dcraft.struct.CompositeParser;
 import dcraft.task.IParentAwareWork;
+import dcraft.util.StringUtil;
 import org.threeten.extra.PeriodDuration;
 
 import dcraft.hub.op.OperatingContextException;
@@ -153,7 +157,24 @@ public class DateStruct extends ScalarStruct {
 			
 			return ReturnOption.CONTINUE;
 		}
-		
+		else if ("Now".equals(op)) {
+			this.value = LocalDate.now();
+
+			return ReturnOption.CONTINUE;
+		}
+		else if ("Format".equals(code.getName())) {
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+			String format = StackUtil.stringFromElement(stack, code, "Pattern");
+
+			String out = DateTimeFormatter.ofPattern(format)
+					.withZone(ZoneId.of(ResourceHub.getResources().getLocale().getDefaultChronology()))
+					.format(this.value);
+
+			StackUtil.addVariable(stack, result, StringStruct.of(out));
+
+			return ReturnOption.CONTINUE;
+		}
+
 		return super.operation(stack, code);
 	}
 

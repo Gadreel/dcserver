@@ -463,6 +463,83 @@ dc.pui.Tags['dcm.CarouselWidget'] = function(entry, node) {
 
 dc.pui.Tags['dc.SlidesSection'] = dc.pui.Tags['dcm.CarouselWidget'];
 
+dc.pui.Tags['dcm.BannerWidget'] = function(entry, node) {
+	var imgPlacement = function(selector) {
+		$(node).find(selector).css({
+		     marginLeft: '0'
+		 });
+
+ 		var centerEnable = $(node).attr('data-dcm-centering');
+
+ 		if (! centerEnable || (centerEnable.toLowerCase() != 'true'))
+ 			return;
+
+		var idata = $(node).attr('data-dc-image-data');
+
+		if (! idata)
+			return;
+
+		var ii = JSON.parse(idata);
+
+		var fimg = $(node).find('img');
+
+		if (fimg.length == 0)
+			return;
+
+		fimg = fimg.get(0);
+
+		var ch = (ii.Data && ii.Data.CenterHint) ? ii.Data.CenterHint : (fimg.naturalWidth / 2);
+		var srcWidth = fimg.naturalWidth;
+		var srcHeight = fimg.naturalHeight;
+		var currWidth = $(node).width();
+		var currHeight = $(node).height();
+
+		// stretch whole image, no offset
+		if (currWidth > srcWidth)
+			return;
+
+		var zoom = currHeight / srcHeight;
+		var availWidth = srcWidth * zoom;
+
+		var xoff = (availWidth - currWidth) / 2;
+
+		if (dc.util.Number.isNumber(ch))
+			xoff -= ((srcWidth / 2) - ch) * zoom;
+
+		if (xoff < 0)
+			xoff = 0;
+		if (xoff + currWidth > availWidth)
+			xoff = availWidth - currWidth;
+
+		$(node).find(selector).css({
+		     marginLeft: '-' + xoff + 'px'
+		 });
+	};
+
+	entry.registerResize(function(e) {
+		imgPlacement('.dcm-widget-banner-img');
+	});
+
+	// make sure the "placement" code gets run
+	/*
+	entry.allocateTimeout({
+		Title: 'Banner Controller',
+		Period: 1000,
+		Op: function() {
+			imgPlacement('.dcm-widget-banner-img');
+		}
+	});
+	*/
+
+	var img = new Image();
+
+	img.onload = function () {
+		imgPlacement('.dcm-widget-banner-img');
+	};
+
+	img.src = $(node).find('img').attr('src');
+};
+
 dc.pui.Tags['dcmi.CmsLink'] = function(entry, node) {
 	$(node).click(function(e) {
 		entry.LastFocus = $(node);

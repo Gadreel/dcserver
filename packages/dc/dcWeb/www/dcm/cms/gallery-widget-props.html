@@ -26,7 +26,7 @@ Must select a show (see below) that already exists. If you don't have a show sav
 					<Button Icon="fa-ellipsis-h" Click="DoSelectShow" />
 				</dcf.Text>
 				<dcf.Text Name="Max" Label="Max" placeholder="if set, will show only the top N images (N = Max)" />
-				<dcf.Text Name="Class" Label="CSS Classes" placeholder="custom styling for this section" />
+				<dcf.Text Name="class" Label="CSS Classes" placeholder="custom styling for this section" />
 
 				<dcf.FormButtons>
 					<!-- dc.Button Label="Save" Click="DoSaveOnly" / -->
@@ -62,7 +62,7 @@ Must select a show (see below) that already exists. If you don't have a show sav
 				Path: widget.attr('Path'),
 				Show: widget.attr('Show'),
 				Max: widget.attr('Max'),
-				Class: widget.attr('class')
+				class: widget.attr('class')
 			};
 	]]></Function>
 	<Function Name="DoSaveOnly"><![CDATA[
@@ -82,38 +82,20 @@ Must select a show (see below) that already exists. If you don't have a show sav
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 			var entry = this;
 
-			var widget = entry.Store.Widget;
+			e.Wait = true;
 
-			if (e.Data.hasOwnProperty('Class'))
-				widget.attr('class', e.Data.Class);
-
-			if (e.Data.hasOwnProperty('Path'))
-				widget.attr('Path', e.Data.Path);
-
-			if (e.Data.hasOwnProperty('Show'))
-				widget.attr('Show', e.Data.Show);
-
-			if (e.Data.hasOwnProperty('Max'))
-				widget.attr('Max', e.Data.Max);
-
-			e.Message = {
-				Service: 'dcmServices',
-				Feature: 'Feed',
-				Op: 'AddCommandHistory',
-				Body: {
-					Feed: entry.Params.Feed,
-					Path: entry.Params.Path,
-					Commands: [
-						{
-							Command: 'SavePart',
-							Params: {
-								PartId: entry.Params.Id,
-								Part: dc.util.Xml.toString(widget)
-							}
-						}
-					]
+			dc.cms.Loader.saveCommands(entry.Params.Feed, entry.Params.Path, [
+				{
+					Command: 'UpdatePart',
+					Params: {
+						PartId: entry.Params.Id,
+						Area: 'Props',
+						Properties: e.Data
+					}
 				}
-			};
+			], function() {
+				e.Task.resume();
+			});
     ]]></Function>
 	<Function Name="AfterSave"><![CDATA[
 		var entry = this;

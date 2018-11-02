@@ -302,6 +302,8 @@
 		<Entry Token="_code_50014" Value="Record too large, unable to complete select query" />
 		<Entry Token="_code_50015" Value="Missing {$1} parameter in call to procedure {$2}." />
 		<Entry Token="_code_50016" Value="Requested record is missing or unavailable" />
+		<Entry Token="_code_50017" Value="Field already in use, must be unique {$1} - {$2}" />
+		<Entry Token="_code_50018" Value="Field must be unique {$1} - {$2}" />
 		<Entry Token="_code_50100" Value="Missing backup time stamp" />
 
 		<!-- TODO remove, just for demo -->

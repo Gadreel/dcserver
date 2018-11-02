@@ -272,6 +272,7 @@
 						<RecordRequest Required="True">
 							<Field Name="Id" Type="Id" />
 							<Field Name="Uuid" Type="dcMetaString" />
+							<Field Name="IndexOnly" Type="Boolean" />
 						</RecordRequest>
 					</Op>
 					<Op Name="AddContent">

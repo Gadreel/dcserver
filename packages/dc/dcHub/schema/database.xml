@@ -434,17 +434,22 @@
 					</Op>
 					<Op Name="dcIndexCounter">
 						<Description>
-							Load a single record including fields and subqueries.
+							TODO
 						</Description>
-						<Request Inherits="dcdbCall">
-							<Field Name="Field" Type="dcTinyString" />
+						<RecordRequest Inherits="dcdbCall">
+							<Field Name="Field" Type="dcMetaString" />
 							<Field Name="Historical" Type="Boolean" />
 							<Field Name="When" Type="BigDateTime" />
 							<Field Name="Values">
-								<List Type="Any" />
-							</Field>
-						</Request>
-						<Response Type="Any" />
+								<List Type="dcMetaString" />
+							</Fields>
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Name" Type="dcMetaString" />
+								<Field Name="Count" Type="Integer" />
+							</Record>
+						</ListResponse>
 					</Op>
 					<Op Name="dcSignIn">
 						<Description>

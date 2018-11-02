@@ -16,6 +16,10 @@
 			<StringRestriction MaxLength="200" />
 		</StringType>
 
+		<StringType Id="dcmFeedHistoryOptionsEnum">
+			<StringRestriction Enum="Save,Publish,Discard" />
+		</StringType>
+
 		<Record Id="dcmQuickPDF" Class="dcraft.util.pdf.QuickPDF" />
 	</Shared>
 
@@ -116,6 +120,7 @@
 		<Procedure Name="dcmServices.Feed.LoadCommandHistory" Execute="dcraft.cms.feed.db.LoadCommandHistory" />
 		<Procedure Name="dcmServices.Feed.SaveCommandHistory" Execute="dcraft.cms.feed.db.SaveCommandHistory" />
 		<Procedure Name="dcmServices.Feed.DiscardCommandHistory" Execute="dcraft.cms.feed.db.DiscardCommandHistory" />
+		<Procedure Name="dcmServices.Feed.BulkCommandHistory" Execute="dcraft.cms.feed.db.BulkCommandHistory" />
 
 		<Procedure Name="dcCoreServices.ManagedForm.Submit" Execute="dcraft.cms.db.forms.Submit" />
 		<Procedure Name="dcCoreServices.ManagedForm.Complete" Execute="dcraft.cms.db.forms.Complete" />
@@ -299,9 +304,22 @@
 						<RecordRequest Required="True">
 							<Field Name="Feed" Type="dcMetaString" Required="True" />
 							<Field Name="Path" Type="dcPath" Required="True" />
+							<Field Name="Note" Type="dcString" />
 							<!-- if When is blank then add to working draft, use only with Schedule -->
 							<Field Name="When" Type="DateTime" />
 						</RecordRequest>
+					</Op>
+					<Op Name="BulkCommandHistory">
+						<Description>
+							make it live, store in file
+						</Description>
+						<ListRequest Required="True">
+							<Record Type="AnyRecord">
+								<Field Name="Feed" Type="dcMetaString" Required="True" />
+								<Field Name="Path" Type="dcPath" Required="True" />
+								<Field Name="Option" Type="dcmFeedHistoryOptionsEnum" />
+							</Record>
+						</ListRequest>
 					</Op>
 				</Secure>
 			</Feature>

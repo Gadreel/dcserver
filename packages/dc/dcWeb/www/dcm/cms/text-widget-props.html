@@ -10,7 +10,7 @@
 				   <RadioButton Value="Safe" Label="Safe" />
 				   <RadioButton Value="Unsafe" Label="Unsafe" />
 				</dcf.HorizRadioGroup>
-				<dcf.Text Name="Class" Label="CSS Classes" placeholder="custom styling for this section" />
+				<dcf.Text Name="class" Label="CSS Classes" placeholder="custom styling for this section" />
 
 				<dcf.FormButtons>
 					<!-- dc.Button Label="Save" Click="DoSaveOnly" / -->
@@ -43,7 +43,7 @@
 
 			e.Data = {
 				Mode: widget.attr('Mode'),
-				Class: widget.attr('class')
+				class: widget.attr('class')
 			};
 	]]></Function>
 	<Function Name="DoSaveOnly"><![CDATA[
@@ -63,32 +63,20 @@
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 			var entry = this;
 
-			var widget = entry.Store.Widget;
+			e.Wait = true;
 
-			if (e.Data.hasOwnProperty('Class'))
-				widget.attr('class', e.Data.Class);
-
-			if (e.Data.hasOwnProperty('Mode'))
-				widget.attr('Mode', e.Data.Mode);
-
-			e.Message = {
-				Service: 'dcmServices',
-				Feature: 'Feed',
-				Op: 'AddCommandHistory',
-				Body: {
-					Feed: entry.Params.Feed,
-					Path: entry.Params.Path,
-					Commands: [
-						{
-							Command: 'SavePart',
-							Params: {
-								PartId: entry.Params.Id,
-								Part: dc.util.Xml.toString(widget)
-							}
-						}
-					]
+			dc.cms.Loader.saveCommands(entry.Params.Feed, entry.Params.Path, [
+				{
+					Command: 'UpdatePart',
+					Params: {
+						PartId: entry.Params.Id,
+						Area: 'Props',
+						Properties: e.Data
+					}
 				}
-			};
+			], function() {
+				e.Task.resume();
+			});
     ]]></Function>
 	<Function Name="AfterSave"><![CDATA[
 		var entry = this;

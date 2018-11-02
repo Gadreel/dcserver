@@ -42,34 +42,37 @@ public class CallService extends OperationsInstruction {
 				return ReturnOption.DONE;
 			}
 			
-			if (this.hasNotEmptyAttribute("Service"))
-				this.add(0, XElement.tag("SetField")
-						.withAttribute("Name", "Service")
-						.withAttribute("Value", this.getAttribute("Service"))
-				);
-			
-			if (this.hasNotEmptyAttribute("Feature"))
-				this.add(0, XElement.tag("SetField")
-						.withAttribute("Name", "Feature")
-						.withAttribute("Value", this.getAttribute("Feature"))
-				);
-			
-			if (this.hasNotEmptyAttribute("Op"))
-				this.add(0, XElement.tag("SetField")
-						.withAttribute("Name", "Op")
-						.withAttribute("Value", this.getAttribute("Op"))
-				);
-			
-			if (this.hasNotEmptyAttribute("Params"))
-				this.add(0, XElement.tag("SetField")
-						.withAttribute("Name", "Params")
-						.withAttribute("Value", this.getAttribute("Params"))
-				);
-			
-			if (this.hasNotEmptyAttribute("Result"))
-				this.with(XElement.tag("Execute")
-						.withAttribute("Result", this.getAttribute("Result"))
-				);
+			// in a loop this instruction may be run again, fresh and READY - check to see if so and then skip op prep
+			if (this.find("Execute") == null) {
+				if (this.hasNotEmptyAttribute("Service"))
+					this.add(0, XElement.tag("SetField")
+							.withAttribute("Name", "Service")
+							.withAttribute("Value", this.getAttribute("Service"))
+					);
+				
+				if (this.hasNotEmptyAttribute("Feature"))
+					this.add(0, XElement.tag("SetField")
+							.withAttribute("Name", "Feature")
+							.withAttribute("Value", this.getAttribute("Feature"))
+					);
+				
+				if (this.hasNotEmptyAttribute("Op"))
+					this.add(0, XElement.tag("SetField")
+							.withAttribute("Name", "Op")
+							.withAttribute("Value", this.getAttribute("Op"))
+					);
+				
+				if (this.hasNotEmptyAttribute("Params"))
+					this.add(0, XElement.tag("SetField")
+							.withAttribute("Name", "Params")
+							.withAttribute("Value", this.getAttribute("Params"))
+					);
+				
+				if (this.hasNotEmptyAttribute("Result"))
+					this.with(XElement.tag("Execute")
+							.withAttribute("Result", this.getAttribute("Result"))
+					);
+			}
 			
 			StackUtil.addVariable(state, name, var);
 			

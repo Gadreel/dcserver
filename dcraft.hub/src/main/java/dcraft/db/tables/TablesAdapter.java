@@ -92,7 +92,7 @@ public class TablesAdapter {
 		}
 	}
 	
-	public boolean checkFields(String table, RecordStruct fields, String inId) throws OperatingContextException {
+	public boolean checkFieldsInternal(String table, RecordStruct fields, String inId) throws OperatingContextException {
 		BiConsumer<DbField,RecordStruct> fieldChecker = new BiConsumer<DbField,RecordStruct>() {
 			@Override
 			public void accept(DbField schema, RecordStruct data) {
@@ -141,7 +141,7 @@ public class TablesAdapter {
 					// if we are a new record
 					if (inId == null) {
 						if (id != null) {
-							Logger.error("Field must be unique: " + table + " - " + schema.getName());
+							Logger.errorTr(50018, table, schema.getName());
 							return;
 						}
 						
@@ -149,7 +149,7 @@ public class TablesAdapter {
 					// if we are not a new record
 					else if (id != null) {
 						if (!inId.equals(id)) {
-							Logger.error("Field already in use, must be unique: " + table + " - " + schema.getName());
+							Logger.errorTr(50017, table, schema.getName());
 							return;
 						}
 					}
@@ -233,14 +233,14 @@ public class TablesAdapter {
 		return true;
 	}
 	
-	public boolean checkSetFields(String table, String id, RecordStruct fields) throws OperatingContextException {
-		if (! this.checkFields(table, fields, id))
+	public boolean setFields(String table, String id, RecordStruct fields) throws OperatingContextException {
+		if (! this.checkFieldsInternal(table, fields, id))
 			return false;
 		
-		return this.setFields(table, id, fields);
+		return this.setFieldsInternal(table, id, fields);
 	}
 	
-	public boolean setFields(String table, String id, RecordStruct fields) throws OperatingContextException {
+	public boolean setFieldsInternal(String table, String id, RecordStruct fields) throws OperatingContextException {
 		String did = this.request.getTenant();
 		
 		try {
@@ -1041,7 +1041,7 @@ public class TablesAdapter {
 						.with("Data", data)
 				);
 		
-		return this.checkSetFields(table, id, fields);
+		return this.setFields(table, id, fields);
 	}
 	
 	public boolean updateStaticScalar(String table, String id, String field, Object data) throws OperatingContextException {
@@ -1051,7 +1051,7 @@ public class TablesAdapter {
 						.with("UpdateOnly", true)
 				);
 		
-		return this.checkSetFields(table, id, fields);
+		return this.setFields(table, id, fields);
 	}
 	
 	public boolean retireStaticScalar(String table, String id, String field) throws OperatingContextException {
@@ -1061,7 +1061,7 @@ public class TablesAdapter {
 						.with("UpdateOnly", true)
 				);
 		
-		return this.checkSetFields(table, id, fields);
+		return this.setFields(table, id, fields);
 	}
 	
 	public boolean setStaticList(String table, String id, String field, String subid, Object data) throws OperatingContextException {
@@ -1070,7 +1070,7 @@ public class TablesAdapter {
 						.with(subid, new RecordStruct().with("Data", data))
 				);
 		
-		return this.checkSetFields(table, id, fields);
+		return this.setFields(table, id, fields);
 	}
 	
 	public boolean updateStaticList(String table, String id, String field, String subid, Object data) throws OperatingContextException {
@@ -1082,7 +1082,7 @@ public class TablesAdapter {
 						)
 				);
 		
-		return this.checkSetFields(table, id, fields);
+		return this.setFields(table, id, fields);
 	}
 	
 	public boolean retireStaticList(String table, String id, String field, String subid) throws OperatingContextException {
@@ -1094,7 +1094,7 @@ public class TablesAdapter {
 						)
 				);
 		
-		return this.checkSetFields(table, id, fields);
+		return this.setFields(table, id, fields);
 	}
 	
 	// from is ms since 1970
@@ -1107,7 +1107,7 @@ public class TablesAdapter {
 						)
 				);
 		
-		return this.checkSetFields(table, id, fields);
+		return this.setFields(table, id, fields);
 	}
 	
 	// from and to are ms since 1970
@@ -1121,7 +1121,7 @@ public class TablesAdapter {
 						)
 				);
 		
-		return this.checkSetFields(table, id, fields);
+		return this.setFields(table, id, fields);
 	}
 	
 	/* 

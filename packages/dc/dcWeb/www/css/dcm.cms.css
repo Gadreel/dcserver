@@ -1,24 +1,11 @@
 
-
 .dcm-file-list {
-    display: -ms-flexbox;
-    display: -webkit-flex;
-    display: flex;
-    -webkit-flex-direction: row;
-    -ms-flex-direction: row;
-    flex-direction: row;
-    -webkit-flex-wrap: wrap;
-    -ms-flex-wrap: wrap;
-    flex-wrap: wrap;
-    -webkit-justify-content: flex-start;
-    -ms-flex-pack: start;
-    justify-content: flex-start;
-    -webkit-align-content: stretch;
-    -ms-flex-line-pack: stretch;
-    align-content: stretch;
-    -webkit-align-items: flex-start;
-    -ms-flex-align: start;
-    align-items: flex-start;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: flex-start;
+	align-content: stretch;
+	align-items: flex-start;
 }
 
 .dcm-file-list a.dcm-file {
@@ -32,170 +19,20 @@
 }
 
 .dcm-file-list div.dcm-file-title {
-    padding: .8rem 1.2rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 1.3rem;
-    overflow: hidden;
+	padding: .8rem 1.2rem;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 1.3rem;
+	overflow: hidden;
 }
 
 .dcm-file-list a.dcm-folder {
 	margin: 1.6rem;
-    width: 152px;
-    border: 1px solid darkgray;
-    -webkit-border-radius: 3px;
-    border-radius: 3px;
-	-webkit-box-shadow: 0 1px 1px 0 rgba(0,0,0,.2);
-    box-shadow: 0 1px 1px 0 rgba(0,0,0,.2);
+	width: 152px;
+	border: 1px solid darkgray;
+	border-radius: 3px;
+	box-shadow: 0 1px 1px 0 rgba(0,0,0,.2);
 }
-
-
-/*
-
-#dcuiIntegratedCms {
-	position: fixed;
-	top: 0;
-	bottom: 0;
-	left: 0;
-	right: 0;
-	background-color: rgba(90,90,90,0.5);
-	z-index: 505;
-	overflow: hidden;
-    display: -ms-flexbox;
-    display: -webkit-flex;
-    display: flex;
-    -webkit-flex-direction: row;
-    -ms-flex-direction: row;
-    flex-direction: row;
-}
-
-#dcuiIntegratedPane {
-    -webkit-flex: 1 1 auto;
-    -ms-flex: 1 1 auto;
-	flex: 1 1 auto;
-	background: white;
-	margin: 0;
-    overflow: hidden;
-}
-*/
-
-/* each individual pane fills full */
-
-/*
-#dcuiIntegratedPane > div {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-	overflow: hidden;
-	overflow-y: auto;
-}
-
-#dcuiIntegratedCms.ui-content {
-	padding: 0;
-}
-
-#dcuiIntegratedMenu {
-	width: 48px;
-	background: white;
-	margin: 0;
-	overflow: hidden;
-	overflow-y: auto;
-}
-
-#dcuiIntegratedMenuCntrl {
-    display: -ms-flexbox;
-    display: -webkit-flex;
-    display: flex;
-    -webkit-flex-direction: column-reverse;
-    -ms-flex-direction: column-reverse;
-    flex-direction: column-reverse;
-    -webkit-flex-wrap: nowrap;
-    -ms-flex-wrap: nowrap;
-    flex-wrap: nowrap;
-    -webkit-justify-content: flex-end;
-    -ms-flex-pack: end;
-    justify-content: flex-end;
-    -webkit-align-content: center;
-    -ms-flex-line-pack: center;
-    align-content: center;
-    -webkit-align-items: center;
-    -ms-flex-align: center;
-    align-items: center;
-}
-
-#dcuiIntegratedMenuCntrl > a {
-	display: block;
-    -webkit-flex: 0 0 auto;
-    -ms-flex: 0 0 auto;
-    flex: 0 0 auto;
-	margin: 12px;
-    font-size: 3.2rem;
-}
-
-#dcuiIntegratedMenuCntrl > a.disabled {
-	color: gray;
-}
-
-@media all and (max-width: 959px) {
-	#dcuiIntegratedMenu {
-		border-right: 3px solid #58595b;
-	}
-
-	#dcuiIntegratedMenu > a {
-		display: none;
-	}
-}
-
-@media all and (min-width: 960px) {
-	#dcuiIntegratedCms.ui-content {
-		padding: 8px;
-	}
-
-	#dcuiIntegratedPane {
-		margin: 8px;
-		border-radius: 10px 10px 10px 10px;
-	}
-
-	#dcuiIntegratedMenu {
-		width: 240px;
-		margin: 8px;
-		border-radius: 10px 10px 10px 10px;
-	}
-
-	#dcuiIntegratedMenuCntrl {
-	    -webkit-flex-direction: row;
-	    -ms-flex-direction: row;
-	    flex-direction: row;
-	}
-
-	#dcuiIntegratedMenuCntrl > a.mobile {
-		display: none;
-	}
-}
-*/
-
-/******************************
-  controls in CMS
-*******************************/
-
-/*
-#dcuiIntegratedPane textarea.ui-input-text.ui-textinput-autogrow {
-    min-height: 150px;
-}
-
-.dcuiHelpViewer {
-	padding: 12px;
-}
-
-@media all and (min-width: 960px) {
-	.dcuiHelpViewer {
-		padding: 24px;
-	}
-}
-*/
-
 
 /* hide internal CMS buttons before CMS is loaded */
 
@@ -207,92 +44,6 @@
 	display: block !important;
 }
 
-#dcuiMain .dcuiCmsToolbar {
-	position: absolute;
-	right: 0;
-	top: 0;
-	background: rgba(64,64,64,.8);
-	border-style: dotted;
-	display: flex;
-	align-items: center;
-	justify-content: flex-end;
-	z-index: 1000;
-}
-
-#dcuiMain .dcuiCmsToolbar > div {
-	margin: 4px 9px;
-	display: inline-block;
-}
-
-#dcuiMain .dcuiCmsToolbar a {
-	font-size: 2.2rem;
-}
-
-#dcuiMain .dcuiCmsToolbar a,
-#dcuiMain .dcuiCmsToolbar a:visited {
-	color: white;
-}
-
-#dcuiMain .dcuiCmsToolbar a:hover,
-#dcuiMain .dcuiCmsToolbar a:focus {
-	color: papayawhip;
-}
-
-#dcuiMain .dcuiCmsToolbar.dcuiCmsImageProps {
-	top: initial;
-	bottom: 0;
-}
-
-/*
-#dcuiMain .dcuiCmsImageProps {
-	position: absolute;
-	left: 0;
-	top: 33%;
-	right: 0;
-	text-align: center;
-	z-index: 1000;
-}
-
-#dcuiMain .dcuiCmsImageProps > div {
-	padding: 4px 9px;
-	display: inline-block;
-	background: rgba(64,64,64,.8);
-	border-style: dotted;
-	display: flex;
-	align-items: center;
-	justify-content: flex-end;
-}
-
-#dcuiMain .dcuiCmsImageProps a {
-	font-size: 2.2rem;
-}
-
-#dcuiMain .dcuiCmsImageProps a,
-#dcuiMain .dcuiCmsImageProps a:visited {
-	color: white;
-}
-
-#dcuiMain .dcuiCmsImageProps a:hover,
-#dcuiMain .dcuiCmsImageProps a:focus {
-	color: papayawhip;
-}
-*/
-
-/*
-	View Shipment form - dcWeb/www/dcm/store/view-shipment.html
-@media print, screen {
-	#sect2d4c98044bbe4b30b7088d7e22e38964 {
-	}
-
-	#sect2d4c98044bbe4b30b7088d7e22e38964.dc-panel-page {
-		height: auto;
-	}
-
-	#sect2d4c98044bbe4b30b7088d7e22e38964 .dc-panel-heading {
-		display: none;
-	}
-}
-*/
 
 #panDcmShipLabelViewer {
 	height: 100%;

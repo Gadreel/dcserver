@@ -112,48 +112,29 @@
 			// remember the content
 			var template = entry.Store.Template = entry.Store.Editor.getValue();
 
-			template = '<Template>' + template + '</Template>';
-
-			var txml = dc.util.Xml.toJQuery(template);
+			var txml = dc.util.Xml.toJQuery('<Template>' + template + '</Template>');
 
 			if (! txml) {
 				dc.pui.Popup.alert('Invalid XML in the template');
 				return;
 			}
 
-			var widget = entry.Store.Widget;
-
-			widget.find('Template').remove();
-
-			widget.dcappend(txml);
-
-			var msg = {
-				Service: 'dcmServices',
-				Feature: 'Feed',
-				Op: 'AddCommandHistory',
-				Body: {
-					Feed: entry.Params.Feed,
-					Path: entry.Params.Path,
-					Commands: [
-						{
-							Command: 'SavePart',
-							Params: {
-								PartId: entry.Params.Id,
-								Part: dc.util.Xml.toString(widget)
-							}
-						}
-					]
+			dc.cms.Loader.saveCommands(entry.Params.Feed, entry.Params.Path, [
+				{
+					Command: 'UpdatePart',
+					Params: {
+						PartId: entry.Params.Id,
+						Area: 'Template',
+						Template: template
+					}
 				}
-			};
-
-			dc.comm.sendMessage(msg, function(rmsg) {
-				if (rmsg.Result != 0)
-					dc.pui.Popup.alert(rmsg.Message);
-				else if (entry.Params.Preview)
+			], function() {
+				if (entry.Params.Preview)
 					dc.pui.Loader.MainLayer.refreshPage();
 				else
 					dc.pui.Popup.alert('Saved');
 			});
+
 	]]></Function>
 	<Function Name="onDestroy">
 			var entry = this;

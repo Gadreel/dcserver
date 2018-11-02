@@ -27,11 +27,7 @@ import dcraft.schema.SchemaHub;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
 import dcraft.script.work.StackWork;
-import dcraft.struct.DataUtil;
-import dcraft.struct.ListStruct;
-import dcraft.struct.PathPart;
-import dcraft.struct.ScalarStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.task.IParentAwareWork;
 import dcraft.util.HexUtil;
 import dcraft.util.StringUtil;
@@ -305,6 +301,15 @@ public class StringStruct extends ScalarStruct {
 		else if ("HexEncode".equals(code.getName())) {
 			if (StringUtil.isNotEmpty(this.value))
 				this.value = HexUtil.encodeHex(this.value.toString().trim());
+
+			return ReturnOption.CONTINUE;
+		}
+		else if ("ParseJson".equals(code.getName())) {
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+
+			if (StringUtil.isNotEmpty(this.value)) {
+				StackUtil.addVariable(stack, result, CompositeParser.parseJson(this.value));
+			}
 
 			return ReturnOption.CONTINUE;
 		}

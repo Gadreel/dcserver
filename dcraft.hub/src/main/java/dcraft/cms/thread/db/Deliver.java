@@ -24,7 +24,7 @@ public class Deliver implements IStoredProc {
 
 		String id = ThreadUtil.getThreadId(db, data);
 
-		ThreadUtil.deliver(db, id, TimeUtil.now());		// TODO handle date time as param
+		ThreadUtil.deliver(db, id, TimeUtil.now(), data.getFieldAsBooleanOrFalse("IndexOnly"));		// TODO handle date time as param
 
 		callback.returnEmpty();
 	}

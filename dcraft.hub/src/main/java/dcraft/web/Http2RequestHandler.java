@@ -16,7 +16,6 @@
 
 package dcraft.web;
 
-import dcraft.test.http2.tiles.Html;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -29,8 +28,6 @@ import io.netty.handler.codec.http2.InboundHttp2ToHttpAdapter;
 
 import java.util.concurrent.TimeUnit;
 
-import static dcraft.test.http2.Http2ExampleUtil.firstValue;
-import static dcraft.test.http2.Http2ExampleUtil.toInt;
 import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
@@ -55,6 +52,7 @@ public class Http2RequestHandler extends SimpleChannelInboundHandler<FullHttpReq
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
+        /*
         QueryStringDecoder queryString = new QueryStringDecoder(request.uri());
         String streamId = streamId(request);
         int latency = toInt(firstValue(queryString, LATENCY_FIELD_NAME), 0);
@@ -70,6 +68,7 @@ public class Http2RequestHandler extends SimpleChannelInboundHandler<FullHttpReq
         else {
             handleImage(x, y, ctx, streamId, latency, request);
         }
+        */
     }
 
     private void sendBadRequest(ChannelHandlerContext ctx, String streamId) {
@@ -90,6 +89,7 @@ public class Http2RequestHandler extends SimpleChannelInboundHandler<FullHttpReq
     private void handlePage(ChannelHandlerContext ctx, String streamId, int latency, FullHttpRequest request) {
     	// TODO support real web pages
     	
+        /*
         byte[] body = Html.body(latency);
         ByteBuf content = ctx.alloc().buffer(Html.HEADER.length + body.length + Html.FOOTER.length);
         content.writeBytes(Html.HEADER);
@@ -98,6 +98,7 @@ public class Http2RequestHandler extends SimpleChannelInboundHandler<FullHttpReq
         FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
         response.headers().set(CONTENT_TYPE, "text/html; charset=UTF-8");
         sendResponse(ctx, streamId, latency, response, request);
+        */
     }
 
     protected void sendResponse(final ChannelHandlerContext ctx, String streamId, int latency,

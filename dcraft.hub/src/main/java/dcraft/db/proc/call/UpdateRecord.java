@@ -39,7 +39,7 @@ public class UpdateRecord implements IUpdatingStoredProc {
 		
 		if (! request.isReplicating()) {
 			// only check first time, otherwise allow replication
-			if (! db.checkFields(table, fields, params.getFieldAsString("Id"))) {
+			if (! db.checkFieldsInternal(table, fields, params.getFieldAsString("Id"))) {
 				callback.returnEmpty();
 				return;
 			}
@@ -77,7 +77,7 @@ public class UpdateRecord implements IUpdatingStoredProc {
 		// ===========================================
 		//  do the data update
 		// ===========================================
-		db.setFields(table, id, fields);
+		db.setFieldsInternal(table, id, fields);
 		
 		// ===========================================
 		//  and set fields

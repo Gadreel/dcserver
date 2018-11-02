@@ -53,7 +53,7 @@ public class UpdateSet implements IUpdatingStoredProc {
 							
 							if ("RemoveFromSet".equals(op) && fnd) {
 								// if present in our list then retire it
-								db.checkSetFields(table, id, new RecordStruct()
+								db.setFields(table, id, new RecordStruct()
 										.with(field, new RecordStruct()
 												.with(suid, new RecordStruct()
 														.with("Retired", true)
@@ -76,7 +76,7 @@ public class UpdateSet implements IUpdatingStoredProc {
 				if ("MakeSet".equals(op)) {
 					for (String suid : othersubids) {
 						// if present in our list then retire it
-						db.checkSetFields(table, id, new RecordStruct()
+						db.setFields(table, id, new RecordStruct()
 								.with(field, new RecordStruct()
 										.with(suid, new RecordStruct()
 												.with("Retired", true)
@@ -90,7 +90,7 @@ public class UpdateSet implements IUpdatingStoredProc {
 				if ("MakeSet".equals(op) || "AddToSet".equals(op)) {
 					for (String suid : lsubids) {
 						// if present in our list then retire it
-						db.checkSetFields(table, id, new RecordStruct()
+						db.setFields(table, id, new RecordStruct()
 								.with(field, new RecordStruct()
 										.with(suid, new RecordStruct()
 												.with("Data", suid)

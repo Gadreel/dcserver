@@ -24,7 +24,7 @@ public class GalleryLayout extends Base {
 	
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
-		UIUtil.markIfEditable(state, this);
+		UIUtil.markIfEditable(state, this, "layout");
 	}
 	
 	@Override

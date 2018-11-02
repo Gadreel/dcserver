@@ -12,6 +12,8 @@ import dcraft.script.inst.doc.Out;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.AnyStruct;
+import dcraft.struct.scalar.BooleanStruct;
+import dcraft.struct.scalar.StringStruct;
 import dcraft.tenant.WebFindResult;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
@@ -73,9 +75,12 @@ public class IncludeFragment extends Base {
 				
 				if (layout instanceof Base) {
 					Base blayout = (Base) layout;
-					
-					// TODO merge with meta or not
-					
+
+					StackUtil.addVariable(state, "_CMSFile", StringStruct.of(ppath.file.toString()));
+					StackUtil.addVariable(state, "_CMSFeedName", null);
+					StackUtil.addVariable(state, "_CMSFeedPath", null);
+					StackUtil.addVariable(state, "_CMSEditable", BooleanStruct.of(false));
+
 					// pull out the merge parts
 					blayout.mergeWithRoot(state, this.getRoot(state), usemeta);
 					

@@ -58,7 +58,7 @@ dc.pui.layer.Base.prototype = {
 	},
 
 	// call with separate args or with a single "options" record
-	loadPage: function(page, params, replaceState, callback, urlparams) {
+	loadPage: function(page, params, replaceState, callback) {
 		var options = {};
 
 		if (dc.util.Struct.isRecord(page)) {
@@ -69,7 +69,6 @@ dc.pui.layer.Base.prototype = {
 
 			options.Name = hpage[0];
 			options.Params = params;
-			options.UrlParams = urlparams;
 			options.ReplaceState = replaceState;
 			options.Callback = callback;
 
@@ -106,14 +105,8 @@ dc.pui.layer.Base.prototype = {
 
 		delete loader.StalePages[options.Name];		// no longer stale
 
-		var ssrc = options.Name + '?_dcui=dyn';
-
-		if (options.UrlParams)
-			ssrc += '&' + options.UrlParams;
-
 		var script = document.createElement('script');
-		script.src = ssrc + '&nocache=' + dc.util.Crypto.makeSimpleKey();
-
+		script.src = options.Name + '?_dcui=dyn&nocache=' + dc.util.Crypto.makeSimpleKey();
 		script.id = 'page' + options.Name.replace(/\//g,'.');
 		script.async = false;
 
@@ -1470,10 +1463,8 @@ dc.pui.PageEntry.prototype = {
 	},
 
 	formQuery: function(name) {
-		var frm = this.form(name);
-
-		if (frm)
-			return $('#' + frm.Id);
+		if (name && this.Forms[name])
+			return $('#' + this.Forms[name].Id);
 
 		return $('#__unreal');
 	},
@@ -2412,11 +2403,7 @@ dc.pui.Form.prototype = {
 							if (e.Result != 0) {
 								dc.pui.Apps.Busy = false;
 
-								if (event.ErrorHandler)
-									event.ErrorHandler(e);
-								else
-									dc.pui.Popup.alert(e.Message);
-
+								dc.pui.Popup.alert(e.Message);
 								task.kill();
 								return;
 							}

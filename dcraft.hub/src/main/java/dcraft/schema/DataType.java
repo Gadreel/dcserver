@@ -289,7 +289,13 @@ public class DataType {
 		if (this.core != null)
 			val = this.core.normalize(this, val);
 
-		return Struct.objectToCore(val);
+		val = Struct.objectToCore(val);
+
+		// empty strings are "null" in index
+		if ((val instanceof CharSequence) && (((CharSequence) val).length() == 0))
+			return null;
+
+		return val;
 	}
 	
 	public List<IndexInfo> toIndexTokens(Object val, String lang) {

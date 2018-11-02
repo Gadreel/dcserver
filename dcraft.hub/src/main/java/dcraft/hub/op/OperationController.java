@@ -297,6 +297,35 @@ public class OperationController extends RecordStruct implements IVariableProvid
 		return false;
 	}
 	
+	// switch errors to warnings for certain range
+	public void downgradeErrors(int msgStart, int msgEnd) {
+		ListStruct messages = this.getFieldAsList("Messages");
+
+		if (msgEnd == -1)
+			msgEnd = messages.size();
+			
+		if (msgStart < 0)
+			msgStart = 0;
+		
+		if (msgEnd < 0)
+			msgEnd = 0;
+		
+		if (msgEnd > messages.size())
+			msgEnd = messages.size();
+		
+		if (msgStart > msgEnd)
+			msgStart = msgEnd;
+
+		String slvl = DebugLevel.Error.toString();
+		
+		for (int i = msgStart; i < msgEnd; i++) {
+			RecordStruct msg = messages.getItemAsRecord(i);
+			
+			if (slvl.equals(msg.getFieldAsString("Level")))
+				msg.with("Level", DebugLevel.Warn.toString());
+		}
+	}
+	
 	// logging is hard on heap and GC - so only do it if necessary
 	// not generally called by code, internal use mostly
     // call this to bypass the Hub logger - for example a bus callback 

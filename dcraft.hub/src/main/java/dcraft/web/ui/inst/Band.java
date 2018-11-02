@@ -54,7 +54,7 @@ public class Band extends Base {
 		
 		this.with(bodyui);
 		
-		UIUtil.markIfEditable(state, this);
+		UIUtil.markIfEditable(state, this, "band");
 	}
 	
 	@Override

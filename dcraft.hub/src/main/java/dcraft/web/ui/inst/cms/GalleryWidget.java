@@ -5,10 +5,13 @@ import dcraft.cms.util.GalleryUtil;
 import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.OperationMarker;
 import dcraft.log.Logger;
+import dcraft.script.ScriptHub;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Var;
 import dcraft.script.work.InstructionWork;
+import dcraft.struct.FieldStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.script.inst.doc.Base;
@@ -59,24 +62,7 @@ public class GalleryWidget extends Base implements ICMSAware {
 
 		boolean usesrcset = ((vdata != null) && vdata.isNotFieldEmpty("Density"));
 		
-		if (template == null) {
-			template = Base.tag("Template").with(
-				W3.tag("a")
-					.withAttribute("href", "#")
-					.withAttribute("data-image-alias", "{$Image.Alias}")
-					.withAttribute("data-image-info", "{$Image.Data}")
-					.with(
-							W3Closed.tag("img")
-									.withClass("pure-img-inline")
-									.withAttribute("src", "{$Image.Path}")
-									.withAttribute("srcset", usesrcset ? "{$Image.SourceSet}" : null)
-					)
-			);
-		}
-		
 		AtomicLong currimg = new AtomicLong();
-		
-		XElement ftemplate = template;
 		
 		GalleryImageConsumer galleryImageConsumer = new GalleryImageConsumer() {
 			@Override
@@ -143,7 +129,7 @@ public class GalleryWidget extends Base implements ICMSAware {
 					GalleryWidget.this.with(setvar);
 					
 					// add nodes using the new variable
-					XElement entry = ftemplate.deepCopy();
+					XElement entry = template.deepCopy();
 					
 					for (XNode node : entry.getChildren())
 						GalleryWidget.this.with(node);
@@ -172,7 +158,7 @@ public class GalleryWidget extends Base implements ICMSAware {
 			}
 		}
 		
-		UIUtil.markIfEditable(state, this);
+		UIUtil.markIfEditable(state, this, "widget");
 	}
 	
 	@Override
@@ -204,9 +190,30 @@ public class GalleryWidget extends Base implements ICMSAware {
 		
 		this.setName("div");
 	}
+	
+	@Override
+	public void canonicalize() throws OperatingContextException {
+		XElement template = this.selectFirst("Template");
+		
+		if (template == null) {
+			// set default
+			this.with(Base.tag("Template").with(
+					W3.tag("a")
+							.withAttribute("href", "#")
+							.withAttribute("data-image-alias", "{$Image.Alias}")
+							.withAttribute("data-image-info", "{$Image.Data}")
+							.with(
+									W3Closed.tag("img")
+											.withClass("pure-img-inline")
+											.withAttribute("src", "{$Image.Path}")
+											//.withAttribute("srcset", usesrcset ? "{$Image.SourceSet}" : null)
+							)
+			));
+		}
+	}
 
 	@Override
-	public boolean applyCommand(CommonPath path, XElement root, RecordStruct command) {
+	public boolean applyCommand(CommonPath path, XElement root, RecordStruct command) throws OperatingContextException {
 		XElement part = this;
 		
 		String cmd = command.getFieldAsString("Command");
@@ -238,6 +245,105 @@ public class GalleryWidget extends Base implements ICMSAware {
 			}
 			
 			return true;		// command was handled
+		}
+		
+		if ("UpdatePart".equals(cmd)) {
+			// TODO check that the changes made are allowed - e.g. on TextWidget
+			RecordStruct params = command.getFieldAsRecord("Params");
+			String area = params.selectAsString("Area");
+			
+			if ("Props".equals(area)) {
+				RecordStruct props = params.getFieldAsRecord("Properties");
+				
+				if (props != null) {
+					for (FieldStruct fld : props.getFields()) {
+						this.attr(fld.getName(), Struct.objectToString(fld.getValue()));
+					}
+				}
+				
+				return true;
+			}
+			
+			if ("SetImage".equals(area)) {
+				String alias = params.getFieldAsString("Alias");
+				XElement fnd = null;
+				
+				for (XElement xel : this.selectAll("Image")) {
+					if (alias.equals(xel.getAttribute("Alias"))) {
+						fnd = xel;
+						break;
+					}
+				}
+				
+				if (fnd == null) {
+					fnd = XElement.tag("Image");
+					
+					if (params.getFieldAsBooleanOrFalse("AddTop"))
+						this.with(fnd);
+					else
+						this.add(0, fnd);
+				}
+				
+				fnd.clearAttributes();
+				
+				// rebuild attrs
+				fnd.attr("Alias", alias);
+				
+				RecordStruct props = params.getFieldAsRecord("Properties");
+				
+				if (props != null) {
+					for (FieldStruct fld : props.getFields()) {
+						fnd.attr(fld.getName(), Struct.objectToString(fld.getValue()));
+					}
+				}
+				
+				return true;
+			}
+			
+			if ("RemoveImage".equals(area)) {
+				String alias = params.getFieldAsString("Alias");
+				XElement fnd = null;
+				
+				for (XElement xel : this.selectAll("Image")) {
+					if (alias.equals(xel.getAttribute("Alias"))) {
+						fnd = xel;
+						break;
+					}
+				}
+				
+				if (fnd != null) {
+					this.remove(fnd);
+				}
+				
+				return true;
+			}
+			
+			if ("Template".equals(area)) {
+				this.canonicalize();    // so all Tr's have a Locale
+				
+				String targetcontent = params.getFieldAsString("Template");
+				
+				String template = "<Template>" + targetcontent + "</Template>";
+				
+				try (OperationMarker om = OperationMarker.clearErrors()) {
+					XElement txml = ScriptHub.parseInstructions(template);
+					
+					if (!om.hasErrors() && (txml != null)) {
+						XElement oldtemp = this.selectFirst("Template");
+						
+						if (oldtemp != null)
+							this.remove(oldtemp);
+						
+						this.with(txml);
+					} else {
+						Logger.warn("Keeping old template, new one is not valid.");
+					}
+				}
+				catch (Exception x) {
+				}
+				
+				return true;
+			}
 		}
 		
 		return false;
