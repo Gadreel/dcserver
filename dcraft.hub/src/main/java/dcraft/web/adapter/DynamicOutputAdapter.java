@@ -32,6 +32,7 @@ import dcraft.tenant.Site;
 import dcraft.util.MimeInfo;
 import dcraft.web.IOutputWork;
 import dcraft.web.WebController;
+import dcraft.web.ui.UIUtil;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 import java.io.PrintStream;
@@ -61,9 +62,7 @@ public class DynamicOutputAdapter extends SsiOutputAdapter implements IOutputWor
 			return;
 		}
 
-		OperationContext wctx = OperationContext.getOrThrow();
-
-		CountHub.countObjects("dcWebOutDynamicCount-" + wctx.getTenant().getAlias(), this);
+		CountHub.countObjects("dcWebOutDynamicCount-" + ctx.getTenant().getAlias(), this);
 
 		Script script = this.getSource();
 
@@ -92,12 +91,12 @@ public class DynamicOutputAdapter extends SsiOutputAdapter implements IOutputWor
 		
 		BooleanStruct isDynamic = (BooleanStruct) StackUtil.queryVariable(null, "_Controller.Request.IsDynamic");
 		
-		WebController wctrl = (WebController) wctx.getController();
+		WebController wctrl = (WebController) ctx.getController();
 
 		if (script.getXml().hasAttribute("Badges")) {
 			String[] tags = script.getXml().getAttribute("Badges").split(",");
 			
-			boolean auth = ((tags == null) || wctx.getUserContext().isTagged(tags));
+			boolean auth = ((tags == null) || ctx.getUserContext().isTagged(tags));
 			
 			if (!auth) {
 				// TODO replace with pages
@@ -119,28 +118,9 @@ public class DynamicOutputAdapter extends SsiOutputAdapter implements IOutputWor
 				return;
 			}
 		}
-		
-		RecordStruct req = wctrl.getFieldAsRecord("Request");
-		
-		String pathclass = req.getFieldAsString("Path").substring(1).replace('/', '-');
-		
-		if (pathclass.endsWith(".html"))
-			pathclass = pathclass.substring(0, pathclass.length() - 5);
-		
-		pathclass = pathclass.replace('.', '_');
 
-		// TODO cleanup everything about wctrl - including making this part more transparent
-		RecordStruct page = RecordStruct.record()
-				.with("Path", req.getFieldAsString("Path"))
-				.with("PathParts", ListStruct.list((Object[]) req.getFieldAsString("Path").substring(1).split("/")))
-				.with("OriginalPath", req.getFieldAsString("OriginalPath"))
-				.with("OriginalPathParts", ListStruct.list((Object[]) req.getFieldAsString("OriginalPath").substring(1).split("/")))
-				.with("PageClass", pathclass);
-		
-		OperationContext.getOrThrow().getController().addVariable("Page", page);
-		
 		this
-				.then(script.toWork())
+				.then(UIUtil.dynamicToWork(ctx, script))
 				.then(DynamicOutputWriter.of(script));
 		
 		super.run(ctx);

@@ -46,7 +46,8 @@ public class With extends OperationsInstruction {
 		if (state.getState() == ExecuteState.READY) {
 			Struct var = StackUtil.refFromSource(state,"Target");
 			
-			if (this.hasNotEmptyAttribute("SetTo")) {
+			// don't check empty, needs to be able to handle empty
+			if (this.hasAttribute("SetTo")) {
 				Struct var3 = StackUtil.refFromSource(state, "SetTo");
 				
 				if (var instanceof ScalarStruct)

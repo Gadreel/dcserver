@@ -1,4 +1,8 @@
 <dc.Html Badges="Editor,Admin" NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Unknown Edit" />
+	</Meta>
+
 	<Require Script="/js/vendor/speakingurl-5.0.1.min.js" />
 
 	<dcs.Var Name="Alias" Type="String" />
@@ -20,9 +24,7 @@
 
 	<!-- TODO what to do if -1 still -->
 
-	<dcs.With Target="$Page">
-		<SetField Name="Title" Value="Edit {$Feeds.$FeedPos.@Title}" />
-	</dcs.With>
+	<dcs.With Target="$Page.Title" SetTo="Edit {$Feeds.$FeedPos.@Title}" />
 
 	<dc.Body>
 		<dc.PagePanel>
@@ -43,6 +45,7 @@
 				<dc.IncludeFragmentInline Path="/dcm/feeds/{$Alias}-properties" Optional="true" />
 
 				<dcf.FormButtons>
+					<dc.Button Label="Delete" Click="DoDeleteFeed" />
 					<dcf.SubmitButton Label="Save" />
 				</dcf.FormButtons>
 			</dcf.Form>
@@ -148,4 +151,29 @@
 				}
 			});
     ]]></Function>
+	<Function Name="DoDeleteFeed"><![CDATA[
+			var page = this;
+
+			dc.pui.Popup.confirm('Are you sure you want to delete this {$Feeds.$FeedPos.@Title}?', function() {
+				dc.comm.sendMessage({
+					Service: 'dcCoreServices',
+					Feature: 'Vaults',
+					Op: 'DeleteFile',
+					Body: {
+						Vault: 'Feeds',
+						Path: '/{$Alias}' + page.Params.Path
+					}
+				}, function(resp) {
+					if (resp.Result > 0) {
+						dc.pui.Popup.alert(resp.Message);
+						return;
+					}
+
+					page.Layer.back();
+
+					if (page.Params.Callback)
+						page.Params.Callback( null );
+				});
+			});
+	]]></Function>
 </dc.Html>

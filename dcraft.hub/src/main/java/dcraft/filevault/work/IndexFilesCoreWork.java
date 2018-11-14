@@ -1,8 +1,10 @@
 package dcraft.filevault.work;
 
+import dcraft.db.BasicRequestContext;
 import dcraft.db.DatabaseAdapter;
 import dcraft.db.DatabaseException;
 import dcraft.db.IConnectionManager;
+import dcraft.db.fileindex.FileIndexAdapter;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filevault.Vault;
 import dcraft.hub.ResourceHub;
@@ -38,7 +40,7 @@ abstract public class IndexFilesCoreWork extends StateWork {
 	protected StateWorkStep indexVault = null;
 	protected StateWorkStep done = null;
 	
-	protected DatabaseAdapter adapter = null;
+	protected FileIndexAdapter adapter = null;
 	
 	public StateWorkStep prepSites(TaskContext trun) throws OperatingContextException {
 		if (! ResourceHub.getResources().getDatabases().hasDefaultDatabase()) {
@@ -48,7 +50,7 @@ abstract public class IndexFilesCoreWork extends StateWork {
 		
 		IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
 		
-		this.adapter = connectionManager.allocateAdapter();
+		this.adapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
 		
 		for (Tenant tenant : TenantHub.getTenants())
 			for (Site site : tenant.getSites())
@@ -80,13 +82,7 @@ abstract public class IndexFilesCoreWork extends StateWork {
 		this.currentVault = vault;
 		this.folders.addLast(vault.getFileStore().rootFolder());
 		
-		try {
-			IndexFilesCoreWork.this.adapter.kill(IndexFilesCoreWork.this.currentSite.getTenant().getAlias(), "dcFileIndex",
-					IndexFilesCoreWork.this.currentSite.getAlias(), IndexFilesCoreWork.this.currentVault.getName());
-		}
-		catch (DatabaseException x) {
-			Logger.error("Unable to index file in db: " + x);
-		}
+		this.adapter.clearVaultIndex(this.currentVault);
 		
 		return this.indexFolder;
 	}
@@ -103,71 +99,23 @@ abstract public class IndexFilesCoreWork extends StateWork {
 			@Override
 			public void callback(List<FileStoreFile> result) throws OperatingContextException {
 				if (result != null) {
-					try {
-						for (FileStoreFile file : result) {
-							if (file.isFolder()) {
-								IndexFilesCoreWork.this.folders.addLast(file);
-								continue;
-							}
-							// set entry marker
-							List<Object> indexkeys = new ArrayList<>();
-							
-							indexkeys.add(IndexFilesCoreWork.this.currentSite.getTenant().getAlias());
-							indexkeys.add("dcFileIndex");
-							indexkeys.add(IndexFilesCoreWork.this.currentSite.getAlias());
-							indexkeys.add(IndexFilesCoreWork.this.currentVault.getName());
-							
-							for (String part : file.getPathAsCommon().getParts())
-								indexkeys.add(part);
-							
-							indexkeys.add(true);
-							
-							adapter.set(indexkeys.toArray());
-							
-							// add state
-							indexkeys = new ArrayList<>();
-							
-							indexkeys.add(IndexFilesCoreWork.this.currentSite.getTenant().getAlias());
-							indexkeys.add("dcFileIndex");
-							indexkeys.add(IndexFilesCoreWork.this.currentSite.getAlias());
-							indexkeys.add(IndexFilesCoreWork.this.currentVault.getName());
-							
-							for (String part : file.getPathAsCommon().getParts())
-								indexkeys.add(part);
-							
-							indexkeys.add("State");
-							indexkeys.add(BigDecimal.ZERO);
-							indexkeys.add("Present");
-							
-							// don't use  ByteUtil.dateTimeToReverse(file.getModificationAsTime()) - using zero is better for eventual consistency across nodes
-							IndexFilesCoreWork.this.adapter.set(indexkeys.toArray());
-							
-							// add history
-							indexkeys = new ArrayList<>();
-							
-							indexkeys.add(IndexFilesCoreWork.this.currentSite.getTenant().getAlias());
-							indexkeys.add("dcFileIndex");
-							indexkeys.add(IndexFilesCoreWork.this.currentSite.getAlias());
-							indexkeys.add(IndexFilesCoreWork.this.currentVault.getName());
-							
-							for (String part : file.getPathAsCommon().getParts())
-								indexkeys.add(part);
-							
-							indexkeys.add("History");
-							indexkeys.add(BigDecimal.ZERO);
-							indexkeys.add(RecordStruct.record()
-									.with("Source", "Scan")
-									.with("Op", "Write")
-									.with("TimeStamp", file.getModification())
-									.with("Node", ApplicationHub.getNodeId())
+					for (FileStoreFile file : result) {
+						System.out.println(" - " + file.isFolder() + " : " + file);
+						
+						if (file.isFolder())
+							IndexFilesCoreWork.this.folders.addLast(file);
+						else
+							IndexFilesCoreWork.this.adapter.indexFile(
+									IndexFilesCoreWork.this.currentVault,
+									file.getPathAsCommon(),
+									null,
+									RecordStruct.record()
+										.with("Source", "Scan")
+										.with("Op", "Write")
+										.with("TimeStamp", file.getModification())
+										.with("Node", ApplicationHub.getNodeId()),
+									true
 							);
-							
-							// don't use  ByteUtil.dateTimeToReverse(file.getModificationAsTime()) - using zero is better for eventual consistency across nodes
-							IndexFilesCoreWork.this.adapter.set(indexkeys.toArray());
-						}
-					}
-					catch (DatabaseException x) {
-						Logger.error("Unable to index file in db: " + x);
 					}
 				}
 				

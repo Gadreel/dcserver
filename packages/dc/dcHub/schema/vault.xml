@@ -7,15 +7,15 @@
 			<Field Name="IsFolder" Type="Boolean" />
 			<Field Name="Extra" Type="Any" />
 		</Record>
-    
+
 		<Record Id="dcFileStoreFile" Inherits="dcFileDescriptor">
 			<Field Name="Exists" Type="Boolean" />
 		</Record>
 
 		<Record Id="dcLocalStoreFile" Inherits="dcFileDescriptor" Class="dcraft.filestore.local.LocalStoreFile" />
-		
+
 		<Record Id="dcLocalStoreScanner" Class="dcraft.filestore.local.LocalStoreScanner" />
-		
+
 		<Record Id="dcLocalStore" Class="dcraft.filestore.local.LocalStore">
 			<Field Name="Scanner" Type="dcLocalStoreScanner" />
 		</Record>
@@ -23,39 +23,43 @@
 		<Record Id="dcAwsStoreFile" Inherits="dcFileDescriptor" Class="dcraft.filestore.aws.AwsStoreFile">
 			<Field Name="AwsETag" Type="dcTinyString" />
 		</Record>
-		
+
 		<Record Id="dcAwsStoreScanner" Class="dcraft.filestore.aws.AwsStoreScanner" />
-		
+
 		<Record Id="dcAwsStore" Class="dcraft.filestore.aws.AwsStore">
 			<Field Name="Scanner" Type="dcLocalStoreScanner" />
 		</Record>
-		
+
 		<StringType Id="dcTransferStatus">
 			<StringRestriction Enum="Failure,Success" />
 		</StringType>
-		
+
+		<StringType Id="dcValueIndexState">
+			<StringRestriction Enum="Present,Deleted" />
+		</StringType>
+
 		<StringType Id="dcHashMethod">
 			<StringRestriction Enum="MD5,SHA128,SHA256,SHA512" />
 		</StringType>
-		
+
 		<Record Id="dcVaultRequest">
 			<Field Name="Vault" Type="dcTinyString" Required="True" />
 			<Field Name="Params" Type="AnyRecord" />
 		</Record>
-		
+
 		<Record Id="dcVaultPathRequest" Inherits="dcVaultRequest">
 			<Field Name="Token" Type="dcTinyString" />
 			<Field Name="Path" Type="dcString" />
 		</Record>
-		
+
 		<Record Id="dcVaultResponse">
 			<Field Name="Extra" Type="Any" />
 		</Record>
-		
+
 		<Record Id="dcVaultFileDescriptor" Inherits="dcFileDescriptor">
 			<Field Name="FileName" Type="dcString" />
 		</Record>
-    
+
 		<Record Id="dcVaultTransferResponse" Inherits="dcVaultResponse">
 			<Field Name="Channel" Type="dcTinyString" />
 			<Field Name="TransactionId" Type="dcTinyString" />
@@ -64,11 +68,16 @@
 			<Field Name="MinimumEvidence" Type="dcTinyString" />
 		</Record>
 	</Shared>
-		
+
+	<Database>
+		<Procedure Name="dcCoreServices.Vaults.SearchIndex" Execute="dcraft.db.fileindex.call.SearchIndex" />
+		<Procedure Name="dcCoreServices.Vaults.ListIndex" Execute="dcraft.db.fileindex.call.ListIndex" />
+	</Database>
+
 	<Services>
 		<Service Name="dcCoreServices">
 			<Feature Name="Vaults">
-				<Secure Tags="Guest,User">		
+				<Secure Tags="Guest,User">
 					<Op Name="ListFiles">
 						<Description>
 							Loads a file listing for a given folder.
@@ -158,7 +167,7 @@
 							Sets up a file uploader channel (on a session) and initiates a data stream to the requesting server.
 							Size is required to determine available space/quota and track progress.  Params is optional.
 							Overwrite - set to true if you do not want to do a resume.
-							
+
 							Channel is added by Session, only add path, size and token.
 						</Description>
 						<RecordRequest Required="True" Inherits="dcVaultPathRequest">
@@ -205,6 +214,51 @@
 							<Field Name="Note" Type="dcString" />
 						</RecordRequest>
 						<RecordResponse Inherits="dcVaultResponse" />
+					</Op>
+
+					<Op Name="ListIndex">
+						<Description>
+							Lists the file index of a given vault.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultPathRequest">
+							<Field Name="Depth" Type="Integer" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Path" Type="dcString" />
+								<Field Name="State" Type="dcValueIndexState" />
+								<Field Name="Public" Type="Boolean" />
+								<Field Name="Title" Type="dcString" />
+								<Field Name="Summary" Type="String" />
+								<Field Name="SortHint" Type="dcString" />
+								<Field Name="Badges">
+									<List Type="dcTinyString" />
+								</Field>
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="SearchIndex">
+						<Description>
+							Searches the file index of a given vault.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultPathRequest">
+							<Field Name="Term" Type="dcString" Required="True" />
+							<Field Name="Depth" Type="Integer" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Path" Type="dcString" />
+								<Field Name="State" Type="dcValueIndexState" />
+								<Field Name="Score" Type="Integer" />
+								<Field Name="Public" Type="Boolean" />
+								<Field Name="Title" Type="dcString" />
+								<Field Name="Summary" Type="String" />
+								<Field Name="SortHint" Type="dcString" />
+								<Field Name="Badges">
+									<List Type="dcTinyString" />
+								</Field>
+							</Record>
+						</ListResponse>
 					</Op>
 				</Secure>
 			</Feature>

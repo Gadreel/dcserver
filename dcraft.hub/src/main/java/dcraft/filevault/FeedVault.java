@@ -1,12 +1,14 @@
 package dcraft.filevault;
 
 import dcraft.cms.util.FeedUtil;
+import dcraft.db.fileindex.FileIndexAdapter;
 import dcraft.db.request.DataRequest;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileStore;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.local.LocalStore;
 import dcraft.filestore.mem.MemoryStoreFile;
+import dcraft.filevault.work.FeedSearchWork;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.*;
 import dcraft.log.Logger;
@@ -15,9 +17,15 @@ import dcraft.stream.file.MemorySourceStream;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.task.ChainWork;
+import dcraft.task.Task;
+import dcraft.task.TaskHub;
 import dcraft.util.FileUtil;
 import dcraft.util.StringUtil;
+import dcraft.web.WebController;
+import dcraft.web.ui.UIUtil;
 import dcraft.xml.*;
+import z.dga.db.ImportMsgWork;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -26,6 +34,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 public class FeedVault extends Vault {
+	// TODO if delete "pages" path also delete the "www" file
 
 	public void commitFiles(Transaction tx) throws OperatingContextException {
 		ListStruct deletes = ListStruct.list();
@@ -550,4 +559,13 @@ public class FeedVault extends Vault {
 		
 		super.executeCustom(request, checkAuth, fcb);
 	}
+	
+	@Override
+	public void updateFileIndex(CommonPath file, FileIndexAdapter adapter) throws OperatingContextException {
+		TaskHub.submit(
+				UIUtil.mockWebRequestTask(this.tenant, this.site, "Feed file search indexing")
+					.withWork(FeedSearchWork.of(this, file, adapter))
+		);
+	}
+	
 }

@@ -6,6 +6,7 @@ import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.InstructionWork;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.AnyStruct;
@@ -53,6 +54,37 @@ public class MenuWidget extends Base {
 		List<XElement> links = this.selectAll("dc.Link");
 		
 		this.children = new ArrayList<>();
+
+		if ((links.size() == 0) && this.hasNotEmptyAttribute("Source")) {
+			XElement menu = Struct.objectToXml(StackUtil.refFromSource(state, "Source"));
+			String[] options = StackUtil.stringFromSource(state, "Options", "").split(",");
+			long depth = StackUtil.intFromSource(state, "Level", 1);
+
+			LevelInfo menulevel = MenuWidget.findLevel(state, menu, (int) depth, 1);
+
+			if (menulevel != null) {
+				for (XElement x : menulevel.level.selectAll("*")) {
+					String[] mnuoptions = StackUtil.stringFromElement(state, x,"Options", "").split(",");
+
+					boolean opass = // ((options.length == 1) && StringUtil.isEmpty(options[0])) &&
+							((mnuoptions.length == 1) && StringUtil.isEmpty(mnuoptions[0]));
+
+					for (int o1 = 0; ! opass && (o1 < options.length); o1++) {
+						for (int o2 = 0; ! opass && ( o2 < mnuoptions.length); o2++) {
+							if (options[o1].equals(mnuoptions[o2]))
+								opass = true;
+						}
+					}
+
+					if (opass) {
+						links.add(Link.tag()
+								.attr("Label", x.getAttribute("Title"))
+								.attr("Page",  menulevel.slug + "/" + x.getAttribute("Slug"))
+						);
+					}
+				}
+			}
+		}
 		
 		// TODO review/improve - in css too
 		if ("both".equals(ctrls) || "open".equals(ctrls)) {
@@ -179,4 +211,44 @@ public class MenuWidget extends Base {
 		
 		this.setName("nav");
     }
+
+    static public LevelInfo findLevel(InstructionWork state, XElement parent, int depth, int current) throws OperatingContextException {
+		LevelInfo result = null;
+
+		if (parent == null)
+			return result;
+
+		if (depth == current) {
+			result = new LevelInfo();
+			result.level = parent;
+		}
+		else {
+			RecordStruct page = (RecordStruct) StackUtil.queryVariable(state, "Page");
+
+			ListStruct pathparts = page.getFieldAsList("OriginalPathParts");
+
+			String part = pathparts.getItemAsString(current - 1);
+
+			if (part == null)
+				return result;
+
+			for (XElement child : parent.selectAll("*")) {
+				if (part.equals(child.getAttribute("Slug")))
+					result = MenuWidget.findLevel(state, child, depth, current + 1);
+
+				if (result != null)
+					break;
+			}
+		}
+
+		if ((result != null) && parent.hasNotEmptyAttribute("Slug"))
+			result.slug = "/" + parent.getAttribute("Slug") + result.slug;
+
+		return result;
+	}
+
+    static public class LevelInfo {
+		public String slug = "";
+		public XElement level = null;
+	}
 }

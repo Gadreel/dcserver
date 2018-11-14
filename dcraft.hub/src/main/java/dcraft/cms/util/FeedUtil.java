@@ -303,7 +303,46 @@ public class FeedUtil {
 		);
 	}
 
-	//static public void
+	static public String getSharedField(String fldname, XElement root) {
+		if(StringUtil.isEmpty(fldname))
+			return null;
+		
+		for (XElement meta : root.selectAll("Meta")) {
+			String name = meta.getAttribute("Name");
+			
+			if (fldname.equals(name))
+				return meta.getValue();
+		}
+		
+		return null;
+	}
+
+	static public CommonPath translateToWebPath(CommonPath path) {
+		XElement def = FeedUtil.getFeedDefinitionRaw(path.getName(0));
+
+		String prefix = def.getAttribute("Path");
+
+		if (StringUtil.isNotEmpty(prefix)) {
+			if ("/".equals(prefix))
+				path = path.subpath(1);
+			else
+				path = CommonPath.from(prefix).resolve(path.subpath(1));
+		}
+
+		return path;
+	}
+
+	static public XElement getFeedDefinitionRaw(String name) {
+		List<XElement> defs = ResourceHub.getResources().getConfig().getTagListDeep("Feeds/Definition");
+
+		for (XElement def : defs) {
+			if (name.equals(def.getAttribute("Alias"))) {
+				return def;
+			}
+		}
+
+		return null;
+	}
 	
 	static public RecordStruct getFeedDefinition(String name) {
 		List<XElement> defs = ResourceHub.getResources().getConfig().getTagListDeep("Feeds/Definition");
@@ -438,6 +477,8 @@ public class FeedUtil {
 			// an Editor cannot change to Unsafe mode
 			
 			part.replace(newel);
+			
+			return;
 		}
 		else if ("SavePart".equals(cmd) && old) {
 			if (part == null) {
@@ -517,6 +558,8 @@ public class FeedUtil {
 			} else {
 				part.replace(newel);
 			}
+			
+			return;
 		}
 		else if ("Reorder".equals(cmd)) {
 			if (part == null) {
@@ -543,6 +586,8 @@ public class FeedUtil {
 				
 				part.with(children.get(pos));
 			}
+			
+			return;
 		}
 		else if ("SaveMeta".equals(cmd)) {
 			RecordStruct def = FeedUtil.getFeedDefinition(path.getName(1));
@@ -568,6 +613,14 @@ public class FeedUtil {
 					);
 				}
 			}
+			
+			return;
 		}
+		else if ("NoOp".equals(cmd)) {
+			// ignore - no operation
+			return;
+		}
+		
+		Logger.warn("Unrecognized command: " + cmd);
 	}
 }

@@ -30,19 +30,20 @@ import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
 import dcraft.xml.XmlReader;
 
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
 public class FeedUtilDb {
-	static public void update(DatabaseAdapter conn, TablesAdapter db, String path) throws OperatingContextException {
-		if (!path.endsWith(".html"))
+	static public void updateFeedIndex(TablesAdapter db, String path) throws OperatingContextException {
+		if (! path.endsWith(".html"))
 			return;
 
 		CommonPath opath = CommonPath.from("/" + OperationContext.getOrThrow().getSite().getAlias() + path.substring(0, path.length() - 5));
 		CommonPath ochan = opath.subpath(0, 2);		// site and feed
 
-		String oid = Struct.objectToString(db.firstInIndex("dcmFeed", "dcmPath", opath, true));
+		String oid = Struct.objectToString(db.firstInIndex("dcmFeed", "dcmPath", opath, false));
 
 		ZonedDateTime opubtime = null;
 
@@ -67,6 +68,9 @@ public class FeedUtilDb {
 					);
 		}
 		else {
+			if (db.isRetired("dcmFeed", oid))
+				db.reviveRecord("dcmFeed", oid);
+			
 			opubtime = Struct.objectToDateTime(db.getStaticScalar("dcmFeed", oid, "dcmPublishAt"));
 		}
 
@@ -235,12 +239,12 @@ public class FeedUtilDb {
 			try {
 				// only kill if needed
 				if ((opubtime != null) && ! opubtime.equals(npubtime))
-					conn.kill(OperationContext.getOrThrow().getUserContext().getTenantAlias(),
-							"dcmFeedIndex", ochan.toString(), conn.inverseTime(opubtime), oid);
+					db.getRequest().getInterface().kill(OperationContext.getOrThrow().getUserContext().getTenantAlias(),
+							"dcmFeedIndex", ochan.toString(), db.getRequest().getInterface().inverseTime(opubtime), oid);
 
 				if (npubtime != null)
-					conn.set(OperationContext.getOrThrow().getUserContext().getTenantAlias(),
-							"dcmFeedIndex", ochan.toString(), conn.inverseTime(npubtime), oid, "");   // TODO to tags
+					db.getRequest().getInterface().set(OperationContext.getOrThrow().getUserContext().getTenantAlias(),
+							"dcmFeedIndex", ochan.toString(), db.getRequest().getInterface().inverseTime(npubtime), oid, "");   // TODO to tags
 			}
 			catch (Exception x) {
 				Logger.error("Error updating feed index: " + x);
@@ -251,14 +255,15 @@ public class FeedUtilDb {
 		}
 	}
 
-	static public void delete(DatabaseAdapter conn, TablesAdapter db, String path) throws OperatingContextException {
-		if (! path.endsWith(".html"))
+	static public void deleteFeedIndex(DatabaseAdapter conn, TablesAdapter db, String path) throws OperatingContextException {
+		CommonPath opath = FeedUtilDb.toIndexPath(path);
+		
+		if (opath == null)
 			return;
-
-		CommonPath opath = CommonPath.from("/" + OperationContext.getOrThrow().getSite().getAlias() + path);
+		
 		CommonPath ochan = opath.subpath(0, 2);		// site and feed
 
-		Object oid = db.firstInIndex("dcmFeed", "dcmPath", path, true);
+		Object oid = db.firstInIndex("dcmFeed", "dcmPath", opath, true);
 
 		if (oid == null)
 			return;
@@ -280,7 +285,14 @@ public class FeedUtilDb {
 	// Command History
 	
 	static public CommonPath toIndexPath(String feed, String path) throws OperatingContextException {
-		return CommonPath.from("/" + OperationContext.getOrThrow().getSite().getAlias() + "/" + feed + path.substring(0, path.length() - 5));
+		return FeedUtilDb.toIndexPath("/" + feed + path);
+	}
+	
+	static public CommonPath toIndexPath(String path) throws OperatingContextException {
+		if (path.endsWith(".html"))
+			path = path.substring(0, path.length() - 5);
+		
+		return CommonPath.from("/" + OperationContext.getOrThrow().getSite().getAlias() + path);
 	}
 	
 	static public String findHistory(DatabaseAdapter conn, TablesAdapter db, String feed, String path, boolean create, boolean audit) throws OperatingContextException {
@@ -402,6 +414,10 @@ public class FeedUtilDb {
 							}
 						}
 					}
+					
+					// if not marked as published - do so, we are publishing
+					if (StringUtil.isEmpty(FeedUtil.getSharedField("PublishAt", root)))
+						FeedUtil.updateSharedField("PublishAt", LocalDate.now().toString(), root);
 					
 					// save part as deposit
 					MemoryStoreFile msource = MemoryStoreFile.of(fileStoreFile.getPathAsCommon())

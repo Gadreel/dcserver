@@ -11,20 +11,15 @@ import java.util.Map;
 import dcraft.filestore.CollectionSourceStream;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileCollection;
-import dcraft.filestore.local.LocalStoreFile;
 import dcraft.filestore.mem.MemoryStoreFile;
-import dcraft.filevault.FeedVault;
-import dcraft.filevault.GalleryVault;
 import dcraft.filevault.Vault;
 import dcraft.filestore.local.LocalStore;
-import dcraft.filevault.SiteVault;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.locale.LocaleDefinition;
 import dcraft.log.Logger;
-import dcraft.service.base.Vaults;
 import dcraft.stream.StreamUtil;
 import dcraft.struct.CompositeParser;
 import dcraft.struct.CompositeStruct;
@@ -33,13 +28,11 @@ import dcraft.struct.Struct;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.web.HtmlMode;
+import dcraft.web.IIndexWork;
 import dcraft.web.IOutputWork;
-import dcraft.web.IOutputWorkBuilder;
+import dcraft.web.IWebWorkBuilder;
 import dcraft.web.WebController;
-import dcraft.web.adapter.DynamicOutputAdapter;
-import dcraft.web.adapter.MarkdownOutputAdapter;
-import dcraft.web.adapter.SsiOutputAdapter;
-import dcraft.web.adapter.StaticOutputAdapter;
+import dcraft.web.adapter.*;
 import dcraft.web.ui.UIUtil;
 import dcraft.web.ui.inst.W3;
 import dcraft.xml.XElement;
@@ -84,7 +77,7 @@ public class Site extends Base {
 	protected List<XElement> webglobals = null;
 	protected String webversion = "7001010000";		// YYMMDDhhmm
 	
-	protected Map<String,IOutputWorkBuilder> dynadapaters = new HashMap<>();
+	protected Map<String, IWebWorkBuilder> dynadapaters = new HashMap<>();
 
 	public HtmlMode getHtmlMode() {
 		return this.htmlmode;
@@ -120,7 +113,7 @@ public class Site extends Base {
 		return this.webversion;
 	}
 	
-	public void addDynamicAdapater(String name, IOutputWorkBuilder builder) {
+	public void addDynamicAdapater(String name, IWebWorkBuilder builder) {
 		this.dynadapaters.put(name, builder);
 	}
 	
@@ -621,7 +614,7 @@ public class Site extends Base {
 		// never go up a level past a file (or folder) with an extension
 		if (path.hasFileExtension()) {
 			if (this.dynadapaters.containsKey(path.toString()))
-				return this.dynadapaters.get(path.toString()).buildAdapter(this, null, path, view);
+				return this.dynadapaters.get(path.toString()).buildOutputAdapter(this, null, path, view);
 			
 			WebFindResult wpath = this.webFindFilePath(path, view);
 
@@ -693,6 +686,77 @@ public class Site extends Base {
 		return ioa;
 	}
 	
+	public IIndexWork webFindIndexFile(CommonPath path, String view) throws OperatingContextException {
+		// =====================================================
+		//  if request has an extension do specific file lookup
+		// =====================================================
+		
+		if (Logger.isDebug())
+			Logger.debug("find file before ext check: " + path + " - " + view);
+		
+		// if we have an extension then we don't have to do the search below
+		// never go up a level past a file (or folder) with an extension
+		if (path.hasFileExtension()) {
+			if (this.dynadapaters.containsKey(path.toString()))
+				return this.dynadapaters.get(path.toString()).buildIndexAdapter(this, null, path, view);
+			
+			WebFindResult wpath = this.webFindFilePath(path, view);
+			
+			if (wpath != null)
+				return this.webPathToIndexAdapter(view, wpath);
+			
+			// TODO not found file!!
+			Logger.errorTr(150007);
+			return null;
+		}
+		
+		// =====================================================
+		//  if request does not have an extension look for files
+		//  that might match this path or one of its parents
+		//  using the special extensions
+		// =====================================================
+		
+		if (Logger.isDebug())
+			Logger.debug("find dyn file: " + path + " - " + view);
+		
+		WebFindResult wpath = this.webFindFilePath(path, view);
+		
+		if (wpath == null) {
+			Logger.errorTr(150007);
+			return null;
+		}
+		
+		if (Logger.isDebug())
+			Logger.debug("find file path: " + wpath + " - " + path + " - " + view);
+		
+		return this.webPathToIndexAdapter(view, wpath);
+	}
+	
+	public IIndexWork webPathToIndexAdapter(String view, WebFindResult wpath) throws OperatingContextException {
+		IIndexWork ioa = null;
+		
+		String filename = wpath.file.getFileName().toString();
+		CommonPath path = wpath.path;
+		
+		HtmlMode hmode = this.getHtmlMode();
+		
+		// currently only supports Dynamic
+		if (filename.endsWith(".html")) {
+			if ((hmode == HtmlMode.Dynamic) || (hmode == HtmlMode.Strict))
+				ioa = new DynamicIndexAdapter();
+		}
+		else if (filename.endsWith(".md")) {
+			ioa = new MarkdownIndexAdapter();
+		}
+		else {
+			return null;
+		}
+		
+		ioa.init(this, wpath.file, path, view);
+		
+		return ioa;
+	}
+	
 	public WebFindResult webFindFilePath(CommonPath path, String view) {
 		// figure out which section we are looking in
 		String sect = "www";
@@ -711,9 +775,15 @@ public class Site extends Base {
 		
 		// if we have an extension then we don't have to do the search below
 		// never go up a level past a file (or folder) with an extension
-		if (path.hasFileExtension())
-			return WebFindResult.of(this.findSectionFile(sect, path.toString(), view), path);
-		
+		if (path.hasFileExtension()) {
+			Path spath = this.findSectionFile(sect, path.toString(), view);
+
+			if (spath == null)
+				return null;
+
+			return WebFindResult.of(spath, path);
+		}
+
 		// =====================================================
 		//  if request does not have an extension look for files
 		//  that might match this path or one of its parents

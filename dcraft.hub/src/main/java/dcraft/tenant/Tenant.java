@@ -170,7 +170,7 @@ public class Tenant extends Base {
 			if (StringUtil.isEmpty(alias) || this.vaults.containsKey(alias))
 				continue;
 
-			Vault b = Vault.of(this, bucket);
+			Vault b = Vault.of(this.getRootSite(), bucket);
 
 			if (b != null)
 				this.vaults.put(alias, b);
@@ -190,7 +190,7 @@ public class Tenant extends Base {
 			if (bucket == null)
 				return null;
 
-			b = Vault.of(this, bucket);
+			b = Vault.of(this.getRootSite(), bucket);
 
 			if (b != null)
 				this.vaults.put(alias, b);

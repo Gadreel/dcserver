@@ -1,4 +1,8 @@
 <dc.Html Badges="Editor,Admin" NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Unknown Add" />
+	</Meta>
+
 	<Require Script="/js/vendor/speakingurl-5.0.1.min.js" />
 
 	<dcs.Var Name="Alias" Type="String" />
@@ -20,9 +24,18 @@
 
 	<!-- TODO what to do if -1 still -->
 
-	<dcs.With Target="$Page">
-		<SetField Name="Title" Value="Add {$Feeds.$FeedPos.@Title}" />
-	</dcs.With>
+	<dcs.With Target="$Page.Title" SetTo="Add {$Feeds.$FeedPos.@Title}" />
+
+	<dcs.Var Name="DestinationPath" Type="String" SetTo="/{$Alias}" />
+
+	<dcs.If Target="$Feeds.$FeedPos.@Path" IsEmpty="false">
+		<dcs.If Target="$Feeds.$FeedPos.@Path" Equal="/">
+			<dcs.With Target="$DestinationPath" SetTo="" />
+		</dcs.If>
+		<dcs.Else>
+			<dcs.With Target="$DestinationPath" SetTo="$Feeds.$FeedPos.@Path" />
+		</dcs.Else>
+	</dcs.If>
 
 	<dcs.File Name="templates" Path="/templates/{$Alias}" In="SiteFiles">
 		<List Result="templatelist" />
@@ -54,7 +67,10 @@
 				</dcf.Text>
 				<dcf.Select Label="Template" Name="Template" FieldParams="TemplateOpts" Required="true" value="null" />
 				<dcf.TextArea Name="Description" Label="Description" DataType="dcmPageDescription" />
+
+				<!-- TODO not standard
 				<dcf.Text Name="PublishAt" Label="Publish At" Pattern="\d\d\d\d-\d\d-\d\d(\s\d\d:\d\d\s[ap]m)?" placeholder="YYYY-MM-DD or YYYY-MM-DD hh:mm am (or pm)" />
+				-->
 
 				<dc.IncludeFragmentInline Path="/dcm/feeds/{$Alias}-properties" Optional="true" />
 
@@ -91,12 +107,18 @@
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 			var page = this;
 
-			page.Store.NewPath = page.Params.Path + '/' + e.Data.Path;
+
+			debugger;
+
+
+			// set destination path
+			page.Store.Slug = '/' + e.Data.Path;
+			page.Store.NewPath = '{$DestinationPath}/' + e.Data.Path;
 
 			var savedata = {
 				Command: 'AddFeed',
 				Vault: page.Store.Vault,
-				Path: page.Store.NewPath + '.html',
+				Path: page.Params.Path + '/' + e.Data.Path + '.html',
 				Params: {
 					Template: e.Data.Template,
 					SetFields: []
@@ -127,10 +149,17 @@
 	<Function Name="AfterSave"><![CDATA[
 			var page = this;
 
-			page.Layer.back();
+			// save "no op" in FeedHistory to cause the Save icon to show
+			dc.cms.Loader.saveCommands('{$Alias}', page.Store.Slug, [
+				{
+					Command: 'NoOp'
+				}
+			], function() {
+				page.Layer.back();
 
-			if (page.Params.Callback)
-				page.Params.Callback( page.Store.NewPath );
+				if (page.Params.Callback)
+					page.Params.Callback( page.Store.NewPath );
+			});
 	]]></Function>
 	<Function Name="DoSelectImage"><![CDATA[
 			var page = this;

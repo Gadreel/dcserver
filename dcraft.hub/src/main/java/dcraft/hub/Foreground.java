@@ -47,7 +47,7 @@ public class Foreground {
 	
 	public static void main(String[] args) {
 		String deployment = (args.length > 0) ? args[0] : null;
-		String nodeid = (args.length > 1) ? args[1] : null;
+		String nodeid = (args.length > 1) ? args[1] : ApplicationHub.getNodeId();
 		
 		ApplicationHub.init(deployment, nodeid);
 		

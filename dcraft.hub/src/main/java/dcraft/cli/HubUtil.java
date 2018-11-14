@@ -1207,7 +1207,7 @@ public class HubUtil implements ILocalCommandLine {
 		keyring.save();
 	}
 	
-	public void initDeployNodeKeys(Path path, String deployment, String node, String passphrase) {
+	static public void initDeployNodeKeys(Path path, String deployment, String node, String passphrase) {
 		Path cpath = path.resolve("config");
 		Path npath = path.resolve("nodes/" + node + "/config");
 		

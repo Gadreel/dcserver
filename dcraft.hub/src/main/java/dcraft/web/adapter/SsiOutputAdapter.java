@@ -77,7 +77,7 @@ public class SsiOutputAdapter extends ChainWork implements IOutputWork {
 	}
 	
 	@Override
-	public void init(Site site, Path file, CommonPath web, String view) {
+	public void init(Site site, Path file, CommonPath web, String view) throws OperatingContextException {
 		this.webpath = web;
 		this.file = file;		
 		this.mime = ResourceHub.getResources().getMime().getMimeTypeForPath(this.file);

@@ -217,9 +217,22 @@ public class WebController extends OperationController {
 		return ret;
 	}
 	
+	public void initSearch(CommonPath path) {
+		this.secure = true;
+		
+		this.with("Request", WebController.loadVoidRequest(path));
+		
+		if (Logger.isDebug())
+			Logger.debug("Web server request b2");
+		
+		Response response = new Response();
+		this.with("Response", response);
+	}
+	
 	static public RecordStruct loadVoidRequest(CommonPath path) {
 		return RecordStruct.record()
 				.with("Path", path.toString())
+				.with("OriginalPath", path)
 				.with("Method", "GET")
 				.with("Headers", RecordStruct.record())
 				.with("Cookies", RecordStruct.record())

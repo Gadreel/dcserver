@@ -8,6 +8,7 @@ public class ProcessContext {
 	}
 
 	protected Configuration config = null;
+	protected String lang = "eng";		// default
 	
 	public Configuration getConfig() {
 		return this.config;
@@ -16,7 +17,11 @@ public class ProcessContext {
 	public void setConfig(Configuration v) {
 		this.config = v;
 	}
-	
+
+	public String getLang() {
+		return this.lang;
+	}
+
 	protected ProcessContext() {
 	}
 }

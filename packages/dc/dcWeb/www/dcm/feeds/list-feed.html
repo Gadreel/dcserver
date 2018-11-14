@@ -1,4 +1,8 @@
 <dc.Html Badges="Editor,Admin"  NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Unknown Browser" />
+	</Meta>
+
 	<dcs.Var Name="Alias" Type="String" />
 	<dcs.Var Name="FeedPos" Type="Integer" SetTo="-1" />
 
@@ -18,28 +22,36 @@
 
 	<!-- TODO what to do if -1 still -->
 
-	<Meta Name="Title">
-		<Tr Locale="eng" Value="{$Feeds.$FeedPos.@Title} Browser" />
-	</Meta>
+	<dcs.With Target="$Page.Title" SetTo="{$Feeds.$FeedPos.@Title} Browser" />
 
 	<dc.Body>
 		<dc.PagePanel>
+			<h4 id="lblDepPlPath" />
+
 			<dcf.Form>
 				<dcf.FormButtons>
 					<dc.Button Click="DoAddFeed" Label="Add {$Feeds.$FeedPos.@Title}" />
-					<dc.Button Click="DoAddFolder" Label="Add Folder" />
+					<!-- TODO restore when chaining works -->
+					<dcs.If Target="$Alias" Equal="pages">
+						<dc.Out>
+							<dc.Button Click="DoAddFolder" Label="Add Folder" />
+						</dc.Out>
+					</dcs.If>
 				</dcf.FormButtons>
 			</dcf.Form>
 
-			<h4 id="lblDepPlPath" />
-
-			<h3>Folders</h3>
-
-			<div id="lstDepPlFolders" class="dcm-file-list" />
-
-			<h3>{$Feeds.$FeedPos.@Title}</h3>
+			<h3>{$Feeds.$FeedPos.@Title} Listing</h3>
 
 			<div id="lstDepPlFiles" class="dcm-file-list" />
+
+			<!-- TODO restore for all feeds when chaining works -->
+			<dcs.If Target="$Alias" Equal="pages">
+				<dc.Out>
+					<h3>{$Feeds.$FeedPos.@Title} Sub Folders</h3>
+
+					<div id="lstDepPlFolders" class="dcm-file-list" />
+				</dc.Out>
+			</dcs.If>
 		</dc.PagePanel>
 	</dc.Body>
 	<Function Name="Load"><![CDATA[
@@ -287,14 +299,7 @@
 			dc.pui.Dialog.loadPage('/dcm/feeds/add-feed/{$Alias}', {
 				Path: this.Store.Path,
 				Callback: function(path) {
-					entry.Store.Path = path;
-
-					$('#lstDepFbFolders,#lstDepFbFiles').empty().dcappend(
-						$('<i>')
-							.attr('class', 'fa fa-spinner fa-pulse fa-lg')
-					);
-
-					entry.callPageFunc('LoadList');
+					window.location = path;
 				}
 			});
 	]]></Function>

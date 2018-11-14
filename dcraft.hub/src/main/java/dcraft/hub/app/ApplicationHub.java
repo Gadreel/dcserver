@@ -208,9 +208,9 @@ public class ApplicationHub {
 				ApplicationHub.nodeid);
 	}
 	
-	static public Path getDeploymentRoleePath() {
+	static public Path getDeploymentRolePath() {
 		return Paths.get("./deploy-" + ApplicationHub.deployment + "/roles/" +
-				ApplicationHub.nodeid);
+				ApplicationHub.role);
 	}
 	
 	static public Path getDeploymentTenantsPath() {

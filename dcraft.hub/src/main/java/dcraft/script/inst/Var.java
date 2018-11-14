@@ -53,7 +53,7 @@ public class Var extends OperationsInstruction {
 			if (StringUtil.isNotEmpty(def))
 				var = ResourceHub.getResources().getSchema().getType(def).create();
 			
-			if (this.hasNotEmptyAttribute("SetTo")) {
+			if (this.hasAttribute("SetTo")) {
 				Struct var3 = StackUtil.refFromSource(state, "SetTo", true);
 				
 				if (var3 == null) {

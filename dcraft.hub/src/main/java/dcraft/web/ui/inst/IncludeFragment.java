@@ -58,7 +58,7 @@ public class IncludeFragment extends Base {
 		// remove the children
 		this.clearChildren();
 		
-		RecordStruct page = (RecordStruct) StackUtil.queryVariable(state, "Page");
+		//RecordStruct page = (RecordStruct) StackUtil.queryVariable(state, "Page");
 		
 		boolean usemeta = StackUtil.boolFromSource(state, "Meta", false);
 		

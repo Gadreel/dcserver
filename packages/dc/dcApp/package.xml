@@ -127,6 +127,7 @@
 
 			<!-- misc tags -->
 			<Tag Name="dc.Recaptcha" Class="dcraft.web.ui.inst.misc.Recaptcha" />
+			<Tag Name="dc.MenuSelector" Class="dcraft.web.ui.inst.misc.MenuSelector" />
 
 			<!-- standard w3 tags -->
 			<Tag Name="a" Class="dcraft.web.ui.inst.W3" />
@@ -257,7 +258,7 @@
 		</Badges>
 
 		<Feeds>
-			<Definition Alias="pages" Title="Web Page"
+			<Definition Alias="pages" Title="Web Page" Path="/"
 				LocaleFields="Title,Keywords,Description"
 				SharedFields="Image,PublishAt"
 			/>

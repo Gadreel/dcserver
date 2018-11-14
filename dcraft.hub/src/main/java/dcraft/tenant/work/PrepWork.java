@@ -4,8 +4,6 @@ import dcraft.db.Constants;
 import dcraft.db.request.query.LoadRecordRequest;
 import dcraft.db.request.query.SelectFields;
 import dcraft.filestore.CommonPath;
-import dcraft.filestore.local.LocalStore;
-import dcraft.filestore.local.LocalStoreFile;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
@@ -24,17 +22,15 @@ import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.*;
-import dcraft.task.run.WorkTopic;
 import dcraft.tenant.*;
-import dcraft.util.IOUtil;
 import dcraft.util.ISettingsObfuscator;
-import dcraft.util.Memory;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 import dcraft.util.pgp.KeyRingCollection;
 import dcraft.web.HtmlMode;
+import dcraft.web.IIndexWork;
 import dcraft.web.IOutputWork;
-import dcraft.web.IOutputWorkBuilder;
+import dcraft.web.IWebWorkBuilder;
 import dcraft.web.adapter.ScriptCacheOutputAdapter;
 import dcraft.web.adapter.StyleCacheOutputAdapter;
 import dcraft.web.adapter.WizardOutputAdapter;
@@ -765,30 +761,45 @@ public class PrepWork extends StateWork {
 		
 		site.setWebGlobals(sconfig.getTagListDeepFirst("Web.Global"));
 		
-		site.addDynamicAdapater("/css/dc.cache.css", new IOutputWorkBuilder() {
+		site.addDynamicAdapater("/css/dc.cache.css", new IWebWorkBuilder() {
 			@Override
-			public IOutputWork buildAdapter(Site site, Path file, CommonPath loc, String view) throws OperatingContextException {
+			public IOutputWork buildOutputAdapter(Site site, Path file, CommonPath loc, String view) throws OperatingContextException {
 				IOutputWork work = new StyleCacheOutputAdapter();
 				work.init(site, file, loc, view);
 				return work;
 			}
+
+			@Override
+			public IIndexWork buildIndexAdapter(Site site, Path file, CommonPath loc, String view) {
+				return null;  // does not apply
+			}
 		});
 		
-		site.addDynamicAdapater("/js/dc.cache.js", new IOutputWorkBuilder() {
+		site.addDynamicAdapater("/js/dc.cache.js", new IWebWorkBuilder() {
 			@Override
-			public IOutputWork buildAdapter(Site site, Path file, CommonPath loc, String view) throws OperatingContextException {
+			public IOutputWork buildOutputAdapter(Site site, Path file, CommonPath loc, String view) throws OperatingContextException {
 				IOutputWork work = new ScriptCacheOutputAdapter();
 				work.init(site, file, loc, view);
 				return work;
 			}
+
+			@Override
+			public IIndexWork buildIndexAdapter(Site site, Path file, CommonPath loc, String view) {
+				return null;  // does not apply
+			}
 		});
 
-		site.addDynamicAdapater("/dcm/forms/loadwiz.js", new IOutputWorkBuilder() {
+		site.addDynamicAdapater("/dcm/forms/loadwiz.js", new IWebWorkBuilder() {
 			@Override
-			public IOutputWork buildAdapter(Site site, Path file, CommonPath loc, String view) throws OperatingContextException {
+			public IOutputWork buildOutputAdapter(Site site, Path file, CommonPath loc, String view) throws OperatingContextException {
 				IOutputWork work = new WizardOutputAdapter();
 				work.init(site, file, loc, view);
 				return work;
+			}
+
+			@Override
+			public IIndexWork buildIndexAdapter(Site site, Path file, CommonPath loc, String view) {
+				return null;  // does not apply
 			}
 		});
 
@@ -799,10 +810,10 @@ public class PrepWork extends StateWork {
 			if (StringUtil.isEmpty(classname) || StringUtil.isEmpty(path))
 				continue;
 
-			IOutputWorkBuilder workBuilder = null;
+			IWebWorkBuilder workBuilder = null;
 
 			try {
-				workBuilder = (IOutputWorkBuilder) site.getResources().getClassLoader().getInstance(classname);
+				workBuilder = (IWebWorkBuilder) site.getResources().getClassLoader().getInstance(classname);
 
 				site.addDynamicAdapater(path, workBuilder);
 			}

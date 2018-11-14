@@ -109,7 +109,8 @@ public class Service extends BaseDataService {
 				return true;
 		
 		if ("Vaults".equals(request.getFeature()))
-			return Vaults.handle(request, callback);
+			if (Vaults.handle(request, callback))
+				return true;
 		
 		if ("Management".equals(request.getFeature())) {
 			if ("UpdateTenants".equals(request.getOp())) {

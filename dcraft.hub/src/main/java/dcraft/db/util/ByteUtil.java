@@ -1,5 +1,6 @@
 package dcraft.db.util;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +23,7 @@ import dcraft.struct.builder.ObjectBuilder;
 import dcraft.struct.serial.BufferToCompositeParser;
 import dcraft.util.ArrayUtil;
 import dcraft.util.Memory;
+import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 import dcraft.util.chars.Utf8Decoder;
 import dcraft.util.chars.Utf8Encoder;
@@ -195,6 +197,82 @@ public class ByteUtil {
 		}
 
 		return matches;
+	}
+	
+	// count key contains a part at offset
+	static public int dataContainsScore(byte[] key, byte[] part) {
+		if ((key == null) || (part == null))
+			return 0;
+		
+		if (part.length > key.length)
+			return 0;
+		
+		// make sure we are comparing same data type
+		if (key[0] != part[0])
+			return 0;
+		
+		int score = 0;
+		int matches = 0;
+		
+		// try from every position in key
+		for (int i = 1; i < key.length; i++) {
+			boolean match = true;
+			
+			for (int i2 = 1; i2 < part.length; i2++) {
+				if (i + i2 - 1 >= key.length) {
+					match = false;
+					break;
+				}
+				
+				if (key[i + i2 - 1] != part[i2]) {
+					match = false;
+					break;
+				}
+			}
+			
+			if (match) {
+				matches++;
+				
+				// start after match
+				i += part.length;
+
+				// up to start
+				while ((i < key.length) && (key[i] != 59)) {
+					i++;
+				}
+				
+				i++;
+				
+				// up to end
+				while ((i < key.length) && (key[i] != 59)) {
+					i++;
+				}
+				
+				i++;
+				
+				int semi2 = i;
+				
+				// up to end
+				while ((i < key.length) && (key[i] != 124)) {
+					i++;
+				}
+				
+				String num = new String(key, semi2, i - semi2, Charset.forName("UTF-8"));
+
+				try {
+					int nv = Integer.parseInt(num);
+					
+					if (nv > score)
+						score = nv;
+				}
+				catch (Exception x) {
+				
+				}
+			}
+		}
+		
+		// combine the highest score plus the count of matches - weight some on count but not much
+		return score + matches;
 	}
 
 	// key contains a part at offset

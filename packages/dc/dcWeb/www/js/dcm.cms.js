@@ -64,6 +64,9 @@ dc.cms.Loader = {
 			];
 
 			if (dc.cms.Loader.Enabled) {
+				// make sure the cookie aligns with the LS, if not client may need to do a page refesh
+				dc.util.Cookies.setCookie('dcmMode', 'now');
+
 				maintoolbar.push({
 					Icon: 'fa-times',
 					Title: 'Stop Editing Page',
@@ -1185,7 +1188,13 @@ dc.pui.TagFuncs['dcm.IncludeFeed']['doCmsEdit'] = function(entry, node) {
 
 	dc.pui.SimpleApp.loadPage('/dcm/feeds/edit-feed/' + $(pel).attr('data-cms-feed'), {
 		Feed: $(pel).attr('data-cms-feed'),
-		Path: $(pel).attr('data-cms-path')
+		Path: $(pel).attr('data-cms-path'),
+		Callback: function(path) {
+			if (path)
+				dc.pui.Loader.MainLayer.refreshPage();
+			else
+				dc.pui.Loader.MainLayer.loadPage('/');
+		}
 	});
 };
 

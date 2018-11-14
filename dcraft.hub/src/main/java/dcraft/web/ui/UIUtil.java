@@ -1,5 +1,8 @@
 package dcraft.web.ui;
 
+import java.io.BufferedReader;
+import java.io.StringReader;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -7,24 +10,35 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import dcraft.db.util.DocumentIndexBuilder;
+import dcraft.filevault.work.FeedSearchWork;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.UserContext;
 import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
+import dcraft.script.Script;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.InstructionWork;
+import dcraft.struct.FieldStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.BooleanStruct;
+import dcraft.task.IWork;
+import dcraft.task.Task;
+import dcraft.task.TaskContext;
+import dcraft.task.TaskHub;
+import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.web.DateParser;
+import dcraft.web.WebController;
 import dcraft.web.md.MarkdownUtil;
-import dcraft.web.ui.inst.ICMSAware;
+import dcraft.web.ui.inst.*;
 import dcraft.xml.XElement;
 import dcraft.xml.XNode;
+import dcraft.xml.XText;
 
 public class UIUtil {
 	// @[a-zA-Z0-9_\\-,:/]+@
@@ -115,7 +129,7 @@ public class UIUtil {
 		if (bestmatch == null)
 			return null;
 		
-		String content = StackUtil.resolveValueToString(state, bestmatch.getText());
+		String content = StackUtil.resolveValueToString(state, bestmatch.getValue());
 		
 		XElement root = MarkdownUtil.process(content, issafe);
 		
@@ -235,5 +249,226 @@ public class UIUtil {
 		}
 
 		return false;
+	}
+
+	static public Task mockWebRequestTask(String tenant, String site, String title) throws OperatingContextException {
+		WebController wctrl = WebController.forChannel(null, null);		// TODO someday load service settings if needed
+
+		OperationContext wctx = OperationContext.context(UserContext.rootUser(tenant, site), wctrl);
+
+		return Task.of(wctx)
+				.withTitle(title);
+	}
+
+	static public IWork dynamicToWork(TaskContext ctx, Path script) throws OperatingContextException {
+		return UIUtil.dynamicToWork(ctx, Script.of(script));
+	}
+
+	static public IWork dynamicToWork(TaskContext ctx, Script script) throws OperatingContextException {
+		WebController wctrl = (WebController) ctx.getController();
+
+		RecordStruct req = wctrl.getFieldAsRecord("Request");
+
+		String pathclass = req.getFieldAsString("Path").substring(1).replace('/', '-');
+
+		if (pathclass.endsWith(".html"))
+			pathclass = pathclass.substring(0, pathclass.length() - 5);
+
+		pathclass = pathclass.replace('.', '_');
+
+		// TODO cleanup everything about wctrl - including making this part more transparent
+		RecordStruct page = RecordStruct.record()
+				.with("Path", req.getFieldAsString("Path"))
+				.with("PathParts", ListStruct.list((Object[]) req.getFieldAsString("Path").substring(1).split("/")))
+				.with("OriginalPath", req.getFieldAsString("OriginalPath"))
+				.with("OriginalPathParts", ListStruct.list((Object[]) req.getFieldAsString("OriginalPath").substring(1).split("/")))
+				.with("PageClass", pathclass);
+
+		wctrl.addVariable("Page", page);
+
+		return script.toWork();
+	}
+
+	static public Script mdToDynamic(Path file) {
+		CharSequence md = IOUtil.readEntireFile(file);
+
+		if (md.length() == 0)
+			return null;
+
+		// TODO md = this.processIncludes(wctx, md);
+
+		try {
+			Html html = Html.tag();
+
+			BufferedReader bufReader = new BufferedReader(new StringReader(md.toString()));
+
+			String line = bufReader.readLine();
+
+			RecordStruct fields = RecordStruct.record();
+
+			// TODO enhance to become https://www.npmjs.com/package/front-matter compatible
+
+			// start with $ for non-locale fields
+			while (StringUtil.isNotEmpty(line)) {
+				int pos = line.indexOf(':');
+
+				if (pos == -1)
+					break;
+
+				String field = line.substring(0, pos);
+
+				String value = line.substring(pos + 1).trim();
+
+				fields.with(field, value);
+
+				line = bufReader.readLine();
+			}
+
+			String locale = LocaleUtil.normalizeCode(fields.getFieldAsString("Locale", "eng"));  // should be a way to override, but be careful because 3rd party might depend on being "en", sorry something has to be default
+
+			// TODO lookup alternative locales based on OC current locale
+
+			for (FieldStruct fld : fields.getFields()) {
+				String name = fld.getName();
+
+				if (name.startsWith("$")) {
+					html.with(
+							W3.tag("Meta")
+									.attr("Title", name.substring(1))
+									.attr("Value", Struct.objectToString(fld.getValue()))
+					);
+				}
+				else {
+					html.with(
+							W3.tag("Meta")
+									.attr("Title", name.substring(1))
+									.with(W3.tag("Tr")
+											.attr("Locale", locale)
+											.attr("Value", Struct.objectToString(fld.getValue()))
+									)
+					);
+				}
+			}
+
+			// see if there is more - the body
+			if (line != null) {
+				XText mdata = new XText();
+				mdata.setCData(true);
+
+				line = bufReader.readLine();
+
+				while (line != null) {
+					mdata.appendBuffer(line);
+					mdata.appendBuffer("\n");
+
+					line = bufReader.readLine();
+				}
+
+				mdata.closeBuffer();
+
+				html.with(IncludeParam.tag()
+						.attr("Name", "content")
+						.with(
+								TextWidget.tag()
+										.with(W3.tag("Tr")
+												.attr("Locale", locale)
+												.with(mdata)
+										)
+						)
+				);
+			}
+
+			String skeleton = fields.getFieldAsString("Skeleton", "general");
+
+			html.with(IncludeFragmentInline.tag()
+					.withAttribute("Path", "/skeletons/" + skeleton));		// TODO if doesn't start with / assume skeletons folder
+
+			return Script.of(html, md);
+		}
+		catch (Exception x) {
+			System.out.println("md parse issue");
+		}
+
+		return null;
+	}
+
+	/*
+		This is debatable but currently we use <header> only to mean page header area, nothing to do with content
+		so for now everying in <header> (and <footer> and <hgroup>) is ignored by the indexing.
+	 */
+	static public void indexFinishedDocument(XElement current, DocumentIndexBuilder indexer) throws OperatingContextException {
+		String tag = current.getName();
+
+		int bonus = 0;
+		boolean section = false;
+		boolean add = false;
+
+		if ("a".equals(tag) || "b".equals(tag) || "strong".equals(tag) || "i".equals(tag) || "em".equals(tag)) {
+			bonus = 1;
+			add = true;
+		}
+		else if ("body".equals(tag) || "div".equals(tag) || "li".equals(tag) || "main".equals(tag) || "ol".equals(tag) || "ul".equals(tag) || "section".equals(tag) || "span".equals(tag)) {
+			add = true;
+		}
+		else if ("p".equals(tag)) {
+			add = true;
+			section = true;
+		}
+		else if ("h6".equals(tag)) {
+			add = true;
+			section = true;
+			bonus = 1;
+		}
+		else if ("h5".equals(tag)) {
+			add = true;
+			section = true;
+			bonus = 2;
+		}
+		else if ("h4".equals(tag)) {
+			add = true;
+			section = true;
+			bonus = 3;
+		}
+		else if ("h3".equals(tag)) {
+			add = true;
+			section = true;
+			bonus = 5;
+		}
+		else if ("h2".equals(tag)) {
+			add = true;
+			section = true;
+			bonus = 8;
+		}
+		else if ("h1".equals(tag)) {
+			add = true;
+			section = true;
+			bonus = 10;
+		}
+
+		if (add) {
+			indexer.adjustScore(bonus);
+
+			if (section)
+				indexer.startSection();
+
+			for (XNode node : current.getChildren()) {
+				if (node instanceof XText) {
+					String text = ((XText) node).getValue().trim() + " ";
+
+					text = StackUtil.resolveValueToString(null, text,true);
+
+					indexer.withText(text);
+				}
+				else if (node instanceof XElement) {
+					UIUtil.indexFinishedDocument((XElement) node, indexer);
+				}
+			}
+
+			if (section)
+				indexer.endSection();
+
+			// must come after end section
+			indexer.adjustScore(-bonus);
+		}
 	}
 }

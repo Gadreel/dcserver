@@ -1,8 +1,10 @@
 package dcraft.filevault.work;
 
+import dcraft.db.BasicRequestContext;
 import dcraft.db.DatabaseAdapter;
 import dcraft.db.DatabaseException;
 import dcraft.db.IConnectionManager;
+import dcraft.db.fileindex.FileIndexAdapter;
 import dcraft.db.util.ByteUtil;
 import dcraft.filestore.*;
 import dcraft.filestore.aws.AwsStore;
@@ -10,6 +12,7 @@ import dcraft.filestore.aws.AwsStoreFile;
 import dcraft.filestore.local.LocalDestStream;
 import dcraft.filestore.local.LocalStoreFile;
 import dcraft.filevault.DepositHub;
+import dcraft.filevault.Vault;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
@@ -27,6 +30,7 @@ import dcraft.struct.*;
 import dcraft.struct.scalar.IntegerStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.*;
+import dcraft.tenant.TenantHub;
 import dcraft.util.HashUtil;
 import dcraft.util.HexUtil;
 import dcraft.util.pgp.ClearsignUtil;
@@ -87,84 +91,6 @@ public class BuildDepositWork extends ChainWork {
 ASCII armored chain sig of all content of the .chain file   (node signing key)
 	
 	 */
-	
-	public void deleteIndex(DatabaseAdapter adapter, String depositId, RecordStruct manifestrec, CommonPath dpath) throws DatabaseException {
-		String tenant = manifestrec.getFieldAsString("Tenant");
-		String site = manifestrec.getFieldAsString("Site");
-		String vault = manifestrec.getFieldAsString("Vault");
-		
-		List<Object> indexkeys = new ArrayList<>();
-		
-		indexkeys.add(tenant);
-		indexkeys.add("dcFileIndex");
-		indexkeys.add(site);
-		indexkeys.add(vault);
-		
-		for (String part : dpath.getParts())
-			indexkeys.add(part);
-		
-		Object mm = adapter.get(indexkeys.toArray());
-		
-		if ((mm instanceof Boolean) && ((Boolean) mm)) {
-			// state
-			indexkeys = new ArrayList<>();
-			
-			indexkeys.add(tenant);
-			indexkeys.add("dcFileIndex");
-			indexkeys.add(site);
-			indexkeys.add(vault);
-			
-			for (String part : dpath.getParts())
-				indexkeys.add(part);
-			
-			indexkeys.add("State");
-			indexkeys.add(ByteUtil.dateTimeToReverse(manifestrec.getFieldAsDateTime("TimeStamp")));
-			indexkeys.add("Deleted");
-			
-			adapter.set(indexkeys.toArray());
-			
-			// history
-			indexkeys = new ArrayList<>();
-			
-			indexkeys.add(tenant);
-			indexkeys.add("dcFileIndex");
-			indexkeys.add(site);
-			indexkeys.add(vault);
-			
-			for (String part : dpath.getParts())
-				indexkeys.add(part);
-			
-			indexkeys.add("History");
-			indexkeys.add(ByteUtil.dateTimeToReverse(manifestrec.getFieldAsDateTime("TimeStamp")));
-			indexkeys.add(RecordStruct.record()
-					.with("Source", "Deposit")
-					.with("Deposit", depositId)
-					.with("Op", "Delete")
-					.with("TimeStamp", manifestrec.getFieldAsDateTime("TimeStamp"))
-					.with("Node", ApplicationHub.getNodeId())
-			);
-			
-			adapter.set(indexkeys.toArray());
-		}
-		else {
-			indexkeys.add(null);
-			
-			byte[] pkey = adapter.nextPeerKey(indexkeys.toArray());
-			
-			while (pkey != null) {
-				Object pval = ByteUtil.extractValue(pkey);
-				
-				if (pval instanceof String) {
-					this.deleteIndex(adapter, depositId, manifestrec, dpath.resolve((String) pval));
-				}
-				
-				indexkeys.remove(indexkeys.size() - 1);
-				indexkeys.add(pval);
-				
-				pkey = adapter.nextPeerKey(indexkeys.toArray());
-			}
-		}
-	}
 	
 	// TODO system messages if anything fails here
 	
@@ -260,26 +186,32 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 			
 			RecordStruct manifestrec = params.getFieldAsRecord("Manifest");
 			
-			DatabaseAdapter adapter = ResourceHub.getResources().getDatabases().hasDefaultDatabase()
-					? ResourceHub.getResources().getDatabases().getDatabase().allocateAdapter()
-					: null;
-			
-
 			ListStruct deletes = manifestrec.getFieldAsList("Delete");
 			
-			if (deletes != null) {
+			if ((deletes != null) && (deletes.size() > 0)) {
+				IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
+				
+				FileIndexAdapter adapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
+				
+				String tenant = manifestrec.getFieldAsString("Tenant");
+				String site = manifestrec.getFieldAsString("Site");
+				String vault = manifestrec.getFieldAsString("Vault");
+				
+				Vault idxvault = TenantHub.resolveTenant(tenant).resolveSite(site).getVault(vault);
+				
+				RecordStruct history =  RecordStruct.record()
+						.with("Source", "Deposit")
+						.with("Deposit", depositId)
+						.with("Op", "Delete")
+						.with("TimeStamp", manifestrec.getFieldAsDateTime("TimeStamp"))
+						.with("Node", ApplicationHub.getNodeId());
+				
 				for (int d = 0; d < deletes.size(); d++) {
 					CommonPath dpath = CommonPath.from(deletes.getItemAsString(d));
 					
 					Logger.info("Deleting path: " + dpath);
 					
-					try {
-						this.deleteIndex(adapter, depositId, manifestrec, dpath);
-					}
-					catch (DatabaseException x) {
-						Logger.error("Unable to index file in db: " + x);
-					}
-					
+					adapter.deleteFile(idxvault, dpath, manifestrec.getFieldAsDateTime("TimeStamp"), history);
 				}
 			}
 			
@@ -323,65 +255,29 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 												.with("Write", ListStruct.list())
 										)
 										*/
-				
-									try {
-										// set entry marker
-										List<Object> indexkeys = new ArrayList<>();
+									String tenant = manifestrec.getFieldAsString("Tenant");
+									String site = manifestrec.getFieldAsString("Site");
+									String vault = manifestrec.getFieldAsString("Vault");
+									
+									Vault idxvault = TenantHub.resolveTenant(tenant).resolveSite(site).getVault(vault);
+									
+									if (idxvault != null) {
+										IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
 										
-										indexkeys.add(manifestrec.getFieldAsString("Tenant"));
-										indexkeys.add("dcFileIndex");
-										indexkeys.add(manifestrec.getFieldAsString("Site"));
-										indexkeys.add(manifestrec.getFieldAsString("Vault"));
+										FileIndexAdapter adapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
 										
-										for (String part : fd.getPathAsCommon().getParts())
-											indexkeys.add(part);
-										
-										indexkeys.add(true);
-										
-										adapter.set(indexkeys.toArray());
-										
-										// add state
-										indexkeys = new ArrayList<>();
-										
-										indexkeys.add(manifestrec.getFieldAsString("Tenant"));
-										indexkeys.add("dcFileIndex");
-										indexkeys.add(manifestrec.getFieldAsString("Site"));
-										indexkeys.add(manifestrec.getFieldAsString("Vault"));
-										
-										for (String part : fd.getPathAsCommon().getParts())
-											indexkeys.add(part);
-										
-										indexkeys.add("State");
-										indexkeys.add(ByteUtil.dateTimeToReverse(manifestrec.getFieldAsDateTime("TimeStamp")));
-										indexkeys.add("Present");
-										
-										adapter.set(indexkeys.toArray());
-										
-										// add history
-										indexkeys = new ArrayList<>();
-										
-										indexkeys.add(manifestrec.getFieldAsString("Tenant"));
-										indexkeys.add("dcFileIndex");
-										indexkeys.add(manifestrec.getFieldAsString("Site"));
-										indexkeys.add(manifestrec.getFieldAsString("Vault"));
-										
-										for (String part : fd.getPathAsCommon().getParts())
-											indexkeys.add(part);
-										
-										indexkeys.add("History");
-										indexkeys.add(ByteUtil.dateTimeToReverse(manifestrec.getFieldAsDateTime("TimeStamp")));
-										indexkeys.add(RecordStruct.record()
-												.with("Source", "Deposit")
-												.with("Deposit", depositId)
-												.with("Op", "Write")
-												.with("TimeStamp", manifestrec.getFieldAsDateTime("TimeStamp"))
-												.with("Node", ApplicationHub.getNodeId())
+										adapter.indexFile(
+												idxvault,
+												fd.getPathAsCommon(),
+												manifestrec.getFieldAsDateTime("TimeStamp"),
+												RecordStruct.record()
+														.with("Source", "Deposit")
+														.with("Deposit", depositId)
+														.with("Op", "Write")
+														.with("TimeStamp", manifestrec.getFieldAsDateTime("TimeStamp"))
+														.with("Node", ApplicationHub.getNodeId()),
+												true
 										);
-										
-										adapter.set(indexkeys.toArray());
-									}
-									catch (DatabaseException x) {
-										Logger.error("Unable to index file in db: " + x);
 									}
 									
 									this.lastfd = fd;

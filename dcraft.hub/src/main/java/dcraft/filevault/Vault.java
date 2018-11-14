@@ -1,10 +1,14 @@
 package dcraft.filevault;
 
+import dcraft.db.fileindex.FileIndexAdapter;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.local.LocalStoreFile;
 import dcraft.hub.op.*;
 import dcraft.stream.StreamFragment;
 import dcraft.tenant.Base;
+import dcraft.tenant.Site;
+import dcraft.tenant.Tenant;
+import dcraft.tenant.TenantHub;
 import dcraft.util.FileUtil;
 import dcraft.util.RndUtil;
 
@@ -27,7 +31,7 @@ import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
 public class Vault {
-	static public Vault of(Base tenancy, XElement vaultdef) throws OperatingContextException {
+	static public Vault of(Site tenancy, XElement vaultdef) throws OperatingContextException {
 		Vault b = vaultdef.hasNotEmptyAttribute("VaultClass")
 				? (Vault) OperationContext.getOrThrow().getResources().getClassLoader().getInstance(vaultdef.getAttribute("VaultClass"))
 				: new Vault();
@@ -46,12 +50,27 @@ public class Vault {
 	protected String[] writeauthlist = null;
 	protected boolean uploadtoken = false;
 	
+	protected String tenant = null;
+	protected String site = null;
+	
+	public Site getSite() {
+		Tenant tenant = TenantHub.resolveTenant(this.tenant);
+		
+		if (tenant == null)
+			return null;
+		
+		return tenant.resolveSite(this.site);
+	}
+	
 	/* groovy
 	protected GroovyObject script = null;
 	*/
 	
-	public void init(Base di, XElement bel, OperationOutcomeEmpty cb) {
+	public void init(Site di, XElement bel, OperationOutcomeEmpty cb) {
 		this.name = bel.getAttribute("Id");
+		
+		this.tenant = di.getTenant().getAlias();
+		this.site = di.getAlias();
 		
 		/* TODO restore groovy support - where to put scriptold?
 		Path bpath = di.resolvePath("buckets").resolve(bname + ".groovy");
@@ -1135,6 +1154,10 @@ public class Vault {
 			Logger.error("Operating context error: " + x);
 			fcb.returnEmpty();
 		}
+	}
+	
+	public void updateFileIndex(CommonPath file, FileIndexAdapter adapter) throws OperatingContextException {
+		// default is nothing
 	}
 	
 		/* TODO review - not a terrible idea
