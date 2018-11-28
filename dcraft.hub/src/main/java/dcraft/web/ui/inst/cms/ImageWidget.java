@@ -43,7 +43,7 @@ public class ImageWidget extends Base implements ICMSAware {
 		String vari = StackUtil.stringFromSource(state,"Variant", "full");
 		String xvari = StackUtil.stringFromSource(state,"ExpandVariant");
 		String description = StackUtil.stringFromSource(state,"Description");
-		String ext = "jpg";
+		String ext = StackUtil.stringFromSource(state,"Extension", "jpg");
 		
 		RecordStruct meta = (RecordStruct) GalleryUtil.getMeta(CommonPath.from(path).getParent().toString(),
 				OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));

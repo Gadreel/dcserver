@@ -6,6 +6,7 @@ import dcraft.db.DatabaseException;
 import dcraft.db.IConnectionManager;
 import dcraft.db.fileindex.FileIndexAdapter;
 import dcraft.filestore.FileStoreFile;
+import dcraft.filevault.IndexTransaction;
 import dcraft.filevault.Vault;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
@@ -34,6 +35,7 @@ abstract public class IndexFilesCoreWork extends StateWork {
 	
 	protected Site currentSite = null;
 	protected Vault currentVault = null;
+	protected IndexTransaction tx = null;
 	
 	protected StateWorkStep indexSite = null;
 	protected StateWorkStep indexFolder = null;
@@ -84,6 +86,8 @@ abstract public class IndexFilesCoreWork extends StateWork {
 		
 		this.adapter.clearVaultIndex(this.currentVault);
 		
+		this.tx = IndexTransaction.of(vault);
+		
 		return this.indexFolder;
 	}
 	
@@ -92,9 +96,13 @@ abstract public class IndexFilesCoreWork extends StateWork {
 		
 		FileStoreFile folder = this.folders.pollFirst();
 		
-		if (folder == null)
+		if (folder == null) {
+			// no more folders so go back to checking vaults, but first commit any files in the tx
+			this.tx.commit();
+			
 			return this.indexVault;
-
+		}
+		
 		folder.getFolderListing(new OperationOutcome<List<FileStoreFile>>() {
 			@Override
 			public void callback(List<FileStoreFile> result) throws OperatingContextException {
@@ -105,17 +113,7 @@ abstract public class IndexFilesCoreWork extends StateWork {
 						if (file.isFolder())
 							IndexFilesCoreWork.this.folders.addLast(file);
 						else
-							IndexFilesCoreWork.this.adapter.indexFile(
-									IndexFilesCoreWork.this.currentVault,
-									file.getPathAsCommon(),
-									null,
-									RecordStruct.record()
-										.with("Source", "Scan")
-										.with("Op", "Write")
-										.with("TimeStamp", file.getModification())
-										.with("Node", ApplicationHub.getNodeId()),
-									true
-							);
+							IndexFilesCoreWork.this.tx.withUpdate(file.getPathAsCommon());
 					}
 				}
 				

@@ -79,7 +79,10 @@ public class MenuWidget extends Base {
 					if (opass) {
 						links.add(Link.tag()
 								.attr("Label", x.getAttribute("Title"))
-								.attr("Page",  menulevel.slug + "/" + x.getAttribute("Slug"))
+								.attr("Page",  x.hasNotEmptyAttribute("Page")
+										? x.getAttribute("Page")
+										: menulevel.slug + "/" + x.getAttribute("Slug")
+								)
 						);
 					}
 				}

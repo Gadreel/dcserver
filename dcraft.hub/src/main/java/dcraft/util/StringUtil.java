@@ -201,7 +201,7 @@ public class StringUtil {
 		    
 		    public static String stripTrailingWhitespace(String str) {
 		        if (StringUtil.isEmpty(str)) 
-		            return str;
+		            return "";
 
 		        int end = str.length();
 		        

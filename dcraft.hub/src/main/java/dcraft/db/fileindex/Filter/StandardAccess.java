@@ -24,7 +24,7 @@ public class StandardAccess extends BasicFilter {
 		
 		if (! "Present".equals(file.getFieldAsString("State")))
 			return ExpressionResult.rejected();
-		
+	
 		if (file.getFieldAsBooleanOrFalse("Public"))
 			return this.nestOrAccept(adapter, rscope, vault, path, file);
 		

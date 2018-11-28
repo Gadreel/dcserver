@@ -309,7 +309,7 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 				}
 			}
 		}
-		
+
 		// -----------------------------------
 		//   load markdown config
 		// -----------------------------------
@@ -414,5 +414,28 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 		Logger.trace("Finished loading dictionaries");
 		
 		return loc;
+	}
+	
+	public void addConfigIfPresent(ConfigResource configres, Path path) {
+		// this is fine, not all config
+		if (path == null)
+			return;
+		
+		Logger.trace("Resolving config xml file: " + path.getFileName());
+		
+		//Path fshared = this.resolvePath(Paths.get(name));
+		
+		if (Files.exists(path)) {
+			XElement cel = XmlReader.loadFile(path, false, true);
+			
+			if (cel == null) {
+				Logger.error("Unable to load config file, expected: " + path);
+			}
+			else {
+				Logger.trace("Loaded config xml file: " + path);
+				
+				configres.add(cel);
+			}
+		}
 	}
 }

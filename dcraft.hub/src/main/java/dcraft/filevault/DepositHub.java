@@ -125,23 +125,16 @@ public class DepositHub {
 		return null;
 	}
 	
-	static public boolean submitVaultDeposit(String transactionid, String vaultname, List<CommonPath> deletes) throws OperatingContextException {
-		// create a resil trigger file so we are found if server stops
+	// create a resil trigger file so we are found if server stops
+	static public String submitVaultDeposit(Transaction tx) throws OperatingContextException {
 		String depositId = DepositHub.allocateDepositId();
 		
 		if (depositId == null)
-			return false;
+			return null;
 		
 		RecordStruct trec = RecordStruct.record()
-				.with("Manifest", RecordStruct.record()
-						.with("TimeStamp", TimeUtil.now())
-						.with("Type", "Deposit")
-						.with("Tenant", OperationContext.getOrThrow().getTenant().getAlias())
-						.with("Site", OperationContext.getOrThrow().getSite().getAlias())
-						.with("Vault", vaultname)
-						.with("Delete", ListStruct.list().withCollection(deletes))
-				)
-				.with("Transaction", transactionid)
+				.with("Manifest", tx.getManifest())
+				.with("Transaction", tx.getId())
 				.with("DepositId", depositId);
 
 		// allocate (above) ensures folder exists
@@ -150,10 +143,14 @@ public class DepositHub {
 		
 		if (Files.exists(triggpath)) {
 			Logger.error("Deposit trigger path already exists, unable to add: " + triggpath);
-			return false;
+			return null;
 		}
 		
-		return IOUtil.saveEntireFile(triggpath, trec.toPrettyString());
+		// if successful return the deposit id
+		if (IOUtil.saveEntireFile(triggpath, trec.toPrettyString()))
+			return depositId;
+		
+		return null;
 	}
 	
 	static public void enableQueueChecker() {
@@ -525,7 +522,9 @@ public class DepositHub {
 			return null;
 		}
 		
-		XElement settings = ApplicationHub.getCatalogSettings(catalog);
+		XElement settings = StringUtil.isEmpty(mode)
+			? ApplicationHub.getCatalogSettings(catalog, alternative)
+			: ApplicationHub.getCatalogSettings(catalog, alternative, mode);
 		
 		if (settings == null) {
 			//System.out.println("Missing settings Interchange-Aws");

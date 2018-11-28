@@ -48,7 +48,7 @@ import dcraft.xml.XmlParser;
 public class CompositeParser {
 	static public CompositeStruct parseJson(CharSequence data) {
 		if (data == null) {
-			Logger.errorTr(1, "Error parsing JSON");
+			Logger.error( "Error parsing JSON");
 			return null;
 		}
 		
@@ -56,7 +56,7 @@ public class CompositeParser {
 			return CompositeParser.parseJson(jp);
 		}
 		catch (Exception x) {
-			Logger.errorTr(1, "Error parsing JSON: " + x);
+			Logger.error( "Error parsing JSON: " + x);
 			
 			return null;
 		}
@@ -71,7 +71,7 @@ public class CompositeParser {
 			return CompositeParser.parseJson(jp);
 		}
 		catch (Exception x) {
-			Logger.errorTr(1, "Error parsing JSON: " + x);
+			Logger.error( "Error parsing JSON: " + x);
 			
 			return null;
 		}

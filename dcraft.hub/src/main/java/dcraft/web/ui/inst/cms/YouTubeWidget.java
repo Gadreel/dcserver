@@ -37,7 +37,10 @@ public class YouTubeWidget extends Base implements ICMSAware {
 		
 		this.with(W3.tag("div")
 				.withClass("dc-media-box", "dc-media-video", "dc-youtube-container-" + ratio)
-				.with(W3.tag("img").withAttribute("src", "/imgs/" + ratio + ".png"))
+				.with(W3.tag("img")
+						.attr("src", "/imgs/" + ratio + ".png")
+						.attr("alt", "")
+				)
 				.with(W3.tag("iframe")
 						.withAttribute("src", "https://www.youtube.com/embed/" + vid + "?html5=1&rel=0&showinfo=0")
 						.withAttribute("frameborder", "0")

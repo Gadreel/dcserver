@@ -20,20 +20,21 @@ public class Uploader extends CoreField {
 	
 	@Override
 	public void addControl(InstructionWork state) throws OperatingContextException {
+		XElement input = W3.tag("input")
+				.withAttribute("id", this.fieldid)
+				.withAttribute("data-dc-enhance", "true")
+				.withAttribute("data-dc-tag", this.getName())
+				.withAttribute("type", "file")
+				.withAttribute("capture", "capture")
+				.withAttribute("multiple", "multiple");
+		
 		Base grp = W3.tag("div")
 			.withClass("dc-control dc-uploader");
 		
 		grp
-			.withAttribute("id", this.fieldid)
-			.withAttribute("data-dc-enhance", "true")
-			.withAttribute("data-dc-tag", this.getName())
 			.with(W3.tag("div")
 					.withClass("dc-uploader-file")
-					.with(W3.tag("input")
-							.withAttribute("type", "file")
-							.withAttribute("capture", "capture")
-							.withAttribute("multiple", "multiple")
-					)
+					.with(input)
 			)
 			.with(W3.tag("div")
 					.withClass("dc-uploader-list-area dc-message dc-message-info")
@@ -48,7 +49,7 @@ public class Uploader extends CoreField {
 					)
 			);
 		
-		RadioControl.enhanceField(this, grp);
+		RadioControl.enhanceField(this, input);
 
 		this.with(grp);
 		

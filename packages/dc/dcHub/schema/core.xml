@@ -720,6 +720,15 @@
 							<Field Name="Username" Type="dcSmallString" Required="True" />
 						</RecordRequest>
 					</Op>
+					<Op Name="InitiateRecovery">
+						<Description>
+							Request a confirmation code.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Captcha" Type="dcString" />
+							<Field Name="Username" Type="dcSmallString" Required="True" />
+						</RecordRequest>
+					</Op>
 					<Op Name="SignUp">
 						<Description>
 							Verify credentials, start a session (AuthToken) indirectly as Verify is called implicitly.

@@ -73,19 +73,26 @@ public class SendEmail extends Instruction {
 			String text = null;
 			String html = null;
 			
-			if (textdoc instanceof Base)
-				text = ((XElement) textdoc).getText();
-			else if ((textdoc instanceof AnyStruct) && (((AnyStruct) textdoc).getValue() instanceof Base))
-				text = ((XElement) ((AnyStruct) textdoc).getValue()).getText();
-			else
+			if (textdoc != null) {
+				XElement template = Struct.objectToXml(textdoc);
+
+				if (template != null) {
+					text = template.getText();
+				}
+			}
+
+			if (text == null)
 				text = this.hasText()
 						? StackUtil.resolveValueToString(stack, this.getText(), true)
 						: StackUtil.resolveValueToString(stack, this.getAttribute("Body"), true);
-			
-			if (htmldoc instanceof Base)
-				html = ((XElement) htmldoc).toPrettyString();
-			else if ((htmldoc instanceof AnyStruct) && (((AnyStruct) htmldoc).getValue() instanceof Base))
-				html = ((XElement) ((AnyStruct) htmldoc).getValue()).toPrettyString();
+
+			if (htmldoc != null) {
+				XElement template = Struct.objectToXml(htmldoc);
+
+				if (template != null) {
+					html = template.toPrettyString();
+				}
+			}
 
 			if (text != null)
 				text = StackUtil.resolveValueToString(stack, text,true);

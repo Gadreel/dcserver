@@ -1,8 +1,14 @@
 package dcraft.filevault;
 
+import dcraft.cms.feed.db.FeedUtilDb;
+import dcraft.cms.feed.work.ReindexFeedWork;
+import dcraft.db.BasicRequestContext;
+import dcraft.db.IConnectionManager;
 import dcraft.db.fileindex.FileIndexAdapter;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.local.LocalStoreFile;
+import dcraft.hub.ResourceHub;
+import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.*;
 import dcraft.stream.StreamFragment;
 import dcraft.tenant.Base;
@@ -181,21 +187,85 @@ public class Vault {
 	}
 
 	// TODO should use a callback approach
-	public void commitFiles(Transaction tx) throws OperatingContextException {
+	public void expandTransaction(TransactionBase tx) throws OperatingContextException {
+		if (this.getMode() != VaultMode.Expand)
+			return;
+		
 		FileStore vfs = this.getFileStore();
 
 		if (vfs instanceof LocalStore) {
+			// delete and move
 			for (CommonPath delete : tx.getDeletelist())
 				vfs.fileReference(delete).remove(null);		// TODO should wait, doesn't matter with locals though
-
+			
 			FileUtil.moveFileTree(tx.getFolder().getPath(), ((LocalStore) vfs).getPath(), null);
 		}
 		else {
 			// TODO add Expand for non-local vaults - probably just to the deposit worker since
-			// non-local vaults are not guaranteed to be epxanded at end of this call
+			// non-local vaults are not guaranteed to be expanded at end of this call
 			Logger.error("Non-local Expand Vaults not yet supported!");
 		}
 	}
+	
+	public void processTransaction(TransactionBase tx) throws OperatingContextException {
+		if (this.getMode() != VaultMode.Expand)
+			return;
+		
+		FileStore vfs = this.getFileStore();
+
+		if (vfs instanceof LocalStore) {
+			// index the file if local database
+
+			IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
+			
+			FileIndexAdapter adapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
+			
+			for (CommonPath file : tx.getDeletelist()) {
+				adapter.deleteFile(
+						this,
+						file,
+						tx.getTimestamp(),
+						this.buildHistory(tx, "Delete")
+				);
+			}
+			
+			for (CommonPath file : tx.getUpdateList()) {
+				adapter.indexFile(
+						this,
+						file,
+						tx.getTimestamp(),
+						this.buildHistory(tx, "Write")
+				);
+			}
+		}
+		else {
+			// TODO add Expand for non-local vaults - probably just to the deposit worker since
+			// non-local vaults are not guaranteed to be expanded at end of this call
+			Logger.error("Non-local Expand Vaults not yet supported!");
+		}
+	}
+
+	public RecordStruct buildHistory(TransactionBase tx, String op) {
+		if (StringUtil.isNotEmpty(tx.getDepositId()))
+			return RecordStruct.record()
+					.with("Source", "Deposit")
+					.with("Deposit", tx.getDepositId())
+					.with("Op", op)
+					.with("TimeStamp", tx.getTimestamp())
+					.with("Node", tx.getNodeId());
+				
+		return RecordStruct.record()
+				.with("Source", "Scan")
+				.with("Op", op)
+				.with("TimeStamp", tx.getTimestamp())
+				.with("Node", tx.getNodeId());
+	}
+	
+	/*
+	public void updateFileIndex(CommonPath file, FileIndexAdapter adapter) throws OperatingContextException {
+		// default is nothing
+	}
+	*/
 
 	/*
 	 * ================ programming points ==================
@@ -664,7 +734,7 @@ public class Vault {
 	public void commitTransaction(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
 		Transaction tx = Transaction.of(request.getFieldAsString("TransactionId"), this);
 		
-		tx.commitTransaction(null, new OperationOutcomeEmpty() {
+		tx.commitTransaction(new OperationOutcomeEmpty() {
 			@Override
 			public void callback() throws OperatingContextException {
 				fcb.returnEmpty();
@@ -888,7 +958,7 @@ public class Vault {
 						
 						if (txMode == TxMode.Automatic) {
 							Transaction tx = Transaction.of(txid, this);
-							tx.commitTransaction(null, finishUpload);
+							tx.commitTransaction(finishUpload);
 						}
 						else {
 							finishUpload.returnEmpty();
@@ -1154,10 +1224,6 @@ public class Vault {
 			Logger.error("Operating context error: " + x);
 			fcb.returnEmpty();
 		}
-	}
-	
-	public void updateFileIndex(CommonPath file, FileIndexAdapter adapter) throws OperatingContextException {
-		// default is nothing
 	}
 	
 		/* TODO review - not a terrible idea

@@ -34,7 +34,7 @@ public class LogsWork extends StateWork {
 	protected StateWorkStep cleanStep = null;
 	protected StateWorkStep finStep = null;
 	
-	protected Transaction tx = Transaction.tx();		// do not connect to a vault
+	protected Transaction tx = Transaction.of("NodeLogs");		// do not connect to a vault
 	protected LocalStore fsd = LocalStore.of("./logs");
 	protected FileCollection collection = new FileCollection();
 	protected FileCollection deletecollection = new FileCollection();
@@ -120,7 +120,7 @@ public class LogsWork extends StateWork {
 	}
 	
 	public StateWorkStep commitFiles(TaskContext trun) throws OperatingContextException {
-		this.tx.commitTransaction("NodeLogs", new OperationOutcomeEmpty() {
+		this.tx.commitTransaction(new OperationOutcomeEmpty() {
 			@Override
 			public void callback() throws OperatingContextException {
 				LogsWork.this.transition(trun, StateWorkStep.NEXT);

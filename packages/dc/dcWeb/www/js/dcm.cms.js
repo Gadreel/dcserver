@@ -159,7 +159,6 @@ dc.cms.Loader = {
 				.addClass('dcuiCmsToolbarVert')
 			);
 
-
 			$('#dcuiMain').dcappend(
 				$('<div>')
 				 	.attr('id', 'dcuiCmsTabSave')
@@ -171,6 +170,8 @@ dc.cms.Loader = {
 			});
 
 			dc.cms.Loader.showMode();
+
+			entry.callPageFunc('onCmsInit')
 		});
 	},
 	showMode: function() {

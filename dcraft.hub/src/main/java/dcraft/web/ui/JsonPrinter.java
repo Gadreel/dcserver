@@ -165,7 +165,7 @@ public class JsonPrinter extends XmlToJsonPrinterOld {
 				
 				code = StringUtil.stripTrailingWhitespace(code);
 				
-				if (code.charAt(0) != '\n')
+				if ((code.length() == 0) || (code.charAt(0) != '\n'))
 					sb.append("\n");
 				
 				sb.append(code);
@@ -201,7 +201,7 @@ public class JsonPrinter extends XmlToJsonPrinterOld {
 					
 					code = StringUtil.stripTrailingWhitespace(code);
 					
-					if (code.charAt(0) != '\n')
+					if ((code.length() == 0) || (code.charAt(0) != '\n'))
 						sb.append("\n");
 					
 					sb.append(code);

@@ -18,9 +18,11 @@ package dcraft.hub.config;
 
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.resource.ConfigResource;
+import dcraft.hub.resource.Package;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.log.Logger;
 import dcraft.task.TaskContext;
+import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 import dcraft.xml.XmlReader;
 
@@ -91,11 +93,43 @@ public class LocalHubConfigLoader extends LocalConfigLoader {
 		
 		this.addConfigIfPresent(configres, this.resolvePath(Paths.get("config.xml")));				// the more internal aspects of config
 		
+		XElement overrideCli = null;
+		
+		// load profile settings based on role
+		
+		XElement packages = configres.getTagLocal("Profiles");
+		
+		if (packages != null) {
+			String packagepath = packages.getAttribute("Path", "./packages");
+			
+			Path pspath = Paths.get(packagepath);
+			
+			for (XElement pack : packages.selectAll("Profile")) {
+				String name = pack.getAttribute("Name");
+				
+				if (StringUtil.isEmpty(name))
+					continue;
+				
+				Path ppath = pspath.resolve(name);
+				
+				if (!Files.exists(ppath))
+					continue;
+				
+				this.addConfigIfPresent(configres, ppath.resolve("profiles/" + ApplicationHub.getRole() + "/config.xml"));            // config specific to the role
+			}
+			
+			overrideCli = configres.getTag("CommandLine");
+		}
+		
 		// TODO reconsider - this.addConfigIfPresent(configres, "deployment.xml");			// the more public aspects of config, treat as unsecure
 		
 		this.addConfigIfPresent(configres, this.resolveRolePath(Paths.get("config.xml")));			// config specific to the role
 		
 		this.addConfigIfPresent(configres, this.resolveNodePath(Paths.get("config.xml")));		// config specific to the node
+		
+		// use the profile CLI if present, instead of the node / role
+		if (overrideCli != null)
+			configres.add(XElement.tag("Config").with(overrideCli));
 		
 		// TODO load Clock Xml from http://169.254.169.254/latest/user-data
 		// then over write
@@ -123,29 +157,6 @@ public class LocalHubConfigLoader extends LocalConfigLoader {
 	public Path resolveNodePath(Path p) {
 		return this.configpath.resolve("deploy-" + ApplicationHub.getDeployment() + "/nodes/"
 				+ ApplicationHub.getNodeId() + "/config").resolve(p);
-	}
-	
-	public void addConfigIfPresent(ConfigResource configres, Path path) {
-		// this is fine, not all config
-		if (path == null)
-			return;
-
-		Logger.trace("Resolving config xml file: " + path.getFileName());
-		
-		//Path fshared = this.resolvePath(Paths.get(name));
-		
-		if (Files.exists(path)) {
-			XElement cel = XmlReader.loadFile(path, false, true);
-			
-			if (cel == null) {
-				Logger.error("Unable to load config file, expected: " + path);
-			}
-			else {
-				Logger.trace("Loaded config xml file: " + path);
-				
-				configres.add(cel);
-			}
-		}
 	}
 	
 	@Override

@@ -260,8 +260,8 @@ dc.pui.Tags['dcm.CarouselWidget'] = function(entry, node) {
 		var currHeight = $(node).height();
 
 		// stretch whole image, no offset
-		if (currWidth > srcWidth)
-			return;
+		//if (currWidth > srcWidth)
+		//	return;
 
 		var zoom = currHeight / srcHeight;
 		var availWidth = srcWidth * zoom;
@@ -271,13 +271,21 @@ dc.pui.Tags['dcm.CarouselWidget'] = function(entry, node) {
 		if (dc.util.Number.isNumber(ch))
 			xoff -= ((srcWidth / 2) - ch) * zoom;
 
-		if (xoff < 0)
-			xoff = 0;
-		if (xoff + currWidth > availWidth)
-			xoff = availWidth - currWidth;
+		if (currWidth > srcWidth) {
+			var minOff = dc.util.Number.toNumberStrict($(node).attr('data-dcm-min-offset'));
+
+			if (xoff < minOff)
+				xoff = minOff;
+		}
+		else {
+			if (xoff < 0)
+				xoff = 0;
+			if (xoff + currWidth > availWidth)
+				xoff = availWidth - currWidth;
+		}
 
 		$(node).find(selector).css({
-		     marginLeft: '-' + xoff + 'px'
+		     marginLeft: (0 - xoff) + 'px'
 		 });
 	};
 

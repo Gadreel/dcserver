@@ -188,6 +188,9 @@ dc.pui.layer.Base.prototype = {
 			$(layer.Content).attr('class', lclass);
 		}
 
+		// simple place to load code overrides
+		layer.Current.callPageFunc('onInit');
+
 		$(layer.Content + ' *[data-dc-enhance="true"]').each(function() {
 			var tag = $(this).attr('data-dc-tag');
 
@@ -387,10 +390,15 @@ dc.pui.layer.Main.prototype.loadPageAdv = function(options) {
 	for (var i = 0; i < dlayers.length; i++)
 		dlayers[i].onDestroy({ Clear: true });
 
+	/* TODO add support for
+		options.Params = params;
+		options.UrlParams = urlparams;
+	*/
+
 	if (options.ReplaceState)
-		window.location.replace(options.Name);
+		window.location.replace(options.Name + (options.TargetElement ? '#' + options.TargetElement : ''));
 	else
-		window.location.assign(options.Name);
+		window.location.assign(options.Name + (options.TargetElement ? '#' + options.TargetElement : ''));
 };
 
 dc.pui.layer.Main.prototype.initPage = function() {
@@ -3000,6 +3008,7 @@ dc.pui.Tags = {
 				});
 			}
 		}
+		// TODO review, maybe not on the main layer
 		else if (link && (link.length > 1) && (link.charAt(0) == '#')) {
 			$(node).click(link, function(e) {
 				entry.scrollPage(e.data);
@@ -3957,9 +3966,9 @@ dc.pui.controls.Uploader.prototype.init = function(entry, node) {
 
 	dc.pui.controls.ListInput.prototype.init.call(this, entry, node);
 
-	$(node).find('input').on("click focusout keyup", this, function(e) { e.data.validate(); });
+	$(node).on("click focusout keyup", this, function(e) { e.data.validate(); });
 
-	$(node).find('input').on("change", this, function(e) {
+	$(node).on("change", this, function(e) {
 		ctrl.addFiles(this.files);
 
 		e.data.validate();
@@ -3980,7 +3989,7 @@ dc.pui.controls.Uploader.prototype.removeAll = function() {
 	this.Values = [ ];
 	this.Files = [ ];
 
-	$('#' + this.Id + ' .dc-uploader-listing').empty();
+	$('#fld' + this.Id + ' .dc-uploader-listing').empty();
 };
 
 dc.pui.controls.Uploader.prototype.getUploads = function(pre) {
@@ -4046,7 +4055,7 @@ dc.pui.controls.Uploader.prototype.addFiles = function(values) {
 
 		var $ctrl = $('<div class="dc-uploader-entry">' + fname + '</div>');
 
-		$('#' + this.Id + ' .dc-uploader-listing').append($ctrl);
+		$('#fld' + this.Id + ' .dc-uploader-listing').append($ctrl);
 	}
 }
 

@@ -1,6 +1,6 @@
 <dc.Html>
 	<Meta Name="Title">
-		<Tr Locale="en" Value="Confirm Code" />
+		<Tr Locale="eng" Value="Recover Account" />
 	</Meta>
 
 	<dc.Body>
@@ -29,7 +29,7 @@
 
 						$('#sectMsg').empty().dcappend(
 							$('<p>').dcappend(
-								'Confirmation completed. ',
+								'Recovery completed. ',
 								$('<a>')
 									.attr('href', '#')
 									.text('Continue')
@@ -46,8 +46,8 @@
 			}
 	]]></Function>
 	<Function Name="AfterCheck">
-			if (dc.handler.confirmEvent)
-				dc.handler.confirmEvent();
+			if (dc.handler.recoverEvent)
+				dc.handler.recoverEvent();
 			else
 				window.location = '/';		// try to get this page out of the history
 	</Function>

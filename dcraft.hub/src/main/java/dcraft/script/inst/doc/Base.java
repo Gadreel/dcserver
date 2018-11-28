@@ -120,9 +120,7 @@ public class Base extends BlockInstruction {
 			String name = StackUtil.stringFromSource(state, "Name");
 			
 			if (StringUtil.isNotEmpty(name)) {
-				Struct var = AnyStruct.of(this);
-				
-				StackUtil.addVariable(state.getParent(), name, var);
+				StackUtil.addVariable(state.getParent(), name, this);
 				
 				// TODO switch target? -- ((OperationsWork) state).setTarget(var);
 				

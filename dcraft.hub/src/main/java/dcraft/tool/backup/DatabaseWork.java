@@ -31,7 +31,7 @@ public class DatabaseWork extends StateWork {
 	protected StateWorkStep uploadStep = null;
 	protected StateWorkStep finStep = null;
 	
-	protected Transaction tx = Transaction.tx();		// do not connect to a vault
+	protected Transaction tx = Transaction.of("NodeDatabase");		// do not connect to a vault
 	protected LocalStore fsd = null;
 	protected FileCollection collection = new FileCollection();
 	protected long since = -1;		// in seconds not millis
@@ -101,7 +101,7 @@ public class DatabaseWork extends StateWork {
 	}
 	
 	public StateWorkStep commitFiles(TaskContext trun) throws OperatingContextException {
-		this.tx.commitTransaction("NodeDatabase", new OperationOutcomeEmpty() {
+		this.tx.commitTransaction(new OperationOutcomeEmpty() {
 			@Override
 			public void callback() throws OperatingContextException {
 				DatabaseWork.this.transition(trun, StateWorkStep.NEXT);

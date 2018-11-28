@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class TrustResource extends ResourceBase {
+	static public final String[] DEFAULT_PROTOCOLS = new String[] { "TLSv1.2", "TLSv1.3" };
 	static public final String[] DEFAULT_CIPHERS = new String[] {
 			// TLS 1.3
 			"TLS_AES_128_GCM_SHA256",
@@ -44,7 +45,7 @@ TLS 1.3
 	protected List<TrustEntry> trustedcerts = new ArrayList<>();
 	protected List<SslEntry> sslcerts = new ArrayList<>();
 	protected SslEntry defualtssl = null;
-	protected String protocol = null;
+	protected List<String> protocols = new ArrayList<>();
 	protected String algorithm = null;
 	protected List<String> ciphers = new ArrayList<>();
 	
@@ -65,7 +66,21 @@ TLS 1.3
 		
 		return this;
 	}
-	
+
+	public TrustResource withProtocols(String... v) {
+		for (int i = 0; i < v.length; i++)
+			this.protocols.add(v[i]);
+
+		return this;
+	}
+
+	public TrustResource withCiphers(String... v) {
+		for (int i = 0; i < v.length; i++)
+			this.ciphers.add(v[i]);
+
+		return this;
+	}
+
 	public TrustResource getParentResource() {
 		if (this.tier == null)
 			return null;
@@ -107,16 +122,16 @@ TLS 1.3
 		return "SunX509";
 	}
 	
-	public String getProtocol() {
-		if (this.protocol != null)
-			return this.protocol;
-		
+	public List<String> getProtocols() {
+		if (this.protocols.size() > 0)
+			return this.protocols;
+
 		TrustResource p = this.getParentResource();
 		
 		if (p != null)
-			return p.getProtocol();
+			return p.getProtocols();
 		
-		return "TLSv1.2";		// TODO 1.3 someday
+		return Arrays.asList(TrustResource.DEFAULT_PROTOCOLS);
 	}
 	
 	public List<String> getCiphers() {

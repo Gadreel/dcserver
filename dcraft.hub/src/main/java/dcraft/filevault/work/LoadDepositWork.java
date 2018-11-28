@@ -59,7 +59,7 @@ public class LoadDepositWork extends ChainWork {
 	
 	/*  #######################################
 	
-	!!!	TODO review CmsSyncWork and adopt steps
+	!!!	TODO review CmsSyncWork + DownloadDeposit and adopt steps
 	
 	####################################### */
 	
@@ -405,7 +405,7 @@ public class LoadDepositWork extends ChainWork {
 						Logger.error("Error removing remote deposit trigger: " + x);
 					}
 					
-					// allow next deposit to upload
+					// allow next deposit to upload (download?)
 					DepositHub.clearDepositId(LoadDepositWork.this.nodeid, depositId, chainsig.getValueAsString());
 					
 					LoadDepositWork.this.currtrigger = DepositHub.nextRemoteDepositOnQueue(LoadDepositWork.this.nodeid);

@@ -320,10 +320,10 @@ public class Emitter {
 	        		.withAttribute("data-dc-tag", "dc.Link")
 	        		.withAttribute("data-dc-enhance", "true");
 
+				if(StringUtil.isNotEmpty(comment))
+					anchr.withAttribute("aria-label", comment);
+
             	parent.add(anchr);
-            	
-                if(comment != null)
-                	anchr.withAttribute("title", comment);
 
                 this.recursiveEmitLine(anchr, name, 0, MarkToken.NONE);  
             }

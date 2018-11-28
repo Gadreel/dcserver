@@ -181,7 +181,7 @@ public class FileIndexAdapter {
 		}
 	}
 	
-	public void indexFile(Vault vault, CommonPath path, ZonedDateTime time, RecordStruct history, boolean notify) throws OperatingContextException {
+	public void indexFile(Vault vault, CommonPath path, ZonedDateTime time, RecordStruct history) throws OperatingContextException {
 		try {
 			// set entry marker
 			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
@@ -209,9 +209,6 @@ public class FileIndexAdapter {
 			
 			// don't use  ByteUtil.dateTimeToReverse(file.getModificationAsTime()) - using zero is better for eventual consistency across nodes
 			this.request.getInterface().set(indexkeys.toArray());
-			
-			if (notify)
-				vault.updateFileIndex(path, this);
 		}
 		catch (DatabaseException x) {
 			Logger.error("Unable to index file " + path + " in db: " + x);
@@ -258,8 +255,7 @@ public class FileIndexAdapter {
 								.with("Source", "Scan")
 								.with("Op", "Write")
 								.with("TimeStamp", now)        // TODO prefer file mod
-								.with("Node", ApplicationHub.getNodeId()),
-						false
+								.with("Node", ApplicationHub.getNodeId())
 				);
 			}
 		}

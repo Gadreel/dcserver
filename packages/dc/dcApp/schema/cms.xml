@@ -113,6 +113,7 @@
 
 		<Procedure Name="dcmUpdateFeed" Execute="dcraft.cms.feed.db.Update" />
 		<Procedure Name="dcmServices.Feed.Reindex" Execute="dcraft.cms.feed.db.Reindex" />
+		<Procedure Name="dcmServices.Feed.CmsCheck" Execute="dcraft.cms.feed.db.CmsCheck" />
 		<Procedure Name="dcmServices.Feed.LoadMeta" Execute="dcraft.cms.feed.db.LoadMeta" />
 		<Procedure Name="dcmServices.Feed.SaveMeta" Execute="dcraft.cms.feed.db.SaveMeta" />
 		<Procedure Name="dcmServices.Feed.LoadPart" Execute="dcraft.cms.feed.db.LoadPart" />
@@ -198,6 +199,16 @@
 					<Op Name="Reindex">
 						<Description>
 							List of feeds to index/remove.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Feed" Type="dcMetaString" Required="True" />
+						</RecordRequest>
+					</Op>
+				</Secure>
+				<Secure Badges="SysAdmin,Admin">
+					<Op Name="CmsCheck">
+						<Description>
+							Cms check of feeds if ready for CMS use.
 						</Description>
 						<RecordRequest Required="True">
 							<Field Name="Feed" Type="dcMetaString" Required="True" />

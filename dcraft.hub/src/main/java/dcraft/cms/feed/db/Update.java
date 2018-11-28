@@ -17,7 +17,7 @@ public class Update implements IStoredProc {
 
 		if (deleted != null) {
 			for (int i = 0; i < deleted.size(); i++) {
-				FeedUtilDb.deleteFeedIndex(request.getInterface(), db, deleted.getItemAsString(i));
+				FeedUtilDb.deleteFeedIndex(db, deleted.getItemAsString(i));
 			}
 		}
 

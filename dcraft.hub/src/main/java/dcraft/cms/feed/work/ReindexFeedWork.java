@@ -14,6 +14,7 @@ import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileStore;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.local.LocalStore;
+import dcraft.filevault.IndexTransaction;
 import dcraft.filevault.Vault;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
@@ -61,17 +62,20 @@ public class ReindexFeedWork extends StateWork {
 	protected ZonedDateTime now = TimeUtil.now();
 	
 	protected StateWorkStep indexFolder = null;
+	protected StateWorkStep transaction = null;
 	protected StateWorkStep checkFileIndex = null;
 	protected StateWorkStep checkFeedIndex = null;
 	protected StateWorkStep done = null;
 	
 	protected FileIndexAdapter adapter = null;
 	protected TablesAdapter db = null;
+	protected IndexTransaction tx = null;
 	
 	@Override
 	public void prepSteps(TaskContext trun) throws OperatingContextException {
 		this
-				.withStep(indexFolder = StateWorkStep.of("Index Folder", this::doFolder))
+				.withStep(indexFolder = StateWorkStep.of("Scan Folder", this::doFolder))
+				.withStep(transaction = StateWorkStep.of("Commit Tx", this::doTx))
 				.withStep(checkFileIndex = StateWorkStep.of("Check File Index", this::doCheckFileIndex))
 				.withStep(checkFeedIndex = StateWorkStep.of("Check Feed Index", this::doCheckFeedIndex))
 				.withStep(done = StateWorkStep.of("Done", this::done));
@@ -82,7 +86,7 @@ public class ReindexFeedWork extends StateWork {
 		
 		this.folders.addLast(this.currentVault.getFileStore().fileReference(CommonPath.from("/" + this.feed)));
 		
-		// TODO remove old indexes - first collect all current paths, then subtract real files, then delete
+		this.tx = IndexTransaction.of(this.currentVault);
 	}
 	
 	public StateWorkStep doFolder(TaskContext trun) throws OperatingContextException {
@@ -104,9 +108,7 @@ public class ReindexFeedWork extends StateWork {
 							ReindexFeedWork.this.folders.addLast(file);
 						}
 						else {
-							FeedUtilDb.updateFeedIndex(ReindexFeedWork.this.db, file.getPathAsCommon().toString());
-							
-							ReindexFeedWork.this.currentVault.updateFileIndex(file.getPathAsCommon(), ReindexFeedWork.this.adapter);
+							ReindexFeedWork.this.tx.withUpdate(file.getPathAsCommon());
 						}
 					}
 				}
@@ -116,6 +118,12 @@ public class ReindexFeedWork extends StateWork {
 		});
 		
 		return StateWorkStep.WAIT;
+	}
+	
+	public StateWorkStep doTx(TaskContext trun) throws OperatingContextException {
+		this.tx.commit();
+		
+		return StateWorkStep.NEXT;
 	}
 	
 	public StateWorkStep doCheckFileIndex(TaskContext trun) throws OperatingContextException {

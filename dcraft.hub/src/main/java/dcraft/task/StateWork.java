@@ -12,6 +12,7 @@ abstract public class StateWork implements IChainAwareWork {
 	protected StateWorkStep current = null;
 	protected StateWorkStep resumeStep = null;
 	protected boolean failOnErrors = true;
+	protected boolean stopFlag = false;
 	
 	public StateWork withStep(StateWorkStep v) {
 		this.steps.add(v);
@@ -39,6 +40,12 @@ abstract public class StateWork implements IChainAwareWork {
 	
 	@Override
 	public void run(TaskContext trun) throws OperatingContextException {
+		// check here because sub work (trun.resumeWith(work);) can cause an error and resume here
+		if (this.failOnErrors && trun.hasExitErrors()) {
+			trun.kill();
+			return;
+		}
+		
 		if (this.steps.size() == 0) {
 			this.prepSteps(trun);
 			
@@ -88,6 +95,7 @@ abstract public class StateWork implements IChainAwareWork {
 			return;
 		
 		if (to == StateWorkStep.STOP) {
+			this.stopFlag = true;
 			trun.complete();
 			return;
 		}
@@ -138,6 +146,11 @@ abstract public class StateWork implements IChainAwareWork {
 	
 	@Override
 	public boolean isComplete(TaskContext taskctx) {
+		// if a step returns a STOP
+		if (this.stopFlag)
+			return true;
+		
+		// if on last step when complete is called
 		int topos = this.steps.indexOf(this.last) + 1;
 		
 		return (topos == this.steps.size());

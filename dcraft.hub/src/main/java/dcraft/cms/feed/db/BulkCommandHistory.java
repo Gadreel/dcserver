@@ -92,6 +92,7 @@ public class BulkCommandHistory implements IStoredProc {
 			@Override
 			public void run(TaskContext taskctx) throws OperatingContextException {
 				callback.returnEmpty();
+				taskctx.returnEmpty();
 			}
 		});
 		

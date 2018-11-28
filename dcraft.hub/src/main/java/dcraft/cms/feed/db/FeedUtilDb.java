@@ -36,6 +36,10 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 public class FeedUtilDb {
+	static public void updateFeedIndex(TablesAdapter db, CommonPath path) throws OperatingContextException {
+		FeedUtilDb.updateFeedIndex(db, path.toString());
+	}
+	
 	static public void updateFeedIndex(TablesAdapter db, String path) throws OperatingContextException {
 		if (! path.endsWith(".html"))
 			return;
@@ -255,7 +259,11 @@ public class FeedUtilDb {
 		}
 	}
 
-	static public void deleteFeedIndex(DatabaseAdapter conn, TablesAdapter db, String path) throws OperatingContextException {
+	static public void deleteFeedIndex(TablesAdapter db, CommonPath path) throws OperatingContextException {
+		FeedUtilDb.deleteFeedIndex(db, path.toString());
+	}
+
+	static public void deleteFeedIndex(TablesAdapter db, String path) throws OperatingContextException {
 		CommonPath opath = FeedUtilDb.toIndexPath(path);
 		
 		if (opath == null)
@@ -272,8 +280,8 @@ public class FeedUtilDb {
 		ZonedDateTime opubtime = Struct.objectToDateTime(db.getStaticScalar("dcmFeed", oid.toString(),"dcmPublishAt"));
 
 		try {
-			conn.kill(OperationContext.getOrThrow().getUserContext().getTenantAlias(),
-					"dcmFeedIndex", ochan, conn.inverseTime(opubtime), oid);
+			db.getRequest().getInterface().kill(OperationContext.getOrThrow().getUserContext().getTenantAlias(),
+					"dcmFeedIndex", ochan, db.getRequest().getInterface().inverseTime(opubtime), oid);
 		}
 		catch (DatabaseException x) {
 			Logger.error("Error killing global: " + x);

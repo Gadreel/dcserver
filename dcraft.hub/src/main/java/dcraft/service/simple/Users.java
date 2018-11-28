@@ -374,6 +374,8 @@ public class Users {
 		}
 
 		if ("InitiateConfirm".equals(request.getOp())) {
+			/* TODO review and use UserDataUtil with this
+
 			RecordStruct data = request.getDataAsRecord();
 			
 			String uname = data.getFieldAsString("Username");
@@ -405,7 +407,9 @@ public class Users {
 				   callback.returnEmpty();
 			   }
 			}));
-			
+			*/
+
+			callback.returnEmpty();
 			return true;
 		}
 		

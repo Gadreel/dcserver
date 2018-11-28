@@ -1,5 +1,6 @@
 package dcraft.web;
 
+import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.app.HubEvents;
 import dcraft.hub.app.HubState;
@@ -40,6 +41,12 @@ public class Service extends BaseService {
 		
 		if (settings != null) {
 			this.defaultTlsPort = settings.getAttribute("DefaultSecurePort", this.defaultTlsPort);
+
+			if (settings.hasNotEmptyAttribute("Protocols"))
+				ResourceHub.getTopResources().getTrust().withProtocols(settings.getAttribute("Protocols").split(","));
+
+			if (settings.hasNotEmptyAttribute("Ciphers"))
+				ResourceHub.getTopResources().getTrust().withCiphers(settings.getAttribute("Ciphers").split(","));
 		}
 		
 		ApplicationHub.subscribeToEvents((e, data) -> {
@@ -55,7 +62,7 @@ public class Service extends BaseService {
 			else if ((e == HubEvents.HubState) && (data == HubState.Stopping))
 				this.goOffline();
 		});
-		
+
 		super.start();
 	}
 	

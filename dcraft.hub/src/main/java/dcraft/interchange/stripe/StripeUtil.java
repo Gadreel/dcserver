@@ -52,7 +52,8 @@ public class StripeUtil {
 			con.setRequestProperty("User-Agent", "dcServer/1.0 (Language=Java/8)");
 			con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 			
-			String body = "amount=" + URLEncoder.encode(amount.toPlainString(), "UTF-8")
+			// switch to cents
+			String body = "amount=" + URLEncoder.encode(amount.multiply(BigDecimal.valueOf(100)).toPlainString(), "UTF-8")
 					+ "&currency=" + URLEncoder.encode(currency, "UTF-8")
 					+ "&source=" + URLEncoder.encode(token, "UTF-8")
 					+ "&description=" + URLEncoder.encode(desc, "UTF-8");
@@ -71,7 +72,7 @@ public class StripeUtil {
 				CompositeStruct resp = CompositeParser.parseJson(con.getInputStream());
 				
 				if (resp == null) {
-					Logger.error("Error processing text: Stripe sent an incomplete response.");
+					Logger.error("Error processing payment: Stripe sent an incomplete response.");
 					callback.returnEmpty();
 					return;
 				}
@@ -177,19 +178,19 @@ or
 					Logger.error("Unable to confirm payment token: " + ((RecordStruct) resp).selectAsString("error.message"));
 
 				// TODO remove sout
-				System.out.println("Stripe Resp:\n" + resp.toPrettyString());
+				//System.out.println("Stripe Resp:\n" + resp.toPrettyString());
 				
 				callback.returnValue((RecordStruct) resp);
 				
 				return;
 			}
 			else {
-				Logger.error("Error processing text: Problem with Stripe gateway.");
+				Logger.error("Error processing payment: Problem with Stripe gateway.");
 			}
 			
 		}
 		catch (Exception x) {
-			Logger.error("Error calling text, Stripe error: " + x);
+			Logger.error("Error calling service, Stripe error: " + x);
 		}
 		
 		callback.returnEmpty();

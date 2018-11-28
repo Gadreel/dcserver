@@ -20,9 +20,7 @@ import dcraft.hub.app.ApplicationHub;
 import io.netty.handler.ssl.*;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -34,7 +32,6 @@ import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -44,12 +41,6 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManager;
 
 import io.netty.handler.ssl.util.SelfSignedCertificate;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DEREncodableVector;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
@@ -114,7 +105,7 @@ public class SslEntry {
 		return SslContextBuilder.forServer(this.keyman)
 				//.ciphers(CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
 				.ciphers(trust.getCiphers())
-				.protocols("TLSv1.2", "TLSv1.3") // TODO review trust.getProtocol())
+				.protocols(trust.getProtocols().toArray(new String[0]))
 				.applicationProtocolConfig(apn)
 				.sslProvider(SslProvider.OPENSSL);
 	}
@@ -244,8 +235,8 @@ public class SslEntry {
 			// show info about the context that can be created from this
 			
 			if (Logger.isDebug()) {
-				// init server context
-				SSLContext serverContext = SSLContext.getInstance(trust.getProtocol());
+				// init server context  TODO show 1.3 too
+				SSLContext serverContext = SSLContext.getInstance("TLSv1.2");
 				serverContext.init(kmf.getKeyManagers(), trust.getAllTrustCerts().toArray(new TrustManager[0]), null);
             
             	Logger.debug("TLS Provider: " + serverContext.getProvider().getName());

@@ -359,6 +359,7 @@
 		<Procedure Name="dcCoreServices.Users.Add" Execute="dcraft.core.db.user.Add" />
 		<Procedure Name="dcCoreServices.Users.Search" Execute="dcraft.core.db.user.Search" />
 		<Procedure Name="dcCoreServices.Users.SignUp" Execute="dcraft.core.db.user.SignUp" />
+		<Procedure Name="dcCoreServices.Users.InitiateRecovery" Execute="dcraft.core.db.user.InitiateRecovery" />
 
 		<Composer Name="dcListCounter" Execute="dcraft.db.proc.comp.ListCounter" Badges="Admin" />
 		<Composer Name="dcConcat" Execute="dcraft.db.proc.comp.Concat" />

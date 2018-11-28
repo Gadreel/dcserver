@@ -143,28 +143,12 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 				return;
 			}
 			
-			//String depositname =  ApplicationHub.getNodeId() + "-" + depositId;
-			
-			//KeyRingCollection keyring = ApplicationHub.getPgpKeyRing();
 			KeyRingResource keyring = ResourceHub.getResources().getKeyRing();
-			
-			/*
-			PGPPublicKeyRing localsign = keyring.findUserPublicKey(ApplicationHub.getNodeId()
-					+ "-signer@" + ApplicationHub.getDeployment() + ".dc");
-			
-			PGPPublicKeyRing leadsign = keyring.findUserPublicKey(
-					"ignite@" + ApplicationHub.getDeployment() + ".dc");
-			*/
 			
 			PGPPublicKeyRing encryptor = keyring.findUserPublicKey("encryptor@" + ApplicationHub.getDeployment() + ".dc");
 			
-			PGPPublicKeyRing publocalsign = keyring.findUserPublicKey(ApplicationHub.getNodeId()
-					+ "-signer@" + ApplicationHub.getDeployment() + ".dc");
-			
 			PGPSecretKeyRing seclocalsign = keyring.findUserSecretKey(ApplicationHub.getNodeId()
 					+ "-signer@" + ApplicationHub.getDeployment() + ".dc");
-			
-			//char[] passpharse = keyring.getPassphrase();
 			
 			// only works because we are in root tenant and so is this vault
 			String transactionid = params.getFieldAsString("Transaction");
@@ -172,7 +156,6 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 			FileCollection finalfiles = new FileCollection();
 			IntegerStruct finalcount = IntegerStruct.of(0L);
 			StringStruct finalsig = StringStruct.ofEmpty();
-			ListStruct finalpaths = ListStruct.list();
 			StringStruct chainsig = StringStruct.ofEmpty();
 			
 			// TODO skip if deposit already written
@@ -184,36 +167,7 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 				return;
 			}
 			
-			RecordStruct manifestrec = params.getFieldAsRecord("Manifest");
-			
-			ListStruct deletes = manifestrec.getFieldAsList("Delete");
-			
-			if ((deletes != null) && (deletes.size() > 0)) {
-				IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
-				
-				FileIndexAdapter adapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
-				
-				String tenant = manifestrec.getFieldAsString("Tenant");
-				String site = manifestrec.getFieldAsString("Site");
-				String vault = manifestrec.getFieldAsString("Vault");
-				
-				Vault idxvault = TenantHub.resolveTenant(tenant).resolveSite(site).getVault(vault);
-				
-				RecordStruct history =  RecordStruct.record()
-						.with("Source", "Deposit")
-						.with("Deposit", depositId)
-						.with("Op", "Delete")
-						.with("TimeStamp", manifestrec.getFieldAsDateTime("TimeStamp"))
-						.with("Node", ApplicationHub.getNodeId());
-				
-				for (int d = 0; d < deletes.size(); d++) {
-					CommonPath dpath = CommonPath.from(deletes.getItemAsString(d));
-					
-					Logger.info("Deleting path: " + dpath);
-					
-					adapter.deleteFile(idxvault, dpath, manifestrec.getFieldAsDateTime("TimeStamp"), history);
-				}
-			}
+			//RecordStruct manifestrec = params.getFieldAsRecord("Manifest");
 			
 			// TODO check and skip the deposit build if that step is already done
 			
@@ -231,62 +185,6 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 			IWork builddeposit = StreamWork.of(
 					StreamUtil.localFile(tarpath).allocStreamSrc(),
 					new UntarStream(),
-					// create manifest - TODO switch to using Untar's Tabulator - or remove Tabulator altogether
-					new TransformFileStream() {
-						protected FileDescriptor lastfd = null;
-						
-						@Override
-						public ReturnOption handle(FileSlice slice) throws OperatingContextException {
-							if (slice != FileSlice.FINAL) {
-								FileDescriptor fd = slice.getFile();
-								
-								if (fd != this.lastfd) {
-									finalpaths.with(fd.getPath());
-									
-									// index the file if local database
-				
-										/* we can now get this
-									.with("Manifest", RecordStruct.record()
-												.with("TimeStamp", TimeUtil.now())
-												.with("Type", "Deposit")
-												.with("Tenant", OperationContext.getOrThrow().getTenant().getAlias())
-												.with("Site", OperationContext.getOrThrow().getSite().getAlias())
-												.with("Vault", vaultname)
-												.with("Write", ListStruct.list())
-										)
-										*/
-									String tenant = manifestrec.getFieldAsString("Tenant");
-									String site = manifestrec.getFieldAsString("Site");
-									String vault = manifestrec.getFieldAsString("Vault");
-									
-									Vault idxvault = TenantHub.resolveTenant(tenant).resolveSite(site).getVault(vault);
-									
-									if (idxvault != null) {
-										IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
-										
-										FileIndexAdapter adapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
-										
-										adapter.indexFile(
-												idxvault,
-												fd.getPathAsCommon(),
-												manifestrec.getFieldAsDateTime("TimeStamp"),
-												RecordStruct.record()
-														.with("Source", "Deposit")
-														.with("Deposit", depositId)
-														.with("Op", "Write")
-														.with("TimeStamp", manifestrec.getFieldAsDateTime("TimeStamp"))
-														.with("Node", ApplicationHub.getNodeId()),
-												true
-										);
-									}
-									
-									this.lastfd = fd;
-								}
-							}
-							
-							return this.consumer.handle(slice);
-						}
-					},
 					new TarStream(),
 					GzipStream.create(),
 					new PgpEncryptStream()
@@ -324,7 +222,7 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 					RecordStruct manifestrec = params.getFieldAsRecord("Manifest");
 					
 					/* we can now get this
-				.with("Manifest", RecordStruct.record()
+					.with("Manifest", RecordStruct.record()
 							.with("TimeStamp", TimeUtil.now())
 							.with("Type", "Deposit")
 							.with("Tenant", OperationContext.getOrThrow().getTenant().getAlias())
@@ -342,12 +240,6 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 						DepositSig: NNNNNN,   (has of current deposit as held by current sig - must agree on alg and val)
 						DepositSignKey: hex of key id,    (just makes it harder to tamper with)
 						DepositEncryptKey: hex of key id,   (just makes it harder to tamper with)
-						Delete: [
-							'path', 'path', 'path'
-						]
-						Write: [                 (just an index, so we know what is in the deposit without reading it)
-							'path', 'path', 'path'
-						]
 					}
 					
 					
@@ -361,7 +253,6 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 					else {
 						manifestrec
 								.with("SplitCount", finalcount)
-								.with("Write", finalpaths)
 								.with("ChainSig", DepositHub.getLastSig(ApplicationHub.getNodeId()))
 								.with("DepositSig", finalsig)
 								.with("DepositSignKey", Long.toHexString(seclocalsign.getPublicKey().getKeyID()))
@@ -409,6 +300,20 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 								});
 							}
 							else {
+								// index the deposit if local database
+								if (ResourceHub.getResources().getDatabases().hasDefaultDatabase()) {
+									IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
+									
+									DatabaseAdapter adapter = connectionManager.allocateAdapter();
+									
+									try {
+										adapter.set("root", "dcDepositIndex", ApplicationHub.getNodeId(), depositId, chain);
+									}
+									catch (DatabaseException x) {
+										Logger.error("Unable to index deposit in db: " + x);
+									}
+								}
+								
 								taskctx.returnEmpty();
 							}
 						}

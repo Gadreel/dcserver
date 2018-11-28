@@ -66,11 +66,15 @@ public class SendText extends Instruction {
 
 			String text = null;
 
-			if (textdoc instanceof Base)
-				text = ((XElement) textdoc).getText();
-			else if ((textdoc instanceof AnyStruct) && (((AnyStruct) textdoc).getValue() instanceof Base))
-				text = ((XElement) ((AnyStruct) textdoc).getValue()).getText();
-			else
+			if (textdoc != null) {
+				XElement template = Struct.objectToXml(textdoc);
+
+				if (template != null) {
+					text = template.getText();
+				}
+			}
+
+			if (text == null)
 				text = this.hasText() ? this.getText() : StackUtil.stringFromSource(stack, "Body");
 
 			if (text != null)

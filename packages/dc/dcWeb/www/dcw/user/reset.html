@@ -1,6 +1,6 @@
 <dc.Html>
 	<Meta Name="Title">
-		<Tr Locale="en" Value="Password Reset / Confirm Code" />
+		<Tr Locale="eng" Value="Account Recovery" />
 	</Meta>
 
 	<dc.Body>
@@ -8,9 +8,11 @@
 			<dcf.Form Name="Reset">
 				<dcf.Text Name="Username" Label="Email" placeholder="email or username" Required="true" />
 
+				<dc.Recaptcha id="recaptcha" Func="DoSubmit" />
+
 				<dcf.FormButtons>
 					<dc.Button Label="Cancel" Click="onCancel" />
-					<dc.Button Label="Request Reset" Click="DoConfirm" />
+					<dc.Button Label="Request Reset" Click="DoRecaptcha" />
 				</dcf.FormButtons>
 			</dcf.Form>
 		</dc.PagePanel>
@@ -21,15 +23,28 @@
 
 				entry.Layer.back();
 	</Function>
-	<Function Name="DoConfirm" Params="e">
+	<Function Name="DoRecaptcha" Params="e"><![CDATA[
+		var page = this;
+
+		var vres = page.form().validate();
+
+		if (vres.Pass) {
+			page.callTagFunc('#recaptcha', 'execute');
+		}
+		else {
+			page.form().updateMessages(vres);
+		}
+	]]></Function>
+	<Function Name="DoSubmit" Params="e"><![CDATA[
 				var entry = this;
 
 				dc.comm.sendMessage({
 					Service: 'dcCoreServices',
 					Feature: 'Users',
-					Op: 'InitiateConfirm',
+					Op: 'InitiateRecovery',
 					Body: {
-						Username: entry.form().getValue('Username')
+						Username: entry.form().getValue('Username'),
+						Captcha: $('#recaptcha').attr('data-response')
 					}
 				}, function(resp) {
 					if (resp.Result > 0) {
@@ -41,5 +56,5 @@
 						});
 					}
 				});
-	</Function>
+	]]></Function>
 </dc.Html>

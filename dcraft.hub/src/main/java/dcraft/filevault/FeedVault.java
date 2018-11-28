@@ -1,83 +1,57 @@
 package dcraft.filevault;
 
+import dcraft.cms.feed.db.FeedUtilDb;
+import dcraft.cms.feed.work.ReindexFeedWork;
 import dcraft.cms.util.FeedUtil;
+import dcraft.db.BasicRequestContext;
+import dcraft.db.IConnectionManager;
 import dcraft.db.fileindex.FileIndexAdapter;
-import dcraft.db.request.DataRequest;
+import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
-import dcraft.filestore.FileStore;
 import dcraft.filestore.FileStoreFile;
-import dcraft.filestore.local.LocalStore;
 import dcraft.filestore.mem.MemoryStoreFile;
 import dcraft.filevault.work.FeedSearchWork;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.*;
 import dcraft.log.Logger;
-import dcraft.service.ServiceHub;
-import dcraft.stream.file.MemorySourceStream;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.task.ChainWork;
-import dcraft.task.Task;
 import dcraft.task.TaskHub;
-import dcraft.util.FileUtil;
 import dcraft.util.StringUtil;
-import dcraft.web.WebController;
 import dcraft.web.ui.UIUtil;
 import dcraft.xml.*;
-import z.dga.db.ImportMsgWork;
 
-import java.io.IOException;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.EnumSet;
 import java.util.List;
 
 public class FeedVault extends Vault {
 	// TODO if delete "pages" path also delete the "www" file
 
-	public void commitFiles(Transaction tx) throws OperatingContextException {
-		ListStruct deletes = ListStruct.list();
-		ListStruct updates = ListStruct.list();
+	@Override
+	public void processTransaction(TransactionBase tx) throws OperatingContextException {
+		// Feeds needs to be a local store with Expand mode
 
-		FileStore vfs = this.getFileStore();
-
-		if (vfs instanceof LocalStore) {
-			for (CommonPath delete : tx.getDeletelist())
-				deletes.with(delete);
-
-			Path source = tx.getFolder().getPath();
-
-			try {
-				if (Files.exists(source)) {
-					Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
-							new SimpleFileVisitor<Path>() {
-								@Override
-								public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-									if (file.endsWith(".DS_Store"))
-										return FileVisitResult.CONTINUE;
-
-									Path dest = source.relativize(file);
-
-									updates.with(CommonPath.from("/" + dest.toString()));
-
-									return FileVisitResult.CONTINUE;
-								}
-							});
-				}
-			}
-			catch (IOException x) {
-				Logger.error("Error copying file tree: " + x);
-			}
-
+		// process moves the files
+		super.processTransaction(tx);
+		
+		IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
+		
+		TablesAdapter adapter = TablesAdapter.ofNow(BasicRequestContext.of(connectionManager.allocateAdapter()));
+		
+		FileIndexAdapter fileIndexAdapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
+		
+		for (CommonPath file : tx.getDeletelist()) {
+			FeedUtilDb.deleteFeedIndex(adapter, file);
 		}
-
-		super.commitFiles(tx);
-
-		ServiceHub.call(DataRequest.of("dcmUpdateFeed")
-				.withParam("Updated", updates)
-				.withParam("Deleted" ,deletes)
-		);
+		
+		for (CommonPath file : tx.getUpdateList()) {
+			FeedUtilDb.updateFeedIndex(adapter, file);
+			
+			TaskHub.submit(
+					UIUtil.mockWebRequestTask(this.tenant, this.site, "Feed file search indexing")
+							.withWork(FeedSearchWork.of(this, file, fileIndexAdapter))
+			);
+		}
 	}
 
 	@Override
@@ -559,13 +533,4 @@ public class FeedVault extends Vault {
 		
 		super.executeCustom(request, checkAuth, fcb);
 	}
-	
-	@Override
-	public void updateFileIndex(CommonPath file, FileIndexAdapter adapter) throws OperatingContextException {
-		TaskHub.submit(
-				UIUtil.mockWebRequestTask(this.tenant, this.site, "Feed file search indexing")
-					.withWork(FeedSearchWork.of(this, file, adapter))
-		);
-	}
-	
 }

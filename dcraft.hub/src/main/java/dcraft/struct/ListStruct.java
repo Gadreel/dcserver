@@ -652,6 +652,23 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		return this.items.contains(v);
 	}
 
+	public String join(String delim) {
+		boolean first = true;
+		StringBuilder res = new StringBuilder();
+
+		for (Struct o : this.items) {
+			if (first)
+				first = false;
+			else
+				res.append(delim);
+
+			if (o != null)
+				res.append(Struct.objectToString(o));
+		}
+
+		return res.toString();
+	}
+
 	public List<Object> toObjectList() {
 		List<Object> nlist = new ArrayList<>();
 		
