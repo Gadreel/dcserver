@@ -107,18 +107,17 @@
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 			var page = this;
 
-
-			debugger;
-
+			var ppos = page.Params.Path.indexOf('/', 1);
+			var vpath = (ppos != -1) ? page.Params.Path.substr(ppos) : '';
 
 			// set destination path
-			page.Store.Slug = '/' + e.Data.Path;
-			page.Store.NewPath = '{$DestinationPath}/' + e.Data.Path;
+			page.Store.Slug = page.Params.Path + '/' + e.Data.Path + '.html';
+			page.Store.NewPath = '{$DestinationPath}' + vpath + '/' + e.Data.Path;
 
 			var savedata = {
 				Command: 'AddFeed',
 				Vault: page.Store.Vault,
-				Path: page.Params.Path + '/' + e.Data.Path + '.html',
+				Path: page.Store.Slug,
 				Params: {
 					Template: e.Data.Template,
 					SetFields: []

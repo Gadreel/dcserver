@@ -64,7 +64,9 @@ public class FileIndexAdapter {
 		try {
 			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
 			
-			boolean isfile = Struct.objectToBooleanOrFalse(this.request.getInterface().get(indexkeys.toArray()));
+			Object fmarker = this.request.getInterface().get(indexkeys.toArray());
+			
+			boolean isfile = Struct.objectToBooleanOrFalse(fmarker) || "File".equals(Struct.objectToString(fmarker));
 			
 			if (isfile) {
 				RecordStruct frec = RecordStruct.record();
@@ -170,6 +172,21 @@ public class FileIndexAdapter {
 		}
 	}
 	
+	public void clearSiteIndex(Site site) {
+		try {
+			List<Object> indexkeys = new ArrayList<>();
+			
+			indexkeys.add(site.getTenant().getAlias());
+			indexkeys.add("dcFileIndex");
+			indexkeys.add(site.getAlias());
+			
+			this.request.getInterface().kill(indexkeys.toArray());
+		}
+		catch (DatabaseException x) {
+			Logger.error("Unable to clea file index in site db: " + x);
+		}
+	}
+	
 	public void clearVaultIndex(Vault vault) {
 		try {
 			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, null);
@@ -186,7 +203,7 @@ public class FileIndexAdapter {
 			// set entry marker
 			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
 			
-			indexkeys.add(true);
+			indexkeys.add("File");
 			
 			this.request.getInterface().set(indexkeys.toArray());
 			
@@ -209,6 +226,8 @@ public class FileIndexAdapter {
 			
 			// don't use  ByteUtil.dateTimeToReverse(file.getModificationAsTime()) - using zero is better for eventual consistency across nodes
 			this.request.getInterface().set(indexkeys.toArray());
+			
+			this.indexFolderEnsure(vault, path.getParent());
 		}
 		catch (DatabaseException x) {
 			Logger.error("Unable to index file " + path + " in db: " + x);
@@ -258,9 +277,52 @@ public class FileIndexAdapter {
 								.with("Node", ApplicationHub.getNodeId())
 				);
 			}
+			else {
+				this.indexFolderEnsure(vault, path.getParent());
+			}
 		}
 		catch (DatabaseException x) {
-			Logger.error("Unable to search index file " + path + " in db: " + x);
+			Logger.error("Unable to ensure index file " + path + " in db: " + x);
+		}
+	}
+	
+	public void indexFolderEnsure(Vault vault, CommonPath path) throws OperatingContextException {
+		if (path.isRoot())
+			return;
+		
+		try {
+			// set public marker
+			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			
+			ZonedDateTime now = TimeUtil.now();
+			
+			Object fmarker = this.request.getInterface().get(indexkeys.toArray());
+			
+			//boolean isfile = Struct.objectToBooleanOrFalse(fmarker) || "File".equals(Struct.objectToString(fmarker));
+			
+			if (fmarker == null) {
+				// check for implied folder
+				indexkeys.add(null);
+				
+				byte[] pkey = this.request.getInterface().nextPeerKey(indexkeys.toArray());
+				
+				// if none implied then force
+				if (pkey == null) {
+					indexkeys.remove(indexkeys.size() - 1);
+					
+					indexkeys.add("Folder");
+					this.request.getInterface().set(indexkeys.toArray());
+				}
+			}
+			else if ("XFolder".equals(Struct.objectToString(fmarker))) {
+				indexkeys.add("Folder");
+				this.request.getInterface().set(indexkeys.toArray());
+			}
+			
+			this.indexFolderEnsure(vault, path.getParent());
+		}
+		catch (DatabaseException x) {
+			Logger.error("Unable to ensure index folder " + path + " in db: " + x);
 		}
 	}
 	
@@ -365,9 +427,11 @@ public class FileIndexAdapter {
 		try {
 			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
 			
-			Object mm = this.request.getInterface().get(indexkeys.toArray());
+			Object fmarker = this.request.getInterface().get(indexkeys.toArray());
 			
-			if ((mm instanceof Boolean) && ((Boolean) mm)) {
+			boolean isfile = Struct.objectToBooleanOrFalse(fmarker) || "File".equals(Struct.objectToString(fmarker));
+
+			if (isfile) {
 				// state
 				indexkeys.add("State");
 				indexkeys.add((time != null) ? ByteUtil.dateTimeToReverse(time) : BigDecimal.ZERO);
@@ -384,7 +448,26 @@ public class FileIndexAdapter {
 				
 				this.request.getInterface().set(indexkeys.toArray());
 			}
-			else {
+			else if ("Folder".equals(Struct.objectToString(fmarker))) {
+				indexkeys.add("XFolder");
+				
+				this.request.getInterface().set(indexkeys.toArray());
+			}
+			else if (fmarker == null) {
+				// check if this is an implied folder
+				
+				indexkeys.add(null);
+				
+				byte[] pkey = this.request.getInterface().nextPeerKey(indexkeys.toArray());
+				
+				while (pkey != null) {
+					indexkeys.remove(indexkeys.size() - 1);
+					indexkeys.add("XFolder");
+					
+					this.request.getInterface().set(indexkeys.toArray());
+				}
+				
+				/*
 				// start at top
 				indexkeys.add(null);
 				
@@ -402,6 +485,7 @@ public class FileIndexAdapter {
 					
 					pkey = this.request.getInterface().nextPeerKey(indexkeys.toArray());
 				}
+				*/
 			}
 		}
 		catch (DatabaseException x) {

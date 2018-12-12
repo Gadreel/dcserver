@@ -1,5 +1,6 @@
 package dcraft.filestore;
 
+import dcraft.hub.op.OperatingContextException;
 import dcraft.log.Logger;
 import dcraft.struct.IPartSelector;
 import dcraft.struct.PathPart;
@@ -11,10 +12,30 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 
 public class FileDescriptor extends RecordStruct {
+	// TODO move this, confusing for subclasses
 	static public FileDescriptor of(String path) {
 		FileDescriptor fd = new FileDescriptor();
 		fd.withPath(path);
 		return fd;
+	}
+	
+	public boolean exists() {
+		return this.getFieldAsBooleanOrFalse("Exists");
+	}
+	
+	public FileDescriptor withExists(boolean v) {
+		this.with("Exists", v);
+		return this;
+	}
+	
+	// file description has been confirmed by consulting the source of the file
+	public boolean confirmed() {
+		return this.getFieldAsBooleanOrFalse("Confirmed");
+	}
+	
+	public FileDescriptor withConfirmed(boolean v) {
+		this.with("Confirmed", v);
+		return this;
 	}
 	
 	public String getName() {
@@ -68,6 +89,10 @@ public class FileDescriptor extends RecordStruct {
 	public FileDescriptor withIsFolder(boolean v) {
 		this.with("IsFolder", v);
 		return this;
+	}
+	
+	public RecordStruct getExtra() throws OperatingContextException {
+		return this.getFieldAsRecord("Extra");
 	}
 	
 	public CommonPath resolvePath(CommonPath path) {

@@ -5,14 +5,11 @@ import dcraft.db.DatabaseException;
 import dcraft.db.IConnectionManager;
 import dcraft.filestore.CommonPath;
 import dcraft.hub.ResourceHub;
-import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.log.Logger;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.util.FileUtil;
-
-import java.time.ZonedDateTime;
 
 public class ManifestTransaction extends TransactionBase {
 	static public ManifestTransaction of(Vault vault, RecordStruct manifest, String depositid, String nodeid) {
@@ -59,7 +56,7 @@ public class ManifestTransaction extends TransactionBase {
 	 * completely destroyed before such sync can happen
 	 */
 	public void commit() throws OperatingContextException {
-		this.vault.expandTransaction(this);
+		this.vault.beforeSubmitTransaction(this);
 
 		// delete the expanded temp files remaining, if any, and the folder
 		FileUtil.deleteDirectory(this.getFolder().getPath());

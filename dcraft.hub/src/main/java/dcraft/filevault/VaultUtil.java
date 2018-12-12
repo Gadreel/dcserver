@@ -77,7 +77,7 @@ public class VaultUtil {
 				return;
 			}
 
-			Object so = ((RecordStruct)centry).getFieldAsAny("Stream");
+			Object so = ((RecordStruct)centry).getFieldAsRecord("Stream");
 
 			if ((so == null) || ! (so instanceof StreamFragment)) {
 				Logger.error("Invalid channel number, not a stream, unable to transfer.");

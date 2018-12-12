@@ -25,6 +25,6 @@ public class LessThan extends TwoExpression {
 	
 	@Override
 	public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, String id) throws OperatingContextException {
-		return (this.compare(adapter, id) == -1) ? ExpressionResult.ACCEPTED : ExpressionResult.REJECTED;
+		return (this.compare(adapter, id) == -1) ? this.nestOrAccept(adapter, scope, table, id) : ExpressionResult.REJECTED;
 	}
 }

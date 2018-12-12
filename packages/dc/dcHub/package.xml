@@ -251,11 +251,13 @@
 			<Tag Name="dcs.CatalogSettings" Class="dcraft.script.inst.ext.CatalogSettings" />
 
 			<Tag Name="dcs.File" Class="dcraft.script.inst.file.File" />
+			<Tag Name="dcs.Stream" Class="dcraft.script.inst.file.Stream" />
 
 			<Tag Name="dcs.TranslationTemplate" Class="dcraft.script.inst.doc.TranslationTemplate" />
 		</Instructions>
 
 		<Formatters>
+			<Definition Code="ascii" Class="dcraft.struct.format.AsciiFormatter" />
 			<Definition Code="dec" Class="dcraft.struct.format.DecimalFormatter" />
 			<Definition Code="dt" Class="dcraft.struct.format.DateTimeFormatter" />
 			<Definition Code="ld" Class="dcraft.struct.format.LocalDateFormatter" />

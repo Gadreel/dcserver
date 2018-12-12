@@ -5,12 +5,17 @@ import dcraft.cms.feed.work.ReindexFeedWork;
 import dcraft.db.BasicRequestContext;
 import dcraft.db.IConnectionManager;
 import dcraft.db.fileindex.FileIndexAdapter;
+import dcraft.filestore.FileDescriptor;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.local.LocalStoreFile;
+import dcraft.filevault.work.VaultIndexLocalFilesWork;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.*;
+import dcraft.stream.IStream;
+import dcraft.stream.IStreamSource;
 import dcraft.stream.StreamFragment;
+import dcraft.task.IWork;
 import dcraft.tenant.Base;
 import dcraft.tenant.Site;
 import dcraft.tenant.Tenant;
@@ -36,11 +41,9 @@ import dcraft.struct.scalar.BooleanStruct;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
-public class Vault {
+abstract public class Vault {
 	static public Vault of(Site tenancy, XElement vaultdef) throws OperatingContextException {
-		Vault b = vaultdef.hasNotEmptyAttribute("VaultClass")
-				? (Vault) OperationContext.getOrThrow().getResources().getClassLoader().getInstance(vaultdef.getAttribute("VaultClass"))
-				: new Vault();
+		Vault b = (Vault) OperationContext.getOrThrow().getResources().getClassLoader().getInstance(vaultdef.getAttribute("VaultClass"));
 
 		b.init(tenancy, vaultdef, null);
 
@@ -48,8 +51,6 @@ public class Vault {
 	}
 
 	protected String name = null;
-	protected FileStore fsd = null;
-	protected VaultMode mode = VaultMode.Expand;		// TODO currently no support for any of the SHared modes
 	protected String bestEvidence = null;
 	protected String minEvidence = null;
 	protected String[] readauthlist = null;
@@ -96,9 +97,6 @@ public class Vault {
 		}
 		*/
 		
-		if (bel.hasNotEmptyAttribute("Mode"))
-			this.mode = VaultMode.valueOf(bel.getAttribute("Mode"));
-		
 		String ratags = bel.getAttribute("ReadBadges");
 		
 		if (StringUtil.isNotEmpty(ratags)) 
@@ -113,25 +111,10 @@ public class Vault {
 		
 		this.bestEvidence = bel.getAttribute("BestEvidence", "SHA256");
 		this.minEvidence = bel.getAttribute("MinEvidence","Size");
-		
-		String root = bel.hasNotEmptyAttribute("DirectPath")
-				? bel.getAttribute("DirectPath")
-				: di.resolvePath(bel.getAttribute("RootFolder", "./vault/" + this.name)).toAbsolutePath().normalize().toString();
-
-		RecordStruct cparams = new RecordStruct().with("RootFolder", root);
-		
-		// TODO enhance, someday this doesn't have to be a local FS
-		this.fsd = new LocalStore();
-		
-		this.fsd.connect(cparams, cb);
 	}
 	
 	public String getName() {
 		return this.name;
-	}
-	
-	public VaultMode getMode() {
-		return this.mode;
 	}
 	
 	public String getBestEvidence() {
@@ -142,7 +125,11 @@ public class Vault {
 		return this.minEvidence;
 	}
 	
-	public boolean checkReadAccess(String op, RecordStruct request) throws OperatingContextException {
+	public boolean isUploadtokenRequired() {
+		return this.uploadtoken;
+	}
+	
+	public boolean checkReadAccess(String op, String path, RecordStruct params) throws OperatingContextException {
 		UserContext uctx = OperationContext.getOrThrow().getUserContext();
 		
 		if (this.readauthlist == null)
@@ -151,7 +138,7 @@ public class Vault {
 		return uctx.isTagged(this.readauthlist);
 	}
 	
-	public boolean checkWriteAccess(String op, RecordStruct request) throws OperatingContextException {
+	public boolean checkWriteAccess(String op, String path, RecordStruct params) throws OperatingContextException {
 		UserContext uctx = OperationContext.getOrThrow().getUserContext();
 		
 		if (this.writeauthlist == null)
@@ -160,7 +147,12 @@ public class Vault {
 		return uctx.isTagged(this.writeauthlist);
 	}
 	
-	public boolean checkUploadToken(RecordStruct data, FileStoreFile file) throws OperatingContextException {
+	// defaults to write access
+	public boolean checkCustomAccess(String cmd, String path, RecordStruct params) throws OperatingContextException {
+		return this.checkWriteAccess("Custom", path, params);
+	}
+	
+	public boolean checkUploadToken(RecordStruct data, FileDescriptor file) throws OperatingContextException {
 		if (!this.uploadtoken)
 			return true;
 		
@@ -181,67 +173,33 @@ public class Vault {
 		
 		return false;
 	}
-	
-	public FileStore getFileStore() {
-		return this.fsd;
-	}
 
 	// TODO should use a callback approach
-	public void expandTransaction(TransactionBase tx) throws OperatingContextException {
-		if (this.getMode() != VaultMode.Expand)
-			return;
-		
-		FileStore vfs = this.getFileStore();
-
-		if (vfs instanceof LocalStore) {
-			// delete and move
-			for (CommonPath delete : tx.getDeletelist())
-				vfs.fileReference(delete).remove(null);		// TODO should wait, doesn't matter with locals though
-			
-			FileUtil.moveFileTree(tx.getFolder().getPath(), ((LocalStore) vfs).getPath(), null);
-		}
-		else {
-			// TODO add Expand for non-local vaults - probably just to the deposit worker since
-			// non-local vaults are not guaranteed to be expanded at end of this call
-			Logger.error("Non-local Expand Vaults not yet supported!");
-		}
+	public void beforeSubmitTransaction(TransactionBase tx) throws OperatingContextException {
+		// nothing to do
 	}
 	
 	public void processTransaction(TransactionBase tx) throws OperatingContextException {
-		if (this.getMode() != VaultMode.Expand)
-			return;
+		IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
 		
-		FileStore vfs = this.getFileStore();
-
-		if (vfs instanceof LocalStore) {
-			// index the file if local database
-
-			IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
-			
-			FileIndexAdapter adapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
-			
-			for (CommonPath file : tx.getDeletelist()) {
-				adapter.deleteFile(
-						this,
-						file,
-						tx.getTimestamp(),
-						this.buildHistory(tx, "Delete")
-				);
-			}
-			
-			for (CommonPath file : tx.getUpdateList()) {
-				adapter.indexFile(
-						this,
-						file,
-						tx.getTimestamp(),
-						this.buildHistory(tx, "Write")
-				);
-			}
+		FileIndexAdapter adapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
+		
+		for (CommonPath file : tx.getDeletelist()) {
+			adapter.deleteFile(
+					this,
+					file,
+					tx.getTimestamp(),
+					this.buildHistory(tx, "Delete")
+			);
 		}
-		else {
-			// TODO add Expand for non-local vaults - probably just to the deposit worker since
-			// non-local vaults are not guaranteed to be expanded at end of this call
-			Logger.error("Non-local Expand Vaults not yet supported!");
+		
+		for (CommonPath file : tx.getUpdateList()) {
+			adapter.indexFile(
+					this,
+					file,
+					tx.getTimestamp(),
+					this.buildHistory(tx, "Write")
+			);
 		}
 	}
 
@@ -261,18 +219,16 @@ public class Vault {
 				.with("Node", tx.getNodeId());
 	}
 	
-	/*
-	public void updateFileIndex(CommonPath file, FileIndexAdapter adapter) throws OperatingContextException {
-		// default is nothing
+	public IWork buildIndexWork() {
+		return null;
 	}
-	*/
-
+	
 	/*
 	 * ================ programming points ==================
 	 */
 	
 	// return true if executed something
-	protected boolean tryExecuteMethod(String name, Object... params) {
+	public boolean tryExecuteMethod(String name, Object... params) {
 	/* groovy
 		if (this.script == null)
 			return false;
@@ -304,987 +260,97 @@ public class Vault {
 		return false;
 	}
 	
-	// feedback
-	// - a file  (file returned may have IsReadable and IsWritable set to indicate permissions for current context)
-	// - log errors
-	protected void mapRequest(RecordStruct data, OperationOutcome<FileStoreFile> fcb) {
-		if (this.tryExecuteMethod("MapRequest", this, data, fcb))
+	public void executeCustom(RecordStruct request, OperationOutcomeStruct fcb) throws OperatingContextException {
+		RecordStruct resp = RecordStruct.record();
+		
+		if (this.tryExecuteMethod("Custom", request, resp, fcb))
 			return;
 		
-		String path = data.getFieldAsString("Path");
-		
-		this.fsd.getFileDetail(new CommonPath(path), fcb);
+		fcb.returnValue(resp);
 	}
 
-	// feedback
-	// - lister is optional - it can filter entries and embellish entries
-	// - log errors
-	// - provide Extra response
-	protected void getLister(FileStoreFile fi, RecordStruct data, OperationOutcome<VaultLister> fcb) {
-		// TODO
-	}
-
-	// feedback
-	// - replace a file with another 
-	// - log errors
-	// - provide Extra response
-	protected void beforeStartDownload(FileStoreFile fi, RecordStruct data, RecordStruct extra, OperationOutcome<FileStoreFile> fcb) {
-		if (this.tryExecuteMethod("BeforeStartDownload", this, fi, data, extra, fcb))
+	public void beforeStartDownload(FileDescriptor fi, RecordStruct params, OperationOutcome<FileDescriptor> cb) {
+		if (this.tryExecuteMethod("BeforeStartDownload", fi, params, cb))
 			return;
 		
-		fcb.returnValue(fi);
+		cb.returnValue(fi);
 	}
 
-	// feedback
-	// - log errors
-	// - provide Extra response
-	protected void afterStartDownload(FileStoreFile fi, RecordStruct data, RecordStruct resp, OperationOutcomeStruct cb) {
-		if (this.tryExecuteMethod("AfterStartDownload", this, fi, data, resp, cb))
+	public void afterStartDownload(FileDescriptor fi, RecordStruct resp, OperationOutcomeStruct cb) {
+		if (this.tryExecuteMethod("AfterStartDownload", fi, resp, cb))
 			return;
 		
 		cb.returnValue(resp);
 	}
 
-	// feedback
-	// - log errors
-	// - provide Extra response
-	protected void finishDownload(FileStoreFile fi, RecordStruct data, RecordStruct extra, boolean pass, String evidenceUsed, OperationOutcomeStruct cb) {
-		if (this.tryExecuteMethod("FinishDownload", this, fi, data, extra, pass, evidenceUsed, cb))
+	public void finishDownload(FileDescriptor fi, RecordStruct data, RecordStruct extra, boolean pass, String evidenceUsed, OperationOutcomeStruct cb) {
+		if (this.tryExecuteMethod("FinishDownload", fi, data, extra, pass, evidenceUsed, cb))
 			return;
 		
-		cb.returnValue(extra);
+		cb.returnValue(RecordStruct.record().with("Extra", extra));
 	}
 
-	// feedback
-	// - replace a file with another 
-	// - log errors
-	// - provide Extra response
-	protected void beforeStartUpload(FileStoreFile fi, RecordStruct data, RecordStruct extra, OperationOutcome<FileStoreFile> fcb) {
-		if (this.tryExecuteMethod("BeforeStartUpload", this, fi, data, extra, fcb))
+	public void beforeStartUpload(FileDescriptor fi, RecordStruct params, OperationOutcome<FileDescriptor> cb) {
+		if (this.tryExecuteMethod("BeforeStartUpload", fi, params, cb))
 			return;
 		
-		fcb.returnValue(fi);
+		cb.returnValue(fi);
 	}
 
-	// feedback
-	// - log errors
-	// - provide Extra response
-	protected void afterStartUpload(FileStoreFile fi, RecordStruct data, RecordStruct resp, OperationOutcomeStruct cb) {
-		if (this.tryExecuteMethod("AfterStartUpload", this, fi, data, resp, cb))
+	public void afterStartUpload(FileDescriptor fi, RecordStruct resp, OperationOutcomeStruct cb) {
+		if (this.tryExecuteMethod("AfterStartUpload", fi, resp, cb))
 			return;
 		
 		cb.returnValue(resp);
 	}
 
-	// feedback
-	// - log errors
-	// - provide Extra response
-	protected void finishUpload(FileStoreFile fi, RecordStruct data, RecordStruct extra, boolean pass, String evidenceUsed, OperationOutcomeStruct cb) {
-		// TODO consider the Watch triggers
-		//
-		//if (! fcb.hasErrors())
-		//	Vault.this.watch("Upload", fi);
-		
-		if (this.tryExecuteMethod("FinishUpload", this, fi, data, extra, pass, evidenceUsed, cb))
+	public void finishUpload(FileDescriptor fi, RecordStruct extra, boolean pass, String evidenceUsed, OperationOutcomeStruct cb) {
+		if (this.tryExecuteMethod("FinishUpload", fi, extra, pass, evidenceUsed, cb))
 			return;
 		
-		cb.returnValue(extra);
+		cb.returnValue(RecordStruct.record().with("Extra", extra));
 	}
 
-	// feedback
-	// - log errors
-	// - provide Extra response
-	protected void beforeRemove(FileStoreFile fi, RecordStruct data, RecordStruct extra, OperationOutcomeEmpty cb) {
-		if (this.tryExecuteMethod("BeforeRemove", this, fi, data, extra, cb))
+	protected void beforeRemove(FileDescriptor fi, RecordStruct params, OperationOutcomeEmpty cb) {
+		if (this.tryExecuteMethod("BeforeRemove", fi, params, cb))
 			return;
 		
-		cb.returnResult();
+		cb.returnEmpty();
 	}
 
-	// feedback
-	// - log errors
-	// - provide Extra response
-	protected void afterRemove(FileStoreFile fi, RecordStruct data, RecordStruct extra, OperationOutcomeStruct cb) {
-		if (this.tryExecuteMethod("AfterRemove", this, fi, data, extra, cb))
+	protected void afterRemove(FileDescriptor fi, RecordStruct params, OperationOutcomeEmpty cb) {
+		if (this.tryExecuteMethod("AfterRemove", fi, params, cb))
 			return;
 		
-		cb.returnValue(extra);
-	}
-	
-	protected String createTransactionId(RecordStruct data, RecordStruct extra) {
-		return Transaction.createTransactionId();  // token is protected by session - session id is secure random
+		cb.returnEmpty();
 	}
 	
 	/*
 	 * ================ features ==================
 	 */
-
-	public void getFileDetail(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
-		try {
-			// check bucket security
-			if (checkAuth && ! this.checkReadAccess("FileDetail", request)) {
-				Logger.errorTr(434);
-				fcb.returnEmpty();
-				return;
-			}
-			
-			this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
-				@Override
-				public void callback(FileStoreFile result) throws OperatingContextException {
-					if (this.hasErrors()) {
-						fcb.returnEmpty();
-						return;
-					}
-					
-					if (this.isEmptyResult()) {
-						Logger.error("Your request appears valid but does not map to a file.  Unable to complete.");
-						fcb.returnEmpty();
-						return;
-					}
-					
-					FileStoreFile fi = this.getResult();
-					
-					if (!fi.exists()) {
-						Logger.error("File does not exist");
-						fcb.returnEmpty();
-						return;
-					}
-					
-					RecordStruct fdata = new RecordStruct();
-					
-					fdata.with("FileName", fi.getName());
-					fdata.with("IsFolder", fi.isFolder());
-					fdata.with("Modified", fi.getModificationAsTime());
-					fdata.with("Size", fi.getSize());
-					fdata.with("Extra", fi.getExtra());
-					
-					String meth = request.getFieldAsString("Method");
-					
-					if (StringUtil.isEmpty(meth) || fi.isFolder()) {
-						fcb.returnValue(fdata);
-						return;
-					}
-			
-					fi.hash(meth, new OperationOutcome<String>() {						
-						@Override
-						public void callback(String result) throws OperatingContextException {
-							if (! fcb.hasErrors()) {
-								fdata.with("Hash", result);
-								fcb.returnValue(fdata);
-							}
-							else {
-								fcb.returnEmpty();
-							}
-						}
-					});
-				}
-			});
-		} 
-		catch (OperatingContextException x) {
-			Logger.error("Operating context error: " + x);
-			fcb.returnEmpty();
-		}
-	}
 	
-	public void deleteFile(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
-		try {
-			// check bucket security
-			if (checkAuth && ! this.checkWriteAccess("DeleteFile", request)) {
-				Logger.errorTr(434);
-				fcb.returnValue(null);
-				return;
-			}
-			
-			this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
-				@Override
-				public void callback(FileStoreFile result) throws OperatingContextException {
-					if (this.hasErrors()) {
-						fcb.returnEmpty();
-						return;
-					}
-					
-					if (this.isEmptyResult()) {
-						Logger.error("Your request appears valid but does not map to a file.  Unable to complete.");
-						fcb.returnEmpty();
-						return;
-					}
-					
-					FileStoreFile fi = this.getResult();
-					RecordStruct extra = new RecordStruct();
-					
-					Vault.this.beforeRemove(fi, request, extra, new OperationOutcomeEmpty() {
-						@Override
-						public void callback() throws OperatingContextException {
-							if (this.hasErrors() || ! fi.exists()) {
-								fcb.returnValue(extra);
-								return;
-							}
-
-							fi.remove(new OperationOutcomeEmpty() {					
-								@Override
-								public void callback() throws OperatingContextException {
-									Transaction ftx = Transaction.of(Vault.this);
-									
-									ftx.withDelete(fi.getPathAsCommon());
-									
-									ftx.commitTransaction(new OperationOutcomeEmpty() {
-										@Override
-										public void callback() throws OperatingContextException {
-											Vault.this.afterRemove(fi, request, extra, fcb);
-										}
-									});
-								}
-							});
-						}
-					});
-				}
-			});
-		} 
-		catch (OperatingContextException x) {
-			Logger.error("Operating context error: " + x);
-			fcb.returnEmpty();
-		}
-	}
+	// add more methods for mapping (delete, hash, add folder)
 	
-	public void addFolder(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
-		try {
-			// check bucket security
-			if (checkAuth && ! this.checkWriteAccess("AddFolder", request)) {
-				Logger.errorTr(434);
-				fcb.returnResult();
-				return;
-			}
-			
-			this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
-				@Override
-				public void callback(FileStoreFile result) throws OperatingContextException {
-					if (this.hasErrors()) {
-						fcb.returnResult();
-						return;
-					}
-					
-					if (this.isEmptyResult()) {
-						Logger.error("Your request appears valid but does not map to a file.  Unable to complete.");
-						fcb.returnResult();
-						return;
-					}
-					
-					FileStoreFile fi = this.getResult();
-					
-					if (fi.exists() && fi.isFolder()) {
-						fcb.returnResult();
-						return;
-					}
-					
-					if (fi.exists() && !fi.isFolder()) {
-						Logger.error("Path already maps to a file, unable to create folder");
-						fcb.returnResult();
-						return;
-					}
-
-					Vault.this.fsd.addFolder(fi.getPathAsCommon(), new OperationOutcome<FileStoreFile>() {
-						@Override
-						public void callback(FileStoreFile result) throws OperatingContextException {
-							fcb.returnResult();
-						}
-					});
-				}
-			});
-		} 
-		catch (OperatingContextException x) {
-			Logger.error("Operating context error: " + x);
-			fcb.returnEmpty();
-		}
-	}
-	
-	// TODO test this, somehow FullPath was returned to call (or in an error maybe)
-	public void listFiles(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
-		try {
-			// check bucket security
-			if (checkAuth && ! this.checkReadAccess("ListFiles", request)) {
-				Logger.errorTr(434);
-				fcb.returnEmpty();
-				return;
-			}
-			
-			this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
-				@Override
-				public void callback(FileStoreFile result) throws OperatingContextException {
-				if (this.hasErrors()) {
-					fcb.returnEmpty();
-					return;
-				}
-
-				if (this.isEmptyResult()) {
-					Logger.error("Your request appears valid but does not map to a file.  Unable to complete.");
-					fcb.returnEmpty();
-					return;
-				}
-
-				FileStoreFile fi = this.getResult();
-
-				if (!fi.exists()) {
-					fcb.returnEmpty();
-					return;
-				}
-
-				Vault.this.fsd.getFolderListing(fi.getPathAsCommon(), new OperationOutcome<List<FileStoreFile>>() {
-					@Override
-					public void callback(List<FileStoreFile> result) throws OperatingContextException {
-						if (this.hasErrors()) {
-							fcb.returnValue(null);
-							return;
-						}
-
-						boolean showHidden = OperationContext.getOrThrow().getUserContext().isTagged("Admin");
-
-						ListStruct files = new ListStruct();
-
-						for (FileStoreFile file : this.getResult()) {
-							if (file.getName().equals(".DS_Store"))
-								continue;
-
-							if (!showHidden && file.getName().startsWith("."))
-								continue;
-
-							RecordStruct fdata = new RecordStruct();
-
-							fdata.with("FileName", file.getName());
-							fdata.with("IsFolder", file.isFolder());
-							fdata.with("Modified", file.getModificationAsTime());
-							fdata.with("Size", file.getSize());
-							fdata.with("Extra", file.getExtra());
-
-							files.withItem(fdata);
-						}
-
-						fcb.returnValue(files);
-					}
-				});
-				}
-			});
-		} 
-		catch (OperatingContextException x) {
-			Logger.error("Operating context error: " + x);
-			fcb.returnEmpty();
-		}
-	}
-	
-	public void executeCustom(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
-		try {
-			// check bucket security
-			if (checkAuth && ! this.checkWriteAccess("Custom", request)) {
-				Logger.errorTr(434);
-				fcb.returnEmpty();
-				return;
-			}
-			
-			RecordStruct resp = new RecordStruct();
-			fcb.setResult(resp);
-			
-			if (this.tryExecuteMethod("Custom", this, request, resp, fcb))
-				return;
-			
-			fcb.returnValue(resp);
-		} 
-		catch (OperatingContextException x) {
-			Logger.error("Operating context error: " + x);
-			fcb.returnEmpty();
-		}
-	}
-
-	public void allocateUploadToken(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
-		RecordStruct resp = new RecordStruct();
-		fcb.setResult(resp);
-		
-		if (this.tryExecuteMethod("AllocateUploadToken", this, request, resp, fcb))
+	public void getMappedFileDetail(String path, RecordStruct params, OperationOutcome<FileDescriptor> fcb) throws OperatingContextException {
+		if (this.tryExecuteMethod("MapRequest", path, params, fcb))
 			return;
 		
-		try {
-			RecordStruct params = request.getFieldAsRecord("Params");
-			
-			String token = null;
-			
-			if ((params != null) && params.isNotFieldEmpty("Token"))
-				token = params.getFieldAsString("Token");
-			else
-				token = RndUtil.nextUUId();  // token is protected by session - session id is secure random
-			
-			VaultUtil.setSessionToken(token);
-			
-			resp.with("Token", token);
-			
-			fcb.returnValue(resp);
-		} 
-		catch (OperatingContextException x) {
-			Logger.error("Operating context error: " + x);
-			fcb.returnEmpty();
-		}
+		this.getFileDetail(new CommonPath(path), params, fcb);
 	}
 	
-	public void beginTransaction(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
-		RecordStruct extra = RecordStruct.record();
+	// these assume path already mapped
+	
+	abstract public void getFileDetail(CommonPath path, RecordStruct params, OperationOutcome<FileDescriptor> fcb) throws OperatingContextException;
+	
+	abstract public void addFolder(CommonPath path, RecordStruct params, OperationOutcome<FileDescriptor> callback) throws OperatingContextException;
 
-		fcb.returnValue(RecordStruct.record()
-				.with("TransactionId", this.createTransactionId(request, extra))
-				.with("Extra", extra)
-		);
-	}
+	abstract public void getFolderListing(FileDescriptor file, RecordStruct params, OperationOutcome<List<? extends FileDescriptor>> callback) throws OperatingContextException;
 	
-	public void commitTransaction(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
-		Transaction tx = Transaction.of(request.getFieldAsString("TransactionId"), this);
-		
-		tx.commitTransaction(new OperationOutcomeEmpty() {
-			@Override
-			public void callback() throws OperatingContextException {
-				fcb.returnEmpty();
-			}
-		});
-	}
+	abstract public void deleteFile(FileDescriptor file, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException;
 	
-	public void rollbackTransaction(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
-		Transaction tx = Transaction.of(request.getFieldAsString("TransactionId"), this);
-		
-		tx.rollbackTransaction(new OperationOutcomeEmpty() {
-			@Override
-			public void callback() throws OperatingContextException {
-				fcb.returnEmpty();
-			}
-		});
-	}
+	abstract public StreamFragment toSourceStream(FileDescriptor fileDescriptor) throws OperatingContextException;
 	
-	public void startUpload(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
-		try {
-			// check bucket security
-			if (checkAuth && ! this.checkWriteAccess("StartUpload", request) && ! this.uploadtoken) {
-				Logger.errorTr(434);
-				fcb.returnEmpty();
-				return;
-			}
-			
-			this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
-				@Override
-				public void callback(FileStoreFile result) throws OperatingContextException {
-					if (this.hasErrors()) {
-						fcb.returnEmpty();
-						return;
-					}
-					
-					if (this.isEmptyResult()) {
-						Logger.error("Your request appears valid but does not map to a file.  Unable to complete.");
-						fcb.returnEmpty();
-						return;
-					}
-					
-					FileStoreFile fi = this.getResult();
-					
-					if (! Vault.this.checkUploadToken(request, fi)) {
-						Logger.error("You may not upload to this path.");
-						fcb.returnEmpty();
-						return;
-					}
-					
-					RecordStruct extra = RecordStruct.record();
-					
-					String transactionId = request.getFieldAsString("TransactionId");
-					TxMode depmode = TxMode.Manual;
-					
-					if (StringUtil.isEmpty(transactionId)) {
-						transactionId = Vault.this.createTransactionId(request, extra);  // token is protected by session - session id is secure random
-						depmode = TxMode.Automatic;
-					}
-					
-					String ftransactionId = transactionId;
-					TxMode fdepmode = depmode;
-					
-					Vault.this.beforeStartUpload(fi, request, extra, new OperationOutcome<FileStoreFile>() {
-						@Override
-						public void callback(FileStoreFile result) throws OperatingContextException {
-							if (this.hasErrors()) {
-								fcb.returnEmpty();
-								return;
-							}
-							
-							HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
-							
-							String channel = RndUtil.nextUUId();  // token is protected by session - session id is secure random
-							
-							/* 	TODO handle resume and progress
-								TODO what to do with this info?
-									.with("TransactionId", ftransactionId)
-									.with("Overwrite", request.getFieldAsBooleanOrFalse("Overwrite"))
-									.with("Size", request.getFieldAsInteger("Size"));
-
-								boolean forceover = request.getFieldAsBooleanOrFalse("Overwrite");
-								long size = request.getFieldAsInteger("Size", 0);
-								boolean resume = !forceover && fi.exists();
-							*/
-					
-							// create a root relative to the transaction id in deposits folder
-							LocalStore dstore = LocalStore.of(DepositHub.DepositStore.resolvePath("/transactions/" + ftransactionId));
-							
-							// file as it sits during transaction
-							LocalStoreFile txfile = LocalStoreFile.of(dstore, result);
-							
-							scache.put(channel, RecordStruct.record()
-									.with("Target", result)		// useful to support HTTP 1.1 binary uploads - this serves as Descriptor
-									.with("TransactionFile", txfile)
-									.with("TransactionMode", fdepmode.name())
-									.with("Stream", StreamFragment.of(txfile.allocStreamDest()))
-									.with("TransactionId", ftransactionId)
-									.with("Extra", extra)
-							);
-							
-							RecordStruct resp = RecordStruct.record()
-									.with("Channel", channel)
-									.with("TransactionId", ftransactionId)
-									.with("BestEvidence", Vault.this.bestEvidence)
-									.with("MinimumEvidence", Vault.this.minEvidence)
-									.with("Extra", extra);
-							
-							Vault.this.afterStartUpload(fi, request, resp, fcb);
-						}
-					});
-				}
-			});
-		} 
-		catch (OperatingContextException x) {
-			Logger.error("Operating context error: " + x);
-			fcb.returnEmpty();
-		}
-	}
-
-	public void finishUpload(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
-		try {
-			String channel = request.getFieldAsString("Channel");
-			
-			HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
-			
-			// put the FileStoreFile in cache
-			Struct centry = scache.get(channel);
-			
-			if ((centry == null) || ! (centry instanceof RecordStruct)) {
-				Logger.error("Invalid channel number, unable to finish upload.");
-				fcb.returnEmpty();
-				return;
-			}
-			
-			Struct so = ((RecordStruct)centry).getFieldAsStruct("TransactionFile");
-			
-			if ((so == null) || ! (so instanceof FileStoreFile)) {
-				Logger.error("Invalid channel number, not a stream, unable to finish upload.");
-				fcb.returnEmpty();
-				return;
-			}
-			
-			FileStoreFile fi = (FileStoreFile) so;
-			
-			Struct tso = ((RecordStruct)centry).getFieldAsStruct("Target");
-			
-			if ((tso == null) || ! (tso instanceof FileStoreFile)) {
-				Logger.error("Invalid channel number, no target in stream, unable to finish upload.");
-				fcb.returnEmpty();
-				return;
-			}
-			
-			FileStoreFile tfi = (FileStoreFile) tso;
-			
-			RecordStruct extra = new RecordStruct();
-			fcb.setResult(extra);
-			
-			String txid = ((RecordStruct)centry).getFieldAsString("TransactionId");
-			TxMode txMode = TxMode.valueOf(((RecordStruct)centry).getFieldAsString("TransactionMode"));
-			
-			
-			if ("Failure".equals(request.getFieldAsString("Status"))) {
-				// TODO consider programming point
-				Logger.warn("File upload incomplete or corrupt: " + tfi.getPath());
-				
-				if (! request.isFieldEmpty("Note"))
-					Logger.warn("File upload note: " + request.getFieldAsString("Note"));
-
-				if (txMode == TxMode.Automatic) {
-					Transaction tx = Transaction.of(txid, this);
-					
-					tx.rollbackTransaction(new OperationOutcomeEmpty() {
-						@Override
-						public void callback() throws OperatingContextException {
-							fcb.returnResult();
-						}
-					});
-				}
-				else {
-					fcb.returnResult();
-				}
-				
-				return;
-			}
-			
-			RecordStruct evidinfo = request.getFieldAsRecord("Evidence");
-			
-			String evidenceType = null;
+	abstract public void hashFile(FileDescriptor fileDescriptor, String evidence, RecordStruct params, OperationOutcomeString callback) throws OperatingContextException;
 	
-			// pick best evidence if available, we really don't care if higher is available
-			if (! evidinfo.isFieldEmpty(Vault.this.bestEvidence)) {
-				evidenceType = Vault.this.bestEvidence;
-			}
-			// else pick the highest available evidence given
-			else {
-				for (FieldStruct fld : evidinfo.getFields())
-					evidenceType = VaultUtil.maxEvidence(fld.getName(), evidenceType);
-			}
-			
-			String selEvidenceType = evidenceType;
-			
-			Consumer<Boolean> afterVerify = (pass) -> {
-				try {
-					OperationOutcomeEmpty finishUpload = new OperationOutcomeEmpty() {
-						@Override
-						public void callback() throws OperatingContextException {
-							if (! request.isFieldEmpty("Note"))
-								Logger.info("File upload note: " + request.getFieldAsString("Note"));
-							
-							Vault.this.finishUpload(tfi, request, extra, pass, selEvidenceType, fcb);
-						}
-					};
-					
-					if (pass) {
-						if (VaultUtil.isSufficentEvidence(Vault.this.bestEvidence, selEvidenceType))
-							Logger.info("Verified best evidence for upload: " + tfi.getPath());
-						else if (VaultUtil.isSufficentEvidence(Vault.this.minEvidence, selEvidenceType))
-							Logger.info("Verified minimum evidence for upload: " + tfi.getPath());
-						else
-							Logger.error("Verified evidence for upload, however evidence is insuffcient: " + tfi.getPath());
-						
-						if (txMode == TxMode.Automatic) {
-							Transaction tx = Transaction.of(txid, this);
-							tx.commitTransaction(finishUpload);
-						}
-						else {
-							finishUpload.returnEmpty();
-						}
-					}
-					else {
-						Logger.error("File upload incomplete or corrupt: " + tfi.getPath());
-						
-						if (txMode == TxMode.Automatic) {
-							Transaction tx = Transaction.of(txid, this);
-							tx.rollbackTransaction(finishUpload);
-						}
-						else {
-							finishUpload.returnEmpty();
-						}
-					}
-				}
-				catch (Exception x) {
-					Logger.error("Operating context error: " + x);
-					fcb.returnResult();
-				}
-			};
-			
-			if ("Size".equals(selEvidenceType)) {
-				Long src = evidinfo.getFieldAsInteger("Size");
-				long dest = fi.getSize();
-				boolean match = (src == dest);
-				
-				if (match)
-					Logger.info("File sizes match");
-				else
-					Logger.error("File sizes do not match");
-				
-				afterVerify.accept(match);
-			}
-			else if (StringUtil.isNotEmpty(selEvidenceType)) {
-				fi.hash(selEvidenceType, new OperationOutcome<String>() {
-					@Override
-					public void callback(String result) throws OperatingContextException {
-						if (fcb.hasErrors()) {
-							afterVerify.accept(false);
-						}
-						else {
-							String src = evidinfo.getFieldAsString(selEvidenceType);
-							String dest = this.getResult();
-							boolean match = (src.equals(dest));
-							
-							if (match)
-								Logger.info("File hashes match (" + selEvidenceType + ")");
-							else
-								Logger.error("File hashes do not match (" + selEvidenceType + ")");
-							
-							afterVerify.accept(match);
-						}
-					}
-				});
-			}
-			else {
-				Logger.error("Missing any form of evidence, supply at least size");
-				
-				afterVerify.accept(false);
-			}
-			
-		} 
-		catch (OperatingContextException x) {
-			Logger.error("Operating context error: " + x);
-			fcb.returnResult();
-		}
-	}
-	
-	public void startDownload(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
-		try {
-			// check bucket security
-			if (checkAuth && ! this.checkReadAccess("StartDownload", request)) {
-				Logger.errorTr(434);
-				fcb.returnEmpty();
-				return;
-			}
-			
-			this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
-				@Override
-				public void callback(FileStoreFile result) throws OperatingContextException {
-					if (this.hasErrors()) {
-						fcb.returnEmpty();
-						return;
-					}
-					
-					if (this.isEmptyResult()) {
-						Logger.error("Your request appears valid but does not map to a file.  Unable to complete.");
-						fcb.returnEmpty();
-						return;
-					}
-					
-					RecordStruct extra = RecordStruct.record();
-					
-					String transactionId = request.getFieldAsString("TransactionId");
-					
-					if (StringUtil.isEmpty(transactionId))
-						transactionId = Vault.this.createTransactionId(request, extra);  // token is protected by session - session id is secure random
-					
-					String ftransactionId = transactionId;
-					
-					FileStoreFile fi = this.getResult();
-					
-					Vault.this.beforeStartDownload(fi, request, extra, new OperationOutcome<FileStoreFile>() {
-						@Override
-						public void callback(FileStoreFile result) throws OperatingContextException {
-							if (this.hasErrors()) {
-								fcb.returnEmpty();
-								return;
-							}
-							
-							HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
-							
-							String channel = RndUtil.nextUUId();  // token is protected by session - session id is secure random
-							
-							/* TODO what to do with this info?
-							<Field Name="Offset" Type="Integer" />
-							<Field Name="TransactionId" Type="dcTinyString" />
-							*/
-							
-							scache.put(channel, RecordStruct.record()
-									.with("Target", result)		// useful to support HTTP 1.1 binary uploads - this serves as Descriptor
-									.with("Stream", StreamFragment.of(result.allocStreamSrc()))
-									.with("TransactionId", ftransactionId)
-									.with("Extra", extra)
-							);
-							
-							RecordStruct resp = RecordStruct.record()
-									.with("Channel", channel)
-									.with("TransactionId", ftransactionId)
-									.with("Size", result.getSize())
-									.with("BestEvidence", Vault.this.bestEvidence)
-									.with("MinimumEvidence", Vault.this.minEvidence)
-									.with("Extra", extra);
-							
-							Vault.this.afterStartDownload(fi, request, resp, fcb);
-						}
-					});
-				}
-			});
-		} 
-		catch (OperatingContextException x) {
-			Logger.error("Operating context error: " + x);
-			fcb.returnEmpty();
-		}
-	}
-	
-	public void finishDownload(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
-		try {
-			String channel = request.getFieldAsString("Channel");
-			
-			HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
-			
-			// put the FileStoreFile in cache
-			Struct centry = scache.get(channel);
-			
-			if ((centry == null) || ! (centry instanceof RecordStruct)) {
-				Logger.error("Invalid channel number, unable to finish upload.");
-				fcb.returnEmpty();
-				return;
-			}
-			
-			Struct so = ((RecordStruct)centry).getFieldAsStruct("Target");
-			
-			if ((so == null) || ! (so instanceof FileStoreFile)) {
-				Logger.error("Invalid channel number, not a stream, unable to finish upload.");
-				fcb.returnEmpty();
-				return;
-			}
-			
-			FileStoreFile fi = (FileStoreFile) so;
-			
-			RecordStruct extra = new RecordStruct();
-			
-			if ("Failure".equals(request.getFieldAsString("Status"))) {
-				Logger.warn("File download incomplete or corrupt: " + fi.getPath());
-				
-				if (!request.isFieldEmpty("Note"))
-					Logger.warn("File download note: " + request.getFieldAsString("Note"));
-				
-				fcb.returnValue(extra);
-				return;
-			}
-			
-			RecordStruct evidinfo = request.getFieldAsRecord("Evidence");
-			
-			String evidenceType = null;
-
-			// pick best evidence if available, we really don't care if higher is available
-			if (! evidinfo.isFieldEmpty(Vault.this.bestEvidence)) {
-				evidenceType = Vault.this.bestEvidence;
-			}
-			// else pick the highest available evidence given
-			else {
-				for (FieldStruct fld : evidinfo.getFields())
-					evidenceType = VaultUtil.maxEvidence(fld.getName(), evidenceType);
-			}
-
-			String selEvidenceType = evidenceType;
-			
-			Consumer<Boolean> afterVerify = (pass) -> {
-				if (pass) {
-					if (VaultUtil.isSufficentEvidence(Vault.this.bestEvidence, selEvidenceType))
-						Logger.info("Verified best evidence for download: " + fi.getPath());
-					else if (VaultUtil.isSufficentEvidence(Vault.this.minEvidence, selEvidenceType))
-						Logger.info("Verified minimum evidence for download: " + fi.getPath());
-					else
-						Logger.error("Verified evidence for download, however evidence is insuffcient: " + fi.getPath());
-				}
-				else {
-					Logger.error("File download incomplete or corrupt: " + fi.getPath());
-				}
-				
-				if (! request.isFieldEmpty("Note"))
-					Logger.info("File download note: " + request.getFieldAsString("Note"));
-				
-				//fcb.complete(extra);	-- will extra still get in if passed this way?
-				Vault.this.finishDownload(fi, request, extra, pass, selEvidenceType, fcb);
-			};
-			
-			if ("Size".equals(selEvidenceType)) {
-				Long src = evidinfo.getFieldAsInteger("Size");
-				long dest = fi.getSize();
-				boolean match = (src == dest);
-				
-				if (match)
-					Logger.info("File sizes match");
-				else
-					Logger.error("File sizes do not match");
-				
-				afterVerify.accept(match);
-			}
-			else if (StringUtil.isNotEmpty(selEvidenceType)) {
-				fi.hash(selEvidenceType, new OperationOutcome<String>() {
-					@Override
-					public void callback(String result) throws OperatingContextException {
-						if (fcb.hasErrors()) {
-							afterVerify.accept(false);
-						}
-						else {
-							String src = evidinfo.getFieldAsString(selEvidenceType);
-							String dest = this.getResult();
-							boolean match = (src.equals(dest));
-							
-							if (match)
-								Logger.info("File hashes match (" + selEvidenceType + ")");
-							else
-								Logger.error("File hashes do not match (" + selEvidenceType + ")");
-							
-							afterVerify.accept(match);
-						}
-					}
-				});
-			}
-			else {
-				Logger.error("Missing any form of evidence, supply at least size");
-				
-				afterVerify.accept(false);
-			}
-		}
-		catch (OperatingContextException x) {
-			Logger.error("Operating context error: " + x);
-			fcb.returnEmpty();
-		}
-	}
-	
-		/* TODO review - not a terrible idea
-	protected void watch(String op, FileStoreFile file) {
-		XElement settings = this.getLoader().getSettings();
-		
-		if (settings != null) {
-	        for (XElement watch : settings.selectAll("Watch")) {
-	        	String wpath = watch.getAttribute("FilePath");
-	        	
-	        	// if we are filtering on path make sure the path is a parent of the triggered path
-	        	if (StringUtil.isNotEmpty(wpath)) {
-	        		CommonPath wp = new CommonPath(wpath);
-	        		
-	        		if (!wp.isParent(file.path()))
-	        			continue;
-	        	}
-        	
-                String tasktag = op + "Task";
-                
-    			for (XElement task : watch.selectAll(tasktag)) {
-    				String id = task.getAttribute("Id");
-    				
-    				if (StringUtil.isEmpty(id))
-    					id = Task.nextTaskId();
-    				
-    				String title = task.getAttribute("Title");			        				
-    				String scriptold = task.getAttribute("Script");
-    				String params = task.selectFirstText("Params");
-    				RecordStruct prec = null;
-    				
-    				if (StringUtil.isNotEmpty(params)) {
-    					FuncResult<CompositeStruct> pres = CompositeParser.parseJson(params);
-    					
-    					if (pres.isNotEmptyResult())
-    						prec = (RecordStruct) pres.getResult();
-    				}
-    				
-    				if (prec == null) 
-    					prec = new RecordStruct();
-    				
-			        prec.setField("File", file);
-    				
-    				if (scriptold.startsWith("$"))
-    					scriptold = scriptold.substring(1);
-    				
-    				Task t = new Task()
-    					.withId(id)
-    					.withTitle(title)
-    					.withParams(prec)
-    					.withRootContext();
-    				
-    				if (!ScriptWork.addScript(t, Paths.get(scriptold))) {
-    					Logger.error("Unable to run scriptold for file watcher: " + watch.getAttribute("FilePath"));
-    					continue;
-    				}
-    				
-    				Hub.instance.getWorkPool().submit(t);
-    			}
-	        }
-		}
-	}
-		*/
+	abstract public Transaction buildUpdateTransaction(String txid, RecordStruct params);
 }

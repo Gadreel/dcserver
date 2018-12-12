@@ -25,6 +25,7 @@ import java.util.Scanner;
 import dcraft.api.ApiSession;
 import dcraft.api.LocalSession;
 import dcraft.filevault.work.IndexAllFilesWork;
+import dcraft.filevault.work.IndexSiteFilesWork;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.clock.SysReporter;
 import dcraft.hub.config.LocalHubConfigLoader;
@@ -210,6 +211,7 @@ public class Foreground {
 				}
 				case 6: {
 					Task task = Task.ofSubtask("ReIndex Vault Files", "Vault")
+							.withTimeout(10)
 							.withWork(new IndexAllFilesWork());
 					
 					TaskHub.submit(task, new TaskObserver() {
@@ -235,7 +237,9 @@ public class Foreground {
 							UserContext.rootUser(tenant, site));
 					
 					Task task = Task.ofContext(tctx)
-							.withWork(new IndexAllFilesWork());
+							.withTitle("File Index a site")
+							.withTimeout(10)
+							.withWork(new IndexSiteFilesWork());
 					
 					TaskHub.submit(task, new TaskObserver() {
 						@Override

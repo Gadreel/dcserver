@@ -29,6 +29,7 @@ import dcraft.filevault.VaultUtil;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.*;
 import dcraft.interchange.paypal.PayPalUtil;
+import dcraft.interchange.slack.SlackUtil;
 import dcraft.interchange.ups.UpsUtil;
 import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
@@ -36,6 +37,7 @@ import dcraft.service.plugin.Operation;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.Task;
 import dcraft.task.TaskHub;
+import dcraft.tenant.Site;
 import dcraft.util.Base64;
 import dcraft.util.Memory;
 import dcraft.util.TimeUtil;
@@ -50,6 +52,10 @@ import dcraft.xml.XElement;
 
 public class OrderUtil {
 	static public void processAuthOrder(ICallContext request, TablesAdapter db, RecordStruct order, OperationOutcomeStruct callback) throws OperatingContextException {
+		Site site = OperationContext.getOrThrow().getSite();
+		String event = site.getAlias() + " - order submission started: " + order.getFieldAsRecord("CustomerInfo").toString();
+		SlackUtil.serverEvent(null, event, null);
+		
 		try (OperationMarker om = OperationMarker.create()) {
 			order = OrderUtil.santitizeAndCalculateOrder(request, db, order);
 
@@ -84,7 +90,11 @@ public class OrderUtil {
 			cleanpay.removeField("Expiration");
 			cleanpay.removeField("Code");
 		}
-
+		
+		Site site = OperationContext.getOrThrow().getSite();
+		String event = site.getAlias() + " - order processing: " + orderclean.getFieldAsRecord("CustomerInfo").toString();
+		SlackUtil.serverEvent(null, event, null);
+		
 		RecordStruct cinfo = orderclean.getFieldAsRecord("CustomerInfo");
 		RecordStruct pinfo = orderclean.getFieldAsRecord("PaymentInfo");
 
@@ -268,6 +278,10 @@ public class OrderUtil {
 	}
 
 	static public void postAuthStep(ICallContext request, TablesAdapter db, DbRecordRequest upreq, RecordStruct order, String status, ZonedDateTime stamp, RecordStruct orderclean, Struct payment, String refid, OperationOutcomeStruct callback) throws OperatingContextException {
+		Site site = OperationContext.getOrThrow().getSite();
+		String event = site.getAlias() + " - order placed: " + refid;
+		SlackUtil.serverEvent(null, event, null);
+		
 		// CustomerId already set by sanitize
 		if (OperationContext.getOrThrow().getUserContext().isTagged("User")) {
 			OrderUtil.onLogStep(request, db, upreq, status, stamp, orderclean, payment, refid, callback);
@@ -384,6 +398,10 @@ public class OrderUtil {
 								.with("Id", refid)
 						)
 						.withScript(CommonPath.from("/dcm/store/event-order-placed.dcs.xml")));
+				
+				Site site = OperationContext.getOrThrow().getSite();
+				String event = site.getAlias() + " - order submission completed: " + refid + " - " + callback.getMessages().toPrettyString();
+				SlackUtil.serverEvent(null, event, null);
 				
 				callback.returnResult();
 			}

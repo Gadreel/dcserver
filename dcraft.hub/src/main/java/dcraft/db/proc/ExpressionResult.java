@@ -6,22 +6,26 @@ public class ExpressionResult {
 	static final public ExpressionResult HALT = ExpressionResult.halt();
 	
 	static public ExpressionResult accepted() {
-		return new ExpressionResult();
+		return new ExpressionResult(true, true);
 	}
 	
 	static public ExpressionResult rejected() {
-		ExpressionResult result = new ExpressionResult();
-		result.accepted = false;
-		return result;
+		return new ExpressionResult(false, true);
 	}
 	
 	static public ExpressionResult halt() {
-		ExpressionResult result = new ExpressionResult();
-		result.resume = false;
-		result.accepted = false;
-		return result;
+		return new ExpressionResult(false, false);
 	}
-	
-	public boolean accepted = true;
-	public boolean resume = true;
+
+	static public ExpressionResult of(boolean accepted, boolean resume) {
+		return new ExpressionResult(accepted, resume);
+	}
+
+	final public boolean accepted;
+	final public boolean resume;
+
+	protected ExpressionResult(boolean accepted, boolean resume) {
+		this.resume = resume;
+		this.accepted = accepted;
+	}
 }

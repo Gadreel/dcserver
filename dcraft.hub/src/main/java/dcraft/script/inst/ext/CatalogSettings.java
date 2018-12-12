@@ -48,8 +48,9 @@ public class CatalogSettings extends Instruction {
 	public ReturnOption run(InstructionWork stack) throws OperatingContextException {
 		if (stack.getState() == ExecuteState.READY) {
 			String id = StackUtil.stringFromSource(stack, "Id");
-			
-			XElement settings = ApplicationHub.getCatalogSettings(id);
+			String alternate = StackUtil.stringFromSource(stack, "Alternate");
+
+			XElement settings = ApplicationHub.getCatalogSettings(id, alternate);
 			
 			if (settings != null) {
 				String result = StackUtil.stringFromSource(stack, "Result");

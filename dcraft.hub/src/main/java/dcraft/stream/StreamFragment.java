@@ -1,10 +1,12 @@
 package dcraft.stream;
 
+import dcraft.struct.RecordStruct;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class StreamFragment {
+public class StreamFragment extends RecordStruct {
 	static public StreamFragment of(IStream... steps) {
 		StreamFragment frag = new StreamFragment();
 		

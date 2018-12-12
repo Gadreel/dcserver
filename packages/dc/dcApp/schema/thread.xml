@@ -56,6 +56,8 @@
 		<Procedure Name="dcmServices.Thread.Deliver" Execute="dcraft.cms.thread.db.Deliver" />
 		<Procedure Name="dcmServices.Thread.AddContent" Execute="dcraft.cms.thread.db.AddContent" />
 		<Procedure Name="dcmServices.Thread.ChangeFolder" Execute="dcraft.cms.thread.db.ChangeFolder" />
+		<Procedure Name="dcmServices.Thread.Reindex" Execute="dcraft.cms.thread.db.Reindex" />
+		<Procedure Name="dcmServices.Thread.ArchiveMessages" Execute="dcraft.cms.thread.db.ArchiveMessages" />
 	</Database>
 
 	<Shared>
@@ -298,6 +300,19 @@
 							<Field Name="Folder" Type="dcMetaString" Required="True" />
 							<Field Name="Read" Type="Boolean" />
 						</RecordRequest>
+					</Op>
+					<Op Name="Reindex">
+						<Description>
+							Clear and reindex entire thread table.
+						</Description>
+					</Op>
+				</Secure>
+				<Secure Badges="User">
+					<Op Name="ArchiveMessages">
+						<Description>
+							Archive a list of messages.
+						</Description>
+						<ListRequest Required="True" Type="Id" />
 					</Op>
 				</Secure>
 			</Feature>

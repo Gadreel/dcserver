@@ -343,7 +343,7 @@ public class Products {
 						if (! this.hasErrors()) {
 							Site site = OperationContext.getOrThrow().getSite();
 
-							FileStore gfs = site.getVault("Galleries").getFileStore();
+							FileStore gfs = site.getGalleriesVault().getFileStore();
 
 							gfs.addFolder(CommonPath.from("/store/product/" + rec.getFieldAsString("Alias")), new OperationOutcome<FileStoreFile>() {
 								@Override

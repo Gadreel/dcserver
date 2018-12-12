@@ -48,10 +48,6 @@ abstract public class FileStoreFile extends FileDescriptor {
 		return this.driver;
 	}
 	
-	public boolean exists() {
-		return this.getFieldAsBooleanOrFalse("Exists");
-	}
-	
 	abstract public IFileCollection scanner() throws OperatingContextException;
 	abstract public IFileStreamDest allocStreamDest() throws OperatingContextException;
 	abstract public IFileStreamDest allocStreamDest(boolean relative) throws OperatingContextException;
@@ -65,7 +61,6 @@ abstract public class FileStoreFile extends FileDescriptor {
 	abstract public void remove(OperationOutcomeEmpty callback) throws OperatingContextException;
 	abstract public void getAttribute(String name, OperationOutcome<Struct> callback) throws OperatingContextException;
 	abstract public void getFolderListing(OperationOutcome<List<FileStoreFile>> callback) throws OperatingContextException;
-	abstract public RecordStruct getExtra() throws OperatingContextException;
 	
 	@Override
     protected void doCopy(Struct n) {

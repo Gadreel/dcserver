@@ -9,6 +9,6 @@ import dcraft.hub.time.BigDateTime;
 public class NotEqual extends TwoExpression {
 	@Override
 	public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, String id) throws OperatingContextException {
-		return (this.compare(adapter, id) != 0) ? ExpressionResult.ACCEPTED : ExpressionResult.REJECTED;
+		return (this.compare(adapter, id) != 0) ? this.nestOrAccept(adapter, scope, table, id) : ExpressionResult.REJECTED;
 	}
 }

@@ -2,6 +2,7 @@ package dcraft.db.proc.expression;
 
 import dcraft.db.proc.ExpressionResult;
 import dcraft.db.proc.IExpression;
+import dcraft.db.proc.IFilter;
 import dcraft.db.request.schema.Query;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.util.ByteUtil;
@@ -28,7 +29,14 @@ public class Term implements IExpression {
 	protected List<byte[]> values = null;
 	protected String lang = null;
 	protected String table = null;
-	
+	protected IFilter nested = null;
+
+	@Override
+	public IFilter withNested(IFilter v) {
+		this.nested = v;
+		return this;
+	}
+
 	@Override
 	public void init(String table, RecordStruct where) throws OperatingContextException {
 		this.table = table;
@@ -140,9 +148,16 @@ public class Term implements IExpression {
 			}
 		}
 		
-		return ExpressionResult.accepted();
+		return this.nestOrAccept(adapter, scope, table, id);
 	}
-	
+
+	public ExpressionResult nestOrAccept(TablesAdapter adapter, IVariableAware scope, String table, Object val) throws OperatingContextException {
+		if (this.nested != null)
+			return this.nested.check(adapter, scope, table, val);
+
+		return ExpressionResult.ACCEPTED;
+	}
+
 	@Override
 	public void parse(IParentAwareWork state, XElement code, RecordStruct clause) throws OperatingContextException {
 		String[] fields = StackUtil.stringFromElement(state, code, "Fields", "").split(",");

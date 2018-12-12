@@ -12,25 +12,28 @@ import dcraft.xml.XElement;
 abstract public class BasicFilter implements IFilter {
 	protected IFilter nested = null;
 
-	public BasicFilter withNested(IFilter v) {
+	@Override
+	public IFilter withNested(IFilter v) {
 		this.nested = v;
 		return this;
 	}
-	
+
+	/*
 	public BasicFilter withNested(String table, WhereExpression v) throws OperatingContextException {
 		if (v != null)
 			this.nested = v.toFilter(table);
 		
 		return this;
 	}
-	
+	*/
+
 	public ExpressionResult nestOrAccept(TablesAdapter adapter, IVariableAware scope, String table, Object val) throws OperatingContextException {
 		if (this.nested != null)
 			return this.nested.check(adapter, scope, table, val);
-		
+
 		return ExpressionResult.ACCEPTED;
 	}
-	
+
 	@Override
 	public void init(String table, RecordStruct filter) throws OperatingContextException {
 	}

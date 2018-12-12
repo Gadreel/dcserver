@@ -149,6 +149,8 @@ public class LocalStoreFile extends FileStoreFile {
 		}
 		else
 			this.with("Exists", false);
+		
+		this.withConfirmed(true);
     }
 
 	public String getFullPath() {

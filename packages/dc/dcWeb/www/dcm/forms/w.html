@@ -32,9 +32,9 @@
 
 	<dc.IncludeFragmentInline Path="/forms/{$TabForm}/{$TabPage}" />
 
-	<Meta Name="Title">
-		<Tr Locale="eng" Value="Step {$StepNumber}: {$TabTitle}" />
-	</Meta>
+	<dcs.With Target="$Page">
+		<SetField Name="Title" Value="Step {$StepNumber}: {$TabTitle}" />
+	</dcs.With>
 
 	<dcs.Var Name="PreviousTabIdx" Type="Integer" SetTo="$TabIndex" />
 

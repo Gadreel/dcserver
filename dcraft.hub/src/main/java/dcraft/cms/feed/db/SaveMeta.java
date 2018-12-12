@@ -10,6 +10,7 @@ import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.mem.MemoryStoreFile;
 import dcraft.filevault.FeedVault;
+import dcraft.filevault.FileStoreVault;
 import dcraft.filevault.Vault;
 import dcraft.filevault.VaultUtil;
 import dcraft.hub.op.*;
@@ -31,7 +32,7 @@ public class SaveMeta implements IStoredProc {
 		
 		CommonPath epath = CommonPath.from("/" + OperationContext.getOrThrow().getSite().getAlias() + "/" + feed + path.substring(0, path.length() - 5));
 
-		Vault feedsvault = OperationContext.getOrThrow().getSite().getVault("Feeds");
+		FileStoreVault feedsvault = OperationContext.getOrThrow().getSite().getFeedsVault();
 		
 		// TODO feedsvault.mapRequest ...
 		

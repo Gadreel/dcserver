@@ -17,6 +17,7 @@
 package dcraft.script.inst.file;
 
 import dcraft.filestore.CommonPath;
+import dcraft.filestore.FileDescriptor;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.mem.MemoryStoreFile;
 import dcraft.filevault.Vault;
@@ -85,9 +86,9 @@ public class File extends OperationsInstruction {
 					
 					String path = StackUtil.stringFromSource(state, "Path");
 
-					vault.getFileStore().getFileDetail(CommonPath.from(path), new OperationOutcome<FileStoreFile>() {
+					vault.getFileDetail(CommonPath.from(path), null, new OperationOutcome<FileDescriptor>() {
 						@Override
-						public void callback(FileStoreFile result) throws OperatingContextException {
+						public void callback(FileDescriptor result) throws OperatingContextException {
 							StackUtil.addVariable(state, name, result);
 							
 							((OperationsWork) state).setTarget(result);

@@ -47,18 +47,19 @@ import java.util.List;
 import java.util.Map;
 
 public class AwsStoreFile extends FileStoreFile {
-	static public AwsStoreFile of(AwsStore driver, CommonPath path) {
+	static public AwsStoreFile of(AwsStore driver, CommonPath path, boolean confirmed) {
 		AwsStoreFile file = new AwsStoreFile();
 		
 		file.driver = driver;
 		file.awsdriver = driver;
 		
 		file.with("Path", path.toString());
+		file.withConfirmed(confirmed);
 		
 		return file;
 	}
 	
-	static public AwsStoreFile of(AwsStore driver, CommonPath path, boolean folder) {
+	static public AwsStoreFile of(AwsStore driver, CommonPath path, boolean folder, boolean confirmed) {
 		AwsStoreFile file = new AwsStoreFile();
 		
 		file.driver = driver;
@@ -66,17 +67,19 @@ public class AwsStoreFile extends FileStoreFile {
 		
 		file.with("Path", path.toString());
 		file.with("IsFolder", folder);
+		file.withConfirmed(confirmed);
 		
 		return file;
 	}
 	
-	static public AwsStoreFile of(AwsStore driver, RecordStruct rec) {
+	static public AwsStoreFile of(AwsStore driver, RecordStruct rec, boolean confirmed) {
 		AwsStoreFile file = new AwsStoreFile();
 		
 		file.driver = driver;
 		file.awsdriver = driver;
 		
 		file.copyFields(rec);
+		file.withConfirmed(confirmed);
 		
 		return file;
 	}
@@ -107,6 +110,8 @@ public class AwsStoreFile extends FileStoreFile {
 					.with("AwsETag", x.object.eTag)
 					.with("IsFolder", false)
 					.with("Exists", true);
+				
+				this.withConfirmed(true);
 			
 				if (callback != null)
 					callback.returnValue(this);
@@ -179,7 +184,7 @@ public class AwsStoreFile extends FileStoreFile {
 						.with("IsFolder", false)
 						.with("Exists", true);
 					
-					files.add(AwsStoreFile.of(this.awsdriver, rec));
+					files.add(AwsStoreFile.of(this.awsdriver, rec, true));
 				}
 				
 				callback.returnValue(files);

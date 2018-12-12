@@ -14,6 +14,7 @@ import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileStore;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.local.LocalStore;
+import dcraft.filevault.FileStoreVault;
 import dcraft.filevault.IndexTransaction;
 import dcraft.filevault.Vault;
 import dcraft.hub.ResourceHub;
@@ -57,7 +58,7 @@ public class ReindexFeedWork extends StateWork {
 	protected Deque<FileStoreFile> folders = new ArrayDeque<>();
 	
 	protected Site currentSite = null;
-	protected Vault currentVault = null;
+	protected FileStoreVault currentVault = null;
 	protected String feed = null;
 	protected ZonedDateTime now = TimeUtil.now();
 	
@@ -82,7 +83,7 @@ public class ReindexFeedWork extends StateWork {
 		
 		this.currentSite = OperationContext.getOrThrow().getSite();
 		
-		this.currentVault = this.currentSite.getVault("Feeds");
+		this.currentVault = this.currentSite.getFeedsVault();
 		
 		this.folders.addLast(this.currentVault.getFileStore().fileReference(CommonPath.from("/" + this.feed)));
 		

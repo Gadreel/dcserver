@@ -48,6 +48,7 @@ public class HttpDestStream extends BaseFileStream implements IFileStreamDest, G
 
 	protected boolean headersent = false;
 	protected boolean asAttachment = true;
+	protected boolean asSendStart = true;
 
 	protected Consumer<FileDescriptor> tabulator = null;
 	
@@ -57,6 +58,11 @@ public class HttpDestStream extends BaseFileStream implements IFileStreamDest, G
 
 	public HttpDestStream withAsAttachment(boolean v) {
 		this.asAttachment = v;
+		return this;
+	}
+	
+	public HttpDestStream withAsSendStart(boolean v) {
+		this.asSendStart = true;
 		return this;
 	}
 
@@ -127,6 +133,9 @@ public class HttpDestStream extends BaseFileStream implements IFileStreamDest, G
 
 			if (this.asAttachment) {
 				wctrl.sendDownloadHeaders(slice.getFile().getPath() != null ? slice.getFile().getPathAsCommon().getFileName() : null, mtype);
+			}
+			else if (this.asSendStart) {
+				wctrl.sendStart(0);
 			}
 			else {
 				HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);

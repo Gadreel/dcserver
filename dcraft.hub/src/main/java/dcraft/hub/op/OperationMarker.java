@@ -86,7 +86,7 @@ public class OperationMarker implements AutoCloseable {
      * Only call this on the correct context, otherwise you may end up with the wrong position or no position
      */
     @Override
-    public void close() throws Exception {
+    public void close() throws OperatingContextException {
     	OperationContext ctx = this.getOperationContext();
 		
 		this.msgEnd = ctx.getController().logMarker();		// end is exclusive, so size is right

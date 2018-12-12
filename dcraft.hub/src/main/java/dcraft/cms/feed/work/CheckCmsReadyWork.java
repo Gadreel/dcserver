@@ -11,6 +11,7 @@ import dcraft.filestore.FileStore;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.local.LocalStore;
 import dcraft.filestore.local.LocalStoreFile;
+import dcraft.filevault.FileStoreVault;
 import dcraft.filevault.IndexTransaction;
 import dcraft.filevault.Vault;
 import dcraft.hub.app.ApplicationHub;
@@ -44,7 +45,6 @@ public class CheckCmsReadyWork extends StateWork {
 		CheckCmsReadyWork work = new CheckCmsReadyWork();
 		work.feed = feed;
 		
-		work.adapter = FileIndexAdapter.of(request);
 		work.db = TablesAdapter.ofNow(request);
 		
 		return work;
@@ -53,7 +53,7 @@ public class CheckCmsReadyWork extends StateWork {
 	protected Deque<FileStoreFile> folders = new ArrayDeque<>();
 	
 	protected Site currentSite = null;
-	protected Vault currentVault = null;
+	protected FileStoreVault currentVault = null;
 	protected String feed = null;
 	protected ZonedDateTime now = TimeUtil.now();
 	
@@ -61,7 +61,6 @@ public class CheckCmsReadyWork extends StateWork {
 	protected StateWorkStep transaction = null;
 	protected StateWorkStep done = null;
 	
-	protected FileIndexAdapter adapter = null;
 	protected TablesAdapter db = null;
 	
 	@Override
@@ -72,7 +71,7 @@ public class CheckCmsReadyWork extends StateWork {
 		
 		this.currentSite = OperationContext.getOrThrow().getSite();
 		
-		this.currentVault = this.currentSite.getVault("Feeds");
+		this.currentVault = this.currentSite.getFeedsVault();
 		
 		this.folders.addLast(this.currentVault.getFileStore().fileReference(CommonPath.from("/" + this.feed)));
 	}

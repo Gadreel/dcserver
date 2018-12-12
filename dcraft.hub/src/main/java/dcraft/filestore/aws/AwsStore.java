@@ -111,12 +111,12 @@ public class AwsStore extends FileStore {
 	}
 
 	public FileStoreFile wrapFileRecord(RecordStruct file) {
-		return AwsStoreFile.of(this, file);
+		return AwsStoreFile.of(this, file, false);
 	}
 
 	@Override
 	public void getFileDetail(CommonPath path, OperationOutcome<FileStoreFile> callback) {
-		AwsStoreFile f = AwsStoreFile.of(this, path);
+		AwsStoreFile f = AwsStoreFile.of(this, path, false);
 		
 		f.loadDetails(callback);
 	}
@@ -156,7 +156,7 @@ public class AwsStore extends FileStore {
 		
 		try {
 			if (! ok.hasErrors()) {
-				callback.returnValue(AwsStoreFile.of(this, dest));
+				callback.returnValue(AwsStoreFile.of(this, dest, true));
 				return;
 			}
 		}
@@ -198,17 +198,17 @@ public class AwsStore extends FileStore {
 	
 	@Override
 	public FileStoreFile fileReference(CommonPath path) {
-		return AwsStoreFile.of(this, path);
+		return AwsStoreFile.of(this, path, false);
 	}
 	
 	@Override
 	public FileStoreFile fileReference(CommonPath path, boolean isFolder) {
-		return (FileStoreFile) AwsStoreFile.of(this, path).withIsFolder(isFolder);
+		return (FileStoreFile) AwsStoreFile.of(this, path, false).withIsFolder(isFolder);
 	}
 	
 	@Override
 	public void getFolderListing(CommonPath path, OperationOutcome<List<FileStoreFile>> callback) {
-		AwsStoreFile f = AwsStoreFile.of(this, path);
+		AwsStoreFile f = AwsStoreFile.of(this, path, false);
 		
 		f.getFolderListing(callback);
 	}

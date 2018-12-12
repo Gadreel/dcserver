@@ -33,7 +33,7 @@ public class StoreImage implements IComposer {
 			
 			// there should always be a "thumb" so check for it
 			
-			LocalStoreFile file = (LocalStoreFile) OperationContext.getOrThrow().getSite().getVault("Galleries")
+			LocalStoreFile file = (LocalStoreFile) OperationContext.getOrThrow().getSite().getGalleriesVault()
 					.getFileStore().fileReference(CommonPath.from(imagePath + ".v/thumb.jpg"));
 			
 			if (! file.exists())

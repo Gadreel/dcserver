@@ -228,7 +228,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 				Logger.debug("Routing the request to: " + reroute);
 			
 			wctrl.getResponse().setStatus(HttpResponseStatus.MOVED_PERMANENTLY);
-			wctrl.getResponse().setHeader(HttpHeaderNames.LOCATION, reroute);
+			wctrl.getResponse().setHeader(HttpHeaderNames.LOCATION.toString(), reroute);
 			wctrl.sendRead();
 			return;
 		}
@@ -292,7 +292,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 						wctrl.getResponse().setCookie(authk);
 						
 						wctrl.getResponse().setStatus(HttpResponseStatus.FOUND);
-						wctrl.getResponse().setHeader(HttpHeaderNames.LOCATION, "/");
+						wctrl.getResponse().setHeader(HttpHeaderNames.LOCATION.toString(), "/");
 						wctrl.getResponse().setHeader("Cache-Control", "no-cache");		// in case they login later, firefox was using cache
 						wctrl.sendRead();
 						return;
@@ -430,7 +430,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 			if (needredirect) {
 				wctrl.getResponse().setStatus(HttpResponseStatus.FOUND);	// not permanent
 				// TODO restore the other parameters too
-				wctrl.getResponse().setHeader(HttpHeaderNames.LOCATION, req.getFieldAsString("OriginalPath") + "?_dclang=" + locale.getName());
+				wctrl.getResponse().setHeader(HttpHeaderNames.LOCATION.toString(), req.getFieldAsString("OriginalPath") + "?_dclang=" + locale.getName());
 				wctrl.getResponse().setHeader("Cache-Control", "no-cache");		// in case they login later, FireFox was using cache
 				wctrl.sendRead();
 				return;

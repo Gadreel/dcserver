@@ -276,17 +276,18 @@
 
 			<Type Name="ApproveUser" />
 
-			<Channel Alias="users" Prefix="Usr" ExtensionType="none" ExtensionDb="dcUser" Notices="yes" NoticeClass="dcraft.cms.thread.UserNotices" />
-			<Channel Alias="admin-notices" Prefix="NoticesPool" Notices="yes" EmailList="Admin" />
+			<Channel Alias="users" Prefix="Usr" ExtensionType="none" ExtensionDb="dcUser" AccessClass="dcraft.cms.thread.db.access.UsrAccess" Notices="yes" NoticeClass="dcraft.cms.thread.UserNotices" />
+			<Channel Alias="admin-notices" Prefix="NoticesPool" Notices="yes" EmailList="Admin" AccessClass="dcraft.cms.thread.db.access.NoticesAccess" />
+			<Channel Alias="managed-forms" Prefix="ManagedForm" Notices="yes" AccessClass="dcraft.cms.thread.db.access.ManagedAccess" />
 		</Threads>
 
 		<Vaults>
 			<Site Id="Galleries" VaultClass="dcraft.filevault.GalleryVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/galleries"  />
-			<Site Id="Files" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/files"  />
+			<Site Id="Files" VaultClass="dcraft.filevault.FileStoreVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/files"  />
 			<Site Id="Feeds" VaultClass="dcraft.filevault.FeedVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/feeds"  />
 			<Site Id="SiteFiles" VaultClass="dcraft.filevault.SiteVault" ReadBadges="Developer" WriteBadges="Developer" RootFolder="/"  />
-			<Tenant Id="StoreOrders" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />
-			<Tenant Id="ManagedForms" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />
+			<Tenant Id="StoreOrders" VaultClass="dcraft.filevault.FileStoreVault" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />
+			<Tenant Id="ManagedForms" VaultClass="dcraft.filevault.FileStoreVault" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />
 		</Vaults>
 	</Config>
 </Package>

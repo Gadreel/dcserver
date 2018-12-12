@@ -16,6 +16,7 @@
 ************************************************************************ */
 package dcraft.stream.file;
 
+import dcraft.struct.scalar.BinaryStruct;
 import io.netty.buffer.ByteBuf;
 import dcraft.filestore.FileDescriptor;
 import dcraft.hub.app.ApplicationHub;
@@ -29,6 +30,12 @@ import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
 public class MemorySourceStream extends BaseFileStream implements IStreamSource {
+	static public MemorySourceStream fromBinary(BinaryStruct v) {
+		MemorySourceStream mss = new MemorySourceStream();
+		mss.source = new Memory(v.getValue());
+		return mss;
+	}
+	
 	static public MemorySourceStream fromBinary(Memory v) {
 		MemorySourceStream mss = new MemorySourceStream();
 		mss.source = new Memory(v);

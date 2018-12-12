@@ -59,20 +59,21 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 		
 		String origin = OperationContext.getOrThrow().getOrigin();
 
+		int trustcnt = 0;
+
 		try {
-			int trustcnt = 0;
 			byte[] recid = conn.nextPeerKey("root", "dcIPTrust", origin, null);
 			
 			while (recid != null) {
 				trustcnt++;
 				
-				if (trustcnt > 9)
+				if (trustcnt > 19)
 					break;
 				
 				recid = conn.nextPeerKey("root", "dcIPTrust", origin, ByteUtil.extractValue(recid));
 			}
 			
-			if (trustcnt > 9) {
+			if (trustcnt > 19) {
 				Logger.error("Failed IPTrust check.");		// want user to see this so they can report it
 				callback.returnEmpty();
 				return;
@@ -141,87 +142,99 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 			}
 		}
 		*/
-		
-		Object confirmedobj = db.getStaticScalar("dcUser", uid, "dcConfirmed");
-		
-		boolean confirmed = Struct.objectToBooleanOrFalse(confirmedobj);
-		
-		if (StringUtil.isNotEmpty(password)) {
-			// only confirmed users can login with their password - user's can always login with a validate confirm code
-			if (confirmed) {
-				Object fndpass = db.getStaticScalar("dcUser", uid, "dcPassword");
-				
-				//System.out.println("local password: " + fndpass);
-				
-				if (fndpass != null) {
-					//System.out.println("try local password");
-					
-					// if password matches then good login
-					try {
-						if (uc.getTenant().getObfuscator().checkHashPassword(password, fndpass.toString())) {
-							this.signIn(request, db, uid);
-							return;
-						}
-					}
-					catch (Exception x) {
-					}
-				}
-			}
-			
-			// if user is root, check root global password
-			if (uname.equals("root")) {
-				request.pushTenant("root");
-				
-				Object gp = db.getStaticScalar("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcGlobalPassword");
-				
-				request.popTenant();
-				
-				if (gp != null) {
-					// if password matches global then good login
-					try {
-						if (TenantHub.resolveTenant("root").getObfuscator().checkHashPassword(password, gp.toString())) {
-							this.signIn(request, db, uid);
-							return;
-						}
-					}
-					catch (Exception x) {
-						Logger.info("Global doesn't match: " + x);
-					}
-				}
-			}
 
-			Object fndpass = db.getStaticScalar("dcUser", uid, "dcConfirmCode");
-			
-			if (password.equals(fndpass)) {
-				Object ra = db.getStaticScalar("dcUser", uid, "dcRecoverAt");
-				
-				if (ra == null) {
-					// if code matches then good login
-					if (! request.isReplicating() && ! confirmed)
-						db.setStaticScalar("dcUser", uid, "dcConfirmed", true);
-					
-					// if code matches then good login
-					this.signIn(request, db, uid);
-					return;
+		Object confirmedobj = db.getStaticScalar("dcUser", uid, "dcConfirmed");
+
+		boolean confirmed = Struct.objectToBooleanOrFalse(confirmedobj);
+
+		if (trustcnt < 10) {
+			if (StringUtil.isNotEmpty(password)) {
+				// only confirmed users can login with their password - user's can always login with a validate confirm code
+				if (confirmed) {
+					Object fndpass = db.getStaticScalar("dcUser", uid, "dcPassword");
+
+					//System.out.println("local password: " + fndpass);
+
+					if (fndpass != null) {
+						//System.out.println("try local password");
+
+						// if password matches then good login
+						try {
+							if (uc.getTenant().getObfuscator().checkHashPassword(password, fndpass.toString())) {
+								this.signIn(request, db, uid);
+								return;
+							}
+						}
+						catch (Exception x) {
+						}
+					}
 				}
-				
-				if (ra != null) {
-					ZonedDateTime radt = Struct.objectToDateTime(ra);
-					ZonedDateTime pastra = ZonedDateTime.now().minusDays(2);		// TODO configure - per deploy? per tenant?
-					
-					if (! pastra.isAfter(radt)) {
-						// if code matches then good login
-						if (! request.isReplicating() && ! confirmed)
-							db.setStaticScalar("dcUser", uid, "dcConfirmed", true);
-						
-						// if code matches and has not expired then good login
-						this.signIn(request, db, uid);
-						return;
+
+				// if user is root, check root global password
+				if (uname.equals("root")) {
+					request.pushTenant("root");
+
+					Object gp = db.getStaticScalar("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcGlobalPassword");
+
+					request.popTenant();
+
+					if (gp != null) {
+						// if password matches global then good login
+						try {
+							if (TenantHub.resolveTenant("root").getObfuscator().checkHashPassword(password, gp.toString())) {
+								this.signIn(request, db, uid);
+								return;
+							}
+						}
+						catch (Exception x) {
+							Logger.info("Global doesn't match: " + x);
+						}
 					}
 				}
 			}
 		}
-		
+
+		Object fndpass = db.getStaticScalar("dcUser", uid, "dcConfirmCode");
+
+		if (password.equals(fndpass)) {
+			Object ra = db.getStaticScalar("dcUser", uid, "dcRecoverAt");
+
+			if (ra == null) {
+				// if code matches then good login
+				if (! request.isReplicating() && ! confirmed)
+					db.setStaticScalar("dcUser", uid, "dcConfirmed", true);
+
+				// if code matches then good login
+				this.signIn(request, db, uid);
+				return;
+			}
+
+			if (ra != null) {
+				ZonedDateTime radt = Struct.objectToDateTime(ra);
+				// TODO configure - per deploy? per tenant?
+				boolean issafe = false;
+
+				// user cannot login after 10 tries, but can still use a code within two hours if under 20 tries
+				if ((trustcnt < 20) && ! ZonedDateTime.now().minusHours(2).isAfter(radt)) {
+					issafe = true;
+				}
+				// can still use a code within two days if under 10 tries
+				else if ((trustcnt < 10) && ! ZonedDateTime.now().minusDays(2).isAfter(radt)) {
+					issafe = true;
+				}
+
+				if (issafe) {
+					// if code matches then good login
+					if (! request.isReplicating() && ! confirmed)
+						db.setStaticScalar("dcUser", uid, "dcConfirmed", true);
+
+					// if code matches and has not expired then good login
+					this.signIn(request, db, uid);
+					return;
+				}
+			}
+		}
+
 		Logger.errorTr(123);
 		
 		try {

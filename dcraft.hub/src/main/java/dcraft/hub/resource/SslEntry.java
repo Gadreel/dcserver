@@ -82,7 +82,7 @@ public class SslEntry {
     	name = name.substring(p + 1);
     	
     	for (String kname : this.keynames)
-    		if (kname.endsWith(name))
+    		if (kname.equals("*." + name))
     			return true;
     	
     	return false;

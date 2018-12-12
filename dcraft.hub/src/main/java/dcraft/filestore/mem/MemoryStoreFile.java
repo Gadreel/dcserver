@@ -58,7 +58,7 @@ public class MemoryStoreFile extends FileStoreFile {
 		file.driver = driver;
 		file.localpath = path;
 
-		file.with("IsFolder", folder);
+		file.withIsFolder(folder);
 
 		file.refreshProps();
 
@@ -95,6 +95,7 @@ public class MemoryStoreFile extends FileStoreFile {
 		this.withPath(this.localpath);
 		this.with("Modified", TimeUtil.now());
 		this.with("Exists", true);
+		this.withConfirmed(true);
     }
 
 	@Override

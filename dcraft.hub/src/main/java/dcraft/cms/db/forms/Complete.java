@@ -11,12 +11,14 @@ import dcraft.filevault.Vault;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.*;
 import dcraft.interchange.google.RecaptchaUtil;
+import dcraft.interchange.slack.SlackUtil;
 import dcraft.log.Logger;
 import dcraft.schema.SchemaHub;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.Task;
 import dcraft.task.TaskHub;
+import dcraft.tenant.Site;
 import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
 
@@ -73,6 +75,10 @@ public class Complete implements IStoredProc {
 						.with("Id", id)
 				)
 				.withScript(CommonPath.from(scriptpath)));
+		
+		Site site = OperationContext.getOrThrow().getSite();
+		String event = site.getAlias() + " - form submission completed: " + form + " - " + callback.getMessages().toPrettyString();
+		SlackUtil.serverEvent(null, event, null);
 
 		callback.returnEmpty();
 	}

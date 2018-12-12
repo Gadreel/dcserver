@@ -16,6 +16,7 @@ import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.*;
 import dcraft.interchange.google.RecaptchaUtil;
+import dcraft.interchange.slack.SlackUtil;
 import dcraft.log.Logger;
 import dcraft.schema.SchemaHub;
 import dcraft.struct.ListStruct;
@@ -23,6 +24,7 @@ import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.Task;
 import dcraft.task.TaskHub;
+import dcraft.tenant.Site;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
@@ -69,6 +71,10 @@ public class Submit implements IStoredProc {
 			callback.returnEmpty();
 			return;
 		}
+		
+		Site site = OperationContext.getOrThrow().getSite();
+		String event = site.getAlias() + " - form submission started: " + form;
+		SlackUtil.serverEvent(null, event, null);
 
 		if (mform.hasNotEmptyAttribute("Type")) {
 			if (! SchemaHub.validateType(data.getField("Data"), mform.getAttribute("Type"))) {
@@ -124,28 +130,5 @@ public class Submit implements IStoredProc {
 				);
 			}
 		});
-
-		/*
-		Vault mfbucket = OperationContext.getOrThrow().getSite().getVault("ManagedForms");
-		
-		RecordStruct vrequest = RecordStruct.record()
-				.with("Vault", "ManagedForms")
-				.with("Params", RecordStruct.record()
-						.with("Token", refid)
-				);
-
-		mfbucket.allocateUploadToken(data, false, new OperationOutcomeStruct() {
-			@Override
-			public void callback(Struct res) throws OperatingContextException {
-				if (res == null) {
-					callback.returnEmpty();
-					return;
-				}
-
-				RecordStruct token = Struct.objectToRecord(res);
-
-			}
-		});
-		*/
 	}
 }

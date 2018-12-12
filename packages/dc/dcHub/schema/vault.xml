@@ -5,6 +5,8 @@
 			<Field Name="Modified" Type="DateTime" />
 			<Field Name="Path" Type="dcString" />
 			<Field Name="IsFolder" Type="Boolean" />
+			<Field Name="Exists" Type="Boolean" />
+			<Field Name="Confirmed" Type="Boolean" />
 			<Field Name="Extra" Type="Any" />
 		</Record>
 

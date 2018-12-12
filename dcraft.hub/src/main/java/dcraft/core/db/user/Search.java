@@ -42,7 +42,7 @@ public class Search implements IStoredProc {
 					.withValueTwo(term)
 			);
 			
-			collectIds.withNested("dcUser", whereAnd);
+			collectIds.withNested(whereAnd.toFilter("dcUser"));
 		}
 
 		ListStruct badges = data.getFieldAsList("Badges");

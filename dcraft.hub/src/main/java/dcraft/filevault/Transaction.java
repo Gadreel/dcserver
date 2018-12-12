@@ -17,7 +17,6 @@ import dcraft.task.TaskContext;
 import dcraft.task.TaskHub;
 import dcraft.task.TaskObserver;
 import dcraft.util.FileUtil;
-import dcraft.util.TimeUtil;
 
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
@@ -33,22 +32,6 @@ public class Transaction extends TransactionBase {
 		Transaction tx = new Transaction();
 		tx.id = Transaction.createTransactionId();
 		tx.vaultname = vaultname;
-		tx.nodeid = ApplicationHub.getNodeId();
-		return tx;
-	}
-	
-	static public Transaction of(String transactionid, Vault vault) {
-		Transaction tx = new Transaction();
-		tx.id = transactionid;
-		tx.vault = vault;
-		tx.nodeid = ApplicationHub.getNodeId();
-		return tx;
-	}
-	
-	static public Transaction of(Vault vault) {
-		Transaction tx = new Transaction();
-		tx.id = Transaction.createTransactionId();
-		tx.vault = vault;
 		tx.nodeid = ApplicationHub.getNodeId();
 		return tx;
 	}
@@ -95,7 +78,7 @@ public class Transaction extends TransactionBase {
 						try {
 							// if there is a vault and it is expandable this will move the files
 							if (Transaction.this.vault != null)
-								Transaction.this.vault.expandTransaction(Transaction.this);
+								Transaction.this.vault.beforeSubmitTransaction(Transaction.this);
 
 							// delete the expanded temp files remaining, if any, and the folder
 							FileUtil.deleteDirectory(dstore.getPath());

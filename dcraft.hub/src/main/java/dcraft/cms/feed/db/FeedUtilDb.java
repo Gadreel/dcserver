@@ -11,6 +11,7 @@ import dcraft.filestore.FileStore;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.local.LocalStore;
 import dcraft.filestore.mem.MemoryStoreFile;
+import dcraft.filevault.FileStoreVault;
 import dcraft.filevault.Vault;
 import dcraft.filevault.VaultUtil;
 import dcraft.hub.op.OperatingContextException;
@@ -83,7 +84,7 @@ public class FeedUtilDb {
 						.with("Data", TimeUtil.now())
 				);
 
-		Vault fvault = OperationContext.getOrThrow().getSite().getVault("Feeds");
+		FileStoreVault fvault = OperationContext.getOrThrow().getSite().getFeedsVault();
 
 		if (fvault == null) {
 			Logger.error("Missing Feeds vault");
@@ -383,7 +384,7 @@ public class FeedUtilDb {
 	static public void publishHistory(DatabaseAdapter conn, TablesAdapter db, String feed, String path, String hid, OperationOutcomeStruct callback) throws OperatingContextException {
 		db.setStaticScalar("dcmFeedHistory", hid, "dcmPublished", true);
 		
-		Vault feedsvault = OperationContext.getOrThrow().getSite().getVault("Feeds");
+		FileStoreVault feedsvault = OperationContext.getOrThrow().getSite().getFeedsVault();
 		
 		// TODO feedsvault.mapRequest ...
 		

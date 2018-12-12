@@ -8,6 +8,7 @@ import dcraft.db.IConnectionManager;
 import dcraft.db.fileindex.FileIndexAdapter;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
+import dcraft.filestore.FileDescriptor;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.mem.MemoryStoreFile;
 import dcraft.filevault.work.FeedSearchWork;
@@ -22,10 +23,11 @@ import dcraft.util.StringUtil;
 import dcraft.web.ui.UIUtil;
 import dcraft.xml.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class FeedVault extends Vault {
-	// TODO if delete "pages" path also delete the "www" file
+public class FeedVault extends FileStoreVault {
+	// TODO if delete "pages" path also delete the "www" file ?
 
 	@Override
 	public void processTransaction(TransactionBase tx) throws OperatingContextException {
@@ -53,101 +55,45 @@ public class FeedVault extends Vault {
 			);
 		}
 	}
-
+	
 	@Override
-	public void listFiles(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
-		// check bucket security
-		if (checkAuth && ! this.checkReadAccess("ListFiles", request)) {
-			Logger.errorTr(434);
-			fcb.returnEmpty();
-			return;
-		}
-		
-		this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
+	public void getFolderListing(FileDescriptor file, RecordStruct params, OperationOutcome<List<? extends FileDescriptor>> callback) throws OperatingContextException {
+		this.fsd.getFolderListing(file.getPathAsCommon(), new OperationOutcome<List<FileStoreFile>>() {
 			@Override
-			public void callback(FileStoreFile result) throws OperatingContextException {
-				if (this.hasErrors()) {
-					fcb.returnEmpty();
-					return;
+			public void callback(List<FileStoreFile> result) throws OperatingContextException {
+				
+				boolean showHidden = OperationContext.getOrThrow().getUserContext().isTagged("Admin");
+				
+				List<FileDescriptor> files = new ArrayList<>();
+				
+				for (FileDescriptor file : this.getResult()) {
+					if (file.getName().equals(".DS_Store"))
+						continue;
+					
+					if (! showHidden && file.getName().startsWith("."))
+						continue;
+					
+					// don't list "part" files, just full
+					if (StringUtil.countOccurrences(file.getName(), '.') > 1)
+						continue;
+					
+					files.add(file);
 				}
 				
-				if (this.isEmptyResult()) {
-					Logger.error("Your request appears valid but does not map to a file.  Unable to complete.");
-					fcb.returnEmpty();
-					return;
-				}
-				
-				FileStoreFile fi = this.getResult();
-				
-				if (!fi.exists()) {
-					fcb.returnEmpty();
-					return;
-				}
-
-				FeedVault.this.fsd.getFolderListing(fi.getPathAsCommon(), new OperationOutcome<List<FileStoreFile>>() {
-					@Override
-					public void callback(List<FileStoreFile> result) throws OperatingContextException {
-						if (this.hasErrors()) {
-							fcb.returnEmpty();
-							return;					
-						}
-						
-						boolean showHidden = OperationContext.getOrThrow().getUserContext().isTagged("Admin");
-						
-						ListStruct files = new ListStruct();
-						
-						for (FileStoreFile file : this.getResult()) {
-							if (file.getName().equals(".DS_Store"))
-								continue;
-							
-							if (! showHidden && file.getName().startsWith("."))
-								continue;
-
-							// TODO better to put this in the browser UI
-							//boolean isHtml = file.getName().endsWith(".html");
-
-							//if (! file.isFolder() && ! isHtml)
-							//	continue;
-
-							// don't list "part" files, just full
-							if (StringUtil.countOccurrences(file.getName(), '.') > 1)
-								continue;
-
-							RecordStruct fdata = new RecordStruct();
-							
-							//fdata.with("FileName", isHtml ? file.getName().substring(0, file.getName().length() - 5) : file.getName());
-							fdata.with("FileName", file.getName());
-							fdata.with("IsFolder", file.isFolder());
-							fdata.with("Modified", file.getModification());
-							fdata.with("Size", file.getSize());
-							fdata.with("Extra", file.getExtra());
-							
-							files.with(fdata);
-						}
-						
-						fcb.returnValue(files);
-					}
-				});
+				callback.returnValue(files);
 			}
 		});
-	}	
+	}
 
 	@Override
-	public void executeCustom(RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
-		// check bucket security
-		if (checkAuth && ! this.checkWriteAccess("Custom", request)) {
-			Logger.errorTr(434);
-			fcb.returnEmpty();
-			return;
-		}
-
+	public void executeCustom(RecordStruct request, OperationOutcomeStruct fcb) throws OperatingContextException {
 		String cmd = request.getFieldAsString("Command");
 		
 		// TODO check security
 		if ("AddFeed".equals(cmd)) {
-			this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
+			this.getMappedFileDetail(request.getFieldAsString("Path"), request.getFieldAsRecord("Params"), new OperationOutcome<FileDescriptor>() {
 				@Override
-				public void callback(FileStoreFile result) throws OperatingContextException {
+				public void callback(FileDescriptor result) throws OperatingContextException {
 					if (this.hasErrors()) {
 						fcb.returnEmpty();
 						return;
@@ -159,7 +105,7 @@ public class FeedVault extends Vault {
 						return;
 					}
 
-					FileStoreFile fi = result;
+					FileStoreFile fi = (FileStoreFile) result;
 
 					if (fi.exists()) {
 						Logger.error("This path would overwrite an existing page. Please edit the page or remove it and then add it.");
@@ -169,7 +115,7 @@ public class FeedVault extends Vault {
 
 					Vault tempvault = OperationContext.getOrThrow().getSite().getVault("SiteFiles");
 
-					if (tempvault == null) {
+					if ((tempvault == null) || ! (tempvault instanceof FileStoreVault)) {
 						Logger.error("SiteFiles vault missing.");
 						fcb.returnEmpty();
 						return;
@@ -183,18 +129,18 @@ public class FeedVault extends Vault {
 					String wwwpath = "/templates/" + fi.getPathAsCommon().getName(0)
 							+ "/" + request.selectAsString("Params.Template") + "/www.html";
 
-					tempvault.mapRequest(RecordStruct.record()
-							.with("Path", temppath),
-							new OperationOutcome<FileStoreFile>() {
+					tempvault.getMappedFileDetail(temppath,
+							request.getFieldAsRecord("Params"),
+							new OperationOutcome<FileDescriptor>() {
 								@Override
-								public void callback(FileStoreFile source) throws OperatingContextException {
+								public void callback(FileDescriptor source) throws OperatingContextException {
 									if (this.hasErrors() || this.isEmptyResult()) {
 										Logger.error("Template file missing.");
 										fcb.returnEmpty();
 										return;
 									}
 
-									source.readAllText(new OperationOutcome<String>() {
+									((FileStoreFile) source).readAllText(new OperationOutcome<String>() {
 										@Override
 										public void callback(String result) throws OperatingContextException {
 											if (this.hasErrors() || this.isEmptyResult()) {
@@ -245,11 +191,11 @@ public class FeedVault extends Vault {
 														@Override
 														public void callback(Struct result) throws OperatingContextException {
 															if ("pages".equals(fi.getPathAsCommon().getName(0))) {
-																tempvault.mapRequest(RecordStruct.record()
-																				.with("Path", wwwpath),
-																		new OperationOutcome<FileStoreFile>() {
+																tempvault.getMappedFileDetail(wwwpath,
+																		request.getFieldAsRecord("Params"),
+																		new OperationOutcome<FileDescriptor>() {
 																			@Override
-																			public void callback(FileStoreFile wwwsource) throws OperatingContextException {
+																			public void callback(FileDescriptor wwwsource) throws OperatingContextException {
 																				if (this.hasErrors() || this.isEmptyResult()) {
 																					Logger.error("Template web file missing.");
 																					fcb.returnEmpty();
@@ -258,7 +204,7 @@ public class FeedVault extends Vault {
 
 																				CommonPath sitepath = CommonPath.from("/www").resolve(fi.getPathAsCommon().subpath(1));
 
-																				VaultUtil.transfer("SiteFiles", wwwsource, sitepath, null, fcb);
+																				VaultUtil.transfer("SiteFiles", (FileStoreFile) wwwsource, sitepath, null, fcb);
 																			}
 																		});
 															}
@@ -278,9 +224,9 @@ public class FeedVault extends Vault {
 		}
 
 		if ("LoadPart".equals(cmd)) {
-			this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
+			this.getMappedFileDetail(request.getFieldAsString("Path"), request.getFieldAsRecord("Params"), new OperationOutcome<FileDescriptor>() {
 				@Override
-				public void callback(FileStoreFile result) throws OperatingContextException {
+				public void callback(FileDescriptor result) throws OperatingContextException {
 					if (this.hasErrors()) {
 						fcb.returnEmpty();
 						return;
@@ -292,7 +238,7 @@ public class FeedVault extends Vault {
 						return;
 					}
 					
-					FileStoreFile fi = this.getResult();
+					FileStoreFile fi = (FileStoreFile) this.getResult();
 					
 					if (!fi.exists()) {
 						Logger.error("Your request appears valid but does not map to a folder.  Unable to complete.");
@@ -368,9 +314,9 @@ public class FeedVault extends Vault {
 		
 		// TODO check security
 		if ("SavePart".equals(cmd) || "SaveMeta".equals(cmd) || "Reorder".equals(cmd)) {
-			this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
+			this.getMappedFileDetail(request.getFieldAsString("Path"), request.getFieldAsRecord("Params"), new OperationOutcome<FileDescriptor>() {
 				@Override
-				public void callback(FileStoreFile result) throws OperatingContextException {
+				public void callback(FileDescriptor result) throws OperatingContextException {
 					if (this.hasErrors()) {
 						fcb.returnEmpty();
 						return;
@@ -382,7 +328,7 @@ public class FeedVault extends Vault {
 						return;
 					}
 					
-					FileStoreFile fi = this.getResult();
+					FileStoreFile fi = (FileStoreFile) this.getResult();
 					
 					if (!fi.exists()) {
 						Logger.error("Your request appears valid but does not map to a folder.  Unable to complete.");
@@ -435,9 +381,9 @@ public class FeedVault extends Vault {
 		}
 		
 		if ("LoadMeta".equals(cmd)) {
-			this.mapRequest(request, new OperationOutcome<FileStoreFile>() {
+			this.getMappedFileDetail(request.getFieldAsString("Path"), request.getFieldAsRecord("Params"), new OperationOutcome<FileDescriptor>() {
 				@Override
-				public void callback(FileStoreFile result) throws OperatingContextException {
+				public void callback(FileDescriptor result) throws OperatingContextException {
 					if (this.hasErrors()) {
 						fcb.returnEmpty();
 						return;
@@ -449,7 +395,7 @@ public class FeedVault extends Vault {
 						return;
 					}
 					
-					FileStoreFile fi = this.getResult();
+					FileStoreFile fi = (FileStoreFile) this.getResult();
 					
 					if (!fi.exists()) {
 						Logger.error("Your request appears valid but does not map to a folder.  Unable to complete.");
@@ -531,6 +477,6 @@ public class FeedVault extends Vault {
 		}
 			*/
 		
-		super.executeCustom(request, checkAuth, fcb);
+		super.executeCustom(request, fcb);
 	}
 }

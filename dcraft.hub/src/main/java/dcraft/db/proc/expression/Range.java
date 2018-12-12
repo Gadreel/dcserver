@@ -32,7 +32,7 @@ public class Range extends TwoExpression {
 		
 		if (ExpressionUtil.compare(data, this.values) > -1) {
 			if (ExpressionUtil.compare(data, this.values2) < 1) {
-				return ExpressionResult.ACCEPTED;
+				return this.nestOrAccept(adapter, scope, table, id);
 			}
 		}
 		

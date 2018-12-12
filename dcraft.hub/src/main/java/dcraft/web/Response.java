@@ -17,7 +17,10 @@
 package dcraft.web;
 
 import dcraft.hub.ResourceHub;
+import dcraft.struct.FieldStruct;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
 import dcraft.util.Memory;
 import dcraft.util.io.InputWrapper;
 import dcraft.util.io.OutputWrapper;
@@ -60,7 +63,7 @@ public class Response extends RecordStruct {
     protected boolean keepAlive = false; 
     // TODO improve
 	protected Memory body = new Memory();
-    protected Map<CharSequence, Object> headers = new HashMap<>();
+    //protected Map<CharSequence, String> headers = new HashMap<>();
     protected HttpResponseStatus status = HttpResponseStatus.OK;
 	
 	// TODO improve
@@ -83,13 +86,16 @@ public class Response extends RecordStruct {
     	this.cookies.put(v.name(), v);
     }
     
-    public void setHeader(CharSequence name, Object value) {
-    	this.headers.put(name, value);
+    public void setHeader(String name, String value) {
+    	if (! this.hasField("Headers"))
+    		this.with("Headers", RecordStruct.record());
+    	
+    	this.getFieldAsRecord("Headers").with(name, value);
     }
     
-    public void setDateHeader(CharSequence name, long value) {
+    public void setDateHeader(String name, long value) {
     	DateParser parser = new DateParser();
-    	this.headers.put(name, parser.convert(value));
+    	this.setHeader(name, parser.convert(value));
     }
     
     public void setStatus(HttpResponseStatus v) {
@@ -136,9 +142,12 @@ public class Response extends RecordStruct {
         // Encode the cookies
         for (Cookie c : this.cookies.values()) 
 	        response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
-        
-        for (Entry<CharSequence, Object> h : this.headers.entrySet())
-        	response.headers().set(h.getKey(), h.getValue());
+	
+		RecordStruct headers = this.getFieldAsRecord("Headers");
+		
+		if (headers != null)
+			for (FieldStruct h : headers.getFields())
+				response.headers().set(h.getName(), Struct.objectToString(h.getValue()));
 	
 		// TODO restore - Hub.instance.getSecurityPolicy().hardenHttpResponse(response);
         
@@ -179,9 +188,12 @@ public class Response extends RecordStruct {
         // Encode the cookies
         for (Cookie c : this.cookies.values()) 
 	        response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
-        
-        for (Entry<CharSequence, Object> h : this.headers.entrySet())
-        	response.headers().set(h.getKey(), h.getValue());
+	
+		RecordStruct headers = this.getFieldAsRecord("Headers");
+	
+		if (headers != null)
+			for (FieldStruct h : headers.getFields())
+				response.headers().set(h.getName(), Struct.objectToString(h.getValue()));
 	
 		// TODO restore - Hub.instance.getSecurityPolicy().hardenHttpResponse(response);
         
@@ -230,11 +242,14 @@ public class Response extends RecordStruct {
         // Encode the cookies
         for (Cookie c : this.cookies.values()) 
 	        response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
-        
-        for (Entry<CharSequence, Object> h : this.headers.entrySet())
-        	response.headers().set(h.getKey(), h.getValue());
-        
-        // TODO restore - Hub.instance.getSecurityPolicy().hardenHttpResponse(response);
+	
+		RecordStruct headers = this.getFieldAsRecord("Headers");
+	
+		if (headers != null)
+			for (FieldStruct h : headers.getFields())
+				response.headers().set(h.getName(), Struct.objectToString(h.getValue()));
+	
+		// TODO restore - Hub.instance.getSecurityPolicy().hardenHttpResponse(response);
         
     	if (Logger.isDebug()) {
     		Logger.debug("Web server responding to " + ch.remoteAddress());
@@ -245,7 +260,7 @@ public class Response extends RecordStruct {
     	}
         
         // Write the response.
-        ch.write(response);
+        ch.writeAndFlush(response);
     }
     
     public void writeEnd(Channel ch) {
@@ -281,9 +296,12 @@ public class Response extends RecordStruct {
         // Encode the cookies
         for (Cookie c : this.cookies.values()) 
 	        response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
-        
-        for (Entry<CharSequence, Object> h : this.headers.entrySet())
-        	response.headers().set(h.getKey(), h.getValue());
+	
+		RecordStruct headers = this.getFieldAsRecord("Headers");
+	
+		if (headers != null)
+			for (FieldStruct h : headers.getFields())
+				response.headers().set(h.getName(), Struct.objectToString(h.getValue()));
 
     	response.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
         
@@ -322,9 +340,12 @@ public class Response extends RecordStruct {
         // Encode the cookies
         for (Cookie c : this.cookies.values()) 
 	        response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
-        
-        for (Entry<CharSequence, Object> h : this.headers.entrySet())
-        	response.headers().set(h.getKey(), h.getValue());
+	
+		RecordStruct headers = this.getFieldAsRecord("Headers");
+	
+		if (headers != null)
+			for (FieldStruct h : headers.getFields())
+				response.headers().set(h.getName(), Struct.objectToString(h.getValue()));
 
     	response.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
         

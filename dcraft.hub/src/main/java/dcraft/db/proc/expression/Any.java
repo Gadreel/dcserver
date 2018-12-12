@@ -13,6 +13,6 @@ public class Any extends TwoExpression {
 	public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, String id) throws OperatingContextException {
 		List<byte[]> data = adapter.getRaw(table, id, this.fieldInfo.field.getName(), this.fieldInfo.subid, "Index");
 		
-		return ExpressionUtil.any(data, this.values) ? ExpressionResult.ACCEPTED : ExpressionResult.REJECTED;
+		return ExpressionUtil.any(data, this.values) ? this.nestOrAccept(adapter, scope, table, id) : ExpressionResult.REJECTED;
 	}
 }

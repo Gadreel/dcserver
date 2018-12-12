@@ -12,6 +12,7 @@ import dcraft.filestore.CollectionSourceStream;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileCollection;
 import dcraft.filestore.mem.MemoryStoreFile;
+import dcraft.filevault.FileStoreVault;
 import dcraft.filevault.Vault;
 import dcraft.filestore.local.LocalStore;
 import dcraft.hub.ResourceHub;
@@ -48,7 +49,7 @@ public class Site extends Base {
 	static final public CommonPath PATH_INDEX = new CommonPath("/index");
 	static final public CommonPath PATH_HOME = new CommonPath("/home");
 
-	static final public String[] EXTENSIONS_STD = new String[] { ".html", ".md", ".gas" };
+	static final public String[] EXTENSIONS_STD = new String[] { ".html", ".md", ".dcs.xml" };
 
 	static public Site of(Tenant tenant, String alias) {
 		Site site = new Site();
@@ -291,6 +292,31 @@ public class Site extends Base {
 		return IOUtil.readEntireFile(fpath).toString();
 	}
 	
+	public Collection<Vault> getSiteVaults() throws OperatingContextException {
+		List<XElement> vaults = this.getResources().getConfig().getTagListDeep("Vaults/Site");
+
+		for (XElement bucket : vaults) {
+			String alias = bucket.getAttribute("Id");
+
+			if (StringUtil.isEmpty(alias) || this.vaults.containsKey(alias))
+				continue;
+
+			Vault b = Vault.of(this, bucket);
+
+			if (b != null)
+				this.vaults.put(alias, b);
+		}
+
+		List<Vault> copy = new ArrayList<>();
+
+		copy.addAll(this.vaults.values());
+		
+		if ("root".equals(this.getAlias()))
+			copy.addAll(this.getTenant().getVaults());
+		
+		return copy;
+	}
+	
 	public Collection<Vault> getVaults() throws OperatingContextException {
 		List<XElement> vaults = this.getResources().getConfig().getTagListDeep("Vaults/Site");
 
@@ -312,7 +338,7 @@ public class Site extends Base {
 
 		copy.addAll(this.getTenant().getVaults());
 
-		return this.vaults.values();
+		return copy;
 	}
 
 	@Override
@@ -336,7 +362,47 @@ public class Site extends Base {
 
 		return this.getTenant().getVault(alias);
 	}
-
+	
+	public FileStoreVault getGalleriesVault() throws OperatingContextException {
+		Vault vault = this.getVault("Galleries");
+		
+		if ((vault != null) && (vault instanceof FileStoreVault))
+			return (FileStoreVault) vault;
+		
+		Logger.error("Missing or badly configured Galleries vault");
+		return null;
+	}
+	
+	public FileStoreVault getFilesVault() throws OperatingContextException {
+		Vault vault = this.getVault("Files");
+		
+		if ((vault != null) && (vault instanceof FileStoreVault))
+			return (FileStoreVault) vault;
+		
+		Logger.error("Missing or badly configured Files vault");
+		return null;
+	}
+	
+	public FileStoreVault getFeedsVault() throws OperatingContextException {
+		Vault vault = this.getVault("Feeds");
+		
+		if ((vault != null) && (vault instanceof FileStoreVault))
+			return (FileStoreVault) vault;
+		
+		Logger.error("Missing or badly configured Galleries Feeds");
+		return null;
+	}
+	
+	public FileStoreVault getSiteFilesVault() throws OperatingContextException {
+		Vault vault = this.getVault("SiteFiles");
+		
+		if ((vault != null) && (vault instanceof FileStoreVault))
+			return (FileStoreVault) vault;
+		
+		Logger.error("Missing or badly configured SiteFiles vault");
+		return null;
+	}
+	
 	public List<XElement> webGlobalStyles(boolean cachmode) throws OperatingContextException {
 		List<XElement> ret = new ArrayList<>();
 		
@@ -672,11 +738,9 @@ public class Site extends Base {
 		else if (filename.endsWith(".md")) {
 			ioa = new MarkdownOutputAdapter();
 		}
-		/*
-		else if (filename.endsWith(".gas")) {
-			ioa = new GasOutputAdapter();
+		else if (filename.endsWith(".dcs.xml")) {
+			ioa = new ScriptOutputAdapter();
 		}
-		*/
 		else {
 			ioa = new StaticOutputAdapter();
 		}
@@ -800,7 +864,7 @@ public class Site extends Base {
 		while (pdepth > 0) {
 			CommonPath ppath = path.subpath(0, pdepth);
 			
-			// TODO move this - we want to check all extensions at folder level then go up the path
+			// we want to check all extensions at folder level then go up the path
 			for (String ext : this.specialExtensions) {
 				Path cfile = this.findSectionFile(sect, ppath.toString() + ext, view);
 				

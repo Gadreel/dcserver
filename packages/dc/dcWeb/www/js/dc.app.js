@@ -3461,8 +3461,15 @@ dc.pui.controls.Input.prototype = {
 
 		var val = $(node).attr('value');
 
-		if (! dc.util.String.isEmpty(val))
+		if (! dc.util.String.isEmpty(val)) {
 			this.DefaultValue = val;
+		}
+		else {
+			val = $(node).attr('data-value');
+
+			if (! dc.util.String.isEmpty(val))
+				this.DefaultValue = val;
+		}
 
 		this.Id = id;
 

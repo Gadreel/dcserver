@@ -1,5 +1,6 @@
 package dcraft.cms.thread.db;
 
+import dcraft.cms.thread.IChannelAccess;
 import dcraft.cms.util.FeedUtil;
 import dcraft.db.DatabaseException;
 import dcraft.db.IRequestContext;
@@ -43,6 +44,7 @@ import dcraft.xml.XElement;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import static dcraft.db.Constants.DB_GLOBAL_INDEX_SUB;
@@ -237,6 +239,17 @@ public class ThreadUtil {
 		}
 	}
 
+	static public void clearIndex(TablesAdapter db) throws OperatingContextException {
+		try {
+			String tenant = OperationContext.getOrThrow().getTenant().getAlias();
+
+			db.getRequest().getInterface().kill(tenant, "dcmThreadA");
+		}
+		catch (DatabaseException x) {
+			Logger.error("Unable to clear thread index: " + x);
+		}
+	}
+
 	public static XElement getMessageTypeDef(String type) {
 		List<XElement> types = ResourceHub.getResources().getConfig().getTagListDeep("Threads/Type");
 
@@ -262,6 +275,10 @@ public class ThreadUtil {
 
 		return null;
 	}
+
+	public static List<XElement> getChannelDefs() {
+		return ResourceHub.getResources().getConfig().getTagListDeep("Threads/Channel");
+	}
 	
 	static public String partyToPrefix(String party) {
 		party = party.substring(1);
@@ -272,6 +289,47 @@ public class ThreadUtil {
 			party = party.substring(0, pos);
 		
 		return party;
+	}
+	
+	public static List<String> getChannelAccess(TablesAdapter db, IVariableAware scope, XElement chandef) throws OperatingContextException {
+		List<String> list = new ArrayList<>();
+		
+		if (chandef.hasEmptyAttribute("AccessClass"))
+			return list;
+		
+		Object accessClass = ResourceHub.getResources().getClassLoader().getInstance(chandef.attr("AccessClass"));
+		
+		if (accessClass instanceof IChannelAccess)
+			return ((IChannelAccess) accessClass).collectParties(db, scope);
+		
+		return list;
+	}
+	
+	public static List<String> collectMessageAccess(TablesAdapter db, IVariableAware scope, String mid) throws OperatingContextException {
+		List<String> list = new ArrayList<>();
+		
+		List<String> parties = db.getStaticListKeys("dcmThread", mid, "dcmParty");
+		
+		for (String party : parties) {
+			XElement chandef = ThreadUtil.getChannelDefFromParty(party);
+			
+			if ((chandef != null) && ! chandef.hasEmptyAttribute("AccessClass")) {
+				Object accessClass = ResourceHub.getResources().getClassLoader().getInstance(chandef.attr("AccessClass"));
+				
+				if (accessClass instanceof IChannelAccess) {
+					List<String> accessparties = ((IChannelAccess) accessClass).collectParties(db, scope);
+					
+					for (String ap : accessparties) {
+						if (ap.equals(party)) {
+							list.add(party);
+							break;
+						}
+					}
+				}
+			}
+		}
+		
+		return list;
 	}
 
 	public static void deliveryNotice(TablesAdapter db, String id) throws OperatingContextException {

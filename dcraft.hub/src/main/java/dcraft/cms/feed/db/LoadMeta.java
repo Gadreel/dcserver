@@ -8,6 +8,7 @@ import dcraft.db.proc.filter.Unique;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileStoreFile;
+import dcraft.filevault.FileStoreVault;
 import dcraft.filevault.Vault;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
@@ -38,7 +39,7 @@ public class LoadMeta implements IStoredProc {
 		
 		String hid = collector.isEmpty() ? null : collector.getOne().toString();
 		
-		Vault feedsvault = OperationContext.getOrThrow().getSite().getVault("Feeds");
+		FileStoreVault feedsvault = OperationContext.getOrThrow().getSite().getFeedsVault();
 		
 		// TODO feedsvault.mapRequest ...
 		

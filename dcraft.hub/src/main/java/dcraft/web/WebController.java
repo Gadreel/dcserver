@@ -287,6 +287,17 @@ public class WebController extends OperationController {
 		}
 	}
 	
+	public void sendForbidden() {
+    	if (Logger.isDebug())
+    		Logger.debug("Web server respond with Forbidden");
+    	
+		if (this.getResponse() != null) {
+			this.getResponse().setStatus(HttpResponseStatus.FORBIDDEN);
+			this.getResponse().setKeepAlive(false);
+			this.send();
+		}
+	}
+	
 	public void sendForbiddenRead() {
     	if (Logger.isDebug())
     		Logger.debug("Web server respond with Forbidden");

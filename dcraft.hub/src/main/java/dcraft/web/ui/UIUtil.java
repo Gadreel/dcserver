@@ -273,6 +273,8 @@ public class UIUtil {
 
 		if (pathclass.endsWith(".html"))
 			pathclass = pathclass.substring(0, pathclass.length() - 5);
+		else if (pathclass.endsWith(".dcs.xml"))
+			pathclass = pathclass.substring(0, pathclass.length() - 8);
 
 		pathclass = pathclass.replace('.', '_');
 

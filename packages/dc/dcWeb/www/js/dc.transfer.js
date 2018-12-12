@@ -393,6 +393,7 @@ dc.transfer = {
 	Util: {
 		uploadFiles: function(files, vault, token, callback, ovrwrt, params) {
 			var steps = [ ];
+			var cleanfiles = [ ];
 
 			for (var i = 0; i < files.length; i++) {
 				var file = files[i];
@@ -404,6 +405,8 @@ dc.transfer = {
 
 				if (! file.Name)
 					file.Name = dc.util.File.toCleanFilename(file.File.name);
+
+				cleanfiles.push(file);
 
 				steps.push({
 					Alias: 'UploadFile',
@@ -453,7 +456,7 @@ dc.transfer = {
 
 			var uploadtask = new dc.lang.Task(steps, function(res) {
 				if (callback)
-					callback();
+					callback(steps, cleanfiles);
 			});
 
 			uploadtask.Store = {

@@ -2,6 +2,7 @@ package dcraft.db.proc.expression;
 
 import dcraft.db.Constants;
 import dcraft.db.proc.ExpressionResult;
+import dcraft.db.proc.IFilter;
 import dcraft.db.request.query.WhereIs;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.util.ByteUtil;
@@ -25,7 +26,7 @@ public class Is extends OneExpression {
 		return obj;
 	}
 		*/
-	
+
 	@Override
 	public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, String id) throws OperatingContextException {
 		List<byte[]> data = adapter.getRaw(table, id, this.fieldInfo.field.getName(), this.fieldInfo.subid, "Data");
@@ -40,7 +41,7 @@ public class Is extends OneExpression {
 				continue;
 			
 			if (ByteUtil.compareKeys(d, Constants.DB_EMPTY_ARRAY) != 0)
-				return ExpressionResult.ACCEPTED;
+				return this.nestOrAccept(adapter, scope, table, id);
 		}
 		
 		return ExpressionResult.REJECTED;

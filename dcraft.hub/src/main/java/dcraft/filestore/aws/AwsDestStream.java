@@ -222,7 +222,7 @@ public class AwsDestStream extends BaseFileStream implements IFileStreamDest {
 				
 				System.out.println("Size: " + fsize);
 				
-				AwsStoreFile fs = AwsStoreFile.of(((AwsStoreFile) this.currfile).awsdriver, this.currfile.resolvePath(fpath));
+				AwsStoreFile fs = AwsStoreFile.of(((AwsStoreFile) this.currfile).awsdriver, this.currfile.resolvePath(fpath), false);
 				
 				S3Object object = new S3Object(null, null);
 				
