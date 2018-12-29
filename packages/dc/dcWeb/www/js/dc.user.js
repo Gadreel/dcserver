@@ -168,6 +168,46 @@ dc.user = {
 		});
 	},
 
+	recover: function(request, code, callback) {
+		if (! dc.comm.isSecure()) {
+			dc.pui.Popup.alert('May not sign in on an insecure connection');
+
+			if (callback)
+				callback(null);
+
+			return;
+		}
+
+		dc.user._info = { };
+
+		// we take what ever Credentials are supplied, so custom Credentials may be used
+		var msg = {
+			Service: 'dcCoreServices',
+			Feature: 'Authentication',
+			Op: 'Recover',
+			Body: {
+				Code: code,
+				Uuid: request
+			}
+		};
+
+		dc.comm.sendMessage(msg, function(rmsg) {
+			if (rmsg.Result == 0) {
+				dc.user.setUserInfo(rmsg.Body);
+
+				// failed login will not wipe out remembered user (could be a server issue or timeout),
+				// only set on success - successful logins will save or wipe out depending on Remember
+				dc.user.saveRemembered(false);
+
+				if (dc.user._signinhandler)
+					dc.user._signinhandler.call(dc.user._info);
+			}
+
+			if (callback)
+				callback();
+		});
+	},
+
 	facebookSignin : function(token, callback) {
 		if (! dc.comm.isSecure()) {
 			dc.pui.Popup.alert('May not sign in on an insecure connection');

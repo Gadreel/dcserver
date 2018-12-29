@@ -23,22 +23,29 @@ public class SignUp implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 		
-		String captcha = data.getFieldAsString("Captcha");
+		XElement userconfig = ResourceHub.getResources().getConfig().getTag("Users");
 		
-		RecaptchaUtil.siteVerify(captcha, null, new OperationOutcomeRecord() {
-			@Override
-			public void callback(RecordStruct result) throws OperatingContextException {
-				if (this.hasErrors()) {
-					Logger.error("Unable to sign up - access not verified");
-					
-					callback.returnEmpty();
-				} else {
-					//System.out.println("Success");
-					
-					SignUp.this.submitWork(request, callback);
+		if ((userconfig != null) && userconfig.getAttributeAsBooleanOrFalse("SignUpCaptcha")) {
+			String captcha = data.getFieldAsString("Captcha");
+			
+			RecaptchaUtil.siteVerify(captcha, null, new OperationOutcomeRecord() {
+				@Override
+				public void callback(RecordStruct result) throws OperatingContextException {
+					if (this.hasErrors()) {
+						Logger.error("Unable to sign up - access not verified");
+						
+						callback.returnEmpty();
+					} else {
+						//System.out.println("Success");
+						
+						SignUp.this.submitWork(request, callback);
+					}
 				}
-			}
-		});
+			});
+		}
+		else {
+			SignUp.this.submitWork(request, callback);
+		}
 	}
 	
 	public void submitWork(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {

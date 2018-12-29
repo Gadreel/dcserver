@@ -63,21 +63,23 @@ public class SearchIndex implements IStoredProc {
 							new BasicFilter() {
 								@Override
 								public ExpressionResult check(FileIndexAdapter adapter, IVariableAware scope, Vault vault, CommonPath path, RecordStruct file) throws OperatingContextException {
-									file.with("Path", path);
-									
-									RecordStruct rcache = (RecordStruct) scope.queryVariable("_RecordCache");
-									
-									if (rcache != null) {
-										file.with("Score", rcache.getFieldAsInteger("TermScore"));
+									if (file.getFieldAsBooleanOrFalse("Public")) {
+										file.with("Path", path);
+
+										RecordStruct rcache = (RecordStruct) scope.queryVariable("_RecordCache");
+
+										if (rcache != null) {
+											file.with("Score", rcache.getFieldAsInteger("TermScore"));
+										}
+
+										try {
+											out.value(file);
+										}
+										catch (BuilderStateException x) {
+
+										}
 									}
-									
-									try {
-										out.value(file);
-									}
-									catch (BuilderStateException x) {
-									
-									}
-									
+
 									return ExpressionResult.accepted();
 								}
 							})

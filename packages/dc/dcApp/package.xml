@@ -36,7 +36,8 @@
 			<Tag Name="dc.Region" Class="dcraft.web.ui.inst.Region" />
 			<Tag Name="dc.Style" Class="dcraft.web.ui.inst.Style" />
 			<Tag Name="dc.Tag" Class="dcraft.web.ui.inst.Tag" />
-
+			<Tag Name="dc.Icon" Class="dcraft.web.ui.inst.Icon" />
+			<Tag Name="dc.StackedIcon" Class="dcraft.web.ui.inst.StackedIcon" />
 
 			<!-- special content tags -->
 			<Tag Name="dc.Out" Class="dcraft.script.inst.doc.Out" />

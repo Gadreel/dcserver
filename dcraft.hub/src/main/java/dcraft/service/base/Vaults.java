@@ -117,7 +117,7 @@ public class Vaults  {
 			return true;
 		}
 		
-		if ("DeleteFile".equals(op) || "DeleteFolder".equals(op)) {
+		if ("Delete".equals(op) || "DeleteFile".equals(op) || "DeleteFolder".equals(op)) {
 			deleteFile(vault, rec, request.isFromRpc(), callback);
 			return true;
 		}
@@ -126,7 +126,17 @@ public class Vaults  {
 			addFolder(vault, rec, request.isFromRpc(), callback);
 			return true;
 		}
-		
+
+		if ("Rename".equals(op)) {
+			rename(vault, rec, request.isFromRpc(), callback);
+			return true;
+		}
+
+		if ("Move".equals(op)) {
+			move(vault, rec, request.isFromRpc(), callback);
+			return true;
+		}
+
 		if ("ListFiles".equals(op)) {
 			listFiles(vault, rec, request.isFromRpc(), new OperationOutcome<List<? extends FileDescriptor>>() {
 				@Override
@@ -286,7 +296,103 @@ public class Vaults  {
 			fcb.returnEmpty();
 		}
 	}
-	
+
+	static public void rename(Vault vault, RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
+		RecordStruct params = request.getFieldAsRecord("Params");
+
+		try {
+			// check bucket security
+			if (checkAuth && ! vault.checkWriteAccess("DeleteFile", request.getFieldAsString("Path"), params)) {
+				Logger.errorTr(434);
+				fcb.returnValue(null);
+				return;
+			}
+
+			vault.getMappedFileDetail(request.getFieldAsString("Path"), params, new OperationOutcome<FileDescriptor>() {
+				@Override
+				public void callback(FileDescriptor result) throws OperatingContextException {
+					if (this.hasErrors()) {
+						fcb.returnEmpty();
+						return;
+					}
+
+					if (this.isEmptyResult()) {
+						Logger.error("Your request appears valid but does not map to a file.  Unable to complete.");
+						fcb.returnEmpty();
+						return;
+					}
+
+					vault.renameFiles(result, params.getFieldAsList("Files"), params, new OperationOutcomeEmpty() {
+						@Override
+						public void callback() throws OperatingContextException {
+							fcb.returnEmpty();
+						}
+					});
+				}
+			});
+		}
+		catch (OperatingContextException x) {
+			Logger.error("Operating context error: " + x);
+			fcb.returnEmpty();
+		}
+	}
+
+	static public void move(Vault vault, RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
+		RecordStruct params = request.getFieldAsRecord("Params");
+
+		try {
+			// check bucket security - TODO check dest access too?
+			if (checkAuth && ! vault.checkWriteAccess("DeleteFile", request.getFieldAsString("Path"), params)) {
+				Logger.errorTr(434);
+				fcb.returnValue(null);
+				return;
+			}
+
+			vault.getMappedFileDetail(request.getFieldAsString("Path"), params, new OperationOutcome<FileDescriptor>() {
+				@Override
+				public void callback(FileDescriptor result) throws OperatingContextException {
+					if (this.hasErrors()) {
+						fcb.returnEmpty();
+						return;
+					}
+
+					if (this.isEmptyResult()) {
+						Logger.error("Your request appears valid but does not map to a file.  Unable to complete.");
+						fcb.returnEmpty();
+						return;
+					}
+
+					vault.getMappedFileDetail(request.getFieldAsString("DestinationPath"), params, new OperationOutcome<FileDescriptor>() {
+						@Override
+						public void callback(FileDescriptor dresult) throws OperatingContextException {
+							if (this.hasErrors()) {
+								fcb.returnEmpty();
+								return;
+							}
+
+							if (this.isEmptyResult()) {
+								Logger.error("Your request appears valid but does not map to a destination file.  Unable to complete.");
+								fcb.returnEmpty();
+								return;
+							}
+
+							vault.moveFiles(result, dresult, params, new OperationOutcomeEmpty() {
+								@Override
+								public void callback() throws OperatingContextException {
+									fcb.returnEmpty();
+								}
+							});
+						}
+					});
+				}
+			});
+		}
+		catch (OperatingContextException x) {
+			Logger.error("Operating context error: " + x);
+			fcb.returnEmpty();
+		}
+	}
+
 	static public void addFolder(Vault vault, RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
 		RecordStruct params = request.getFieldAsRecord("Params");
 		

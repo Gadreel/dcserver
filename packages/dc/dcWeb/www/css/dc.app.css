@@ -2563,6 +2563,11 @@ ol.dc-listview > li img:first-child + * ~ * {
 		z-index: 1000;
 	}
 
+	#dcuiMain .dcuiCmsToolbarLeft {
+		left: 0;
+		right: initial;
+	}
+
 	#dcuiMain .dcuiCmsToolbarVert {
 		display: flex;
 		align-items: center;
@@ -2689,6 +2694,10 @@ ol.dc-listview > li img:first-child + * ~ * {
 
 	#dcuiSimpleAppPane .dc-panel-page > .dc-panel-body {
 		height: calc(100vh - 85px);
+	}
+
+	.dc-band.dc-band-hidden {
+		filter: opacity(25%);
 	}
 }
 

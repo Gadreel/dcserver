@@ -20,6 +20,8 @@ import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,92 +64,17 @@ public class FileIndexAdapter {
 	// -1 means recursive, 1 = just this level, > 1 means just this many levels
 	public void traverseIndex(Vault vault, CommonPath path, int depth, IVariableAware scope, IFilter filter) throws OperatingContextException {
 		try {
-			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
-			
-			Object fmarker = this.request.getInterface().get(indexkeys.toArray());
-			
-			boolean isfile = Struct.objectToBooleanOrFalse(fmarker) || "File".equals(Struct.objectToString(fmarker));
-			
-			if (isfile) {
-				RecordStruct frec = RecordStruct.record();
-				
-				// state
-				indexkeys.add("State");
-				indexkeys.add(null);
-				
-				byte[] pkey = this.request.getInterface().nextPeerKey(indexkeys.toArray());
-				
-				if (pkey != null) {
-					Object pval = ByteUtil.extractValue(pkey);
-					
-					indexkeys = FileIndexAdapter.pathToIndex(vault, path);
-					
-					indexkeys.add("State");
-					indexkeys.add(pval);
-					
-					frec.with("State", Struct.objectToString(this.request.getInterface().get(indexkeys.toArray())));
-				}
-				
-				// public
-				
-				indexkeys = FileIndexAdapter.pathToIndex(vault, path);
-				
-				indexkeys.add("Public");
-				
-				frec.with("Public", Struct.objectToBoolean(this.request.getInterface().get(indexkeys.toArray()), true));
-				
-				// title
-				
-				indexkeys = FileIndexAdapter.pathToIndex(vault, path);
-				
-				indexkeys.add("eng");		// TODO current locale
-				indexkeys.add("Title");
-				
-				frec.with("Title", Struct.objectToString(this.request.getInterface().get(indexkeys.toArray())));
-				
-				// summary
-				
-				indexkeys = FileIndexAdapter.pathToIndex(vault, path);
-				
-				indexkeys.add("eng");		// TODO current locale
-				indexkeys.add("Summary");
-				
-				frec.with("Summary", Struct.objectToString(this.request.getInterface().get(indexkeys.toArray())));
+			RecordStruct frec = this.fileInfo(vault, path, scope);
 
-				/*
-				// search
-				
-				indexkeys = FileIndexAdapter.pathToIndex(vault, path);
-				
-				indexkeys.add("eng");		// TODO current locale
-				indexkeys.add("Search");
-				
-				frec.with("Search", Struct.objectToString(this.request.getInterface().get(indexkeys.toArray())));
-				*/
-				
-				// sort hint
-				
-				indexkeys = FileIndexAdapter.pathToIndex(vault, path);
-				
-				indexkeys.add("eng");		// TODO current locale
-				indexkeys.add("SortHint");
-				
-				frec.with("SortHint", Struct.objectToString(this.request.getInterface().get(indexkeys.toArray())));
-				
-				// badges
-				
-				indexkeys = FileIndexAdapter.pathToIndex(vault, path);
-				
-				indexkeys.add("Badges");
-				
-				frec.with("Badges", Struct.objectToList(this.request.getInterface().get(indexkeys.toArray())));
-				
+			if ((frec != null) && ! frec.getFieldAsBooleanOrFalse("IsFolder")) {
 				//System.out.println("Found: " + path + " - " + state + " - " + title);
 
 				if (! filter.check(this, scope, vault, path, frec).resume)
 					return;
 			}
 			else if (depth != 0) {
+				List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
 				// start at top
 				indexkeys.add(null);
 				
@@ -172,6 +99,128 @@ public class FileIndexAdapter {
 		}
 	}
 	
+	//TODO support files too - look at EncryptedFileStore getInfo - also fix the code above to ignore folders
+	public RecordStruct fileInfo(Vault vault, CommonPath path, IVariableAware scope) throws OperatingContextException {
+		try {
+			List<Object> entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+			
+			Object marker = this.request.getInterface().get(entrykeys.toArray());
+			
+			if ("Folder".equals(Struct.objectToString(marker))) {
+				RecordStruct frec = RecordStruct.record();
+				frec.with("State", "Present");
+				frec.with("IsFolder", true);
+				return frec;
+			}
+			else if ("XFolder".equals(Struct.objectToString(marker))) {
+				return null;
+			}
+			else if (marker != null) {			// Either is true or "File"
+				// state
+				entrykeys.add("State");
+				entrykeys.add(null);
+				
+				byte[] pkey = this.request.getInterface().nextPeerKey(entrykeys.toArray());
+				
+				if (pkey == null)
+					return null;
+				
+				Object pval = ByteUtil.extractValue(pkey);
+				
+				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+				
+				entrykeys.add("State");
+				entrykeys.add(pval);
+				
+				RecordStruct frec = RecordStruct.record();
+				
+				frec.with("State", Struct.objectToString(this.request.getInterface().get(entrykeys.toArray())));
+				
+				BigDecimal stamp = Struct.objectToDecimal(pval);
+				
+				if (stamp == null)
+					stamp = BigDecimal.ZERO;
+				
+				frec.with("Modified", stamp.negate());
+				
+				// public
+				
+				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+				
+				entrykeys.add("Public");
+				
+				frec.with("Public", Struct.objectToBoolean(this.request.getInterface().get(entrykeys.toArray()), true));
+				
+				// title
+				
+				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+				
+				entrykeys.add("eng");        // TODO current locale
+				entrykeys.add("Title");
+				
+				frec.with("Title", Struct.objectToString(this.request.getInterface().get(entrykeys.toArray())));
+				
+				// summary
+				
+				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+				
+				entrykeys.add("eng");        // TODO current locale
+				entrykeys.add("Summary");
+				
+				frec.with("Summary", Struct.objectToString(this.request.getInterface().get(entrykeys.toArray())));
+
+				/*
+				// search
+
+				indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
+				indexkeys.add("eng");		// TODO current locale
+				indexkeys.add("Search");
+
+				frec.with("Search", Struct.objectToString(this.request.getInterface().get(indexkeys.toArray())));
+				*/
+				
+				// sort hint
+				
+				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+				
+				entrykeys.add("eng");        // TODO current locale
+				entrykeys.add("SortHint");
+				
+				frec.with("SortHint", Struct.objectToString(this.request.getInterface().get(entrykeys.toArray())));
+				
+				// badges
+				
+				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+				
+				entrykeys.add("Badges");
+				
+				frec.with("Badges", Struct.objectToList(this.request.getInterface().get(entrykeys.toArray())));
+				
+				return frec;
+			}
+			else {
+				entrykeys.add(null);
+				
+				byte[] ekey = this.request.getInterface().nextPeerKey(entrykeys.toArray());
+				
+				if (ekey != null) {
+					// the folder is implied by path
+					RecordStruct frec = RecordStruct.record();
+					frec.with("State", "Present");
+					frec.with("Implied", true);
+					frec.with("IsFolder", true);
+					return frec;
+				}
+			}
+		}
+		catch (DatabaseException x) {
+			Logger.error("Unable to delete index file " + path + " in db: " + x);
+		}
+
+		return null;
+	}
+
 	public void clearSiteIndex(Site site) {
 		try {
 			List<Object> indexkeys = new ArrayList<>();
@@ -460,7 +509,7 @@ public class FileIndexAdapter {
 				
 				byte[] pkey = this.request.getInterface().nextPeerKey(indexkeys.toArray());
 				
-				while (pkey != null) {
+				if (pkey != null) {
 					indexkeys.remove(indexkeys.size() - 1);
 					indexkeys.add("XFolder");
 					
@@ -487,6 +536,19 @@ public class FileIndexAdapter {
 				}
 				*/
 			}
+		}
+		catch (DatabaseException x) {
+			Logger.error("Unable to delete index file " + path + " in db: " + x);
+		}
+	}
+	
+	public void hideFolder(Vault vault, CommonPath path, ZonedDateTime time, RecordStruct history) {
+		try {
+			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			
+			indexkeys.add("XFolder");
+			
+			this.request.getInterface().set(indexkeys.toArray());
 		}
 		catch (DatabaseException x) {
 			Logger.error("Unable to delete index file " + path + " in db: " + x);

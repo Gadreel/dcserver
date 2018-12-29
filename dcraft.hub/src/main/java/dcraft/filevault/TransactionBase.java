@@ -44,6 +44,7 @@ abstract public class TransactionBase {
 	protected ZonedDateTime timestamp = TimeUtil.now();
 	protected List<CommonPath> deletelist = new ArrayList<>();
 	protected List<CommonPath> updatelist = new ArrayList<>();
+	protected CommonPath cleanfolder = null;
 
 	public List<CommonPath> getDeletelist() {
 		return this.deletelist;
@@ -62,10 +63,18 @@ abstract public class TransactionBase {
 			
 		return this;
 	}
-
-	// assumes the transaction is expanded
+	
 	public List<CommonPath> getUpdateList() {
 		return this.updatelist;
+	}
+	
+	public TransactionBase withCleanFolder(CommonPath v) {
+		this.cleanfolder = v;
+		return this;
+	}
+	
+	public CommonPath getCleanFolder() {
+		return this.cleanfolder;
 	}
 	
 	public String getId() {

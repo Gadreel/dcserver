@@ -48,6 +48,7 @@ import io.netty.handler.ssl.SslHandler;
 public class Site extends Base {
 	static final public CommonPath PATH_INDEX = new CommonPath("/index");
 	static final public CommonPath PATH_HOME = new CommonPath("/home");
+	static final public CommonPath PATH_NOT_FOUND = new CommonPath("/not-found");
 
 	static final public String[] EXTENSIONS_STD = new String[] { ".html", ".md", ".dcs.xml" };
 
@@ -73,6 +74,7 @@ public class Site extends Base {
 
 	protected HtmlMode htmlmode = HtmlMode.Dynamic;
 	protected CommonPath homepath = Site.PATH_HOME;
+	protected CommonPath notfoundpath = null;
 	protected String[] specialExtensions = Site.EXTENSIONS_STD;
 	protected boolean srcptstlcache = false;
 	protected List<XElement> webglobals = null;
@@ -117,12 +119,13 @@ public class Site extends Base {
 	public void addDynamicAdapater(String name, IWebWorkBuilder builder) {
 		this.dynadapaters.put(name, builder);
 	}
-	
-	public CommonPath getNotFound() {
-		if (this.homepath != null)
-			return this.homepath;
 
-		return new CommonPath("/not-found.html");
+	public void setNotFoundPath(CommonPath v) {
+		this.notfoundpath = v;
+	}
+
+	public CommonPath getNotFoundPath() {
+		return this.notfoundpath;
 	}
 
 	public Tenant getTenant() {
@@ -687,8 +690,7 @@ public class Site extends Base {
 			if (wpath != null)
 				return this.webPathToAdapter(view, wpath);
 
-			// TODO not found file!!
-			Logger.errorTr(150007);
+			// let caller decide if error - Logger.errorTr(150007);
 			return null;
 		}
 
@@ -704,7 +706,7 @@ public class Site extends Base {
 		WebFindResult wpath = this.webFindFilePath(path, view);
 
 		if (wpath == null) {
-			Logger.errorTr(150007);
+			// let caller decide if error - Logger.errorTr(150007);
 			return null;
 		}
 
@@ -770,7 +772,7 @@ public class Site extends Base {
 				return this.webPathToIndexAdapter(view, wpath);
 			
 			// TODO not found file!!
-			Logger.errorTr(150007);
+			// let caller decide if error - Logger.errorTr(150007);
 			return null;
 		}
 		
@@ -786,7 +788,7 @@ public class Site extends Base {
 		WebFindResult wpath = this.webFindFilePath(path, view);
 		
 		if (wpath == null) {
-			Logger.errorTr(150007);
+			// let caller decide if error - Logger.errorTr(150007);
 			return null;
 		}
 		
@@ -876,12 +878,12 @@ public class Site extends Base {
 		}
 
 		// for no extension
-		WebFindResult result = WebFindResult.of(this.findSectionFile(sect, path.toString(), view), path);
+		Path cfile = this.findSectionFile(sect, path.toString(), view);
 
-		if (result != null)
-			return result;
+		if (cfile != null)
+			return WebFindResult.of(cfile, path);
 
-		Logger.errorTr(150007);
+		// let caller decide if error - Logger.errorTr(150007);
 		return null;
 	}
 

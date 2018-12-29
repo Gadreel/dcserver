@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
@@ -34,6 +35,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.DecimalFormat;
 import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
@@ -313,7 +315,34 @@ public class FileUtil {
 			return false;
 		}
     }
-
+	
+    // returns false if there are no visible files or folders in the folder (files starting with "." count as hidden)
+    static public boolean isDirEmpty(Path path) {
+		try(DirectoryStream<Path> dirStream = Files.newDirectoryStream(path)) {
+			Iterator<Path> pathIterator = dirStream.iterator();
+			
+			if (! pathIterator.hasNext())
+				return true;
+			
+			Path entry = pathIterator.next();
+			
+			while (entry != null) {
+				if (! entry.getFileName().toString().startsWith("."))
+					return false;
+				
+				if (! pathIterator.hasNext())
+					break;
+				
+				entry = pathIterator.next();
+			}
+			
+			return true;
+		}
+		catch (IOException x) {
+			return true;
+		}
+	}
+	
     /**
      * Returns an Iterator for the lines in a <code>File</code>.
      * <p>
@@ -475,6 +504,33 @@ public class FileUtil {
 		return cnt.get();
 	}
  
+	public static void moveFile(Path source, Path dest) {
+		try {
+			if (source.getFileName().toString().equals(".DS_Store"))
+				return;
+
+			if (Files.notExists(dest.getParent()))
+				Files.createDirectories(dest.getParent());
+
+			Files.move(source, dest, StandardCopyOption.REPLACE_EXISTING);
+		}
+		catch (IOException x) {
+			Logger.error("Error copying file: " + x);
+		}
+	}
+
+	public static void moveFolder(Path source, Path dest) {
+		try {
+			if (Files.notExists(dest))
+				Files.createDirectories(dest);
+
+			Files.move(source, dest, StandardCopyOption.REPLACE_EXISTING);
+		}
+		catch (IOException x) {
+			Logger.error("Error copying file: " + x);
+		}
+	}
+
 	static public String formatFileSize(long size) {
 	    if(size <= 0) 
 	    	return "0";

@@ -15,11 +15,11 @@
 			var entry = this;
 
 			var grecover = dc.util.Web.getQueryParam('code');
-			var user = dc.util.Web.getQueryParam('user');
+			var request = dc.util.Web.getQueryParam('request');
 
-			if (grecover && user) {
+			if (grecover && request) {
 				// TODO this won't work, add a service call
-				dc.user.signin(user, grecover, false, function() {
+				dc.user.recover(request, grecover, function() {
 					if (dc.user.isVerified()) {
 						dc.pui.Dialog.loadPage('/dcw/user/edit-password', {
 							Callback: function() {

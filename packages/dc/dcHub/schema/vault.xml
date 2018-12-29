@@ -98,13 +98,6 @@
 							<Field Name="Hash" Type="dcString" />
 						</RecordResponse>
 					</Op>
-					<Op Name="DeleteFile">
-						<Description>
-							Removes a file.
-						</Description>
-						<RecordRequest Required="True" Inherits="dcVaultPathRequest" />
-						<RecordResponse Inherits="dcVaultResponse" />
-					</Op>
 					<Op Name="AddFolder">
 						<Description>
 							Adds a new folder.
@@ -112,11 +105,50 @@
 						<RecordRequest Required="True" Inherits="dcVaultPathRequest" />
 						<RecordResponse Inherits="dcVaultResponse" />
 					</Op>
-					<Op Name="DeleteFolder">
+					<Op Name="DeleteFile">
 						<Description>
-							Removes a folder and all files under it.
+							Removes a file - TODO switch to use Delete.
 						</Description>
 						<RecordRequest Required="True" Inherits="dcVaultPathRequest" />
+						<RecordResponse Inherits="dcVaultResponse" />
+					</Op>
+					<Op Name="DeleteFolder">
+						<Description>
+							Removes a folder and all files under it - TODO switch to use Delete.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultPathRequest" />
+						<RecordResponse Inherits="dcVaultResponse" />
+					</Op>
+					<Op Name="Delete">
+						<Description>
+							Removes a file or a folder (and all files under it).
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultPathRequest" />
+						<RecordResponse Inherits="dcVaultResponse" />
+					</Op>
+					<Op Name="Move">
+						<Description>
+							Moves a file or a folder (and all files under it).
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultPathRequest">
+							<Field Name="DestinationPath" Type="dcString" Required="True" />
+						</RecordRequest>
+						<RecordResponse Inherits="dcVaultResponse" />
+					</Op>
+					<Op Name="Rename">
+						<Description>
+							Path with a list of files to rename in one transaction.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcVaultPathRequest">
+							<Field Name="Files" Required="True">
+								<List>
+									<Record>
+										<Field Name="Name" Type="dcString" Required="True" />
+										<Field Name="NewName" Type="dcString" Required="True" />
+									</Record>
+								</List>
+							</Field>
+						</RecordRequest>
 						<RecordResponse Inherits="dcVaultResponse" />
 					</Op>
 					<Op Name="Custom">
@@ -256,6 +288,7 @@
 								<Field Name="Title" Type="dcString" />
 								<Field Name="Summary" Type="String" />
 								<Field Name="SortHint" Type="dcString" />
+								<Field Name="Modified" Type="Integer" />
 								<Field Name="Badges">
 									<List Type="dcTinyString" />
 								</Field>

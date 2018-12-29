@@ -17,6 +17,11 @@
 package dcraft.web;
 
 import dcraft.hub.ResourceHub;
+import dcraft.hub.op.OperatingContextException;
+import dcraft.script.StackUtil;
+import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
+import dcraft.struct.CompositeParser;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
@@ -25,6 +30,7 @@ import dcraft.util.Memory;
 import dcraft.util.io.InputWrapper;
 import dcraft.util.io.OutputWrapper;
 import dcraft.util.web.DateParser;
+import dcraft.xml.XElement;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -64,7 +70,7 @@ public class Response extends RecordStruct {
     // TODO improve
 	protected Memory body = new Memory();
     //protected Map<CharSequence, String> headers = new HashMap<>();
-    protected HttpResponseStatus status = HttpResponseStatus.OK;
+    //protected String status = "OK";
 	
 	// TODO improve
     protected PrintStream stream = null;
@@ -97,9 +103,13 @@ public class Response extends RecordStruct {
     	DateParser parser = new DateParser();
     	this.setHeader(name, parser.convert(value));
     }
-    
+
     public void setStatus(HttpResponseStatus v) {
-		this.status = v;
+		this.with("Code", v.code());
+	}
+    
+    public void setCode(int v) {
+		this.with("Code", v);
 	}
     
     public void setKeepAlive(boolean v) {
@@ -113,11 +123,15 @@ public class Response extends RecordStruct {
 	
 	// TODO prefer not to write this way - no full response
     public void write(Channel ch) {
-        if ((this.status != HttpResponseStatus.OK) && (this.body.getLength() == 0))
-        	this.body.write(this.status.toString());
+    	int code = (int) this.getFieldAsInteger("Code", 200);
+
+		HttpResponseStatus status = HttpResponseStatus.valueOf(code);
+
+        if (! "OK".equals(status) && (this.body.getLength() == 0))
+        	this.body.write(status.toString());
 		
         // Build the response object.
-    	FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, this.status);
+    	FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status);
 
         int clen = 0;
         this.body.setPosition(0);
@@ -142,7 +156,7 @@ public class Response extends RecordStruct {
         // Encode the cookies
         for (Cookie c : this.cookies.values()) 
 	        response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
-	
+
 		RecordStruct headers = this.getFieldAsRecord("Headers");
 		
 		if (headers != null)
@@ -175,8 +189,12 @@ public class Response extends RecordStruct {
     }
     
     public void writeNotModified(Channel ch) {
-        // Build the response object.
-    	FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, this.status);
+		int code = (int) this.getFieldAsInteger("Code", 200);
+
+		HttpResponseStatus status = HttpResponseStatus.valueOf(code);
+
+		// Build the response object.
+    	FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status);
 
 
         if (this.keepAlive) {
@@ -221,8 +239,12 @@ public class Response extends RecordStruct {
     }
     
     public void writeStart(Channel ch, long contentLength) {
-        // Build the response object.
-    	HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, this.status);
+		int code = (int) this.getFieldAsInteger("Code", 200);
+
+		HttpResponseStatus status = HttpResponseStatus.valueOf(code);
+
+		// Build the response object.
+    	HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status);
 
         response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain; charset=UTF-8");
 
@@ -280,8 +302,12 @@ public class Response extends RecordStruct {
     }
     
     public void writeChunked(Channel ch) {
-        // Build the response object.
-    	HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, this.status);
+		int code = (int) this.getFieldAsInteger("Code", 200);
+
+		HttpResponseStatus status = HttpResponseStatus.valueOf(code);
+
+		// Build the response object.
+    	HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status);
 
         response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain; charset=UTF-8");
 
@@ -321,8 +347,12 @@ public class Response extends RecordStruct {
     }
     
     public void writeDownloadHeaders(Channel ch, String name, String mime) {
-        // Build the response object.
-    	HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, this.status);
+		int code = (int) this.getFieldAsInteger("Code", 200);
+
+		HttpResponseStatus status = HttpResponseStatus.valueOf(code);
+
+		// Build the response object.
+    	HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status);
 
         response.headers().set(HttpHeaderNames.CONTENT_TYPE, StringUtil.isNotEmpty(mime) ? mime :
 				ResourceHub.getResources().getMime().getMimeTypeForName(name));
@@ -388,4 +418,25 @@ public class Response extends RecordStruct {
 		return this.body;
 	}
 	
+	@Override
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
+		if ("DownloadHeaders".equals(code.getName())) {
+			String name = StackUtil.stringFromElement(stack, code, "FileName");
+			
+			if (StringUtil.isEmpty(name))
+				name = FileUtil.randomFilename("bin");
+			
+			String mime = StackUtil.stringFromElement(stack, code, "Mime");
+			
+			if (StringUtil.isEmpty(mime))
+				mime = ResourceHub.getResources().getMime().getMimeTypeForName(name).getType();
+			
+			this.setHeader("Content-Type", mime);
+			this.setHeader("Content-Disposition", "attachment; filename=\"" + dcraft.util.net.NetUtil.urlEncodeUTF8(name) + "\"");
+			
+			return ReturnOption.CONTINUE;
+		}
+		
+		return super.operation(stack, code);
+	}
 }

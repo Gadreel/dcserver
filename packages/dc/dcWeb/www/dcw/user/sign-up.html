@@ -3,6 +3,12 @@
 		<GetTag Path="Users" Result="UserConfig" />
 	</dcs.With>
 
+	<dcs.Var Name="reCAPTCHA" Type="Boolean" SetTo="false" />
+
+	<dcs.If Target="$UserConfig.@SignUpCaptcha" Equal="true">
+		<dcs.With Target="$reCAPTCHA" SetTo="true" />
+	</dcs.If>
+
 	<Meta Name="Title">
 		<Tr Locale="eng" Value="Account Sign Up" />
 	</Meta>
@@ -105,7 +111,7 @@ You will get an confirmation email. Please confirm the account by following the 
 							</dc.Out>
 						</dcs.Else>
 
-						<dc.Recaptcha id="recaptcha" Func="DoSubmit" />
+						<dc.Recaptcha id="recaptchaSignUp" Func="DoSubmit" />
 
 						<dcf.FormButtons>
 							<dc.Button Label="Sign Up" Scope="Primary" Click="DoRecaptcha" />
@@ -133,7 +139,12 @@ You will get an confirmation email. Please confirm the account by following the 
 				return;
 			}
 
-			page.callTagFunc('#recaptcha', 'execute');
+			if ({$reCAPTCHA}) {
+				page.callTagFunc('#recaptchaSignUp', 'execute');
+			}
+			else {
+				page.callPageFunc('DoSubmit');
+			}
 		}
 		else {
 			page.form().updateMessages(vres);
@@ -145,7 +156,7 @@ You will get an confirmation email. Please confirm the account by following the 
 			page.form().submit();
 	]]></Function>
 	<Function Name="SaveRecord" Params="e"><![CDATA[
-			e.Data.Captcha = $('#recaptcha').attr('data-response');
+			e.Data.Captcha = $('#recaptchaSignUp').attr('data-response');
 
 			delete e.Data.ConfirmPassword;
 

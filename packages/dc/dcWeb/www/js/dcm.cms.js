@@ -1249,6 +1249,38 @@ dc.pui.TagFuncs['dc.Band']['doCmsGetCommands'] = function(entry, node) {
 	return cmds;
 };
 
+dc.pui.TagFuncs['dc.Band']['doCmsInitWidget'] = function(entry, node) {
+	var widget = this;
+
+	// after so we don't get drag and drop
+	$(node).find('> div').dcappend(
+		dc.cms.Loader.createEditToolBar([
+			{
+				Icon: 'fa-window-minimize',
+				Title: 'Properties',
+				Auth: [ 'Admin', 'Editor' ],		// can be limited at band level
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+					dc.pui.Dialog.loadPage('/dcm/cms/band-props/' + params.Feed, params);
+				}
+			}
+		], 'dcuiCmsToolbarLeft')
+	);
+};
+
+dc.pui.TagFuncs['dc.Band']['getParams'] = function(entry, node) {
+	var pel = $(node).closest('*[data-cms-type="feed"]').get(0);
+
+	if (! pel)
+		return null;
+
+	return {
+		Feed: $(pel).attr('data-cms-feed'),
+		Path: $(pel).attr('data-cms-path'),
+		Id: $(node).attr('id')
+	};
+};
+
 dc.pui.TagFuncs['dc.Band']['doCmsInitLayout'] = function(entry, node) {
 	if (! $(node).attr('data-cms-reorder-enabled')) {
 		console.log('reorder enable');

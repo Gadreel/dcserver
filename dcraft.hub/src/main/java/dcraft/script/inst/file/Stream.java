@@ -16,6 +16,7 @@
 ************************************************************************ */
 package dcraft.script.inst.file;
 
+import dcraft.filestore.FileStoreFile;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
@@ -59,12 +60,19 @@ public class Stream extends Instruction {
 			if (source instanceof BinaryStruct) {
 				source = MemorySourceStream.fromBinary((BinaryStruct) source);
 			}
+			else if (source instanceof FileStoreFile) {
+				source = StreamFragment.of(((FileStoreFile) source).allocStreamSrc());
+			}
 			else if (source instanceof Struct) {
 				source = MemorySourceStream.fromBinary(Utf8Encoder.encode(Struct.objectToString(source)));
 			}
 			
 			if (source instanceof IStream) {
 				source = StreamFragment.of((IStream) source);
+			}
+
+			if (dest instanceof FileStoreFile) {
+				dest = StreamFragment.of(((FileStoreFile) dest).allocStreamDest());
 			}
 			
 			if (dest instanceof IStream) {

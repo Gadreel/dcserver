@@ -372,7 +372,20 @@ public class RequestWork extends ChainWork {
 				path = CommonPath.from(path.toString().toLowerCase());
 				output = webSite.webFindFile(path, wctrl.getFieldAsRecord("Request").getFieldAsString("View"));
 			}
-			
+
+			if (om.hasErrors()) {
+				Logger.errorTr(150001);
+				return null;
+			}
+
+			if (output == null) {
+				path = webSite.getNotFoundPath();
+
+				if (path != null) {
+					output = webSite.webFindFile(path, wctrl.getFieldAsRecord("Request").getFieldAsString("View"));
+				}
+			}
+
 			if (om.hasErrors() || (output == null)) {
 				Logger.errorTr(150001);
 				return null;

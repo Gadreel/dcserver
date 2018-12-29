@@ -46,6 +46,7 @@ import dcraft.xml.XRawText;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -87,7 +88,9 @@ public class Html extends Base {
 			}
 		}
 	}
-	
+
+	protected List<XElement> icondefs = new ArrayList<>();
+
 	protected Map<String, String> hiddenattributes = null;
 	protected List<XNode> hiddenchildren = null;
 	protected boolean headdone = false;
@@ -188,7 +191,21 @@ public class Html extends Base {
 			if (xel.getName().equals("Require") && xel.hasNotEmptyAttribute("Class"))
 				body.withClass(xel.getAttribute("Class"));
 		}
-		
+
+		// insert the defs into the body
+		if (this.icondefs.size() > 0) {
+			body.add(0,
+					W3.tag("svg")
+						.attr("id","dcIconDefs")
+						.attr("xmlns", "http://www.w3.org/2000/svg")
+						.attr("viewBox", "0 0 512 512")
+						.attr("style", "display: none;")
+						.with(W3.tag("defs")
+								.withAll(this.icondefs)
+						)
+			);
+		}
+
 		RecordStruct page = (RecordStruct) StackUtil.queryVariable(state, "Page");
 		
 		// TODO add feature for page title pattern
@@ -539,6 +556,21 @@ $(document).ready(function() {
 		}
 		
 		return ret;
+	}
+
+	public void addIconDef(XElement def) {
+		this.icondefs.add(def);
+	}
+
+	public XElement getIconDef(String id) {
+		for (int i = 0; i < this.icondefs.size(); i++) {
+			XElement def = this.icondefs.get(i);
+
+			if (id.equals(def.attr("id")))
+				return def;
+		}
+
+		return null;
 	}
 
 	@Override

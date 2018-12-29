@@ -46,6 +46,8 @@ public class FeedVault extends FileStoreVault {
 			FeedUtilDb.deleteFeedIndex(adapter, file);
 		}
 		
+		// clean list does not matter here
+		
 		for (CommonPath file : tx.getUpdateList()) {
 			FeedUtilDb.updateFeedIndex(adapter, file);
 			

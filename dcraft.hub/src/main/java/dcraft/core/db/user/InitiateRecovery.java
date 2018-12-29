@@ -17,23 +17,30 @@ public class InitiateRecovery implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
-		
-		String captcha = data.getFieldAsString("Captcha");
-		
-		RecaptchaUtil.siteVerify(captcha, null, new OperationOutcomeRecord() {
-			@Override
-			public void callback(RecordStruct result) throws OperatingContextException {
-				if (this.hasErrors()) {
-					Logger.error("Unable to recover - access not verified");
-					
-					callback.returnEmpty();
-				} else {
-					//System.out.println("Success");
-					
-					InitiateRecovery.this.submitWork(request, callback);
+
+		XElement userconfig = ResourceHub.getResources().getConfig().getTag("Users");
+
+		if ((userconfig != null) && userconfig.getAttributeAsBooleanOrFalse("RecoveryCaptcha")) {
+			String captcha = data.getFieldAsString("Captcha");
+
+			RecaptchaUtil.siteVerify(captcha, null, new OperationOutcomeRecord() {
+				@Override
+				public void callback(RecordStruct result) throws OperatingContextException {
+					if (this.hasErrors()) {
+						Logger.error("Unable to recover - access not verified");
+
+						callback.returnEmpty();
+					} else {
+						//System.out.println("Success");
+
+						InitiateRecovery.this.submitWork(request, callback);
+					}
 				}
-			}
-		});
+			});
+		}
+		else {
+			InitiateRecovery.this.submitWork(request, callback);
+		}
 	}
 	
 	public void submitWork(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {

@@ -5,10 +5,7 @@ import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.hub.op.OperationOutcomeList;
 import dcraft.hub.op.OperationOutcomeRecord;
 import dcraft.log.Logger;
-import dcraft.struct.CompositeParser;
-import dcraft.struct.CompositeStruct;
-import dcraft.struct.FieldStruct;
-import dcraft.struct.RecordStruct;
+import dcraft.struct.*;
 import dcraft.util.Base64;
 import dcraft.util.StringUtil;
 import dcraft.util.chars.Utf8Encoder;
@@ -174,7 +171,82 @@ public class MoodleUtil {
 
 			//System.out.println("Moodle Resp:\n" + resp.toPrettyString());
 
-			callback.returnValue(resp.selectAsRecord("0"));
+			if (resp instanceof ListStruct) {
+				callback.returnValue(resp.selectAsRecord("0"));
+			}
+			else {
+				Logger.error("Unable to create record: " + resp.selectAsString("message"));
+				callback.returnEmpty();
+			}
+
+			return;
+		}
+		catch (Exception x) {
+			Logger.error("Error calling service, Moodle error: " + x);
+		}
+
+		callback.returnEmpty();
+	}
+
+	static public void enrollUser(String alt, String userid, String courseid, OperationOutcomeEmpty callback) {
+		try {
+				/*
+				enrolments[0][roleid]= 5		student
+				enrolments[0][userid]= int
+				enrolments[0][courseid]= int
+
+				enrol_manual_enrol_users
+				 */
+
+			StringBuilder body = new StringBuilder();
+
+			body.append("enrolments[0][roleid]=5");
+			body.append('&');
+			body.append("enrolments[0][userid]=" + URLEncoder.encode(userid, "UTF-8"));
+			body.append('&');
+			body.append("enrolments[0][courseid]=" + URLEncoder.encode(courseid, "UTF-8"));
+
+			// parse and close response stream
+			CompositeStruct resp = MoodleUtil.execute(alt, "enrol_manual_enrol_users", body.toString());
+
+			// returns null unless error
+			if (resp != null) {
+				Logger.error("Moodle Resp:\n" + resp.toPrettyString());
+			}
+		}
+		catch (Exception x) {
+			Logger.error("Error calling service, Moodle error: " + x);
+		}
+
+		callback.returnEmpty();
+	}
+
+	static public void editEnrollUser(String alt, String userid, String courseid, OperationOutcomeEmpty callback) {
+		try {
+				/*
+				courseid = int
+				ueid = int
+
+				core_enrol_edit_user_enrolment
+				 */
+
+			StringBuilder body = new StringBuilder();
+
+			body.append("courseid=" + URLEncoder.encode(courseid + "", "UTF-8"));
+			body.append("&ueid=" + URLEncoder.encode(userid + "", "UTF-8"));
+
+			// parse and close response stream
+			CompositeStruct resp = MoodleUtil.execute(alt, "core_enrol_edit_user_enrolment", body.toString());
+
+			if (resp == null) {
+				Logger.error("Error processing text: Moodle sent an incomplete response.");
+				callback.returnEmpty();
+				return;
+			}
+
+			System.out.println("Moodle Resp:\n" + resp.toPrettyString());
+
+			callback.returnEmpty();
 
 			return;
 		}
@@ -255,6 +327,9 @@ public class MoodleUtil {
 
 			if (responseCode == 200) {
 				// parse and close response stream
+				if (con.getContentLength() < 5)
+					return null;
+
 				return CompositeParser.parseJson(con.getInputStream());
 			}
 			else {

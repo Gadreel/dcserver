@@ -1,5 +1,6 @@
 package dcraft.db;
 
+import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
@@ -12,6 +13,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BasicRequestContext implements IRequestContext{
+	static public BasicRequestContext ofDefaultDatabase() throws OperatingContextException {
+		return BasicRequestContext.ofDatabase("default");
+	}
+	
+	static public BasicRequestContext ofDatabase(String name) throws OperatingContextException {
+		IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase(name);
+		
+		DatabaseAdapter conn = connectionManager.allocateAdapter();
+		
+		return BasicRequestContext.of(conn);
+	}
+	
 	static public BasicRequestContext of(DatabaseAdapter conn) throws OperatingContextException {
 		BasicRequestContext ctx = new BasicRequestContext();
 		ctx.ntrfc = conn;

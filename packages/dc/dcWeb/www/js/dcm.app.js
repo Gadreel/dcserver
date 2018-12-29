@@ -310,6 +310,23 @@ dc.pui.Tags['dcm.CarouselWidget'] = function(entry, node) {
 		return idx;
 	};
 
+	var prevImage = function() {
+		var idx = sscurr - 1;
+
+		if (idx < 0)
+			idx = dc.pui.TagCache['dcm.CarouselWidget'][gallery][show].length - 1;
+
+		if (sscurr == idx)
+			return -1;
+
+		var fimg = dc.pui.TagCache['dcm.CarouselWidget'][gallery][show][idx];
+
+		if (! imgLoadedFunc(fimg))
+			return -1;
+
+		return idx;
+	};
+
 	var switchImage = function(idx) {
 		if (idx == -1)
 			return;
@@ -350,6 +367,12 @@ dc.pui.Tags['dcm.CarouselWidget'] = function(entry, node) {
 		dc.handler.tags.CarouselWidget.init(entry, node, show, icache, {
 			switchImage: function(idx) {
 				animatefade(idx);
+			},
+			nextImage: function() {
+				animatefade(nextImage());
+			},
+			prevImage: function() {
+				animatefade(prevImage());
 			}
 		});
 

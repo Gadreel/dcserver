@@ -754,12 +754,34 @@ public class PrepWork extends StateWork {
 				site.setHomePath(new CommonPath(webconfig.getAttribute("HomePath")));
 			else if ((site.getHtmlMode() == HtmlMode.Static) || (site.getHtmlMode() == HtmlMode.Ssi))
 				site.setHomePath(Site.PATH_INDEX);
-			
+
+			if (webconfig.hasAttribute("NotFoundPath"))
+				site.setNotFoundPath(new CommonPath(webconfig.getAttribute("NotFoundPath")));
+
 			if (webconfig.getAttributeAsBooleanOrFalse("AlwaysCache"))
 				site.setScriptCache(true);
 		}
-		
-		site.setWebGlobals(sconfig.getTagListDeepFirst("Web.Global"));
+
+		List<XElement> globals = sconfig.getTagListDeepFirst("Web.Global");
+		boolean leagacyIcons = true;		// TODO switch to false, for now default to true
+
+		if (webconfig.hasNotEmptyAttribute("LegacyIcons"))
+			leagacyIcons = webconfig.getAttributeAsBooleanOrFalse("LegacyIcons");
+
+		for (int i = globals.size() - 1; i >= 0; i--) {
+			if (leagacyIcons) {
+				if (globals.get(i).getAttributeAsBooleanOrFalse("NewIcon")) {
+					globals.remove(i);
+				}
+			}
+			else {
+				if (globals.get(i).getAttributeAsBooleanOrFalse("LegacyIcon")) {
+					globals.remove(i);
+				}
+			}
+		}
+
+		site.setWebGlobals(globals);
 		
 		site.addDynamicAdapater("/css/dc.cache.css", new IWebWorkBuilder() {
 			@Override

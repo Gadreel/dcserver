@@ -1,11 +1,16 @@
 package dcraft.filevault;
 
+import dcraft.db.BasicRequestContext;
+import dcraft.db.IConnectionManager;
+import dcraft.db.fileindex.FileIndexAdapter;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileDescriptor;
 import dcraft.filestore.FileStore;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.local.LocalStore;
+import dcraft.filestore.local.LocalStoreFile;
 import dcraft.filevault.work.VaultIndexLocalFilesWork;
+import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
@@ -14,13 +19,18 @@ import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.hub.op.OperationOutcomeString;
 import dcraft.log.Logger;
 import dcraft.stream.StreamFragment;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.task.IWork;
 import dcraft.tenant.Site;
 import dcraft.util.FileUtil;
 import dcraft.xml.XElement;
 
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 public class FileStoreVault extends Vault {
@@ -55,11 +65,75 @@ public class FileStoreVault extends Vault {
 		// would also not work for folders, but that will be solved by listing only file entries
 
 		if (vfs instanceof LocalStore) {
-			// delete and move
-			for (CommonPath delete : tx.getDeletelist())
-				vfs.fileReference(delete).remove(null);		// TODO should wait, doesn't matter with locals though
+			IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
+
+			FileIndexAdapter adapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
+
+			long dstemp = tx.getTimestamp().toEpochSecond();
+
+			// delete files from transaction
+			for (CommonPath delete : tx.getDeletelist()) {
+				RecordStruct frec = adapter.fileInfo(this, delete, OperationContext.getOrThrow());
+
+				if ((frec != null) && ! frec.getFieldAsBooleanOrFalse("IsFolder")) {
+					long stamp = frec.getFieldAsInteger("Modified", 0) / 1000;
+
+					// do not delete if there is a newer file in the folder currently
+					if (stamp > dstemp)
+						continue;
+				}
+
+				vfs.fileReference(delete).remove(null);        // TODO should wait, doesn't matter with locals though
+			}
 			
-			FileUtil.moveFileTree(tx.getFolder().getPath(), ((LocalStore) vfs).getPath(), null);
+			// cleanup a folder structure if this was a delete folder
+			CommonPath cleanup = tx.getCleanFolder();
+			
+			if (cleanup != null) {
+				Path source = ((LocalStore) vfs).resolvePath(cleanup);
+				
+				List<Path> cleanups = new ArrayList<>();
+				
+				try {
+					if (Files.exists(source)) {
+						Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
+								new SimpleFileVisitor<Path>() {
+									@Override
+									public FileVisitResult postVisitDirectory(Path sfile, IOException x1) throws IOException {
+										if (x1 != null)
+											throw x1;
+										
+										cleanups.add(sfile);
+										
+										return FileVisitResult.CONTINUE;
+									}
+								});
+					}
+					
+					for (Path path : cleanups) {
+						if (FileUtil.isDirEmpty(path))
+							FileUtil.deleteDirectory(path);
+					}
+				}
+				catch (IOException x) {
+					Logger.error("Error deleting file tree: " + x);
+				}
+			}
+
+			// add the tx Update files to the local folder
+			for (CommonPath update : tx.getUpdateList()) {
+				RecordStruct frec = adapter.fileInfo(this, update, OperationContext.getOrThrow());
+				
+				if ((frec != null) && ! frec.getFieldAsBooleanOrFalse("IsFolder")) {
+					long stamp = frec.getFieldAsInteger("Modified", 0) / 1000;
+
+					// do not replace if there is a newer file in the folder currently
+					if (stamp > dstemp)
+						continue;
+				}
+
+				FileUtil.moveFile(tx.getFolder().resolvePath(update), ((LocalStore) vfs).resolvePath(update));
+			}
 		}
 		else {
 			// TODO add Expand for non-local vaults - probably just to the deposit worker since
@@ -110,27 +184,277 @@ public class FileStoreVault extends Vault {
 					return;
 				}
 				
-				((FileStoreFile) file).remove(new OperationOutcomeEmpty() {
-					@Override
-					public void callback() throws OperatingContextException {
-						Transaction ftx = buildUpdateTransaction(Transaction.createTransactionId(), params);
+				Transaction ftx = buildUpdateTransaction(Transaction.createTransactionId(), params);
+				
+				// if this was a folder, list all the files removed for a safer transaction
+				// allows us to replay the transaction out of order
+				// deleting folders can be delayed before it shows to user as the deletes don't actually occur until TX is run
+				if (file.isFolder()) {
+					FileStore vfs = getFileStore();
+					
+					if (vfs instanceof LocalStore) {
+						Path base = ((LocalStore) vfs).getPath();
+						Path source = ((LocalStoreFile) file).getLocalPath();
 						
-						// TODO if this was a folder, instead list all the files removed for a safer transaction
-						// allows us to replay the transaction out of order
-						ftx.withDelete(file.getPathAsCommon());
-						
-						ftx.commitTransaction(new OperationOutcomeEmpty() {
-							@Override
-							public void callback() throws OperatingContextException {
-								afterRemove(file, params, callback);
-							}
-						});
+						try {
+							Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
+									new SimpleFileVisitor<Path>() {
+										@Override
+										public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+											if (file.endsWith(".DS_Store"))
+												return FileVisitResult.CONTINUE;
+											
+											Path dest = base.relativize(file);
+											
+											ftx.withDelete(CommonPath.from("/" + dest.toString()));
+											
+											return FileVisitResult.CONTINUE;
+										}
+									});
+							
+							ftx.withCleanFolder(file.getPathAsCommon());
+							
+							ftx.commitTransaction(new OperationOutcomeEmpty() {
+								@Override
+								public void callback() throws OperatingContextException {
+									afterRemove(file, params, callback);
+								}
+							});
+						}
+						catch (IOException x) {
+							Logger.error("Error copying file tree: " + x);
+							callback.returnEmpty();
+						}
 					}
-				});
+					else {
+						// TODO add delete folder for non-local vaults
+						Logger.error("Non-local Vaults do not yet support folder delete!");
+						callback.returnEmpty();
+					}
+				}
+				else {
+					ftx.withDelete(file.getPathAsCommon());
+					
+					((FileStoreFile) file).remove(new OperationOutcomeEmpty() {
+						@Override
+						public void callback() throws OperatingContextException {
+							ftx.commitTransaction(new OperationOutcomeEmpty() {
+								@Override
+								public void callback() throws OperatingContextException {
+									afterRemove(file, params, callback);
+								}
+							});
+						}
+					});
+				}
 			}
 		});
 	}
-	
+
+	@Override
+	public void renameFiles(FileDescriptor folder, ListStruct files, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException {
+		// check if `file` has info loaded
+		if (! folder.confirmed()) {
+			Logger.error("Get file details first");
+			callback.returnEmpty();
+			return;
+		}
+
+		if (! folder.exists() || ! folder.isFolder()) {
+			Logger.error("Folder not valid, unable to rename files");
+			callback.returnEmpty();
+			return;
+		}
+
+		this.beforeRename(folder, files, params, new OperationOutcomeEmpty() {
+			@Override
+			public void callback() throws OperatingContextException {
+				if (this.hasErrors()) {
+					callback.returnEmpty();
+					return;
+				}
+
+				// TODO enhance
+				Logger.error("Rename not yet supported");
+				callback.returnEmpty();
+
+				/*
+				Transaction ftx = buildUpdateTransaction(Transaction.createTransactionId(), params);
+
+				// if this was a folder, list all the files removed for a safer transaction
+				// allows us to replay the transaction out of order
+				// deleting folders can be delayed before it shows to user as the deletes don't actually occur until TX is run
+				if (file.isFolder()) {
+					FileStore vfs = getFileStore();
+
+					if (vfs instanceof LocalStore) {
+						Path base = ((LocalStore) vfs).getPath();
+						Path source = ((LocalStoreFile) file).getLocalPath();
+
+						try {
+							Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
+									new SimpleFileVisitor<Path>() {
+										@Override
+										public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+											if (file.endsWith(".DS_Store"))
+												return FileVisitResult.CONTINUE;
+
+											Path dest = base.relativize(file);
+
+											ftx.withDelete(CommonPath.from("/" + dest.toString()));
+
+											return FileVisitResult.CONTINUE;
+										}
+									});
+
+							ftx.withCleanFolder(file.getPathAsCommon());
+
+							ftx.commitTransaction(new OperationOutcomeEmpty() {
+								@Override
+								public void callback() throws OperatingContextException {
+									afterRemove(file, params, callback);
+								}
+							});
+						}
+						catch (IOException x) {
+							Logger.error("Error copying file tree: " + x);
+							callback.returnEmpty();
+						}
+					}
+					else {
+						// TODO add delete folder for non-local vaults
+						Logger.error("Non-local Vaults do not yet support folder delete!");
+						callback.returnEmpty();
+					}
+				}
+				else {
+					ftx.withDelete(file.getPathAsCommon());
+
+					((FileStoreFile) file).remove(new OperationOutcomeEmpty() {
+						@Override
+						public void callback() throws OperatingContextException {
+							ftx.commitTransaction(new OperationOutcomeEmpty() {
+								@Override
+								public void callback() throws OperatingContextException {
+									afterRemove(file, params, callback);
+								}
+							});
+						}
+					});
+				}
+				*/
+			}
+		});
+	}
+
+	@Override
+	public void moveFiles(FileDescriptor source, FileDescriptor dest, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException {
+		// check if `file` has info loaded
+		if (! source.confirmed() || ! dest.confirmed()) {
+			Logger.error("Get file details first");
+			callback.returnEmpty();
+			return;
+		}
+
+		if (! source.exists()) {
+			Logger.error("Folder not valid, unable to rename files");
+			callback.returnEmpty();
+			return;
+		}
+
+		this.beforeMove(source, dest, params, new OperationOutcomeEmpty() {
+			@Override
+			public void callback() throws OperatingContextException {
+				if (this.hasErrors()) {
+					callback.returnEmpty();
+					return;
+				}
+
+				Transaction ftx = buildUpdateTransaction(Transaction.createTransactionId(), params);
+
+				// if this was a folder, list all the files moved for a safer transaction
+				// allows us to replay the transaction out of order
+				// moving folders can be delayed before it shows to user as the deletes don't actually occur until TX is run
+				// this could mess up if a file started uploading after walktree starts, basically move needs to be done when no other operations are occuring to the folder
+
+				if (source.isFolder()) {
+					FileStore vfs = getFileStore();
+
+					if (vfs instanceof LocalStore) {
+						Path lbase = ((LocalStore) vfs).getPath();
+						Path lsource = ((LocalStoreFile) source).getLocalPath();
+
+						try {
+							Files.walkFileTree(lsource, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
+									new SimpleFileVisitor<Path>() {
+										@Override
+										public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+											if (file.endsWith(".DS_Store"))
+												return FileVisitResult.CONTINUE;
+
+											Path dest = lbase.relativize(file);
+
+											ftx.withDelete(CommonPath.from("/" + dest.toString()));
+
+											return FileVisitResult.CONTINUE;
+										}
+									});
+
+							ftx.withCleanFolder(source.getPathAsCommon());
+
+							Path ldest = ftx.getFolder().resolvePath(dest.getPathAsCommon());
+
+							FileUtil.moveFolder(lsource, ldest);
+
+							// update list is built automatically from inside commit
+							ftx.commitTransaction(new OperationOutcomeEmpty() {
+								@Override
+								public void callback() throws OperatingContextException {
+									afterMove(source, dest, params, callback);
+								}
+							});
+						}
+						catch (IOException x) {
+							Logger.error("Error move file tree: " + x);
+							callback.returnEmpty();
+						}
+					}
+					else {
+						// TODO add delete folder for non-local vaults
+						Logger.error("Non-local Vaults do not yet support folder move!");
+						callback.returnEmpty();
+					}
+				}
+				else {
+					FileStore vfs = getFileStore();
+
+					if (vfs instanceof LocalStore) {
+						Path lsource = ((LocalStoreFile) source).getLocalPath();
+
+						ftx.withDelete(source.getPathAsCommon());
+
+						Path ldest = ftx.getFolder().resolvePath(dest.getPathAsCommon());
+
+						FileUtil.moveFile(lsource, ldest);
+
+						// update list is built automatically from inside commit
+						ftx.commitTransaction(new OperationOutcomeEmpty() {
+							@Override
+							public void callback() throws OperatingContextException {
+								afterMove(source, dest, params, callback);
+							}
+						});
+					}
+					else {
+						// TODO add delete folder for non-local vaults
+						Logger.error("Non-local Vaults do not yet support file move!");
+						callback.returnEmpty();
+					}
+				}
+			}
+		});
+	}
+
 	@Override
 	public StreamFragment toSourceStream(FileDescriptor file) throws OperatingContextException {
 		return StreamFragment.of(((FileStoreFile) file).allocStreamSrc());
@@ -141,7 +465,6 @@ public class FileStoreVault extends Vault {
 		this.fsd.getFolderListing(file.getPathAsCommon(), new OperationOutcome<List<FileStoreFile>>() {
 			@Override
 			public void callback(List<FileStoreFile> result) throws OperatingContextException {
-				
 				boolean showHidden = OperationContext.getOrThrow().getUserContext().isTagged("Admin");
 				
 				List<FileDescriptor> files = new ArrayList<>();

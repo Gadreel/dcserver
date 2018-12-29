@@ -208,25 +208,25 @@ public class Base extends BlockInstruction {
 		
 		return null;
 	}
-	
+
 	// get top level UI element
 	public Base getRoot(InstructionWork state) {
 		IParentAwareWork pw = state.getParent();
-		
+
 		while (pw != null) {
 			if (pw instanceof InstructionWork) {
 				XElement pel = ((InstructionWork) pw).getInstruction();
-				
+
 				if (pel instanceof Base)
 					return ((Base) pel).getRoot((InstructionWork) pw);
 			}
-			
+
 			pw = pw.getParent();
 		}
-		
+
 		return this;
 	}
-	
+
 	// if this block is a fragment that should be merged with root, call this during build
 	// PagePart, PagePartDef, Skeleton (only first is used), Function, Require
 	public void mergeWithRoot(InstructionWork state, Base root, boolean usemeta) throws OperatingContextException {

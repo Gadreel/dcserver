@@ -119,6 +119,9 @@ public class DynamicOutputAdapter extends SsiOutputAdapter implements IOutputWor
 			}
 		}
 
+		// set at least one header so that the Headers struct is available in script
+		wctrl.getResponse().setHeader("Cache-Control", "no-cache");
+
 		this
 				.then(UIUtil.dynamicToWork(ctx, script))
 				.then(DynamicOutputWriter.of(script));

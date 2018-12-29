@@ -9,7 +9,9 @@
 	</DependsOn>
 
 	<Config>
-		<Web.Global Style="/css/font-awesome.min.css" />
+		<Web.Global Style="/css/font-awesome.min.css" LegacyIcon="true" />
+		<!-- not min because of our edits -->
+		<Web.Global Style="/css/fa-svg-icon.css" xNewIcon="true" />
 		<Web.Global Style="/css/dc.app.css" />
 		<Web.Global Style="/css/dcm.app.css" />
 

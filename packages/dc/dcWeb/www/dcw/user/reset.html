@@ -1,4 +1,14 @@
 <dc.Html>
+	<dcs.With Target="$_Resources.Config">
+		<GetTag Path="Users" Result="UserConfig" />
+	</dcs.With>
+
+	<dcs.Var Name="reCAPTCHA" Type="Boolean" SetTo="false" />
+
+	<dcs.If Target="$UserConfig.@RecoveryCaptcha" Equal="true">
+		<dcs.With Target="$reCAPTCHA" SetTo="true" />
+	</dcs.If>
+
 	<Meta Name="Title">
 		<Tr Locale="eng" Value="Account Recovery" />
 	</Meta>
@@ -8,7 +18,7 @@
 			<dcf.Form Name="Reset">
 				<dcf.Text Name="Username" Label="Email" placeholder="email or username" Required="true" />
 
-				<dc.Recaptcha id="recaptcha" Func="DoSubmit" />
+				<dc.Recaptcha id="recaptchaReset" Func="DoSubmit" />
 
 				<dcf.FormButtons>
 					<dc.Button Label="Cancel" Click="onCancel" />
@@ -28,8 +38,11 @@
 
 		var vres = page.form().validate();
 
-		if (vres.Pass) {
-			page.callTagFunc('#recaptcha', 'execute');
+		if (vres.Pass && {$reCAPTCHA}) {
+			page.callTagFunc('#recaptchaReset', 'execute');
+		}
+		else if (vres.Pass) {
+			page.callPageFunc('DoSubmit');
 		}
 		else {
 			page.form().updateMessages(vres);
@@ -44,7 +57,7 @@
 					Op: 'InitiateRecovery',
 					Body: {
 						Username: entry.form().getValue('Username'),
-						Captcha: $('#recaptcha').attr('data-response')
+						Captcha: $('#recaptchaReset').attr('data-response')
 					}
 				}, function(resp) {
 					if (resp.Result > 0) {

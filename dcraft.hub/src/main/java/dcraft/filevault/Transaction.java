@@ -54,6 +54,7 @@ public class Transaction extends TransactionBase {
 				.with("Site", OperationContext.getOrThrow().getSite().getAlias())
 				.with("Vault", this.getVaultName())
 				.with("Write", ListStruct.list().withCollection(this.updatelist))
+				.with("Clean", this.cleanfolder)
 				.with("Delete", ListStruct.list().withCollection(this.deletelist));
 	}
 	

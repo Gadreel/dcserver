@@ -1,43 +1,24 @@
 package dcraft.filevault;
 
-import dcraft.cms.feed.db.FeedUtilDb;
-import dcraft.cms.feed.work.ReindexFeedWork;
 import dcraft.db.BasicRequestContext;
 import dcraft.db.IConnectionManager;
 import dcraft.db.fileindex.FileIndexAdapter;
 import dcraft.filestore.FileDescriptor;
-import dcraft.filestore.FileStoreFile;
-import dcraft.filestore.local.LocalStoreFile;
-import dcraft.filevault.work.VaultIndexLocalFilesWork;
 import dcraft.hub.ResourceHub;
-import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.*;
-import dcraft.stream.IStream;
-import dcraft.stream.IStreamSource;
 import dcraft.stream.StreamFragment;
+import dcraft.struct.ListStruct;
 import dcraft.task.IWork;
-import dcraft.tenant.Base;
 import dcraft.tenant.Site;
 import dcraft.tenant.Tenant;
 import dcraft.tenant.TenantHub;
-import dcraft.util.FileUtil;
-import dcraft.util.RndUtil;
 
-import java.lang.reflect.Method;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
-import java.util.function.Consumer;
 
 import dcraft.filestore.CommonPath;
-import dcraft.filestore.FileStore;
-import dcraft.filestore.local.LocalStore;
-import dcraft.log.Logger;
-import dcraft.struct.FieldStruct;
-import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.struct.scalar.BooleanStruct;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
@@ -193,6 +174,11 @@ abstract public class Vault {
 			);
 		}
 		
+		CommonPath cleanup = tx.getCleanFolder();
+		
+		if (cleanup != null)
+			adapter.deleteFile(this, cleanup, tx.getTimestamp(), this.buildHistory(tx, "Clean"));
+		
 		for (CommonPath file : tx.getUpdateList()) {
 			adapter.indexFile(
 					this,
@@ -324,7 +310,35 @@ abstract public class Vault {
 		
 		cb.returnEmpty();
 	}
-	
+
+	protected void beforeRename(FileDescriptor fi, ListStruct files, RecordStruct params, OperationOutcomeEmpty cb) {
+		if (this.tryExecuteMethod("BeforeRename", fi, files, params, cb))
+			return;
+
+		cb.returnEmpty();
+	}
+
+	protected void afterRename(FileDescriptor fi, ListStruct files, RecordStruct params, OperationOutcomeEmpty cb) {
+		if (this.tryExecuteMethod("AfterRename", fi, files, params, cb))
+			return;
+
+		cb.returnEmpty();
+	}
+
+	protected void beforeMove(FileDescriptor source, FileDescriptor dest, RecordStruct params, OperationOutcomeEmpty cb) {
+		if (this.tryExecuteMethod("BeforeMove", source, dest, params, cb))
+			return;
+
+		cb.returnEmpty();
+	}
+
+	protected void afterMove(FileDescriptor source, FileDescriptor dest, RecordStruct params, OperationOutcomeEmpty cb) {
+		if (this.tryExecuteMethod("AfterMove", source, dest, params, cb))
+			return;
+
+		cb.returnEmpty();
+	}
+
 	/*
 	 * ================ features ==================
 	 */
@@ -347,7 +361,11 @@ abstract public class Vault {
 	abstract public void getFolderListing(FileDescriptor file, RecordStruct params, OperationOutcome<List<? extends FileDescriptor>> callback) throws OperatingContextException;
 	
 	abstract public void deleteFile(FileDescriptor file, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException;
-	
+
+	abstract public void renameFiles(FileDescriptor file, ListStruct renames, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException;
+
+	abstract public void moveFiles(FileDescriptor file, FileDescriptor dest, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException;
+
 	abstract public StreamFragment toSourceStream(FileDescriptor fileDescriptor) throws OperatingContextException;
 	
 	abstract public void hashFile(FileDescriptor fileDescriptor, String evidence, RecordStruct params, OperationOutcomeString callback) throws OperatingContextException;

@@ -10,6 +10,7 @@ import dcraft.log.Logger;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.util.FileUtil;
+import dcraft.util.StringUtil;
 
 public class ManifestTransaction extends TransactionBase {
 	static public ManifestTransaction of(Vault vault, RecordStruct manifest, String depositid, String nodeid) {
@@ -35,6 +36,11 @@ public class ManifestTransaction extends TransactionBase {
 				this.deletelist.add(CommonPath.from(deletes.getItemAsString(i)));
 			}
 		}
+		
+		String cleanup = this.manifest.getFieldAsString("Clean");
+		
+		if (StringUtil.isNotEmpty(cleanup))
+			this.cleanfolder = CommonPath.from(cleanup);
 		
 		ListStruct writes = this.manifest.getFieldAsList("Write");
 		

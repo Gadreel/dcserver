@@ -21,10 +21,7 @@ import dcraft.script.Script;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.InstructionWork;
-import dcraft.struct.FieldStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.struct.scalar.BooleanStruct;
 import dcraft.task.IWork;
 import dcraft.task.Task;
@@ -472,5 +469,52 @@ public class UIUtil {
 			// must come after end section
 			indexer.adjustScore(-bonus);
 		}
+	}
+
+	static public String requireIcon(Base element, InstructionWork state, String library, String name) throws OperatingContextException {
+		String vb = "0 0 512 512";
+
+		Base root = element.getRoot(state);
+
+		if (! (root instanceof Html)) {
+			Logger.warn("Require icon def failed: " + library + "-" + name);
+			return vb;
+		}
+
+		// more efficient, not looking up same icon multiple times
+		XElement icon = ((Html) root).getIconDef(library + "-" + name);
+
+		if (icon != null) {
+			vb = icon.attr("data-view-box");
+			return vb;
+		}
+
+		XElement res = OperationContext.getOrThrow().getSite().getXmlResource("www", "/icons/" + library + "/" + name + ".svg", null);
+
+		if (res != null) {
+			vb = res.attr("viewBox");
+
+			icon = W3.tag("g")
+					.attr("id", library + "-" + name)
+					.attr("data-view-box", vb);
+
+			for (int n = 0; n < res.getChildCount(); n++) {
+				if (res.getChild(n) instanceof XElement) {
+					XElement path = res.getChildAsElement(n);
+
+					if (! path.hasNotEmptyAttribute("fill"))
+						path.attr("fill", "currentColor");
+
+					icon.with(path);
+				}
+			}
+
+			((Html) root).addIconDef(icon);
+		}
+		else {
+			Logger.warn("Require icon missing: " + library + "-" + name);
+		}
+
+		return vb;
 	}
 }

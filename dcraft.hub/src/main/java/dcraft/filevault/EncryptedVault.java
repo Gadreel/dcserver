@@ -1,22 +1,14 @@
 package dcraft.filevault;
 
 import dcraft.db.BasicRequestContext;
-import dcraft.db.DatabaseAdapter;
 import dcraft.db.DatabaseException;
-import dcraft.db.IConnectionManager;
+import dcraft.db.IRequestContext;
 import dcraft.db.fileindex.BasicFilter;
 import dcraft.db.fileindex.FileIndexAdapter;
-import dcraft.db.fileindex.IFilter;
 import dcraft.db.proc.ExpressionResult;
 import dcraft.db.util.ByteUtil;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileDescriptor;
-import dcraft.filestore.FileStore;
-import dcraft.filestore.FileStoreFile;
-import dcraft.filestore.local.LocalStore;
-import dcraft.filestore.local.LocalStoreFile;
-import dcraft.filevault.work.VaultIndexLocalFilesWork;
-import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
@@ -24,37 +16,18 @@ import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.hub.op.OperationOutcomeString;
-import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.hub.op.UserContext;
 import dcraft.log.Logger;
-import dcraft.stream.IStream;
 import dcraft.stream.StreamFragment;
-import dcraft.struct.FieldStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
-import dcraft.task.IWork;
-import dcraft.task.TaskContext;
-import dcraft.tenant.Site;
-import dcraft.tenant.Tenant;
-import dcraft.tenant.TenantHub;
-import dcraft.util.FileUtil;
-import dcraft.util.RndUtil;
-import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
-import dcraft.xml.XElement;
 
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.zone.ZoneOffsetTransition;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.function.Consumer;
 
 public class EncryptedVault extends Vault {
 	/*
@@ -63,11 +36,9 @@ public class EncryptedVault extends Vault {
 	
 	@Override
 	public void getFileDetail(CommonPath path, RecordStruct params, OperationOutcome<FileDescriptor> fcb) throws OperatingContextException {
-		IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
+		BasicRequestContext dbctx = BasicRequestContext.ofDefaultDatabase();
 		
-		DatabaseAdapter adapter = connectionManager.allocateAdapter();
-		
-		FileDescriptor fd = this.getDetail(adapter, path);
+		FileDescriptor fd = this.getDetail(dbctx, path);
 		
 		fcb.returnValue(fd);
 	}
@@ -75,9 +46,9 @@ public class EncryptedVault extends Vault {
 	@Override
 	public void addFolder(CommonPath path, RecordStruct params, OperationOutcome<FileDescriptor> callback) throws OperatingContextException {
 		// no transactions, folders are not tracked
-		IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
+		BasicRequestContext dbctx = BasicRequestContext.ofDefaultDatabase();
 		
-		FileIndexAdapter adapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
+		FileIndexAdapter adapter = FileIndexAdapter.of(dbctx);
 		
 		adapter.indexFolderEnsure(this, path);
 		
@@ -101,25 +72,34 @@ public class EncryptedVault extends Vault {
 					return;
 				}
 				
-				IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
+				BasicRequestContext dbctx = BasicRequestContext.ofDefaultDatabase();
 				
-				FileIndexAdapter adapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
+				FileIndexAdapter adapter = FileIndexAdapter.of(dbctx);
 				
 				Transaction ftx = buildUpdateTransaction(Transaction.createTransactionId(), params);
 				
-				// TODO really only works on files for now, not folders
-				// better approach - collect all files in a folder and add to Tx for processing later.
+				// if folder collect all files in a folder and add to Tx for processing later.
 				// then here do a quick entry that marks only the folder as deleted and mark it as User not Scan
 				// this is to give immediate feedback to a user that deletes a folder
 				// processing the Tx will result in marking all sub files with the transaction id - so no need to do that here
 	
-				// mark the folder so it is hidden from user, no other point
-				if (file.isFolder())
-					adapter.deleteFile(EncryptedVault.this, file.getPathAsCommon(), TimeUtil.now(), buildHistory(ftx, "Delete"));
-				
-				// TODO if this was a folder, instead list all the files removed for a safer transaction
-				// allows us to replay the transaction out of order
-				ftx.withDelete(file.getPathAsCommon());
+				if (file.isFolder()) {
+					adapter.traverseIndex(EncryptedVault.this, file.getPathAsCommon(), -1, OperationContext.getOrThrow(), new BasicFilter() {
+						@Override
+						public ExpressionResult check(FileIndexAdapter adapter, IVariableAware scope, Vault vault, CommonPath path, RecordStruct file) throws OperatingContextException {
+							ftx.withDelete(path);
+							
+							return ExpressionResult.ACCEPTED;
+						}
+					});
+					
+					// mark the folder so it is hidden from user, no other point
+					adapter.hideFolder(EncryptedVault.this, file.getPathAsCommon(), TimeUtil.now(),
+							buildHistory(ftx, "Delete").with("Source", "User"));
+				}
+				else {
+					ftx.withDelete(file.getPathAsCommon());
+				}
 				
 				ftx.commitTransaction(new OperationOutcomeEmpty() {
 					@Override
@@ -133,9 +113,7 @@ public class EncryptedVault extends Vault {
 	
 	@Override
 	public void getFolderListing(FileDescriptor file, RecordStruct params, OperationOutcome<List<? extends FileDescriptor>> callback) throws OperatingContextException {
-		IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
-		
-		DatabaseAdapter adapter = connectionManager.allocateAdapter();
+		BasicRequestContext dbctx = BasicRequestContext.ofDefaultDatabase();
 		
 		List<FileDescriptor> files = new ArrayList<>();
 		
@@ -145,7 +123,7 @@ public class EncryptedVault extends Vault {
 			// start at top
 			indexkeys.add(null);
 			
-			byte[] pkey = adapter.nextPeerKey(indexkeys.toArray());
+			byte[] pkey = dbctx.getInterface().nextPeerKey(indexkeys.toArray());
 			
 			while (pkey != null) {
 				Object pval = ByteUtil.extractValue(pkey);
@@ -153,7 +131,7 @@ public class EncryptedVault extends Vault {
 				if (pval instanceof String) {
 					CommonPath entrypath = file.getPathAsCommon().resolve((String) pval);
 					
-					FileDescriptor fd = this.getDetail(adapter, entrypath);
+					FileDescriptor fd = this.getDetail(dbctx, entrypath);
 					
 					if ((fd != null) && fd.confirmed() && fd.exists()) {
 						files.add(fd);
@@ -165,7 +143,7 @@ public class EncryptedVault extends Vault {
 				indexkeys.remove(indexkeys.size() - 1);
 				indexkeys.add(pval);
 				
-				pkey = adapter.nextPeerKey(indexkeys.toArray());
+				pkey = dbctx.getInterface().nextPeerKey(indexkeys.toArray());
 			}
 			
 			callback.returnValue(files);
@@ -177,68 +155,41 @@ public class EncryptedVault extends Vault {
 		}
 	}
 	
-	public FileDescriptor getDetail(DatabaseAdapter adapter, CommonPath path) throws OperatingContextException {
-		try {
-			FileDescriptor fd = FileDescriptor.of(path.toString());
+	public FileDescriptor getDetail(IRequestContext dbctx, CommonPath path) throws OperatingContextException {
+		FileIndexAdapter fiadapter = FileIndexAdapter.of(dbctx);
+		
+		RecordStruct info = fiadapter.fileInfo(this, path, OperationContext.getOrThrow());
+		
+		if (info != null) {
+			FileDescriptor fd = FileDescriptor.of(path.toString())
+					.withExists("Present".equals(info.getFieldAsString("State")))
+					.withConfirmed(true)
+					.withIsFolder(info.getFieldAsBooleanOrFalse("IsFolder"));
 			
-			List<Object> entrykeys = FileIndexAdapter.pathToIndex(this, path);
-			
-			Object marker = adapter.get(entrykeys.toArray());
-			
-			if ("Folder".equals(Struct.objectToString(marker))) {
-				fd.withIsFolder(true).withExists(true).withConfirmed(true);
+			if (info.isNotFieldEmpty("Modified")) {
+				BigDecimal epoch = info.getFieldAsDecimal("Modified");
+				
+				fd.withModificationTime(ZonedDateTime.ofInstant(Instant.ofEpochMilli(epoch.longValue()), ZoneId.of("UTC")));
 			}
-			else if ("XFolder".equals(Struct.objectToString(marker))) {
-				fd.withIsFolder(true).withExists(false).withConfirmed(true);
-			}
-			else if (marker != null) {
-				// state
-				entrykeys.add("State");
-				entrykeys.add(null);
-				
-				byte[] ekey = adapter.nextPeerKey(entrykeys.toArray());
-				
-				if (ekey != null) {
-					Object eval = ByteUtil.extractValue(ekey);
-					
-					entrykeys = FileIndexAdapter.pathToIndex(this, path);
-					
-					entrykeys.add("State");
-					entrykeys.add(eval);
-					
-					BigDecimal epoch = Struct.objectToDecimal(eval).abs();
-					
-					fd.withModificationTime(ZonedDateTime.ofInstant(Instant.ofEpochMilli(epoch.longValue()), ZoneId.of("UTC")));
-					
-					if ("Present".equals(Struct.objectToString(adapter.get(entrykeys.toArray()))))
-						fd.withExists(true);
-				}
-				
-				fd.withConfirmed(true);
-			}
-			else {
-				entrykeys.add(null);
-				
-				byte[] ekey = adapter.nextPeerKey(entrykeys.toArray());
-				
-				if (ekey != null) {
-					// the folder is implied by path
-					fd
-							.withExists(true)
-							.withIsFolder(true)
-							.withConfirmed(true);
-				}
-			}
-	
+
 			return fd;
-		}
-		catch (DatabaseException x) {
-			Logger.error("Unable to get file detail " + path + " in db: " + x);
 		}
 		
 		return null;
 	}
-	
+
+	@Override
+	public void renameFiles(FileDescriptor file, ListStruct renames, RecordStruct params, OperationOutcomeEmpty callback) {
+		Logger.error("Not currently supported on encrypted vaults.");
+		callback.returnEmpty();
+	}
+
+	@Override
+	public void moveFiles(FileDescriptor file, FileDescriptor dest, RecordStruct params, OperationOutcomeEmpty callback) {
+		Logger.error("Not currently supported on encrypted vaults.");
+		callback.returnEmpty();
+	}
+
 	@Override
 	public StreamFragment toSourceStream(FileDescriptor fileDescriptor) {
 		return null;	// TODO
