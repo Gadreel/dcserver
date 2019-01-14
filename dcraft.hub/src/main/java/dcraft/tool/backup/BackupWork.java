@@ -9,7 +9,12 @@ public class BackupWork extends ChainWork {
 	protected void init(TaskContext taskctx) {
 		Logger.info("Start nightly BATCH");
 		
-		this.then(new DatabaseWork())
-				.then(new LogsWork());
+		this
+				.then(new CounterWork())		// before all the activity
+				.then(new DatabaseWork())
+				.then(new LogsWork())
+				.then(new CertCheckWork())
+				.then(new BackupShellWork())
+		;
 	}
 }

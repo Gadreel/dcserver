@@ -29,6 +29,14 @@ abstract public class TwoExpression implements IExpression {
 		return this;
 	}
 
+	@Override
+	public IFilter shiftNested(IFilter v) {
+		v.withNested(this.nested);
+
+		this.nested = v;
+		return this;
+	}
+
 	public ExpressionResult nestOrAccept(TablesAdapter adapter, IVariableAware scope, String table, Object val) throws OperatingContextException {
 		if (this.nested != null)
 			return this.nested.check(adapter, scope, table, val);

@@ -25,16 +25,6 @@ import java.net.URL;
 public class SlackUtil {
 	// TODO replace with a real event system and notices
 	static public void serverEvent(String alt, String msg, OperationOutcomeEmpty callback) throws OperatingContextException {
-		XElement eventsettings = ApplicationHub.getCatalogSettings("Server-Event", alt);
-
-		// no action or error if not configured
-		if ((eventsettings == null) || ! "Slack".equals(eventsettings.attr("Catalog"))) {
-			if (callback != null)
-				callback.returnEmpty();
-			
-			return;
-		}
-		
 		RecordStruct data = RecordStruct.record()
 				.with("text", msg);
 		
@@ -44,6 +34,20 @@ public class SlackUtil {
 			String indexurl = domainwebconfig.getAttribute("IndexUrl");
 			
 			data.with("icon_url", indexurl + "imgs/logo152.png");
+		}
+		
+		SlackUtil.serverEvent(alt, data, callback);
+	}
+	
+	static public void serverEvent(String alt, RecordStruct data, OperationOutcomeEmpty callback) throws OperatingContextException {
+		XElement eventsettings = ApplicationHub.getCatalogSettings("Server-Event", alt);
+
+		// no action or error if not configured
+		if ((eventsettings == null) || ! "Slack".equals(eventsettings.attr("Catalog"))) {
+			if (callback != null)
+				callback.returnEmpty();
+			
+			return;
 		}
 		
 		try (OperationMarker om = OperationMarker.clearErrors()) {

@@ -491,6 +491,22 @@ dc.transfer = {
 				else
 					dc.transfer.CVS.writeRecordsToCSV(fileName, [ res.Body ], options);
 			});
+		},
+
+		commitTx : function(vault, token, params, cb) {
+			dc.comm.sendMessage({
+				Service: 'dcCoreServices',
+				Feature: 'Vaults',
+				Op: 'CommitTransaction',
+				Body: {
+					Vault: vault,
+					Token: token,
+					Params: params
+				}
+			}, function(rmsg) {
+				if (cb)
+					cb(rmsg);
+			});
 		}
 	},
 

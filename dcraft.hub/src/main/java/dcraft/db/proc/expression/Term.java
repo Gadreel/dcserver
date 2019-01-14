@@ -38,6 +38,14 @@ public class Term implements IExpression {
 	}
 
 	@Override
+	public IFilter shiftNested(IFilter v) {
+		v.withNested(this.nested);
+
+		this.nested = v;
+		return this;
+	}
+
+	@Override
 	public void init(String table, RecordStruct where) throws OperatingContextException {
 		this.table = table;
 		this.lang = where.getFieldAsString("Locale", OperationContext.getOrThrow().getLocale());

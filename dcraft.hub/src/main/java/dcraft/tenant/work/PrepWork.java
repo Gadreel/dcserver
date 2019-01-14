@@ -194,7 +194,7 @@ public class PrepWork extends StateWork {
 
 		Path cpath = this.tenant.resolvePath("config");
 
-		KeyRingCollection key1 = KeyRingCollection.load(cpath);
+		KeyRingCollection key1 = KeyRingCollection.load(cpath, false);
 
 		if (key1 != null) {
 			KeyRingResource keyres = resources.getOrCreateTierKeyRing();
@@ -542,7 +542,7 @@ public class PrepWork extends StateWork {
 						
 						Path ppath = pspath.resolve(name);
 						
-						if (! Files.exists(ppath))
+						if (!Files.exists(ppath))
 							continue;
 						
 						Path pxml = ppath.resolve("package.xml");
@@ -564,86 +564,86 @@ public class PrepWork extends StateWork {
 					for (Package hpackage : packres.getReverseTierList()) {
 						sconfig.addTop(hpackage.getDefinition().find("Config"));
 					}
-
-					this.getSchema(site.getResourcesOrCreate(resources));
-
-					for (XElement lel : sconfig.getTagListLocal("Variables/Var")) {
-						String lname = lel.getAttribute("Name");
-
-						if (StringUtil.isEmpty(lname))
-							continue;
-
-						site.addVariable(lname, StringStruct.of(lel.getAttribute("Value")));
-					}
-
-					if (site.queryVariable("SiteCopyright") == null)
-						site.addVariable("SiteCopyright", StringStruct.of(ZonedDateTime.now().getYear() + ""));
-
-					TrustResource trustres = resources.getOrCreateTierTrust();
-
-					// TODO load trusted keys/prints
-
-					// TODO load all certs, just match the passwords as
-
-					for (XElement certinfo : sconfig.getTagListLocal("Certificate")) {
-						String certname = certinfo.getAttribute("Name");
-
-						if (StringUtil.isNotEmpty(certname)) {
-							Path certpath = scpath.resolve(certname);
-
-							if ((certpath == null) || Files.notExists(certpath)) {
-								Logger.error("Unable to locate certificate: " + certname);
-							}
-							else {
-								SslEntry entry = SslEntry.ofJks(trustres, certpath,
-										certinfo.getAttribute("Password"), certinfo.getAttribute("PlainPassword"));
-
-								if (entry == null) {
-									Logger.error("Unable to load certificate: " + certname);
-								}
-								else {
-									trustres.withSsl(entry, certinfo.getAttributeAsBooleanOrFalse("Default"));
-								}
-							}
-						}
-					}
-					
-					// load standard cert
-					{
-						Path certpath = scpath.resolve("certs.jks");
-						
-						if (Files.exists(certpath)) {
-							SslEntry entry = SslEntry.ofJks(trustres, certpath,null, new String(ResourceHub.getResources().getKeyRing().getPassphrase()));
-							
-							if (entry == null) {
-								Logger.error("Unable to load default certificate");
-							}
-							else {
-								trustres.withSsl(entry, false);
-							}
-						}
-					}
+				}
 				
-					// TODO make sure services are stopped when site/tenant reload
-					
-					ServiceResource srres = site.getResourcesOrCreate(resources).getOrCreateTierServices();
-					
-					for (XElement el : sconfig.getTagListLocal("Service")) {
-						try {
-							String name = el.getAttribute("Name");
-							
-							if (StringUtil.isNotEmpty(name)) {
-								IService srv = (IService) site.getResources().getClassLoader().getInstance(el.getAttribute("RunClass", "dcraft.service.BaseDataService"));
-								
-								if (srv != null) {
-									srv.init(name, el, site.getResources());
-									srres.registerTierService(name, srv);
-								}
+				this.getSchema(site.getResourcesOrCreate(resources));
+
+				for (XElement lel : sconfig.getTagListLocal("Variables/Var")) {
+					String lname = lel.getAttribute("Name");
+
+					if (StringUtil.isEmpty(lname))
+						continue;
+
+					site.addVariable(lname, StringStruct.of(lel.getAttribute("Value")));
+				}
+
+				if (site.queryVariable("SiteCopyright") == null)
+					site.addVariable("SiteCopyright", StringStruct.of(ZonedDateTime.now().getYear() + ""));
+
+				TrustResource trustres = resources.getOrCreateTierTrust();
+
+				// TODO load trusted keys/prints
+
+				// TODO load all certs, just match the passwords as
+
+				for (XElement certinfo : sconfig.getTagListLocal("Certificate")) {
+					String certname = certinfo.getAttribute("Name");
+
+					if (StringUtil.isNotEmpty(certname)) {
+						Path certpath = scpath.resolve(certname);
+
+						if ((certpath == null) || Files.notExists(certpath)) {
+							Logger.error("Unable to locate certificate: " + certname);
+						}
+						else {
+							SslEntry entry = SslEntry.ofJks(trustres, certpath,
+									certinfo.getAttribute("Password"), certinfo.getAttribute("PlainPassword"));
+
+							if (entry == null) {
+								Logger.error("Unable to load certificate: " + certname);
+							}
+							else {
+								trustres.withSsl(entry, certinfo.getAttributeAsBooleanOrFalse("Default"));
 							}
 						}
-						catch (Exception x) {
-							Logger.error("Unable to load serivce: " + el);
+					}
+				}
+				
+				// load standard cert
+				{
+					Path certpath = scpath.resolve("certs.jks");
+					
+					if (Files.exists(certpath)) {
+						SslEntry entry = SslEntry.ofJks(trustres, certpath,null, new String(ResourceHub.getResources().getKeyRing().getPassphrase()));
+						
+						if (entry == null) {
+							Logger.error("Unable to load default certificate");
 						}
+						else {
+							trustres.withSsl(entry, false);
+						}
+					}
+				}
+			
+				// TODO make sure services are stopped when site/tenant reload
+				
+				ServiceResource srres = site.getResourcesOrCreate(resources).getOrCreateTierServices();
+				
+				for (XElement el : sconfig.getTagListLocal("Service")) {
+					try {
+						String name = el.getAttribute("Name");
+						
+						if (StringUtil.isNotEmpty(name)) {
+							IService srv = (IService) site.getResources().getClassLoader().getInstance(el.getAttribute("RunClass", "dcraft.service.BaseDataService"));
+							
+							if (srv != null) {
+								srv.init(name, el, site.getResources());
+								srres.registerTierService(name, srv);
+							}
+						}
+					}
+					catch (Exception x) {
+						Logger.error("Unable to load serivce: " + el);
 					}
 				}
 				
@@ -760,28 +760,28 @@ public class PrepWork extends StateWork {
 
 			if (webconfig.getAttributeAsBooleanOrFalse("AlwaysCache"))
 				site.setScriptCache(true);
-		}
-
-		List<XElement> globals = sconfig.getTagListDeepFirst("Web.Global");
-		boolean leagacyIcons = true;		// TODO switch to false, for now default to true
-
-		if (webconfig.hasNotEmptyAttribute("LegacyIcons"))
-			leagacyIcons = webconfig.getAttributeAsBooleanOrFalse("LegacyIcons");
-
-		for (int i = globals.size() - 1; i >= 0; i--) {
-			if (leagacyIcons) {
-				if (globals.get(i).getAttributeAsBooleanOrFalse("NewIcon")) {
-					globals.remove(i);
+			
+			List<XElement> globals = sconfig.getTagListDeepFirst("Web.Global");
+			boolean leagacyIcons = true;		// TODO switch to false, for now default to true
+			
+			if (webconfig.hasNotEmptyAttribute("LegacyIcons"))
+				leagacyIcons = webconfig.getAttributeAsBooleanOrFalse("LegacyIcons");
+			
+			for (int i = globals.size() - 1; i >= 0; i--) {
+				if (leagacyIcons) {
+					if (globals.get(i).getAttributeAsBooleanOrFalse("NewIcon")) {
+						globals.remove(i);
+					}
+				}
+				else {
+					if (globals.get(i).getAttributeAsBooleanOrFalse("LegacyIcon")) {
+						globals.remove(i);
+					}
 				}
 			}
-			else {
-				if (globals.get(i).getAttributeAsBooleanOrFalse("LegacyIcon")) {
-					globals.remove(i);
-				}
-			}
+			
+			site.setWebGlobals(globals);
 		}
-
-		site.setWebGlobals(globals);
 		
 		site.addDynamicAdapater("/css/dc.cache.css", new IWebWorkBuilder() {
 			@Override

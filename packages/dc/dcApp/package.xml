@@ -29,6 +29,7 @@
 			<Tag Name="dc.TextWidget" Class="dcraft.web.ui.inst.TextWidget" />
 			<Tag Name="dc.Button" Class="dcraft.web.ui.inst.Button" />
 			<Tag Name="dc.Callout" Class="dcraft.web.ui.inst.Callout" />
+			<Tag Name="dc.CaptchaButton" Class="dcraft.web.ui.inst.CaptchaButton" />
 			<Tag Name="dc.Link" Class="dcraft.web.ui.inst.Link" />
 			<Tag Name="dc.MenuWidget" Class="dcraft.web.ui.inst.MenuWidget" />
 			<Tag Name="dc.PagePanel" Class="dcraft.web.ui.inst.PagePanel" />
@@ -122,6 +123,7 @@
 			<Tag Name="dcf.HorizRadioGroup" Class="dcraft.web.ui.inst.form.HorizRadioGroup" />
 			<Tag Name="dcf.Select" Class="dcraft.web.ui.inst.form.SelectField" />
 			<Tag Name="dcf.SubmitButton" Class="dcraft.web.ui.inst.form.SubmitButton" />
+			<Tag Name="dcf.SubmitCaptchaButton" Class="dcraft.web.ui.inst.form.SubmitCaptchaButton" />
 			<Tag Name="dcf.TextArea" Class="dcraft.web.ui.inst.form.TextArea" />
 			<Tag Name="dcf.Uploader" Class="dcraft.web.ui.inst.form.Uploader" />
 			<Tag Name="dcf.YesNo" Class="dcraft.web.ui.inst.form.YesNo" />

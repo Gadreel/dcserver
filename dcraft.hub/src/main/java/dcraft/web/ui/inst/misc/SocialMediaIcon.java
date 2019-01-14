@@ -30,8 +30,17 @@ public class SocialMediaIcon extends Link {
 			if ((setting != null) && ! this.hasAttribute("To"))
 				this.withAttribute("To", setting.getAttribute("Url"));
 
-			if (! this.hasAttribute("Icon"))
-				this.withAttribute("Icon", "fa-" + formedia.toLowerCase());
+			if (! this.hasAttribute("Icon")) {
+				String iconname = formedia.toLowerCase();
+				
+				if ("facebook".equals(iconname))
+					iconname = "facebook-f";
+				else if ("linkedin".equals(iconname))
+					iconname = "linkedin-in";
+				
+				this.withAttribute("IconName", iconname);
+				this.withAttribute("IconLibrary", "fab");
+			}
 			
 			if (! this.hasAttribute("aria-label"))
 				this.withAttribute("aria-label", "{$_Tr.dcwTagSocialIcon} " + formedia);		// TODO locale, get from settings

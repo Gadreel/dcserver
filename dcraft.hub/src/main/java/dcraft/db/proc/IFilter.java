@@ -14,4 +14,5 @@ public interface IFilter {
 	ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, Object val) throws OperatingContextException;
 	void parse(IParentAwareWork state, XElement code, RecordStruct filter) throws OperatingContextException;
 	IFilter withNested(IFilter v);
+	IFilter shiftNested(IFilter v);
 }

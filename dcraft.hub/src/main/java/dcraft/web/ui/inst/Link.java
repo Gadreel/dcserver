@@ -7,6 +7,7 @@ import dcraft.script.work.InstructionWork;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.StackWork;
 import dcraft.util.StringUtil;
+import dcraft.web.ui.UIUtil;
 import dcraft.xml.XElement;
 
 public class Link extends Base {
@@ -30,10 +31,15 @@ public class Link extends Base {
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
 		String label = StackUtil.stringFromSource(state,"Label");
-		String icon = StackUtil.stringFromSource(state,"Icon");
+		String icon = StackUtil.stringFromSource(state,"Icon");		// TODO old approach, remove after migration of all icon links
+		String iconLibrary = StackUtil.stringFromSource(state,"IconLibrary");
+		String iconName = StackUtil.stringFromSource(state,"IconName");
 
 		// square, circle, none/empty, simple
-		String icontype = StackUtil.stringFromSource(state,"IconType", "fa-square").toLowerCase();
+		String icontype = StackUtil.stringFromSource(state,"IconType", "fa-square").toLowerCase();   // TODO set to `standard` as default after migration above
+		String icontypeLibrary = StackUtil.stringFromSource(state,"IconTypeLibrary", "fas").toLowerCase();
+		String icontypeName = StackUtil.stringFromSource(state,"IconTypeName", "square").toLowerCase();
+		
 		String iconsize = StackUtil.stringFromSource(state,"IconSize", "lg");
 		String to = StackUtil.stringFromSource(state,"To", "#");
 		String click = StackUtil.stringFromSource(state,"Click");
@@ -41,6 +47,62 @@ public class Link extends Base {
 		
 		if (StringUtil.isNotEmpty(label)) {
 			this.withText(label).attr("dc-title", label);
+		}
+		else if (StringUtil.isNotEmpty(iconName)) {
+			String vb = UIUtil.requireIcon(this, state, iconLibrary, iconName);
+			
+			XElement iconel = W3.tag("svg")
+					.attr("xmlns", "http://www.w3.org/2000/svg")
+					.attr("aria-hidden", "true")
+					.attr("role", "img")
+					.attr("viewBox", vb)
+					.with(W3.tag("use")
+							.attr("href", "#" + iconLibrary + "-" + iconName)
+							.attr("xlink:href", "#" + iconLibrary + "-" + iconName)
+					);
+			
+			if ("none".equals(icontype) || "empty".equals(icontype)) {
+				iconel.attr("class", "dc-icon-stack svg-inline--fa fa5-w-12 fa5-stack-1x dc-icon-foreground icon-" + iconLibrary + "-" + iconName);
+				
+				this.with(
+						W3.tag("span")
+								.withClass("dc-icon-stacked", "fa5-stack", "fa5-" + iconsize)
+								.attr("aria-hidden","true")
+								.attr("role", "img")
+								.with(
+										iconel
+								)
+				);
+			}
+			else if ("simple".equals(icontype)) {
+				iconel.attr("class", "dc-icon-foreground svg-inline--fa fa5-w-12 fa5-" + iconsize + " icon-" + iconLibrary + "-" + iconName);
+				
+				this.with(iconel);
+			}
+			else {
+				iconel.attr("class", "dc-icon-stack svg-inline--fa fa5-w-12 fa5-stack-1x dc-icon-foreground fa5-inverse icon-" + iconLibrary + "-" + iconName);
+				
+				String vbb = UIUtil.requireIcon(this, state, icontypeLibrary, icontypeName);
+				
+				XElement iconelb = W3.tag("svg")
+						.attr("class", "dc-icon-stack svg-inline--fa fa5-w-12 fa5-stack-2x dc-icon-background")
+						.attr("xmlns", "http://www.w3.org/2000/svg")
+						.attr("aria-hidden", "true")
+						.attr("role", "img")
+						.attr("viewBox", vbb)
+						.with(W3.tag("use")
+								.attr("href", "#" + icontypeLibrary + "-" + icontypeName)
+								.attr("xlink:href", "#" + icontypeLibrary + "-" + icontypeName)
+						);
+				
+				this.with(
+						W3.tag("span")
+								.withClass("dc-icon-stacked", "fa5-stack", "fa5-" + iconsize)
+								.attr("aria-hidden","true")
+								.attr("role", "img")
+								.with(iconelb, iconel)
+				);
+			}
 		}
 		else if (StringUtil.isNotEmpty(icon)) {
 			if ("none".equals(icontype) || "empty".equals(icontype)) {

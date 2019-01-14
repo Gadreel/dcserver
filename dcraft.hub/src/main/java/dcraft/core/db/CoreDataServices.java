@@ -11,7 +11,7 @@ import dcraft.xml.XElement;
 public class CoreDataServices extends BaseService {
 	@Override
 	public boolean handle(ServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
-		/* TODO review all
+		/* TODO review all and delete this class, not in use
 		RecordStruct rec = request.getDataAsRecord();
 		
 		OperationContext tc = OperationContext.getOrThrow();

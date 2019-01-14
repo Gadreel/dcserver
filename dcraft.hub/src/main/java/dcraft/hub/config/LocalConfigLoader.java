@@ -69,7 +69,12 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 		tctx.withDebugLevel(HubLog.getGlobalLevel());
 		
 		Logger.trace("Start init resources work");
-		
+
+		if (Files.notExists(ApplicationHub.getDeploymentNodePath()) && ! "00001".equals(ApplicationHub.getNodeId())) {
+			Logger.error("Missing node folder, node folder must be added.");
+			return;
+		}
+
 		// -----------------------------------
 		//   apply config minimally
 		// -----------------------------------
@@ -256,17 +261,17 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 	
 		KeyRingResource keyres = resources.getOrCreateTierKeyRing();
 		
-		KeyRingCollection key1 = KeyRingCollection.load(this.resolvePath(Paths.get(".")));
+		KeyRingCollection key1 = KeyRingCollection.load(this.resolvePath(Paths.get(".")), false);
 		
 		if (key1 != null)
 			keyres.withKeys(key1);
 		
-		KeyRingCollection key2 = KeyRingCollection.load(this.resolveRolePath(Paths.get(".")));
+		KeyRingCollection key2 = KeyRingCollection.load(this.resolveRolePath(Paths.get(".")), false);
 		
 		if (key2 != null)
 			keyres.withKeys(key2);
 		
-		KeyRingCollection key3 = KeyRingCollection.load(this.resolveNodePath(Paths.get(".")));
+		KeyRingCollection key3 = KeyRingCollection.load(this.resolveNodePath(Paths.get(".")), false);
 		
 		if (key3 != null)
 			keyres.withKeys(key3);
@@ -416,7 +421,7 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 		return loc;
 	}
 	
-	public void addConfigIfPresent(ConfigResource configres, Path path) {
+	public void addConfigIfPresent(ConfigResource configres, Path path, boolean top) {
 		// this is fine, not all config
 		if (path == null)
 			return;
@@ -433,8 +438,11 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 			}
 			else {
 				Logger.trace("Loaded config xml file: " + path);
-				
-				configres.add(cel);
+
+				if (top)
+					configres.addTop(cel);
+				else
+					configres.add(cel);
 			}
 		}
 	}

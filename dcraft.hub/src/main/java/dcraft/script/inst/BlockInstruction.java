@@ -2,6 +2,7 @@ package dcraft.script.inst;
 
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.BlockWork;
+import dcraft.script.work.MainWork;
 import dcraft.task.IParentAwareWork;
 import dcraft.xml.XNode;
 
@@ -61,5 +62,10 @@ abstract public class BlockInstruction extends Instruction {
 	@Override
 	public InstructionWork createStack(IParentAwareWork state) {
 		return BlockWork.of(state, this);
+	}
+	
+	@Override
+	public InstructionWork createStackMain(IParentAwareWork state) {
+		return MainWork.of(state, this);
 	}
 }

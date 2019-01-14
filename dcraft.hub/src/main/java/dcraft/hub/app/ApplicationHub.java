@@ -90,7 +90,7 @@ public class ApplicationHub {
 	static protected String runid = TimeUtil.stampFmt.format(ZonedDateTime.now(ZoneId.of("UTC")));
 
 	static protected boolean isproduction = false;
-	static protected String role = "local";			// local and remote are the core roles, but can be expanded
+	static protected String role = "server";			// server is the core role, but can be expanded
 	
 	static protected long starttime = System.currentTimeMillis();
 	static protected Clock clock = new Clock();

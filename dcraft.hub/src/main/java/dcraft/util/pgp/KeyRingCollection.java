@@ -99,31 +99,31 @@ public class KeyRingCollection {
     }
     
     public static PGPPublicKeyRing importArmoredPublicKeyToRing(String key, Path ringpath) {
-    	KeyRingCollection krc = KeyRingCollection.load(ringpath);
+    	KeyRingCollection krc = KeyRingCollection.load(ringpath, true);
     	
     	return krc.importArmoredPublicKeyToRing(key);
     }
 	
     public static PGPPublicKeyRing importArmoredPublicKeyToRing(Path file, Path ringpath) {
-    	KeyRingCollection krc = KeyRingCollection.load(ringpath);
+    	KeyRingCollection krc = KeyRingCollection.load(ringpath, true);
     	
     	return krc.importArmoredPublicKeyToRing(file);
 	}
 	
     public static PGPPublicKeyRing importBinPublicKeyToRing(Path file, Path ringpath) {
-    	KeyRingCollection krc = KeyRingCollection.load(ringpath);
+    	KeyRingCollection krc = KeyRingCollection.load(ringpath, true);
     	
     	return krc.importBinPublicKeyToRing(file);
 	}
 	
 	public static PGPPublicKeyRing importPublicKeyToRing(InputStream src, Path ringpath) {
-    	KeyRingCollection krc = KeyRingCollection.load(ringpath);
+    	KeyRingCollection krc = KeyRingCollection.load(ringpath, true);
         
         return krc.importPublicKeyToRing(src);
     }    
     
 	public static PGPPublicKeyRing createKeyPairAddToRing(String identity, String pass, Path ringpath) {
-    	KeyRingCollection krc = KeyRingCollection.load(ringpath);
+    	KeyRingCollection krc = KeyRingCollection.load(ringpath, true);
     	
         return krc.createKeyPairAddToRing(identity, pass);
     }
@@ -213,8 +213,11 @@ public class KeyRingCollection {
     }
 	
 	@SuppressWarnings("rawtypes")
-	static public KeyRingCollection load(Path ringpath) {
+	static public KeyRingCollection load(Path ringpath, boolean createMode) {
     	if (ringpath == null)
+    		return null;
+
+    	if (! createMode && Files.notExists(ringpath))
     		return null;
 
 		KeyRingCollection rings = new KeyRingCollection();

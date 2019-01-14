@@ -1588,6 +1588,29 @@ input:focus + label.dc-input-button,
 	padding: 1rem 0;
 }
 
+.dc-uploader-list-area.dc-message {
+	padding: 1.5rem 1.5rem 3rem 1.5rem;
+	background-image: url(/icons/fas/file-upload.svg);
+	background-repeat: no-repeat;
+	background-position: right 2rem center;
+	background-size: 3rem;
+	outline: 2px dashed white;
+	outline-offset: -10px;
+
+	-webkit-transition: outline-offset .15s ease-in-out, background-color .15s linear;
+	transition: outline-offset .15s ease-in-out, background-color .15s linear;
+}
+
+.dc-uploader.dragenter .dc-uploader-list-area.dc-message {
+	outline: 2px dashed black;
+	outline-offset: -20px;
+	background-size: 2rem;
+}
+
+.dc-uploader-list-area.dc-message * {
+	pointer-events: none;
+}
+
 .dc-uploader-list-header {
 	margin-bottom: .8rem;
 }
@@ -1715,9 +1738,9 @@ input:focus + label.dc-input-button,
 }
 
 .dc-message {
-    padding: 1.5rem;
-    border: 1px solid transparent;
-    border-radius: 4px;
+	padding: 1.5rem;
+	border: 1px solid transparent;
+	border-radius: 4px;
 }
 
 .dc-message-success {

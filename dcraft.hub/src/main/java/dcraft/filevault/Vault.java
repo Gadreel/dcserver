@@ -155,6 +155,23 @@ abstract public class Vault {
 		return false;
 	}
 
+	public String getTxForToken(RecordStruct data) throws OperatingContextException {
+		String token = data.getFieldAsString("Token");
+
+		HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
+
+		if (! scache.containsKey(token))
+			return null;
+
+		return Struct.objectToString(scache.get(token + "Tx"));
+	}
+
+	public void clearToken(RecordStruct data) throws OperatingContextException {
+		String token = data.getFieldAsString("Token");
+
+		VaultUtil.clearSessionToken(token);
+	}
+
 	// TODO should use a callback approach
 	public void beforeSubmitTransaction(TransactionBase tx) throws OperatingContextException {
 		// nothing to do

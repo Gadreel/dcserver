@@ -24,6 +24,7 @@ import dcraft.hub.app.ApplicationHub;
 import dcraft.log.Logger;
 import dcraft.script.Script;
 import dcraft.struct.RecordStruct;
+import dcraft.task.ContextShimWork;
 import dcraft.task.IWork;
 import dcraft.task.scheduler.BaseSchedule;
 import dcraft.task.scheduler.SimpleSchedule;
@@ -38,14 +39,12 @@ public class CommonSchedule extends BaseSchedule {
 	static public final int METHOD_SCRIPT = 2;
 	static public final int METHOD_CLASS = 3;
 	
-	static public CommonSchedule of(RecordStruct task, IWork work) {
+	static public CommonSchedule of(RecordStruct task) {
 		CommonSchedule sch = new CommonSchedule();
 
 		sch.repeat = true;
-		
 		sch.setTask(task);
-		sch.setWork(work);
-		
+
 		return sch;
 	}
 	
@@ -62,7 +61,9 @@ public class CommonSchedule extends BaseSchedule {
 	
 	protected IInlineScript iscript = null;
 	
-	protected Script workScript = null;
+	protected String workClass = null;
+	
+	protected CommonPath workScript = null;
 	
 	public void setLastRun(ZonedDateTime v) {
 		this.last = v;
@@ -79,13 +80,19 @@ public class CommonSchedule extends BaseSchedule {
 	public IInlineScript getInlineScript() {
 		return this.iscript;
 	}
-	
+
 	@Override
 	public IWork getWork() {
+		// use context shim so that the correct script and class loaders are available at the time
+		// the work is running - in the right context
+
 		if (this.workScript != null)
-			return this.workScript.toWork();
+			return ContextShimWork.ofScript(this.workScript);
 		
-		return super.getWork();
+		if (StringUtil.isNotEmpty(this.workClass))
+			return ContextShimWork.ofClass(this.workClass);
+		
+		return null;
 	}
 	
 	protected CommonSchedule() { }
@@ -243,18 +250,16 @@ public class CommonSchedule extends BaseSchedule {
 				this.helper.init(this, helpel);
 			}
 			
-			if (this.work == null) {
-				String script = config.getAttribute("Script");
-				
-				if (StringUtil.isNotEmpty(script)) {
-					this.workScript = Script.of(CommonPath.from(script));		// TODO really this should just be a CommonPath, should reload script each run
-				}
-				else {
-					String className = config.getAttribute("ClassName");
-					
-					if (StringUtil.isNotEmpty(className)) {
-						this.work = (IWork) ResourceHub.getResources().getClassLoader().getInstance(className);
-					}
+			String script = config.getAttribute("Script");
+
+			if (StringUtil.isNotEmpty(script)) {
+				this.workScript = CommonPath.from(script);
+			}
+			else {
+				String className = config.getAttribute("ClassName");
+
+				if (StringUtil.isNotEmpty(className)) {
+					this.workClass = className;
 				}
 			}
 		}

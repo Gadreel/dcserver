@@ -38,6 +38,12 @@ public class ConnectionManager implements IConnectionManager {
 	protected Path databasePath = null;
 	protected Path backupPath = null;
 	
+	/*
+	TODO Find ways to collect an monitor memory use - https://github.com/facebook/rocksdb/issues/3216
+	
+	see part about getting properties
+	 */
+	
 	@Override
 	public Path getDatabasePath() {
 		return this.databasePath;

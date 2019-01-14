@@ -25,8 +25,10 @@ public class Uploader extends CoreField {
 				.withAttribute("data-dc-enhance", "true")
 				.withAttribute("data-dc-tag", this.getName())
 				.withAttribute("type", "file")
-				.withAttribute("capture", "capture")
-				.withAttribute("multiple", "multiple");
+				.withAttribute("capture", "capture");
+
+		if (! this.getAttributeAsBooleanOrFalse("Single"))
+				input.withAttribute("multiple", "multiple");
 		
 		Base grp = W3.tag("div")
 			.withClass("dc-control dc-uploader");
@@ -41,7 +43,7 @@ public class Uploader extends CoreField {
 					.with(
 						W3.tag("div")
 							.withClass("dc-uploader-list-header")
-							.withText("Selected Files: ")
+							.withText(this.getAttributeAsBooleanOrFalse("Single") ? "Selected File: " : "Selected Files: ")
 					)
 					.with(
 						W3.tag("div")

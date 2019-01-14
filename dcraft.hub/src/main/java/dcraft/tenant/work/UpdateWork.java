@@ -173,7 +173,7 @@ public class UpdateWork extends StateWork {
 						.withTopic("Batch")		// TODO need to build batch into the system
 						.withNextId("SCHEDULE");
 				
-				CommonSchedule sched = CommonSchedule.of(schcontext.freezeToRecord(), null);
+				CommonSchedule sched = CommonSchedule.of(schcontext.freezeToRecord());
 				
 				sched.init(schedule);
 				

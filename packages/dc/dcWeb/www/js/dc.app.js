@@ -874,6 +874,9 @@ dc.pui.Loader = {
 		if (dc.handler && dc.handler.settings && dc.handler.settings.ga)
 			loadGA();
 
+		if (dc.handler && dc.handler.settings && dc.handler.settings.gcaptcha)
+			loadGCaptcha();
+
 		dc.comm.init(function() {
 			if (dc.handler && dc.handler.init)
 				dc.handler.init();
@@ -2358,7 +2361,8 @@ dc.pui.Form.prototype = {
 						Wait: false,
 						Stop: false,
 						Record: task.Store.Current.Record,
-						Data: task.Store.Current.Data
+						Data: task.Store.Current.Data,
+						Form: task.Store.Form
 					};
 
 					if (task.Store.Form.Managed) {
@@ -2593,7 +2597,7 @@ dc.pui.Form.prototype = {
 				};
 
 				if (task.Store.Form.Managed) {
-					task.Store.Form.query('a[data-dc-tag="dcf.SubmitButton"]').addClass('pure-button-disabled');
+					task.Store.Form.query('a[data-dc-tag="dcf.SubmitButton"],a[data-dc-tag="dcf.SubmitCaptchaButton"]').addClass('pure-button-disabled');
 					event.Alert = 'Form successfully submitted.';
 
 					if (typeof ga == 'function')
@@ -2891,29 +2895,9 @@ dc.pui.TagFuncs = {
 	},
 	'dc.Recaptcha': {
 		'execute': function(entry, node) {
-			// TODO for now assume Google, later add other types
-			/*
-			var widgetid = $(node).attr('data-widgetid');
-
-			if (! widgetid)
-				return;
-
-			grecaptcha.execute(widgetid);
-			*/
-
 			grecaptcha.execute();
 		},
 		'reset': function(entry, node) {
-			// TODO for now assume Google, later add other types
-
-			/*
-			var widgetid = $(node).attr('data-widgetid');
-
-			if (! widgetid)
-				return;
-
-			grecaptcha.reset(widgetid);
-			*/
 			grecaptcha.reset();
 		}
 	}
@@ -3041,6 +3025,48 @@ dc.pui.Tags = {
 				else {
 					$(node).attr('target', '_blank');
 				}
+			}
+		}
+	},
+	'dc.CaptchaButton': function(entry, node) {
+		var click = $(node).attr('data-dc-click');
+		var skey = $(node).attr('data-dc-sitekey');
+		var action = $(node).attr('data-dc-action');
+
+		if (click && skey) {
+			var clickfunc = function(e, ctrl) {
+				if (! $(node).hasClass('pure-button-disabled') && ! dc.pui.Apps.busyCheck()) {
+					entry.LastFocus = $(node);
+
+					$(node).addClass('pure-button-disabled');
+
+					grecaptcha.ready(function() {
+						grecaptcha
+							.execute(skey, { action: action })
+							.then(function(token) {
+								entry.callPageFunc(click, e, token, ctrl);
+							});
+					});
+				}
+			};
+
+			$(node).click(function(e) {
+				clickfunc(e, this);
+
+				e.preventDefault();
+				return false;
+			});
+
+			if (node.nodeName == 'SPAN') {
+				$(node).keypress(function(e) {
+					var keycode = (e.keyCode ? e.keyCode : e.which);
+					if (keycode == '13') {
+						clickfunc(e, this);
+
+						e.preventDefault();
+						return false;
+					}
+				});
 			}
 		}
 	},
@@ -3215,6 +3241,83 @@ dc.pui.Tags = {
 			e.preventDefault();
 			return false;
 		});
+	},
+	'dcf.SubmitCaptchaButton': function(entry, node) {
+		var skey = $(node).attr('data-dc-sitekey');
+		var action = $(node).attr('data-dc-action');
+
+		if (skey) {
+			var clickfunc = function(e, ctrl) {
+				var fnode = $(node).closest('form');
+
+				if (fnode && ! $(node).hasClass('pure-button-disabled') && ! dc.pui.Apps.busyCheck()) {
+					dc.pui.Apps.Busy = true;
+
+					entry.LastFocus = $(node);
+
+					var form = entry.form(fnode.attr('data-dcf-name'));
+					var vres = form.validate();
+
+					form.updateMessages(vres);
+
+					for (var i = 0; i < vres.Inputs.length; i++) {
+						var inp = vres.Inputs[i];
+
+						if (inp.Code != 0) {
+							dc.pui.Popup.alert(inp.Message, function() {
+								if (form.OnFocus)
+									form.PageEntry.callPageFunc(form.OnFocus, inp.Input);
+								else
+									form.inputQuery(inp.Input.Field).focus();
+							});
+
+							break;
+						}
+					}
+
+					if (vres.Pass) {
+						$(node).addClass('pure-button-disabled');
+
+						grecaptcha.ready(function() {
+							grecaptcha
+								.execute(skey, { action: action })
+								.then(function(token) {
+									form.Captcha = {
+										Token: token,
+										Action: action
+									};
+
+									form.save(function() {
+										dc.pui.Apps.Busy = false;
+									});
+								});
+						});
+					}
+					else {
+						dc.pui.Apps.Busy = false;
+					}
+				}
+			};
+
+			$(node).click(function(e) {
+				clickfunc(e, this);
+
+				e.preventDefault();
+				return false;
+			});
+
+			if (node.nodeName == 'SPAN') {
+				$(node).keypress(function(e) {
+					var keycode = (e.keyCode ? e.keyCode : e.which);
+					if (keycode == '13') {
+						clickfunc(e, this);
+
+						e.preventDefault();
+						return false;
+					}
+				});
+			}
+		}
 	},
 	'dcf.SubmitButton': function(entry, node) {
 		$(node).on("click", function(e) {
@@ -3973,15 +4076,52 @@ dc.pui.controls.Uploader.prototype.init = function(entry, node) {
 
 	dc.pui.controls.ListInput.prototype.init.call(this, entry, node);
 
-	$(node).on("click focusout keyup", this, function(e) { e.data.validate(); });
+	$(node)
+		.on("click focusout keyup", this, function(e) { e.data.validate(); })
+		.on("change", this, function(e) {
+			if (! $(node).attr('multiple'))
+				ctrl.removeAll();
 
-	$(node).on("change", this, function(e) {
-		ctrl.addFiles(this.files);
+			ctrl.addFiles(this.files);
 
-		e.data.validate();
-	});
+			e.data.validate();
+		});
 
-	// TODO drag and drop
+	var upctrl = $(node).closest('.dc-uploader');
+	var uparea = upctrl.find('.dc-uploader-list-area');
+
+	uparea
+		.on('dragstart dragover dragend', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+		})
+		.on('dragenter', function(e) {
+			$(upctrl).addClass('dragenter');
+			e.preventDefault();
+			e.stopPropagation();
+		})
+		.on('dragleave', function(e) {
+			$(upctrl).removeClass('dragenter');
+
+			e.preventDefault();
+			e.stopPropagation();
+		})
+		.on('drop', function(e) {
+			var droppedFiles = e.originalEvent.dataTransfer.files;
+
+			$(upctrl).removeClass('dragenter');
+
+			if ($(node).attr('multiple')) {
+				ctrl.addFiles(droppedFiles);
+			}
+			else {
+				ctrl.removeAll();
+				ctrl.addFiles([ droppedFiles[0] ]);
+			}
+
+			e.preventDefault();
+			e.stopPropagation();
+		});
 };
 
 dc.pui.controls.Uploader.prototype.setValue = function(values) {
@@ -4199,6 +4339,15 @@ function loadGA() {
 
 	ga('create', dc.handler.settings.ga, 'auto');
 	ga('set', 'forceSSL', true);
+}
+
+function loadGCaptcha() {
+	var script = document.createElement('script');
+	script.src = 'https://www.google.com/recaptcha/api.js?render=' +
+		dc.handler.settings.gcaptcha;
+	script.async = true;
+	script.defer = true;
+	document.head.appendChild(script);
 }
 
 /*

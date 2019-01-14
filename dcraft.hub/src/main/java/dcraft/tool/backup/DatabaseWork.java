@@ -10,6 +10,7 @@ import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.local.LocalStore;
 import dcraft.filevault.Transaction;
 import dcraft.hub.ResourceHub;
+import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeEmpty;
@@ -30,6 +31,7 @@ public class DatabaseWork extends StateWork {
 	protected StateWorkStep packStep = null;
 	protected StateWorkStep uploadStep = null;
 	protected StateWorkStep finStep = null;
+	protected StateWorkStep notify = null;
 	
 	protected Transaction tx = Transaction.of("NodeDatabase");		// do not connect to a vault
 	protected LocalStore fsd = null;
@@ -44,7 +46,8 @@ public class DatabaseWork extends StateWork {
 				collectStep = StateWorkStep.of("Collect Files", this::collectFiles),
 				packStep = StateWorkStep.of("Copy Files", this::copyFiles),
 				uploadStep = StateWorkStep.of("Commit Files", this::commitFiles),
-				finStep = StateWorkStep.of("Finish", this::finish)
+				finStep = StateWorkStep.of("Finish", this::finish),
+				notify = StateWorkStep.of("Notify", this::notify)
 		);
 	}
 	
@@ -131,5 +134,11 @@ public class DatabaseWork extends StateWork {
 		);
 		
 		return StateWorkStep.WAIT;
+	}
+	
+	public StateWorkStep notify(TaskContext trun) throws OperatingContextException {
+		BackupUtil.notifyProgress(ApplicationHub.getDeployment() + " : " + ApplicationHub.getNodeId() + " : database backup done");
+		
+		return StateWorkStep.STOP;
 	}
 }

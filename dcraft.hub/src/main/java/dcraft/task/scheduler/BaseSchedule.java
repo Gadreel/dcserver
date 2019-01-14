@@ -26,22 +26,15 @@ import dcraft.util.RndUtil;
 import dcraft.xml.XElement;
 
 abstract public class BaseSchedule implements ISchedule {
-	protected IWork work = null;
 	protected RecordStruct task = null;
 	protected boolean repeat = false;
 	protected String scheduleid = null;
 	protected RecordStruct hints = new RecordStruct();
 	protected boolean canceled = false;
 	protected XElement config = null;
-	
-	public void setWork(IWork v) {
-		this.work = v;
-	}
-	
-	public IWork getWork() {
-		return this.work;
-	}
-	
+
+	abstract public IWork getWork();
+
 	public void setTask(RecordStruct v) {
 		this.task = v;
 	}

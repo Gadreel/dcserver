@@ -130,4 +130,8 @@ public class Script implements IWorkBuilder {
 	public IWork toWork() {
 		return this.xml.createStack(null);
 	}
+	
+	public IWork toWorkMain() throws Exception {
+		return this.xml.createStackMain(null);
+	}
 }

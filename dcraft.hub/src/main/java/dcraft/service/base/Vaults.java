@@ -536,28 +536,56 @@ public class Vaults  {
 		RecordStruct params = request.getFieldAsRecord("Params");
 		
 		// TODO verify requested id is allowed in this session
-		Transaction tx = vault.buildUpdateTransaction(request.getFieldAsString("TransactionId"), params);
-		
-		tx.commitTransaction(new OperationOutcomeEmpty() {
-			@Override
-			public void callback() throws OperatingContextException {
-				fcb.returnEmpty();
-			}
-		});
+		String transactionId = request.getFieldAsString("TransactionId");
+
+		if (StringUtil.isEmpty(transactionId)) {
+			transactionId = vault.getTxForToken(request);
+		}
+
+		if (StringUtil.isNotEmpty(transactionId)) {
+			Transaction tx = vault.buildUpdateTransaction(transactionId, params);
+
+			tx.commitTransaction(new OperationOutcomeEmpty() {
+				@Override
+				public void callback() throws OperatingContextException {
+					vault.clearToken(request);
+
+					fcb.returnEmpty();
+				}
+			});
+		}
+		else {
+			Logger.error("Missing Tx Id");
+			fcb.returnEmpty();
+		}
 	}
 	
 	static public void rollbackTransaction(Vault vault, RecordStruct request, OperationOutcomeStruct fcb) throws OperatingContextException {
 		RecordStruct params = request.getFieldAsRecord("Params");
-		
+
 		// TODO verify requested id is allowed in this session
-		Transaction tx = vault.buildUpdateTransaction(request.getFieldAsString("TransactionId"), params);
-		
-		tx.rollbackTransaction(new OperationOutcomeEmpty() {
-			@Override
-			public void callback() throws OperatingContextException {
-				fcb.returnEmpty();
-			}
-		});
+		String transactionId = request.getFieldAsString("TransactionId");
+
+		if (StringUtil.isEmpty(transactionId)) {
+			transactionId = vault.getTxForToken(request);
+		}
+
+		if (StringUtil.isNotEmpty(transactionId)) {
+			Transaction tx = vault.buildUpdateTransaction(transactionId, params);
+
+			tx.rollbackTransaction(new OperationOutcomeEmpty() {
+				@Override
+				public void callback() throws OperatingContextException {
+					vault.clearToken(request);
+
+					fcb.returnEmpty();
+				}
+			});
+		}
+		else {
+			Logger.error("Missing Tx Id");
+			fcb.returnEmpty();
+		}
 	}
 	
 	static public void startUpload(Vault vault, RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
@@ -597,8 +625,12 @@ public class Vaults  {
 					TxMode depmode = TxMode.Manual;
 					
 					if (StringUtil.isEmpty(transactionId)) {
-						transactionId = Transaction.createTransactionId();  // token is protected by session - session id is secure random
-						depmode = TxMode.Automatic;
+						transactionId = vault.getTxForToken(request);
+
+						if (StringUtil.isEmpty(transactionId)) {
+							transactionId = Transaction.createTransactionId();  // token is protected by session - session id is secure random
+							depmode = TxMode.Automatic;
+						}
 					}
 					
 					String ftransactionId = transactionId;

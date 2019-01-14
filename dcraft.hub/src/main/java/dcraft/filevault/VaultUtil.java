@@ -11,6 +11,7 @@ import dcraft.stream.StreamWork;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.BooleanStruct;
+import dcraft.struct.scalar.StringStruct;
 import dcraft.task.Task;
 import dcraft.task.TaskContext;
 import dcraft.task.TaskHub;
@@ -144,5 +145,19 @@ public class VaultUtil {
 		HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
 		
 		scache.put(token, BooleanStruct.of(true));
+	}
+
+	static public void setSessionToken(String token, String txid) throws OperatingContextException {
+		HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
+
+		scache.put(token, BooleanStruct.of(true));
+		scache.put(token + "Tx", StringStruct.of(txid));
+	}
+
+	static public void clearSessionToken(String token) throws OperatingContextException {
+		HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
+
+		scache.remove(token);
+		scache.remove(token + "Tx");
 	}
 }

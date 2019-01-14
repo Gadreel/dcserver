@@ -13,6 +13,7 @@ import dcraft.filestore.FileCollection;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.local.LocalStore;
 import dcraft.filevault.Transaction;
+import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeEmpty;
@@ -33,6 +34,7 @@ public class LogsWork extends StateWork {
 	protected StateWorkStep uploadStep = null;
 	protected StateWorkStep cleanStep = null;
 	protected StateWorkStep finStep = null;
+	protected StateWorkStep notify = null;
 	
 	protected Transaction tx = Transaction.of("NodeLogs");		// do not connect to a vault
 	protected LocalStore fsd = LocalStore.of("./logs");
@@ -51,7 +53,8 @@ public class LogsWork extends StateWork {
 				packStep = StateWorkStep.of("Copy Files", this::copyFiles),
 				uploadStep = StateWorkStep.of("Commit Files", this::commitFiles),
 				cleanStep = StateWorkStep.of("Clean Files", this::cleanFiles),
-				finStep = StateWorkStep.of("Finish", this::finish)
+				finStep = StateWorkStep.of("Finish", this::finish),
+				notify = StateWorkStep.of("Notify", this::notify)
 		);
 	}
 	
@@ -171,5 +174,11 @@ public class LogsWork extends StateWork {
 		);
 		
 		return StateWorkStep.WAIT;
+	}
+	
+	public StateWorkStep notify(TaskContext trun) throws OperatingContextException {
+		BackupUtil.notifyProgress(ApplicationHub.getDeployment() + " : " + ApplicationHub.getNodeId() + " : logs backup done");
+		
+		return StateWorkStep.STOP;
 	}
 }

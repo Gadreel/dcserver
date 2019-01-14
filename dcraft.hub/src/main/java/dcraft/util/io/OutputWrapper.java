@@ -31,7 +31,11 @@ public class OutputWrapper extends OutputStream {
 	public OutputWrapper(Memory mem) {
 		this.mem = mem;
 	}
-	
+
+	public Memory getMemory() {
+		return this.mem;
+	}
+
 	@Override
 	public void write(int value) throws IOException {
 		this.mem.writeByte((byte)value);

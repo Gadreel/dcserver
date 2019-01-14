@@ -39,7 +39,10 @@ public class EncryptedVault extends Vault {
 		BasicRequestContext dbctx = BasicRequestContext.ofDefaultDatabase();
 		
 		FileDescriptor fd = this.getDetail(dbctx, path);
-		
+
+		if (fd == null)
+			fd = new FileDescriptor().withPath(path).withExists(false).withConfirmed(true);
+
 		fcb.returnValue(fd);
 	}
 

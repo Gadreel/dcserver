@@ -34,13 +34,38 @@ dc.comm = {
 		callback();
 	},
 
-	sendForgetMessage : function(msg) {
+	call: function(service, params, callbackfunc, timeout) {
+		var sparts = service.split('.');
+
+		if (sparts.length != 3) {
+			if (callbackfunc)
+				callbackfunc({
+					Result: 1,
+					Message: 'Invalid service naming.'
+				});
+
+			return;
+		}
+
+		var msg = {
+			Service: sparts[0],
+			Feature: sparts[1],
+			Op: sparts[2]
+		};
+
+		if (params)
+			msg.Body = params;
+
+		dc.comm.sendMessage(msg, callbackfunc, timeout);
+	},
+
+	sendForgetMessage: function(msg) {
 		msg.RespondTag = 'SendForget';
 
 		dc.comm.sendMessage(msg);
 	},
 
-	sendMessage : function(msg, callbackfunc, timeout) {
+	sendMessage: function(msg, callbackfunc, timeout) {
 		// TODO consider
 		//if (dc.comm._session)
 		//	msg.Session = dc.comm._session;

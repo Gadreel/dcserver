@@ -1,0 +1,20 @@
+<Config Title="Ignite Utilites">
+	<Packages.Template Id="main-packages">
+		<Package Name="dc/dcHub" />
+		<Package Name="dc/dcApp" />
+	</Packages.Template>
+
+	<Packages Use="main-packages" />
+
+	<Service.Template Id="main-sessions" Inherit="dc-sessions" />
+	<Service.Template Id="main-core" Inherit="dc-core-simple" />
+
+	<Service Use="main-sessions" />
+	<Service Use="main-core" />
+
+	<WorkHub>
+		<Topic Name="Batch" RunLimit="1" />
+	</WorkHub>
+
+	<CommandLine ClientClass="dcraft.cli.Ignite" />
+</Config>

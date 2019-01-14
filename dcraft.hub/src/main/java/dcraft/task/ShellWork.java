@@ -24,6 +24,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -51,6 +52,10 @@ public class ShellWork implements IWork {
 			v = "null";
 		
 		return "\"" + v.replace("\"", "\"\"") + "\"";			// TODO could be ^ instead??
+	}
+	
+	static public ShellWork work() {
+		return new ShellWork();
 	}
 	
 	// members
@@ -168,7 +173,13 @@ public class ShellWork implements IWork {
 			}
 			
 			input.close();
-			  
+
+			try {
+				proc.waitFor(58, TimeUnit.SECONDS);
+			}
+			catch (InterruptedException x) {
+			}
+
 			long ecode = (long) proc.exitValue();
 			
 			// special handling

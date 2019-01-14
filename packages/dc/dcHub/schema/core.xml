@@ -732,6 +732,11 @@
 						</Description>
 						<ListRequest Required="True" Type="dcTenant:dcAlias" />
 					</Op>
+					<Op Name="Backup">
+						<Description>
+							Standard backup for logs, database and file sync.
+						</Description>
+					</Op>
 				</Secure>
 			</Feature>
 

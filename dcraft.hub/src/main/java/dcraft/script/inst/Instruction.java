@@ -43,5 +43,9 @@ abstract public class Instruction extends XElement {
 
 	public InstructionWork createStack(IParentAwareWork state) {
 		return InstructionWork.of(state, this);
-	}	
+	}
+	
+	public InstructionWork createStackMain(IParentAwareWork state) throws Exception {
+    	throw new Exception(this.toLocalString() + ": instruction cannot be script main");
+	}
 }

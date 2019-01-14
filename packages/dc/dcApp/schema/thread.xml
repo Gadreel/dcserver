@@ -40,7 +40,7 @@
 			<Field Name="dcmContentAttributes" Type="AnyRecord" List="True" />
 
 			<!-- for ManagedForm -->
-			<Field Name="dcmManagedFormName" Type="dcMetaString" />
+			<Field Name="dcmManagedFormName" Type="dcMetaString" Indexed="True" />
 			<Field Name="dcmManagedFormToken" Type="dcMetaString" />
 
 			<!-- for Store -->

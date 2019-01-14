@@ -26,14 +26,16 @@ public class SocialMediaWidget extends Base {
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
 		String icons = StackUtil.stringFromSource(state, "For");
-		String iconType = StackUtil.stringFromSource(state, "IconType");
+		String iconTypeLibrary = StackUtil.stringFromSource(state, "IconTypeLibrary");
+		String iconTypeName = StackUtil.stringFromSource(state, "IconTypeName");
 		String iconSize = StackUtil.stringFromSource(state, "IconSize");
 		
 		if (StringUtil.isNotEmpty(icons)) {
 			for (String icon : icons.split(",")) {
 				this.with(SocialMediaIcon.tag()
 						.withAttribute("For", icon)
-						.withAttribute("IconType", iconType)
+						.withAttribute("IconTypeLibrary", iconTypeLibrary)
+						.withAttribute("IconTypeName", iconTypeName)
 						.withAttribute("IconSize", iconSize)
 				);
 			}

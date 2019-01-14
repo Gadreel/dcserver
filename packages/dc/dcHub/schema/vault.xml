@@ -46,11 +46,11 @@
 
 		<Record Id="dcVaultRequest">
 			<Field Name="Vault" Type="dcTinyString" Required="True" />
+			<Field Name="Token" Type="dcTinyString" />
 			<Field Name="Params" Type="AnyRecord" />
 		</Record>
 
 		<Record Id="dcVaultPathRequest" Inherits="dcVaultRequest">
-			<Field Name="Token" Type="dcTinyString" />
 			<Field Name="Path" Type="dcString" />
 		</Record>
 
@@ -183,7 +183,7 @@
 							Get a transaction id for use with multiple file uploads.
 						</Description>
 						<RecordRequest Required="True" Inherits="dcVaultRequest">
-							<Field Name="TransactionId" Type="dcTinyString" Required="True" />
+							<Field Name="TransactionId" Type="dcTinyString" />
 						</RecordRequest>
 						<RecordResponse Inherits="dcVaultResponse" />
 					</Op>
@@ -192,7 +192,7 @@
 							Get a transaction id for use with multiple file uploads.
 						</Description>
 						<RecordRequest Required="True" Inherits="dcVaultRequest">
-							<Field Name="TransactionId" Type="dcTinyString" Required="True" />
+							<Field Name="TransactionId" Type="dcTinyString" />
 						</RecordRequest>
 						<RecordResponse Inherits="dcVaultResponse" />
 					</Op>

@@ -4,10 +4,13 @@ import dcraft.db.request.common.RequestFactory;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.app.HubState;
+import dcraft.hub.clock.ISystemWork;
+import dcraft.hub.clock.SysReporter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.log.Logger;
+import dcraft.log.count.CountHub;
 import dcraft.service.ServiceHub;
 import dcraft.struct.Struct;
 import dcraft.task.IWork;
@@ -21,7 +24,16 @@ import dcraft.task.scheduler.common.CommonSchedule;
 import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
 
+import java.lang.management.ClassLoadingMXBean;
+import java.lang.management.CompilationMXBean;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.OperatingSystemMXBean;
+import java.lang.management.RuntimeMXBean;
+import java.lang.management.ThreadMXBean;
 import java.time.Instant;
+import java.util.List;
 
 /**
  */
@@ -127,45 +139,43 @@ public class HubStartFinalWork extends CoreLoaderWork {
 		
 		// TODO remember that sys workers should not use OperationContext
 		// monitor the Hub/Java/Core counters
-        /* TODO
+
 		ISystemWork monitorcounters = new ISystemWork() {
 			@Override
 			public void run(SysReporter reporter) {
 				reporter.setStatus("Updating hub counters");
 				
-				CountManager cm = Hub.getCountManager();
-				
 		        /* TODO
 				SessionHub.recordCounters();
-				* /
+				*/
 				
-				if (! cm.hasCounter("dcRunId"))
-					cm.allocateSetStringCounter("dcRunId", Hub.getRunId());
+				if (! CountHub.hasCounter("dcRunId"))
+					CountHub.allocateSetStringCounter("dcRunId", ApplicationHub.getRunId());
 				
 				//long st = System.currentTimeMillis();
 				
 				ClassLoadingMXBean clbean = ManagementFactory.getClassLoadingMXBean();
 				
-				cm.allocateSetNumberCounter("javaClassCount", clbean.getLoadedClassCount());
-				cm.allocateSetNumberCounter("javaClassLoads", clbean.getTotalLoadedClassCount());
-				cm.allocateSetNumberCounter("javaClassUnloads", clbean.getUnloadedClassCount());
+				CountHub.allocateSetNumberCounter("javaClassCount", clbean.getLoadedClassCount());
+				CountHub.allocateSetNumberCounter("javaClassLoads", clbean.getTotalLoadedClassCount());
+				CountHub.allocateSetNumberCounter("javaClassUnloads", clbean.getUnloadedClassCount());
 				
 				CompilationMXBean cpbean = ManagementFactory.getCompilationMXBean();
 
 				if (cpbean != null)
-					cm.allocateSetNumberCounter("javaCompileTime", cpbean.getTotalCompilationTime());
+					CountHub.allocateSetNumberCounter("javaCompileTime", cpbean.getTotalCompilationTime());
 				
 				MemoryMXBean mebean = ManagementFactory.getMemoryMXBean();
 				
-				cm.allocateSetNumberCounter("javaMemoryHeapCommitted", mebean.getHeapMemoryUsage().getCommitted());
-				cm.allocateSetNumberCounter("javaMemoryHeapUsed", mebean.getHeapMemoryUsage().getUsed());
-				cm.allocateSetNumberCounter("javaMemoryHeapInit", mebean.getHeapMemoryUsage().getInit());
-				cm.allocateSetNumberCounter("javaMemoryHeapMax", mebean.getHeapMemoryUsage().getMax());
-				cm.allocateSetNumberCounter("javaMemoryNonHeapCommitted", mebean.getNonHeapMemoryUsage().getCommitted());
-				cm.allocateSetNumberCounter("javaMemoryNonHeapUsed", mebean.getNonHeapMemoryUsage().getUsed());
-				cm.allocateSetNumberCounter("javaMemoryNonHeapInit", mebean.getNonHeapMemoryUsage().getInit());
-				cm.allocateSetNumberCounter("javaMemoryNonHeapMax", mebean.getNonHeapMemoryUsage().getMax());
-				cm.allocateSetNumberCounter("javaMemoryFinals", mebean.getObjectPendingFinalizationCount());
+				CountHub.allocateSetNumberCounter("javaMemoryHeapCommitted", mebean.getHeapMemoryUsage().getCommitted());
+				CountHub.allocateSetNumberCounter("javaMemoryHeapUsed", mebean.getHeapMemoryUsage().getUsed());
+				CountHub.allocateSetNumberCounter("javaMemoryHeapInit", mebean.getHeapMemoryUsage().getInit());
+				CountHub.allocateSetNumberCounter("javaMemoryHeapMax", mebean.getHeapMemoryUsage().getMax());
+				CountHub.allocateSetNumberCounter("javaMemoryNonHeapCommitted", mebean.getNonHeapMemoryUsage().getCommitted());
+				CountHub.allocateSetNumberCounter("javaMemoryNonHeapUsed", mebean.getNonHeapMemoryUsage().getUsed());
+				CountHub.allocateSetNumberCounter("javaMemoryNonHeapInit", mebean.getNonHeapMemoryUsage().getInit());
+				CountHub.allocateSetNumberCounter("javaMemoryNonHeapMax", mebean.getNonHeapMemoryUsage().getMax());
+				CountHub.allocateSetNumberCounter("javaMemoryFinals", mebean.getObjectPendingFinalizationCount());
 				
 				List<GarbageCollectorMXBean> gcbeans = ManagementFactory.getGarbageCollectorMXBeans();
 				long collects = 0;
@@ -176,23 +186,23 @@ public class HubStartFinalWork extends CoreLoaderWork {
 					collecttime += gcbean.getCollectionTime();
 				}
 				
-				cm.allocateSetNumberCounter("javaGarbageCollects", collects);
-				cm.allocateSetNumberCounter("javaGarbageTime", collecttime);
+				CountHub.allocateSetNumberCounter("javaGarbageCollects", collects);
+				CountHub.allocateSetNumberCounter("javaGarbageTime", collecttime);
 				
 				OperatingSystemMXBean osbean = ManagementFactory.getOperatingSystemMXBean();
 				
-				cm.allocateSetNumberCounter("javaSystemLoadAverage", osbean.getSystemLoadAverage());
+				CountHub.allocateSetNumberCounter("javaSystemLoadAverage", osbean.getSystemLoadAverage());
 				
 				RuntimeMXBean rtbean = ManagementFactory.getRuntimeMXBean();
 				
-				cm.allocateSetNumberCounter("javaJvmUptime", rtbean.getUptime());
+				CountHub.allocateSetNumberCounter("javaJvmUptime", rtbean.getUptime());
 				
 				ThreadMXBean thbean = ManagementFactory.getThreadMXBean();
 				
-				cm.allocateSetNumberCounter("javaJvmRunningDaemonThreads", thbean.getDaemonThreadCount());
-				cm.allocateSetNumberCounter("javaJvmRunningPeakThreads", thbean.getPeakThreadCount());
-				cm.allocateSetNumberCounter("javaJvmRunningThreads", thbean.getThreadCount());
-				cm.allocateSetNumberCounter("javaJvmStartedThreads", thbean.getTotalStartedThreadCount());
+				CountHub.allocateSetNumberCounter("javaJvmRunningDaemonThreads", thbean.getDaemonThreadCount());
+				CountHub.allocateSetNumberCounter("javaJvmRunningPeakThreads", thbean.getPeakThreadCount());
+				CountHub.allocateSetNumberCounter("javaJvmRunningThreads", thbean.getThreadCount());
+				CountHub.allocateSetNumberCounter("javaJvmStartedThreads", thbean.getTotalStartedThreadCount());
 				
 				//System.out.println("collect: " + (System.currentTimeMillis() - st));
 				
@@ -207,8 +217,7 @@ public class HubStartFinalWork extends CoreLoaderWork {
 			}
 		};
 		
-		Hub.getClock().addSlowSystemWorker(monitorcounters);
-		*/
+		ApplicationHub.getClock().addSlowSystemWorker(monitorcounters);
 		
 		ApplicationHub.setState(HubState.Booted);
 		

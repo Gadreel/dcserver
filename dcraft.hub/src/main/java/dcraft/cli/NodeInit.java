@@ -114,9 +114,10 @@ public class NodeInit implements ILocalCommandLine {
 
 			System.out.println();
 
-			Path cpath = Paths.get("./deploy-" + deployment);
-
-			HubUtil.initDeployNodeKeys(cpath, deployment, node, new String(ResourceHub.getResources().getKeyRing().getPassphrase()));
+			// not the best place for this - use node management in Ignite - if used here then more keys are added on nodes- including in production
+			
+			//Path cpath = Paths.get("./deploy-" + deployment);
+			//HubUtil.initDeployNodeKeys(cpath, deployment, node, new String(ResourceHub.getResources().getKeyRing().getPassphrase()));
 
 
 			XElement clock1 = ResourceHub.getTopResources().getConfig().getTag("Clock");

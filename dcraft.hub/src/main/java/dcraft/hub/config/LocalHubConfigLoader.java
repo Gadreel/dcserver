@@ -84,16 +84,22 @@ public class LocalHubConfigLoader extends LocalConfigLoader {
 		// -----------------------------------
 		
 		System.out.println("Start local hub loader work");
-		
+
+		if (Files.notExists(ApplicationHub.getDeploymentPath())) {
+			Logger.error("Missing deploy folder, folder must be added.");
+			taskctx.returnEmpty();
+			return;
+		}
+
 		ConfigResource configres = resources.getOrCreateTierConfig();
 		
 		Logger.info( "Loading hub resources");
 		
 		//Logger.trace( "Loading shared config");
 		
-		this.addConfigIfPresent(configres, this.resolvePath(Paths.get("config.xml")));				// the more internal aspects of config
+		this.addConfigIfPresent(configres, this.resolvePath(Paths.get("config.xml")), true);				// the more internal aspects of config
 		
-		XElement overrideCli = null;
+		//XElement overrideCli = null;
 		
 		// load profile settings based on role
 		
@@ -103,33 +109,36 @@ public class LocalHubConfigLoader extends LocalConfigLoader {
 			String packagepath = packages.getAttribute("Path", "./packages");
 			
 			Path pspath = Paths.get(packagepath);
-			
+
 			for (XElement pack : packages.selectAll("Profile")) {
 				String name = pack.getAttribute("Name");
 				
 				if (StringUtil.isEmpty(name))
 					continue;
-				
+
 				Path ppath = pspath.resolve(name);
 				
-				if (!Files.exists(ppath))
+				if (! Files.exists(ppath))
 					continue;
-				
-				this.addConfigIfPresent(configres, ppath.resolve("profiles/" + ApplicationHub.getRole() + "/config.xml"));            // config specific to the role
+
+				// these are just definitions and so should be listed before deployment's config/config.xml so can be overridden
+				this.addConfigIfPresent(configres, ppath.resolve("profiles/shared.xml"), true);            // config shared by the profile
+
+				this.addConfigIfPresent(configres, ppath.resolve("profiles/" + ApplicationHub.getRole() + "/config.xml"), false);            // config specific to the role
 			}
 			
-			overrideCli = configres.getTag("CommandLine");
+			//overrideCli = configres.getTag("CommandLine");
 		}
 		
 		// TODO reconsider - this.addConfigIfPresent(configres, "deployment.xml");			// the more public aspects of config, treat as unsecure
 		
-		this.addConfigIfPresent(configres, this.resolveRolePath(Paths.get("config.xml")));			// config specific to the role
+		this.addConfigIfPresent(configres, this.resolveRolePath(Paths.get("config.xml")), false);			// config specific to the role
 		
-		this.addConfigIfPresent(configres, this.resolveNodePath(Paths.get("config.xml")));		// config specific to the node
+		this.addConfigIfPresent(configres, this.resolveNodePath(Paths.get("config.xml")), false);		// config specific to the node
 		
 		// use the profile CLI if present, instead of the node / role
-		if (overrideCli != null)
-			configres.add(XElement.tag("Config").with(overrideCli));
+		//if (overrideCli != null)
+		//	configres.add(XElement.tag("Config").with(overrideCli));
 		
 		// TODO load Clock Xml from http://169.254.169.254/latest/user-data
 		// then over write

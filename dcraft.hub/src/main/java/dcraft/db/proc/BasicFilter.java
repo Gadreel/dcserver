@@ -18,6 +18,14 @@ abstract public class BasicFilter implements IFilter {
 		return this;
 	}
 
+	@Override
+	public IFilter shiftNested(IFilter v) {
+		v.withNested(this.nested);
+
+		this.nested = v;
+		return this;
+	}
+
 	/*
 	public BasicFilter withNested(String table, WhereExpression v) throws OperatingContextException {
 		if (v != null)

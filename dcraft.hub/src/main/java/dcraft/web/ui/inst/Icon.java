@@ -31,6 +31,7 @@ public class Icon extends Base {
 		String vb = UIUtil.requireIcon(this, state, library, icon);
 
 		this
+				.withClass("icon-" + library + "-" + icon)
 				.attr("viewBox", vb)
 				.with(W3.tag("use")
 						.attr("href", "#" + library + "-" + icon)

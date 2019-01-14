@@ -31,7 +31,8 @@ public class StackedIcon extends Base {
 			String vb = UIUtil.requireIcon(this, state, library, name);
 
 			icon
-					.attr("class", "dc-icon-stack svg-inline--fa fa5-w-12 " + icon.getAttribute("class", ""))
+					.attr("class", "dc-icon-stack svg-inline--fa fa5-w-12 " + icon.getAttribute("class", "")
+							+ " icon-" + library + "-" + icon)
 					.attr("xmlns", "http://www.w3.org/2000/svg")
 					.attr("aria-hidden", "true")
 					.attr("role", "img")
@@ -41,8 +42,6 @@ public class StackedIcon extends Base {
 							.attr("xlink:href", "#" + library + "-" + name)
 					)
 					.setName("svg");
-
-
 		}
 	}
 	

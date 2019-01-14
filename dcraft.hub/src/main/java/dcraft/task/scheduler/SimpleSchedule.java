@@ -41,10 +41,20 @@ public class SimpleSchedule extends BaseSchedule {
 	
 	protected long nextrunat = 0;
 	protected int every = 0;
-	
+	protected IWork work = null;
+
 	protected SimpleSchedule() {
 	}
-	
+
+	public void setWork(IWork v) {
+		this.work = v;
+	}
+
+	@Override
+	public IWork getWork() {
+		return this.work;
+	}
+
 	public void init(XElement config) {
 		super.init(config);
 		

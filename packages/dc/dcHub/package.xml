@@ -227,6 +227,7 @@
 			<Tag Name="dcs.Main" Class="dcraft.script.inst.Main" />
 			<Tag Name="dcs.Out" Class="dcraft.script.inst.doc.Out" />
 			<Tag Name="dcs.Progress" Class="dcraft.script.inst.Progress" />
+			<Tag Name="dcs.Result" Class="dcraft.script.inst.Result" />
 			<Tag Name="dcs.Return" Class="dcraft.script.inst.Return" />
 			<Tag Name="dcs.Script" Class="dcraft.script.inst.Main" />
 			<Tag Name="dcs.Sleep" Class="dcraft.script.inst.Sleep" />

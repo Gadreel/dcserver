@@ -39,6 +39,12 @@ public class StandardSettingsObfuscator extends BasicSettingsObfuscator {
 		return obfus;
 	}
 	
+	static public StandardSettingsObfuscator obfus(XElement settings) {
+		StandardSettingsObfuscator obfus = new StandardSettingsObfuscator();
+		obfus.load(settings);
+		return obfus;
+	}
+	
 	@Override
 	public void load(XElement config) {
 		this.config = config;

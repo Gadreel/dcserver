@@ -1115,7 +1115,7 @@ public class HubUtil implements ILocalCommandLine {
 						
 						Path cpath = Paths.get("./deploy-" + deployment);
 						
-						this.initDeployKeys(cpath, deployment, pw);
+						HubUtil.initDeployKeys(cpath, deployment, pw);
 						
 						break;
 					}
@@ -1138,7 +1138,7 @@ public class HubUtil implements ILocalCommandLine {
 						
 						Path cpath = Paths.get("./deploy-" + deployment);
 						
-						this.initDeployNodeKeys(cpath, deployment, node, pw);
+						HubUtil.initDeployNodeKeys(cpath, deployment, node, pw);
 						
 						break;
 					}
@@ -1174,7 +1174,7 @@ public class HubUtil implements ILocalCommandLine {
 		}
 	}
 	
-	public void initDeployKeys(Path path, String deployment, String passphrase) {
+	static public void initDeployKeys(Path path, String deployment, String passphrase) {
 		Path cpath = path.resolve("config");
 		Path ipath = path.resolve("roles/ignite/config");
 		
@@ -1187,13 +1187,13 @@ public class HubUtil implements ILocalCommandLine {
 			return;
 		}
 		
-		KeyRingCollection keyring = KeyRingCollection.load(cpath);
+		KeyRingCollection keyring = KeyRingCollection.load(cpath, true);
 		
 		PGPPublicKeyRing pgpPublicKeyRing2 = keyring.createKeyPairAddToRing("encryptor@" + deployment + ".dc", passphrase);
 		
 		System.out.println("new encryptor key: " + HexUtil.bufferToHex(pgpPublicKeyRing2.getPublicKey().getFingerprint()));
 		
-		KeyRingCollection ikeyring = KeyRingCollection.load(ipath);
+		KeyRingCollection ikeyring = KeyRingCollection.load(ipath, true);
 		
 		// only on the orchestration node, not on public
 		PGPPublicKeyRing pgpPublicKeyRing3 = ikeyring.createKeyPairAddToRing("ignite@" + deployment + ".dc", passphrase);
@@ -1220,7 +1220,7 @@ public class HubUtil implements ILocalCommandLine {
 			return;
 		}
 		
-		KeyRingCollection nkeyring = KeyRingCollection.load(npath);
+		KeyRingCollection nkeyring = KeyRingCollection.load(npath, true);
 		
 		PGPPublicKeyRing pgpPublicKeyRing = nkeyring.createKeyPairAddToRing(node + "-signer@" + deployment + ".dc", passphrase);
 		
@@ -1228,14 +1228,16 @@ public class HubUtil implements ILocalCommandLine {
 		
 		nkeyring.save();
 		
-		KeyRingCollection keyring = KeyRingCollection.load(cpath);
+		// share public with all
+		KeyRingCollection keyring = KeyRingCollection.load(cpath, true);
 		
 		keyring.addPublicKey(pgpPublicKeyRing,false);
 		
 		keyring.save();
 	}
 	
-	public void initDeployTenantKeys(Path path, String deployment, String tenant, String passphrase) {
+	static public void initDeployTenantKeys(Path path, String deployment, String tenant, String passphrase) {
+		Path cpath = path.resolve("config");
 		Path npath = path.resolve("tenants/" + tenant + "/config");
 		
 		try {
@@ -1246,12 +1248,19 @@ public class HubUtil implements ILocalCommandLine {
 			return;
 		}
 		
-		KeyRingCollection nkeyring = KeyRingCollection.load(npath);
+		KeyRingCollection nkeyring = KeyRingCollection.load(npath, true);
 		
 		PGPPublicKeyRing pgpPublicKeyRing = nkeyring.createKeyPairAddToRing(tenant + "-secure@" + deployment + ".dc", passphrase);
 		
 		System.out.println("new tenant security key: " + HexUtil.bufferToHex(pgpPublicKeyRing.getPublicKey().getFingerprint()));
 		
 		nkeyring.save();
+		
+		// share public with all
+		KeyRingCollection keyring = KeyRingCollection.load(cpath, true);
+		
+		keyring.addPublicKey(pgpPublicKeyRing,false);
+		
+		keyring.save();
 	}
 }

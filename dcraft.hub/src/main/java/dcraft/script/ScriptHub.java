@@ -18,16 +18,26 @@ package dcraft.script;
 
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationOutcome;
+import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.log.Logger;
 import dcraft.schema.DataType;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
 import dcraft.struct.Struct;
-import dcraft.task.IParentAwareWork;
+import dcraft.task.*;
+import dcraft.util.Memory;
 import dcraft.util.io.CharSequenceReader;
+import dcraft.util.io.OutputWrapper;
 import dcraft.xml.XElement;
+import dcraft.xml.XmlPrinter;
 import dcraft.xml.XmlReader;
+
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class ScriptHub {
 	static public XmlReader instructionsReader() {
@@ -563,4 +573,62 @@ public class ScriptHub {
 		
 	 * 
 	 */
+
+	static public void scriptToDocument(Path scriptpath, String subtitle, Struct params, OperationOutcome<Memory> callback) throws OperatingContextException {
+		OutputWrapper out = new OutputWrapper();
+
+		PrintStream ps = new PrintStream(out);
+
+		ScriptHub.scriptToDocument(scriptpath, subtitle, params, ps, new OperationOutcomeEmpty() {
+			@Override
+			public void callback() throws OperatingContextException {
+				ps.flush();
+				ps.close();
+
+				if (! this.hasErrors()) {
+					Memory memory = out.getMemory();
+					memory.setPosition(0);
+					callback.returnValue(memory);
+				}
+				else {
+					callback.returnEmpty();
+				}
+			}
+		});
+	}
+
+	static public void scriptToDocument(Path scriptpath, String subtitle, Struct params, PrintStream ps, OperationOutcomeEmpty callback) throws OperatingContextException {
+		try {
+			Script scrpt = Script.of(scriptpath);
+			
+			Task task = Task.ofSubtask("Script to Document: " + subtitle, "SCRPT")
+					.withParams(params)
+					.withWork(scrpt.toWorkMain());
+			
+			TaskHub.submit(task, new TaskObserver() {
+				@Override
+				public void callback(TaskContext subtask) {
+					if (!subtask.hasExitErrors()) {
+						try {
+							XmlPrinter prt = new XmlPrinter();
+							
+							prt.setFormatted(true);
+							prt.setOut(ps);
+							
+							prt.print(scrpt.getXml());
+						}
+						catch (OperatingContextException x) {
+							Logger.error("Unable to xml print script: " + x);
+						}
+					}
+					
+					callback.returnEmpty();
+				}
+			});
+		}
+		catch (Exception x) {
+			Logger.error("Invalid main instruction.");
+			callback.returnEmpty();
+		}
+	}
 }

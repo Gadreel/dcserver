@@ -457,9 +457,16 @@ $(document).ready(function() {
 					if ((facebooksetting != null) && facebooksetting.hasNotEmptyAttribute("SignInAppId"))
 						ps.append("dc.handler.settings.fbAppId = '" + facebooksetting.getAttribute("SignInAppId") + "';\n");
 					
-					if ((googlesetting != null) && googlesetting.hasNotEmptyAttribute("TrackingCode"))
-						ps.append("dc.handler.settings.ga = '" + googlesetting.getAttribute("TrackingCode") + "';\n");
-					
+					if (googlesetting != null) {
+						if (googlesetting.hasNotEmptyAttribute("TrackingCode"))
+							ps.append("dc.handler.settings.ga = '" + googlesetting.getAttribute("TrackingCode") + "';\n");
+
+						XElement captcha = googlesetting.find("reCAPTCHA");
+
+						if ((captcha != null) && captcha.getAttributeAsBooleanOrFalse("Tracking"))
+							ps.append("dc.handler.settings.gcaptcha = '" + captcha.getAttribute("SiteKey") + "';\n");
+					}
+
 					ps.append("\n");
 					
 					JsonPrinter prt = new JsonPrinter();
