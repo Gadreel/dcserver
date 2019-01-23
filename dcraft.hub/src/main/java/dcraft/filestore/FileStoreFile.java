@@ -28,6 +28,8 @@ import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
 import dcraft.stream.IStreamDest;
 import dcraft.stream.IStreamSource;
+import dcraft.stream.IStreamUp;
+import dcraft.stream.StreamFragment;
 import dcraft.stream.file.FileSlice;
 import dcraft.stream.file.IFileStreamDest;
 import dcraft.struct.ListStruct;
@@ -49,9 +51,8 @@ abstract public class FileStoreFile extends FileDescriptor {
 	}
 	
 	abstract public IFileCollection scanner() throws OperatingContextException;
-	abstract public IFileStreamDest allocStreamDest() throws OperatingContextException;
-	abstract public IFileStreamDest allocStreamDest(boolean relative) throws OperatingContextException;
-	abstract public IStreamSource allocStreamSrc() throws OperatingContextException;
+	abstract public StreamFragment allocStreamDest() throws OperatingContextException;
+	abstract public StreamFragment allocStreamSrc() throws OperatingContextException;
 	abstract public void readAllText(OperationOutcome<String> callback) throws OperatingContextException;
 	abstract public void writeAllText(String v, OperationOutcomeEmpty callback) throws OperatingContextException;
 	abstract public void readAllBinary(OperationOutcome<Memory> callback) throws OperatingContextException;

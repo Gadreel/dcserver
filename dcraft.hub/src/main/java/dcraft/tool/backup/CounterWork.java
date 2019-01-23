@@ -3,21 +3,33 @@ package dcraft.tool.backup;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.log.count.CountHub;
+import dcraft.log.count.Counter;
 import dcraft.log.count.NumberCounter;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.task.IWork;
 import dcraft.task.TaskContext;
 import dcraft.util.FileUtil;
+import dcraft.util.IOUtil;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.math.BigDecimal;
+import java.nio.file.Paths;
 import java.util.List;
 
 public class CounterWork implements IWork {
 	@Override
 	public void run(TaskContext taskctx) throws OperatingContextException {
+		ListStruct clog = ListStruct.list();
+		
+		for (Counter c : CountHub.getCounters()) {
+			clog.with(c.toCleanRecord());
+		}
+		
+		IOUtil.saveEntireFile(Paths.get("./logs/stats.json"), clog.toPrettyString());
+		
 		// if there are counters then pull out the key ones
 		if (CountHub.getCounter("javaSystemLoadAverage") != null) {
 			BigDecimal heapCommitted = ((NumberCounter) CountHub.getCounter("javaMemoryHeapCommitted")).getValue();
@@ -34,8 +46,6 @@ public class CounterWork implements IWork {
 			
 			BigDecimal loadAverage = ((NumberCounter) CountHub.getCounter("javaSystemLoadAverage")).getValue();
 			BigDecimal loadAverageHigh = ((NumberCounter) CountHub.getCounter("javaSystemLoadAverage")).getHigh();
-			
-			CountHub.resetReturnCounters();
 			
 			String report = "Heap Memory: U " + FileUtil.formatFileSize(heapUsed.longValue()) + " / H "
 					+ FileUtil.formatFileSize(heapUsedHigh.longValue()) + " / C " + FileUtil.formatFileSize(heapCommitted.longValue())
@@ -59,6 +69,8 @@ public class CounterWork implements IWork {
 
 			BackupUtil.notifyProgress(ApplicationHub.getDeployment() + " : " + ApplicationHub.getNodeId() + " : Counters\n" + report);
 		}
+		
+		CountHub.resetReturnCounters();
 		
 		taskctx.returnEmpty();
 	}

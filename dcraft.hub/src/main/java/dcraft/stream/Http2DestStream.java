@@ -18,6 +18,7 @@ package dcraft.stream;
 
 import dcraft.filestore.FileStoreFile;
 import dcraft.log.Logger;
+import dcraft.stream.file.IFileStreamConsumer;
 import dcraft.struct.RecordStruct;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
@@ -31,7 +32,6 @@ import dcraft.hub.op.OperationContext;
 import dcraft.scriptold.StackEntry;
 import dcraft.stream.file.BaseFileStream;
 import dcraft.stream.file.FileSlice;
-import dcraft.stream.file.IFileStreamConsumer;
 import dcraft.task.TaskContext;
 import dcraft.xml.XElement;
 
@@ -52,14 +52,6 @@ public class Http2DestStream extends BaseFileStream implements IStreamDest<FileS
 	protected Http2ConnectionHandler conn = null;
 	protected int streamId = 0;
 	protected FileDescriptor fd = null;
-	
-	protected Consumer<FileDescriptor> tabulator = null;
-	
-	@Override
-	public IStreamDown<FileSlice> withTabulator(Consumer<FileDescriptor> v) throws OperatingContextException {
-		this.tabulator = v;
-		return this;
-	}
 	
 	protected Http2DestStream() {
 	}
@@ -130,9 +122,6 @@ public class Http2DestStream extends BaseFileStream implements IStreamDest<FileS
 			
 	        try {
 	            this.conn.flush(this.ctx);
-	            
-	            if (slice.isEof() && (this.tabulator != null))
-					this.tabulator.accept(fd);
 	        }
 	        catch (Throwable cause) {
 				OperationContext.getAsTaskOrThrow().kill("Problem writing destination file: " + cause);

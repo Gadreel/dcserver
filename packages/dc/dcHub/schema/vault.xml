@@ -32,6 +32,9 @@
 			<Field Name="Scanner" Type="dcLocalStoreScanner" />
 		</Record>
 
+		<Record Id="dcEncryptedVaultStore" Class="dcraft.filevault.EncryptedVaultStore" />
+		<Record Id="dcEncryptedVaultFile" Inherits="dcFileDescriptor" Class="dcraft.filevault.EncryptedVaultFile" />
+
 		<StringType Id="dcTransferStatus">
 			<StringRestriction Enum="Failure,Success" />
 		</StringType>

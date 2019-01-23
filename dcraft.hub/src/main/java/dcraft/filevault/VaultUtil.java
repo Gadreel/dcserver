@@ -38,9 +38,7 @@ public class VaultUtil {
 
 						String channel = rec.getFieldAsString("Channel");
 
-						VaultUtil.transfer(channel,
-								StreamFragment.of(upfile.allocStreamSrc()),
-								null,
+						VaultUtil.transfer(channel, upfile.allocStreamSrc(),null,
 								new OperationOutcomeEmpty() {
 									@Override
 									public void callback() throws OperatingContextException {

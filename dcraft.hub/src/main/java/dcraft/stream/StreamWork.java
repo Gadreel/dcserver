@@ -95,7 +95,7 @@ public class StreamWork extends StreamFragment implements IWork {
 				last = curr;
 			}
 			
-			// if a stream finishes nromally then it will cleanup itself, but when it does
+			// if a stream finishes normally then it will cleanup itself, but when it does
 			// not, ask it to release the resources it allocated - use task observer so we
 			// respond to cleanup only when the current task is complete regardless of the
 			// other tasks in this OperationController

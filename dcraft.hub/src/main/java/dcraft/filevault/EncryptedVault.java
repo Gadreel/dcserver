@@ -9,19 +9,26 @@ import dcraft.db.proc.ExpressionResult;
 import dcraft.db.util.ByteUtil;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileDescriptor;
+import dcraft.filestore.local.LocalStore;
+import dcraft.filestore.local.LocalStoreFile;
+import dcraft.filevault.work.ExpandDepositWork;
+import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
-import dcraft.hub.op.IVariableAware;
-import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationContext;
-import dcraft.hub.op.OperationOutcome;
-import dcraft.hub.op.OperationOutcomeEmpty;
-import dcraft.hub.op.OperationOutcomeString;
+import dcraft.hub.op.*;
+import dcraft.hub.resource.KeyRingResource;
 import dcraft.log.Logger;
 import dcraft.stream.StreamFragment;
+import dcraft.stream.file.FilterStream;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
+import dcraft.struct.scalar.StringStruct;
+import dcraft.util.IOUtil;
 import dcraft.util.TimeUtil;
+import dcraft.util.chars.Utf8Encoder;
+import dcraft.util.pgp.ClearsignUtil;
 
+import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -30,6 +37,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EncryptedVault extends Vault {
+	protected EncryptedVaultStore estore = EncryptedVaultStore.of(this);
+
 	/*
 	 * ================ internal features ==================
 	 */
@@ -55,7 +64,7 @@ public class EncryptedVault extends Vault {
 		
 		adapter.indexFolderEnsure(this, path);
 		
-		callback.returnEmpty();
+		callback.returnValue(this.getDetail(dbctx, path));
 	}
 	
 	@Override
@@ -163,21 +172,9 @@ public class EncryptedVault extends Vault {
 		
 		RecordStruct info = fiadapter.fileInfo(this, path, OperationContext.getOrThrow());
 		
-		if (info != null) {
-			FileDescriptor fd = FileDescriptor.of(path.toString())
-					.withExists("Present".equals(info.getFieldAsString("State")))
-					.withConfirmed(true)
-					.withIsFolder(info.getFieldAsBooleanOrFalse("IsFolder"));
-			
-			if (info.isNotFieldEmpty("Modified")) {
-				BigDecimal epoch = info.getFieldAsDecimal("Modified");
-				
-				fd.withModificationTime(ZonedDateTime.ofInstant(Instant.ofEpochMilli(epoch.longValue()), ZoneId.of("UTC")));
-			}
+		if (info != null)
+			return EncryptedVaultFile.ofFileIndex(this.estore, path, info);
 
-			return fd;
-		}
-		
 		return null;
 	}
 
@@ -194,8 +191,24 @@ public class EncryptedVault extends Vault {
 	}
 
 	@Override
-	public StreamFragment toSourceStream(FileDescriptor fileDescriptor) {
-		return null;	// TODO
+	public StreamFragment toSourceStream(FileDescriptor fileDescriptor) throws OperatingContextException {
+		BasicRequestContext dbctx = BasicRequestContext.ofDefaultDatabase();
+
+		FileIndexAdapter adapter = FileIndexAdapter.of(dbctx);
+
+		RecordStruct hist = adapter.fileDeposit(this, fileDescriptor.getPathAsCommon(), OperationContext.getOrThrow());
+
+		if (hist != null) {
+			StreamFragment source = DepositHub.expandDepositFragment(hist.getFieldAsString("Node"), hist.getFieldAsString("Deposit"));
+			
+			if (source != null) {
+				source.withAppend(FilterStream.of(fileDescriptor.getName()));
+				return source;
+			}
+		}
+
+		Logger.error("Could not find file in vault.");
+		return null;
 	}
 	
 	@Override

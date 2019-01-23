@@ -1,5 +1,8 @@
 package dcraft.tool.backup;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.TimeZone;
 
@@ -19,6 +22,7 @@ import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.service.ServiceHub;
+import dcraft.stream.StreamUtil;
 import dcraft.stream.StreamWork;
 import dcraft.struct.Struct;
 import dcraft.task.StateWork;
@@ -81,6 +85,16 @@ public class LogsWork extends StateWork {
 				})
 		);
 		
+		// always add the counter stats if present
+		Path stats = Paths.get("./logs/stats.json");
+		
+		if (Files.exists(stats)) {
+			FileStoreFile f = StreamUtil.localFile(stats);
+			
+			this.collection.withFiles(f);
+			this.deletecollection.withFiles(f);
+		}
+		
 		return StateWorkStep.WAIT;
 	}
 	
@@ -118,8 +132,8 @@ public class LogsWork extends StateWork {
 		if (this.collection.getSize() == 0)
 			return this.cleanStep;
 		
-		return this.chainThenNext(trun, StreamWork.of(CollectionSourceStream.of(this.collection),
-				tx.getFolder().rootFolder().allocStreamDest()));
+		return this.chainThenNext(trun, StreamWork.of(CollectionSourceStream.of(this.collection))
+				.with(tx.getFolder().rootFolder().allocStreamDest()));
 	}
 	
 	public StateWorkStep commitFiles(TaskContext trun) throws OperatingContextException {

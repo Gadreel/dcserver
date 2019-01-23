@@ -49,8 +49,6 @@ public class HttpDestStream extends BaseFileStream implements IFileStreamDest, G
 	protected boolean headersent = false;
 	protected boolean asAttachment = true;
 	protected boolean asSendStart = true;
-
-	protected Consumer<FileDescriptor> tabulator = null;
 	
 	public void setHeaderSent(boolean v) {
 		this.headersent = v;
@@ -63,12 +61,6 @@ public class HttpDestStream extends BaseFileStream implements IFileStreamDest, G
 	
 	public HttpDestStream withAsSendStart(boolean v) {
 		this.asSendStart = true;
-		return this;
-	}
-
-	@Override
-	public IStreamDest<FileSlice> withTabulator(Consumer<FileDescriptor> v) throws OperatingContextException {
-		this.tabulator = v;
 		return this;
 	}
 
@@ -153,7 +145,7 @@ public class HttpDestStream extends BaseFileStream implements IFileStreamDest, G
 		}
 
 		if (slice.getData() != null) {
-			HttpContent b = new DefaultHttpContent(Unpooled.copiedBuffer(slice.getData()));		// TODO not copied
+			HttpContent b = new DefaultHttpContent(slice.getData());
 			ChannelFuture future = channel.writeAndFlush(b);
 
 			future.addListener(new ChannelFutureListener() {
@@ -163,17 +155,7 @@ public class HttpDestStream extends BaseFileStream implements IFileStreamDest, G
 				}
 			});
 
-			if (slice.isEof()) {
-				if (HttpDestStream.this.tabulator != null)
-					HttpDestStream.this.tabulator.accept(slice.getFile());
-			}
-
 			return ReturnOption.AWAIT;
-		}
-
-		if (slice.isEof()) {
-			if (HttpDestStream.this.tabulator != null)
-				HttpDestStream.this.tabulator.accept(slice.getFile());
 		}
 
 		return ReturnOption.CONTINUE;

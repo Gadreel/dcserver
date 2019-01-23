@@ -37,7 +37,7 @@ public class FileStoreVault extends Vault {
 	protected FileStore fsd = null;
 	
 	@Override
-	public void init(Site di, XElement bel, OperationOutcomeEmpty cb) {
+	public void init(Site di, XElement bel, OperationOutcomeEmpty cb) throws OperatingContextException {
 		super.init(di, bel, cb);
 		
 		String root = bel.hasNotEmptyAttribute("DirectPath")
@@ -457,7 +457,7 @@ public class FileStoreVault extends Vault {
 
 	@Override
 	public StreamFragment toSourceStream(FileDescriptor file) throws OperatingContextException {
-		return StreamFragment.of(((FileStoreFile) file).allocStreamSrc());
+		return ((FileStoreFile) file).allocStreamSrc();
 	}
 	
 	@Override

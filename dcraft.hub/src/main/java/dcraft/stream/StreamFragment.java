@@ -1,6 +1,11 @@
 package dcraft.stream;
 
+import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
+import dcraft.log.Logger;
+import dcraft.scriptold.StackEntry;
 import dcraft.struct.RecordStruct;
+import dcraft.xml.XElement;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,6 +22,13 @@ public class StreamFragment extends RecordStruct {
 	
 	public List<IStream> getSteps() {
 		return this.steps;
+	}
+
+	public IStream getLastStep() {
+		if (steps.size() == 0)
+			return null;
+
+		return steps.get(steps.size() - 1);
 	}
 	
 	protected StreamFragment() {
@@ -69,4 +81,5 @@ public class StreamFragment extends RecordStruct {
 		this.steps.add(step);
 		return this;
 	}
+
 }

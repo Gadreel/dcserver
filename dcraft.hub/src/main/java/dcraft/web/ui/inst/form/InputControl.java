@@ -186,7 +186,10 @@ public class InputControl extends Base {
 		
 		if (! input.hasNotEmptyAttribute("max") && fld.hasNotEmptyAttribute("max"))
 			ic.withAttribute("max", fld.getAttribute("max"));
-		
+
+		if (! input.hasNotEmptyAttribute("maxlength") && fld.hasNotEmptyAttribute("maxlength"))
+			ic.withAttribute("maxlength", fld.getAttribute("maxlength"));
+
 		if (input.hasNotEmptyAttribute("Name"))
 			ic.withAttribute("data-dcf-name", input.getAttribute("Name"));
 		else if (fld.hasNotEmptyAttribute("Name"))

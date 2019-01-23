@@ -19,6 +19,7 @@ import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.hub.resource.KeyRingResource;
 import dcraft.log.Logger;
 import dcraft.stream.ReturnOption;
+import dcraft.stream.StreamFragment;
 import dcraft.stream.StreamWork;
 import dcraft.stream.file.FileSlice;
 import dcraft.stream.file.JoinStream;
@@ -117,15 +118,15 @@ public class DownloadDepositWork extends StateWork {
 		// if local skip download
 		if (lfile.exists())
 			return this.downloadPart;
-		
+
+		StreamFragment fragment =remotedepositstore.fileReference(CommonPath.from("/deposits/" + this.prodnodeid
+				+ "/files/" + did + ".sig")).allocStreamSrc();
+
+		fragment.withAppend(lfile.allocStreamDest());
+
 		this.chainThen(
 				trun,
-				StreamWork.of(
-						remotedepositstore.fileReference(CommonPath.from("/deposits/" + this.prodnodeid
-							+ "/files/" + did + ".sig"))
-							.allocStreamSrc(),
-					lfile.allocStreamDest()
-				),
+				StreamWork.of(fragment),
 				this.downloadPart
 		);
 		
@@ -142,15 +143,16 @@ public class DownloadDepositWork extends StateWork {
 		// if local skip download
 		if (lfile.exists())
 			return this.nextPart;
-		
+
+		StreamFragment fragment = remotedepositstore.fileReference(CommonPath.from("/deposits/" + this.prodnodeid
+				+ "/files/" + fname))
+				.allocStreamSrc();
+
+		fragment.withAppend(lfile.allocStreamDest());
+
 		this.chainThen(
 				trun,
-				StreamWork.of(
-						remotedepositstore.fileReference(CommonPath.from("/deposits/" + this.prodnodeid
-								+ "/files/" + fname))
-								.allocStreamSrc(),
-						lfile.allocStreamDest()
-				),
+				StreamWork.of(fragment),
 				this.nextPart
 		);
 		

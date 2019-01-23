@@ -669,7 +669,7 @@ public class Vaults  {
 									.with("Target", result)		// useful to support HTTP 1.1 binary uploads - this serves as Descriptor
 									.with("TransactionFile", txfile)
 									.with("TransactionMode", fdepmode.name())
-									.with("Stream", StreamFragment.of(txfile.allocStreamDest()))
+									.with("Stream", txfile.allocStreamDest())
 									.with("TransactionId", ftransactionId)
 									.with("Extra", params)
 							);

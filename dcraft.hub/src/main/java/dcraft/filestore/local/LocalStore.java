@@ -59,7 +59,7 @@ public class LocalStore extends FileStore {
 	
 	static public LocalStore of(Path path) {
 		LocalStore driver = new LocalStore();
-		driver.with("RootFolder", path.normalize().toString());
+		driver.with("RootFolder", ".".equalsIgnoreCase(path.toString()) ? "." : path.normalize().toString());
 		driver.connect(null, null);
 		return driver;
 	}

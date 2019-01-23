@@ -148,11 +148,11 @@ dc.pui.layer.Base.prototype = {
 			$(layer.Content).attr('class', lclass);
 
 			if (entry.Loaded && entry.FreezeTop)
-				$(layer.Content).scrollTop(entry.FreezeTop);
+				$(layer.ContentShell).scrollTop(entry.FreezeTop);
 			else if (entry.TargetElement)
-				$(layer.Content).scrollTop($('#' + entry.TargetElement).get(0).getBoundingClientRect().top + $(layer.Content).scrollTop());
+				$(layer.ContentShell).scrollTop($('#' + entry.TargetElement).get(0).getBoundingClientRect().top + $(layer.ContentShell).scrollTop());
 			else
-				$(layer.Content).scrollTop(0);
+				$(layer.ContentShell).scrollTop(0);
 
 			layer.enhancePage(false);
 
@@ -1168,25 +1168,18 @@ dc.pui.Loader = {
 		layer.open();
 
 		if (layer.Current.LastFocus) {
-			var cs = $(layer.ContentShell).get(0);
-			var x = cs.scrollLeft, y = cs.scrollTop;
+			var cs = 'html';
+
+			var y = $(cs).scrollTop();
+
+			if (y == 0) {
+				cs = 'body';		// one of those should work cross browser
+				y = $(cs).scrollTop();
+			}
+
 			layer.Current.LastFocus.focus();
 			$(cs).scrollTop(y);
 		}
-
-		/*
-		$('body > .dcuiLayerShell').each(function() {
-			var z = $(this).css('z-index');
-
-			if (z == 'auto')
-				z = 0;
-
-			if (z > max) {
-				max = z;
-				maxel = $(this);
-			}
-		  });
-		  */
 	}
 };
 
@@ -1493,7 +1486,7 @@ dc.pui.PageEntry.prototype = {
 		var entry = this;
 		var page = dc.pui.Loader.Pages[entry.Name];
 
-		entry.FreezeTop = $(entry.Layer.Content).scrollTop();
+		entry.FreezeTop = $(entry.Layer.ContentShell).scrollTop();
 
 		entry.callPageFunc('Freeze');
 

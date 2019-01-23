@@ -14,6 +14,7 @@ import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.resource.KeyRingResource;
 import dcraft.log.Logger;
 import dcraft.stream.ReturnOption;
+import dcraft.stream.StreamFragment;
 import dcraft.stream.StreamWork;
 import dcraft.stream.file.*;
 import dcraft.struct.CompositeParser;
@@ -117,13 +118,14 @@ public class LoadDepositWork extends ChainWork {
 			LocalStore nodeDepositStore = LocalStore.of(ApplicationHub.getDeploymentPath().resolve("nodes/" + nodeid + "/deposits"));
 			
 			LocalStoreFile chainfile = nodeDepositStore.resolvePathToStore("/chain/" + depositId + ".chain");
-			
-			IWork downloadchain = StreamWork.of(
-					store.fileReference(CommonPath.from("/deposits/" + this.nodeid
-						+ "/chain/" + depositId + ".chain"))
-							.allocStreamSrc(),
-					chainfile.allocStreamDest()
-			);
+
+			StreamFragment fragment = store.fileReference(CommonPath.from("/deposits/" + this.nodeid
+					+ "/chain/" + depositId + ".chain"))
+					.allocStreamSrc();
+
+			fragment.withAppend(chainfile.allocStreamDest());
+
+			IWork downloadchain = StreamWork.of(fragment);
 			
 			if (chainfile.exists())
 				downloadchain = new IWork() {
@@ -277,9 +279,9 @@ public class LoadDepositWork extends ChainWork {
 										
 										return this.consumer.handle(slice);
 									}
-								},
-								nodeDepositStore.rootFolder().allocStreamDest()
-						));
+								})
+								.with(nodeDepositStore.rootFolder().allocStreamDest())
+						);
 					}
 					
 					super.run(taskctx);
@@ -341,9 +343,9 @@ public class LoadDepositWork extends ChainWork {
 											.withKeyResource(keyring)
 											.withPassword(keyring.getPassphrase()),
 									new UngzipStream(),
-									new UntarStream(),
-									LocalStore.of(DepositHub.DepositStore.resolvePath("/transactions/" + txid)).rootFolder().allocStreamDest()
+									new UntarStream()
 							)
+							.with(LocalStore.of(DepositHub.DepositStore.resolvePath("/transactions/" + txid)).rootFolder().allocStreamDest())
 						);
 					}
 					

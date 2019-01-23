@@ -54,7 +54,7 @@ abstract public class Vault {
 	protected GroovyObject script = null;
 	*/
 	
-	public void init(Site di, XElement bel, OperationOutcomeEmpty cb) {
+	public void init(Site di, XElement bel, OperationOutcomeEmpty cb) throws OperatingContextException {
 		this.name = bel.getAttribute("Id");
 		
 		this.tenant = di.getTenant().getAlias();

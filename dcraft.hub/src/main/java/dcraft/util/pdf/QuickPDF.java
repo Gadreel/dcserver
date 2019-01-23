@@ -51,6 +51,7 @@ import dcraft.util.io.ByteBufWriter;
 import dcraft.util.io.OutputWrapper;
 import dcraft.xml.XElement;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.PDPageContentStream.AppendMode;
@@ -64,6 +65,8 @@ import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import dcraft.web.md.ProcessContext;
 import dcraft.web.md.Processor;
 import dcraft.web.md.process.Block;
+import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
+import org.apache.pdfbox.pdmodel.interactive.form.PDField;
 
 public class QuickPDF extends RecordStruct {
 	protected PDDocument doc = null; 
@@ -199,6 +202,9 @@ public class QuickPDF extends RecordStruct {
     	}
     }
     
+    // TODO enahnce so page can be added from another PDF
+	// note that must read the template fresh each time as the addPage code will change the page root
+	
     public void addPage() throws IOException {
     	this.closePage();
     	
@@ -218,7 +224,13 @@ public class QuickPDF extends RecordStruct {
 		
 		this.addPage();
     }
-    
+
+	public void load(String filepath) throws IOException, OperatingContextException {
+    	Path src = OperationContext.getOrThrow().getSite().resolvePath(filepath);
+
+		this.doc = PDDocument.load(src.toFile());
+	}
+
     public void save(String filepath) throws IOException {
 		this.closeDocument();
 	
@@ -665,6 +677,20 @@ public class QuickPDF extends RecordStruct {
 		public int chars = 0;
 	}
 
+	public void setField(String name, String value) throws IOException {
+		PDDocumentCatalog docCatalog = this.doc.getDocumentCatalog();
+		PDAcroForm acroForm = docCatalog.getAcroForm();
+		PDField field = acroForm.getField( name );
+
+		if( field != null ) {
+			field.setValue(value);
+		}
+		else {
+			System.err.println( "No field found with name:" + name );
+		}
+	}
+
+
 	@Override
 	public ReturnOption operation(StackWork state, XElement code) throws OperatingContextException {
 
@@ -1109,6 +1135,20 @@ public class QuickPDF extends RecordStruct {
 			return ReturnOption.CONTINUE;
 		}
 
+		if ("SetField".equals(code.getName())) {
+			String name = StackUtil.resolveValueToString(state, StackUtil.stringFromElement(state, code, "Name"), true);
+			String value = StackUtil.resolveValueToString(state, StackUtil.stringFromElement(state, code, "Value"), true);
+
+			try {
+				setField(name, value);
+			}
+			catch (IOException x3) {
+				Logger.error("Error writing drawing in PDF: " + x3);
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+
 		if ("Save".equals(code.getName())) {
 			try {
 				if (code.hasNotEmptyAttribute("Path")) {
@@ -1133,6 +1173,19 @@ public class QuickPDF extends RecordStruct {
 			}
 			catch (IOException x) {
 				Logger.error("Error saving PDF: " + x);
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("Load".equals(code.getName())) {
+			try {
+				if (code.hasNotEmptyAttribute("Path")) {
+					this.load(StackUtil.stringFromElement(state, code, "Path"));
+				}
+			}
+			catch (IOException x) {
+				Logger.error("Error loading PDF: " + x);
 			}
 
 			return ReturnOption.CONTINUE;

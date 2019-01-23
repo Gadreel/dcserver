@@ -23,6 +23,7 @@ import dcraft.hub.resource.ResourceBase;
 import dcraft.log.Logger;
 import dcraft.scriptold.StackEntry;
 import dcraft.stream.ReturnOption;
+import dcraft.stream.StreamFragment;
 import dcraft.stream.StreamUtil;
 import dcraft.stream.StreamWork;
 import dcraft.stream.file.*;
@@ -171,25 +172,20 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 			
 			// TODO check and skip the deposit build if that step is already done
 			
-			Path tarpath = outpath.resolve(transactionid + ".tar");
+			Path tarpath = outpath.resolve(transactionid + ".tgzg");
 			
 			boolean tarfiles = Files.exists(tarpath);
 			
-			// create a deposit file from TAR - deposit sequence number - and sig and chain
+			// create a deposit file from PGP - deposit sequence number - and sig and chain
 			LocalStoreFile sigfile = DepositHub.DepositStore.resolvePathToStore("/files/" + depositId + ".sig");
 			
 			if (tarfiles) {
 				finalfiles.withFiles(sigfile);
 			}
-			
-			IWork builddeposit = StreamWork.of(
-					StreamUtil.localFile(tarpath).allocStreamSrc(),
-					new UntarStream(),
-					new TarStream(),
-					GzipStream.create(),
-					new PgpEncryptStream()
-							.withPgpKeyring(encryptor)
-							.withTgzgFormat(true),
+
+			StreamFragment fragment = StreamUtil.localFile(tarpath).allocStreamSrc();
+
+			fragment.withAppend(
 					new PgpSignStream().withOutputFile(sigfile.getLocalPath())
 							.withSignKey(seclocalsign)		// TODO get hash out
 							.withPassphrase(keyring.getPassphrase())
@@ -199,20 +195,21 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 							.withDashNumMode(false)
 							.withSize(4294967296L)    // 4 GB
 							.withCountVar(finalcount),
-					DepositHub.DepositStore.fileReference(CommonPath.from("/files"), true).allocStreamDest()
-						.withTabulator(new Consumer<FileDescriptor>() {
-							@Override
-							public void accept(FileDescriptor file) {
-								if (! file.isFolder()) {
-									//finalfiles.withFiles((FileStoreFile) file);
-									
-									LocalStoreFile dfile = DepositHub.DepositStore.resolvePathToStore("/files/" + file.getName());
-									
-									finalfiles.withFiles(dfile);
-								}
+					FileObserverStream.of(new Consumer<FileDescriptor>() {
+						@Override
+						public void accept(FileDescriptor file) {
+							if (! file.isFolder()) {
+								LocalStoreFile dfile = DepositHub.DepositStore.resolvePathToStore("/files/" + file.getName());
+								finalfiles.withFiles(dfile);
 							}
-						})
+						}
+					})
+			)
+			.withAppend(
+					DepositHub.DepositStore.fileReference(CommonPath.from("/files"), true).allocStreamDest()
 			);
+
+			IWork builddeposit = StreamWork.of(fragment);
 			
 			// update the manifest, create chain file
 			
@@ -333,10 +330,10 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 					}
 					
 					try {
-						Files.deleteIfExists(outpath.resolve(transactionid + ".tar"));
+						Files.deleteIfExists(outpath.resolve(transactionid + ".tgzg"));
 					}
 					catch (IOException x) {
-						Logger.error("Error removing deposit tar: " + x);
+						Logger.error("Error removing deposit pgp: " + x);
 					}
 					
 					// allow next deposit to upload
@@ -379,12 +376,13 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 			
 			// TODO check and skip upload deposit if step is already done
 			
-			if (store != null)
-					this.then(StreamWork.of(
-							CollectionSourceStream.of(finalfiles),
-							store.fileReference(CommonPath.from("/deposits/" + ApplicationHub.getNodeId()), true)
-									.allocStreamDest()
-					));
+			if (store != null) {
+					this.then(StreamWork.of(CollectionSourceStream.of(finalfiles))
+							.with(
+									store.fileReference(CommonPath.from("/deposits/" + ApplicationHub.getNodeId()), true)
+											.allocStreamDest()
+							));
+			}
 			
 			this
 					.then(ControlWork.dieOnError("Unable to upload deposit files"))

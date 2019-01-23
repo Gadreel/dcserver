@@ -118,24 +118,29 @@ public class UngzipStream extends TransformFileStream {
     	ByteBuf in = slice.data;
     	
 		if (in != null) {
-			ByteBuf rem = this.remnant;
-
-			ByteBuf src = ((rem != null) && rem.isReadable()) 
-					? Unpooled.copiedBuffer(rem, in)
-					: in;
-
+			ByteBuf src = in;
+			
+			if (this.remnant != null) {
+				if (this.remnant.isReadable()) {
+					src = Unpooled.copiedBuffer(this.remnant, in);
+					in.release();
+				}
+				
+				this.remnant.release();
+				this.remnant = null;
+			}
+			
 			this.inflate(src);
 			
 			// if there are any unread bytes here we need to store them and combine with the next "handle"
 			// this would be rare since the header and footer are small, but it is possible and should be handled
 			// file content has its own "in progress" buffer so no need to worry about that
-			this.remnant = src.isReadable() ? src.copy() : null;		// TODO wrap or slice here? we need copy above
-			
-	        if (in != null)
-	        	in.release();
-	        
-			if (rem != null) 
-				rem.release();
+			if (src.isReadable()) {
+				this.remnant = src;
+			}
+			else {
+				src.release();
+			}
 			
 			if(OperationContext.getAsTaskOrThrow().isComplete())
 				return ReturnOption.DONE;

@@ -24,6 +24,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.log.Logger;
 import dcraft.scriptold.Ops;
 import dcraft.scriptold.StackEntry;
+import dcraft.stream.StreamFragment;
 import dcraft.stream.file.FileSlice;
 import dcraft.stream.file.FunnelStream;
 import dcraft.stream.file.GzipStream;
@@ -81,7 +82,7 @@ public class FileOps extends Ops {
 	}
 
 	protected void copy(StackEntry stack, XElement el) throws OperatingContextException {
-		IStreamSource streamin = this.getSourceStream(stack, el);
+		StreamFragment streamin = this.getSourceStream(stack, el);
 		
 		el.withAttribute("Relative", "false");
 		
@@ -90,7 +91,7 @@ public class FileOps extends Ops {
 	}
 
 	protected void xcopy(StackEntry stack, XElement el) throws OperatingContextException {
-		IStreamSource streamin = this.getSourceStream(stack, el);
+		StreamFragment streamin = this.getSourceStream(stack, el);
 		
 		el.withAttribute("Relative", "true");
 		
@@ -99,23 +100,24 @@ public class FileOps extends Ops {
 	}
 
 	protected void injectStream(StackEntry stack, XElement el, IStreamUp add) throws OperatingContextException {
-		IStreamSource streamin = this.getSourceStream(stack, el);
+		StreamFragment streamin = this.getSourceStream(stack, el);
 		
 		if (streamin == null) 
 			return;
 		
 		add.init(stack, el);
 		
-		add.setUpstream(streamin);
+		// add.setUpstream(streamin.getSteps());
+		streamin.withAppend(streamin);
 		
 		this.registerUpStream(stack, el, add);
 		
 		el.withAttribute("Relative", "true");
 
-        this.executeDest(stack, el, add, false);
+        this.executeDest(stack, el, streamin, false);
 	}
 
-	protected IStreamSource getSourceStream(StackEntry stack, XElement el) throws OperatingContextException {
+	protected StreamFragment getSourceStream(StackEntry stack, XElement el) throws OperatingContextException {
         Struct src = stack.refFromElement(el, "Source");
         
         if ((src == null) || (src instanceof NullStruct)) {
@@ -128,23 +130,23 @@ public class FileOps extends Ops {
             }
         }
         
-        if (src instanceof IStreamSource)
-        	return (IStreamSource) src;
+        if (src instanceof StreamFragment)
+        	return (StreamFragment) src;
         
         if (!(src instanceof FileStoreFile) && !(src instanceof FileStore) && !(src instanceof IFileCollection)) {
         	Logger.error("Invalid source type");
 			this.nextOpResume(stack);
         	return null;
         }
-        
-        IStreamSource filesrc = null;
+
+		StreamFragment filesrc = null;
 		
         if (src instanceof FileStoreFile)
         	filesrc = ((FileStoreFile)src).allocStreamSrc();
         else if (src instanceof FileStore)
        		filesrc = ((FileStore)src).rootFolder().allocStreamSrc();
         else 
-        	filesrc = CollectionSourceStream.of((IFileCollection) src);
+        	filesrc = StreamFragment.of(CollectionSourceStream.of((IFileCollection) src));
         
         if (filesrc == null) {
         	Logger.error("Invalid source type");
@@ -152,23 +154,23 @@ public class FileOps extends Ops {
         	return null;
         }
         
-        filesrc.init(stack, el);
+        // TODO review filesrc.init(stack, el);
         
 		return filesrc;
 	}
 
 	@SuppressWarnings("unchecked")
-	protected IStreamDest<FileSlice> getDestStream(StackEntry stack, XElement el) throws OperatingContextException {
+	protected StreamFragment getDestStream(StackEntry stack, XElement el) throws OperatingContextException {
         Struct dest = stack.refFromElement(el, "Dest");
         
         if ((dest == null) || (dest instanceof NullStruct)) 
         	return null;
         
         if ((dest instanceof StringStruct) && "NULL".equals(((StringStruct)dest).getValue()))
-        	return new NullDest();
+        	return StreamFragment.of(new NullDest());
         
         if (dest instanceof IStreamDest<?>)
-        	return (IStreamDest<FileSlice>) dest;
+        	return StreamFragment.of ((IStreamDest<FileSlice>) dest);
         
         if (!(dest instanceof FileStoreFile) && !(dest instanceof FileStore)) {
         	Logger.error("Invalid dest type");
@@ -176,7 +178,7 @@ public class FileOps extends Ops {
         	return null;
         }
         
-        IStreamDest<FileSlice> deststrm = null;
+        StreamFragment deststrm = null;
         
         if (dest instanceof FileStore)
         	deststrm = ((FileStore)dest).rootFolder().allocStreamDest();
@@ -189,11 +191,11 @@ public class FileOps extends Ops {
         	return null;
         }
         
-        deststrm.init(stack, el);
+        //deststrm.init(stack, el);
         return deststrm;
 	}
 	
-	protected void executeDest(StackEntry stack, XElement el, IStreamUp src, boolean destRequired) throws OperatingContextException {
+	protected void executeDest(StackEntry stack, XElement el, StreamFragment src, boolean destRequired) throws OperatingContextException {
 		stack.addVariable("_LastStream", (Struct)src);
 		
 		/* TODO get StreamFragment

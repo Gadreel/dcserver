@@ -135,7 +135,16 @@ public class FileIndexAdapter {
 				RecordStruct frec = RecordStruct.record();
 				
 				frec.with("State", Struct.objectToString(this.request.getInterface().get(entrykeys.toArray())));
-				
+
+				/*
+				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+
+				entrykeys.add("History");
+				entrykeys.add(pval);
+
+				frec.with("History", this.request.getInterface().get(entrykeys.toArray()));
+				*/
+
 				BigDecimal stamp = Struct.objectToDecimal(pval);
 				
 				if (stamp == null)
@@ -215,7 +224,65 @@ public class FileIndexAdapter {
 			}
 		}
 		catch (DatabaseException x) {
-			Logger.error("Unable to delete index file " + path + " in db: " + x);
+			Logger.error("Unable to get index file info " + path + " in db: " + x);
+		}
+
+		return null;
+	}
+
+	public RecordStruct fileDeposit(Vault vault, CommonPath path, IVariableAware scope) throws OperatingContextException {
+		try {
+			List<Object> entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+
+			Object marker = this.request.getInterface().get(entrykeys.toArray());
+
+			if ("Folder".equals(Struct.objectToString(marker))) {
+				return null;
+			}
+			else if ("XFolder".equals(Struct.objectToString(marker))) {
+				return null;
+			}
+			else if (marker != null) {			// Either is true or "File"
+				// state
+				entrykeys.add("State");
+				entrykeys.add(null);
+
+				byte[] pkey = this.request.getInterface().nextPeerKey(entrykeys.toArray());
+
+				while (pkey != null) {
+					Object pval = ByteUtil.extractValue(pkey);
+
+					entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+
+					entrykeys.add("State");
+					entrykeys.add(pval);
+
+					String state = Struct.objectToString(this.request.getInterface().get(entrykeys.toArray()));
+
+					if (! "Present".equals(state))
+						return null;
+
+					entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+
+					entrykeys.add("History");
+					entrykeys.add(pval);
+
+					RecordStruct hist = Struct.objectToRecord(this.request.getInterface().get(entrykeys.toArray()));
+
+					if ("Deposit".equals(hist.getFieldAsString("Source")))
+						return hist;
+
+					// go to next State
+					entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+					entrykeys.add("State");
+					entrykeys.add(pval);
+
+					pkey = this.request.getInterface().nextPeerKey(entrykeys.toArray());
+				}
+			}
+		}
+		catch (DatabaseException x) {
+			Logger.error("Unable to get index file deposit " + path + " in db: " + x);
 		}
 
 		return null;

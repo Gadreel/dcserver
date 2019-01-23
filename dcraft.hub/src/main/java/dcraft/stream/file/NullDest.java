@@ -32,14 +32,6 @@ import java.util.function.Consumer;
 public class NullDest extends BaseFileStream implements IStreamDest<FileSlice>, IFileStreamConsumer {
     protected int files = 0;
     protected long bytes = 0;
-	
-	protected Consumer<FileDescriptor> tabulator = null;
-	
-	@Override
-	public IStreamDown<FileSlice> withTabulator(Consumer<FileDescriptor> v) throws OperatingContextException {
-		this.tabulator = v;
-		return this;
-	}
  
 	// make sure we don't return without first releasing the file reference content
     @Override
@@ -66,9 +58,6 @@ public class NullDest extends BaseFileStream implements IStreamDest<FileSlice>, 
         	
     		//System.out.println("--- " + slice.file.getPath() + "     " + slice.file.getSize()
     		//		+ "     " + (slice.file.isFolder() ? "FOLDER" : "FILE"));
-    		
-    		if (this.tabulator != null)
-    			this.tabulator.accept(slice.file);
     	}
     	
     	if (slice.data != null) {

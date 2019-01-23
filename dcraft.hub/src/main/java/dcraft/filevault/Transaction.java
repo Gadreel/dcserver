@@ -3,12 +3,17 @@ package dcraft.filevault;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.local.LocalStore;
 import dcraft.filestore.local.LocalStoreFile;
+import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeEmpty;
+import dcraft.hub.resource.KeyRingResource;
 import dcraft.log.Logger;
+import dcraft.stream.StreamFragment;
 import dcraft.stream.StreamWork;
+import dcraft.stream.file.GzipStream;
+import dcraft.stream.file.PgpEncryptStream;
 import dcraft.stream.file.TarStream;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
@@ -17,6 +22,7 @@ import dcraft.task.TaskContext;
 import dcraft.task.TaskHub;
 import dcraft.task.TaskObserver;
 import dcraft.util.FileUtil;
+import org.bouncycastle.openpgp.PGPPublicKeyRing;
 
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
@@ -65,14 +71,25 @@ public class Transaction extends TransactionBase {
 	public void commitTransaction(OperationOutcomeEmpty callback) throws OperatingContextException {
 		this.buildUpdateList();
 		
-		LocalStore dstore = this.getFolder();
+		KeyRingResource keyring = ResourceHub.getResources().getKeyRing();
 		
+		PGPPublicKeyRing encryptor = keyring.findUserPublicKey("encryptor@" + ApplicationHub.getDeployment() + ".dc");
+		
+		LocalStore dstore = this.getFolder();
+
+		StreamFragment fragment = dstore.rootFolder().allocStreamSrc();
+
+		fragment.withAppend(
+				new TarStream().withNameHint(this.id),
+				GzipStream.create(),
+				new PgpEncryptStream()
+						.withPgpKeyring(encryptor)
+						.withTgzgFormat(true)
+			)
+			.withAppend(LocalStoreFile.of(DepositHub.DepositStore, CommonPath.from("/outstanding"), true).allocStreamDest());
+
 		TaskHub.submit(Task.ofSubtask("Create Transaction Tar", "XFR")
-				.withWork(StreamWork.of(
-						dstore.rootFolder().allocStreamSrc(),
-						new TarStream().withNameHint(this.id),
-						LocalStoreFile.of(DepositHub.DepositStore, CommonPath.from("/outstanding"), true).allocStreamDest()
-				)),
+				.withWork(StreamWork.of(fragment)),
 				new TaskObserver() {
 					@Override
 					public void callback(TaskContext subtask) {

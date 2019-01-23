@@ -27,6 +27,7 @@ import dcraft.schema.SchemaHub;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
 import dcraft.stream.IStreamSource;
+import dcraft.stream.StreamFragment;
 import dcraft.stream.file.IFileStreamDest;
 import dcraft.stream.file.MemorySourceStream;
 import dcraft.struct.RecordStruct;
@@ -125,18 +126,14 @@ public class MemoryStoreFile extends FileStoreFile {
 	}
 	
 	@Override
-	public IFileStreamDest allocStreamDest() {
-		return null;
-	}
-	
-	public IFileStreamDest allocStreamDest(boolean relative) {
+	public StreamFragment allocStreamDest() {
 		//TODO return MemoryDestDestStream.from(this).withRelative(relative);
 		return null;
 	}
 
 	@Override
-	public IStreamSource allocStreamSrc() {
-		return MemorySourceStream.fromBinary(this.binary);
+	public StreamFragment allocStreamSrc() {
+		return StreamFragment.of(MemorySourceStream.fromBinary(this.binary));
 	}
 
 	@Override

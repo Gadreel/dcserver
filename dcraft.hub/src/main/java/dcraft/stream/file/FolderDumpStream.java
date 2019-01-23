@@ -28,14 +28,6 @@ import dcraft.xml.XElement;
 import java.util.function.Consumer;
 
 public class FolderDumpStream extends BaseFileStream implements IStreamDest<FileSlice>, IFileStreamConsumer {
-	protected Consumer<FileDescriptor> tabulator = null;
-	
-	@Override
-	public IStreamDest<FileSlice> withTabulator(Consumer<FileDescriptor> v) throws OperatingContextException {
-		this.tabulator = v;
-		return this;
-	}
-	
     @Override
     public void init(StackEntry stack, XElement el) {
     	// TODO Auto-generated method stub
@@ -62,9 +54,6 @@ public class FolderDumpStream extends BaseFileStream implements IStreamDest<File
     	
 		System.out.println(" " + slice.file.getPath() + "     " + slice.file.getSize()
 				+ "     " + (slice.file.isFolder() ? "FOLDER" : "FILE"));
-
-    	if (this.tabulator != null)
-    		this.tabulator.accept(slice.file);
     	
        	return ReturnOption.CONTINUE;
     }

@@ -99,8 +99,8 @@ public class DatabaseWork extends StateWork {
 		if (this.collection.getSize() == 0)
 			return StateWorkStep.STOP;
 		
-		return this.chainThenNext(trun, StreamWork.of(CollectionSourceStream.of(this.collection),
-				tx.getFolder().rootFolder().allocStreamDest()));
+		return this.chainThenNext(trun, StreamWork.of(CollectionSourceStream.of(this.collection)
+				).with(tx.getFolder().rootFolder().allocStreamDest()));
 	}
 	
 	public StateWorkStep commitFiles(TaskContext trun) throws OperatingContextException {

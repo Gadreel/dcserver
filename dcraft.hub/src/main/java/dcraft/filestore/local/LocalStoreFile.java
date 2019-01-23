@@ -34,6 +34,7 @@ import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
 import dcraft.script.work.StackWork;
 import dcraft.stream.IStreamSource;
+import dcraft.stream.StreamFragment;
 import dcraft.stream.file.IFileStreamDest;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.ScalarStruct;
@@ -226,20 +227,16 @@ public class LocalStoreFile extends FileStoreFile {
 	}
 	
 	@Override
-	public IFileStreamDest allocStreamDest() {
-		return LocalDestStream.from(this);
-	}
-	
-	public IFileStreamDest allocStreamDest(boolean relative) {
-		return LocalDestStream.from(this).withRelative(relative);
+	public StreamFragment allocStreamDest() {
+		return StreamFragment.of(LocalDestStream.from(this));
 	}
 
 	@Override
-	public IStreamSource allocStreamSrc() {
+	public StreamFragment allocStreamSrc() {
     	if (this.isFolder()) 
-    		return CollectionSourceStream.of(this.scanner());
+    		return StreamFragment.of(CollectionSourceStream.of(this.scanner()));
     	
-		return LocalSourceStream.of(this);
+		return StreamFragment.of(LocalSourceStream.of(this));
 	}
 
 	@Override

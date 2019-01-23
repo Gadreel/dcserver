@@ -21,13 +21,13 @@ import dcraft.scriptold.StackEntry;
 import dcraft.xml.XElement;
 
 public interface IStream {
-	void init(StackEntry stack, XElement el);
+	void init(StackEntry stack, XElement el) throws OperatingContextException;
 	
-	void setUpstream(IStreamUp upstream);
-	IStreamUp getUpstream();
+	void setUpstream(IStreamUp upstream) throws OperatingContextException;
+	IStreamUp getUpstream() throws OperatingContextException;
 	
-	void setDownstream(IStreamDown<?> downstream);
-	IStreamDown<?> getDownstream();
+	void setDownstream(IStreamDown<?> downstream) throws OperatingContextException;
+	IStreamDown<?> getDownstream() throws OperatingContextException;
 	
 	void cleanup() throws OperatingContextException;
 }

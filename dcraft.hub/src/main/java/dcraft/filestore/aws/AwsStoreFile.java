@@ -29,6 +29,7 @@ import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
 import dcraft.stream.IStreamDest;
 import dcraft.stream.IStreamSource;
+import dcraft.stream.StreamFragment;
 import dcraft.stream.file.FileSlice;
 import dcraft.stream.file.IFileStreamDest;
 import dcraft.struct.RecordStruct;
@@ -199,21 +200,16 @@ public class AwsStoreFile extends FileStoreFile {
 		}
 	}
 	
-	@Override
-	public IFileStreamDest allocStreamDest() {
-		return AwsDestStream.from(this);
-	}
-	
-	public IFileStreamDest allocStreamDest(boolean relative) {
-		return AwsDestStream.from(this).withRelative(relative);
+	public StreamFragment allocStreamDest() {
+		return StreamFragment.of(AwsDestStream.from(this));
 	}
 
 	@Override
-	public IStreamSource allocStreamSrc() {
+	public StreamFragment allocStreamSrc() {
 		if (this.isFolder())
-			return CollectionSourceStream.of(this.scanner());
+			return StreamFragment.of(CollectionSourceStream.of(this.scanner()));
 
-		return AwsSourceStream.of(this);
+		return StreamFragment.of(AwsSourceStream.of(this));
 	}
 
 	@Override

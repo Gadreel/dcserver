@@ -30,7 +30,6 @@ import dcraft.stream.IStreamDest;
 import dcraft.stream.ReturnOption;
 import dcraft.stream.file.BaseFileStream;
 import dcraft.stream.file.FileSlice;
-import dcraft.stream.file.IFileStreamConsumer;
 import dcraft.stream.file.IFileStreamDest;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.NullStruct;
@@ -52,14 +51,6 @@ public class AwsDestStream extends BaseFileStream implements IFileStreamDest {
 	protected OutputStream out = null;
 	protected boolean userelpath = true;
 	
-	protected Consumer<FileDescriptor> tabulator = null;
-	
-	@Override
-	public IStreamDest<FileSlice> withTabulator(Consumer<FileDescriptor> v) throws OperatingContextException {
-		this.tabulator = v;
-		return this;
-	}
-	
 	protected AwsDestStream() {
 	}
 
@@ -70,7 +61,7 @@ public class AwsDestStream extends BaseFileStream implements IFileStreamDest {
 	
 	// for use with dcScript
 	@Override
-	public void init(StackEntry stack, XElement el) {
+	public void init(StackEntry stack, XElement el) throws OperatingContextException {
 			// TODO autorelative and rethink the RelativeTo
 		if (stack.boolFromElement(el, "Relative", true) || el.getName().startsWith("X")) {
         	this.userelpath = true;
@@ -182,9 +173,6 @@ public class AwsDestStream extends BaseFileStream implements IFileStreamDest {
 					this.out = null;
 				}
 				
-				if (this.tabulator != null)
-					this.tabulator.accept(this.currfile);
-				
 				((AwsStoreFile) this.currfile).loadDetails(null);		// TODO really we want to wait, but this is fine for now
 			}
 			catch (IOException x) {
@@ -269,9 +257,6 @@ public class AwsDestStream extends BaseFileStream implements IFileStreamDest {
 			try {
 				this.out.close();
 				this.out = null;
-				
-				if (this.tabulator != null)
-					this.tabulator.accept(this.currfile);
 				
 				((AwsStoreFile) this.currfile).loadDetails(null);		// TODO really we want to wait, but this is fine for now
 			}

@@ -124,10 +124,8 @@ public class WizardOutputAdapter extends ChainWork implements IOutputWork {
 			}
 		}
 
-		StreamFragment fragment = StreamFragment.of(
-				MemoryStoreFile.of(CommonPath.from(webpath + "/" + form +  ".js"))
-						.with(script).allocStreamSrc()
-		);
+		StreamFragment fragment = MemoryStoreFile.of(CommonPath.from(webpath + "/" + form +  ".js"))
+						.with(script).allocStreamSrc();
 		
 		HttpDestStream dest = HttpDestStream.dest();
 		dest.setHeaderSent(true);

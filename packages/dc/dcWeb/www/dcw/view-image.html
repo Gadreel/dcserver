@@ -294,6 +294,9 @@
 
 			var path = '/galleries' + view.Path + '/' + view.Images[view.StartPos].Alias + '.v/' + vname;
 
+			if (entry.Params.NoCache)
+				path += '?nocache=' + dc.util.Crypto.makeSimpleKey();
+
 			dc.util.Image.load(path,
 				function(img) {
 					entry.Store.SelImg = img;

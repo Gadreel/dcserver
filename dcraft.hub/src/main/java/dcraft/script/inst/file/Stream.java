@@ -61,7 +61,7 @@ public class Stream extends Instruction {
 				source = MemorySourceStream.fromBinary((BinaryStruct) source);
 			}
 			else if (source instanceof FileStoreFile) {
-				source = StreamFragment.of(((FileStoreFile) source).allocStreamSrc());
+				source = ((FileStoreFile) source).allocStreamSrc();
 			}
 			else if (source instanceof Struct) {
 				source = MemorySourceStream.fromBinary(Utf8Encoder.encode(Struct.objectToString(source)));
@@ -72,7 +72,7 @@ public class Stream extends Instruction {
 			}
 
 			if (dest instanceof FileStoreFile) {
-				dest = StreamFragment.of(((FileStoreFile) dest).allocStreamDest());
+				dest = ((FileStoreFile) dest).allocStreamDest();
 			}
 			
 			if (dest instanceof IStream) {

@@ -29,7 +29,7 @@ abstract public class BaseStream extends RecordStruct implements IStream {
 	protected IStreamDown<?> downstream = null;
 	
 	@Override
-	public void setUpstream(IStreamUp upstream) {
+	public void setUpstream(IStreamUp upstream) throws OperatingContextException {
 		this.upstream = upstream;
 		
 		upstream.setDownstream((IStreamDown<?>) this);
@@ -51,7 +51,7 @@ abstract public class BaseStream extends RecordStruct implements IStream {
 	}
 	
 	@Override
-	public void init(StackEntry stack, XElement el) {
+	public void init(StackEntry stack, XElement el) throws OperatingContextException {
 		// NA
 	}
 	

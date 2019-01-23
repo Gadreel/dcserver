@@ -9,29 +9,37 @@ import dcraft.filestore.FileStore;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.aws.AwsStore;
 import dcraft.filestore.local.LocalStore;
+import dcraft.filestore.local.LocalStoreFile;
 import dcraft.filevault.work.BuildDepositWork;
+import dcraft.filevault.work.ExpandDepositWork;
 import dcraft.filevault.work.LoadDepositWork;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcome;
+import dcraft.hub.resource.KeyRingResource;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
+import dcraft.stream.StreamFragment;
+import dcraft.stream.file.FilterStream;
 import dcraft.struct.CompositeParser;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.StringStruct;
 import dcraft.task.*;
 import dcraft.task.run.WorkTopic;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 import dcraft.util.chars.Utf8Encoder;
+import dcraft.util.pgp.ClearsignUtil;
 import dcraft.xml.XElement;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
@@ -55,6 +63,31 @@ public class DepositHub {
 	static protected RecordStruct depositstatus = RecordStruct.record();
 	
 	//static
+	
+	static public StreamFragment expandDepositFragment(String node, String deposit) {
+		LocalStore dstore = LocalStore.of(ApplicationHub.getDeploymentPath().resolve("nodes/" + node + "/deposits"));
+		
+		LocalStoreFile lfile = dstore.resolvePathToStore("/chain/" + deposit + ".chain");
+		
+		// if local skip download
+		if (lfile.exists()) {
+			CharSequence result = IOUtil.readEntireFile(lfile.getLocalPath());
+			
+			KeyRingResource keyring = ResourceHub.getResources().getKeyRing();
+			
+			StringStruct chainsig = StringStruct.ofEmpty();
+			
+			StringBuilder sb = new StringBuilder();
+			
+			ClearsignUtil.verifyFile(new ByteArrayInputStream(Utf8Encoder.encode(result)), keyring, sb, chainsig);
+			
+			RecordStruct manifest = Struct.objectToRecord(sb);
+			
+			return ExpandDepositWork.depositSource(deposit, dstore, manifest);
+		}
+
+		return null;
+	}
 	
 	// TODO load save the data files
 	

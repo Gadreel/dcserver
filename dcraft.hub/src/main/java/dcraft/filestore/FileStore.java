@@ -30,18 +30,18 @@ import dcraft.xml.XElement;
 import java.util.List;
 
 abstract public class FileStore extends RecordStruct {
-	abstract public boolean close(OperationOutcomeEmpty callback);
-	abstract public void connect(RecordStruct params, OperationOutcomeEmpty callback);
-	abstract public void removeFolder(CommonPath path, OperationOutcomeEmpty callback);
-	abstract public void queryFeatures(OperationOutcome<RecordStruct> callback);
-	abstract public void customCommand(RecordStruct params, OperationOutcome<RecordStruct> callback);
-	abstract public IFileCollection scanner(CommonPath path);
-	abstract public FileStoreFile rootFolder();
-	abstract public FileStoreFile fileReference(CommonPath path);
-	abstract public FileStoreFile fileReference(CommonPath path, boolean isFolder);
-	abstract public void getFolderListing(CommonPath path, OperationOutcome<List<FileStoreFile>> callback);
-	abstract public void getFileDetail(CommonPath path, OperationOutcome<FileStoreFile> callback);
-	abstract public void addFolder(CommonPath path, OperationOutcome<FileStoreFile> callback);
+	abstract public boolean close(OperationOutcomeEmpty callback) throws OperatingContextException;
+	abstract public void connect(RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException;
+	abstract public void removeFolder(CommonPath path, OperationOutcomeEmpty callback) throws OperatingContextException;
+	abstract public void queryFeatures(OperationOutcome<RecordStruct> callback) throws OperatingContextException;
+	abstract public void customCommand(RecordStruct params, OperationOutcome<RecordStruct> callback) throws OperatingContextException;
+	abstract public IFileCollection scanner(CommonPath path) throws OperatingContextException;
+	abstract public FileStoreFile rootFolder() throws OperatingContextException;
+	abstract public FileStoreFile fileReference(CommonPath path) throws OperatingContextException;
+	abstract public FileStoreFile fileReference(CommonPath path, boolean isFolder) throws OperatingContextException;
+	abstract public void getFolderListing(CommonPath path, OperationOutcome<List<FileStoreFile>> callback) throws OperatingContextException;
+	abstract public void getFileDetail(CommonPath path, OperationOutcome<FileStoreFile> callback) throws OperatingContextException;
+	abstract public void addFolder(CommonPath path, OperationOutcome<FileStoreFile> callback) throws OperatingContextException;
 	
 	@Override
 	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {

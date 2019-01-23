@@ -21,7 +21,9 @@ import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.scriptold.StackEntry;
 import dcraft.stream.IStreamSource;
+import dcraft.stream.IStreamUp;
 import dcraft.stream.ReturnOption;
+import dcraft.stream.StreamFragment;
 import dcraft.stream.file.FileSlice;
 import dcraft.stream.file.TransformFileStream;
 import dcraft.xml.XElement;
@@ -80,8 +82,11 @@ public class CollectionSourceStream extends TransformFileStream implements IStre
 						OperationContext.getAsTaskOrThrow().resume();
 					}
 					else {
+						StreamFragment fragment = result.allocStreamSrc();
+
 						CollectionSourceStream.this.currfile = result;
-						CollectionSourceStream.this.upstream = result.allocStreamSrc();
+						// TODO there may be a lot of steps in the fragment but fragment needs to be flattened to work, review and change
+						CollectionSourceStream.this.upstream = (IStreamUp) fragment.getLastStep();
 						CollectionSourceStream.this.upstream.setDownstream(CollectionSourceStream.this);
 						CollectionSourceStream.this.upstream.read();
 					}

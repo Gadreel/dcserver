@@ -12,6 +12,7 @@ import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.resource.KeyRingResource;
 import dcraft.log.Logger;
+import dcraft.stream.StreamFragment;
 import dcraft.stream.StreamWork;
 import dcraft.stream.file.JoinStream;
 import dcraft.stream.file.PgpDecryptStream;
@@ -60,45 +61,17 @@ public class ExpandDepositWork extends StateWork {
 	}
 	
 	public StateWorkStep expand(TaskContext trun) throws OperatingContextException {
-		int cnt = (int) this.manifest.getFieldAsInteger("SplitCount", 0);
-		
-		if (cnt < 0) {
-			Logger.error("Invalid SplitCount: " + cnt);
+		StreamFragment source = ExpandDepositWork.depositSource(this.did, this.localdepositstore, this.manifest);
+
+		if (source == null) {
 			return this.done;
 		}
-		
-		if (cnt == 0) {
-			return this.done;
-		}
-		
-		Logger.info("Expanding deposit: " + did);
-		
-		KeyRingResource keyring = ResourceHub.getResources().getKeyRing();
-		
-		FileCollection finalfiles = new FileCollection();
-		
-		LocalStoreFile chkfile = localdepositstore.resolvePathToStore("/files/" + this.did + ".sig");
-		
-		for (int i = 1; i <= cnt; i++) {
-			String fname = "/files/" + this.did + ".tgzp-" + StringUtil.leftPad(i + "", 4, '0');
-			finalfiles.withFiles(localdepositstore.resolvePathToStore(fname));
-		}
-		
+
+		source.withAppend(this.destination.allocStreamDest());
+
 		this.chainThen(
 				trun,
-				StreamWork.of(
-						CollectionSourceStream.of(finalfiles),
-						new JoinStream(),
-						new PgpVerifyStream()
-								.withKeyResource(keyring)
-								.withSignatureFile(chkfile.getLocalPath()),
-						new PgpDecryptStream()
-								.withKeyResource(keyring)
-								.withPassword(keyring.getPassphrase()),
-						new UngzipStream(),
-						new UntarStream(),
-						this.destination.allocStreamDest()
-				),
+				StreamWork.of(source),
 				this.done
 		);
 		
@@ -109,5 +82,44 @@ public class ExpandDepositWork extends StateWork {
 		Logger.info("Deposit files expanded: " + did);
 		
 		return StateWorkStep.STOP;
+	}
+
+	static public StreamFragment depositSource(String did, LocalStore localdepositstore, RecordStruct manifest) {
+		int cnt = (int) manifest.getFieldAsInteger("SplitCount", 0);
+
+		if (cnt < 0) {
+			Logger.error("Invalid SplitCount: " + cnt);
+			return null;
+		}
+
+		if (cnt == 0) {
+			return null;
+		}
+
+		Logger.info("Expanding deposit: " + did);
+
+		KeyRingResource keyring = ResourceHub.getResources().getKeyRing();
+
+		FileCollection finalfiles = new FileCollection();
+
+		LocalStoreFile chkfile = localdepositstore.resolvePathToStore("/files/" + did + ".sig");
+
+		for (int i = 1; i <= cnt; i++) {
+			String fname = "/files/" + did + ".tgzp-" + StringUtil.leftPad(i + "", 4, '0');
+			finalfiles.withFiles(localdepositstore.resolvePathToStore(fname));
+		}
+
+		return StreamFragment.of(
+			CollectionSourceStream.of(finalfiles),
+				new JoinStream(),
+				new PgpVerifyStream()
+						.withKeyResource(keyring)
+						.withSignatureFile(chkfile.getLocalPath()),
+				new PgpDecryptStream()
+						.withKeyResource(keyring)
+						.withPassword(keyring.getPassphrase()),
+				new UngzipStream(),
+				new UntarStream()
+		);
 	}
 }

@@ -8,5 +8,4 @@ import dcraft.stream.IStreamDown;
 import java.util.function.Consumer;
 
 public interface IFileStreamConsumer extends IStreamDown<FileSlice> {
-	IStreamDown<FileSlice> withTabulator(Consumer<FileDescriptor> v) throws OperatingContextException;
 }

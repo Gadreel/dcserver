@@ -100,8 +100,16 @@ public class PgpDecryptStream extends TransformFileStream {
 	@Override
     public void close() throws OperatingContextException {
 		this.cipher = null;
-    
-    	super.close();
+		
+		ByteBuf rem = this.remnant;
+		
+		if (rem != null) {
+			rem.release();
+			
+			this.remnant = null;
+		}
+		
+		super.close();
     }
     
 	// make sure we don't return without first releasing the file reference content
@@ -142,16 +150,24 @@ public class PgpDecryptStream extends TransformFileStream {
     			
 	            // TODO inflate if compressed
 	            
+				in.release();
+    			
 		        in = ApplicationHub.getBufferAllocator().heapBuffer(decrypteddata.length);
 		        
 		        in.writeBytes(decrypteddata);
     		}
-    		
-			ByteBuf rem = this.remnant;
-
-			ByteBuf src = ((rem != null) && rem.isReadable()) 
-					? Unpooled.copiedBuffer(rem, in)
-					: in;
+		
+			ByteBuf src = in;
+   
+			if (this.remnant != null) {
+				if (this.remnant.isReadable()) {
+					src = Unpooled.copiedBuffer(this.remnant, in);
+					in.release();
+				}
+				
+				this.remnant.release();
+				this.remnant = null;
+			}
 			
     		while (src.isReadable()) {
     			boolean needMore = false;
@@ -172,6 +188,7 @@ public class PgpDecryptStream extends TransformFileStream {
     				
     		        if ((hdr & 0x80) == 0) {
     		        	OperationContext.getAsTaskOrThrow().kill("May not be binary");
+    		        	src.release();
     		        	return ReturnOption.DONE;
     		        }
 		            
@@ -260,6 +277,7 @@ public class PgpDecryptStream extends TransformFileStream {
 		                    break;
 		                default:
 	    		        	OperationContext.getAsTaskOrThrow().kill("unknown length type encountered");
+	    		        	src.release();
 	    		        	return ReturnOption.DONE;
 		                }
 		            }            
@@ -331,6 +349,7 @@ public class PgpDecryptStream extends TransformFileStream {
     				}
     				catch (Exception x) {
     		        	OperationContext.getAsTaskOrThrow().kill("Error loading the secret key: " + x);
+    		        	src.release();
     		        	return ReturnOption.DONE;
     				}
     				
@@ -340,6 +359,7 @@ public class PgpDecryptStream extends TransformFileStream {
     			case DATA_PROTECT: {
     				if (this.cipher == null) {
     		        	OperationContext.getAsTaskOrThrow().kill("Unable to find secret key, or password is bad.");
+    		        	src.release();
     		        	return ReturnOption.DONE;
     				}
     				
@@ -351,6 +371,8 @@ public class PgpDecryptStream extends TransformFileStream {
 	                    byte[] decrypteddata = slice.isEof() 
 	                    		? this.cipher.doFinal(src.array(), src.arrayOffset() + src.readerIndex(), src.readableBytes())
 	                    		: this.cipher.update(src.array(), src.arrayOffset() + src.readerIndex(), src.readableBytes());
+	                    
+	                    src.release();
 	                    
 	        	        src = ApplicationHub.getBufferAllocator().heapBuffer(decrypteddata.length);
 	        	        
@@ -422,6 +444,7 @@ public class PgpDecryptStream extends TransformFileStream {
                 	// we only process binary type
                 	if (ftype != 98) {
     		        	OperationContext.getAsTaskOrThrow().kill("wrong data type!");
+    		        	src.release();
     		        	return ReturnOption.DONE;
                 	}
                 	
@@ -614,6 +637,7 @@ public class PgpDecryptStream extends TransformFileStream {
 	                	
 	                	if (ByteUtil.compareKeys(dgcalc, dgexpect) != 0) {
 	    		        	OperationContext.getAsTaskOrThrow().kill("data protected failed!");
+	    		        	src.release();
 	    		        	return ReturnOption.DONE;
 	                	}
 	    				
@@ -622,6 +646,7 @@ public class PgpDecryptStream extends TransformFileStream {
     				}
     				catch (Exception x) {
     		        	OperationContext.getAsTaskOrThrow().kill("data protected incomplete: " + x);
+    		        	src.release();
     		        	return ReturnOption.DONE;
     				}
     			}
@@ -650,13 +675,12 @@ public class PgpDecryptStream extends TransformFileStream {
     		}
 			
 			// if there are any unread bytes here we need to store them and combine with the next "handle"
-			this.remnant = src.isReadable() ? src.copy() : null;
-			
-	        if (in != null)
-	        	in.release();
-	        
-			if (rem != null) 
-				rem.release();
+			if (src.isReadable()) {
+				this.remnant = src;
+			}
+			else {
+				src.release();
+			}
     	}
 		
     	// tell dest we got a final

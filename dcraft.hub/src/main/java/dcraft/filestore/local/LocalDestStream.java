@@ -36,7 +36,6 @@ import dcraft.stream.IStreamDest;
 import dcraft.stream.StreamUtil;
 import dcraft.stream.file.BaseFileStream;
 import dcraft.stream.file.FileSlice;
-import dcraft.stream.file.IFileStreamConsumer;
 import dcraft.stream.ReturnOption;
 import dcraft.stream.file.IFileStreamDest;
 import dcraft.struct.Struct;
@@ -60,14 +59,6 @@ public class LocalDestStream extends BaseFileStream implements IFileStreamDest {
 	protected FileChannel out = null;
 	protected boolean userelpath = true;
 	
-	protected Consumer<FileDescriptor> tabulator = null;
-	
-	@Override
-	public IStreamDest<FileSlice> withTabulator(Consumer<FileDescriptor> v) throws OperatingContextException {
-		this.tabulator = v;
-		return this;
-	}
-	
 	protected LocalDestStream() {
 	}
 
@@ -78,7 +69,7 @@ public class LocalDestStream extends BaseFileStream implements IFileStreamDest {
 	
 	// for use with dcScript
 	@Override
-	public void init(StackEntry stack, XElement el) {
+	public void init(StackEntry stack, XElement el) throws OperatingContextException {
 			// TODO autorelative and re-think RelativeTo, shouldn't a stream always come from a file so this is redundant?
 		if (stack.boolFromElement(el, "Relative", true) || el.getName().startsWith("X")) {
         	this.userelpath = true;
@@ -184,9 +175,6 @@ public class LocalDestStream extends BaseFileStream implements IFileStreamDest {
 					this.out = null;
 				}
 				
-				if (this.tabulator != null)
-					this.tabulator.accept(this.currfile);
-				
 				((LocalStoreFile) this.currfile).refreshProps();
 				
 				((LocalStoreFile) this.currfile).getDriver().fireFolderEvent(((LocalStoreFile) this.currfile).getLocalPath(), StandardWatchEventKinds.ENTRY_MODIFY);
@@ -237,9 +225,6 @@ public class LocalDestStream extends BaseFileStream implements IFileStreamDest {
 		if (this.out == null)
 			try {
 				Path dpath = folder.resolve(fpath.substring(1));
-				
-				if (this.tabulator != null)
-					this.tabulator.accept(((LocalStoreFile) this.currfile).getDriver().resolvePathToStore(fpath));
 				
 				Files.createDirectories(dpath.getParent());
 				

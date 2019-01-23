@@ -660,6 +660,20 @@ var dc = {
 				return src;
 			}
 		},
+		Icon: {
+			use: function(name) {		// name = [library]-[icon name]
+				var svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+				var link = document.createElementNS("http://www.w3.org/2000/svg","use");
+				link.setAttributeNS("http://www.w3.org/1999/xlink", 'href', '#' + name);
+
+				return $(svg)
+					.attr('role', 'img')
+					.attr('viewBox', '0 0 512 512')
+					.attr('aria-hidden', 'true')
+					.attr('class', 'icon-'+ name + ' dc-icon svg-inline--fa fa5-w-12')
+					.dcappend(link);
+			}
+		},
 		Image: {
 			blobToUrl: function(blob) {
 				return (window.URL || window.webkitURL).createObjectURL(blob);
