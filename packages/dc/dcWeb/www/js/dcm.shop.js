@@ -243,26 +243,144 @@ dc.cms.cart = {
 		submit: function(callback) {
 			var me = this;
 
-			dc.comm.sendMessage({
-				Service: 'dcmStoreServices',
-				Feature: 'Orders',
-				Op: 'Submit',
-				Body: me._cart
-			}, function(resp) {
-				if (resp.Result > 0) {
+			var subcomm = function() {
+				dc.comm.sendMessage({
+					Service: 'dcmStoreServices',
+					Feature: 'Orders',
+					Op: 'Submit',
+					Body: me._cart
+				}, function(resp) {
+					if (resp.Result > 0) {
+						if (callback)
+							callback(null, resp);
+						else
+							dc.pui.Popup.alert('Unable to submit order: ' + resp.Message);
+
+						return;
+					}
+
+					me._cart = resp.Body.Cart;
+
 					if (callback)
-						callback(null, resp);
-					else
-						dc.pui.Popup.alert('Unable to submit order: ' + resp.Message);
+						callback(resp.Body.Id, resp);
+				});
+			};
 
-					return;
+			var log = new dc.lang.OperationResult();
+
+			if (dc.handler && dc.handler.payments && (dc.handler.payments.method == 'Authorize')) {
+				var authprocess = function() {
+					var pi = me._cart.PaymentInfo;
+
+					Accept.dispatchData({
+						authData: {
+							clientKey: dc.handler.payments.clientKey,
+							apiLoginID: dc.handler.payments.apiLoginID
+						},
+						cardData: {
+							cardNumber: pi.CardNumber,
+							month: pi.Expiration.substr(0,2),
+							year: '20' + pi.Expiration.substr(2,2),
+							cardCode: pi.Code
+						}
+					}, function(response) {
+						if (response.messages.resultCode === "Error") {
+							for (i = 0; i < response.messages.message.length; i++) {
+								log.error(1,
+									response.messages.message[i].code + ": " +
+									response.messages.message[i].text
+								);
+
+								console.log(
+									response.messages.message[i].code + ": " +
+									response.messages.message[i].text
+								);
+							}
+
+							//log.error(1, 'Unable to connect to payment gateway');
+							log.Result = 1;		// outdated approach, backward compatible - Code would be better
+
+							callback(null, log);
+						}
+						else {
+							var od = response.opaqueData;
+
+							// replace payment data
+							me._cart.PaymentInfo = {
+								PaymentMethod: 'CreditCard',
+								Token1: od.dataDescriptor,
+								Token2: od.dataValue
+							};
+
+							subcomm();
+						}
+					});
+				};
+
+				if (window.Accept) {
+					authprocess();
 				}
+				else {
+					// poorly named event - when auth async load is done
+					$('body').one('handshake', function() {
+						window.isReady = true;		// we may run before the accept event handler, all it does is this
+						authprocess();
+					});
 
-				me._cart = resp.Body.Cart;
+					var lib = dc.handler.payments.live
+						? 'https://js.authorize.net/v1/Accept.js'
+						: 'https://jstest.authorize.net/v1/Accept.js';
 
-				if (callback)
-					callback(resp.Body.Id, resp);
-			});
+					dc.pui.Loader.addExtraLibs([ lib ], function() {
+						console.log('loading accept.js');
+					});
+				}
+			}
+			else if (dc.handler && dc.handler.payments && (dc.handler.payments.method == 'Stripe')) {
+				var stripeprocess = function() {
+					var bi = me._cart.BillingInfo;
+					var pi = me._cart.PaymentInfo;
+
+					Stripe.setPublishableKey(dc.handler.payments.publishKey);
+
+					Stripe.card.createToken({
+						name: bi.FirstName + ' ' + bi.LastName,
+						number: pi.CardNumber,
+						cvc: pi.Code,
+						exp_month: pi.Expiration.substr(0,2),
+						exp_year: '20' + pi.Expiration.substr(2,2),
+						address_zip: bi.Zip
+					}, function(status, response) {
+						if (response.error) { // Problem!
+							log.error(1, response.error.message);
+							log.Result = 1;
+
+							callback(null, log);
+						}
+						else {
+							// replace payment data
+							me._cart.PaymentInfo = {
+								PaymentMethod: 'CreditCard',
+								Token1: response.id
+							};
+
+							subcomm();
+						}
+					});
+				};
+
+				if (window.Stripe) {
+					stripeprocess();
+				}
+				else {
+					var lib = 'https://js.stripe.com/v2/';
+
+					dc.pui.Loader.addExtraLibs([ lib ], stripeprocess);
+				}
+			}
+			else {
+				subcomm();
+			}
 		},
 
 		load: function(displayHook) {

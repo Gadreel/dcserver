@@ -753,9 +753,9 @@ public class StringUtil {
 	    	
 			for (int i = 0; i < str.length(); i++) { 
 				char ch = str.charAt(i);
-				  
+				
 				if ((ch == '_') || Character.isLetterOrDigit(ch))
-					sb.append(ch);
+					sb.append(Character.isUpperCase(ch) ? Character.toLowerCase(ch) : ch);
 			  	else
 				  	sb.append('-');
 			}

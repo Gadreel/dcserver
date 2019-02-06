@@ -35,7 +35,7 @@ public class RadioGroup extends CoreField {
 		List<XElement> inputs = this.fieldinfo.selectAll("RadioButton");
 		
 		for (XElement el : inputs) 
-			grp.with(RadioControl.fromRadioField(this, el));
+			grp.with(RadioControl.fromRadioField(state,this, el));
 
 		this.with(grp);
 		
@@ -48,22 +48,6 @@ public class RadioGroup extends CoreField {
 				</dcf.RadioGroup>
 				
 
-				<div class="dc-control dc-controlgroup-vertical">
-					<div class="dc-radio">
-						<input type="radio" id="comm1" name="CertInterest" value="No" />
-						<label for="comm1" class="dc-input-button"><i class="fa fa-circle" aria-hidden="true"></i> Not Interested</label>
-					</div>
-					<div class="dc-radio">
-						<input type="radio" id="comm2" name="CertInterest" value="Yes" />
-						<label for="comm2" class="dc-input-button"><i class="fa fa-circle" aria-hidden="true"></i> Interested</label>
-					</div>
-					<div class="dc-radio">
-						<input type="radio" id="comm3" name="CertInterest" value="Maybe" />
-						<label for="comm3" class="dc-input-button"><i class="fa fa-circle" aria-hidden="true"></i> Maybe</label>
-					</div>
-				</div>
-
-
 				<dcf.HorizRadioGroup Label="Years Experience:" Name="GrazingYears" Required="true">
 				   <RadioButton Value="LessThanFive" Label="0 - 5" />
 				   <RadioButton Value="FiveToTen" Label="5 - 10" />
@@ -71,22 +55,6 @@ public class RadioGroup extends CoreField {
 				   <RadioButton Value="FifteenToTwenty" Label="15 - 20" />
 				   <RadioButton Value="TwentyOrMore" Label="20+" />
 				</dcf.HorizRadioGroup>
-
-				
-				<div class="dc-control dc-controlgroup-horizontal">
-					<div class="dc-radio">
-						<input type="radio" id="comm1b" name="CertInterestb" value="No" />
-						<label for="comm1b" class="dc-input-button"><i class="fa fa-circle" aria-hidden="true"></i> Not Interested</label>
-					</div>
-					<div class="dc-radio">
-						<input type="radio" id="comm2b" name="CertInterestb" value="Yes" />
-						<label for="comm2b" class="dc-input-button"><i class="fa fa-circle" aria-hidden="true"></i> Interested</label>
-					</div>
-					<div class="dc-radio">
-						<input type="radio" id="comm3b" name="CertInterestb" value="Maybe" />
-						<label for="comm3b" class="dc-input-button"><i class="fa fa-circle" aria-hidden="true"></i> Maybe</label>
-					</div>
-				</div>
 				
 				
 		*/		

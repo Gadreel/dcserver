@@ -40,7 +40,7 @@ dc.comm = {
 		if (sparts.length != 3) {
 			if (callbackfunc)
 				callbackfunc({
-					Result: 1,
+					Code: 1,
 					Message: 'Invalid service naming.'
 				});
 
@@ -56,7 +56,14 @@ dc.comm = {
 		if (params)
 			msg.Body = params;
 
-		dc.comm.sendMessage(msg, callbackfunc, timeout);
+		dc.comm.sendMessage(msg, function(rmsg) {
+			if (callbackfunc) {
+				rmsg.Code = rmsg.Result;		// switch to new names
+				rmsg.Result = rmsg.Body;
+				delete rmsg.Body;
+				callbackfunc(rmsg);
+			}
+		}, timeout);
 	},
 
 	sendForgetMessage: function(msg) {

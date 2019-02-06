@@ -6,14 +6,20 @@ import dcraft.db.request.update.DbRecordRequest;
 import dcraft.db.request.update.UpdateRecordRequest;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
+import dcraft.filestore.local.LocalStoreFile;
+import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.service.ServiceHub;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.builder.BuilderStateException;
+import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.task.Task;
 import dcraft.task.TaskHub;
+import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 
 import java.time.ZonedDateTime;
@@ -114,5 +120,35 @@ public class Util {
 					.withScript(CommonPath.from("/dcm/store/event-order-updated.dcs.xml")));
 		}
 		
+	}
+	
+	static public String productImagePath(TablesAdapter db, String id) throws OperatingContextException {
+		return storeImagePath(db, "dcmProduct", id);
+	}
+	
+	static public String categoryImagePath(TablesAdapter db, String id) throws OperatingContextException {
+		return storeImagePath(db, "dcmCategory", id);
+	}
+	
+	static public String storeImagePath(TablesAdapter db, String table, String id) throws OperatingContextException {
+		String image = Struct.objectToString(db.getStaticScalar(table, id, "dcmImage"));
+		String alias = Struct.objectToString(db.getStaticScalar(table, id, "dcmAlias"));
+		
+		if (StringUtil.isEmpty(image))
+			image = "main";
+		
+		String area = "dcmCategory".equals(table) ? "category" : "product";
+		
+		String imagePath = "/store/" + area + "/" + alias + "/" + image;
+		
+		// there should always be a "thumb" so check for it
+		
+		LocalStoreFile file = (LocalStoreFile) OperationContext.getOrThrow().getSite().getGalleriesVault()
+				.getFileStore().fileReference(CommonPath.from(imagePath + ".v/thumb.jpg"));
+		
+		if (! file.exists())
+			imagePath = "/store/" + area + "/not-found";
+		
+		return imagePath;
 	}
 }

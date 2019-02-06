@@ -1394,6 +1394,8 @@ code {
 	color: #aaa;
 }
 
+.dc-checkbox input[type="checkbox"] + label svg.icon-fas-check,
+.dc-radio input[type="radio"] + label svg.icon-fas-check,
 .dc-checkbox input[type="checkbox"] + label i.fa-check,
 .dc-radio input[type="radio"] + label i.fa-check {
 	display: none;
@@ -1410,11 +1412,15 @@ code {
 	color: white;
 }
 
+.dc-checkbox input[type="checkbox"]:checked + label svg.icon-fas-check,
+.dc-radio input[type="radio"]:checked + label svg.icon-fas-check,
 .dc-checkbox input[type="checkbox"]:checked + label i.fa-check,
 .dc-radio input[type="radio"]:checked + label i.fa-check {
 	display: inline;
 }
 
+.dc-checkbox input[type="checkbox"]:checked + label svg.icon-fas-square,
+.dc-radio input[type="radio"]:checked + label svg.icon-fas-circle,
 .dc-checkbox input[type="checkbox"]:checked + label i.fa-square,
 .dc-radio input[type="radio"]:checked + label i.fa-circle {
 	display: none;
@@ -2072,6 +2078,10 @@ input:focus + label.dc-input-button,
 		width: 10%;
 	}
 
+	.dc-input-15 {
+		width: 15%;
+	}
+
 	.dc-input-20 {
 		width: 20%;
 	}
@@ -2081,15 +2091,27 @@ input:focus + label.dc-input-button,
 	}
 
 	.dc-input-33 {
-		width: 33%;
+		width: 32%;
 	}
 
 	.dc-input-40 {
-		width: 40%;
+		width: 38%;
 	}
 
 	.dc-input-50 {
-		width: 50%;
+		width: 48%;
+	}
+
+	.dc-input-60 {
+		width: 58%;
+	}
+
+	.dc-input-70 {
+		width: 68%;
+	}
+
+	.dc-input-80 {
+		width: 78%;
 	}
 }
 

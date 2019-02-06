@@ -101,8 +101,8 @@ public class MenuWidget extends Base {
 							.with(Link.tag()
 									.withClass("dc-menu-open")
 									.attr("aria-label", OperationContext.getOrThrow().tr("_code_60000"))
-									.withAttribute("Icon", "fa-bars")
-									.withAttribute("IconSize", "2x")
+									.withAttribute("IconLibrary", "fas")
+									.withAttribute("IconName", "bars")
 							)
 			);
 			
@@ -172,8 +172,8 @@ public class MenuWidget extends Base {
 							.with(Link.tag()
 									.withClass("dc-menu-close")
 									.attr("aria-label", OperationContext.getOrThrow().tr("_code_60001"))
-									.withAttribute("Icon", "fa-chevron-up")
-									.withAttribute("IconSize", "2x")
+									.withAttribute("IconLibrary", "fas")
+									.withAttribute("IconName", "chevron-up")
 							)
 			);
 		}

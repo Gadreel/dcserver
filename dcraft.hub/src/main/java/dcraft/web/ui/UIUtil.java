@@ -470,49 +470,106 @@ public class UIUtil {
 			indexer.adjustScore(-bonus);
 		}
 	}
+	
+	static public String iconConvertOld(String old) {
+		if (StringUtil.isEmpty(old) || ! old.startsWith("fa-"))
+			return old;
+		
+		if ("fa-ellipsis-h".equals(old))
+			return "fas/ellipsis-h";
+		
+		if ("fa-upload".equals(old))
+			return "fas/upload";
+		
+		if ("fa-image".equals(old))
+			return "fas/image";
+		
+		if ("fa-plus".equals(old))
+			return "fas/plus";
+		
+		if ("fa-minus".equals(old))
+			return "fas/minus";
+		
+		if ("fa-question".equals(old))
+			return "fas/question";
+		
+		if ("fa-search".equals(old))
+			return "fas/search";
+		
+		if ("fa-calendar".equals(old))
+			return "far/calendar-alt";
+		
+		return "fas/circle";
+	}
+	
+	static public XElement requireSvgIcon(Base element, InstructionWork state, String path, String size) throws OperatingContextException{
+		String vb = requireIcon(element, state, path);
 
+		String id = path.replace('/', '-');
+		
+		return W3.tag("svg")
+				.withClass("icon-" + id, size, "svg-inline--fa fa5-w-12")
+				.attr("xmlns", "http://www.w3.org/2000/svg")
+				.attr("aria-hidden", "true")
+				.attr("role", "img")
+				.attr("viewBox", vb)
+				.with(W3.tag("use")
+						.attr("href", "#" + id)
+						.attr("xlink:href", "#" + id)
+				);
+	}
+	
+	static public XElement requireSvgIcon(Base element, InstructionWork state, String library, String name, String size) throws OperatingContextException{
+		return requireSvgIcon(element, state, library + "/" + name, size);
+	}
+	
 	static public String requireIcon(Base element, InstructionWork state, String library, String name) throws OperatingContextException {
+		return requireIcon(element, state, library + "/" + name);
+	}
+
+	static public String requireIcon(Base element, InstructionWork state, String path) throws OperatingContextException {
 		String vb = "0 0 512 512";
+		String id = path.replace('/', '-');
 
 		Base root = element.getRoot(state);
 
 		if (! (root instanceof Html)) {
-			Logger.warn("Require icon def failed: " + library + "-" + name);
+			Logger.warn("Require icon def failed: " + path);
 			return vb;
 		}
 
 		// more efficient, not looking up same icon multiple times
-		XElement icon = ((Html) root).getIconDef(library + "-" + name);
+		XElement icon = ((Html) root).getIconDef(id);
 
 		if (icon != null) {
 			vb = icon.attr("data-view-box");
 			return vb;
 		}
 
-		XElement res = OperationContext.getOrThrow().getSite().getXmlResource("www", "/icons/" + library + "/" + name + ".svg", null);
+		XElement res = OperationContext.getOrThrow().getSite().getXmlResource("www", "/icons/" + path + ".svg", null);
 
 		if (res != null) {
 			vb = res.attr("viewBox");
 
 			icon = W3.tag("g")
-					.attr("id", library + "-" + name)
+					.attr("id", id)
 					.attr("data-view-box", vb);
 
 			for (int n = 0; n < res.getChildCount(); n++) {
 				if (res.getChild(n) instanceof XElement) {
-					XElement path = res.getChildAsElement(n);
+					XElement pathel = res.getChildAsElement(n);
 
-					if (! path.hasNotEmptyAttribute("fill"))
-						path.attr("fill", "currentColor");
+					if (! pathel.hasNotEmptyAttribute("fill"))
+						pathel.attr("fill", "currentColor");
 
-					icon.with(path);
+					icon.with(pathel);
 				}
 			}
 
 			((Html) root).addIconDef(icon);
 		}
 		else {
-			Logger.warn("Require icon missing: " + library + "-" + name);
+			Logger.warn("Require icon missing: " + path);
 		}
 
 		return vb;

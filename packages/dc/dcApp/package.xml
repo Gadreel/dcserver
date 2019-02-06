@@ -66,6 +66,7 @@
 			<Tag Name="dcm.BannerWidget" Class="dcraft.web.ui.inst.cms.BannerWidget" />
 			<Tag Name="dcm.YouTubeWidget" Class="dcraft.web.ui.inst.cms.YouTubeWidget" />
 			<Tag Name="dcm.GalleryWidget" Class="dcraft.web.ui.inst.cms.GalleryWidget" />
+			<Tag Name="dcm.StoreGalleryWidget" Class="dcraft.web.ui.inst.cms.StoreGalleryWidget" />
 
 			<!-- TODO
 			<Tag Name="dcm.MediaWidget" Class="dcraft.web.ui.inst.cms.MediaWidget" />
@@ -290,7 +291,7 @@
 			<Site Id="Feeds" VaultClass="dcraft.filevault.FeedVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/feeds"  />
 			<Site Id="SiteFiles" VaultClass="dcraft.filevault.SiteVault" ReadBadges="Developer" WriteBadges="Developer" RootFolder="/"  />
 			<Tenant Id="StoreOrders" VaultClass="dcraft.filevault.FileStoreVault" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />
-			<Tenant Id="ManagedForms" VaultClass="dcraft.filevault.FileStoreVault" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />
+			<Tenant Id="ManagedForms" VaultClass="dcraft.filevault.ManagedFormVault" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />
 		</Vaults>
 	</Config>
 </Package>

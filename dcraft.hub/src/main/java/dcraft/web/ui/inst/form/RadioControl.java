@@ -4,8 +4,10 @@ import java.util.Map.Entry;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.script.work.InstructionWork;
+import dcraft.script.work.StackWork;
 import dcraft.util.HexUtil;
 import dcraft.script.inst.doc.Base;
+import dcraft.web.ui.UIUtil;
 import dcraft.web.ui.inst.W3;
 import dcraft.xml.XElement;
 
@@ -30,7 +32,7 @@ public class RadioControl extends Base {
 			grp.withAttribute("data-dcf-pattern", fld.getAttribute("Pattern"));
 	}
 	
-	static public XElement fromRadioField(CoreField fld, XElement input) {
+	static public XElement fromRadioField(InstructionWork state, CoreField fld, XElement input) throws OperatingContextException {
 		RadioControl ic = (input instanceof RadioControl) ? (RadioControl) input : new RadioControl();
 
 		ic.withAttribute("type", "radio");
@@ -59,24 +61,19 @@ public class RadioControl extends Base {
 			}
 		}
 		
+		XElement circle = UIUtil.requireSvgIcon(fld, state, "fas", "circle", "fa5-1x");
+		XElement check = UIUtil.requireSvgIcon(fld, state, "fas", "check", "fa5-1x");
+		
 		return W3.tag("div")
 				.withClass("dc-radio")
 				.with(ic)
 				.with(W3.tag("label")
 					.withClass("dc-input-button")
 					.withAttribute("for", ic.getAttribute("id"))
-					.with(W3.tag("i").withClass("fa fa-circle").withAttribute("aria-hidden", "true"))
-					.with(W3.tag("i").withClass("fa fa-check").withAttribute("aria-hidden", "true"))
+					.with(circle)
+					.with(check)
 					.withText(input.getAttribute("Label"))
 				);
-		
-		/*
-					<div class="dc-radio">
-						<input type="radio" id="comm1" name="CertInterest" value="No" />
-						<label for="comm1" class="dc-input-button"><i class="fa fa-circle" aria-hidden="true"></i> Not Interested</label>
-					</div>
-		 * 
-		 */
 	}
 	
 	static public RadioControl tag() {

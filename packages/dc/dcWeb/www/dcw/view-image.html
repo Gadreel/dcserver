@@ -33,14 +33,23 @@
 			-->
 
 			<dc.Link id="panDcwImageViewerClose" Click="onClose" style="position: absolute; top: 24px; right: 24px;" aria-label="close images">
-				<i class="fa fa-times fa-lg" style="font-size: 32px; background-color: rgba(0,0,0,0.50); color: white; border-radius: 22px; padding: 6px 4px; width: 26px; height: 26px;" aria-hidden="true" />
+				<dc.StackedIcon class="fa5-lg">
+					<Icon Library="fas" Name="circle" class="fa5-stack-2x" style="color: gray;" />
+					<Icon Library="fas" Name="times" class="fa5-stack-1x" style="color: white;" />
+				</dc.StackedIcon>
 			</dc.Link>
 
 			<dc.Link id="panDcwImageViewerLeft" Click="onLeft" style="position: absolute; top: 45%; left: 16px; display: none;" aria-label="previous image">
-				<i class="fa fa-arrow-left" style="font-size: 32px; background-color: rgba(0,0,0,0.50); color: white; border-radius: 22px; padding: 6px 4px; width: 32px; height: 31px;" aria-hidden="true" />
+				<dc.StackedIcon class="fa5-lg">
+					<Icon Library="fas" Name="circle" class="fa5-stack-2x" style="color: gray;" />
+					<Icon Library="fas" Name="arrow-left" class="fa5-stack-1x" style="color: white;" />
+				</dc.StackedIcon>
 			</dc.Link>
 			<dc.Link id="panDcwImageViewerRight" Click="onRight" style="position: absolute; top: 45%; right: 16px; display: none;" aria-label="next image">
-				<i class="fa fa-arrow-right" style="font-size: 32px; background-color: rgba(0,0,0,0.50); color: white; border-radius: 22px; padding: 6px 4px; width: 29px; height: 31px;" aria-hidden="true" />
+				<dc.StackedIcon class="fa5-lg">
+					<Icon Library="fas" Name="circle" class="fa5-stack-2x" style="color: gray;" />
+					<Icon Library="fas" Name="arrow-right" class="fa5-stack-1x" style="color: white;" />
+				</dc.StackedIcon>
 			</dc.Link>
 		</div>
 

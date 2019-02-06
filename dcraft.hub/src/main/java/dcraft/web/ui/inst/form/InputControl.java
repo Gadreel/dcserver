@@ -7,41 +7,12 @@ import dcraft.script.work.InstructionWork;
 import dcraft.util.RndUtil;
 import dcraft.util.StringUtil;
 import dcraft.script.inst.doc.Base;
+import dcraft.web.ui.UIUtil;
 import dcraft.web.ui.inst.W3;
 import dcraft.xml.XElement;
 
 public class InputControl extends Base {
-	static public Base fromGylph(XElement input) {
-		/*
-				<span class="dc-input-group-addon dc-addon-glyph"><i class="fa fa-star"></i></span>
-				<span class="dc-input-group-addon dc-addon-info">@designcraft.io</span>
-				<span class="dc-input-group-addon dc-addon-button dc-addon-glyph-button"><i class="fa fa-bell dc-valid-flag"></i></span>
-		 * 
-		 * 
-				<span class="dc-input-group-addon dc-addon-info"><i class="fa fa-square"></i></span>
-				<span class="dc-input-group-addon dc-addon-glyph dc-valid-flag"><i class="fa fa-circle"></i></span>
-				<input id="email" type="text" placeholder="Email"  />
-				<span class="dc-input-group-addon dc-addon-glyph"><i class="fa fa-star"></i></span>
-				<span class="dc-input-group-addon dc-addon-info">@designcraft.io</i></span>
-				<span class="dc-input-group-addon dc-addon-button dc-addon-glyph-button"><i class="fa fa-bell dc-valid-flag"></i></span>
-
-		*
-				<span class="dc-input-group-addon dc-addon-button"><i class="fa fa-square"></i></span>
-				<span class="dc-input-group-addon dc-addon-button"><i class="fa fa-circle"></i></span>
-				<span class="dc-input-group-addon dc-addon-button"><i class="fa fa-star"></i></span>
-				<span class="dc-input-group-addon dc-addon-button"><i class="fa fa-bell"></i></span>
-		*
-				<span class="dc-input-group-addon dc-addon-glyph">?</span>
-		*
-				<span class="dc-input-group-addon dc-addon-button dc-addon-glyph-button"><i class="fa fa-info-circle dc-invalid-hidden"></i><i class="fa fa-warning dc-valid-hidden dc-valid-flag"></i></span>
-		*
-	<Glyph Label="$" Icon="fa-info-circle" InvalidIcon="warning" Flag="true" />
-	<Input />
-	<Info Label="$" Icon="fa-info-circle" InvalidIcon="warning" Flag="true" />
-	<Button Label="$" Icon="bell" InvalidIcon="warning" Flag="true" Click="aaa" />
-		*
-		 */
-		
+	static public Base fromGylph(InstructionWork state, CoreField fld, XElement input) throws OperatingContextException {
 		W3 ret = W3.tag("span");
 
 		String gtype = input.getName();
@@ -49,8 +20,8 @@ public class InputControl extends Base {
 		ret.withClass("dc-input-group-addon");
 
 		String label = input.getAttribute("Label");
-		String icon = input.getAttribute("Icon");
-		String invicon = input.getAttribute("InvalidIcon");
+		String icon = UIUtil.iconConvertOld(input.getAttribute("Icon"));
+		String invicon = UIUtil.iconConvertOld(input.getAttribute("InvalidIcon"));
 		
 		if ("Glyph".equals(gtype)) {
 			ret.withClass("dc-addon-glyph");
@@ -89,12 +60,14 @@ public class InputControl extends Base {
 		if (input.getAttributeAsBooleanOrFalse("Flag"))
 			ret.withClass("dc-valid-flag");
 		
-		if (StringUtil.isNotEmpty(icon) && StringUtil.isNotEmpty(invicon))
+		if (StringUtil.isNotEmpty(icon) && StringUtil.isNotEmpty(invicon)) {
 			ret
-				.with(W3.tag("i").withAttribute("class", "dc-invalid-hidden fa fa-fw " + icon))
-				.with(W3.tag("i").withAttribute("class", "dc-valid-hidden dc-valid-flag fa fa-fw " + invicon));
-		else if (StringUtil.isNotEmpty(icon))
-			ret.with(W3.tag("i").withAttribute("class", "fa fa-fw " + icon));
+					.with(UIUtil.requireSvgIcon(fld, state, icon, "fa5-1x fa5-fw dc-invalid-hidden"))
+					.with(UIUtil.requireSvgIcon(fld, state, invicon, "fa5-1x fa5-fw dc-valid-hidden dc-valid-flag"));
+		}
+		else if (StringUtil.isNotEmpty(icon)) {
+			ret.with(UIUtil.requireSvgIcon(fld, state, icon, "fa5-1x fa5-fw"));
+		}
 		else if (StringUtil.isNotEmpty(label))
 			ret.withText(label);
 

@@ -6,6 +6,27 @@
 	<Require Script="/js/vendor/ace-1.1.8/ace.js" />
 
 	<dc.Body>
+		<dc.Style>
+#sectDepEscEdit {
+	position: absolute;
+	top: 17rem;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
+
+@media all and (min-width: 420px) {
+	#sectDepEscEdit {
+		top: 12rem;
+	}
+}
+
+@media all and (min-width: 660px) {
+	#sectDepEscEdit {
+		top: 10rem;
+	}
+}
+		</dc.Style>
 		<dc.PagePanel>
 			<dcf.FormButtons>
 			<!-- TODO create language selector -->
@@ -18,7 +39,7 @@
 			</dcf.FormButtons>
 
 			<!-- TODO create editor control, add Accessibility -->
-			<div id="sectDepEscEdit" style="position: absolute; top: 10rem; left: 0; right: 0; bottom: 0;" />
+			<div id="sectDepEscEdit" />
 		</dc.PagePanel>
 	</dc.Body>
 	<Function Name="Load">

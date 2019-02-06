@@ -64,22 +64,6 @@ public class Complete implements IStoredProc {
 
 		ThreadUtil.deliver(db, id, now);
 
-		String scriptpath = mform.getAttribute("Script", "/dcm/forms/event-form-submitted.dcs.xml");
-
-		// TODO use task queue instead
-		TaskHub.submit(Task.ofSubtask("ManagedForm submitted", "CMS")
-				.withTopic("Batch")
-				.withMaxTries(5)
-				.withTimeout(10)		// TODO this should be graduated - 10 minutes moving up to 30 minutes if fails too many times
-				.withParams(RecordStruct.record()
-						.with("Id", id)
-				)
-				.withScript(CommonPath.from(scriptpath)));
-		
-		Site site = OperationContext.getOrThrow().getSite();
-		String event = site.getAlias() + " - form submission completed: " + form + " - " + callback.getMessages().toPrettyString();
-		SlackUtil.serverEvent(null, event, null);
-
 		callback.returnEmpty();
 	}
 }

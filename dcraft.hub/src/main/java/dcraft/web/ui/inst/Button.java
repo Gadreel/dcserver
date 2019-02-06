@@ -5,6 +5,7 @@ import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.inst.doc.Base;
 import dcraft.util.StringUtil;
+import dcraft.web.ui.UIUtil;
 import dcraft.xml.XElement;
 
 public class Button extends Base {
@@ -38,11 +39,14 @@ public class Button extends Base {
 		
 		if (StringUtil.isNotEmpty(label))
 			this.withText(label).attr("dc-title", label);
-		else if (StringUtil.isNotEmpty(icon))
-			this.with(W3.tag("i").withAttribute("class", "fa " + icon)
-				.withAttribute("aria-hidden","true")
-			);
-
+		else if (StringUtil.isNotEmpty(icon)) {
+			if (icon.startsWith("fa-"))
+				this.with(W3.tag("i").withAttribute("class", "fa " + icon)
+						.withAttribute("aria-hidden", "true")
+				);
+			else
+				this.with(UIUtil.requireSvgIcon(this, state, icon, "1x"));
+		}
 
 		// Default, Primary, Selected (TODO Success, Info, Warning, Danger)
 		String scope = StackUtil.stringFromSource(state,"Scope", "Default").toLowerCase();

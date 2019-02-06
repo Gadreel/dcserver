@@ -41,6 +41,14 @@ public class UserContext extends RecordStruct {
 		return ctx;
 	}
 	
+	static public UserContext rootUser(Site site) {
+		UserContext ctx = new UserContext();
+		
+		ctx.clearToRoot(site.getTenant().getAlias(), site.getAlias());
+
+		return ctx;
+	}
+	
 	static public UserContext guestUser() {
 		return UserContext.guestUser("root", "root");
 	}

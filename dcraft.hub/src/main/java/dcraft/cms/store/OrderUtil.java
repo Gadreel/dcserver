@@ -30,6 +30,7 @@ import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.*;
 import dcraft.interchange.paypal.PayPalUtil;
 import dcraft.interchange.slack.SlackUtil;
+import dcraft.interchange.stripe.StripeUtil;
 import dcraft.interchange.ups.UpsUtil;
 import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
@@ -251,6 +252,31 @@ public class OrderUtil {
 					}
 				});
 			}
+			else if ("Stripe".equals(pmethod)) {
+				// TODO store order items as independent records? order audits? other fields/tables to fill in?
+				// put order into a thread and box
+				
+				BigDecimal amt = order.getFieldAsRecord("CalcInfo").getFieldAsDecimal("GrandTotal");
+				String token = order.getFieldAsRecord("PaymentInfo").getFieldAsString("Token1");
+				
+				StripeUtil.confirmCharge(pel.getAttribute("StripeAlternate"), amt, "usd", token,"order: " + refid, new OperationOutcomeRecord() {
+					@Override
+					public void callback(RecordStruct res) throws OperatingContextException {
+						OperationContext.getOrThrow().touch();
+
+						String status = "VerificationRequired";
+
+						if (! this.hasErrors() && ! this.isEmptyResult()) {
+							status = "AwaitingFulfillment";
+							upreq.withUpdateField("dcmPaymentId", this.getResult().getFieldAsString("id"));
+						}
+
+						upreq.withUpdateField("dcmStatus", status);
+
+						OrderUtil.postAuthStep(request, db, upreq, order, status, now, orderclean, this.getResult(), refid, callback);
+					}
+				});
+			}
 			else if ("PayPal".equals(pmethod)) {
 				// check that the PayPal record is present and matching in the payment thread
 				try (OperationMarker om2 = OperationMarker.create()) {
@@ -390,7 +416,9 @@ public class OrderUtil {
 				// TODO switch to queue local someday soon!
 				//TaskHub.queueLocalTask(Task.ofSubtask("Order placed trigger", "STORE")
 
-				TaskHub.submit(Task.ofSubtask("Order placed trigger", "STORE")
+				// needs to be in a separate context so it won't impact result code of current task
+				TaskHub.submit(Task.of(OperationContext.context(UserContext.rootUser(OperationContext.getOrThrow().getSite())))
+						.withTitle("Order placed trigger")
 						.withTopic("Batch")
 						.withMaxTries(5)
 						.withTimeout(10)		// TODO this should be graduated - 10 minutes moving up to 30 minutes if fails too many times
@@ -886,7 +914,7 @@ public class OrderUtil {
 		}
 
 		// TODO account for product discounts in taxcalc, apply discounts to the taxfree part first then reduce taxcalc by any remaining discount amt
-		BigDecimal taxtotal = taxcalc.get().multiply(taxat).setScale(2, RoundingMode.HALF_EVEN);
+		BigDecimal taxtotal = taxcalc.get().multiply(taxat).setScale(2, RoundingMode.HALF_UP);
 
 		if ((custinfo != null) && custinfo.getFieldAsBooleanOrFalse("TaxExempt") && sset.getAttributeAsBooleanOrFalse("EnableTaxExempt"))
 			taxtotal = BigDecimal.ZERO;

@@ -67,46 +67,11 @@ public class Panel extends Base {
 				
 				ret.withClass("dc-panel-header-btn");
 				
-				if (ret.hasNotEmptyAttribute("Icon"))
+				if (ret.hasNotEmptyAttribute("Icon") || ret.hasNotEmptyAttribute("IconName"))
 					ret.withClass("dc-panel-header-icon");
 
 				if (ret.hasEmptyAttribute("IconType"))
 					ret.withAttribute("IconType", "simple");
-				
-				/*
-				String label = btn.getAttribute("Label");
-				String icon = btn.getAttribute("Icon");
-				
-				String to = btn.getAttribute("To", "#");
-				String click = btn.getAttribute("Click");
-				String page = btn.getAttribute("Page");
-				
-				ret
-						.attr("href", StringUtil.isNotEmpty(page) ? page : to)
-						.attr("tabindex", "0")
-						.attr("role", "button");
-				
-				if (btn.hasEmptyAttribute("data-dc-enhance"))
-					ret
-							.attr("data-dc-enhance", "true")
-							.attr("data-dc-tag", "dc.Button");
-				
-				if (StringUtil.isNotEmpty(click))
-					ret.attr("data-dc-click", click);
-				else if (StringUtil.isNotEmpty(page))
-					ret.attr("data-dc-page", page);
-				else if (StringUtil.isNotEmpty(to))
-					ret.attr("data-dc-to", to);
-				
-				
-				if (StringUtil.isNotEmpty(icon))
-					ret.with(W3.tag("i").withAttribute("class", "fa fa-fw " + icon));
-				else if (StringUtil.isNotEmpty(label))
-					ret.withText(label);
-				
-				if (btn.hasNotEmptyAttribute("aria-label"))
-					ret.withAttribute("aria-label", btn.getAttribute("aria-label"));
-				*/
 				
 				nav.with(
 						W3.tag("li")

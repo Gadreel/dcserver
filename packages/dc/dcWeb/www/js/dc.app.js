@@ -2728,7 +2728,7 @@ dc.pui.Form.prototype = {
 				return;
 
 			if (asNew || iinfo.isChanged())
-				changes[name] = iinfo.getValue();
+				changes[iinfo.Field] = iinfo.getValue();
 		});
 
 		return changes;
@@ -2807,7 +2807,7 @@ dc.pui.Form.prototype = {
 		var form = this;
 
 		if (dc.util.String.isString(fld))
-			fld = $('#' + form.Id).find('div.dc-field[data-dcf-name=' + fld + ']');
+			fld = $('#' + form.Id).find('div.dc-field[data-dcf-mapname=' + fld + ']');
 
 		if (!fld)
 			return;
@@ -2819,8 +2819,8 @@ dc.pui.Form.prototype = {
 		};
 
 		// find all inputs in field and validate them
-		$(fld).find('*[data-dcf-name]').each(function() {
-			var mr = form.input($(this).attr('data-dcf-name')).validateInput();
+		$(fld).find('*[data-dcf-mapname]').each(function() {
+			var mr = form.input($(this).attr('data-dcf-mapname')).validateInput();
 
 			res.Inputs.push(mr);
 
@@ -3571,20 +3571,24 @@ dc.pui.controls.Input.prototype = {
 
 		var fname = $(node).attr('data-dcf-name');
 
-		if (!fname)
+		if (! fname)
 			return;
-
-		this.Field = fname;
-
-		form.Inputs[fname] = this;
-		form.InputOrder.push(fname);
 
 		var rec = $(node).attr('data-dcf-record');
 
 		if (! rec)
 			rec = 'Default';
 
+		// non-default records have the record name in the Input map
+		var fmname = (rec != 'Default') ? rec + '.' + fname : fname;
+
+		this.Field = fname;
 		this.Record = rec;
+
+		$(node).attr('data-dcf-mapname', fmname);
+
+		form.Inputs[fmname] = this;
+		form.InputOrder.push(fmname);
 
 		var dtype = $(node).attr('data-dcf-data-type');
 

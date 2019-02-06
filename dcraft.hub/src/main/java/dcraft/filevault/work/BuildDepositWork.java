@@ -16,8 +16,10 @@ import dcraft.filevault.Vault;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeEmpty;
+import dcraft.hub.op.UserContext;
 import dcraft.hub.resource.KeyRingResource;
 import dcraft.hub.resource.ResourceBase;
 import dcraft.log.Logger;
@@ -388,6 +390,38 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 					.then(ControlWork.dieOnError("Unable to upload deposit files"))
 					.then(buildstoremanifest)
 					.then(ControlWork.dieOnError("Unable to chain deposit files"))
+					.then(new IWork() {
+						@Override
+						public void run(TaskContext taskctx2) throws OperatingContextException {
+							RecordStruct manifestrec = params.getFieldAsRecord("Manifest");
+							
+							String type = manifestrec.getFieldAsString("Type");
+							
+							if ("Deposit".equals(type)) {
+								String vault = manifestrec.getFieldAsString("Vault");
+								String tenant = manifestrec.getFieldAsString("Tenant");
+								String site = manifestrec.getFieldAsString("Site");
+
+								TaskHub.submit(
+										Task.of(TaskContext.context(UserContext.rootUser(tenant, site)))
+											.withWork(new IWork() {
+												@Override
+												public void run(TaskContext taskctx3) throws OperatingContextException {
+													Vault v = taskctx3.getSite().getVault(vault);
+													
+													if (v != null)
+														v.afterDeposit(manifestrec);
+													
+													taskctx3.returnEmpty();
+												}
+											})
+								);
+							}
+							
+							taskctx2.returnEmpty();
+						}
+					})
+					.then(ControlWork.dieOnError("Unable to notify vault of deposit"))
 					.then(findnext);
 			
 			// TODO if global update the cloud DB and create an audit deposit - consider for Ignite

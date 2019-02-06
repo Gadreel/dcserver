@@ -53,7 +53,7 @@ public class StripeUtil {
 			con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 			
 			// switch to cents
-			String body = "amount=" + URLEncoder.encode(amount.multiply(BigDecimal.valueOf(100)).toPlainString(), "UTF-8")
+			String body = "amount=" + URLEncoder.encode(amount.multiply(BigDecimal.valueOf(100)).toBigInteger().toString(), "UTF-8")
 					+ "&currency=" + URLEncoder.encode(currency, "UTF-8")
 					+ "&source=" + URLEncoder.encode(token, "UTF-8")
 					+ "&description=" + URLEncoder.encode(desc, "UTF-8");

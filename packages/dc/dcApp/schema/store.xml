@@ -421,6 +421,9 @@
 			<Field Name="CardNumber" Type="dcTinyString" />
 			<Field Name="Expiration" Type="dcTinyString" />
 			<Field Name="Code" Type="dcTinyString" />
+
+			<Field Name="Token1" Type="dcString" />
+			<Field Name="Token2" Type="dcString" />
 			<!-- for tracking message -->
 			<Field Name="Uuid" Type="dcMetaString" />
 			<Field Name="PaymentTx" Type="dcMetaString" />

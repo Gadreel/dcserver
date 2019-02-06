@@ -25,6 +25,8 @@ import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
 import dcraft.script.work.StackWork;
 import dcraft.struct.CompositeParser;
+import dcraft.struct.ListStruct;
+import dcraft.struct.RecordStruct;
 import dcraft.task.IParentAwareWork;
 import dcraft.util.StringUtil;
 import org.threeten.extra.PeriodDuration;
@@ -149,6 +151,35 @@ public class DateStruct extends ScalarStruct {
 				else if (code.hasAttribute("Period")) {
 					PeriodDuration p = PeriodDuration.parse(StackUtil.stringFromElement(stack, code, "Period"));
 					this.value = this.value.minus(p);
+				}
+			}
+			catch (Exception x) {
+				Logger.error("Error doing " + op + ": " + x);
+			}
+			
+			return ReturnOption.CONTINUE;
+		}
+		else if ("Difference".equals(op)) {
+			try {
+				Struct sref = StackUtil.refFromElement(stack, code, "Value", true);
+				
+				if (sref instanceof DateStruct) {
+					DateStruct ref = (DateStruct) sref;
+					
+					PeriodDuration period = PeriodDuration.between(ref.value, this.value);
+					
+					String result = StackUtil.stringFromElement(stack, code, "Result");
+					
+					if (StringUtil.isNotEmpty(result)) {
+						RecordStruct res = RecordStruct.record();
+						
+						res
+								.with("Years", period.getPeriod().getYears())
+								.with("Months", period.getPeriod().getMonths())
+								.with("Days", period.getPeriod().getDays());
+						
+						StackUtil.addVariable(stack, result, res);
+					}
 				}
 			}
 			catch (Exception x) {

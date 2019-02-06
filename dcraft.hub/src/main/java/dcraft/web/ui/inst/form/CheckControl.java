@@ -6,6 +6,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.script.work.InstructionWork;
 import dcraft.util.HexUtil;
 import dcraft.script.inst.doc.Base;
+import dcraft.web.ui.UIUtil;
 import dcraft.web.ui.inst.W3;
 import dcraft.xml.XElement;
 
@@ -30,7 +31,7 @@ public class CheckControl extends Base {
 			grp.withAttribute("data-dcf-pattern", fld.getAttribute("Pattern"));
 	}
 	
-	static public XElement fromCheckField(CoreField fld, XElement input) {
+	static public XElement fromCheckField(InstructionWork state, CoreField fld, XElement input) throws OperatingContextException {
 		CheckControl ic = (input instanceof CheckControl) ? (CheckControl) input : new CheckControl();
 
 		ic.withAttribute("type", "checkbox");
@@ -58,6 +59,9 @@ public class CheckControl extends Base {
 				}
 			}
 		}
+
+		XElement square = UIUtil.requireSvgIcon(fld, state, "fas", "square", "fa5-1x");
+		XElement check = UIUtil.requireSvgIcon(fld, state, "fas", "check", "fa5-1x");
 		
 		return W3.tag("div")
 				.withClass("dc-checkbox")
@@ -65,18 +69,10 @@ public class CheckControl extends Base {
 				.with(W3.tag("label")
 					.withClass("dc-input-button")
 					.withAttribute("for", ic.getAttribute("id"))
-					.with(W3.tag("i").withClass("fa fa-square").withAttribute("aria-hidden", "true"))
-					.with(W3.tag("i").withClass("fa fa-check").withAttribute("aria-hidden", "true"))
+					.with(square)
+					.with(check)
 					.withText(input.getAttribute("Label"))
 				);
-		
-		/*
-				<div class="dc-checkbox">
-					<input type="checkbox" id="comm22" name="CertInterest2" value="Yes" />
-					<label for="comm22" class="dc-input-button"><i class="fa fa-square" aria-hidden="true"></i> <i class="fa fa-check" aria-hidden="true"></i>  Interested</label>
-				</div>
-		 * 
-		 */
 	}
 	
 	static public CheckControl tag() {

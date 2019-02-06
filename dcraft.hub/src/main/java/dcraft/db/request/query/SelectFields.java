@@ -18,6 +18,7 @@ package dcraft.db.request.query;
 
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
 
 /**
  * This is a collection of database fields to be selected by a query.  A selected
@@ -34,6 +35,12 @@ public class SelectFields {
 	static public SelectFields of(ISelectField... items) {
 		SelectFields fields = new SelectFields();
 		fields.addField(items);
+		return fields;
+	}
+
+	static public SelectFields of(ListStruct defs) {
+		SelectFields fields = new SelectFields();
+		fields.fields = defs;
 		return fields;
 	}
 
@@ -78,11 +85,27 @@ public class SelectFields {
 		return this;
 	}
 	
+	public SelectFields with(Struct field) {
+		this.fields.withItem(field);
+		
+		return this;
+	}
+	
 	/**
 	 * @param field name of foreign key field
 	 * @param name display (return) name
 	 */
 	public SelectFields with(String field, String name) {
+		SelectField sub = new SelectField()
+			.with(field)
+			.withName(name);
+		
+		this.fields.withItem(sub.getParams());
+		
+		return this;
+	}
+	
+	public SelectFields withAs(String name, String field) {
 		SelectField sub = new SelectField()
 			.with(field)
 			.withName(name);

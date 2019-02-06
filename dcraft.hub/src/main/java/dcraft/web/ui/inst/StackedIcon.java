@@ -32,7 +32,7 @@ public class StackedIcon extends Base {
 
 			icon
 					.attr("class", "dc-icon-stack svg-inline--fa fa5-w-12 " + icon.getAttribute("class", "")
-							+ " icon-" + library + "-" + icon)
+							+ " icon-" + library + "-" + name)
 					.attr("xmlns", "http://www.w3.org/2000/svg")
 					.attr("aria-hidden", "true")
 					.attr("role", "img")

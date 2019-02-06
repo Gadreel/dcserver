@@ -36,7 +36,7 @@ public class MultiInputField extends CoreField {
 			String ename = el.getName();
 			
 			if ("Glyph".equals(ename) || "Info".equals(ename) || "Button".equals(ename)) {
-				grp.with(InputControl.fromGylph(el));
+				grp.with(InputControl.fromGylph(state, this, el));
 			}
 			else if ("Input".equals(ename)) {
 				grp.with(InputControl.fromField(this, el));

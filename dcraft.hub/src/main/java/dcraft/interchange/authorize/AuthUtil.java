@@ -44,10 +44,9 @@ public class AuthUtil {
 			return;
 		}
 
-		String lid = auth.getAttribute("LoginId");
+		String authid = auth.getAttribute("LoginId");
 		String key = auth.getAttribute("TransactionKey");
 
-		String authid = ApplicationHub.getClock().getObfuscator().decryptHexToString(lid);
 		String authkey = ApplicationHub.getClock().getObfuscator().decryptHexToString(key);
 
 		boolean live = auth.getAttributeAsBooleanOrFalse("Live");
@@ -58,11 +57,13 @@ public class AuthUtil {
 		RecordStruct shipinfo = order.getFieldAsRecord("ShippingInfo");	// not required
 		RecordStruct calcinfo = order.getFieldAsRecord("CalcInfo");	// not required in schema
 
+		/*
 		if (paymentinfo.isFieldEmpty("CardNumber") || paymentinfo.isFieldEmpty("Expiration") || paymentinfo.isFieldEmpty("Code")) {
 			Logger.error("Missing payment details.");
 			callback.returnEmpty();
 			return;
 		}
+		*/
 		
 		if (billinginfo == null) {
 			Logger.error("Missing billing details.");
@@ -92,21 +93,30 @@ public class AuthUtil {
 	    BigDecimal ship = calcinfo.getFieldAsDecimal("ShipTotal");
 	    BigDecimal total = calcinfo.getFieldAsDecimal("GrandTotal");
 		
+	    XElement payel = null;
+	    
+	    if (paymentinfo.isNotFieldEmpty("CardNumber")) {
+	    	payel = XElement.tag("creditCard")
+					.with(
+							XElement.tag("cardNumber").withText(paymentinfo.getFieldAsString("CardNumber")),
+							XElement.tag("expirationDate").withText(paymentinfo.getFieldAsString("Expiration")),
+							XElement.tag("cardCode").withText(paymentinfo.getFieldAsString("Code"))
+					);
+		}
+		else if (paymentinfo.isNotFieldEmpty("Token1")) {
+			payel = XElement.tag("opaqueData")
+					.with(
+							XElement.tag("dataDescriptor").withText(paymentinfo.getFieldAsString("Token1")),
+							XElement.tag("dataValue").withText(paymentinfo.getFieldAsString("Token2"))
+					);
+		}
+		
 	    XElement txreq = XElement.tag("transactionRequest")
 				.with(
 					XElement.tag("transactionType").withText("authCaptureTransaction"),		// or authOnlyTransaction
 					XElement.tag("amount").withText(new DecimalFormat("0.00").format(total)),
-					XElement.tag("payment")
-						.with(
-							XElement.tag("creditCard")
-								.with(
-									XElement.tag("cardNumber").withText(paymentinfo.getFieldAsString("CardNumber")),
-									XElement.tag("expirationDate").withText(paymentinfo.getFieldAsString("Expiration")),
-									XElement.tag("cardCode").withText(paymentinfo.getFieldAsString("Code"))
-								)
-							)
-
-					);
+					XElement.tag("payment").with(payel)
+				);
 	    
 		ListStruct items = order.getFieldAsList("Items");
 		
@@ -260,6 +270,8 @@ public class AuthUtil {
 			con.setRequestProperty("Content-Type", "text/xml");
 	 
 			String body = root.toString();
+		
+			//System.out.println("I: " + body);
 
 			// Send post request
 			con.setDoOutput(true);
@@ -273,6 +285,8 @@ public class AuthUtil {
 			if (responseCode == 200) {
 				// parse and close response stream
 				XElement resp = XmlReader.parse(con.getInputStream(), false, true);
+				
+				//System.out.println("X: " + resp.toPrettyString());
 
 				if (resp == null) {
 					Logger.error("Error processing payment: Gateway sent an incomplete response.");

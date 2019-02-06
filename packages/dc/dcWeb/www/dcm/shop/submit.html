@@ -3,8 +3,24 @@
 		<Tr Locale="en" Value="Placing Order" />
 	</Meta>
 
+	<dcs.CatalogSettings Id="CMS-Store" Result="StoreSettings" />
+
+	<dcs.Var Name="PaymentMethod" Type="String" SetTo="{$StoreSettings.Payment.0.@Method}" />
+
+	<dcs.CatalogSettings Id="CMS-{$PaymentMethod}" Result="GatewaySettings" />
+
 	<dc.Body>
 		<dc.PagePanel>
+			<!--
+			<p>
+				Method: {$PaymentMethod}
+			</p>
+
+			<p>
+				Live: {$GatewaySettings.@Live}
+			</p>
+			-->
+
 			<p id="sectProcessMessage">
 				Please wait while the order is placed.
 
@@ -42,6 +58,14 @@
 
 	<Function Name="Load"><![CDATA[
 				var page = this;
+
+				dc.handler.payments = {
+					method: '{$PaymentMethod}',
+					live: {$GatewaySettings.@Live|tf:true,false},
+					clientKey: '{$GatewaySettings.@ClientPublicKey}',
+					apiLoginID: '{$GatewaySettings.@LoginId}',
+					publishKey: '{$GatewaySettings.@PublishKey}'
+				};
 
 				dc.cms.cart.Cart.submit(function(id, resp) {
 					$('#sectProcessMessage').empty();

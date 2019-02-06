@@ -232,6 +232,11 @@ public class JsonPrinter extends XmlToJsonPrinterOld {
 				prt.setFormatted(false);
 				prt.setOut(this.jsb.startStreamValue());
 				
+				XElement svg = doc.selectFirst("body/svg");
+				
+				if (svg != null)
+					prt.print(svg, 0, body);
+				
 				for (XNode cnode : body.getChildren())
 					prt.print(cnode, 0, body);
 				

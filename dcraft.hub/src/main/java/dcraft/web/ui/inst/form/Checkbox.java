@@ -38,7 +38,7 @@ public class Checkbox extends CoreField {
 		//this.withAttribute("Value", "true");	// always true if checked
 		this.withAttribute("DataType", "Boolean");
 		
-		grp.with(CheckControl.fromCheckField(this, this));
+		grp.with(CheckControl.fromCheckField(state,this, this));
 		
 		this.with(grp);
 	}

@@ -25,8 +25,8 @@ public class Label extends CoreField {
 	public void addControl(InstructionWork state) throws OperatingContextException {
 		if (Struct.objectToBooleanOrFalse(this.fieldinfo.getAttribute("ValidateButton")))
 			this.fieldinfo.with(W3.tag("Button")
-				.withAttribute("Icon", "fa-info-circle")
-				.withAttribute("InvalidIcon", "fa-warning")
+				.withAttribute("Icon", "fa/circle")
+				.withAttribute("InvalidIcon", "fas/exclamation-triangle")
 				.withAttribute("Flag", "true")
 				.withAttribute("data-dc-enhance", "true")
 				.withAttribute("data-dc-tag", "dcf.ValidateButton")
@@ -42,7 +42,7 @@ public class Label extends CoreField {
 			String ename = el.getName();
 			
 			if ("Glyph".equals(ename) || "Info".equals(ename) || "Button".equals(ename)) {
-				curr.add(InputControl.fromGylph(el));
+				curr.add(InputControl.fromGylph(state, this, el));
 			}
 			else if ("Input".equals(ename)) {
 				input = InputControl.fromField(this, el);

@@ -416,13 +416,13 @@ public class FileUtil {
 			            {
 			                Path targetdir = target.resolve(source.relativize(dir));
 			                
-			                if (Files.notExists(target)) {
-			                	Files.createDirectories(target);
+			                if (Files.notExists(targetdir)) {
+			                	Files.createDirectories(targetdir);
 							}
-							else if (! Files.isDirectory(target)) {
+							else if (! Files.isDirectory(targetdir)) {
 			                	// move overrides current content
-								Files.delete(target);
-								Files.createDirectories(target);
+								Files.delete(targetdir);
+								Files.createDirectories(targetdir);
 							}
 			                
 			                return FileVisitResult.CONTINUE;

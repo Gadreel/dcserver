@@ -226,6 +226,8 @@ abstract public class Vault {
 		return null;
 	}
 	
+	public void afterDeposit(RecordStruct manifest) throws OperatingContextException { }
+	
 	/*
 	 * ================ programming points ==================
 	 */

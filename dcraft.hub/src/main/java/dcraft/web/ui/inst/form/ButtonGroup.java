@@ -26,27 +26,12 @@ public class ButtonGroup extends CoreField {
 				Compact="true"
 			>
 				<Button Icon="square" Label="nnn" Click="aaa" />
-				<Button Icon="cricle" />
+				<Button Icon="circle" />
 				<Button Icon="star" />
 				<Button Icon="bell" />
 			</dcf.ButtonGroup>
 		 * 
-		 * 
-			<div class="dc-control dc-input-group">
-				<span class="dc-input-group-addon dc-addon-button"><i class="fa fa-square"></i></span>
-				<span class="dc-input-group-addon dc-addon-button"><i class="fa fa-circle"></i></span>
-				<span class="dc-input-group-addon dc-addon-button"><i class="fa fa-star"></i></span>
-				<span class="dc-input-group-addon dc-addon-button"><i class="fa fa-bell"></i></span>
-			</div>
-
-			<div class="dc-control dc-button-group">
-				<span class="dc-input-group-addon dc-addon-button"><i class="fa fa-square"></i></span>
-				<span class="dc-input-group-addon dc-addon-button"><i class="fa fa-circle"></i></span>
-				<span class="dc-input-group-addon dc-addon-button"><i class="fa fa-star"></i></span>
-				<span class="dc-input-group-addon dc-addon-button"><i class="fa fa-bell"></i></span>
-			</div>
-		 * 
-		 * 
+		 
 		 * 
 		 */
 		
@@ -58,7 +43,7 @@ public class ButtonGroup extends CoreField {
 			String ename = el.getName();
 			
 			if ("Glyph".equals(ename) || "Info".equals(ename) || "Button".equals(ename)) {
-				Base ic = InputControl.fromGylph(el);
+				Base ic = InputControl.fromGylph(state, this, el);
 				
 				// not helpful in this context
 				ic.withoutClass("dc-addon-glyph-button");

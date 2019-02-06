@@ -31,7 +31,7 @@ public class HorizCheckGroup extends CoreField {
 		CheckControl.enhanceField(this, grp);
 		
 		for (XElement el : this.fieldinfo.selectAll("Checkbox"))
-			grp.with(CheckControl.fromCheckField(this, el));
+			grp.with(CheckControl.fromCheckField(state,this, el));
 		
 		this.with(grp);
 	}
