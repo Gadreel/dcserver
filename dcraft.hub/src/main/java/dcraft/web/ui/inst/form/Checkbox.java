@@ -24,7 +24,7 @@ public class Checkbox extends CoreField {
 			.withClass("dc-control");
 		
 		grp
-			.withAttribute("id", this.fieldid)
+			.withAttribute("id", "ctrl" + this.fieldid)
 			.withAttribute("data-dc-enhance", "true")
 			.withAttribute("data-dc-tag", this.getName());
 		

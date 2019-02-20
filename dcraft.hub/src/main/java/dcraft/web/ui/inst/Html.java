@@ -28,9 +28,7 @@ import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
 import dcraft.script.work.*;
 import dcraft.script.inst.doc.Base;
-import dcraft.struct.FieldStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.struct.builder.JsonStreamBuilder;
 import dcraft.struct.scalar.BooleanStruct;
 import dcraft.struct.scalar.StringStruct;
@@ -40,6 +38,7 @@ import dcraft.util.Memory;
 import dcraft.util.StringUtil;
 import dcraft.util.io.OutputWrapper;
 import dcraft.web.ui.JsonPrinter;
+import dcraft.web.ui.UIUtil;
 import dcraft.xml.XElement;
 import dcraft.xml.XNode;
 import dcraft.xml.XRawText;
@@ -599,6 +598,21 @@ $(document).ready(function() {
 
 		blockWork.setCurrEntry(((Instruction) head).createStack(state));
 		return true;
+	}
+
+	@Override
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
+		if ("Require".equals(code.getName())) {
+			XElement copy = code.deepCopy();
+
+			UIUtil.cleanDocReferences(stack, copy);
+
+			this.add(copy);
+
+			return ReturnOption.CONTINUE;
+		}
+
+		return super.operation(stack, code);
 	}
 
 	@Override

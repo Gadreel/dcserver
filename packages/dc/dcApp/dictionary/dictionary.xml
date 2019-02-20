@@ -24,6 +24,13 @@
 		<Entry Token="dcwFormOptions" Value="Form options" />
 		<Entry Token="dcwTagSocialIcon" Value="Visit us on" />
 
+		<Entry Token="dcwFormEmail" Value="Email" />
+		<Entry Token="dcwFormEmailHint" Value="Email or username" />
+		<Entry Token="dcwFormPassword" Value="Password" />
+		<Entry Token="dcwFormSignUp" Value="Sign Up for Account" />
+		<Entry Token="dcwFormResetPassword" Value="Reset Password" />
+		<Entry Token="dcwFormSignIn" Value="Sign In" />
+
 		<Entry Token="_enum_dcmOrderStatusEnum_Pending" Value="Pending" />
 		<Entry Token="_enum_dcmOrderStatusEnum_AwaitingPayment" Value="Awaiting Payment" />
 		<Entry Token="_enum_dcmOrderStatusEnum_AwaitingFulfillment" Value="Awaiting Fulfillment" />
@@ -66,6 +73,13 @@
 		<Entry Token="dcwDialogClose" Value="Cerrar cuadro de diálogo" />
 		<Entry Token="dcwFormOptions" Value="Opciones de forma" />
 		<Entry Token="dcwTagSocialIcon" Value="Visítanos en" />
+
+		<Entry Token="dcwFormEmail" Value="Correo electrónico" />
+		<Entry Token="dcwFormEmailHint" Value="correo electrónico ó nombre de usuario" />
+		<Entry Token="dcwFormPassword" Value="Contraseña" />
+		<Entry Token="dcwFormSignUp" Value="Crea una cuenta" />
+		<Entry Token="dcwFormResetPassword" Value="Restaurar Contraseña" />
+		<Entry Token="dcwFormSignIn" Value="Iniciar Sesión" />
 	</Locale>
 
 	<Locale Id="hmn">

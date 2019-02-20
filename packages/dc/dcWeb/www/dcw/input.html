@@ -1,0 +1,61 @@
+<dc.Html Title="{$_Tr.dcwDialogMessage}">
+	<dc.Body>
+		<dc.PagePanel id="panDcwAlert">
+			<div id="panDcwMessage" />
+
+			<dcf.Form Name="SimpleInput">
+				<dcf.Text Name="Value" Label="Value" />
+
+				<dcf.FormButtons Hint="{$_Tr.dcwFormOptions}">
+					<dc.Button Click="DoAccept" Label="Accept" aria-label="Accept input" />
+					<dc.Button Click="onBack" Label="{$_Tr.dcwPageClose}" aria-label="{$_Tr.dcwDialogClose}" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load">
+				var entry = this;
+
+				if (entry.Params.Title)
+					entry.callTagFunc('#panDcwAlert', 'setTitle', entry.Params.Title);
+
+				if (entry.Params.Label)
+					entry.form().query('label').text(entry.Params.Label + ':');
+
+				if (entry.Params.Message)
+					$('#panDcwMessage').html(entry.Params.Message);
+	</Function>
+	<Function Name="LoadRecord" Params="e">
+				var entry = this;
+
+				if (entry.Params.Value)
+					e.Data = {
+						Value: entry.Params.Value
+					};
+	</Function>
+	<Function Name="DoAccept">
+				var entry = this;
+				var value = entry.form().getValue('Value');
+
+				entry.Layer.back();
+
+				if (entry.Params.Callback)
+					entry.Params.Callback.call(entry, value);
+	</Function>
+	<Function Name="onBack">
+				var entry = this;
+
+				entry.Layer.back();
+
+				if (entry.Params.Callback)
+					entry.Params.Callback.call(entry);
+	</Function>
+	<Function Name="onClose">
+				var entry = this;
+
+				entry.Layer.close();
+
+				if (entry.Params.Callback)
+					entry.Params.Callback.call(entry);
+	</Function>
+</dc.Html>

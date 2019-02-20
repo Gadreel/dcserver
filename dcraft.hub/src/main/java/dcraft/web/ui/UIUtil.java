@@ -23,16 +23,14 @@ import dcraft.script.inst.doc.Base;
 import dcraft.script.work.InstructionWork;
 import dcraft.struct.*;
 import dcraft.struct.scalar.BooleanStruct;
-import dcraft.task.IWork;
-import dcraft.task.Task;
-import dcraft.task.TaskContext;
-import dcraft.task.TaskHub;
+import dcraft.task.*;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.web.DateParser;
 import dcraft.web.WebController;
 import dcraft.web.md.MarkdownUtil;
 import dcraft.web.ui.inst.*;
+import dcraft.xml.XComment;
 import dcraft.xml.XElement;
 import dcraft.xml.XNode;
 import dcraft.xml.XText;
@@ -284,6 +282,8 @@ public class UIUtil {
 				.with("PageClass", pathclass);
 
 		wctrl.addVariable("Page", page);
+
+		wctrl.addVariable("_Page", script.getXml());
 
 		return script.toWork();
 	}
@@ -573,5 +573,33 @@ public class UIUtil {
 		}
 
 		return vb;
+	}
+
+	static public void cleanDocReferences(IParentAwareWork stack, XElement src) throws OperatingContextException {
+		if (src.hasAttributes()) {
+			for (String key : src.getAttributes().keySet()) {
+				String value = src.getAttribute(key);
+				value = StackUtil.resolveValueToString(stack, value, true);
+				src.setAttribute(key, value);
+			}
+		}
+
+		if (src.hasChildren()) {
+			for (XNode node : src.getChildren()) {
+				if (node instanceof XText) {
+					String value = ((XText) node).getValue();
+					value = StackUtil.resolveValueToString(stack, value, true);
+					((XText) node).setValue(value);
+				}
+				else if (node instanceof XComment) {
+					String value = ((XComment) node).getValue();
+					value = StackUtil.resolveValueToString(stack, value, true);
+					((XComment) node).setValue(value);
+				}
+				else if (node instanceof XElement) {
+					UIUtil.cleanDocReferences(stack, (XElement) node);
+				}
+			}
+		}
 	}
 }

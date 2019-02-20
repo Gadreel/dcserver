@@ -34,6 +34,14 @@ public class Link extends Base {
 		String icon = StackUtil.stringFromSource(state,"Icon");		// TODO old approach, remove after migration of all icon links
 		String iconLibrary = StackUtil.stringFromSource(state,"IconLibrary");
 		String iconName = StackUtil.stringFromSource(state,"IconName");
+		
+		// temp fix, eventually switch all to use lib/icon and clean up this code
+		if (StringUtil.isNotEmpty(icon) && icon.contains("/")) {
+			String[] iparts = icon.split("/");
+			iconLibrary = iparts[0];
+			iconName = iparts[1];
+			icon = null;
+		}
 
 		// square, circle, none/empty, simple
 		String icontype = StackUtil.stringFromSource(state,"IconType", "fa-square").toLowerCase();   // TODO set to `standard` as default after migration above

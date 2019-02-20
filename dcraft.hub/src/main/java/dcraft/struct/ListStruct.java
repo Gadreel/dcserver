@@ -589,6 +589,15 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 			this.withItem(sref);
 			return ReturnOption.CONTINUE;
 		}
+		else if ("AddAll".equals(code.getName())) {
+			Struct sref = StackUtil.refFromElement(stack, code, "Value", true);
+			if (sref instanceof ListStruct)
+				this.withCollection((ListStruct) sref);
+			else
+				Logger.error("Unable to add to list, invalid data type.");
+
+			return ReturnOption.CONTINUE;
+		}
 		else if ("RemoveItem".equals(code.getName())) {
 			long idx = StackUtil.intFromElement(stack, code, "Index", -1);
 			

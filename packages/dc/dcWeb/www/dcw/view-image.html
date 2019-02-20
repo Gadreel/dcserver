@@ -94,6 +94,8 @@
 
 			var view = entry.Store.View = entry.Params.View;
 
+			this.callPageFunc('SetSizes');
+
 			if (dc.handler && dc.handler.tags && dc.handler.tags.ViewImage && dc.handler.tags.ViewImage.init)
 				dc.handler.tags.ViewImage.init(entry, $('#panDcwImageViewer'), entry.Store.View);
 
@@ -296,6 +298,13 @@
 
 			if (view.Images.length - 1 > view.StartPos)
 				$('#panDcwImageViewerRight').show();
+
+			if (view.Images[view.StartPos].Source) {
+				entry.Store.SelImg = view.Images[view.StartPos].Source;
+				entry.callPageFunc('PrepImage');
+				dc.pui.Loader.requestFrame();
+				return;
+			}
 
 			var vname = view.Variant ? view.Variant : 'full';
 

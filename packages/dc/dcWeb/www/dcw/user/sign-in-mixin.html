@@ -5,8 +5,8 @@
 		</dcs.With>
 
 		<dcf.Form Name="SignIn">
-			<dcf.Text Name="Username" Label="Email" placeholder="email or username" Required="true" />
-			<dcf.Password Name="Password" Label="Password" Required="true" />
+			<dcf.Text Name="Username" Label="{$_Tr.dcwFormEmail}" placeholder="{$_Tr.dcwFormEmailHint}" Required="true" />
+			<dcf.Password Name="Password" Label="{$_Tr.dcwFormPassword}" Required="true" />
 
 			<dcs.If Target="$UserConfig.@SignInRemember" Equal="true">
 				<dc.Out>
@@ -17,11 +17,11 @@
 			<dcf.FormButtons>
 				<dcs.If Target="$UserConfig.@SignUpEnabled" Equal="true">
 					<dc.Out>
-						<dc.Button Label="Sign Up for Account" Click="onSignUp" />
+						<dc.Button Label="{$_Tr.dcwFormSignUp}" Click="onSignUp" />
 					</dc.Out>
 				</dcs.If>
-				<dc.Button Label="Reset Password" Click="onRecover" />
-				<dcf.SubmitButton Label="Sign In" />
+				<dc.Button Label="{$_Tr.dcwFormResetPassword}" Click="onRecover" />
+				<dcf.SubmitButton Label="{$_Tr.dcwFormSignIn}" />
 			</dcf.FormButtons>
 		</dcf.Form>
 	</dc.Fragment>

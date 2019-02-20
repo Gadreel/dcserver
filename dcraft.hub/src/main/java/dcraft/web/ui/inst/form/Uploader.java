@@ -3,6 +3,7 @@ package dcraft.web.ui.inst.form;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.InstructionWork;
+import dcraft.web.ui.UIUtil;
 import dcraft.web.ui.inst.W3;
 import dcraft.xml.XElement;
 
@@ -54,6 +55,10 @@ public class Uploader extends CoreField {
 		RadioControl.enhanceField(this, input);
 
 		this.with(grp);
+		
+		UIUtil.requireIcon(this, state, "fas/times");
+		UIUtil.requireIcon(this, state, "fas/pencil-alt");
+		UIUtil.requireIcon(this, state, "fas/eye");
 		
 		/*
 				<dcf.Uploader Label="Files" Name="Attachments" />

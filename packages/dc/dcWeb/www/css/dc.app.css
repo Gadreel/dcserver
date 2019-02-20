@@ -1613,7 +1613,7 @@ input:focus + label.dc-input-button,
 	background-size: 2rem;
 }
 
-.dc-uploader-list-area.dc-message * {
+.dc-uploader.dragenter .dc-uploader-list-area.dc-message * {
 	pointer-events: none;
 }
 

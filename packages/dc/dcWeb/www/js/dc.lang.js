@@ -362,7 +362,7 @@ var dc = {
 				return moment.utc(z, 'YYYYMMDDTHHmmssSSSZ', true);
 			},
 			formatZMomentLocal: function(m) {
-				if (!z)
+				if (!m)
 					return '';
 
 				return m.local().format('MMM Do YYYY, h:mm:ss a Z');

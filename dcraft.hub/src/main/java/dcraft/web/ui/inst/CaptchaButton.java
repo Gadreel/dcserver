@@ -31,6 +31,7 @@ public class CaptchaButton extends Base {
 		String label = StackUtil.stringFromSource(state,"Label");
 		String icon = StackUtil.stringFromSource(state,"Icon");
 		String click = StackUtil.stringFromSource(state,"Click");
+		String clickprep = StackUtil.stringFromSource(state,"ClickPrep");
 		String action = StackUtil.stringFromSource(state,"Action", "default");
 
 		this
@@ -51,6 +52,9 @@ public class CaptchaButton extends Base {
 
 		if (StringUtil.isNotEmpty(click))
 			this.withAttribute("data-dc-click", click);
+
+		if (StringUtil.isNotEmpty(clickprep))
+			this.withAttribute("data-dc-click-prep", clickprep);
 
 		this.withAttribute("data-dc-action", action);
 

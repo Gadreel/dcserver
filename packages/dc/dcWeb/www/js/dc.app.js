@@ -404,6 +404,7 @@ dc.pui.layer.Main.prototype.loadPageAdv = function(options) {
 dc.pui.layer.Main.prototype.initPage = function() {
 	var entry = new dc.pui.PageEntry({
 		Name: window.location.pathname,
+		Href: window.location.href,
 		Layer: this
 	});
 
@@ -451,7 +452,10 @@ dc.pui.layer.Main.prototype.enhancePage = function(firstload) {
 };
 
 dc.pui.layer.Main.prototype.refreshPage = function() {
-	window.location.reload(true);
+	var layer = this;
+	var entry = layer.Current;
+
+	window.location.href = entry.Href;
 };
 
 
@@ -1276,6 +1280,10 @@ dc.pui.Popup = {
 
 	confirm: function(msg, callback, title) {
 		dc.pui.Alert.loadPage('/dcw/confirm', { Message: msg, Callback: callback, Title: title })
+	},
+
+	input: function(msg, callback, title, label, value) {
+		dc.pui.Alert.loadPage('/dcw/input', { Message: msg, Callback: callback, Title: title, Label: label, Value: value })
 	},
 
 	menu: function(menu) {
@@ -3031,7 +3039,16 @@ dc.pui.Tags = {
 				if (! $(node).hasClass('pure-button-disabled') && ! dc.pui.Apps.busyCheck()) {
 					entry.LastFocus = $(node);
 
-					$(node).addClass('pure-button-disabled');
+					var clickprep = $(node).attr('data-dc-click-prep');
+
+					if (clickprep) {
+						var flagok = entry.callPageFunc(clickprep, e, ctrl);
+
+						if (! flagok) {
+							$(node).removeClass('pure-button-disabled');
+							return;
+						}
+					}
 
 					grecaptcha.ready(function() {
 						grecaptcha
@@ -4119,6 +4136,16 @@ dc.pui.controls.Uploader.prototype.init = function(entry, node) {
 			e.preventDefault();
 			e.stopPropagation();
 		});
+
+	var uplist = upctrl.find('.dc-uploader-listing');
+
+	uplist.dcappend(
+		$('<table>')
+			.addClass('dc-table-break-wide dc-table dc-table-reflow dc-table-stripe')
+			.dcappend(
+				$('<tbody>')
+			)
+	);
 };
 
 dc.pui.controls.Uploader.prototype.setValue = function(values) {
@@ -4127,6 +4154,21 @@ dc.pui.controls.Uploader.prototype.setValue = function(values) {
 
 dc.pui.controls.Uploader.prototype.getValue = function() {
 	return this.Values;
+};
+
+dc.pui.controls.Uploader.prototype.remove = function(pos) {
+	this.Values.splice(pos, 1);
+	this.Files.splice(pos, 1);
+
+	$('#fld' + this.Id + ' .dc-uploader-listing tbody tr').eq(pos).remove();
+};
+
+dc.pui.controls.Uploader.prototype.renameFile = function(pos, fname) {
+	fname = dc.util.File.toCleanFilename(fname);
+
+	this.Values[pos] = fname;
+
+	$('#fld' + this.Id + ' .dc-uploader-listing tbody tr').eq(pos).find('td').eq(0).text(fname);
 };
 
 dc.pui.controls.Uploader.prototype.removeAll = function() {
@@ -4189,17 +4231,96 @@ dc.pui.controls.Uploader.prototype.onAfterSave = function(e) {
 };
 
 dc.pui.controls.Uploader.prototype.addFiles = function(values) {
+	var ctrl = this;
+
 	for (var i = 0; i < values.length; i++) {
 		var file = values[i];
 
 		var fname = dc.util.File.toCleanFilename(file.name);
 
-		this.Files.push(file);
-		this.Values.push(fname);
+		ctrl.Files.push(file);
+		ctrl.Values.push(fname);
 
-		var $ctrl = $('<div class="dc-uploader-entry">' + fname + '</div>');
+		var $actions = $('<td>').append(
+			$('<a>')
+				.attr('href', '#')
+				.attr('aria-label', 'edit name')
+				.dcappend(dc.util.Icon.use('fas-pencil-alt')
+					.addClass('fa5-lg')
+				)
+				.click(function(e) {
+					var idx = $(e.currentTarget).closest('tr').index();
 
-		$('#fld' + this.Id + ' .dc-uploader-listing').append($ctrl);
+					dc.pui.Popup.input('Edit the file name. Spaces and special characters are not allowed and will be replaced.', function(newname) {
+						if (newname) {
+							ctrl.renameFile(idx, newname);
+						}
+					}, 'File Name', 'Name', ctrl.Values[idx]);
+
+					e.preventDefault();
+					return false;
+				}),
+			' &nbsp; ',
+			$('<a>')
+				.attr('href', '#')
+				.attr('aria-label', 'remove')
+				.dcappend(dc.util.Icon.use('fas-times')
+					.addClass('fa5-lg')
+				)
+				.click(function(e) {
+					ctrl.remove($(e.currentTarget).closest('tr').index());
+
+					e.preventDefault();
+					return false;
+				}),
+			' &nbsp; '
+		);
+
+		if (dc.util.String.endsWith(fname, '.jpg') || dc.util.String.endsWith(fname, '.jpg') || dc.util.String.endsWith(fname, '.png')) {
+			$actions.dcappend(
+				$('<a>')
+					.attr('href', '#')
+					.attr('aria-label', 'preview')
+					.dcappend(dc.util.Icon.use('fas-eye')
+						.addClass('fa5-lg')
+					)
+					.click(function(e) {
+						var idx = $(e.currentTarget).closest('tr').index();
+
+						var fileReader = new FileReader()
+
+						fileReader.addEventListener("load", function () {
+							var img = new Image();
+							img.src = fileReader.result;
+
+							var show = {
+								Path: '/',
+								StartPos: 0,
+								Images: [ { Source: img } ]
+							};
+
+							dc.pui.FullScreen.loadPage('/dcw/view-image', {
+								View: show
+							});
+
+						}, false);
+
+						fileReader.readAsDataURL(ctrl.Files[idx]);
+
+						e.preventDefault();
+						return false;
+					})
+			);
+		}
+
+		$('#fld' + this.Id + ' .dc-uploader-listing tbody').dcappend(
+			$('<tr>')
+				.addClass('dc-uploader-entry')
+				.dcappend(
+					$('<td>').text(fname),
+					$actions
+				)
+		);
 	}
 }
 
