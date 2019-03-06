@@ -238,6 +238,10 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		return this;
 	}
 
+	public void addItem(int i, Struct o) {
+		this.items.add(i, o);
+	}
+
 	public void replaceItem(int i, Struct o) {
 		if (i < this.items.size())
 			this.items.set(i, o);

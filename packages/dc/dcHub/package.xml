@@ -241,6 +241,7 @@
 			<Tag Name="dcs.With" Class="dcraft.script.inst.With" />
 
 			<Tag Name="dcdb.Query" Class="dcraft.script.inst.db.Query" />
+			<Tag Name="dcdb.QueryFirst" Class="dcraft.script.inst.db.QueryFirst" />
 			<Tag Name="dcdb.LoadRecord" Class="dcraft.script.inst.db.LoadRecord" />
 			<Tag Name="dcdb.LoadTenant" Class="dcraft.script.inst.db.LoadTenant" />
 			<Tag Name="dcdb.UpdateRecord" Class="dcraft.script.inst.db.UpdateRecord" />
@@ -277,6 +278,10 @@
 			<Definition Code="decodejson" Class="dcraft.struct.format.DecodeJsonFormatter" />
 			<Definition Code="decrypt" Class="dcraft.struct.format.Decrypt" />
 			<Definition Code="encrypt" Class="dcraft.struct.format.Encrypt" />
+			<Definition Code="img-g2p" Class="dcraft.struct.format.ImageGalleryToPath" />
+			<Definition Code="img-p2g" Class="dcraft.struct.format.ImagePathToGallery" />
+			<Definition Code="phE164" Class="dcraft.struct.format.PhoneE164" />
+			<Definition Code="url" Class="dcraft.struct.format.Url" />
 
 			<!--
 			// TODO format date/time to chrono

@@ -544,14 +544,19 @@ dc.transfer = {
 				rows.push(cols);
 			}
 
-			dc.transfer.CVS.writeCSV(fileName, rows);
+			dc.transfer.CVS.writeCSV(fileName, rows, options);
 		},
-		writeCSV: function(fileName, rows) {
-			var esc = dc.transfer.CVS.createFormatter();
+		writeCSV: function(fileName, rows, options) {
+			options = options || {};
+
+			var esc = dc.transfer.CVS.createFormatter(options.Format);
 			var data = '';
 
 			for (var i = 0; i < rows.length; i++) {
-				data += esc(rows[i]) + '\n';
+				if ((i == 0) && options.ClearHeader)
+					data += rows[i].join(',') + '\n';
+				else
+					data += esc(rows[i]) + '\n';
 			}
 
 			dc.transfer.Util.directSaveData(fileName, data);

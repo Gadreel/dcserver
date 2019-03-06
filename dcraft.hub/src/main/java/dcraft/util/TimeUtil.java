@@ -55,6 +55,9 @@ public class TimeUtil {
 		.appendPattern("HH:mm:ss.SSS")
 		.toFormatter();
 	
+	static public final String RFC_822_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss Z";
+	static public final DateTimeFormatter rfc822DateFormatter = DateTimeFormatter.ofPattern(RFC_822_DATE_FORMAT);
+	
 	/*
 	System.out.println("pt: " + ISODateTimeFormat.localTimeParser().parseDateTime("16:20:45"));
 	

@@ -1181,7 +1181,7 @@ public class QuickPDF extends RecordStruct {
 		if ("Load".equals(code.getName())) {
 			try {
 				if (code.hasNotEmptyAttribute("Path")) {
-					this.load(StackUtil.stringFromElement(state, code, "Path"));
+					this.load(StackUtil.resolveValueToString(state, code.attr("Path"), true));
 				}
 			}
 			catch (IOException x) {

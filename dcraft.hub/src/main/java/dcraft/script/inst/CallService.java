@@ -10,6 +10,7 @@ import dcraft.script.work.OperationsWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.struct.Struct;
 import dcraft.xml.XElement;
+import sun.rmi.runtime.Log;
 
 public class CallService extends OperationsInstruction {
 	static public CallService tag() {
@@ -24,7 +25,7 @@ public class CallService extends OperationsInstruction {
 	}
 	
 	/*
-			<dcs.CallService Nam="aaa" Service="sss" Feature="bbb" Op="ccc" Params="$ggg" Result="ttt" />
+			<dcs.CallService Name="aaa" Service="sss" Feature="bbb" Op="ccc" Params="$ggg" Result="ttt" />
 	
 	 */
 	
@@ -56,11 +57,39 @@ public class CallService extends OperationsInstruction {
 							.withAttribute("Value", this.getAttribute("Feature"))
 					);
 				
-				if (this.hasNotEmptyAttribute("Op"))
-					this.add(0, XElement.tag("SetField")
-							.withAttribute("Name", "Op")
-							.withAttribute("Value", this.getAttribute("Op"))
-					);
+				if (this.hasNotEmptyAttribute("Op")) {
+					String op = this.getAttribute("Op");
+					
+					if (op.contains(".")) {
+						String[] parts = op.split("\\.");
+						
+						if (parts.length != 3) {
+							Logger.error("Op path invalid");
+							return ReturnOption.DONE;
+						}
+						
+						this.add(0, XElement.tag("SetField")
+								.withAttribute("Name", "Service")
+								.withAttribute("Value", parts[0])
+						);
+						
+						this.add(0, XElement.tag("SetField")
+								.withAttribute("Name", "Feature")
+								.withAttribute("Value", parts[1])
+						);
+						
+						this.add(0, XElement.tag("SetField")
+								.withAttribute("Name", "Op")
+								.withAttribute("Value", parts[2])
+						);
+					}
+					else {
+						this.add(0, XElement.tag("SetField")
+								.withAttribute("Name", "Op")
+								.withAttribute("Value", op)
+						);
+					}
+				}
 				
 				if (this.hasNotEmptyAttribute("Params"))
 					this.add(0, XElement.tag("SetField")

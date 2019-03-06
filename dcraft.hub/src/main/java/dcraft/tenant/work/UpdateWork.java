@@ -165,8 +165,8 @@ public class UpdateWork extends StateWork {
 			Logger.info("- add schedule: " + schedule.getAttribute("Title"));
 			
 			if ("CommonSchedule".equals(schedule.getName())) {
-				UserContext userContext = schedule.hasNotEmptyAttribute("Tenant")
-						? UserContext.rootUser(schedule.getAttribute("Tenant"), "root") : UserContext.rootUser();
+				UserContext userContext = UserContext.rootUser(schedule.getAttribute("Tenant", "root"),
+						schedule.getAttribute("Site", "root"));
 
 				Task schcontext = Task.of(OperationContext.context(userContext))
 						.withTitle("Scheduled run: " + schedule.getAttribute("Title"))

@@ -58,6 +58,8 @@ public class ImageWidget extends Base implements ICMSAware {
 			// TODO support alt ext (from the gallery meta.json)
 			img.with("Gallery", meta);
 			img.with("Variant", vdata);
+
+			ext = vdata.getFieldAsString("Extension", ext);
 			
 			if ((vdata != null) && vdata.isNotFieldEmpty("Density")) {
 				StringBuilder srcset = new StringBuilder();

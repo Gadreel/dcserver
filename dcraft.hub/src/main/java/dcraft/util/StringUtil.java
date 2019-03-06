@@ -16,6 +16,7 @@
 ************************************************************************ */
 package dcraft.util;
 
+import java.net.IDN;
 import java.util.Iterator;
 import java.util.regex.Pattern;
 
@@ -770,7 +771,9 @@ public class StringUtil {
 			
 			while (str.indexOf("--") != -1)
 				str = str.replace("--", "-");
-			
+
+			str = ASCIIFoldingFilter.foldToASCII(str);
+
 			return str;
 	    }
 
