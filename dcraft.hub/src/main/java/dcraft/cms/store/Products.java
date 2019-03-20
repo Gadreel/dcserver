@@ -36,6 +36,7 @@ import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
 import dcraft.service.ServiceRequest;
 import dcraft.struct.CompositeStruct;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.tenant.Site;
@@ -253,53 +254,6 @@ public class Products {
 
 		RecordStruct rec = request.getDataAsRecord();
 		
-		if ("Load".equals(op)) {
-			SelectFields flds = SelectFields.select()
-					.with("Id")
-					.with("dcmAlias", "Alias")
-					.with("dcmSku", "Sku")
-					.with("dcmImage", "Image")
-					.with("dcmCustomDisplayField", "CustomDisplayField", null, true)
-					.with("dcmCategories", "Categories")
-					.with("dcmCategoryPosition", "CategoryPosition")
-					.with("dcmPrice", "Price")
-					.with("dcmVariablePrice", "VariablePrice")
-					.with("dcmMinimumPrice", "MinimumPrice")
-					.with("dcmShipAmount", "ShipAmount")
-					.with("dcmShipWeight", "ShipWeight")
-					.with("dcmShipCost", "ShipCost")
-					.with("dcmTaxFree", "TaxFree")
-					.with("dcmShowInStore", "ShowInStore")
-					.with("dcmDelivery", "Delivery")
-					.with("dcmTag", "Tags");
-			
-			String tr = rec.getFieldAsString("TrLocale");
-			
-			if (StringUtil.isEmpty(tr) || tr.equals(OperationContext.getOrThrow().getTenant().getResources().getLocale().getDefaultLocale())) {
-				flds
-					// .withComposer("dcTranslate", "Title", "dcmTitle", null)
-						.with("dcmTitle", "Title")
-						.with("dcmDescription", "Description")
-						.with("dcmInstructions", "Instructions");
-			}
-			else {
-				flds
-						.withSubField("dcmTitleTr", tr, "Title")
-						.withSubField("dcmDescriptionTr", tr, "Description")
-						.withSubField("dcmInstructionsTr", tr, "Instructions");
-			}
-			
-			ServiceHub.call(LoadRecordRequest.of("dcmProduct")
-					.withId(rec.getFieldAsString("Id"))
-					.withNow()
-					.withSelect(flds)
-				.toServiceRequest()
-				.withOutcome(callback)
-			);
-			
-			return true;
-		}
-		
 		if ("Update".equals(op)) {
 			String locale = rec.getFieldAsString("TrLocale");
 			
@@ -387,6 +341,23 @@ public class Products {
 					if (this.isNotEmptyResult()) {
 						RecordStruct rec = Struct.objectToRecord(result);
 
+						ListStruct fields = rec.getFieldAsList("CustomFields");
+
+						if (fields != null) {
+							fields.sortRecords("Position", false);
+
+							for (int i = 0; i < fields.size(); i++) {
+								fields.getItemAsRecord(i).removeField("Position");
+							}
+						}
+
+						RecordStruct custom = RecordStruct.record()
+								.with("Controls", fields);
+
+						rec.with("CustomFields", custom);
+
+						//System.out.println("str: " + rec.toPrettyString());
+
 						// need lookup even for "hidden" registries
 						//if (rec.getFieldAsBooleanOrFalse("ShowInStore")) {
 							rec.removeField("ShowInStore");
@@ -412,7 +383,26 @@ public class Products {
 					.with("dcmMinimumPrice", "MinimumPrice")
 					.with("dcmTaxFree", "TaxFree")
 					.with("dcmDelivery", "Delivery")
-					.with("dcmShowInStore", "ShowInStore");
+					.with("dcmShowInStore", "ShowInStore")
+					.withReverseSubquery("CustomFields", "dcmProductCustomFields", "dcmProduct", new SelectFields()
+							.with("Id")
+							.with("dcmPosition", "Position")
+							.with("dcmFieldType", "Type")
+							.with("dcmDataType", "DataType")
+							.with("dcmLabel", "Label")
+							.with("dcmLongLabel", "LongLabel")
+							.with("dcmPlaceholder", "Placeholder")
+							.with("dcmPattern", "Pattern")
+							.with("dcmRequired", "Required")
+							.with("dcmMaxLength", "MaxLength")
+							.with("dcmHorizontal", "Horizontal")
+							.with("dcmPrice", "Price")
+							.withGroup("dcmOptionLabel", "Options", "Id", new SelectFields()
+									.with("dcmOptionLabel", "Label")
+									.with("dcmOptionValue", "Value")
+									.with("dcmOptionPrice", "Price")
+							)
+					);
 			
 			if (rec.isNotFieldEmpty("Id")) {
 				ServiceHub.call(LoadRecordRequest.of("dcmProduct")

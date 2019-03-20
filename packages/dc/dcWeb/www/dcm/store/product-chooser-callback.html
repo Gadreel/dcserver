@@ -1,0 +1,110 @@
+<dc.Html Badges="Clerk,Admin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Products" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.FormButtons>
+				<dc.Button Label="Add Product" Click="DoAdd" />
+			</dcf.FormButtons>
+
+			<h3 id="dcmStPrdsTitle">Products for ...</h3>
+
+			<table id="lstStPrds" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<th>Title</th>
+					<th>Sku</th>
+					<th>Price</th>
+					<th>Actions</th>
+				</thead>
+				<tbody id="lstStPrdsBody" />
+			</table>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			var list = $('#lstStPrdsBody');
+
+			list.empty().dcappend(
+				$('<tr>').dcappend(
+					$('<td>').attr('colspan','4').dcappend(
+						$('<i>').attr('class', 'fa fa-spinner fa-spin fa-2x')
+					)
+				)
+			);
+
+			dc.comm.sendMessage({
+				Service: 'dcmStoreServices',
+				Feature: 'Product',
+				Op: 'CatList',
+				Body: {
+					Id: page.Params.CategoryId
+				}
+			}, function(rmsg) {
+				if (rmsg.Result > 0) {
+					dc.pui.Popup.alert('Unable to list products: ' + rmsg.Message);
+					return;
+				}
+
+				$('#dcmStPrdsTitle').empty().dcappend('Products for ' + rmsg.Body.Category);
+
+				var prods = rmsg.Body.Products;
+				list.empty();
+
+				if (prods.length == 0) {
+					list.dcappend(
+						$('<tr>').dcappend(
+							$('<td>').attr('colspan','4').text('No products found.')
+						)
+					);
+
+					return;
+				}
+
+				// sort
+				var sfield = page.Store.SortField ? page.Store.SortField : 'Title';
+				prods.sort(dc.util.List.sortObjects(sfield));
+
+				// output
+				for (var i = 0; i < prods.length; i++) {
+					var item = prods[i];
+
+					list.dcappend(
+						$('<tr>').dcappend(
+							$('<td>').text(item.Title),
+							$('<td>').text(item.Sku),
+							$('<td>').text('$' + dc.util.Number.formatMoney(item.Price)),
+							$('<td>').dcappend(
+								$('<a>')
+									.attr('href', '#')
+									.attr('class', 'pure-button-default pure-button dc-button')
+									.text('Select')
+									.click(item, function(e) {
+										page.Store.ProductId = e.data.Id;
+										page.Store.ProductAlias = e.data.Alias;
+										page.callPageFunc('DoClose');
+
+										e.preventDefault();
+										return false;
+									})
+							)
+						)
+					);
+				}
+			});
+	]]></Function>
+	<Function Name="DoClose"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback({
+					ProductId: page.Store.ProductId,
+					ProductAlias: page.Store.ProductAlias
+				});
+	]]></Function>
+</dcui>

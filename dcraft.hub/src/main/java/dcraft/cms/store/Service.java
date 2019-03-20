@@ -44,8 +44,12 @@ public class Service extends BaseDataService {
 		//  store products
 		// =========================================================
 		
-		if ("Product".equals(feature))
-			return Products.handleProducts(request, callback);
+		if ("Product".equals(feature)) {
+			if (Products.handleProducts(request, callback))
+				return true;
+
+			return super.handle(request, callback);
+		}
 
 		// =========================================================
 		//  store coupons

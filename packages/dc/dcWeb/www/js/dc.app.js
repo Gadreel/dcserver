@@ -3028,6 +3028,21 @@ dc.pui.Tags = {
 				}
 			}
 		}
+		// TODO revise and update BID
+		else if (link && dc.handler && dc.handler.Protocols) {
+			var proto = link.substr(0, link.indexOf(':'));
+
+			if (dc.handler.Protocols[proto]) {
+				$(node).click(link, function(e) {
+					entry.LastFocus = $(node);
+
+					dc.handler.Protocols[proto].call(e);		// custom handler
+
+					e.preventDefault();
+					return false;
+				});
+			}
+		}
 	},
 	'dc.CaptchaButton': function(entry, node) {
 		var click = $(node).attr('data-dc-click');

@@ -119,7 +119,7 @@ public class UIUtil {
 		}
 		
 		if (bestmatch == null)
-			return bestmatch = firstmatch;
+			bestmatch = firstmatch;
 
 		if (bestmatch == null)
 			return null;
@@ -366,7 +366,7 @@ public class UIUtil {
 				mdata.closeBuffer();
 
 				html.with(IncludeParam.tag()
-						.attr("Name", "content")
+						.attr("Name", "Content")
 						.with(
 								TextWidget.tag()
 										.with(W3.tag("Tr")
@@ -378,9 +378,12 @@ public class UIUtil {
 			}
 
 			String skeleton = fields.getFieldAsString("Skeleton", "general");
+			
+			if (! skeleton.startsWith("/"))
+				skeleton = "/skeletons/" + skeleton;
 
 			html.with(IncludeFragmentInline.tag()
-					.withAttribute("Path", "/skeletons/" + skeleton));		// TODO if doesn't start with / assume skeletons folder
+					.withAttribute("Path", skeleton));
 
 			return Script.of(html, md);
 		}

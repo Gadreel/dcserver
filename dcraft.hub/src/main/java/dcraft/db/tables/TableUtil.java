@@ -4,6 +4,7 @@ import dcraft.db.DatabaseAdapter;
 import dcraft.db.ICallContext;
 import dcraft.db.IRequestContext;
 import dcraft.db.proc.*;
+import dcraft.db.proc.filter.CurrentRecord;
 import dcraft.db.request.query.SelectFields;
 import dcraft.db.request.update.DbRecordRequest;
 import dcraft.db.util.ByteUtil;
@@ -350,7 +351,7 @@ public class TableUtil {
 			else {
 				// write all records in reverse index within a List
 				out.startList();
-				db.traverseIndex(scope, fktable, field.getFieldAsString("KeyField"), id, new BasicFilter() {
+				db.traverseIndex(scope, fktable, field.getFieldAsString("KeyField"), id, CurrentRecord.current().withNested(new BasicFilter() {
 					@Override
 					public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, Object id) throws OperatingContextException {
 						if (foreignSink.apply(id))
@@ -358,7 +359,7 @@ public class TableUtil {
 
 						return ExpressionResult.rejected();
 					}
-				});
+				}));
 				out.endList();
 			}
 

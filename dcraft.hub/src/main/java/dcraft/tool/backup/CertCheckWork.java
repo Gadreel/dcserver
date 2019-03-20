@@ -27,7 +27,7 @@ public class CertCheckWork implements IWork {
 	public void run(TaskContext taskctx) throws OperatingContextException {
 		StringBuilder report = new StringBuilder();
 		
-		ZonedDateTime checkdate = ZonedDateTime.now().plusDays(28);		// TODO switch to 10 once auto certificate system is in place
+		ZonedDateTime checkdate = ZonedDateTime.now().plusDays(21);		// TODO switch to 10 once auto certificate system is in place
 		
 		ResourceTier sysources = ResourceHub.getTopResources();
 		

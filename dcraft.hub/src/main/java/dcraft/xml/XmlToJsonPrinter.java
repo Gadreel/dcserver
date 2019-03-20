@@ -1,13 +1,15 @@
 package dcraft.xml;
 
 import dcraft.hub.op.OperatingContextException;
+import dcraft.struct.builder.ICompositeBuilder;
+import dcraft.struct.builder.JsonBuilder;
 import dcraft.struct.builder.JsonStreamBuilder;
 
 import java.io.PrintStream;
 import java.util.Map.Entry;
 
 public class XmlToJsonPrinter extends XmlPrinter {
-	protected JsonStreamBuilder jsb = null;
+	protected ICompositeBuilder jsb = null;
 	
 	@Override
 	public void setOut(PrintStream v) {

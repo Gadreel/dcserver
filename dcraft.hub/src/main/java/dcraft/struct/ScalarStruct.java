@@ -49,4 +49,11 @@ abstract public class ScalarStruct extends Struct implements Comparable {
 	}
 	
 	abstract public Object toInternalValue(RootType t);
+	
+	@Override
+	abstract public int compareTo(Object o);
+	
+	public int compareToIgnoreCase(Object o) {
+		return this.compareTo(o);
+	}
 }

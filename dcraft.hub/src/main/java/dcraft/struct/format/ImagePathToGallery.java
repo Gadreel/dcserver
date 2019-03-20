@@ -8,17 +8,30 @@ public class ImagePathToGallery implements IFormatter {
 	public FormatResult format(Object value, String op, String format) {
 		String val = Struct.objectToString(value);
 		
+		String vari = format;
+		
+		if (StringUtil.isNotEmpty(vari)) {
+			if (vari.indexOf('.') == -1)
+				vari = vari + ".jpg";			// TODO support lookup from meta
+		}
+		
 		if (StringUtil.isNotEmpty(val)) {
 			if (! val.startsWith("/galleries"))
 				val = "/galleries" + val;
 			
 			int pos = val.indexOf(".v");
 			
-			if (pos == -1)
+			if (pos == -1) {
 				val = val + ".v";
+				val.indexOf(".v");
+			}
 			
-			if (val.endsWith(".v"))
-				val = val + "/" + (StringUtil.isNotEmpty(format) ? format : "full.jpg");
+			if (val.endsWith(".v")) {
+				val = val + "/" + (StringUtil.isNotEmpty(format) ? vari : "full.jpg");
+			}
+			else if (StringUtil.isNotEmpty(vari)) {
+				val = val.substring(0, pos + 2) + "/" + vari;
+			}
 			
 			value = val;
 		}

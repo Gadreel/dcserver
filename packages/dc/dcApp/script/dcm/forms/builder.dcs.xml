@@ -1,0 +1,149 @@
+<dc.Fragment>
+	<div class="dc-form-builder-script">
+		<dcs.ForEach Name="Control" In="$dcFormParam.Controls">
+			<dcs.If Target="$Control.Type" Equal="Text">
+				<dc.Out>
+					<dcf.Text Label="{$Control.Label}" Name="{$Control.Id}"
+						Required="{$Control.Required|ifempty:false}"
+						Record="{$dcFormParam.Record|ifempty:Options}"
+						DataType="{$Control.DataType|ifempty:String}"
+						maxlength="{$Control.MaxLength|ifempty:200}"
+						placeholder="{$Control.Placeholder}"
+					/>
+				</dc.Out>
+			</dcs.If>
+			<dcs.ElseIf Target="$Control.Type" Equal="TextPattern">
+				<dc.Out>
+					<dcf.Text Label="{$Control.Label}" Name="{$Control.Id}"
+						Required="{$Control.Required|ifempty:false}"
+						Record="{$dcFormParam.Record|ifempty:Options}"
+						Pattern="{$Control.Pattern}"
+						maxlength="{$Control.MaxLength|ifempty:200}"
+						placeholder="{$Control.Placeholder}"
+					/>
+				</dc.Out>
+			</dcs.ElseIf>
+			<dcs.ElseIf Target="$Control.Type" Equal="TextArea">
+				<dc.Out>
+					<dcf.TextArea Label="{$Control.Label}" Name="{$Control.Id}"
+						Required="{$Control.Required|ifempty:false}"
+						Record="{$dcFormParam.Record|ifempty:Options}"
+						maxlength="{$Control.MaxLength|ifempty:200}"
+						placeholder="{$Control.Placeholder}"
+					/>
+				</dc.Out>
+			</dcs.ElseIf>
+			<dcs.ElseIf Target="$Control.Type" Equal="YesNo">
+				<dc.Out>
+					<dcf.YesNo Label="{$Control.Label}" Name="{$Control.Id}"
+						Required="{$Control.Required|ifempty:false}"
+						Record="{$dcFormParam.Record|ifempty:Options}"
+					/>
+				</dc.Out>
+			</dcs.ElseIf>
+			<dcs.ElseIf Target="$Control.Type" Equal="Checkbox">
+				<dc.Out>
+					<dcf.Checkbox Label="{$Control.Label}" Name="{$Control.Id}"
+						LongLabel="{$Control.LongLabel}"
+						Required="{$Control.Required|ifempty:false}"
+						Record="{$dcFormParam.Record|ifempty:Options}"
+					/>
+				</dc.Out>
+			</dcs.ElseIf>
+			<dcs.ElseIf Target="$Control.Type" Equal="Select">
+				<dc.Template Name="CtrlOpts">
+					<dcs.ForEach Name="Option" In="$Control.Options">
+						<dcs.If Target="$Option.Price" IsEmpty="false">
+							<dc.Out>
+								<option value="{$Option.Value}">{$Option.Label} - ${$Option.Price|dec:Money}</option>
+							</dc.Out>
+						</dcs.If>
+						<dcs.Else>
+							<dc.Out>
+								<option value="{$Option.Value}">{$Option.Label}</option>
+							</dc.Out>
+						</dcs.Else>
+					</dcs.ForEach>
+				</dc.Template>
+
+				<dc.Out>
+					<dcf.Select Label="{$Control.Label}" Name="{$Control.Id}"
+						Required="{$Control.Required|ifempty:false}"
+						Record="{$dcFormParam.Record|ifempty:Options}"
+						FieldParams="CtrlOpts"
+					/>
+				</dc.Out>
+			</dcs.ElseIf>
+			<dcs.ElseIf Target="$Control.Type" Equal="CheckGroup">
+				<dc.Template Name="CtrlOpts">
+					<dcs.ForEach Name="Option" In="$Control.Options">
+						<dcs.If Target="$Option.Price" IsEmpty="false">
+							<dc.Out>
+								<Checkbox Value="{$Option.Value}" Label="{$Option.Label} - ${$Option.Price|dec:Money}" />
+							</dc.Out>
+						</dcs.If>
+						<dcs.Else>
+							<dc.Out>
+								<Checkbox Value="{$Option.Value}" Label="{$Option.Label}" />
+							</dc.Out>
+						</dcs.Else>
+					</dcs.ForEach>
+				</dc.Template>
+
+				<dcs.If Target="$Control.Horizontal">
+					<dc.Out>
+						<dcf.HorizCheckGroup Label="{$Control.Label}" Name="{$Control.Id}"
+							Required="{$Control.Required|ifempty:false}"
+							Record="{$dcFormParam.Record|ifempty:Options}"
+							FieldParams="CtrlOpts"
+						/>
+					</dc.Out>
+				</dcs.If>
+				<dcs.Else>
+					<dc.Out>
+						<dcf.CheckGroup Label="{$Control.Label}" Name="{$Control.Id}"
+							Required="{$Control.Required|ifempty:false}"
+							Record="{$dcFormParam.Record|ifempty:Options}"
+							FieldParams="CtrlOpts"
+						/>
+					</dc.Out>
+				</dcs.Else>
+			</dcs.ElseIf>
+			<dcs.ElseIf Target="$Control.Type" Equal="RadioGroup">
+				<dc.Template Name="CtrlOpts">
+					<dcs.ForEach Name="Option" In="$Control.Options">
+						<dcs.If Target="$Option.Price" IsEmpty="false">
+							<dc.Out>
+								<RadioButton Value="{$Option.Value}" Label="{$Option.Label} - ${$Option.Price|dec:Money}" />
+							</dc.Out>
+						</dcs.If>
+						<dcs.Else>
+							<dc.Out>
+								<RadioButton Value="{$Option.Value}" Label="{$Option.Label}" />
+							</dc.Out>
+						</dcs.Else>
+					</dcs.ForEach>
+				</dc.Template>
+
+				<dcs.If Target="$Control.Horizontal">
+					<dc.Out>
+						<dcf.HorizRadioGroup Label="{$Control.Label}" Name="{$Control.Id}"
+							Required="{$Control.Required|ifempty:false}"
+							Record="{$dcFormParam.Record|ifempty:Options}"
+							FieldParams="CtrlOpts"
+						/>
+					</dc.Out>
+				</dcs.If>
+				<dcs.Else>
+					<dc.Out>
+						<dcf.RadioGroup Label="{$Control.Label}" Name="{$Control.Id}"
+							Required="{$Control.Required|ifempty:false}"
+							Record="{$dcFormParam.Record|ifempty:Options}"
+							FieldParams="CtrlOpts"
+						/>
+					</dc.Out>
+				</dcs.Else>
+			</dcs.ElseIf>
+		</dcs.ForEach>
+	</div>
+</dc.Fragment>

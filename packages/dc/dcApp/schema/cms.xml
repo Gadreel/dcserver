@@ -21,6 +21,37 @@
 		</StringType>
 
 		<Record Id="dcmQuickPDF" Class="dcraft.util.pdf.QuickPDF" />
+
+		<Record Id="dcmFormBuilderInfo">
+			<Field Name="Record" Type="dcMetaString" />
+			<Field Name="Controls">
+				<List>
+					<Record>
+						<Field Name="Id" Type="Id" />
+						<Field Name="Type" Type="dcmProductCustomFields:dcmFieldType" />
+						<Field Name="DataType" Type="dcmProductCustomFields:dcmDataType" />
+						<Field Name="Label" Type="dcmProductCustomFields:dcmLabel" />
+						<Field Name="LongLabel" Type="dcmProductCustomFields:dcmLongLabel" />
+						<Field Name="Placeholder" Type="dcmProductCustomFields:dcmPlaceholder" />
+						<Field Name="Pattern" Type="dcmProductCustomFields:dcmPattern" />
+						<Field Name="Required" Type="dcmProductCustomFields:dcmRequired" />
+						<Field Name="MaxLength" Type="dcmProductCustomFields:dcmMaxLength" />
+						<Field Name="Horizontal" Type="dcmProductCustomFields:dcmHorizontal" />
+						<Field Name="Price" Type="dcmProductCustomFields:dcmPrice" />
+						<Field Name="Options">
+							<List>
+								<Record>
+									<Field Name="Id" Type="dcSmallString" />
+									<Field Name="Label" Type="dcmProductCustomFields:dcmOptionLabel" />
+									<Field Name="Value" Type="dcmProductCustomFields:dcmOptionValue" />
+									<Field Name="Price" Type="dcmProductCustomFields:dcmOptionPrice" />
+								</Record>
+							</List>
+						</Field>
+					</Record>
+				</List>
+			</Field>
+		</Record>
 	</Shared>
 
 	<Database>
@@ -109,6 +140,12 @@
 				  entry
 			-->
 			<Field Name="dcmScheduled" Type="DateTime" Indexed="True" List="True" />
+		</Table>
+
+		<Table Id="dcmForm">
+		</Table>
+
+		<Table Id="dcmFormControls">
 		</Table>
 
 		<Procedure Name="dcmUpdateFeed" Execute="dcraft.cms.feed.db.Update" />

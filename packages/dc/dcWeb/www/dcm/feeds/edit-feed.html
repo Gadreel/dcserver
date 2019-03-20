@@ -78,6 +78,8 @@
 
 				e.Data[m.Name] = m.Value;
 			}
+
+			entry.callPageFunc('LoadRecordPlugin', e, data.Fields);
 	]]></Function>
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 			var entry = this;
@@ -143,10 +145,14 @@
 			dc.pui.Dialog.loadPage('/dcm/galleries/chooser', {
 				//Path: path,
 				Callback: function(res) {
+					var topvari = res.Gallery.Meta.Variations[0];
+
 					if (res.Images && res.Images.length) {
 						var fh = res.Images[0];
 
-						page.form().setValue('Image', '/galleries' + fh.FullPath);
+						var path = fh.FullPath.substr(0, fh.FullPath.lastIndexOf('/') + 1) + topvari.Alias + fh.FullPath.substr(fh.FullPath.lastIndexOf('.'));
+
+						page.form().setValue('Image', '/galleries' + path);
 					}
 				}
 			});

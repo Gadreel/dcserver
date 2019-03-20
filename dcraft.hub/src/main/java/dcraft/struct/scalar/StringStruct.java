@@ -347,7 +347,12 @@ public class StringStruct extends ScalarStruct {
 	public int compareTo(Object y) {
 		return StringStruct.comparison(this, y);
 	}
-
+	
+	@Override
+	public int compareToIgnoreCase(Object y) {
+		return StringStruct.comparisonIgnoreCase(this, y);
+	}
+	
 	@Override
 	public int hashCode() {
 		return (this.value == null) ? 0 : this.value.hashCode();
@@ -378,6 +383,27 @@ public class StringStruct extends ScalarStruct {
 			return -1;
 
 		int cv = xv.compareTo(yv);
+
+		//System.out.println("a: " + xv + " - b: " + yv + " x: " + cv);
+
+		return cv;
+	}
+
+	public static int comparisonIgnoreCase(Object x, Object y)
+	{
+		String xv = Struct.objectToString(x);
+		String yv = Struct.objectToString(y);
+
+		if ((yv == null) && (xv == null))
+			return 0;
+
+		if (yv == null)
+			return 1;
+
+		if (xv == null)
+			return -1;
+
+		int cv = xv.compareToIgnoreCase(yv);
 
 		//System.out.println("a: " + xv + " - b: " + yv + " x: " + cv);
 

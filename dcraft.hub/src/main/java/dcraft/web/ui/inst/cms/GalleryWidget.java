@@ -16,15 +16,23 @@ import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.script.inst.doc.Base;
 import dcraft.struct.Struct;
+import dcraft.struct.builder.JsonStreamBuilder;
+import dcraft.util.Memory;
 import dcraft.util.StringUtil;
+import dcraft.util.io.OutputWrapper;
+import dcraft.web.ui.JsonPrinter;
 import dcraft.web.ui.UIUtil;
 import dcraft.web.ui.inst.ICMSAware;
 import dcraft.web.ui.inst.W3;
 import dcraft.web.ui.inst.W3Closed;
 import dcraft.xml.XElement;
 import dcraft.xml.XNode;
+import dcraft.xml.XmlToJson;
+import dcraft.xml.XmlToJsonPrinter;
 import dcraft.xml.XmlUtil;
 
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -153,7 +161,7 @@ public class GalleryWidget extends Base implements ICMSAware {
 				galleryImageConsumer.accept(meta, showrec, RecordStruct.record()
 						.with("Alias", img.getAttribute("Alias"))
 						.with("Path", path + "/" + img.getAttribute("Alias"))
-						.with("Element", img)
+						.with("Element", XmlToJson.convertXml(img,true))
 				);
 			}
 		}

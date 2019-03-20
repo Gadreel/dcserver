@@ -716,7 +716,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 					return descending ? 1 : -1;
 				
 				if ((fld1 instanceof ScalarStruct) && (fld2 instanceof ScalarStruct)) {
-					int cp = ((ScalarStruct) fld1).compareTo(fld2);
+					int cp = ((ScalarStruct) fld1).compareToIgnoreCase(fld2);
 					
 					if (descending)
 						cp = -cp;

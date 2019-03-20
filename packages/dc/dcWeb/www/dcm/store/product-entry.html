@@ -96,20 +96,21 @@
 			}
 
 			// make alias read only if edit
-			if (page.Params.Id) {
+			if (page.Params.Id || page.Params.Alias) {
 				page.form().inputQuery('Alias').prop('readonly', 'readonly');
 			}
 	]]></Function>
 	<Function Name="LoadRecord" Params="e"><![CDATA[
 			var page = this;
 
-			if (page.Params.Id) {
+			if (page.Params.Id || page.Params.Alias) {
 				e.Message = {
 					Service: 'dcmStoreServices',
 					Feature: 'Product',
 					Op: 'Load',
 					Body: {
 						Id: page.Params.Id,
+						Alias: page.Params.Alias,
 						TrLocale: page.Store.Locale
 					}
 				};
@@ -133,6 +134,8 @@
 
 			page.Store.Categories = e.Data.Categories;
 			page.Store.Slug = e.Data.Alias;
+
+			page.Params.Id = e.Data.Id;
 
 			e.Data.TrLocale = page.Store.Locale;
 	]]></Function>
