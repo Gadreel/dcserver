@@ -98,7 +98,10 @@ public class StoreGalleryWidget extends Base implements ICMSAware {
 			
 			if (Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmProduct", id, "dcmDisabled")))
 				continue;
-			
+
+			if (! Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmProduct", id, "dcmShowInStore")))
+				continue;
+
 			long cidx = currimg.incrementAndGet();
 			
 			if (cidx > maximgs)

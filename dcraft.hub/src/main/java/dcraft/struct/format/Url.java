@@ -24,6 +24,11 @@ public class Url implements IFormatter {
 
 				value = val;
 			}
+			else if ("http".equals(format)) {
+				if (! val.startsWith("https://") && ! val.startsWith("http://")) {
+					value = "http://" + val;		// don't default to https
+				}
+			}
 		}
 		
 		return FormatResult.result(value);

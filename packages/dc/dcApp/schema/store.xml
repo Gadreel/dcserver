@@ -47,6 +47,7 @@
 			<Field Name="dcmItemPrice" Group="dcmItems" List="True" Type="Decimal" />
 			<Field Name="dcmItemTotal" Group="dcmItems" List="True" Type="Decimal" />
 			<Field Name="dcmItemExtra" Group="dcmItems" List="True" Type="AnyRecord" />
+			<Field Name="dcmItemCustomFields" Group="dcmItems" List="True" Type="AnyRecord" />
 			<Field Name="dcmItemStatus" Group="dcmItems" List="True" Type="dcmItemStatusEnum" />
 			<Field Name="dcmItemUpdated" Group="dcmItems" List="True" Type="DateTime" />
 			<Field Name="dcmItemShipment" Group="dcmItems" List="True" Type="dcMetaString" />
@@ -186,7 +187,9 @@
 		</Table>
 
 		<Table Id="dcmProductCustomFields">
+			<!-- either product or form -->
 			<Field Name="dcmProduct" ForeignKey="dcmProduct" />
+			<Field Name="dcmBasicCustomForm" ForeignKey="dcmBasicCustomForm" />
 			<Field Name="dcmPosition" Type="Integer" />
 
 			<Field Name="dcmFieldType" Type="dcMetaString" />
@@ -250,6 +253,8 @@
 		<Procedure Name="dcmStoreServices.Orders.CalcShipWeight" Execute="dcraft.cms.store.db.orders.CalcShipWeight" />
 		<Procedure Name="dcmStoreServices.Orders.Calculate" Execute="dcraft.cms.store.db.orders.Calculate" />
 		<Procedure Name="dcmStoreServices.Orders.Submit" Execute="dcraft.cms.store.db.orders.Submit" />
+		<Procedure Name="dcmStoreServices.Orders.Load" Execute="dcraft.cms.store.db.orders.Load" />
+		<Procedure Name="dcmStoreServices.Orders.ResendReceipts" Execute="dcraft.cms.store.db.orders.ResendReceipts" />
 		<Procedure Name="dcmStoreServices.Orders.UpdateItems" Execute="dcraft.cms.store.db.orders.UpdateItems" />
 		<Procedure Name="dcmStoreServices.Orders.UpdateStatus" Execute="dcraft.cms.store.db.orders.UpdateStatus" />
 
@@ -369,6 +374,7 @@
 			<Field Name="ShipCost" Type="dcmProduct:dcmShipCost" />
 
 			<Field Name="Extra" Type="AnyRecord" />
+			<Field Name="CustomFields" Type="AnyRecord" />
 		</Record>
 
 		<Record Id="dcmOrderCustomerInfo" >
@@ -520,6 +526,7 @@
 			<Field Name="CalcInfo" Type="dcmOrderCalcInfo" />		<!-- not required coming in from outside world, but is required once payment is being processed -->
 
 			<Field Name="Extra" Type="AnyRecord" />
+			<Field Name="CustomFields" Type="AnyRecord" />
 		</Record>
 
 		<Record Id="dcmOrderInfoSubmit" Inherits="dcmOrderInfo">
@@ -563,6 +570,16 @@
 
 			<Field Name="Updated" Type="DateTime" />
 			<Field Name="Shipment" Type="dcMetaString" />
+
+			<Field Name="CustomFields">
+				<List>
+					<Record>
+						<Field Name="Label" Type="dcSmallString" />
+						<Field Name="Value" Type="dcSmallString" />
+						<Field Name="Price" Type="Decimal" />
+					</Record>
+				</List>
+			</Field>
 		</Record>
 	</Shared>
 
@@ -673,6 +690,11 @@
 								<List Type="dcmOrderShipmentInfo" />
 							</Field>
 						</RecordResponse>
+					</Op>
+					<Op Name="ResendReceipts">
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
 					</Op>
 					<Op Name="UpdateStatus">
 						<RecordRequest Required="True">
@@ -1061,7 +1083,8 @@
 							Load custom fields of a product.
 						</Description>
 						<RecordRequest Required="True">
-							<Field Name="Product" Type="Id" Required="True" />
+							<Field Name="Product" Type="Id" Required="IfPresent" />
+							<Field Name="BasicForm" Type="Id" Required="IfPresent" />
 						</RecordRequest>
 						<ListResponse>
 							<Record>
@@ -1127,7 +1150,8 @@
 							Add custom field to a product.
 						</Description>
 						<RecordRequest Required="True">
-							<Field Name="Product" Type="Id" Required="True" />
+							<Field Name="Product" Type="Id" Required="IfPresent" />
+							<Field Name="BasicForm" Type="Id" Required="IfPresent" />
 							<Field Name="Position" Type="dcmProductCustomFields:dcmPosition" />
 							<Field Name="FieldType" Type="dcmProductCustomFields:dcmFieldType" Required="True" />
 							<Field Name="DataType" Type="dcmProductCustomFields:dcmDataType" />

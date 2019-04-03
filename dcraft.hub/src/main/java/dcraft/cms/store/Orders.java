@@ -50,11 +50,11 @@ public class Orders {
 			Orders.handleLoadMy(request, callback);
 			return true;
 		}
+		/*
 		else if ("Load".equals(op)) {
 			Orders.handleLoad(request, callback);
 			return true;
 		}
-		/*
 		else if ("UpdateStatus".equals(op)) {
 			Orders.handleUpdateStatus(request, callback);
 			return true;
@@ -274,166 +274,6 @@ public class Orders {
 				}
 
 				callback.returnEmpty();
-			}
-		}));
-	}
-
-	static public void handleLoad(ServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
-		RecordStruct data = request.getDataAsRecord();
-		
-		LoadRecordRequest req = LoadRecordRequest.of("dcmOrder")
-				.withId(data.getFieldAsString("Id"))
-				.withSelect(SelectFields.select()
-						.with("dcmOrderDate", "OrderDate")
-						.with("dcmStatus", "Status")
-						.with("dcmLastStatusDate", "LastStatusDate")
-						.with("dcmCustomer", "Customer")
-						.with("dcmCustomerInfo", "CustomerInfo")
-						.with("dcmDelivery", "Delivery")
-						.withSubquery("dcmItemProduct", "ProductInfo", SelectFields.select()
-								.with("Id", "Product")
-								.with("dcmTitle", "Title")
-								.with("dcmAlias", "Alias")
-								.with("dcmSku", "Sku")
-								.with("dcmDescription", "Description")
-								.with("dcmInstructions", "Instructions")
-								.with("dcmImage", "Image")
-						)
-						.with("dcmItemProduct", "ItemProduct", null, true)
-						.with("dcmItemQuantity", "ItemQuantity", null,true)
-						.with("dcmItemPrice", "ItemPrice", null, true)
-						.with("dcmItemTotal", "ItemTotal", null,true)
-						.with("dcmItemStatus", "ItemStatus", null,true)
-						.with("dcmItemUpdated", "ItemUpdated", null,true)
-						.with("dcmItemShipment", "ItemShipment", null,true)
-						.with("dcmShippingInfo", "ShippingInfo")
-						.with("dcmBillingInfo", "BillingInfo")
-						.with("dcmComment", "Comment")
-						.with("dcmCouponCodes", "CouponCodes")
-						.with("dcmDiscounts", "Discounts")
-						.with("dcmPaymentId", "PaymentId")
-						.with("dcmPaymentInfo", "PaymentInfo")
-						.with("dcmCalcInfo", "CalcInfo")
-						.with("dcmGrandTotal", "GrandTotal")
-						.with("dcmAudit", "Audit")
-						.with("dcmShipmentInfo", "Shipments")
-				);
-
-		// Alias, Image, Instructions, Title - Price, Quantity, Total
-
-		ServiceHub.call(req.toServiceRequest().withOutcome(new OperationOutcomeStruct() {
-			@Override
-			public void callback(Struct result) throws OperatingContextException {
-				if (this.hasErrors()) {
-					callback.returnEmpty();
-					return;
-				}
-
-				RecordStruct rec = Struct.objectToRecord(result);
-				ListStruct finallist = ListStruct.list();
-
-				ListStruct pinfo = rec.getFieldAsList("ProductInfo");
-				rec.removeField("ProductInfo");
-
-				ListStruct plist = rec.getFieldAsList("ItemProduct");
-				rec.removeField("ItemProduct");
-
-				ListStruct qlist = rec.getFieldAsList("ItemQuantity");
-				rec.removeField("ItemQuantity");
-
-				ListStruct alist = rec.getFieldAsList("ItemPrice");
-				rec.removeField("ItemPrice");
-
-				ListStruct tlist = rec.getFieldAsList("ItemTotal");
-				rec.removeField("ItemTotal");
-
-				ListStruct slist = rec.getFieldAsList("ItemStatus");
-				rec.removeField("ItemStatus");
-				
-				ListStruct uplist = rec.getFieldAsList("ItemUpdated");
-				rec.removeField("ItemUpdated");
-				
-				ListStruct shlist = rec.getFieldAsList("ItemShipment");
-				rec.removeField("ItemShipment");
-
-				for (Struct pentry : plist.items()) {
-					RecordStruct prec = Struct.objectToRecord(pentry);
-
-					String eid = prec.getFieldAsString("SubId");
-					String pid = prec.getFieldAsString("Data");
-
-					RecordStruct resrec = RecordStruct.record()
-							.with("EntryId", eid);
-
-					for (Struct prodentry : pinfo.items()) {
-						RecordStruct prodrec = Struct.objectToRecord(prodentry);
-
-						if (pid.equals(prodrec.getFieldAsString("Product"))) {
-							resrec.copyFields(prodrec);
-							break;
-						}
-					}
-
-					for (Struct xentry : qlist.items()) {
-						RecordStruct xrec = Struct.objectToRecord(xentry);
-
-						if (eid.equals(xrec.getFieldAsString("SubId"))) {
-							resrec.with("Quantity", xrec.getField("Data"));
-							break;
-						}
-					}
-
-					for (Struct xentry : alist.items()) {
-						RecordStruct xrec = Struct.objectToRecord(xentry);
-
-						if (eid.equals(xrec.getFieldAsString("SubId"))) {
-							resrec.with("Price", xrec.getField("Data"));
-							break;
-						}
-					}
-
-					for (Struct xentry : tlist.items()) {
-						RecordStruct xrec = Struct.objectToRecord(xentry);
-
-						if (eid.equals(xrec.getFieldAsString("SubId"))) {
-							resrec.with("Total", xrec.getField("Data"));
-							break;
-						}
-					}
-
-					for (Struct xentry : slist.items()) {
-						RecordStruct xrec = Struct.objectToRecord(xentry);
-
-						if (eid.equals(xrec.getFieldAsString("SubId"))) {
-							resrec.with("Status", xrec.getField("Data"));
-							break;
-						}
-					}
-					
-					for (Struct xentry : uplist.items()) {
-						RecordStruct xrec = Struct.objectToRecord(xentry);
-						
-						if (eid.equals(xrec.getFieldAsString("SubId"))) {
-							resrec.with("Updated", xrec.getField("Data"));
-							break;
-						}
-					}
-					
-					for (Struct xentry : shlist.items()) {
-						RecordStruct xrec = Struct.objectToRecord(xentry);
-						
-						if (eid.equals(xrec.getFieldAsString("SubId"))) {
-							resrec.with("Shipment", xrec.getField("Data"));
-							break;
-						}
-					}
-
-					finallist.with(resrec);
-				}
-
-				rec.with("Items", finallist);
-
-				callback.returnValue(rec);
 			}
 		}));
 	}

@@ -101,6 +101,7 @@ Target - who all was the target of the event
 Participant - TODO.
 Present - who all was present at the event. Present is defined as someone who was able to (or reasonably could have) meaningfully engage the circumstances of the event.
 Witness - who had real time information about the event but was not able to meaningfully engage the circumstances of the event.
+React - later thoughts or feelings about the event
 
 Each role may have start and end times (or duration). If the event is a journey and if the role is participant then it is assumed typically that the participant is on the same part of the path as defined in the event. However, participant can be marked as remote and then not assumed as at the give path.
 
@@ -177,11 +178,36 @@ political action
 - Did [person] [attend] [event - attend event] while in [city/country] when visiting in [year/time].
 
 
-# Family Legacy
+# History FAQ
 
-How does data ownership and access change from generation to generation? When a family history dataset is no longer accessible by the original party, a local admin (on a different server) can unlink a remote dataset (mark it as no longer the master source) or switch it to another server.
+Q: How does data set ownership and access change from generation to generation?
+A: As long as at least one person has edit access to a data set they can share access with additional users. Otherwise create a new dataset - "Smith Family Gen. 2"
 
+Q: How do we prevent edits to an unauthorized dataset (channel) edit.
+A: No one can publish to the bridge without an approved signature for that channel. Also the software won't give the option if they aren't allowed.
+
+Q: Can users override another dataset?
 Users cannot (or should not) edit someone else's dataset directly, but rather they should edit in their own dataset as overrides to the "parent" dataset. Then a dataset can be marked as dependent on another data set.
+
+# Bridge FAQ
+
+Q: How does messaging work in Bridge?
+A: Every deployment should subscribe to a general message board channel. Subscription is for deployment as a whole, now each node (deployment pool - only one message). Message and attachments are encrypted to the deployment's current key.
+
+Q: How does sharing dataset (channel) access work?
+A: Steps:
+	- A dataset editor sends API request to Bridge to allow a new editor. This returns a signed access token.
+	- Current editor then attaches this to a message for deployment.
+	- Deployment admin then opens the message, gets and verifies the token.
+	- If accepting the offer they then send a (new) public signing key to Bridge via API call and include the access token.
+	- Bridge then records the signing key as valid from that Timestamp until revoked
+	- Now the deployment can publish to the channel / dataset
+
+Q: What levels of channel access does Bridge recognize?
+A: Levels:
+	- Owner - edit and manage subscriptions (read) and manage publishers (write)
+	- Editor - edit and manage subscriptions (read only)
+	- Subscriber - read
 
 # UI Notes
 
@@ -208,6 +234,176 @@ Event Significance
 Icons - based on tags (tags can be suggested from keywords)
 
 Events can be related to events, part of an event, a role and level of significance within the event (another kind of significance chart for that).
+
+# Dexie Data Structure
+
+- Entity db - ++id, kind, \*names
+
+
+See https://dexie.org/docs/MultiEntry-Index
+
+# Chronologica II Server Data Structure
+
+- Dataset
+	- Entities [
+		- Id (uuid)
+		- Kind (Organization, Structure, Expedition, Community, Landscape, Animal, MediaObject (art, book, play, movie, ), OtherObject, Unknown)
+		- Properties [
+			- Id (uuid)
+			- Name
+			- Versions [
+				- Id (uuid)
+				- Op: Admit, Revoke (remove this version - can only be done by author, otherwise filter it or override with a newer stamp)
+				- Stamp (of operation)
+				- Author (uuid)
+				- From (empty means from inception or don't know)
+				- FromConfidence: fact, strong, medium, speculative
+				- To (empty means to culmination or don't know)
+				- ToConfidence: fact, strong, medium, speculative
+				- Value
+				- ValueConfidence: fact, strong, medium, speculative
+			]
+			- Discussion [
+				- Id (uuid)
+				- Stamp (of operation)
+				- Author (uuid)
+				- Notes
+				- ReferenceLink (uuid to a book or other source that is a recorded entity)
+				- Endorsement (uuid of version endorsed)
+			]
+		]
+	]
+	- Events [
+		- Id (uuid)
+		- Kind			(interaction, start / end relationship, movement, reaction)
+		- Properties (see above)
+			(examples: description, videos, recordings, written notes, scans, photos, etc)
+		- Links [			(entities connect through events)
+			- Id (uuid)
+			- EntityId   (how does X participate or react)
+			- Versions [
+				- Id (uuid)
+				- Op: Admit, Revoke (remove this version - can only be done by author, otherwise filter it or override with a newer stamp)
+				- Stamp (of operation)
+				- Author (uuid)
+				- From (empty means from inception or don't know)
+				- FromConfidence: fact, strong, medium, speculative
+				- To (empty means to culmination or don't know)
+				- ToConfidence: fact, strong, medium, speculative
+				- Role (leads, target, participant, witness, reaction)
+				- RoleConfidence: fact, strong, medium, speculative
+			]
+			- Discussion [
+				- Id (uuid)
+				- Stamp (of operation)
+				- Author (uuid)
+				- Notes
+				- ReferenceLink (uuid to a book or other source that is a recorded entity)
+				- Endorsement (uuid of version endorsed)
+			]
+		]
+	]
+
+? Properties that allow multiple values simply use a different UUID for the property. Properties that do not allow multiple values, do not include a UUID at all.
+
+## Properties
+
+- General
+	- Inception, single-valued
+	- Culmination, single-valued
+
+- Animal (e.g. person)
+	- BioFather, single-valued
+	- BioMother, single-valued
+	- Name, multi-valued (from - to)
+	- Gender, multi-valued (from - to)
+	- Ethnicity, multi-valued (from - to)
+
+	Events...
+			- Occupation, multi-valued (from - to)
+				- Value is entity id
+			- Allegiance, multi-valued (from - to)
+				- Value is entity id
+			- Position, multi-valued (from - to)
+				- Value is map coord
+			- Spouse, multi-valued (from - to)
+				- Value is entity id
+			- Parents, multi-valued (from - to)
+				- Value is entity id
+
+			interact
+			react
+			start/end relationship
+			significance change (relative to a person, Animal or a community - i.e. to history)
+			rank change (relative to Organization)
+
+- Landscape (e.g. forest)
+	- Name, multi-valued (from - to)
+	- Area, multi-valued (from - to)
+
+	Events -	weather/humans impact
+				grows / merges / shrinks / splits (component change)
+				moves (position change)
+				significance change
+
+- Community (e.g. household, estate, town, county, state, nation)
+	- Name, multi-valued (from - to)
+	- Area, multi-valued (from - to)
+
+	Events -	becomes capital of Landscape under rule of Government (rank change)
+				grows / merges / shrinks / splits (component change)
+				moves (position change)
+				Allegiance change
+				significance change
+				interact
+				react
+				start/end relationship
+				_weather/humans impact (infer through landscape)_
+
+- Organization (including government)
+	- Name, multi-valued (from - to)
+	- Offices, multi-valued (from - to)
+
+	Events -	rank change
+				component change (member add/remove - change rank)
+				allegiance change
+				significance change
+				interact
+				react
+				start/end relationship
+
+- Structure
+	- Name, multi-valued (from - to)
+	- Locations, multi-valued (from - to)
+
+	Events -	rank change
+				component change
+				allegiance change
+				significance change
+
+- Expedition
+
+	Events -	position change
+				component change
+				allegiance change
+				significance change
+				interact
+				react
+				start/end relationship
+
+- MediaObject (art, book, play, movie, )
+
+	Events -	component change
+				significance change
+
+- OtherObject
+
+	Events -	component change
+				significance change
+
+## Examples/Conventions
+
+
 
 # Chronologica Examples
 

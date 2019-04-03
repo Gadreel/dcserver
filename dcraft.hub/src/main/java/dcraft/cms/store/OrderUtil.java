@@ -35,6 +35,7 @@ import dcraft.interchange.ups.UpsUtil;
 import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
 import dcraft.service.plugin.Operation;
+import dcraft.struct.FieldStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.Task;
 import dcraft.task.TaskHub;
@@ -50,6 +51,7 @@ import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
 import dcraft.util.cb.CountDownCallback;
 import dcraft.xml.XElement;
+import z.gei.db.estimator.product.List;
 
 public class OrderUtil {
 	static public void processAuthOrder(ICallContext request, TablesAdapter db, RecordStruct order, OperationOutcomeStruct callback) throws OperatingContextException {
@@ -151,6 +153,9 @@ public class OrderUtil {
 
 				if (item.isNotFieldEmpty("Extra"))
 					req.withSetField("dcmItemExtra", eid, item.getFieldAsRecord("Extra"));
+
+				if (item.isNotFieldEmpty("CustomFields"))
+					req.withSetField("dcmItemCustomFields", eid, item.getFieldAsRecord("CustomFields"));
 			}
 		}
 
@@ -410,23 +415,8 @@ public class OrderUtil {
 			@Override
 			public void callback(Struct result) throws OperatingContextException {
 				//System.out.println(OperationContext.getOrThrow().toPrettyString());
+				triggerEvent(refid);
 
-				// TODO trigger Event to send emails separate from order placed so email (notice) can be resent
-
-				// TODO switch to queue local someday soon!
-				//TaskHub.queueLocalTask(Task.ofSubtask("Order placed trigger", "STORE")
-
-				// needs to be in a separate context so it won't impact result code of current task
-				TaskHub.submit(Task.of(OperationContext.context(UserContext.rootUser(OperationContext.getOrThrow().getSite())))
-						.withTitle("Order placed trigger")
-						.withTopic("Batch")
-						.withMaxTries(5)
-						.withTimeout(10)		// TODO this should be graduated - 10 minutes moving up to 30 minutes if fails too many times
-						.withParams(RecordStruct.record()
-								.with("Id", refid)
-						)
-						.withScript(CommonPath.from("/dcm/store/event-order-placed.dcs.xml")));
-				
 				Site site = OperationContext.getOrThrow().getSite();
 				String event = site.getAlias() + " - order submission completed: " + refid + " - " + callback.getMessages().toPrettyString();
 				SlackUtil.serverEvent(null, event, null);
@@ -434,6 +424,25 @@ public class OrderUtil {
 				callback.returnResult();
 			}
 		});
+	}
+
+	static public void triggerEvent(String refid) throws OperatingContextException {
+
+		// TODO trigger Event to send emails separate from order placed so email (notice) can be resent
+
+		// TODO switch to queue local someday soon!
+		//TaskHub.queueLocalTask(Task.ofSubtask("Order placed trigger", "STORE")
+
+		// needs to be in a separate context so it won't impact result code of current task
+		TaskHub.submit(Task.of(OperationContext.context(UserContext.rootUser(OperationContext.getOrThrow().getSite())))
+				.withTitle("Order placed trigger")
+				.withTopic("Batch")
+				.withMaxTries(5)
+				.withTimeout(10)		// TODO this should be graduated - 10 minutes moving up to 30 minutes if fails too many times
+				.withParams(RecordStruct.record()
+						.with("Id", refid)
+				)
+				.withScript(CommonPath.from("/dcm/store/event-order-placed.dcs.xml")));
 	}
 
 	static public void trackOrder(ICallContext request, TablesAdapter db, RecordStruct order, OperationOutcomeStruct callback) throws OperatingContextException {
@@ -672,7 +681,25 @@ public class OrderUtil {
 				.with("dcmShipCost", "ShipCost")
 				.with("dcmShipAmount", "ShipAmount")
 				.with("dcmShipWeight", "ShipWeight")
-				.withForeignField("dcmCategory", "CatShipAmount", "dcmShipAmount");
+				.withForeignField("dcmCategory", "CatShipAmount", "dcmShipAmount")
+				.withReverseSubquery("Fields",	"dcmProductCustomFields", "dcmProduct",	SelectFields.select().with("Id")
+					.withAs("Position", "dcmPosition")
+					.withAs("FieldType","dcmFieldType")
+					.withAs("DataType", "dcmDataType")
+					.withAs("Label", "dcmLabel")
+					.withAs("LongLabel", "dcmLongLabel")
+					.withAs("Placeholder","dcmPlaceholder")
+					.withAs("Pattern","dcmPattern")
+					.withAs("Required","dcmRequired")
+					.withAs("MaxLength","dcmMaxLength")
+					.withAs("Horizontal","dcmHorizontal")
+					.withAs("Price","dcmPrice")
+					.withGroup("dcmOptionLabel", "Options", "Id", SelectFields.select()
+							.withAs("Label","dcmOptionLabel")
+							.withAs("Value","dcmOptionValue")
+							.withAs("Price","dcmOptionPrice")
+					)
+				);
 
 		for (Struct itm : items.items()) {
 			RecordStruct orgitem = Struct.objectToRecord(itm);
@@ -691,7 +718,7 @@ public class OrderUtil {
 
 			// make sure we are using the 'real' values here, from the DB
 			// we are excluding fields that are not valid in an order item, however these fields are still used in the calculation below
-			item.copyFields(prodrec, "ShipAmount", "ShipWeight", "CatShipAmount", "Disabled");
+			item.copyFields(prodrec, "ShipAmount", "ShipWeight", "CatShipAmount", "Disabled", "Fields");
 
 			// add to the 'real' order list
 			fnditems.with(item);
@@ -713,6 +740,39 @@ public class OrderUtil {
 			}
 
 			BigDecimal qty = item.getFieldAsDecimal("Quantity", BigDecimal.ZERO);
+
+			// add cost from CustomFields to price
+			if (item.isNotFieldEmpty("CustomFields")) {
+				RecordStruct customs = item.getFieldAsRecord("CustomFields");
+				ListStruct fields = prodrec.getFieldAsList("Fields");
+
+				for (FieldStruct custom : customs.getFields()) {
+					for (int fd = 0; fd < fields.size(); fd++) {
+						RecordStruct fld = fields.getItemAsRecord(fd);
+
+						if (custom.getName().equals(fld.getFieldAsString("Id"))) {
+							//System.out.println("calc: " + fld.getFieldAsString("Label"));
+
+							if (fld.isNotFieldEmpty("Price")) {
+								price = price.add(fld.getFieldAsDecimal("Price"));
+							}
+							else if (fld.isNotFieldEmpty("Options")) {
+								ListStruct options = fld.getFieldAsList("Options");
+
+								for (int n = 0; n < options.size(); n++) {
+									RecordStruct opt = options.getItemAsRecord(n);
+
+									if (custom.getValue().equals(opt.getField("Value")) && opt.isNotFieldEmpty("Price"))
+										price = price.add(opt.getFieldAsDecimal("Price"));
+								}
+							}
+						}
+					}
+				}
+
+				item.with("Price", price);
+			}
+
 			BigDecimal total = price.multiply(qty);
 
 			item.with("Total", total);

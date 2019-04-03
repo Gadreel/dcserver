@@ -1,11 +1,11 @@
 <dc.MixIn>
-	<Meta Name="Title"> 
+	<Meta Name="Title">
 		<Tr Locale="en" Value="Simple CMS ♥" />
 	</Meta>
-	<Meta Name="Description"> 
+	<Meta Name="Description">
 		<Tr Locale="en" Value="this is simple&apos;s CMS" />
 	</Meta>
-	<Meta Name="Keywords"> 
+	<Meta Name="Keywords">
 		<Tr Locale="en" Value="simple cms test" />
 	</Meta>
 
@@ -29,14 +29,16 @@ before two
 
 			<dc.FullLayout id="sectAutovyHZ1wSECkJq6Wfu" Title="Board">
 				<dcm.GalleryWidget Path="/examples/simple/board" Show="main" Size="1-4">
-					<div class="board-member">
-						<img src="{$Image.Path}" class="pure-img" />
-					
-						<p class="name-title">{$Image.Name}<br />{$Image.Title}</p>
-					</div>
+					<Template>
+						<div class="board-member">
+							<img src="{$Image.Path}" class="pure-img" />
+
+							<p class="name-title">{$Image.Name}<br />{$Image.Title}</p>
+						</div>
+					</Template>
 				</dcm.GalleryWidget>
 			</dc.FullLayout>
-			
+
 			<dc.RowLayout id="sectAuto4KB681QjEw18wxiC">
 				<dc.Column Size="2-3">
 					<dc.TextWidget id="sectAuto4KB681QjEw18wxiC-text"><Tr>
@@ -49,12 +51,14 @@ righto old chap
 				</dc.Column>
 				<dc.Column Size="1-3">
 					<dcm.ImageWidget id="sectAuto4KB681QjEw18wxiC-image" Path="/examples/simple/board/lance">
-						<img src="{$Image.Path}" class="pure-img" /> 
-						<p class="paired-title">check this title</p>
+						<Template>
+							<img src="{$Image.Path}" class="pure-img" />
+							<p class="paired-title">check this title</p>
+						</Template>
 					</dcm.ImageWidget>
 				</dc.Column>
 			</dc.RowLayout>
-			
+
 			<dc.RowLayout id="sectAuto10101018wxiC">
 				<dc.Column Size="1-3">
 					<dcm.ImageWidget Column.Size="1-3" id="sectAuto10101018wxiC-image" Path="/examples/simple/board/mac" />

@@ -2387,7 +2387,7 @@ dc.pui.Form.prototype = {
 							"Op":"Submit",
 							Body: {
 								Form: task.Store.Form.Name,
-								Captcha: task.Store.Captcha,
+								Captcha: task.Store.Captcha ? task.Store.Captcha : task.Store.Form.Captcha.Token,
 								Title: title,
 								Data: event.Data
 							}

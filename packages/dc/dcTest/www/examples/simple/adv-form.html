@@ -1,8 +1,8 @@
 <dc.Html>
-	<Meta Name="Title"> 
-		<Tr Locale="en" Value="Test Basic Form Functions" />
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Multi-form, multi-records example" />
 	</Meta>
-	
+
 	<dc.Body style="padding: 16px;">
 		<dc.Panel Title="Multiple Records and Types">
 			<dcf.Form Name="TestUserEdit4"
@@ -15,13 +15,13 @@
 				<dcf.Text Name="Sex" Label="Sex" Record="Birth" />
 				<dcf.Text Name="DOB" Label="DOB" Record="Birth" />
 				<dcf.Text Name="Phone" Label="Phone" Record="Contact" />
-				
+
 				<dcf.FormButtons>
 					<dcf.SubmitButton Label="Save" />
 				</dcf.FormButtons>
 			</dcf.Form>
 		</dc.Panel>
-		
+
 		<dc.Panel Title="Prefixed Form">
 			<dcf.Form Name="TestUserEdit5" Prefix="pf"
 				RecordOrder="Names,Contact"
@@ -30,7 +30,7 @@
 				<dcf.Text Name="First" Label="First" Record="Names" />
 				<dcf.Text Name="Last" Label="Last" Record="Names" />
 				<dcf.Text Name="Phone" Label="Phone" Record="Contact" />
-				
+
 				<dcf.FormButtons>
 					<dcf.SubmitButton Label="Save" />
 				</dcf.FormButtons>
@@ -40,17 +40,17 @@
 
 	<Function Name="Load">
 				var page = this;
-			
+
 				console.log('page loaded: ' + page.Name);
     </Function>
 	<Function Mode="Load">
 				var page = this;
-			
+
 				console.log('page loaded 2: ' + page.Name);
     </Function>
 	<Function Name="tree" Mode="Load">
 				var page = this;
-			
+
 				console.log('page loaded 3: ' + page.Name);
     </Function>
 	<Function Name="LoadRecord-Names" Params="e">

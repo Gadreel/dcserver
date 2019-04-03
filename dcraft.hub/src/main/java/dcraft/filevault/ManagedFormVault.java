@@ -52,15 +52,23 @@ public class ManagedFormVault extends EncryptedVault {
 			
 			String form = Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmManagedFormName"));
 			
+			String scriptpath = null;
 			
 			XElement mform = ApplicationHub.getCatalogSettings("CMS-ManagedForm-" + form);
 			
 			if (mform == null) {
-				Logger.error("Managed form not enabled.");
-				return;
+				String fid = Struct.objectToString(db.firstInIndex("dcmBasicCustomForm", "dcmAlias", form, true));
+				
+				if (StringUtil.isEmpty(fid)) {
+					Logger.error("Managed form not enabled.");
+					return;
+				}
+				
+				scriptpath = "/dcm/forms/event-basic-form-submitted.dcs.xml";
 			}
-			
-			String scriptpath = mform.getAttribute("Script", "/dcm/forms/event-form-submitted.dcs.xml");
+			else {
+				scriptpath = mform.getAttribute("Script", "/dcm/forms/event-form-submitted.dcs.xml");
+			}
 			
 			// TODO use task queue instead
 			TaskHub.submit(Task.ofSubtask("ManagedForm submitted", "CMS")

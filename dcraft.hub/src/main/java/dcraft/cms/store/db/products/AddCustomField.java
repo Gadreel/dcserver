@@ -23,7 +23,7 @@ public class AddCustomField implements IStoredProc {
 
 		DbRecordRequest req = InsertRecordRequest.insert()
 				.withTable("dcmProductCustomFields")
-				.withConditionallyUpdateFields(data, "Product", "dcmProduct", "Position", "dcmPosition",
+				.withConditionallyUpdateFields(data, "Product", "dcmProduct", "BasicForm", "dcmBasicCustomForm", "Position", "dcmPosition",
 						"FieldType", "dcmFieldType", "DataType", "dcmDataType", "Label", "dcmLabel", "LongLabel", "dcmLongLabel",
 						"Placeholder", "dcmPlaceholder", "Pattern", "dcmPattern", "Required", "dcmRequired",
 						"MaxLength", "dcmMaxLength", "Horizontal", "dcmHorizontal", "Price", "dcmPrice"

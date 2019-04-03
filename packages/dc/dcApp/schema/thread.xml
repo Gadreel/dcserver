@@ -42,6 +42,8 @@
 			<!-- for ManagedForm -->
 			<Field Name="dcmManagedFormName" Type="dcMetaString" Indexed="True" />
 			<Field Name="dcmManagedFormToken" Type="dcMetaString" />
+			<Field Name="dcmManagedFormEmail" Type="dcMetaString" />
+			<Field Name="dcmManagedFormBasic" ForeignKey="dcmBasicCustomForm" />
 
 			<!-- for Store -->
 			<Field Name="dcmOrderData" Type="dcmOrderInfoSubmit" />

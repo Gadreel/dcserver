@@ -1028,6 +1028,12 @@ dc.pui.TagFuncs['dcm.GalleryWidget']['doCmsInitWidget'] = function(entry, node) 
 												var params = entry.callTagFunc(widget, 'getParams');
 
 												var path = $(node).attr('data-path');
+												var propeditor = $(node).attr('data-property-editor');
+
+												if (propeditor)
+													propeditor = '/dcm/cms/gallery-widget-image-props/' + propeditor;
+												else
+													propeditor = '/dcm/cms/gallery-widget-image-props';
 
 												dc.cms.image.Loader.loadGallery(path, function(gallery, resp) {
 													if (resp.Result > 0) {
@@ -1036,7 +1042,7 @@ dc.pui.TagFuncs['dcm.GalleryWidget']['doCmsInitWidget'] = function(entry, node) 
 													}
 
 													var editor = gallery.Meta.PropertyEditor
-														? gallery.Meta.PropertyEditor : '/dcm/cms/gallery-widget-image-props';
+														? gallery.Meta.PropertyEditor : propeditor;
 
 													dc.pui.Dialog.loadPage(editor, {
 														Feed: params.Feed,

@@ -63,30 +63,38 @@ public class Submit implements IStoredProc {
 
 	public void saveWork(ICallContext request, OperationOutcomeStruct callback, RecordStruct data) throws OperatingContextException {
 		String form = data.getFieldAsString("Form");
+		
+		TablesAdapter db = TablesAdapter.ofNow(request);
 
 		XElement mform = ApplicationHub.getCatalogSettings("CMS-ManagedForm-" + form);
-
+		
+		String messagepool = (mform != null) ? mform.getAttribute("MessagePool", "/ManagedForm") : "/ManagedForm";
+		
 		if (mform == null) {
-			Logger.error("Managed form not enabled.");
-			callback.returnEmpty();
-			return;
+			String fid = Struct.objectToString(db.firstInIndex("dcmBasicCustomForm", "dcmAlias", form, true));
+			
+			if (StringUtil.isEmpty(fid)) {
+				Logger.error("Managed form not enabled.");
+				callback.returnEmpty();
+				return;
+			}
+			
+			// TODO consider validating
+			
+			// TODO message pool
+		}
+		else if (mform.hasNotEmptyAttribute("Type")) {
+			if (! SchemaHub.validateType(data.getField("Data"), mform.getAttribute("Type"))) {
+				callback.returnEmpty();
+				return;
+			}
 		}
 		
 		Site site = OperationContext.getOrThrow().getSite();
 		String event = site.getAlias() + " - form submission started: " + form;
 		SlackUtil.serverEvent(null, event, null);
 
-		if (mform.hasNotEmptyAttribute("Type")) {
-			if (! SchemaHub.validateType(data.getField("Data"), mform.getAttribute("Type"))) {
-				callback.returnEmpty();
-				return;
-			}
-		}
 
-		String messagepool = mform.getAttribute("MessagePool", "/ManagedForm");
-		
-		TablesAdapter db = TablesAdapter.ofNow(request);
-		
 		// ======== create thread =========
 		
 		// don't deliver this yet, have user confirm first

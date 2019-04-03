@@ -3,66 +3,66 @@
 		<StringType Id="nakFirstName">
 			<StringRestriction Length="7" />
 		</StringType>
-		
+
 		<StringType Id="nakMiddleName">
 			<StringRestriction Length="1" />
 		</StringType>
-		
+
 		<StringType Id="nakLastName">
 			<StringRestriction Enum="White,Smith" />
 		</StringType>
-		
+
 		<StringType Id="nakSSN">
 			<StringRestriction Pattern="\d{3}-\d{2}-\d{4}" />
 		</StringType>
-		
+
 		<StringType Id="nakDOB">
 			<StringRestriction Pattern="\d{4}-\d{2}-\d{2}" />
 		</StringType>
-		
+
 		<StringType Id="nakSexEnum">
 			<StringRestriction Enum="M,F,U" />
 		</StringType>
-		
+
 		<StringType Id="nakPhone">
 			<StringRestriction Pattern="\d{3}-\d{4}" />
 		</StringType>
-		
-		
+
+
 		<Record Id="nakNameInfoTest">
 			<Field Name="First" Type="nakFirstName" Required="True" />
 			<Field Name="Last" Type="nakLastName" Required="True" />
 		</Record>
-		
+
 		<Record Id="nakBirthInfoTest">
 			<Field Name="SSN" Type="nakSSN" />
 			<Field Name="DOB" Type="nakDOB" />
 			<Field Name="Sex" Type="nakSexEnum" Required="True"  />
 		</Record>
-		
+
 		<Record Id="nakContactInfoTest">
 			<Field Name="Phone" Type="nakPhone" />
 		</Record>
-		
+
 		<!-- define scalar data types used by this domain, such as string restrictions -->
 		<!--
 		<StringType Id="dcaAccountStateEnum">
 			<StringRestriction Enum="Active,Inactive,Hidden" />
 		</StringType>
-		
+
 		<StringType Id="dcaWorkReportEnum">
 			<StringRestriction Enum="Needed,Completed" />
 		</StringType>
-		
+
 		<StringType Id="dcaZipPrefix">
 			<StringRestriction Length="\d{3}" />
 		</StringType>
-		
+
 		<StringType Id="dcaAuditTypeEnum">
 			<StringRestriction Enum="Audit,Note,CourseWork,FarmVisit,GroupDiscussion,WorkLog" />
 		</StringType>
 		-->
-		
+
 		<!-- define record types used by this domain -->
 		<!--
 		<Record Id="dcaAuditItem">
@@ -73,48 +73,48 @@
 			<Field Name="Type" Type="dcaAuditTypeEnum" Required="True" />
 			<Field Name="Ident" Type="dcTinyString" />
 		</Record>
-		
+
 		<Record Id="dcaAuditViewItem" Inherits="dcaAuditItem">
 			<Field Name="OriginName" Type="dcSmallString" />
 		</Record>
 		
 		<Record Id="dcaNoteItem">
-			<!-- Ident = entered date/time -->
+			< ! - - Ident = entered date/time - - >
 			<Field Name="Ident" Type="DateTime" Required="True" />
 			<Field Name="Note" Type="dcLargeString" Required="True" />
 		</Record>
 		-->
 	</Shared>
-	
+
 	<Database>
 		<!-- extend the tables for this domain -->
 
-		<!--		
-		<Table Id="dcDomain">			
+		<!--
+		<Table Id="dcDomain">
 			<Field Name="dcaExampleSetting" Type="dcTinyString" />
 		</Table>
-	
+
 		<Table Id="dcUser">
 			<Field Name="dcaAccountState" Type="dcaAccountStateEnum" Indexed="True" />
-			<Field Name="dcaZipPrefix" Type="dcaZipPrefix" Indexed="True" />  
+			<Field Name="dcaZipPrefix" Type="dcaZipPrefix" Indexed="True" />
 			<Field Name="dcaLocation" Type="dcTinyString" />
 			<Field Name="dcaDisplayName" Type="dcTinyString" />
 			<Field Name="dcaIntro" Type="dcLargeString" />
 			<Field Name="dcaImageSource" Type="dcTinyString" />
 			<Field Name="dcaImageDiscreet" Type="Boolean" />
-		
+
 			<Field Name="dcaAuditLog" Type="dcaAuditItem" List="True" />
 		</Table>
-		
+
 		<Table Id="dcmFeed">
 			<Field Name="dcaExampleField" Type="Id" List="True" ForeignKey="dcUser" />
 		</Table>
 		-->
 	</Database>
-	
+
 	<Services>
 		<!-- increase access to certain core services as required by domain -->
-		
+
 		<!--
 		<Service Name="dcmCms">
 			<Secure Tags="EdCoordinator,Staff">
@@ -130,9 +130,9 @@
 			</Secure>
 		</Service>
 		-->
-		
+
 		<!-- add domain services as required by domain -->
-		
+
 		<!--
 		<Service Name="dca">
 			<Secure Tags="Guest,User">

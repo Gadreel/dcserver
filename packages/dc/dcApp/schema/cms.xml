@@ -148,6 +148,12 @@
 		<Table Id="dcmFormControls">
 		</Table>
 
+		<Table Id="dcmBasicCustomForm">
+			<Field Name="dcmTitle" Type="dcSmallString" Required="True" />
+			<Field Name="dcmAlias" Type="dcMetaString" Required="True" Unique="True" Indexed="True" />
+			<Field Name="dcmEmail" Type="dcMetaString" />
+		</Table>
+
 		<Procedure Name="dcmUpdateFeed" Execute="dcraft.cms.feed.db.Update" />
 		<Procedure Name="dcmServices.Feed.Reindex" Execute="dcraft.cms.feed.db.Reindex" />
 		<Procedure Name="dcmServices.Feed.CmsCheck" Execute="dcraft.cms.feed.db.CmsCheck" />
@@ -162,6 +168,12 @@
 
 		<Procedure Name="dcCoreServices.ManagedForm.Submit" Execute="dcraft.cms.db.forms.Submit" />
 		<Procedure Name="dcCoreServices.ManagedForm.Complete" Execute="dcraft.cms.db.forms.Complete" />
+
+		<Procedure Name="dcCoreServices.BasicCustomForm.Lookup" Execute="dcraft.cms.db.forms.BasicLookup" />
+		<Procedure Name="dcCoreServices.BasicCustomForm.Load" Execute="dcraft.cms.db.forms.BasicLoad" />
+		<Procedure Name="dcCoreServices.BasicCustomForm.Add" Execute="dcraft.cms.db.forms.BasicAdd" />
+		<Procedure Name="dcCoreServices.BasicCustomForm.Update" Execute="dcraft.cms.db.forms.BasicUpdate" />
+		<Procedure Name="dcCoreServices.BasicCustomForm.Delete" Execute="dcraft.cms.db.forms.BasicDelete" />
 
 		<Collector Name="dcmScanFeed" Execute="dcraft.cms.feed.db.Scan" />
 
@@ -190,6 +202,74 @@
 		</Service>
 
 		<Service Name="dcCoreServices">
+			<Feature Name="BasicCustomForm">
+				<Secure Tags="Guest,User">
+					<Op Name="Lookup">
+						<Description>
+							Find basic form record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+							<Field Name="Alias" Type="dcMetaString" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+							<Field Name="Title" Type="dcmBasicCustomForm:dcmTitle" />
+							<Field Name="Alias" Type="dcmBasicCustomForm:dcmAlias" />
+							<Field Name="Email" Type="dcmBasicCustomForm:dcmEmail" />
+							<Field Name="CustomFields" Type="dcmFormBuilderInfo" />
+						</RecordResponse>
+					</Op>
+				</Secure>
+				<Secure Badges="Editor,Admin">
+					<Op Name="Load">
+						<Description>
+							Add a basic form record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Title" Type="dcmBasicCustomForm:dcmTitle" />
+							<Field Name="Alias" Type="dcmBasicCustomForm:dcmAlias" />
+							<Field Name="Email" Type="dcmBasicCustomForm:dcmEmail" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Add">
+						<Description>
+							Add a basic form record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Title" Type="dcmBasicCustomForm:dcmTitle" Required="True" />
+							<Field Name="Alias" Type="dcmBasicCustomForm:dcmAlias" Required="True" />
+							<Field Name="Email" Type="dcmBasicCustomForm:dcmEmail" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Update">
+						<Description>
+							Add a basic form record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Title" Type="dcmBasicCustomForm:dcmTitle" Required="IfPresent" />
+							<Field Name="Alias" Type="dcmBasicCustomForm:dcmAlias" Required="IfPresent" />
+							<Field Name="Email" Type="dcmBasicCustomForm:dcmEmail" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Delete">
+						<Description>
+							Add a basic form record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+				</Secure>
+			</Feature>
+
 			<Feature Name="ManagedForm">
 				<Secure Tags="Guest,User">
 					<Op Name="Submit">

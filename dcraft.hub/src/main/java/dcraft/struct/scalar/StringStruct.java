@@ -158,6 +158,14 @@ public class StringStruct extends ScalarStruct {
 			
 			return ReturnOption.CONTINUE;
 		}
+		else if ("AppendLine".equals(code.getName())) {
+			if (this.value == null)
+				this.value = "";
+			
+			this.value = this.value + "\n";
+			
+			return ReturnOption.CONTINUE;
+		}
 		else if ("Append".equals(code.getName())) {
 			if (this.value == null)
 				this.value = "";

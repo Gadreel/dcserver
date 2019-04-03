@@ -53,9 +53,10 @@
 				e.Wait = true;
 
 				var file = page.form().input('Attachments').Files[0];
+				var ext = file.name.substr(file.name.lastIndexOf('.'));
 
 				// TODO support alternatives to jpg
-				page.Store.File = page.Params.Path + '.v/' + page.Params.Variation + '.jpg';
+				page.Store.File = page.Params.Path + '.v/' + page.Params.Variation + ext;
 
 				page.Store.Transfer = new dc.transfer.Vault({
 					Vault: 'Galleries',

@@ -88,14 +88,14 @@
 
 			var editItem = function(e) {
 					if (e.data.VariablePrice)
-						dc.pui.Dialog.loadPage('/dcm/shop/variable-amount', {
+						dc.pui.Dialog.loadPage('/dcm/shop/variable-amount/' + e.data.Alias, {
 							Product: e.data,
 							Callback: function() {
 								page.reload();
 							}
 						});
 					else
-						dc.pui.Dialog.loadPage('/dcm/shop/variable-quantity', {
+						dc.pui.Dialog.loadPage('/dcm/shop/variable-quantity/' + e.data.Alias, {
 							Product: e.data,
 							Callback: function() {
 								page.reload();
@@ -203,7 +203,7 @@
 				if (cart.CalcInfo.ShipDiscount) {
 					$('#sectCalcs01dea8fb54024150bccbfb584a94d51b').dcappend(
 						$('<tr>').dcappend(
-							$('<th>').text('Shipping Total: '),
+							$('<th>').text('Shipping & Handling Total: '),
 							$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ShipAmount))
 						),
 						$('<tr>').dcappend(
@@ -215,7 +215,7 @@
 
 				$('#sectCalcs01dea8fb54024150bccbfb584a94d51b').dcappend(
 					$('<tr>').dcappend(
-						$('<th>').text('Shipping: '),
+						$('<th>').text('Shipping & Handling: '),
 						$('<td>').text('$' + dc.util.Number.formatMoney(cart.CalcInfo.ShipTotal))
 					),
 					$('<tr>').dcappend(

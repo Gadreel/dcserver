@@ -31,6 +31,8 @@
 		<Entry Token="dcwFormResetPassword" Value="Reset Password" />
 		<Entry Token="dcwFormSignIn" Value="Sign In" />
 
+		<Entry Token="dcmShopConfirmPickup" Value="All of the items in your cart will be picked up at the store or are items that you will download. Unless instructed otherwise, we will send you and message when the order is ready for pickup." />
+
 		<Entry Token="_enum_dcmOrderStatusEnum_Pending" Value="Pending" />
 		<Entry Token="_enum_dcmOrderStatusEnum_AwaitingPayment" Value="Awaiting Payment" />
 		<Entry Token="_enum_dcmOrderStatusEnum_AwaitingFulfillment" Value="Awaiting Fulfillment" />

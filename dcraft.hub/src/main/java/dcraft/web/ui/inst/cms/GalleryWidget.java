@@ -174,6 +174,7 @@ public class GalleryWidget extends Base implements ICMSAware {
 		this.withClass("pure-g", "dc-widget", "dc-widget-gallery")
 			.withAttribute("data-dc-enhance", "true")
 			.withAttribute("data-dc-tag", this.getName())
+			.withAttribute("data-property-editor", StackUtil.stringFromSource(state,"PropertyEditor"))
 			.withAttribute("data-variant", StackUtil.stringFromSource(state,"Variant"))
 			.withAttribute("data-ext", StackUtil.stringFromSource(state,"Extension"))
 			.withAttribute("data-path", StackUtil.stringFromSource(state,"Path"))

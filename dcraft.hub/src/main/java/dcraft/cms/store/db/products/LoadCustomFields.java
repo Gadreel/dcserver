@@ -12,6 +12,7 @@ import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
+import dcraft.util.StringUtil;
 
 public class LoadCustomFields implements IStoredProc {
 	@Override
@@ -42,15 +43,22 @@ public class LoadCustomFields implements IStoredProc {
 				);
 		
 		Unique collector = Unique.unique();
-		
-		db.traverseIndex(OperationContext.getOrThrow(), "dcmProductCustomFields", "dcmProduct", prodid, collector.withNested(CurrentRecord.current()));
+
+		if (StringUtil.isNotEmpty(prodid)) {
+			db.traverseIndex(OperationContext.getOrThrow(), "dcmProductCustomFields", "dcmProduct", prodid, collector.withNested(CurrentRecord.current()));
+		}
+		else {
+			String formid = data.getFieldAsString("BasicForm");
+
+			db.traverseIndex(OperationContext.getOrThrow(), "dcmProductCustomFields", "dcmBasicCustomForm", formid, collector.withNested(CurrentRecord.current()));
+		}
 
 		ListStruct result = ListStruct.list();
-		
+
 		for (Object fid : collector.getValues()) {
 			result.with(TableUtil.getRecord(db, OperationContext.getOrThrow(), "dcmProductCustomFields", fid.toString(), flds));
 		}
-		
+
 		result.sortRecords("Position", false);
 
 		callback.returnValue(result);

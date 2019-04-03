@@ -94,7 +94,7 @@ public class CheckCmsReadyWork extends StateWork {
 						if (file.isFolder()) {
 							CheckCmsReadyWork.this.folders.addLast(file);
 						}
-						else {
+						else if (file.getName().endsWith(".html")) {
 							XElement root = XmlReader.loadFile(((LocalStoreFile) file).getLocalPath(), true, true);
 							
 							Map<String, Integer> counters = new HashMap<>();

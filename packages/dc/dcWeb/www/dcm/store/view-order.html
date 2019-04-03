@@ -10,6 +10,7 @@
 					<dcf.Form>
 						<dcf.FormButtons Hint="Form options">
 							<dc.Button Label="Cancel Order" Click="DoCancel" />
+							<dc.Button Label="Resend Notices" Click="DoResend" />
 							<dc.Button Label="Quick Complete" Click="DoQuickComplete" />
 							<dc.Button Label="Close" Click="AfterSave" />
 
@@ -322,6 +323,16 @@
 			for (var i = 0; i < cart.Items.length; i++) {
 				var item = cart.Items[i];
 
+				var customfields = $('<div>');
+
+				if (item.CustomFields) {
+					for (var i5 = 0; i5 < item.CustomFields.length; i5++) {
+						var cfield = item.CustomFields[i5];
+
+						customfields.dcappend(cfield.Label + ': ' + cfield.Value, $('<br>'));
+					}
+				}
+
 				var shiplink = '';
 
 				if (item.Shipment && cart.Shipments) {
@@ -369,7 +380,8 @@
 						$('<td>').dcappend(
 							$('<b>').addClass('dc-table-cell-label').text('Description'),
 							' ',
-							item.Title
+							item.Title,
+							customfields
 						),
 						$('<td>').dcappend(
 							$('<b>').addClass('dc-table-cell-label').text('Status'),
@@ -483,6 +495,31 @@
 					}
 
 					page.callPageFunc('AfterSave')
+				});
+			});
+	]]></Function>
+	<Function Name="DoResend"><![CDATA[
+			var page = this;
+
+			dc.pui.Popup.confirm('Resend order notices?', function(confirm) {
+				if (! confirm)
+					return;
+
+				//console.log('delete');
+				dc.comm.sendMessage({
+					Service: 'dcmStoreServices',
+					Feature: 'Orders',
+					Op: 'ResendReceipts',
+					Body: {
+						Id: page.Params.Order.Id
+					}
+				}, function(resp) {
+					if (resp.Result > 0) {
+						dc.pui.Popup.alert(resp.Message);
+						return;
+					}
+
+					dc.pui.Popup.alert('Notices Sent');
 				});
 			});
 	]]></Function>

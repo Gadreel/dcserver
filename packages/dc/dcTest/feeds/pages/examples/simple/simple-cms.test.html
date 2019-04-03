@@ -6,9 +6,9 @@
 
 ### downloads
 
-[image download test](/files/examples/simple/test.jpg "")
-[json download test](/files/examples/simple/test.json "")
-[pdf download test](/files/examples/simple/test.pdf "")
+[image download test](/files/examples/placeholder.jpg "")
+[json download test](/files/examples/placeholder.json "")
+[pdf download test](/files/examples/placeholder.pdf "")
 
 ### links
 
@@ -22,22 +22,21 @@
 		</dc.FullLayout>
 		<dc.FullLayout id="sectAutovyHZ3wSECkJq6Wfu" Title="Board">
 			<dcm.GalleryWidget Path="/examples/simple/board" Show="main" Size="1-3">
-				<div class="board-member">
-					<img src="{$Image.Path}" class="pure-img" />
-					
-					<p class="name-title">{$Image.Name}<br />{$Image.Title}</p>
-					
-					<p> 
-						{$Image.Description}<br />
-						<a href="tel:{$Image.Phone}">{$Image.Phone}</a>
-						<br />
-						<a href="mailto:{$Image.Email}">{$Image.Email}</a>
-					</p>
-				</div>
+				<Template>
+					<div class="board-member">
+						<img src="{$Image.Path}" class="pure-img" />
+
+						<p class="name-title">{$Image.Name}<br />{$Image.Title}</p>
+
+						<p>
+							{$Image.Description}<br />
+							<a href="tel:{$Image.Phone}">{$Image.Phone}</a>
+							<br />
+							<a href="mailto:{$Image.Email}">{$Image.Email}</a>
+						</p>
+					</div>
+				</Template>
 			</dcm.GalleryWidget>
 		</dc.FullLayout>
 	</dc.Fragment>
 </dc.MixIn>
-
-
-

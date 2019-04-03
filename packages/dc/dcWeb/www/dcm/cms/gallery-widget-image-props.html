@@ -5,16 +5,23 @@
 
 	<Require Script="/js/vendor/ace-1.1.8/ace.js" />
 
+	<dcs.Var Name="Alias" Type="String" />
+
+	<dcs.If Target="$Page.OriginalPathParts.3" IsEmpty="false">
+		<dcs.With Target="$Alias" SetTo="$Page.OriginalPathParts.3" />
+	</dcs.If>
+
 	<dc.Body>
 		<dc.PagePanel>
-			<dcf.Form>
-				<!--
+			<dcf.Form AlwaysNew="true">
 				<dcf.Text Name="Title" Label="Title" />
-				-->
-
 				<dcf.TextArea Name="Description" Label="Description" />
 
-				<dc.IncludeParam Name="ExtraProps" />
+				<dcs.If Target="$Alias" IsEmpty="false">
+					<dc.Out>
+						<dc.IncludeFragment Path="/dcm/cms/gallery-widget-image/{$Alias}" />
+					</dc.Out>
+				</dcs.If>
 
 				<dcf.FormButtons>
 					<!-- dc.Button Label="Save" Click="DoSaveOnly" / -->
@@ -52,7 +59,14 @@
 
 		for (var i = 0; i < $imgs.length; i++) {
 			if ($($imgs.get(i)).attr('Alias') == entry.Params.Image) {
-				e.Data.Description = $($imgs.get(i)).attr('Description');
+				//e.Data.Description = $($imgs.get(i)).attr('Description');
+
+				$($imgs.get(i)).each(function() {
+					$.each(this.attributes, function() {
+						console.log(this.name, this.value);
+						e.Data[this.name] = this.value;
+					});
+				});
 			}
 		}
 	]]></Function>
