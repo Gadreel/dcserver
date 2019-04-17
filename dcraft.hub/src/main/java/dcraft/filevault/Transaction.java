@@ -71,52 +71,64 @@ public class Transaction extends TransactionBase {
 	public void commitTransaction(OperationOutcomeEmpty callback) throws OperatingContextException {
 		this.buildUpdateList();
 		
-		KeyRingResource keyring = ResourceHub.getResources().getKeyRing();
-		
-		PGPPublicKeyRing encryptor = keyring.findUserPublicKey("encryptor@" + ApplicationHub.getDeployment() + ".dc");
-		
 		LocalStore dstore = this.getFolder();
-
-		StreamFragment fragment = dstore.rootFolder().allocStreamSrc();
-
-		fragment.withAppend(
-				new TarStream().withNameHint(this.id),
-				GzipStream.create(),
-				new PgpEncryptStream()
-						.withPgpKeyring(encryptor)
-						.withTgzgFormat(true)
+		
+		OperationOutcomeEmpty events = new OperationOutcomeEmpty() {
+			@Override
+			public void callback() throws OperatingContextException {
+				try {
+					// if there is a vault and it is expandable this will move the files
+					if (Transaction.this.vault != null)
+						Transaction.this.vault.beforeSubmitTransaction(Transaction.this);
+					
+					// delete the expanded temp files remaining, if any, and the folder
+					FileUtil.deleteDirectory(dstore.getPath());
+					
+					// vault in name only, not function (server backup)
+					Transaction.this.depositid = DepositHub.submitVaultDeposit(Transaction.this);
+					
+					// if there is a vault process (index) as needed
+					if (Transaction.this.vault != null)
+						Transaction.this.vault.processTransaction(Transaction.this);
+					
+					// don't update deposit index here, let it happen in build deposit
+				}
+				catch (OperatingContextException x) {
+					Logger.error("Missing OC - unexpected - " + x);
+				}
+				
+				callback.returnEmpty();
+			}
+		};
+		
+		if (this.updatelist.size() > 0) {
+			KeyRingResource keyring = ResourceHub.getResources().getKeyRing();
+			
+			PGPPublicKeyRing encryptor = keyring.findUserPublicKey("encryptor@" + ApplicationHub.getDeployment() + ".dc");
+			
+			StreamFragment fragment = dstore.rootFolder().allocStreamSrc();
+			
+			fragment.withAppend(
+					new TarStream().withNameHint(this.id),
+					GzipStream.create(),
+					new PgpEncryptStream()
+							.withPgpKeyring(encryptor)
+							.withTgzgFormat(true)
 			)
-			.withAppend(LocalStoreFile.of(DepositHub.DepositStore, CommonPath.from("/outstanding"), true).allocStreamDest());
-
-		TaskHub.submit(Task.ofSubtask("Create Transaction Tar", "XFR")
-				.withWork(StreamWork.of(fragment)),
-				new TaskObserver() {
-					@Override
-					public void callback(TaskContext subtask) {
-						try {
-							// if there is a vault and it is expandable this will move the files
-							if (Transaction.this.vault != null)
-								Transaction.this.vault.beforeSubmitTransaction(Transaction.this);
-
-							// delete the expanded temp files remaining, if any, and the folder
-							FileUtil.deleteDirectory(dstore.getPath());
-
-							// vault in name only, not function (server backup)
-							Transaction.this.depositid = DepositHub.submitVaultDeposit(Transaction.this);
-							
-							// if there is a vault process (index) as needed
-							if (Transaction.this.vault != null)
-								Transaction.this.vault.processTransaction(Transaction.this);
-							
-							// don't update deposit index here, let it happen in build deposit
+					.withAppend(LocalStoreFile.of(DepositHub.DepositStore, CommonPath.from("/outstanding"), true).allocStreamDest());
+			
+			TaskHub.submit(Task.ofSubtask("Create Transaction Tar", "XFR")
+							.withWork(StreamWork.of(fragment)),
+					new TaskObserver() {
+						@Override
+						public void callback(TaskContext subtask) {
+							events.returnEmpty();
 						}
-						catch (OperatingContextException x) {
-							Logger.error("Missing OC - unexpected - " + x);
-						}
-						
-						callback.returnEmpty();
-					}
-				});
+					});
+		}
+		else {
+			events.returnEmpty();
+		}
 	}
 	
 	public void buildUpdateList() {

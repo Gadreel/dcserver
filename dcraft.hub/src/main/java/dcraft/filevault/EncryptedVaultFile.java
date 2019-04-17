@@ -46,6 +46,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 public class EncryptedVaultFile extends FileStoreFile {
@@ -402,7 +403,11 @@ public class EncryptedVaultFile extends FileStoreFile {
 	@Override
 	public void remove(OperationOutcomeEmpty callback) throws OperatingContextException {
 		if (this.exists()) {
-			this.localdriver.vault.deleteFile(this, null, callback);
+			List<FileDescriptor> files = new ArrayList<>();
+			
+			files.add(this);
+			
+			this.localdriver.vault.deleteFiles(files, null, callback);
 
 			this.withExists(false);
 		}

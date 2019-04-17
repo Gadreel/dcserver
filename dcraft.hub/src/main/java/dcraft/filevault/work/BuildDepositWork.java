@@ -176,42 +176,42 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 			
 			Path tarpath = outpath.resolve(transactionid + ".tgzg");
 			
-			boolean tarfiles = Files.exists(tarpath);
-			
 			// create a deposit file from PGP - deposit sequence number - and sig and chain
 			LocalStoreFile sigfile = DepositHub.DepositStore.resolvePathToStore("/files/" + depositId + ".sig");
 			
-			if (tarfiles) {
+			//boolean tarfiles = manifestrec.isNotFieldEmpty("Write") && Files.exists(tarpath);
+			
+			if (Files.exists(tarpath)) {
 				finalfiles.withFiles(sigfile);
-			}
-
-			StreamFragment fragment = StreamUtil.localFile(tarpath).allocStreamSrc();
-
-			fragment.withAppend(
-					new PgpSignStream().withOutputFile(sigfile.getLocalPath())
-							.withSignKey(seclocalsign)		// TODO get hash out
-							.withPassphrase(keyring.getPassphrase())
-							.withSigVar(finalsig),
-					new SplitStream()
-							.withNameTemplate(depositId + ".tgzp-%seq%")
-							.withDashNumMode(false)
-							.withSize(4294967296L)    // 4 GB
-							.withCountVar(finalcount),
-					FileObserverStream.of(new Consumer<FileDescriptor>() {
-						@Override
-						public void accept(FileDescriptor file) {
-							if (! file.isFolder()) {
-								LocalStoreFile dfile = DepositHub.DepositStore.resolvePathToStore("/files/" + file.getName());
-								finalfiles.withFiles(dfile);
+	
+				StreamFragment fragment = StreamUtil.localFile(tarpath).allocStreamSrc();
+	
+				fragment.withAppend(
+						new PgpSignStream().withOutputFile(sigfile.getLocalPath())
+								.withSignKey(seclocalsign)		// TODO get hash out
+								.withPassphrase(keyring.getPassphrase())
+								.withSigVar(finalsig),
+						new SplitStream()
+								.withNameTemplate(depositId + ".tgzp-%seq%")
+								.withDashNumMode(false)
+								.withSize(4294967296L)    // 4 GB
+								.withCountVar(finalcount),
+						FileObserverStream.of(new Consumer<FileDescriptor>() {
+							@Override
+							public void accept(FileDescriptor file) {
+								if (! file.isFolder()) {
+									LocalStoreFile dfile = DepositHub.DepositStore.resolvePathToStore("/files/" + file.getName());
+									finalfiles.withFiles(dfile);
+								}
 							}
-						}
-					})
-			)
-			.withAppend(
-					DepositHub.DepositStore.fileReference(CommonPath.from("/files"), true).allocStreamDest()
-			);
+						})
+				)
+				.withAppend(
+						DepositHub.DepositStore.fileReference(CommonPath.from("/files"), true).allocStreamDest()
+				);
 
-			IWork builddeposit = StreamWork.of(fragment);
+				this.then(StreamWork.of(fragment));
+			}
 			
 			// update the manifest, create chain file
 			
@@ -347,11 +347,6 @@ ASCII armored chain sig of all content of the .chain file   (node signing key)
 					taskctx.returnEmpty();
 				}
 			};
-			
-			if (tarfiles) {
-				this
-						.then(builddeposit);
-			}
 
 			this
 					.then(ControlWork.dieOnError("Unable to create deposit files"))

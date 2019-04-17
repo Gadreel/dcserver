@@ -1,0 +1,58 @@
+<dc.Html>
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Rename" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form AlwaysNew="true">
+				<dcf.Text Name="Name" Label="Name" Required="true" Pattern="[\w-\.]+"
+					placeholder="file name, no spaces - use dash instead of space" />
+
+				<dcf.FormButtons>
+					<dcf.SubmitButton Label="Rename" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var entry = this;
+
+			if (entry.Params.Vault)
+				entry.Store.Vault = entry.Params.Vault;
+			else
+				entry.Store.Vault = 'Files';
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			e.Data = {
+				Name: entry.Params.Name
+			};
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			if (entry.Params.Path && (entry.Params.Path != '/'))
+				e.Data.Path = entry.Params.Path + e.Data.Path;
+
+			e.Message = {
+				Service: 'dcCoreServices',
+				Feature: 'Vaults',
+				Op: 'Move',
+				Body: {
+					Vault: entry.Store.Vault,
+					Path: ((entry.Params.Path != '/') ? entry.Params.Path : '') + '/' + entry.Params.Name,
+					DestinationPath: ((entry.Params.Path != '/') ? entry.Params.Path : '') + '/' + e.Data.Name
+				}
+			};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var entry = this;
+
+			entry.Layer.back();
+
+			if (entry.Params.Callback)
+				entry.Params.Callback();
+	]]></Function>
+</dc.Html>

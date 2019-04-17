@@ -121,7 +121,7 @@ public class HttpDestStream extends BaseFileStream implements IFileStreamDest, G
 
 			long when = System.currentTimeMillis();
 
-			String mtype = ResourceHub.getResources().getMime().getMimeTypeForPath(slice.getFile().getPathAsCommon()).getType();
+			String mtype = ResourceHub.getResources().getMime().getMimeTypeForPath(slice.getFile().getPathAsCommon()).getMimeType();
 
 			if (this.asAttachment) {
 				wctrl.sendDownloadHeaders(slice.getFile().getPath() != null ? slice.getFile().getPathAsCommon().getFileName() : null, mtype);

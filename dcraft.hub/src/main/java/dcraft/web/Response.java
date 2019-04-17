@@ -429,7 +429,7 @@ public class Response extends RecordStruct {
 			String mime = StackUtil.stringFromElement(stack, code, "Mime");
 			
 			if (StringUtil.isEmpty(mime))
-				mime = ResourceHub.getResources().getMime().getMimeTypeForName(name).getType();
+				mime = ResourceHub.getResources().getMime().getMimeTypeForName(name).getMimeType();
 			
 			this.setHeader("Content-Type", mime);
 			this.setHeader("Content-Disposition", "attachment; filename=\"" + dcraft.util.net.NetUtil.urlEncodeUTF8(name) + "\"");

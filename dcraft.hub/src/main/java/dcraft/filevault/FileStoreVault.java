@@ -14,6 +14,7 @@ import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.hub.op.OperationOutcomeString;
@@ -24,6 +25,7 @@ import dcraft.struct.RecordStruct;
 import dcraft.task.IWork;
 import dcraft.tenant.Site;
 import dcraft.util.FileUtil;
+import dcraft.util.cb.CountDownCallback;
 import dcraft.xml.XElement;
 
 import java.io.IOException;
@@ -168,87 +170,125 @@ public class FileStoreVault extends Vault {
 	}
 	
 	@Override
-	public void deleteFile(FileDescriptor file, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException {
+	public void deleteFiles(List<FileDescriptor> files, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException {
 		// check if `file` has info loaded
-		if (! file.confirmed()) {
-			Logger.error("Get file details first");
-			callback.returnEmpty();
-			return;
+		for (FileDescriptor file : files) {
+			if (!file.confirmed()) {
+				Logger.error("Get file details first");
+				callback.returnEmpty();
+				return;
+			}
 		}
 		
-		this.beforeRemove(file, params, new OperationOutcomeEmpty() {
+		OperationMarker om = OperationMarker.create();
+		
+		CountDownCallback countDownCallback = new CountDownCallback(files.size(), new OperationOutcomeEmpty() {
 			@Override
 			public void callback() throws OperatingContextException {
-				if (this.hasErrors() || ! file.exists()) {
+				if (om.hasErrors()) {
 					callback.returnEmpty();
 					return;
 				}
 				
 				Transaction ftx = buildUpdateTransaction(Transaction.createTransactionId(), params);
 				
-				// if this was a folder, list all the files removed for a safer transaction
-				// allows us to replay the transaction out of order
-				// deleting folders can be delayed before it shows to user as the deletes don't actually occur until TX is run
-				if (file.isFolder()) {
-					FileStore vfs = getFileStore();
-					
-					if (vfs instanceof LocalStore) {
-						Path base = ((LocalStore) vfs).getPath();
-						Path source = ((LocalStoreFile) file).getLocalPath();
+				for (FileDescriptor file : files) {
+					if (! file.exists()) {
+						continue;	// skip
+					}
+					// if this was a folder, list all the files removed for a safer transaction
+					// allows us to replay the transaction out of order
+					// deleting folders can be delayed before it shows to user as the deletes don't actually occur until TX is run
+					else if (file.isFolder()) {
+						FileStore vfs = getFileStore();
 						
-						try {
-							Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
-									new SimpleFileVisitor<Path>() {
-										@Override
-										public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-											if (file.endsWith(".DS_Store"))
+						if (vfs instanceof LocalStore) {
+							Path base = ((LocalStore) vfs).getPath();
+							Path source = ((LocalStoreFile) file).getLocalPath();
+							
+							try {
+								Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
+										new SimpleFileVisitor<Path>() {
+											@Override
+											public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+												if (file.endsWith(".DS_Store"))
+													return FileVisitResult.CONTINUE;
+												
+												Path dest = base.relativize(file);
+												
+												ftx.withDelete(CommonPath.from("/" + dest.toString()));
+												
 												return FileVisitResult.CONTINUE;
-											
-											Path dest = base.relativize(file);
-											
-											ftx.withDelete(CommonPath.from("/" + dest.toString()));
-											
-											return FileVisitResult.CONTINUE;
-										}
-									});
-							
-							ftx.withCleanFolder(file.getPathAsCommon());
-							
-							ftx.commitTransaction(new OperationOutcomeEmpty() {
-								@Override
-								public void callback() throws OperatingContextException {
-									afterRemove(file, params, callback);
-								}
-							});
+											}
+										});
+								
+								ftx.withCleanFolder(file.getPathAsCommon());
+						
+								/*
+								ftx.commitTransaction(new OperationOutcomeEmpty() {
+									@Override
+									public void callback() throws OperatingContextException {
+										afterRemove(file, params, callback);
+									}
+								});
+								*/
+							}
+							catch (IOException x) {
+								Logger.error("Error copying file tree: " + x);
+								callback.returnEmpty();
+							}
 						}
-						catch (IOException x) {
-							Logger.error("Error copying file tree: " + x);
+						else {
+							// TODO add delete folder for non-local vaults
+							Logger.error("Non-local Vaults do not yet support folder delete!");
 							callback.returnEmpty();
 						}
 					}
 					else {
-						// TODO add delete folder for non-local vaults
-						Logger.error("Non-local Vaults do not yet support folder delete!");
-						callback.returnEmpty();
+						ftx.withDelete(file.getPathAsCommon());
+						
+						/*
+						((FileStoreFile) file).remove(new OperationOutcomeEmpty() {
+							@Override
+							public void callback() throws OperatingContextException {
+								ftx.commitTransaction(new OperationOutcomeEmpty() {
+									@Override
+									public void callback() throws OperatingContextException {
+										afterRemove(file, params, callback);
+									}
+								});
+							}
+						});
+						*/
 					}
 				}
-				else {
-					ftx.withDelete(file.getPathAsCommon());
-					
-					((FileStoreFile) file).remove(new OperationOutcomeEmpty() {
-						@Override
-						public void callback() throws OperatingContextException {
-							ftx.commitTransaction(new OperationOutcomeEmpty() {
+				
+				ftx.commitTransaction(new OperationOutcomeEmpty() {
+					@Override
+					public void callback() throws OperatingContextException {
+						CountDownCallback countDownCallback2 = new CountDownCallback(files.size(), callback);
+						
+						for (FileDescriptor file : files) {
+							afterRemove(file, params, new OperationOutcomeEmpty() {
 								@Override
 								public void callback() throws OperatingContextException {
-									afterRemove(file, params, callback);
+									countDownCallback2.countDown();
 								}
 							});
 						}
-					});
-				}
+					}
+				});
 			}
 		});
+		
+		for (FileDescriptor file : files) {
+			this.beforeRemove(file, params, new OperationOutcomeEmpty() {
+				@Override
+				public void callback() throws OperatingContextException {
+					countDownCallback.countDown();
+				}
+			});
+		}
 	}
 
 	@Override

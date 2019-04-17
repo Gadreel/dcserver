@@ -379,7 +379,7 @@ abstract public class Vault {
 
 	abstract public void getFolderListing(FileDescriptor file, RecordStruct params, OperationOutcome<List<? extends FileDescriptor>> callback) throws OperatingContextException;
 	
-	abstract public void deleteFile(FileDescriptor file, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException;
+	abstract public void deleteFiles(List<FileDescriptor> files, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException;
 
 	abstract public void renameFiles(FileDescriptor file, ListStruct renames, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException;
 

@@ -248,7 +248,8 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 				
 				MimeInfo info = MimeInfo.create()
 						.withExt(ext)
-						.withType(mtype)
+						.withMimeType(mtype)
+						.withIcon(mimeinfo.getAttribute("Icon"))
 						.withCompress(Struct.objectToBoolean(mimeinfo.getAttribute("Compress","false")));
 				
 				mimeres.with(info);

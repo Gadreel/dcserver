@@ -23,20 +23,33 @@ public class Icon extends Base {
 	
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
-		String library = StackUtil.stringFromSource(state,"Library");
-		String icon = StackUtil.stringFromSource(state,"Name");
-
+		String path = StackUtil.stringFromSource(state, "Path");
+		
+		if (StringUtil.isEmpty(path)) {
+			String library = StackUtil.stringFromSource(state,"Library");
+			String icon = StackUtil.stringFromSource(state,"Name");
+			
+			path = library + "/" + icon;
+		}
+		
 		this.clearChildren();
-
-		String vb = UIUtil.requireIcon(this, state, library, icon);
-
-		this
-				.withClass("icon-" + library + "-" + icon)
-				.attr("viewBox", vb)
-				.with(W3.tag("use")
-						.attr("href", "#" + library + "-" + icon)
-						.attr("xlink:href", "#" + library + "-" + icon)
-				);
+		
+		if (StringUtil.isNotEmpty(path)) {
+			if (path.startsWith("/"))
+				path = path.substring(1);
+			
+			String id = path.replace('/', '-');
+			
+			String vb = UIUtil.requireIcon(this, state, path);
+			
+			this
+					.withClass("icon-" + id)
+					.attr("viewBox", vb)
+					.with(W3.tag("use")
+							.attr("href", "#" + id)
+							.attr("xlink:href", "#" + id)
+					);
+		}
 	}
 	
 	@Override

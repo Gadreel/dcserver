@@ -30,12 +30,16 @@ If a dataset is dependent on other datasets then you are shown the dependencies 
 
 Add the URL to their server, enter the access or dataset token, define the following optional filters:
 
+- dataset (which also control the below)
+	- content privacy
+	- content classifications / speculations
 - significance (meaningless if lower than source)
-- privacy (meaningless if lower than source)
-- tags (only accept certain tags)
 - evidence (only accept certain evidence)
 - geographical region
 - min / max date
+- entity/event amplifier - mark certain entities or events as more important, thus surrounding events and entities get amplified too
+
+All above should be easy to find in server data structure for client updates.
 
 Suggest not filtering sources unless the source is huge and little of the data is desired. Generally prefer to filter at the View level. Then continue with Destination Action Same Server.
 
@@ -217,19 +221,19 @@ Column - can be individual entity or a grouping of entities
 
 Entity Significance:
 
-1. world/empire
-2. Country
-3. state/region
-4. township/county
-5. neighborhood
+10. world/empire
+25. Country
+40. state/region
+75. township/county
+90. neighborhood
 
 Event Significance
 
-1. Life changing/major
-2. primary Milestones
-3. secondary Milestones
-4. valued routine
-5. minor routine
+10. Life changing/major
+25. primary Milestones
+40. secondary Milestones
+75. valued routine
+90. minor routine
 
 Icons - based on tags (tags can be suggested from keywords)
 
@@ -244,10 +248,54 @@ See https://dexie.org/docs/MultiEntry-Index
 
 # Chronologica II Server Data Structure
 
+- dccEntities
+	- [EntityId]
+		- Datasets
+			- [ds ids]
+		- Aliases
+			- [alt ids] = dataset id alias comes from
+		- Properties
+			- [PropertyId]
+- dccEvents
+	- [EntityId]
+		- Datasets
+			- [ds ids]
+		- Aliases
+			- [alt ids] = dataset id alias comes from
+		- Properties
+			- [PropertyId]
+		- Links
+			- [LinkId]
+- dccProps
+	- [PropertyId]
+		- Name: NNN
+		- Entity: NNN   (Entity or Event)
+		- Event: NNN
+ 		- Vers:
+			- [VersionId]: Record - include dataset id
+		- Crits:
+			- [CritiqueId]: Record - include dataset id
+		- Aliases
+			- [alt ids] = dataset id alias comes from
+- dccLinks
+	- [LinkId]
+		- Name: NNN
+		- Entity: NNN	(Entity and Event - relationship)
+		- Event: NNN
+ 		- Vers:
+			- [VersionId]: Record - include dataset id
+		- Crits:
+			- [CritiqueId]: Record - include dataset id
+		- Aliases
+			- [alt ids] = dataset id alias comes from
+
+
+
 - Dataset
 	- Entities [
 		- Id (uuid)
-		- Kind (Organization, Structure, Expedition, Community, Landscape, Animal, MediaObject (art, book, play, movie, ), OtherObject, Unknown)
+		- (move to properties) Kind (Organization, Structure, Expedition, Community, Landscape, Animal, MediaObject (art, book, play, movie, ), OtherObject, Unknown)
+		- (move to properties) Significance: 1 - 100 (relative to world history)
 		- Properties [
 			- Id (uuid)
 			- Name
@@ -257,27 +305,26 @@ See https://dexie.org/docs/MultiEntry-Index
 				- Stamp (of operation)
 				- Author (uuid)
 				- From (empty means from inception or don't know)
-				- FromConfidence: fact, strong, medium, speculative
 				- To (empty means to culmination or don't know)
-				- ToConfidence: fact, strong, medium, speculative
 				- Value
-				- ValueConfidence: fact, strong, medium, speculative
 			]
-			- Discussion [
+			- Critique [
 				- Id (uuid)
-				- Stamp (of operation)
+				- Stamp (of critique)
 				- Author (uuid)
+				- VersionId (uuid of version endorsed - confidence relates to)
+				- Confidence: fact, strong, medium, speculative, fiction
 				- Notes
-				- ReferenceLink (uuid to a book or other source that is a recorded entity)
-				- Endorsement (uuid of version endorsed)
+				- ReferenceIds (uuid to a book or other source that is a recorded entity)
 			]
 		]
 	]
 	- Events [
 		- Id (uuid)
-		- Kind			(interaction, start / end relationship, movement, reaction)
+		- (move to properties) Kind			(interaction, start / end relationship, movement, reaction)
+		- (move to properties) Significance: 1 - 100 (relative to world history)
 		- Properties (see above)
-			(examples: description, videos, recordings, written notes, scans, photos, etc)
+			(examples: kind, significance, description, videos, recordings, written notes, scans, photos, etc)
 		- Links [			(entities connect through events)
 			- Id (uuid)
 			- EntityId   (how does X participate or react)
@@ -287,24 +334,88 @@ See https://dexie.org/docs/MultiEntry-Index
 				- Stamp (of operation)
 				- Author (uuid)
 				- From (empty means from inception or don't know)
-				- FromConfidence: fact, strong, medium, speculative
 				- To (empty means to culmination or don't know)
-				- ToConfidence: fact, strong, medium, speculative
 				- Role (leads, target, participant, witness, reaction)
-				- RoleConfidence: fact, strong, medium, speculative
+				- Significance: 1 - 100 (relative to entity's experience)
 			]
-			- Discussion [
+			- Critique [
 				- Id (uuid)
 				- Stamp (of operation)
 				- Author (uuid)
+				- VersionId (uuid of version endorsed)
+				- Confidence: fact, strong, medium, speculative, fiction
 				- Notes
-				- ReferenceLink (uuid to a book or other source that is a recorded entity)
-				- Endorsement (uuid of version endorsed)
+				- ReferenceIds (uuid to a book or other source that is a recorded entity)
 			]
 		]
 	]
+	- Aliases: [
+		{
+			Source: uuid
+			Target: uuid
+		}
+	]
 
 ? Properties that allow multiple values simply use a different UUID for the property. Properties that do not allow multiple values, do not include a UUID at all.
+
+## Sync Dataset File
+
+[
+	// record about synchronization
+	{
+		Source: {
+			Dataset: uuid,
+			Author(Publisher): uuid of bridge account,
+			Timestamp: of the bundle (API to bridge call to get the timestamp)
+		},
+		Updates: [
+			{
+				EntityId: uuid,
+				Op: AdmitProperty|RevokeProperty|AdmitLink|RevokeLink,
+				PropertyId|LinkId: uuid,
+				TargetEntityId: uuid, (if link)
+				VersionId (uuid of version endorsed),
+				From: xxx,
+				To: xxx,
+				Value|Role: xxx
+				(note that author, stamp come from the Source area)
+			},
+			{
+				Id: uuid of critique,
+				EntityId: uuid,
+				Op: CritiqueProperty|CritiqueProperty|CritiqueLink|CritiqueLink,
+				PropertyId|LinkId: uuid,
+				VersionId (uuid of version endorsed)
+				Confidence (role or value): fact, strong, medium, speculative
+				Notes
+				ReferenceIds (uuid to a book or other source that is a recorded entity)
+			},
+			{
+				Id: uuid of alias,
+				Op: AdmitAlias|RevokeAlias,
+				Source: uuid
+				Target: uuid
+			},
+			{
+				Id: uuid of critique,
+				Op: CritiqueAlias,
+				Alias: uuid,
+				Confidence (alias): fact, strong, medium, speculative
+				Notes
+				ReferenceIds (uuid to a book or other source that is a recorded entity)
+			}
+		]
+	}
+]
+
+loading a sync file
+
+- check the signature
+- decrypt
+- lookup the uuid for the signature
+- does that uuid match what is in the Author field?
+- does this account have access to that dataset?
+
 
 ## Properties
 

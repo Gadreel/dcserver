@@ -247,7 +247,7 @@ public class AwsStoreFile extends FileStoreFile {
 		Map<String, List<String>> hdrs = new HashMap<>();
 		
 		List<String> ctlist = new ArrayList<>();
-		ctlist.add(ResourceHub.getResources().getMime().getMimeTypeForName(this.getPath()).getType());
+		ctlist.add(ResourceHub.getResources().getMime().getMimeTypeForName(this.getPath()).getMimeType());
 		hdrs.put("Content-Type", ctlist);
 		
 		if (this.getFieldAsBooleanOrFalse("AwsGrantPublic")) {

@@ -265,7 +265,7 @@ public class SmtpWork extends StateWork {
 		String mime = attachment.getFieldAsString("Mime");
 		
 		if (StringUtil.isEmpty(mime))
-			mime = ResourceHub.getResources().getMime().getMimeTypeForName(name).getType();
+			mime = ResourceHub.getResources().getMime().getMimeTypeForName(name).getMimeType();
 		
 		String fmime = mime;
 		

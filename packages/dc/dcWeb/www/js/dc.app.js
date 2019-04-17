@@ -2312,16 +2312,26 @@ dc.pui.Form.prototype = {
 					Changed: false
 				};
 
-				// do before save record event
-				task.Store.Form.raiseEvent('BeforeSave', event);
+				try {
+					// do before save record event
+					task.Store.Form.raiseEvent('BeforeSave', event);
 
-				if (event.Changed)
-					task.Store.AnyChanged = true;
+					if (event.Changed)
+						task.Store.AnyChanged = true;
 
-				if (event.Stop) 			// quit the task
-					task.kill();
-				else if (! event.Wait) 			//  continue the task, unless told to wait
-					task.resume();
+					if (event.Stop) 			// quit the task
+						task.kill();
+					else if (! event.Wait) 			//  continue the task, unless told to wait
+						task.resume();
+				}
+				catch (x) {
+					console.log('error: ' + x);
+					dc.pui.Apps.Busy = false;
+
+					dc.pui.Popup.alert('Unexpected error.', function() {
+						task.kill();
+					});
+				}
 			}
 		} );
 
@@ -2654,7 +2664,7 @@ dc.pui.Form.prototype = {
 
 		var savetask = new dc.lang.Task(steps, function(res) {
 			//console.log('observer: ' + res.Code);
-			callback();
+			callback(res);
 		});
 
 		savetask.Store = {
@@ -3312,7 +3322,10 @@ dc.pui.Tags = {
 										Action: action
 									};
 
-									form.save(function() {
+									form.save(function(task) {
+										if (task && task.hasErrors())
+											$(node).removeClass('pure-button-disabled');
+
 										dc.pui.Apps.Busy = false;
 									});
 								});

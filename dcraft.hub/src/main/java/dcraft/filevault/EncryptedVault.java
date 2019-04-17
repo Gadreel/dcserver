@@ -25,6 +25,7 @@ import dcraft.struct.Struct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.util.IOUtil;
 import dcraft.util.TimeUtil;
+import dcraft.util.cb.CountDownCallback;
 import dcraft.util.chars.Utf8Encoder;
 import dcraft.util.pgp.ClearsignUtil;
 
@@ -68,18 +69,22 @@ public class EncryptedVault extends Vault {
 	}
 	
 	@Override
-	public void deleteFile(FileDescriptor file, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException {
+	public void deleteFiles(List<FileDescriptor> files, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException {
 		// check if `file` has info loaded
-		if (! file.confirmed()) {
-			Logger.error("Get file details first");
-			callback.returnEmpty();
-			return;
+		for (FileDescriptor file : files) {
+			if (!file.confirmed()) {
+				Logger.error("Get file details first");
+				callback.returnEmpty();
+				return;
+			}
 		}
 		
-		this.beforeRemove(file, params, new OperationOutcomeEmpty() {
+		OperationMarker om = OperationMarker.create();
+		
+		CountDownCallback countDownCallback = new CountDownCallback(files.size(), new OperationOutcomeEmpty() {
 			@Override
 			public void callback() throws OperatingContextException {
-				if (this.hasErrors() || ! file.exists()) {
+				if (om.hasErrors()) {
 					callback.returnEmpty();
 					return;
 				}
@@ -90,37 +95,61 @@ public class EncryptedVault extends Vault {
 				
 				Transaction ftx = buildUpdateTransaction(Transaction.createTransactionId(), params);
 				
-				// if folder collect all files in a folder and add to Tx for processing later.
-				// then here do a quick entry that marks only the folder as deleted and mark it as User not Scan
-				// this is to give immediate feedback to a user that deletes a folder
-				// processing the Tx will result in marking all sub files with the transaction id - so no need to do that here
-	
-				if (file.isFolder()) {
-					adapter.traverseIndex(EncryptedVault.this, file.getPathAsCommon(), -1, OperationContext.getOrThrow(), new BasicFilter() {
-						@Override
-						public ExpressionResult check(FileIndexAdapter adapter, IVariableAware scope, Vault vault, CommonPath path, RecordStruct file) throws OperatingContextException {
-							ftx.withDelete(path);
-							
-							return ExpressionResult.ACCEPTED;
-						}
-					});
+				for (FileDescriptor file : files) {
+					if (! file.exists()) {
+						continue;
+					}
 					
-					// mark the folder so it is hidden from user, no other point
-					adapter.hideFolder(EncryptedVault.this, file.getPathAsCommon(), TimeUtil.now(),
-							buildHistory(ftx, "Delete").with("Source", "User"));
-				}
-				else {
-					ftx.withDelete(file.getPathAsCommon());
+					// if folder collect all files in a folder and add to Tx for processing later.
+					// then here do a quick entry that marks only the folder as deleted and mark it as User not Scan
+					// this is to give immediate feedback to a user that deletes a folder
+					// processing the Tx will result in marking all sub files with the transaction id - so no need to do that here
+					
+					else if (file.isFolder()) {
+						adapter.traverseIndex(EncryptedVault.this, file.getPathAsCommon(), -1, OperationContext.getOrThrow(), new BasicFilter() {
+							@Override
+							public ExpressionResult check(FileIndexAdapter adapter, IVariableAware scope, Vault vault, CommonPath path, RecordStruct file) throws OperatingContextException {
+								ftx.withDelete(path);
+								
+								return ExpressionResult.ACCEPTED;
+							}
+						});
+						
+						// mark the folder so it is hidden from user, no other point
+						adapter.hideFolder(EncryptedVault.this, file.getPathAsCommon(), TimeUtil.now(),
+								buildHistory(ftx, "Delete").with("Source", "User"));
+					}
+					else {
+						ftx.withDelete(file.getPathAsCommon());
+					}
 				}
 				
 				ftx.commitTransaction(new OperationOutcomeEmpty() {
 					@Override
 					public void callback() throws OperatingContextException {
-						afterRemove(file, params, callback);
+						CountDownCallback countDownCallback2 = new CountDownCallback(files.size(), callback);
+						
+						for (FileDescriptor file : files) {
+							afterRemove(file, params, new OperationOutcomeEmpty() {
+								@Override
+								public void callback() throws OperatingContextException {
+									countDownCallback2.countDown();
+								}
+							});
+						}
 					}
 				});
 			}
 		});
+		
+		for (FileDescriptor file : files) {
+			this.beforeRemove(file, params, new OperationOutcomeEmpty() {
+				@Override
+				public void callback() throws OperatingContextException {
+					countDownCallback.countDown();
+				}
+			});
+		}
 	}
 	
 	@Override

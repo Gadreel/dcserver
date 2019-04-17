@@ -26,6 +26,7 @@ import dcraft.filevault.Vault;
 import dcraft.filevault.VaultUtil;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.hub.op.OperationOutcomeString;
@@ -40,7 +41,9 @@ import dcraft.struct.Struct;
 import dcraft.tenant.Site;
 import dcraft.util.RndUtil;
 import dcraft.util.StringUtil;
+import dcraft.util.cb.CountDownCallback;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
@@ -117,8 +120,13 @@ public class Vaults  {
 			return true;
 		}
 		
-		if ("Delete".equals(op) || "DeleteFile".equals(op) || "DeleteFolder".equals(op)) {
+		if ("DeleteFile".equals(op) || "DeleteFolder".equals(op)) {
 			deleteFile(vault, rec, request.isFromRpc(), callback);
+			return true;
+		}
+		
+		if ("Delete".equals(op)) {
+			deleteFiles(vault, rec, request.isFromRpc(), callback);
 			return true;
 		}
 		
@@ -282,7 +290,11 @@ public class Vaults  {
 					
 					FileDescriptor fi = this.getResult();
 					
-					vault.deleteFile(fi, params, new OperationOutcomeEmpty() {
+					List<FileDescriptor> files = new ArrayList<>();
+					
+					files.add(fi);
+					
+					vault.deleteFiles(files, params, new OperationOutcomeEmpty() {
 						@Override
 						public void callback() throws OperatingContextException {
 							fcb.returnEmpty();
@@ -290,6 +302,67 @@ public class Vaults  {
 					});
 				}
 			});
+		}
+		catch (OperatingContextException x) {
+			Logger.error("Operating context error: " + x);
+			fcb.returnEmpty();
+		}
+	}
+	
+	static public void deleteFiles(Vault vault, RecordStruct request, boolean checkAuth, OperationOutcomeStruct fcb) throws OperatingContextException {
+		RecordStruct params = request.getFieldAsRecord("Params");
+		
+		try {
+			ListStruct paths = request.getFieldAsList("Paths");
+			
+			// check bucket security
+			if (checkAuth) {
+				for (int i = 0; i < paths.size(); i++) {
+					if (!vault.checkWriteAccess("DeleteFile", paths.getItemAsString(i), params)) {
+						Logger.errorTr(434);
+						fcb.returnValue(null);
+						return;
+					}
+				}
+			}
+			
+			OperationMarker om = OperationMarker.create();
+			
+			List<FileDescriptor> files = new ArrayList<>();
+			
+			CountDownCallback countDownCallback = new CountDownCallback(paths.size(), new OperationOutcomeEmpty() {
+				@Override
+				public void callback() throws OperatingContextException {
+					if (om.hasErrors()) {
+						fcb.returnEmpty();
+						return;
+					}
+					
+					vault.deleteFiles(files, params, new OperationOutcomeEmpty() {
+						@Override
+						public void callback() throws OperatingContextException {
+							fcb.returnEmpty();
+						}
+					});
+				}
+			});
+			
+			for (int i = 0; i < paths.size(); i++) {
+				vault.getMappedFileDetail(paths.getItemAsString(i), params, new OperationOutcome<FileDescriptor>() {
+					@Override
+					public void callback(FileDescriptor result) throws OperatingContextException {
+						if (!this.hasErrors()) {
+							if (this.isEmptyResult()) {
+								Logger.error("Your request appears valid but does not map to a file.  Unable to complete.");
+							} else {
+								files.add(result);
+							}
+						}
+						
+						countDownCallback.countDown();
+					}
+				});
+			}
 		}
 		catch (OperatingContextException x) {
 			Logger.error("Operating context error: " + x);
@@ -322,7 +395,7 @@ public class Vaults  {
 						return;
 					}
 
-					vault.renameFiles(result, params.getFieldAsList("Files"), params, new OperationOutcomeEmpty() {
+					vault.renameFiles(result, request.getFieldAsList("Files"), params, new OperationOutcomeEmpty() {
 						@Override
 						public void callback() throws OperatingContextException {
 							fcb.returnEmpty();

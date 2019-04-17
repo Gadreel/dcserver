@@ -209,8 +209,9 @@ public class MenuWidget extends Base {
 	public void renderAfterChildren(InstructionWork state) throws OperatingContextException {
 		this
 				.withClass("dc-widget", "dc-widget-menu")
-				.withAttribute("data-dc-enhance", "true")
-				.withAttribute("data-dc-tag", this.getName());
+				.attr("data-dc-enhance", "true")
+				.attr("data-dc-tag", this.getName())
+				.attr("itemtype", "https://schema.org/SiteNavigationElement");
 		
 		this.setName("nav");
     }

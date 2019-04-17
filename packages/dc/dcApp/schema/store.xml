@@ -1240,6 +1240,15 @@
 								<Field Name="Delivery">
 									<List Type="dcmProduct:dcmDelivery" />
 								</Field>
+								<Field Name="Categories">
+									<List>
+										<Record>
+											<Field Name="Id" Type="Id" />
+											<Field Name="Title" Type="dcmCategory:dcmTitle" />
+											<Field Name="Alias" Type="dcmCategory:dcmAlias" />
+										</Record>
+									</List>
+								</Field>
 								<Field Name="Score" Type="Decimal" />
 							</Record>
 						</ListResponse>

@@ -1,13 +1,21 @@
 package dcraft.hub.resource;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import dcraft.filestore.CommonPath;
+import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.resource.ResourceBase;
 import dcraft.hub.resource.ResourceTier;
+import dcraft.script.StackUtil;
+import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
+import dcraft.struct.ListStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.StringStruct;
 import dcraft.util.FileUtil;
 import dcraft.util.MimeInfo;
 import dcraft.util.StringUtil;
@@ -35,7 +43,7 @@ public class MimeResource extends ResourceBase {
 	
 	public MimeResource with(MimeInfo v) {
 		this.mimeExtMapping.put(v.getExt(), v);
-		this.mimeTypeMapping.put(v.getType(), v);
+		this.mimeTypeMapping.put(v.getMimeType(), v);
 		
 		return this;
 	}
@@ -74,6 +82,23 @@ public class MimeResource extends ResourceBase {
 		
 		return this.getMimeType(ext);
 	}
+	
+	public List<MimeInfo> getDeep() {
+		List<MimeInfo> list = new ArrayList<>();
+		
+		this.getDeep(list);
+		
+		return list;
+	}
+	
+	protected void getDeep(List<MimeInfo> list) {
+		MimeResource parent = this.getParentResource();
+		
+		if (parent != null)
+			parent.getDeep(list);
+		
+		list.addAll(this.mimeExtMapping.values());
+	}
 
 	/*
 	public boolean getMimeCompress(String ext) {
@@ -98,4 +123,48 @@ public class MimeResource extends ResourceBase {
 		return false;
 	}
 	*/
+	
+	@Override
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
+		if ("MimeForName".equals(code.getName())) {
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+			
+			if (StringUtil.isNotEmpty(result)) {
+				String extension = FileUtil.getFileExtension(StackUtil.stringFromElement(stack, code, "Name"));
+				
+				StackUtil.addVariable(stack, result, this.getMimeType(extension));
+			}
+			
+			return ReturnOption.CONTINUE;
+		}
+		
+		if ("TypeForName".equals(code.getName())) {
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+			
+			if (StringUtil.isNotEmpty(result)) {
+				String extension = FileUtil.getFileExtension(StackUtil.stringFromElement(stack, code, "Name"));
+				
+				MimeInfo info = this.getMimeType(extension);
+				
+				StackUtil.addVariable(stack, result, StringStruct.of(info.getMimeType()));
+			}
+			
+			return ReturnOption.CONTINUE;
+		}
+		
+		if ("GetMimeDeep".equals(code.getName())) {
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+			
+			if (StringUtil.isNotEmpty(result)) {
+				ListStruct list = ListStruct.list();
+				List<MimeInfo> mimes = this.getDeep();
+				list.withCollection(mimes);
+				StackUtil.addVariable(stack, result, list);
+			}
+			
+			return ReturnOption.CONTINUE;
+		}
+		
+		return super.operation(stack, code);
+	}
 }

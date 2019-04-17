@@ -55,7 +55,7 @@ public class StaticOutputAdapter implements IOutputWork {
 			Response resp = wctrl.getResponse();
 			RecordStruct request = wctrl.getFieldAsRecord("Request");
 			
-			String mtype = this.mime.getType();
+			String mtype = this.mime.getMimeType();
 			
 			resp.setHeader("Content-Type", mtype);
 			resp.setDateHeader("Date", System.currentTimeMillis());

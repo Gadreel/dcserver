@@ -126,7 +126,11 @@
 						<Description>
 							Removes a file or a folder (and all files under it).
 						</Description>
-						<RecordRequest Required="True" Inherits="dcVaultPathRequest" />
+						<RecordRequest Required="True" Inherits="dcVaultRequest">
+							<Field Name="Paths" Required="True">
+								<List Type="dcString" />
+							</Field>
+						</RecordRequest>
 						<RecordResponse Inherits="dcVaultResponse" />
 					</Op>
 					<Op Name="Move">

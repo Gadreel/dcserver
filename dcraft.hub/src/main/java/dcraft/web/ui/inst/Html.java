@@ -195,7 +195,7 @@ public class Html extends Base {
 		if (this.icondefs.size() > 0) {
 			body.add(0,
 					W3.tag("svg")
-						.attr("id","dcIconDefs")
+						//.attr("id","dcIconDefs")
 						.attr("xmlns", "http://www.w3.org/2000/svg")
 						.attr("viewBox", "0 0 512 512")
 						.attr("style", "display: none;")

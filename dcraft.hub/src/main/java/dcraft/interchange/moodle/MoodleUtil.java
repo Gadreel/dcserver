@@ -55,7 +55,7 @@ public class MoodleUtil {
 			*/
 
 			// parse and close response stream
-			CompositeStruct resp = MoodleUtil.execute(alt, "core_user_get_users", body);
+			CompositeStruct resp = MoodleUtil.execute(alt, "core_user_get_users", body, 5);
 
 			if (resp == null) {
 				Logger.error("Error processing text: Moodle sent an incomplete response.");
@@ -82,7 +82,7 @@ public class MoodleUtil {
 					+ "&criteria[0][value]=" + URLEncoder.encode(uname, "UTF-8");
 
 			// parse and close response stream
-			CompositeStruct resp = MoodleUtil.execute(alt, "core_user_get_users", body);
+			CompositeStruct resp = MoodleUtil.execute(alt, "core_user_get_users", body, 5);
 
 			if (resp == null) {
 				Logger.error("Error processing text: Moodle sent an incomplete response.");
@@ -109,7 +109,7 @@ public class MoodleUtil {
 					+ "&criteria[0][value]=" + URLEncoder.encode(lastname, "UTF-8");
 
 			// parse and close response stream
-			CompositeStruct resp = MoodleUtil.execute(alt, "core_user_get_users", body);
+			CompositeStruct resp = MoodleUtil.execute(alt, "core_user_get_users", body, 5);
 
 			if (resp == null) {
 				Logger.error("Error processing text: Moodle sent an incomplete response.");
@@ -161,7 +161,7 @@ public class MoodleUtil {
 			}
 
 			// parse and close response stream
-			CompositeStruct resp = MoodleUtil.execute(alt, "core_user_create_users", body.toString());
+			CompositeStruct resp = MoodleUtil.execute(alt, "core_user_create_users", body.toString(), 5);
 
 			if (resp == null) {
 				Logger.error("Error processing text: Moodle sent an incomplete response.");
@@ -207,7 +207,7 @@ public class MoodleUtil {
 			body.append("enrolments[0][courseid]=" + URLEncoder.encode(courseid, "UTF-8"));
 
 			// parse and close response stream
-			CompositeStruct resp = MoodleUtil.execute(alt, "enrol_manual_enrol_users", body.toString());
+			CompositeStruct resp = MoodleUtil.execute(alt, "enrol_manual_enrol_users", body.toString(), 5);
 
 			// returns null unless error
 			if (resp != null) {
@@ -236,7 +236,7 @@ public class MoodleUtil {
 			body.append("&ueid=" + URLEncoder.encode(userid + "", "UTF-8"));
 
 			// parse and close response stream
-			CompositeStruct resp = MoodleUtil.execute(alt, "core_enrol_edit_user_enrolment", body.toString());
+			CompositeStruct resp = MoodleUtil.execute(alt, "core_enrol_edit_user_enrolment", body.toString(), 5);
 
 			if (resp == null) {
 				Logger.error("Error processing text: Moodle sent an incomplete response.");
@@ -247,6 +247,106 @@ public class MoodleUtil {
 			System.out.println("Moodle Resp:\n" + resp.toPrettyString());
 
 			callback.returnEmpty();
+
+			return;
+		}
+		catch (Exception x) {
+			Logger.error("Error calling service, Moodle error: " + x);
+		}
+
+		callback.returnEmpty();
+	}
+
+	static public void getUserEnrollments(String alt, String userid, OperationOutcomeList callback) {
+		try {
+				/*
+				courseid = int
+				ueid = int
+
+				core_enrol_edit_user_enrolment
+				 */
+
+			StringBuilder body = new StringBuilder();
+
+			body.append("userid=" + URLEncoder.encode(userid + "", "UTF-8"));
+
+			// parse and close response stream
+			CompositeStruct resp = MoodleUtil.execute(alt, "core_enrol_get_users_courses", body.toString(), 5);
+
+			if (resp == null) {
+				Logger.error("Error processing text: Moodle sent an incomplete response.");
+				callback.returnEmpty();
+				return;
+			}
+
+			System.out.println("Moodle Resp:\n" + resp.toPrettyString());
+
+
+			callback.returnValue((ListStruct) resp);
+
+			return;
+		}
+		catch (Exception x) {
+			Logger.error("Error calling service, Moodle error: " + x);
+		}
+
+		callback.returnEmpty();
+	}
+
+	static public void getCourseGrades(String alt, String courseid, OperationOutcomeRecord callback) {
+		try {
+			StringBuilder body = new StringBuilder();
+
+			body.append("courseid=" + URLEncoder.encode(courseid + "", "UTF-8"));
+
+			// parse and close response stream
+			CompositeStruct resp = MoodleUtil.execute(alt, "gradereport_user_get_grade_items", body.toString(), -1);
+
+			if (resp == null) {
+				Logger.error("Error processing text: Moodle sent an incomplete response.");
+				callback.returnEmpty();
+				return;
+			}
+
+			//System.out.println("Moodle Resp:\n" + resp.toPrettyString());
+
+			callback.returnValue((RecordStruct) resp);
+
+			return;
+		}
+		catch (Exception x) {
+			Logger.error("Error calling service, Moodle error: " + x);
+		}
+
+		callback.returnEmpty();
+	}
+
+	static public void getCourseEnrollments(String alt, String courseid, OperationOutcomeList callback) {
+		try {
+				/*
+				courseid = int
+				ueid = int
+
+				core_enrol_edit_user_enrolment
+				 */
+
+			StringBuilder body = new StringBuilder();
+
+			body.append("courseid=" + URLEncoder.encode(courseid + "", "UTF-8"));
+
+			// parse and close response stream
+			CompositeStruct resp = MoodleUtil.execute(alt, "core_enrol_get_enrolled_users", body.toString(), 5);
+
+			if (resp == null) {
+				Logger.error("Error processing text: Moodle sent an incomplete response.");
+				callback.returnEmpty();
+				return;
+			}
+
+			System.out.println("Moodle Resp:\n" + resp.toPrettyString());
+
+
+			callback.returnValue((ListStruct) resp);
 
 			return;
 		}
@@ -270,7 +370,7 @@ public class MoodleUtil {
 			 */
 
 			// parse and close response stream
-			MoodleUtil.execute(alt, "core_role_assign_roles", body);
+			MoodleUtil.execute(alt, "core_role_assign_roles", body, 5);
 
 			callback.returnEmpty();
 
@@ -283,7 +383,7 @@ public class MoodleUtil {
 		callback.returnEmpty();
 	}
 
-	static private CompositeStruct execute(String alt, String function, String body) {
+	static private CompositeStruct execute(String alt, String function, String body, int minlen) {
 		XElement twilio = ApplicationHub.getCatalogSettings("Moodle-Services", alt);
 
 		if (twilio == null) {
@@ -327,7 +427,7 @@ public class MoodleUtil {
 
 			if (responseCode == 200) {
 				// parse and close response stream
-				if (con.getContentLength() < 5)
+				if ((minlen != -1) && (con.getContentLength() < minlen))
 					return null;
 
 				return CompositeParser.parseJson(con.getInputStream());

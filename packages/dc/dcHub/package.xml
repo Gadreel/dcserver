@@ -48,25 +48,25 @@
 		<Service.Definition Id="dc-core-simple" Name="dcCoreServices" RunClass="dcraft.service.simple.Service" />
 
 		<Mime>
-			<Definition Ext="html" Type="text/html" Compress="True" />
-			<Definition Ext="shtml" Type="text/html" Compress="True" />
-			<Definition Ext="xml" Type="text/xml" Compress="True" />
-			<Definition Ext="txt" Type="text/plain" Compress="True" />
-			<Definition Ext="jpg" Type="image/jpeg" />
-			<Definition Ext="jpeg" Type="image/jpeg" />
-			<Definition Ext="png" Type="image/png" />
-			<Definition Ext="gif" Type="image/gif" />
-			<Definition Ext="css" Type="text/css" Compress="True" />
-			<Definition Ext="json" Type="application/json" Compress="True" />
-			<Definition Ext="js" Type="application/javascript" Compress="True" />
-			<Definition Ext="yaml" Type="text/yaml" Compress="True" />
-			<Definition Ext="woff" Type="font/woff" />
-			<Definition Ext="woff2" Type="font/woff2" />
-			<Definition Ext="cur" Type="image/vnd.microsoft.icon" />
-			<Definition Ext="ico" Type="image/vnd.microsoft.icon" />
-			<Definition Ext="svg" Type="image/svg+xml" />
-			<Definition Ext="svgz" Type="image/svg+xml" />
-			<Definition Ext="pdf" Type="application/pdf" />
+			<Definition Ext="html" Type="text/html" Compress="True" Icon="far/file-code" />
+			<Definition Ext="shtml" Type="text/html" Compress="True" Icon="far/file-code" />
+			<Definition Ext="xml" Type="text/xml" Compress="True" Icon="far/file-code" />
+			<Definition Ext="txt" Type="text/plain" Compress="True" Icon="far/file" />
+			<Definition Ext="jpg" Type="image/jpeg" Icon="far/image" />
+			<Definition Ext="jpeg" Type="image/jpeg" Icon="far/image" />
+			<Definition Ext="png" Type="image/png" Icon="far/image" />
+			<Definition Ext="gif" Type="image/gif" Icon="far/image" />
+			<Definition Ext="css" Type="text/css" Compress="True" Icon="far/file-code" />
+			<Definition Ext="json" Type="application/json" Compress="True" Icon="far/file-code" />
+			<Definition Ext="js" Type="application/javascript" Compress="True" Icon="far/file-code" />
+			<Definition Ext="yaml" Type="text/yaml" Compress="True" Icon="far/file-code" />
+			<Definition Ext="woff" Type="font/woff" Icon="fas/italic" />
+			<Definition Ext="woff2" Type="font/woff2" Icon="fas/italic" />
+			<Definition Ext="cur" Type="image/vnd.microsoft.icon" Icon="far/image" />
+			<Definition Ext="ico" Type="image/vnd.microsoft.icon" Icon="far/image" />
+			<Definition Ext="svg" Type="image/svg+xml" Icon="far/image" />
+			<Definition Ext="svgz" Type="image/svg+xml" Icon="far/image" />
+			<Definition Ext="pdf" Type="application/pdf" Icon="far/file-pdf" />
 
 			<Definition Ext="aac" Note="AAC audio" Type="audio/aac" />
 			<Definition Ext="abw" Note="AbiWord document" Type="application/x-abiword" />
@@ -78,9 +78,9 @@
 			<Definition Ext="bz" Note="BZip archive" Type="application/x-bzip" />
 			<Definition Ext="bz2" Note="BZip2 archive" Type="application/x-bzip2" />
 			<Definition Ext="csh" Note="C-Shell script" Type="application/x-csh" />
-			<Definition Ext="csv" Note="Comma-separated values (CSV)" Type="text/csv" />
-			<Definition Ext="doc" Note="Microsoft Word" Type="application/msword" />
-			<Definition Ext="docx" Note="Microsoft Word (OpenXML)" Type="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+			<Definition Ext="csv" Note="Comma-separated values (CSV)" Type="text/csv" Icon="fas/file-csv" />
+			<Definition Ext="doc" Note="Microsoft Word" Type="application/msword" Icon="far/file-word" />
+			<Definition Ext="docx" Note="Microsoft Word (OpenXML)" Type="application/vnd.openxmlformats-officedocument.wordprocessingml.document" Icon="far/file-word" />
 			<Definition Ext="eot" Note="MS Embedded OpenType fonts" Type="application/vnd.ms-fontobject" />
 			<Definition Ext="epub" Note="Electronic publication (EPUB)" Type="application/epub+zip" />
 			<Definition Ext="es" Note="ECMAScript RFC 4329 Section 8.2" Type="application/ecmascript" />
@@ -98,8 +98,8 @@
 			<Definition Ext="ogv" Note="OGG video" Type="video/ogg" />
 			<Definition Ext="ogx" Note="OGG" Type="application/ogg" />
 			<Definition Ext="otf" Note="OpenType font" Type="font/otf" />
-			<Definition Ext="ppt" Note="Microsoft PowerPoint" Type="application/vnd.ms-powerpoint" />
-			<Definition Ext="pptx" Note="Microsoft PowerPoint (OpenXML)" Type="application/vnd.openxmlformats-officedocument.presentationml.presentation" />
+			<Definition Ext="ppt" Note="Microsoft PowerPoint" Type="application/vnd.ms-powerpoint" Icon="far/file-powerpoint" />
+			<Definition Ext="pptx" Note="Microsoft PowerPoint (OpenXML)" Type="application/vnd.openxmlformats-officedocument.presentationml.presentation" Icon="far/file-powerpoint" />
 			<Definition Ext="rar" Note="RAR archive" Type="application/x-rar-compressed" />
 			<Definition Ext="rtf" Note="Rich Text Format (RTF)" Type="application/rtf" />
 			<Definition Ext="sh" Note="Bourne shell script" Type="application/x-sh" />
@@ -116,8 +116,8 @@
 			<Definition Ext="webm" Note="WEBM video" Type="video/webm" />
 			<Definition Ext="webp" Note="WEBP image" Type="image/webp" />
 			<Definition Ext="xhtml" Note="XHTML" Type="application/xhtml+xml" />
-			<Definition Ext="xls" Note="Microsoft Excel" Type="application/vnd.ms-excel" />
-			<Definition Ext="xlsx" Note="Microsoft Excel (OpenXML)" Type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+			<Definition Ext="xls" Note="Microsoft Excel" Type="application/vnd.ms-excel" Icon="far/file-excel" />
+			<Definition Ext="xlsx" Note="Microsoft Excel (OpenXML)" Type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" Icon="far/file-excel" />
 			<Definition Ext="xul" Note="XUL" Type="application/vnd.mozilla.xul+xml" />
 			<Definition Ext="zip" Note="ZIP archive" Type="application/zip" />
 			<Definition Ext="3gp" Note="3GPP audio/video container" Type="video/3gpp" />

@@ -1,44 +1,51 @@
 package dcraft.util;
 
-public class MimeInfo {
+import dcraft.struct.RecordStruct;
+
+public class MimeInfo extends RecordStruct {
 	//public static String octetStream() {
 	//	return "application/octetstream";
 	//}
 	
-	public static MimeInfo DEFAULT = new MimeInfo().withCompress(false).withExt("txt").withType("text/plain");
+	public static MimeInfo DEFAULT = new MimeInfo().withCompress(false).withExt("txt").withIcon("far/file").withMimeType("text/plain");
 	
 	public static MimeInfo create() {
 		return new MimeInfo();
 	}
 	
-	protected String ext = null;
-	protected String type = null;
-	protected boolean compress = false;
-	
 	public String getExt() {
-		return this.ext;
+		return this.getFieldAsString("Ext");
 	}
 	
 	public MimeInfo withExt(String v) {
-		this.ext = v;
+		this.with("Ext", v);
 		return this;
 	}
 	
-	public String getType() {
-		return this.type;
+	public String getMimeType() {
+		return this.getFieldAsString("Type");
 	}
 	
-	public MimeInfo withType(String v) {
-		this.type = v;
+	public MimeInfo withMimeType(String v) {
+		this.with("Type", v);
+		return this;
+	}
+	
+	public String getIcon() {
+		return this.getFieldAsString("Icon");
+	}
+	
+	public MimeInfo withIcon(String v) {
+		this.with("Icon", v);
 		return this;
 	}
 	
 	public boolean isCompress() {
-		return this.compress;
+		return this.getFieldAsBooleanOrFalse("Compress");
 	}
 	
 	public MimeInfo withCompress(boolean v) {
-		this.compress = v;
+		this.with("Compress", v);
 		return this;
 	}
 }

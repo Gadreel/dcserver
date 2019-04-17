@@ -15,10 +15,10 @@ public class TrueFalseFormatter implements IFormatter {
 		
 		if (StringUtil.isNotEmpty(format) && format.contains(","))
 			fmt = format;
-			
-		String[] split = fmt.split(",");
-		
-		value = val ? split[0] : split[1];
+
+		int pos = fmt.indexOf(',');
+
+		value = val ? fmt.substring(0, pos) : fmt.substring(pos + 1);
 		
 		return FormatResult.result(value);
 	}

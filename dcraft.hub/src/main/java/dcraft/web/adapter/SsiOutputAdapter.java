@@ -106,7 +106,7 @@ public class SsiOutputAdapter extends ChainWork implements IOutputWork {
 			
 			Response resp = wctrl.getResponse();
 			
-			resp.setHeader("Content-Type", this.mime.getType());
+			resp.setHeader("Content-Type", this.mime.getMimeType());
 			resp.setDateHeader("Date", System.currentTimeMillis());
 			resp.setDateHeader("Last-Modified", when);
 			resp.setHeader("X-UA-Compatible", "IE=Edge,chrome=1");

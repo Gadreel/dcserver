@@ -139,7 +139,10 @@ public class EncryptedVaultStore extends FileStore {
 			@Override
 			public void callback(FileDescriptor result) throws OperatingContextException {
 				if (result.exists() && result.isFolder()) {
-					vault.deleteFile(result, null, callback);
+					List<FileDescriptor> files = new ArrayList<>();
+					files.add(result);
+					
+					vault.deleteFiles(files, null, callback);
 				}
 				else {
 					callback.returnEmpty();

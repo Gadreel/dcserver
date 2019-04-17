@@ -46,7 +46,7 @@ public class StyleCacheOutputAdapter extends ChainWork implements IOutputWork {
 		
 		Response resp = wctrl.getResponse();
 		
-		String mtype = this.mime.getType();
+		String mtype = this.mime.getMimeType();
 		
 		resp.setHeader("Content-Type", mtype);
 		resp.setDateHeader("Date", System.currentTimeMillis());
