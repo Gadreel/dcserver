@@ -279,7 +279,7 @@ public class MoodleUtil {
 				return;
 			}
 
-			System.out.println("Moodle Resp:\n" + resp.toPrettyString());
+			//System.out.println("Moodle Resp:\n" + resp.toPrettyString());
 
 
 			callback.returnValue((ListStruct) resp);
@@ -383,6 +383,21 @@ public class MoodleUtil {
 		callback.returnEmpty();
 	}
 
+	static public void getCourses(String alt, OperationOutcomeList callback) {
+		try {
+			// parse and close response stream
+			CompositeStruct result = MoodleUtil.execute(alt, "core_course_get_courses", null, -1);
+
+			callback.returnValue((ListStruct) result);
+			return;
+		}
+		catch (Exception x) {
+			Logger.error("Error calling service, Moodle error: " + x);
+		}
+
+		callback.returnEmpty();
+	}
+
 	static private CompositeStruct execute(String alt, String function, String body, int minlen) {
 		XElement twilio = ApplicationHub.getCatalogSettings("Moodle-Services", alt);
 
@@ -412,16 +427,22 @@ public class MoodleUtil {
 			URL url = new URL(endpoint);
 			HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
 
-			con.setRequestMethod("POST");
 			con.setRequestProperty("User-Agent", "dcServer/1.0 (Language=Java/8)");
-			con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
-			// Send post request
-			con.setDoOutput(true);
-			DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-			wr.writeBytes(body);
-			wr.flush();
-			wr.close();
+			if (StringUtil.isNotEmpty(body)) {
+				con.setRequestMethod("POST");
+				con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
+				// Send post request
+				con.setDoOutput(true);
+				DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+				wr.writeBytes(body);
+				wr.flush();
+				wr.close();
+			}
+			else {
+				con.setRequestMethod("GET");
+			}
 
 			int responseCode = con.getResponseCode();
 

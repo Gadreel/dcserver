@@ -142,22 +142,6 @@
 						</RecordRequest>
 						<RecordResponse Inherits="dcVaultResponse" />
 					</Op>
-					<Op Name="Rename">
-						<Description>
-							Path with a list of files to rename in one transaction.
-						</Description>
-						<RecordRequest Required="True" Inherits="dcVaultPathRequest">
-							<Field Name="Files" Required="True">
-								<List>
-									<Record>
-										<Field Name="Name" Type="dcString" Required="True" />
-										<Field Name="NewName" Type="dcString" Required="True" />
-									</Record>
-								</List>
-							</Field>
-						</RecordRequest>
-						<RecordResponse Inherits="dcVaultResponse" />
-					</Op>
 					<Op Name="Custom">
 						<Description>
 							Execute a custom command.

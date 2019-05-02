@@ -69,7 +69,7 @@
 
 			<!--
 			<Field Name="dcmBadges" Type="dcTinyString" List="True" Indexed="True" />
-		-->
+			-->
 
 			<!-- tags are like categories -->
 			<Field Name="dcmTags" Type="dcMetaString" Indexed="True" List="True" />
@@ -103,7 +103,8 @@
 		<Table Id="dcmFeedHistory">
 			<!-- dcmPath includes the site alias and feed alias to be truly unique: /[site]/[feed]/[path]/[file] -->
 			<Field Name="dcmPath" Type="dcPath" Indexed="True" Required="True" />
-			<!-- dcmLocalPath is path as seen in search results (local to site), null if no local path (i.e. this is a block, not an independent entry) -->
+			<!-- like dcmPath, except it is only present when not published  -->
+			<Field Name="dcmDraftPath" Type="dcPath" Indexed="True" />
 
 			<!--
 				dcmStartedBy - the one who started this entry or draft
@@ -119,7 +120,7 @@
 			<Field Name="dcmModifiedBy" ForeignKey="dcUser" />
 			<Field Name="dcmNote" Type="dcString" />
 			<Field Name="dcmScheduleAt" Type="DateTime" />
-			<Field Name="dcmPublished" Type="Boolean" />
+			<Field Name="dcmPublished" Type="Boolean" Indexed="True" />
 			<Field Name="dcmCompleted" Type="Boolean" />
 			<Field Name="dcmCompletedAt" Type="DateTime" />
 			<Field Name="dcmCancelled" Type="Boolean" />
@@ -165,6 +166,8 @@
 		<Procedure Name="dcmServices.Feed.SaveCommandHistory" Execute="dcraft.cms.feed.db.SaveCommandHistory" />
 		<Procedure Name="dcmServices.Feed.DiscardCommandHistory" Execute="dcraft.cms.feed.db.DiscardCommandHistory" />
 		<Procedure Name="dcmServices.Feed.BulkCommandHistory" Execute="dcraft.cms.feed.db.BulkCommandHistory" />
+		<Procedure Name="dcmServices.Feed.LoadDrafts" Execute="dcraft.cms.feed.db.LoadDrafts" />
+		<Procedure Name="dcmServices.Feed.LoadFeedDashboard" Execute="dcraft.cms.feed.db.LoadFeedDashboard" />
 
 		<Procedure Name="dcCoreServices.ManagedForm.Submit" Execute="dcraft.cms.db.forms.Submit" />
 		<Procedure Name="dcCoreServices.ManagedForm.Complete" Execute="dcraft.cms.db.forms.Complete" />
@@ -448,6 +451,49 @@
 								<Field Name="Option" Type="dcmFeedHistoryOptionsEnum" />
 							</Record>
 						</ListRequest>
+					</Op>
+					<Op Name="LoadDrafts">
+						<Description>
+							get a list of the current drafts
+						</Description>
+						<ListResponse>
+							<Record>
+								<Field Name="LocalPath" Type="dcPath" />
+								<Field Name="Feed" Type="dcMetaString" />
+								<Field Name="FeedName" Type="dcSmallString" />
+								<Field Name="Highlight" Type="Boolean" />
+								<Field Name="StartEdit" Type="dcmFeedHistory:dcmStartedAt" />
+								<Field Name="StartBy">
+									<Record>
+										<Field Name="Id" Type="Id" />
+										<Field Name="FirstName" Type="dcUser:dcFirstName" />
+										<Field Name="LastName" Type="dcUser:dcLastName" />
+									</Record>
+								</Field>
+								<Field Name="LastEdit" Type="dcmFeedHistory:dcmModifiedAt" />
+								<Field Name="LastBy">
+									<Record>
+										<Field Name="Id" Type="Id" />
+										<Field Name="FirstName" Type="dcUser:dcFirstName" />
+										<Field Name="LastName" Type="dcUser:dcLastName" />
+									</Record>
+								</Field>
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="LoadFeedDashboard">
+						<Description>
+							get a list of highlighted feeds
+						</Description>
+						<ListResponse>
+							<Record>
+								<Field Name="LocalPath" Type="dcPath" />
+								<Field Name="Feed" Type="dcMetaString" />
+								<Field Name="FeedName" Type="dcSmallString" />
+								<Field Name="Title" Type="dcString" />
+								<Field Name="Published" Type="dcmFeed:dcmPublishAt" />
+							</Record>
+						</ListResponse>
 					</Op>
 				</Secure>
 			</Feature>

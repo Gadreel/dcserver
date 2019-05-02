@@ -44,7 +44,8 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 	static protected final String RPC_PATH = "rpc";
 	static protected final String STATUS_PATH = "status";
 	static protected final String TRANSFER_PATH = "xfer";
-	
+	static protected final String VAULT_PATH = "vault";
+
 	protected OperationContext context = null;
 	protected XElement servicesettings = null;		// TODO load these from service
 	

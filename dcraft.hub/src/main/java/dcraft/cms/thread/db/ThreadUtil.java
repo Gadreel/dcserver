@@ -216,6 +216,11 @@ public class ThreadUtil {
 				return;
 			}
 
+			if (deliver == null) {
+				Logger.error("Thread missing delivery date: " + id);
+				return;
+			}
+
 			String tenant = OperationContext.getOrThrow().getTenant().getAlias();
 
 			db.updateStaticScalar("dcmThread", id, "dcmModified", deliver);				// we show threads ordered by modified, when new content is added modified changes
@@ -228,7 +233,10 @@ public class ThreadUtil {
 				String folder = Struct.objectToString(db.getStaticList("dcmThread", id, "dcmFolder", party));
 				Boolean isread = Struct.objectToBooleanOrFalse(db.getStaticList("dcmThread", id, "dcmRead", party));
 
-				db.getRequest().getInterface().set(tenant, "dcmThreadA", party, folder, revmod, id, isread);
+				if (StringUtil.isNotEmpty(party) && StringUtil.isNotEmpty(folder))
+					db.getRequest().getInterface().set(tenant, "dcmThreadA", party, folder, revmod, id, isread);
+				else
+					Logger.error("Thread missing folder or party: " + id);
 			}
 
 			if (! indexonly)
@@ -524,11 +532,35 @@ public class ThreadUtil {
 	 */
 	
 	public static void updateDeliver(TablesAdapter db, String id, ZonedDateTime deliver) throws OperatingContextException {
+		if (! db.isPresent("dcmThread", id)) {
+			Logger.error("Thread not found: " + id);
+			return;
+		}
+
+		if (deliver == null) {
+			Logger.error("Thread missing delivery date: " + id);
+			return;
+		}
+
+		CommonPath invpath = CommonPath.from("/dc/dcm/threads/" + id);
+
+		String claimid = ApplicationHub.makeLocalClaim(invpath, 5);
+
+		if (StringUtil.isEmpty(claimid)) {
+			Logger.warn("Unable to claim thread: " + id);
+			return;
+		}
+
 		try {
 			String tenant = OperationContext.getOrThrow().getTenant().getAlias();
-			
+
 			ZonedDateTime olddeliver = Struct.objectToDateTime(db.getStaticScalar("dcmThread", id, "dcmModified"));
-			
+
+			if (olddeliver == null) {
+				Logger.error("Thread missing old delivery date: " + id);
+				return;
+			}
+
 			BigDecimal oldrevmod = ByteUtil.dateTimeToReverse(olddeliver);
 			
 			db.updateStaticScalar("dcmThread", id, "dcmModified", deliver);				// we show threads ordered by modified, when new content is added modified changes
@@ -541,10 +573,15 @@ public class ThreadUtil {
 				for (String party : parties) {
 					String folder = Struct.objectToString(db.getStaticList("dcmThread", id, "dcmFolder", party));
 					Boolean isread = Struct.objectToBooleanOrFalse(db.getStaticList("dcmThread", id, "dcmRead", party));
-					
-					db.getRequest().getInterface().kill(tenant, "dcmThreadA", party, folder, oldrevmod, id);
-					
-					db.getRequest().getInterface().set(tenant, "dcmThreadA", party, folder, revmod, id, isread);
+
+					if (StringUtil.isNotEmpty(party) && StringUtil.isNotEmpty(folder)) {
+						db.getRequest().getInterface().kill(tenant, "dcmThreadA", party, folder, oldrevmod, id);
+
+						db.getRequest().getInterface().set(tenant, "dcmThreadA", party, folder, revmod, id, isread);
+					}
+					else {
+						Logger.error("Thread missing folder or party: " + id);
+					}
 				}
 			}
 
@@ -552,6 +589,9 @@ public class ThreadUtil {
 		}
 		catch (DatabaseException x) {
 			Logger.error("Unable to deliver thread: " + x);
+		}
+		finally {
+			ApplicationHub.releaseLocalClaim(invpath, claimid);
 		}
 	}
 

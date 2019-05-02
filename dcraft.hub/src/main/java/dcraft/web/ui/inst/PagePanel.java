@@ -28,7 +28,15 @@ public class PagePanel extends Base {
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
 		// the children will move into the body, so clear out our child list
 		List<XNode> hiddenchildren = this.children;
-		
+
+		List<XElement> btnchildren = new ArrayList<>();
+
+		for (XNode node : this.children) {
+			if ((node instanceof XElement) && (((XElement)node).getName().equals("Button"))) {
+				btnchildren.add((XElement) node);
+			}
+		}
+
 		this.children = new ArrayList<>();
 
 		String title = "{$Page.Title}";
@@ -48,7 +56,76 @@ public class PagePanel extends Base {
 				//.withAttribute("aria-labelledby", id + "Header")
 				//.withAttribute("role", "region")
 				//.withAttribute("tabindex", "-1");
-		
+
+		Base ul = (Base) Base.tag("ul");
+
+		for (XElement btn : btnchildren) {
+			Base ret = Link.tag();
+
+			ret.mergeDeep(btn, false);
+
+			ret.withClass("dc-panel-header-btn");
+
+			if (ret.hasNotEmptyAttribute("Icon") || ret.hasNotEmptyAttribute("IconName"))
+				ret.withClass("dc-panel-header-icon");
+
+			if (ret.hasEmptyAttribute("IconType"))
+				ret.withAttribute("IconType", "simple");
+
+			ul.with(
+				W3.tag("li")
+						.with(ret)
+			);
+		}
+
+		ul
+			.with(Base.tag("li")
+				.with(Link.tag()
+						.withClass("dc-panel-header-btn", "dcui-pagepanel-back")
+						.withAttribute("aria-label", "{$_Tr.dcwPagePrevious}")
+						.withAttribute("IconLibrary", "fas")
+						.withAttribute("IconName", "chevron-left")
+						.withAttribute("IconType", "Simple")
+						.withAttribute("IconSize", "1x")
+				)
+			)
+			.with(Base.tag("li")
+					.with(Link.tag()
+							.withClass("dc-panel-header-btn", "dcui-pagepanel-menu")
+							.withAttribute("aria-label", "{$_Tr.dcwPageOpenMenu}")
+							.withAttribute("IconLibrary", "fas")
+							.withAttribute("IconName", "bars")
+							.withAttribute("IconType", "Simple")
+							.withAttribute("IconSize", "1x")
+					)
+			)
+			/* TODO restore
+			.with(Base.tag("li")
+					.with(Link.tag()
+							.withClass("dc-panel-header-btn", "dcui-pagepanel-help")
+							.withAttribute("aria-label", "{$_Tr.dcwPageHelp}")
+							.withAttribute("IconLibrary", "fas")
+							.withAttribute("IconName", "question")
+							.withAttribute("IconType", "Simple")
+							.withAttribute("IconSize", "1x")
+					)
+			)
+			*/
+			.with(Base.tag("li")
+					.with(Link.tag()
+							.withClass("dc-panel-header-btn", "dcui-pagepanel-close")
+							.withAttribute("aria-label", "{$_Tr.dcwPageClose}")
+							.withAttribute("IconLibrary", "fas")
+							.withAttribute("IconName", "times")
+							.withAttribute("IconType", "Simple")
+							.withAttribute("IconSize", "1x")
+					)
+			);
+
+		Base nav = (Base) Base.tag("nav")
+				.attr("aria-label", "{$_Tr.dcwPageSecondaryNavigation}")
+				.with(ul);
+
 		this.with(W3.tag("div")
 				.withAttribute("class", "dc-panel-heading")
 				.with(W3.tag("h1")
@@ -57,53 +134,7 @@ public class PagePanel extends Base {
 						.withAttribute("aria-label", title + " {$_Tr.dcwPage}")
 						.withText(title)
 				)
-				.with(Base.tag("nav")
-					.attr("aria-label", "{$_Tr.dcwPageSecondaryNavigation}")
-					.with(Base.tag("ul")
-						.with(Base.tag("li")
-								.with(Link.tag()
-										.withClass("dc-panel-header-btn", "dcui-pagepanel-back")
-										.withAttribute("aria-label", "{$_Tr.dcwPagePrevious}")
-										.withAttribute("IconLibrary", "fas")
-										.withAttribute("IconName", "chevron-left")
-										.withAttribute("IconType", "Simple")
-										.withAttribute("IconSize", "1x")
-								)
-						)
-						.with(Base.tag("li")
-								.with(Link.tag()
-										.withClass("dc-panel-header-btn", "dcui-pagepanel-menu")
-										.withAttribute("aria-label", "{$_Tr.dcwPageOpenMenu}")
-										.withAttribute("IconLibrary", "fas")
-										.withAttribute("IconName", "bars")
-										.withAttribute("IconType", "Simple")
-										.withAttribute("IconSize", "1x")
-								)
-						)
-						/* TODO restore
-						.with(Base.tag("li")
-								.with(Link.tag()
-										.withClass("dc-panel-header-btn", "dcui-pagepanel-help")
-										.withAttribute("aria-label", "{$_Tr.dcwPageHelp}")
-										.withAttribute("IconLibrary", "fas")
-										.withAttribute("IconName", "question")
-										.withAttribute("IconType", "Simple")
-										.withAttribute("IconSize", "1x")
-								)
-						)
-						*/
-						.with(Base.tag("li")
-								.with(Link.tag()
-								.withClass("dc-panel-header-btn", "dcui-pagepanel-close")
-									.withAttribute("aria-label", "{$_Tr.dcwPageClose}")
-									.withAttribute("IconLibrary", "fas")
-									.withAttribute("IconName", "times")
-									.withAttribute("IconType", "Simple")
-									.withAttribute("IconSize", "1x")
-								)
-						)
-					)
-				)
+				.with(nav)
 			);
 		
 		XElement bodyui = W3.tag("main")

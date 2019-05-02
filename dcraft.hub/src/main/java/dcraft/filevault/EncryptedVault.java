@@ -208,13 +208,7 @@ public class EncryptedVault extends Vault {
 	}
 
 	@Override
-	public void renameFiles(FileDescriptor file, ListStruct renames, RecordStruct params, OperationOutcomeEmpty callback) {
-		Logger.error("Not currently supported on encrypted vaults.");
-		callback.returnEmpty();
-	}
-
-	@Override
-	public void moveFiles(FileDescriptor file, FileDescriptor dest, RecordStruct params, OperationOutcomeEmpty callback) {
+	public void moveFile(FileDescriptor file, FileDescriptor dest, RecordStruct params, OperationOutcomeEmpty callback) {
 		Logger.error("Not currently supported on encrypted vaults.");
 		callback.returnEmpty();
 	}

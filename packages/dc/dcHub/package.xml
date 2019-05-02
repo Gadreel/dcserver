@@ -245,6 +245,7 @@
 			<Tag Name="dcdb.LoadRecord" Class="dcraft.script.inst.db.LoadRecord" />
 			<Tag Name="dcdb.LoadTenant" Class="dcraft.script.inst.db.LoadTenant" />
 			<Tag Name="dcdb.UpdateRecord" Class="dcraft.script.inst.db.UpdateRecord" />
+			<Tag Name="dcdb.UpdateTenant" Class="dcraft.script.inst.db.UpdateTenant" />
 			<Tag Name="dcdb.InsertRecord" Class="dcraft.script.inst.db.InsertRecord" />
 
 			<Tag Name="dcs.SendEmail" Class="dcraft.script.inst.ext.SendEmail" />

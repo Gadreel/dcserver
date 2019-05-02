@@ -148,17 +148,10 @@
 	<Function Name="AfterSave"><![CDATA[
 			var page = this;
 
-			// save "no op" in FeedHistory to cause the Save icon to show
-			dc.cms.Loader.saveCommands('{$Alias}', page.Store.Slug, [
-				{
-					Command: 'NoOp'
-				}
-			], function() {
-				page.Layer.back();
+			page.Layer.back();
 
-				if (page.Params.Callback)
-					page.Params.Callback( page.Store.NewPath );
-			});
+			if (page.Params.Callback)
+				page.Params.Callback( page.Store.NewPath );
 	]]></Function>
 	<Function Name="DoSelectImage"><![CDATA[
 			var page = this;

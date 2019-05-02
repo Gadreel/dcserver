@@ -38,6 +38,15 @@ public class RecaptchaUtil {
 			return;
 		}
 
+		boolean disabled = rsettings.getAttributeAsBooleanOrFalse("Disabled");
+
+		if (disabled) {
+			callback.returnValue(RecordStruct.record()
+					.with("Disabled", true)
+			);
+			return;
+		}
+
 		String secretKey = rsettings.getAttribute("SecretKey");
 
 		if (StringUtil.isEmpty(secretKey)) {

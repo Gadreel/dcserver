@@ -22,9 +22,7 @@ public class ServiceChainWork implements IWork {
 	
 	@Override
 	public void run(TaskContext taskctx) throws OperatingContextException {
-		this.request
-			.withData(taskctx.getParams())
-			.withOutcome(new OperationOutcomeStruct() {
+		this.request.withOutcome(new OperationOutcomeStruct() {
 			@Override
 			public void callback(Struct result) throws OperatingContextException {
 				taskctx.returnValue(result);

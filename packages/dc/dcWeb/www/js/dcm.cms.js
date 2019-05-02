@@ -1163,14 +1163,23 @@ dc.pui.TagFuncs['dcm.CarouselWidget']['doCmsInitWidget'] = function(entry, node)
 	$(node).dcappend(
 		dc.cms.Loader.createEditToolBar([
 			{
-				Icon: 'fa-plus',
+				Icon: 'fa-pencil',
 				Title: 'Add',
 				Auth: [ 'Admin', 'Editor' ],
 				Op: function(e) {
 					var params = entry.callTagFunc(widget, 'getParams');
 					//dc.pui.Dialog.loadPage('/dcm/cms/carousel-widget-list/' + params.Feed, params);
+
+					dc.pui.Dialog.loadPage('/dcm/shows/edit', {
+						Path: $(node).attr('data-dcm-gallery'),
+						Alias: $(node).attr('data-dcm-show'),
+						Callback: function(g) {
+							dc.pui.Loader.MainLayer.refreshPage();
+						}
+					});
 				}
 			},
+			/*
 			{
 				Icon: 'fa-file-text-o',
 				Title: 'Template',
@@ -1180,6 +1189,7 @@ dc.pui.TagFuncs['dcm.CarouselWidget']['doCmsInitWidget'] = function(entry, node)
 					dc.pui.SimpleApp.loadPage('/dcm/cms/carousel-widget-template/' + params.Feed, params);
 				}
 			},
+			*/
 			{
 				Icon: 'fa-cog',
 				Title: 'Properties',

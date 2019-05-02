@@ -1,10 +1,9 @@
 package dcraft.web;
 
 import dcraft.filestore.CommonPath;
-import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationContext;
-import dcraft.hub.op.OperationMarker;
-import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.filevault.VaultServiceRequest;
+import dcraft.filevault.VaultUtil;
+import dcraft.hub.op.*;
 import dcraft.log.Logger;
 import dcraft.log.count.CountHub;
 import dcraft.service.ServiceHub;
@@ -30,6 +29,7 @@ import javax.management.monitor.CounterMonitor;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class RequestWork extends ChainWork {
 	protected String oldAuthToken = null;
@@ -230,6 +230,109 @@ public class RequestWork extends ChainWork {
 						CountHub.countObjects("dcWebUploadCount-" + taskctx.getTenant().getAlias(), req);
 
 						// let the super run so that streamwork requests a read.
+					}
+				}
+				else if (reqpath.getName(1).equals(ServerHandler.VAULT_PATH)) {
+					String vault = reqpath.getName(2);
+
+					if ("GET".equals(method)) {
+						wctrl.setDecoder(new IContentDecoder() {
+							@Override
+							public void offer(HttpContent chunk) throws OperatingContextException {
+								if (chunk instanceof LastHttpContent) {
+									taskctx.resume();  // cause stream work to start
+								}
+							}
+
+							@Override
+							public void release() throws OperatingContextException {
+								wctrl.sendRequestBadRead();
+								taskctx.returnEmpty();
+							}
+						});
+
+						String sourcepath = req.selectAsString("Parameters.path.0");
+
+						HttpDestStream destStream = HttpDestStream.dest();
+
+						StreamFragment fragment = StreamFragment.of(destStream);
+
+						AtomicReference<String> channel = new AtomicReference<>();
+
+						this.then(VaultServiceRequest.ofStartDownload(vault)
+								.withPath(CommonPath.from(sourcepath))
+								.withFromRpc()
+							)
+							.then(new IWork() {
+								@Override
+								public void run(TaskContext taskctx) throws OperatingContextException {
+									if (taskctx.hasExitErrors()) {
+										taskctx.returnEmpty();
+										return;
+									}
+
+									RecordStruct rec = Struct.objectToRecord(taskctx.getResult());
+
+									channel.set(rec.getFieldAsString("Channel"));
+
+									// collect fragment for upload or download
+									Session session = taskctx.getSession();
+
+									HashMap<String, Struct> scache = session.getCache();
+
+									// put the FileStoreFile in cache
+									Struct centry = scache.get(channel.get());
+
+									if ((centry == null) || ! (centry instanceof RecordStruct)) {
+										Logger.error("Invalid channel number, unable to transfer.");
+										wctrl.sendRequestBadRead();
+
+										taskctx.returnEmpty();
+										return;
+									}
+
+									Object so = ((RecordStruct)centry).getFieldAsRecord("Stream");
+
+									if ((so == null) || ! (so instanceof StreamFragment)) {
+										Logger.error("Invalid channel number, not a stream, unable to transfer.");
+										wctrl.sendRequestBadRead();
+
+										taskctx.returnEmpty();
+										return;
+									}
+
+									fragment.withPrepend((StreamFragment) so);
+									taskctx.returnEmpty();
+								}
+							})
+							.then(new IWork() {
+								@Override
+								public void run(TaskContext taskctx) throws OperatingContextException {
+									if (taskctx.hasExitErrors()) {
+										wctrl.sendRequestBadRead();
+
+										taskctx.returnEmpty();
+										return;
+									}
+
+									RequestWork.this.then(StreamWork.of(fragment));
+									taskctx.returnEmpty();
+								}
+							});
+							//.then(VaultServiceRequest.ofFinishDownload(vault)
+							//		.withPath(CommonPath.from(sourcepath))
+							//		.withChannel(channel.get())
+							//		.withStatus("Success") // TODO alt?
+							//);
+
+						CountHub.countObjects("dcWebDownloadCount-" + taskctx.getTenant().getAlias(), req);
+
+						// don't end task, that happens after decoder
+						wctrl.getChannel().read();
+						return;
+					}
+					else if ("PUT".equals(method) || "POST".equals(method)) {
+						// TODO
 					}
 				}
 			}

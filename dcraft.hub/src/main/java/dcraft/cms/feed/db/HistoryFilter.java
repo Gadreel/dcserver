@@ -16,15 +16,15 @@ public class HistoryFilter extends BasicExpression {
 	public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, String id) throws OperatingContextException {
 		// these should already be in the file
 		if (Struct.objectToBooleanOrFalse(adapter.getStaticScalar(table, id, "dcmCompleted")))
-			return ExpressionResult.rejected();
+			return ExpressionResult.REJECTED;
 		
 		// skip these
 		if (Struct.objectToBooleanOrFalse(adapter.getStaticScalar(table, id, "dcmCancelled")))
-			return ExpressionResult.rejected();
+			return ExpressionResult.REJECTED;
 		
 		// only deal with draft mode - later TODO check schedules and apply for version viewed
 		if (adapter.getStaticScalar(table, id, "dcmScheduleAt") != null)
-			return ExpressionResult.rejected();
+			return ExpressionResult.REJECTED;
 
 		return this.nestOrAccept(adapter, scope, table, id);
 	}

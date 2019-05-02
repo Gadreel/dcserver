@@ -72,7 +72,7 @@ public class Complete implements IStoredProc {
 			db.updateStaticScalar("dcmThread", id,"dcmManagedFormBasic", fid);
 		}
 
-		ThreadUtil.deliver(db, id, now);
+		ThreadUtil.updateDeliver(db, id, now);
 
 		callback.returnEmpty();
 	}

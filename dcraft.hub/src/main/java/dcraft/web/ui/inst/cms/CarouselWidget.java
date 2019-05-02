@@ -11,6 +11,7 @@ import dcraft.hub.op.OperationMarker;
 import dcraft.log.Logger;
 import dcraft.script.ScriptHub;
 import dcraft.script.StackUtil;
+import dcraft.script.inst.Var;
 import dcraft.script.work.InstructionWork;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.ListStruct;
@@ -26,6 +27,7 @@ import dcraft.web.ui.inst.ICMSAware;
 import dcraft.web.ui.inst.W3;
 import dcraft.web.ui.inst.W3Closed;
 import dcraft.xml.XElement;
+import dcraft.xml.XNode;
 
 public class CarouselWidget extends Base implements ICMSAware {
 	static public CarouselWidget tag() {
@@ -71,7 +73,16 @@ public class CarouselWidget extends Base implements ICMSAware {
 		boolean preloadenabled = this.hasNotEmptyAttribute("Preload")
 				? "true".equals(StackUtil.stringFromSource(state,"Preload").toLowerCase())
 				: false;
-		
+
+		XElement ariatemplate = this.selectFirst("AriaTemplate");
+
+		this.remove(ariatemplate);
+
+	 	W3 arialist = (W3) W3.tag("div").withClass("dc-element-hidden")
+				.attr("role", "list").attr("aria-label", "banner images");
+
+		boolean ariatemplateused = false;
+
 		//System.out.println("using show: " + alias);
 
 		this
@@ -128,8 +139,11 @@ public class CarouselWidget extends Base implements ICMSAware {
 				
 				Base list = W3.tag("div").withClass("dcm-widget-carousel-list");
 				
-				list.withAttribute("role", "list");
-				
+				list.attr("role", "list")
+						.attr("aria-hidden", "true");
+
+				int cidx = 0;
+
 				for (Struct simg : images.items()) {
 					String img = simg.toString();
 					
@@ -156,7 +170,7 @@ public class CarouselWidget extends Base implements ICMSAware {
 					
 					RecordStruct data = (imgmeta != null) ? imgmeta : RecordStruct.record();
 					
-					// TODO use templates
+					// TODO use aria templates
 					
 					Base iel = W3Closed.tag("img");
 					
@@ -167,12 +181,37 @@ public class CarouselWidget extends Base implements ICMSAware {
 						.withAttribute("data-dc-image-data", data.toString());
 					
 					list.with(iel);
+
+					// setup image for expand
+					StackUtil.addVariable(state, "image-" + cidx, data);
+
+					// switch images during expand
+					XElement setvar = Var.tag()
+							.withAttribute("Name", "Image")
+							.withAttribute("SetTo", "$image-" + cidx);
+
+					arialist.with(setvar);
+
+					if (ariatemplate != null) {
+						// add nodes using the new variable
+						XElement entry = ariatemplate.deepCopy();
+
+						for (XNode node : entry.getChildren())
+							arialist.with(node);
+
+						ariatemplateused = true;
+					}
+
+					cidx++;
 				}
 				
 				this.with(fader).with(viewer).with(list);
 			}
 		}
-		
+
+		if (ariatemplateused)
+			this.with(arialist);
+
 		UIUtil.markIfEditable(state, this, "widget");
 	}
 	

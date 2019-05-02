@@ -381,9 +381,7 @@ abstract public class Vault {
 	
 	abstract public void deleteFiles(List<FileDescriptor> files, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException;
 
-	abstract public void renameFiles(FileDescriptor file, ListStruct renames, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException;
-
-	abstract public void moveFiles(FileDescriptor file, FileDescriptor dest, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException;
+	abstract public void moveFile(FileDescriptor file, FileDescriptor dest, RecordStruct params, OperationOutcomeEmpty callback) throws OperatingContextException;
 
 	abstract public StreamFragment toSourceStream(FileDescriptor fileDescriptor) throws OperatingContextException;
 	

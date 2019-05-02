@@ -3281,38 +3281,38 @@ dc.pui.Tags = {
 		var skey = $(node).attr('data-dc-sitekey');
 		var action = $(node).attr('data-dc-action');
 
-		if (skey) {
-			var clickfunc = function(e, ctrl) {
-				var fnode = $(node).closest('form');
+		var clickfunc = function(e, ctrl) {
+			var fnode = $(node).closest('form');
 
-				if (fnode && ! $(node).hasClass('pure-button-disabled') && ! dc.pui.Apps.busyCheck()) {
-					dc.pui.Apps.Busy = true;
+			if (fnode && ! $(node).hasClass('pure-button-disabled') && ! dc.pui.Apps.busyCheck()) {
+				dc.pui.Apps.Busy = true;
 
-					entry.LastFocus = $(node);
+				entry.LastFocus = $(node);
 
-					var form = entry.form(fnode.attr('data-dcf-name'));
-					var vres = form.validate();
+				var form = entry.form(fnode.attr('data-dcf-name'));
+				var vres = form.validate();
 
-					form.updateMessages(vres);
+				form.updateMessages(vres);
 
-					for (var i = 0; i < vres.Inputs.length; i++) {
-						var inp = vres.Inputs[i];
+				for (var i = 0; i < vres.Inputs.length; i++) {
+					var inp = vres.Inputs[i];
 
-						if (inp.Code != 0) {
-							dc.pui.Popup.alert(inp.Message, function() {
-								if (form.OnFocus)
-									form.PageEntry.callPageFunc(form.OnFocus, inp.Input);
-								else
-									form.inputQuery(inp.Input.Field).focus();
-							});
+					if (inp.Code != 0) {
+						dc.pui.Popup.alert(inp.Message, function() {
+							if (form.OnFocus)
+								form.PageEntry.callPageFunc(form.OnFocus, inp.Input);
+							else
+								form.inputQuery(inp.Input.Field).focus();
+						});
 
-							break;
-						}
+						break;
 					}
+				}
 
-					if (vres.Pass) {
-						$(node).addClass('pure-button-disabled');
+				if (vres.Pass) {
+					$(node).addClass('pure-button-disabled');
 
+					if (skey) {
 						grecaptcha.ready(function() {
 							grecaptcha
 								.execute(skey, { action: action })
@@ -3332,29 +3332,42 @@ dc.pui.Tags = {
 						});
 					}
 					else {
-						dc.pui.Apps.Busy = false;
+						form.Captcha = {
+							Token: '0123456789',
+							Action: action
+						};
+
+						form.save(function(task) {
+							if (task && task.hasErrors())
+								$(node).removeClass('pure-button-disabled');
+
+							dc.pui.Apps.Busy = false;
+						});
 					}
 				}
-			};
-
-			$(node).click(function(e) {
-				clickfunc(e, this);
-
-				e.preventDefault();
-				return false;
-			});
-
-			if (node.nodeName == 'SPAN') {
-				$(node).keypress(function(e) {
-					var keycode = (e.keyCode ? e.keyCode : e.which);
-					if (keycode == '13') {
-						clickfunc(e, this);
-
-						e.preventDefault();
-						return false;
-					}
-				});
+				else {
+					dc.pui.Apps.Busy = false;
+				}
 			}
+		};
+
+		$(node).click(function(e) {
+			clickfunc(e, this);
+
+			e.preventDefault();
+			return false;
+		});
+
+		if (node.nodeName == 'SPAN') {
+			$(node).keypress(function(e) {
+				var keycode = (e.keyCode ? e.keyCode : e.which);
+				if (keycode == '13') {
+					clickfunc(e, this);
+
+					e.preventDefault();
+					return false;
+				}
+			});
 		}
 	},
 	'dcf.SubmitButton': function(entry, node) {

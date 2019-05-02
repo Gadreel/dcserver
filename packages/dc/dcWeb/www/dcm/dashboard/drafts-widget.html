@@ -1,0 +1,65 @@
+<dc.MixIn Badges="Admin,Editor">
+	<dc.Fragment>
+		<div class="dc-dashboard-widget">
+			<h2>Open Drafts</h2>
+
+			<table id="lstDcmDraftsWidget" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Path</th>
+						<th scope="col">Last Edit</th>
+						<th scope="col">Actions</th>
+					</tr>
+				</thead>
+				<tbody id="lstDcmDraftsWidgetBody" />
+			</table>
+		</div>
+	</dc.Fragment>
+
+	<Function Name="dcmDraftsWidgetLoad" Mode="Load"><![CDATA[
+			var page = this;
+
+			page.Store.RefreshList.push(function() {
+				dc.comm.call('dcmServices.Feed.LoadDrafts', null, function(rmsg) {
+					if (rmsg.Code != 0) {
+						// don't alert
+						return;
+					}
+
+					//console.dir(rmsg.Result);
+
+					$drafttable = $('#lstDcmDraftsWidgetBody');
+
+					$drafttable.empty();
+
+					if (rmsg.Result) {
+						for (var i = 0; i < rmsg.Result.length; i++) {
+							var draft = rmsg.Result[i];
+
+							$drafttable.dcappend(
+								$('<tr>').dcappend(
+									$('<td>').dcappend(draft.FeedName, $('<br>'), draft.LocalPath),
+									$('<td>').text(moment.utc(draft.LastEdit ? draft.LastEdit : draft.StartEdit, 'YYYYMMDDTHHmmssSSSZ', true).local().format('MM-DD-YYYY, h:mm a')),
+									$('<td>').dcappend(
+										$('<a>')
+											.attr("href", "#")
+											.attr("tabindex", "0")
+											.attr("role", "button")
+											.attr("class", "pure-button-default pure-button dc-button")
+											.dcappend(dc.util.Icon.use('fas-pencil-alt'))
+											.click(draft, function(e) {
+												window.location = e.data.LocalPath;		// TODO may need adjustment someday
+
+												e.preventDefault();
+												return false;
+											})
+									)
+								)
+							);
+						}
+					}
+				});
+			});
+	]]></Function>
+
+</dc.MixIn>

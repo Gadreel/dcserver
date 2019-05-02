@@ -181,6 +181,19 @@
 			<Field Name="When" Type="BigDateTime" />
 		</RecordRequest>
 
+		<Record Id="dcdbUpdateTenant" Inherits="dcdbCall" Class="dcraft.db.request.schema.UpdateTenant">
+			<!--
+				Fields contains either:
+			 		[field name]: dcdbDataField
+				Or
+					[field name]:
+					 	[subid]: dcdbDataField
+					 	[subid]: dcdbDataField
+		 	-->
+			<Field Name="Fields" Type="Record" />
+			<Field Name="When" Type="BigDateTime" />
+		</RecordRequest>
+
 		<Record Id="dcdbInsertRecord" Inherits="dcdbCall" Class="dcraft.db.request.schema.Insert">
 			<!--
 				Fields contains either:

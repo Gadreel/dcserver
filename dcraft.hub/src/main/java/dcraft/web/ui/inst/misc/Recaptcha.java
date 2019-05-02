@@ -5,6 +5,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.InstructionWork;
+import dcraft.struct.RecordStruct;
 import dcraft.xml.XElement;
 
 public class Recaptcha extends Base {
@@ -29,6 +30,7 @@ public class Recaptcha extends Base {
 		XElement gsettings = ApplicationHub.getCatalogSettings("Google", alt);
 
 		String key = null;
+		boolean disabled = false;
 
 		if (gsettings != null) {
 			XElement rsettings = gsettings.find("reCAPTCHA");
@@ -36,6 +38,8 @@ public class Recaptcha extends Base {
 			if (rsettings != null) {
 				key = rsettings.getAttribute("SiteKey");
 			}
+
+			disabled = rsettings.getAttributeAsBooleanOrFalse("Disabled");
 		}
 
 		// use either CheckEnabled or Func, combined won't likely work out well
@@ -45,7 +49,7 @@ public class Recaptcha extends Base {
 				.attr("data-func", StackUtil.stringFromSource(state, "Func"))
 				.attr("data-ready-func", StackUtil.stringFromSource(state, "ReadyFunc"))
 				.attr("data-size", StackUtil.boolFromSource(state, "CheckEnabled") ? "visible" : "invisible")
-				.attr("data-sitekey", key)
+				.attr("data-sitekey", disabled ? "" : key)
 				.attr("data-type", rtype)
 				.withAttribute("data-dc-enhance", "true")
 				.withAttribute("data-dc-tag", this.getName());

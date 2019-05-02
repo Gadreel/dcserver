@@ -307,7 +307,7 @@ public class FeedUtilDb {
 	static public String findHistory(DatabaseAdapter conn, TablesAdapter db, String feed, String path, boolean create, boolean audit) throws OperatingContextException {
 		CommonPath epath = FeedUtilDb.toIndexPath(feed, path);
 		
-		Unique collector = (Unique) db.traverseIndex(OperationContext.getOrThrow(), "dcmFeedHistory", "dcmPath", epath.toString(), Unique.unique().withNested(
+		Unique collector = (Unique) db.traverseIndex(OperationContext.getOrThrow(), "dcmFeedHistory", "dcmDraftPath", epath.toString(), Unique.unique().withNested(
 				CurrentRecord.current().withNested(HistoryFilter.forDraft())));
 		
 		String hid = collector.isEmpty() ? null : collector.getOne().toString();
@@ -317,8 +317,10 @@ public class FeedUtilDb {
 				hid = db.createRecord("dcmFeedHistory");
 				
 				db.setStaticScalar("dcmFeedHistory", hid, "dcmPath", epath);
+				db.setStaticScalar("dcmFeedHistory", hid, "dcmDraftPath", epath);
 				db.setStaticScalar("dcmFeedHistory", hid, "dcmStartedAt", TimeUtil.now());
 				db.setStaticScalar("dcmFeedHistory", hid, "dcmStartedBy", OperationContext.getOrThrow().getUserContext().getUserId());
+				db.setStaticScalar("dcmFeedHistory", hid, "dcmPublished", false);
 			}
 		}
 		else {
@@ -355,6 +357,7 @@ public class FeedUtilDb {
 			db.setStaticScalar("dcmFeedHistory", hid, "dcmCancelled", true);
 			db.setStaticScalar("dcmFeedHistory", hid, "dcmCancelledAt", TimeUtil.now());
 			db.setStaticScalar("dcmFeedHistory", hid, "dcmCancelledBy", OperationContext.getOrThrow().getUserContext().getUserId());
+			db.retireStaticScalar("dcmFeedHistory", hid, "dcmDraftPath");
 			
 			if ((data != null) && data.hasField("Note"))
 				db.setStaticScalar("dcmFeedHistory", hid, "dcmNote", data.getFieldAsString("Note"));
@@ -438,6 +441,7 @@ public class FeedUtilDb {
 							if (! this.hasErrors()) {
 								db.setStaticScalar("dcmFeedHistory", hid, "dcmCompleted", true);
 								db.setStaticScalar("dcmFeedHistory", hid, "dcmCompletedAt", TimeUtil.now());
+								db.retireStaticScalar("dcmFeedHistory", hid, "dcmDraftPath");
 								
 								// TODO publish - if dcmScheduleAt then just set the dcmScheduled field to dcmScheduleAt, else do it now
 							}

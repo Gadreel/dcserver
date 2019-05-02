@@ -67,8 +67,10 @@ public class CaptchaButton extends Base {
 
 			if (rsettings != null) {
 				String key = rsettings.getAttribute("SiteKey");
+				boolean disabled = rsettings.getAttributeAsBooleanOrFalse("Disabled");
 
-				this.withAttribute("data-dc-sitekey", key);
+				if (! disabled)
+					this.withAttribute("data-dc-sitekey", key);
 			}
 		}
 	}

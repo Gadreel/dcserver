@@ -1,0 +1,73 @@
+<Schema>
+	<Shared>
+
+	</Shared>
+
+	<Database>
+		<Table Id="dcTenant">
+
+		</Table>
+
+		<Table Id="dcUser">
+
+		</Table>
+
+		<Table Id="dccFileset">
+			<Field Name="dccTitle" Type="dcSmallString" />
+			<Field Name="dccPublishId" Type="dcMetaString" Required="True" Unique="True" Indexed="True" />
+		</Table>
+
+		<!-- ability to publish to fileset -->
+		<Table Id="dccFilesetAccess">
+			<Field Name="dccFileset" ForeignKey="dccSigningKey" />
+			<Field Name="dccSigningKey" ForeignKey="dccSigningKey" />
+
+			<!-- even if deactivated the sign key can be checked for a past date timestamp -->
+			<Field Name="dccActivated" Type="DateTime" />
+			<Field Name="dccDeactivated" Type="DateTime" />
+			<Field Name="dccOwner" Type="Boolean" />
+		</Table>
+
+		<!-- public list of signing keys owned, must have secret key to prove ownership -->
+		<Table Id="dccSigningKey">
+			<Field Name="dccTitle" Type="dcSmallString" />
+			<Field Name="dccId" Type="dcMetaString" Required="True" Unique="True" Indexed="True" />
+			<Field Name="dccPublicKey" Type="dcLargeString" Required="True" />
+
+			<Field Name="dccOwner" ForeignKey="dcUser" Required="True" />
+		</Table>
+
+		<!--
+		<Procedure Name="dcCoreServices.Users.LoadSelf" Execute="dcraft.core.db.user.LoadSelf" />
+		-->
+	</Database>
+
+	<Services>
+		<Service Name="dcChrono">
+			<Feature Name="Filesets">
+				<Secure Badges="SysAdmin,Admin">
+					<Op Name="UpdateAccount">
+						<Description>
+							Load settings into an account.
+						</Description>
+						<RecordRequest Required="True">
+						</RecordRequest>
+					</Op>
+				</Secure>
+				<Secure Badges="Fileset">
+					<Op Name="StartUpload">
+						<Description>
+							Sets up a file uploader channel (on a session). Returns the sequence number for that PublishId.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="PublishId" Type="dcMetaString" />
+						</RecordRequest>
+						<RecordResponse Inherits="dcVaultTransferResponse">
+							<Field Name="SequenceNumber" Type="Integer" />
+						</RecordResponse>
+					</Op>
+				</Secure>
+			</Feature>
+		</Service>
+	</Services>
+</Schema>

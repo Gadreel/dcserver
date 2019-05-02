@@ -221,19 +221,19 @@ Column - can be individual entity or a grouping of entities
 
 Entity Significance:
 
-10. world/empire
-25. Country
+90. world/empire
+75. Country
 40. state/region
-75. township/county
-90. neighborhood
+25. township/county
+10. neighborhood
 
 Event Significance
 
-10. Life changing/major
-25. primary Milestones
+90. Life changing/major
+75. primary Milestones
 40. secondary Milestones
-75. valued routine
-90. minor routine
+25. valued routine
+10. minor routine
 
 Icons - based on tags (tags can be suggested from keywords)
 
@@ -251,52 +251,62 @@ See https://dexie.org/docs/MultiEntry-Index
 - dccEntities
 	- [EntityId]
 		- Datasets
-			- [ds ids]
-		- Aliases
-			- [alt ids] = dataset id alias comes from
+			- [ds ids] = active, inactive, inherit (any ds can mark an entity inactive - which can then be marked active by an override)
+		X- Aliases
+		X	- [alt ids] = dataset id alias comes from
 		- Properties
 			- [PropertyId]
+		- PropertyMap
+			- [name]
+				- [PropertyId]
 - dccEvents
 	- [EntityId]
 		- Datasets
 			- [ds ids]
-		- Aliases
-			- [alt ids] = dataset id alias comes from
+		X- Aliases
+		X	- [alt ids] = dataset id alias comes from
 		- Properties
 			- [PropertyId]
-		- Links
-			- [LinkId]
+		- PropertyMap
+			- [name]
+				- [PropertyId]
 - dccProps
 	- [PropertyId]
 		- Name: NNN
-		- Entity: NNN   (Entity or Event)
+		- Entity: NNN   (Entity xor Event)
 		- Event: NNN
  		- Vers:
 			- [VersionId]: Record - include dataset id
 		- Crits:
 			- [CritiqueId]: Record - include dataset id
-		- Aliases
-			- [alt ids] = dataset id alias comes from
+		X- Aliases
+		X	- [alt ids] = dataset id alias comes from
 - dccLinks
 	- [LinkId]
-		- Name: NNN
+		X- Name: NNN
 		- Entity: NNN	(Entity and Event - relationship)
 		- Event: NNN
  		- Vers:
 			- [VersionId]: Record - include dataset id
 		- Crits:
 			- [CritiqueId]: Record - include dataset id
-		- Aliases
-			- [alt ids] = dataset id alias comes from
-
+		X- Aliases
+		X	- [alt ids] = dataset id alias comes from
+- dccLinkIndex
+	- [Entity1Id]
+		- [Entity2Id]: [LinkId]
 
 
 - Dataset
 	- Entities [
 		- Id (uuid)
-		- (move to properties) Kind (Organization, Structure, Expedition, Community, Landscape, Animal, MediaObject (art, book, play, movie, ), OtherObject, Unknown)
+		- State: Ignore|Foundation|Present	(used to override on/off in dataset levels)
+		- Kind:
+			Entity -Organization, Structure, Expedition, Community, Landscape, Animal, MediaObject (art, book, play, movie, ), OtherObject, Unknown
+			Event - Interaction, start / end relationship, movement, reaction, creation
 		- (move to properties) Significance: 1 - 100 (relative to world history)
 		- Properties [
+			(examples: significance, description, videos, recordings, written notes, scans, photos, etc)
 			- Id (uuid)
 			- Name
 			- Versions [
@@ -307,6 +317,7 @@ See https://dexie.org/docs/MultiEntry-Index
 				- From (empty means from inception or don't know)
 				- To (empty means to culmination or don't know)
 				- Value
+				S - Dataset: (uuid) only present when in database, not in the transfer file
 			]
 			- Critique [
 				- Id (uuid)
@@ -316,15 +327,9 @@ See https://dexie.org/docs/MultiEntry-Index
 				- Confidence: fact, strong, medium, speculative, fiction
 				- Notes
 				- ReferenceIds (uuid to a book or other source that is a recorded entity)
+				S - Dataset: (uuid) only present when in database, not in the transfer file
 			]
 		]
-	]
-	- Events [
-		- Id (uuid)
-		- (move to properties) Kind			(interaction, start / end relationship, movement, reaction)
-		- (move to properties) Significance: 1 - 100 (relative to world history)
-		- Properties (see above)
-			(examples: kind, significance, description, videos, recordings, written notes, scans, photos, etc)
 		- Links [			(entities connect through events)
 			- Id (uuid)
 			- EntityId   (how does X participate or react)
@@ -337,6 +342,7 @@ See https://dexie.org/docs/MultiEntry-Index
 				- To (empty means to culmination or don't know)
 				- Role (leads, target, participant, witness, reaction)
 				- Significance: 1 - 100 (relative to entity's experience)
+				S - Dataset: (uuid) only present when in database, not in the transfer file
 			]
 			- Critique [
 				- Id (uuid)
@@ -346,17 +352,226 @@ See https://dexie.org/docs/MultiEntry-Index
 				- Confidence: fact, strong, medium, speculative, fiction
 				- Notes
 				- ReferenceIds (uuid to a book or other source that is a recorded entity)
+				S - Dataset: (uuid) only present when in database, not in the transfer file
 			]
 		]
 	]
-	- Aliases: [
-		{
-			Source: uuid
-			Target: uuid
-		}
-	]
+
+
+	(nope, people have copy/move props and links then delete old - delete can be in any dataset)
+	X- Reassign [Aliases]: [			// reassign links/props...?? what about if we remove/add dataset
+	X	{
+	X		Source: uuid
+	X		Target: uuid
+	X	}
+	X]
 
 ? Properties that allow multiple values simply use a different UUID for the property. Properties that do not allow multiple values, do not include a UUID at all.
+
+## Pseudo Code
+
+function GetPropertyValue(view, propid)
+	for each critid in ^dccProps(propid, "Crits", critid)
+		critique = ^dccProps(propid, "Crits", critid)
+
+		if (critique.Confidence >= view.Confidence)
+			return true
+	end for			
+
+
+	==== needs to be per property version
+	multipler = 0
+
+	for each setid in ^dccLinks(linkid, "Datasets", setid)
+		for each ds in view.Datasets
+			if (ds.Id == setid)
+				if (ds.Multiplier > multipler)
+					multipler = ds.Multiplier
+				end if
+			end if
+		end for
+	end for
+	====
+
+	if multipler == 0 return false
+
+	// do we trust this link?
+	for each critid in ^dccLinks(linkid, "Crits", critid)
+		critique = ^dccLinks(linkid, "Crits", critid)
+
+		if (critique.Confidence < view.Confidence)
+			return false
+	end for
+
+	return true
+
+end function
+
+// is Inception, Culmination or Name accessible?
+function CheckEntityAccess(view, entityid)
+	==== needs to be per property version
+	multipler = 0
+
+	for each setid in ^dccEntities(entityid, "Datasets", setid)
+		for each ds in view.Datasets
+			if (ds.Id == setid)
+				if (ds.Multiplier > multipler)
+					multipler = ds.Multiplier
+				end if
+			end if
+		end for
+	end for
+
+	if multipler == 0 return false
+	====
+
+	for each propid in ^dccEntities(entityid, "PropertyMap", "Name|Inception|Culmination", propid)
+		for each critid in ^dccProps(propid, "Crits", critid)
+			critique = ^dccProps(propid, "Crits", critid)
+
+			if (critique.Confidence >= view.Confidence)
+				return true
+		end for			
+	end for
+
+	return false
+end function
+
+function CheckEventAccess(view, eventid)
+	// much like entity
+end function
+
+// here is where a full check takes place, including
+function CheckLink(params, linkid)
+	entityid = ^dccLinks(linkid, "Entity")
+
+	if ! CheckEntity(params.View, entityid) return false
+
+	eventid = ^dccLinks(linkid, "Event")
+
+	if ! CheckEvent(params.View, eventid) return false
+
+	return CheckLinkSimple(params, linkid)
+end function
+
+// here is where a full check takes place, including
+function CheckLinkSimple(params, linkid)
+	==== needs to be per property version
+	multipler = 0
+
+	for each setid in ^dccLinks(linkid, "Datasets", setid)
+		for each ds in view.Datasets
+			if (ds.Id == setid)
+				if (ds.Multiplier > multipler)
+					multipler = ds.Multiplier
+				end if
+			end if
+		end for
+	end for
+	====
+
+	if multipler == 0 return false
+
+	// do we trust this link?
+	for each critid in ^dccLinks(linkid, "Crits", critid)
+		critique = ^dccLinks(linkid, "Crits", critid)
+
+		if (critique.Confidence < view.Confidence)
+			return false
+	end for
+
+	return true
+end function
+
+function Query(params)
+	ListStruct results
+
+	for each entityid in params.Entities					
+		if CheckEntityAccess(params.View, entityid)
+			for each eventid in ^dccLinkEntityIndex(entityid, eventid)
+				linkid = ^dccLinkEntityIndex(entityid, eventid)
+
+				if CheckEventAccess(params.View, eventid)
+					if CheckLinkSimple(params, linkid)
+						results.add(GetReaction(linkid))
+					end if
+				end if
+			end for
+		end if
+	end for
+
+	for each eventid in params.Events
+		if CheckEventAccess(params.View, eventid)
+			for each entityid in ^dccLinkEventIndex(eventid, entityid)
+				linkid = ^dccLinkEntityIndex(entityid, eventid)
+
+				if CheckEntityAccess(params.View, entityid)
+					if CheckLink(params, linkid)
+						results.add(GetReaction(linkid))
+					end if
+				end if
+			end for
+		end if
+	end for
+
+	return results
+end function
+
+### Entity (Person) Related Search
+
+Natural Language: "What important events happened to Andy in Champaign area between 1982 and 1985."
+
+Then UI confirms entity (selects an id) and place and dates. So "area" turns into geo-coords. Andy turns into 888777222.
+
+params = {
+	Entities: [ 888777222 ],
+	View: {
+		Significance: 200,		// min
+		Confidence: medium,		// min
+		When: max-time-for-data-timestamp,
+		Datasets: [
+			{ Id: 'nnn', Multiplier: 10 },
+			{ Id: 'bbb', Multiplier: 5 },
+			{ Id: 'aaa', Multiplier: 1 }
+		]
+	},
+	From: '1982',
+	To: '1985',
+	Geo: {
+		Latitude: 40.110910,
+		Longitude: -88.275754,
+		Radius: 15000		// meters
+	}
+}
+
+Code:
+
+Query(params)
+
+### Entity (Place) Related Search
+
+Natural Language: "What important events happened in Champaign/Urbana between 1982 and 1985."
+
+Then UI confirms place and dates. Champaign turns into 22299111, Urbana to 22299000.
+
+params = {
+	Entities: [ 22299111, 22299000 ],
+	View: {
+		Significance: 200,		// min
+		Confidence: medium,		// min
+		Datasets: [
+			{ Id: 'nnn', Multiplier: 10 },
+			{ Id: 'bbb', Multiplier: 5 },
+			{ Id: 'aaa', Multiplier: 1 }
+		]
+	},
+	From: '1982',
+	To: '1985'
+}
+
+Code:
+
+Query(params)
 
 ## Sync Dataset File
 

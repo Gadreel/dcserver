@@ -59,12 +59,13 @@ dc.transfer = {
 		};
 
 		// ask the backend Uploader for a channel to connect to
-		this.upload = function(blob, path, token, ovrwrt, params) {
+		this.upload = function(blob, path, token, ovrwrt, params, tx) {
 			console.log(new Date() + ': Requesting');
 
 			this.data.file = blob;
 			this.data.path = path;
 			this.data.token = token;
+			this.data.tx = tx;
 			this.data.params = params;
 
 			var tmsg = {
@@ -75,6 +76,7 @@ dc.transfer = {
 					Vault: this.settings.Vault,
 					Path: this.data.path,
 					Token: this.data.token,
+					TransactionId: this.data.tx,
 					Size: this.data.file.size,
 					Overwrite: ovrwrt ? true : false,
 					Params: this.data.params
@@ -210,6 +212,7 @@ dc.transfer = {
 					Vault: this.settings.Vault,
 					Path: this.data.path,
 					Token: this.data.token,
+					TransactionId: this.data.tx,
 					Channel: this.data.binding.Channel,
 					TransactionId: this.data.binding.TransactionId,
 					Status: 'Success',
@@ -394,6 +397,23 @@ dc.transfer = {
 		uploadFiles: function(files, vault, token, callback, ovrwrt, params) {
 			var steps = [ ];
 			var cleanfiles = [ ];
+			var usetx = (! token && (files.length > 1));  // tokens may have their own tx
+
+			if (usetx) {
+				// commit the file transaction
+				steps.push({
+					Alias: 'BeginTx',
+					Title: 'Start Tx',
+					Func: function(step) {
+						var task = this;
+
+						dc.transfer.Util.beginTx(vault, null, null, function(rmsg, tx) {
+							task.Store.Tx = tx;
+							task.resume();
+						});
+					}
+				});
+			}
 
 			for (var i = 0; i < files.length; i++) {
 				var file = files[i];
@@ -449,7 +469,22 @@ dc.transfer = {
 						// start/resume upload (basic token service requires that token be in the path)
 						step.Store.Transfer.upload(step.Params.File,
 								path + '/' + step.Params.FileName,
-								task.Store.Token, step.Params.Overwrite, step.Params.Params);
+								task.Store.Token, step.Params.Overwrite, step.Params.Params, task.Store.Tx);
+					}
+				});
+			}
+
+			if (usetx) {
+				// commit the file transaction
+				steps.push({
+					Alias: 'CommitTx',
+					Title: 'Commit Tx',
+					Func: function(step) {
+						var task = this;
+
+						dc.transfer.Util.commitTx(vault, null, task.Store.Tx, null, function() {
+							task.resume();
+						});
 					}
 				});
 			}
@@ -493,7 +528,23 @@ dc.transfer = {
 			});
 		},
 
-		commitTx : function(vault, token, params, cb) {
+		beginTx : function(vault, token, params, cb) {
+			dc.comm.sendMessage({
+				Service: 'dcCoreServices',
+				Feature: 'Vaults',
+				Op: 'BeginTransaction',
+				Body: {
+					Vault: vault,
+					Token: token,
+					Params: params
+				}
+			}, function(rmsg) {
+				if (cb)
+					cb(rmsg, rmsg.Body ? rmsg.Body.TransactionId : null);
+			});
+		},
+
+		commitTx : function(vault, token, tx, params, cb) {
 			dc.comm.sendMessage({
 				Service: 'dcCoreServices',
 				Feature: 'Vaults',
@@ -501,7 +552,8 @@ dc.transfer = {
 				Body: {
 					Vault: vault,
 					Token: token,
-					Params: params
+					Params: params,
+					TransactionId: tx
 				}
 			}, function(rmsg) {
 				if (cb)

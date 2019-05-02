@@ -3,135 +3,70 @@
 		<Tr Locale="eng" Value="CMS Dashboard" />
 	</Meta>
 
+	<Require Icons="fas/pencil-alt,fas/list,fas/plus" />
+
 	<dc.Body>
-		<dc.PagePanel>
-			<h2>CMS Mode</h2>
+		<dc.Style>
+#dcDcmDashboard .dc-dashboard-widget {
+	border-bottom: 1px solid #999;
+}
 
-			<p>Widget Editor Enabled</p>
+@media screen and (max-width: 719px) {
+	#dcDcmDashboard .dc-layout-collapse-medium .pure-u {
+		width: 100%;
+	}
+}
+		</dc.Style>
+		<dc.PagePanel id="dcDcmDashboard">
+			<Button Icon="fas/recycle" Click="OnRefresh" />
 
-			<!--
-			<dcf.FormButtons>
-				<dc.Button Label="Close" Click="DoClose" />
-			</dcf.FormButtons>
-			-->
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-2" Pad="Large">
+					<div class="dc-dashboard-widget">
+						<h2>CMS Mode</h2>
 
-			<h2>Alerts</h2>
+						<p>Widget Editor Enabled</p>
+					</div>
+				</dc.Column>
+				<dc.Column Size="1-2" Pad="Large">
+					<div class="dc-dashboard-widget">
+						<h2>Alerts</h2>
 
-			<p>Currently no alerts</p>
+						<p>Currently no alerts</p>
+					</div>
+				</dc.Column>
+				<dc.Column Size="1-2" Pad="Large">
+					<dc.IncludeFragmentInline Path="/dcm/dashboard/drafts-widget" />
+				</dc.Column>
+				<dc.Column Size="1-2" Pad="Large">
+					<div class="dc-dashboard-widget">
+						<h2>Managed Forms</h2>
 
-			<h2>Managed Forms</h2>
-
-			<p>[Coming soon - recently submitted form]</p>
-
-			<h2>Principle Feeds</h2>
-
-			<dcs.With Target="$_Resources.Config">
-			  <GetTagDeep Path="Feeds/Definition" Result="Feeds" />
-			</dcs.With>
-
-			<dcs.Var Name="FeedFound" Type="Boolean" />
-
-			<dcs.For Name="Cnt" From="0" To="$Feeds.Last">
-				<dcs.If Target="$Feeds.$Cnt.@Highlight">
-					<dcs.With Target="$FeedFound" SetTo="true" />
-				</dcs.If>
-			</dcs.For>
-
-			<dcs.If Target="$FeedFound">
-				<dc.Out>
-					<table id="lstHours" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
-						<thead>
-							<tr>
-								<th scope="col">Feed</th>
-								<th scope="col">Last Entry</th>
-								<th scope="col">Edited On</th>
-								<th scope="col">Actions</th>
-							</tr>
-						</thead>
-						<tbody id="lstHoursBody">
-							<dcs.For Name="Cnt" From="0" To="$Feeds.Last">
-								<dcs.If Target="$Feeds.$Cnt.@Highlight">
-									<dcs.Var Name="query4" Type="dcdbQuery">
-										<SetField Name="Table" Value="dcmFeed" />
-
-										<Select Field="dcmModified" As="Modified" />
-										<Select Field="dcmPublishAt" As="Published" />
-										<Select Field="dcmAlias" As="Alias" />
-										<Select Field="dcmPath" As="Path" />
-										<Select Field="dcmLocalPath" As="LocalPath" />
-										<Select Field="dcmTags" As="Tags" />
-
-										<Select Composer="dcmFeedFields" As="Fields" />
-
-										<Collector Func="dcmScanFeed" Feed="{$Feeds.$Cnt.@Alias}" Max="1" From="+" To="-" />
-
-										<Execute Result="LastFeed" />
-									</dcs.Var>
-
-									<dc.Out>
-										<tr>
-											<td>{$Feeds.$Cnt.@Title}</td>
-											<td><dc.Link Click="OnEditFeed" data-alias="{$Feeds.$Cnt.@Alias}"  data-path="{$LastFeed.0.LocalPath}">{$LastFeed.0.Fields.Title}</dc.Link></td>
-											<td>{$LastFeed.0.Modified|dt:MMM dd yyyy, hh:mm a}</td>
-											<td>
-												<dc.Button Icon="fas/plus" Click="OnAddFeed" data-alias="{$Feeds.$Cnt.@Alias}" />
-												<dc.Button Icon="fas/list" Click="OnListFeed" data-alias="{$Feeds.$Cnt.@Alias}" />
-											</td>
-										</tr>
-									</dc.Out>
-								</dcs.If>
-							</dcs.For>
-						</tbody>
-					</table>
-				</dc.Out>
-			</dcs.If>
-			<dcs.Else>
-				<dc.Out>
-					<p>No feeds to highlight.</p>
-				</dc.Out>
-			</dcs.Else>
-
+						<p>[Coming soon - recently submitted form]</p>
+					</div>
+				</dc.Column>
+				<dc.Column Size="1-1" Pad="Large">
+					<dc.IncludeFragmentInline Path="/dcm/dashboard/feeds-widget" />
+				</dc.Column>
+			</dc.RowLayout>
 		</dc.PagePanel>
 	</dc.Body>
 
+	<Function Name="dcmPreload" Mode="Load"><![CDATA[
+			var page = this;
+
+			page.Store.RefreshList = [ ];
+	]]></Function>
 	<Function Name="Load"><![CDATA[
 			var page = this;
 
+			page.callPageFunc('OnRefresh');
 	]]></Function>
-	<Function Name="OnAddFeed" Params="e"><![CDATA[
-			var entry = this;
-
-			var alias = $(e.currentTarget).attr('data-alias');
-
-			dc.pui.Dialog.loadPage('/dcm/feeds/add-feed/' + alias, {
-				Path: '/' + alias,
-				Callback: function(path) {
-					window.location = path;
-				}
-			});
-	]]></Function>
-	<Function Name="OnEditFeed" Params="e"><![CDATA[
-			var entry = this;
-
-			var path = $(e.currentTarget).attr('data-path');
-
-			window.location = path;
-	]]></Function>
-	<Function Name="OnListFeed" Params="e"><![CDATA[
-			var entry = this;
-
-			var alias = $(e.currentTarget).attr('data-alias');
-
-			dc.pui.Dialog.loadPage('/dcm/feeds/list-feed/' + alias, {
-				Path: '/' + alias,
-				xCallback: function(path) {
-					// TODO entry.Layer.refreshPage();
-				}
-			});
-	]]></Function>
-	<Function Name="DoClose"><![CDATA[
+	<Function Name="OnRefresh" Params="e"><![CDATA[
 			var page = this;
 
-			page.Layer.back();
+			for (var i = 0; i < page.Store.RefreshList.length; i++) {
+				page.Store.RefreshList[i].call();
+			}
 	]]></Function>
 </dc.Html>

@@ -457,7 +457,7 @@ public class WebController extends OperationController {
 				//m.setField("DeployVersion", this.siteman.getVersion());
 				
 				// we are always using UTF 8, charset is required with any "text/*" mime type that is not ANSI text
-				this.getResponse().setHeader(HttpHeaders.Names.CONTENT_TYPE, ResourceHub.getResources().getMime().getMimeType("json").getType() + "; charset=utf-8");
+				this.getResponse().setHeader(HttpHeaders.Names.CONTENT_TYPE, ResourceHub.getResources().getMime().getMimeType("json").getMimeType() + "; charset=utf-8");
 				
 				// TODO enable CORS - http://www.html5rocks.com/en/tutorials/file/xhr2/
 				// TODO possibly config to be more secure for some users - see CORS handler in Netty

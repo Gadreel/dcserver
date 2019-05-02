@@ -1,0 +1,20 @@
+<Package
+	ClassRoot="dcraft"
+	Abbrv="dc"
+	Version="0.9.5"
+	MessageCodes="150000-199999"
+>
+	<DependsOn>
+		<Package Name="dc/dcHub" MinVersion="0.9" />
+	</DependsOn>
+
+	<Config>
+		<Badges>
+			<Definition Label="Fileset User" Value="Fileset" />
+		</Badges>
+
+		<Vaults>
+			<Site Id="Filesets" VaultClass="dcraft.chrono.filesets.FilesetVault" ReadBadges="Admin" WriteBadges="Fileset,Admin" UploadToken="true"  />
+		</Vaults>
+	</Config>
+</Package>

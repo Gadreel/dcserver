@@ -192,6 +192,14 @@ public class FeedVault extends FileStoreVault {
 													new OperationOutcomeStruct() {
 														@Override
 														public void callback(Struct result) throws OperatingContextException {
+															TablesAdapter adapter = TablesAdapter.ofNow(BasicRequestContext.ofDefaultDatabase());
+															
+															FeedUtilDb.addHistory(adapter.getRequest().getInterface(), adapter, fi.getPathAsCommon().getName(0), fi.getPathAsCommon().subpath(1).toString(), ListStruct.list()
+																	.with(RecordStruct.record()
+																			.with("Command","NoOp")
+																	)
+															);
+															
 															if ("pages".equals(fi.getPathAsCommon().getName(0))) {
 																tempvault.getMappedFileDetail(wwwpath,
 																		request.getFieldAsRecord("Params"),

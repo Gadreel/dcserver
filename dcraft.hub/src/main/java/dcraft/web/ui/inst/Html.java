@@ -189,7 +189,15 @@ public class Html extends Base {
 			
 			if (xel.getName().equals("Require") && xel.hasNotEmptyAttribute("Class"))
 				body.withClass(xel.getAttribute("Class"));
+
+			if (xel.getName().equals("Require") && xel.hasNotEmptyAttribute("Icons")) {
+				String[] icons = xel.attr("Icons").split(",");
+
+				for (String icon : icons)
+					UIUtil.requireIcon(this, state, icon);
+			}
 		}
+
 
 		// insert the defs into the body
 		if (this.icondefs.size() > 0) {
@@ -462,7 +470,7 @@ $(document).ready(function() {
 
 						XElement captcha = googlesetting.find("reCAPTCHA");
 
-						if ((captcha != null) && captcha.getAttributeAsBooleanOrFalse("Tracking"))
+						if ((captcha != null) && captcha.getAttributeAsBooleanOrFalse("Tracking") && !  captcha.getAttributeAsBooleanOrFalse("Disabled"))
 							ps.append("dc.handler.settings.gcaptcha = '" + captcha.getAttribute("SiteKey") + "';\n");
 					}
 

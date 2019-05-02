@@ -526,6 +526,19 @@ public class Products {
 		}
 
 		if ("SearchAvailable".equals(op)) {
+			String locale = OperationContext.getOrThrow().getLocale();
+
+			WhereExpression term = WhereTerm.term()
+					.withFields(
+							WhereField.of("dcmTitle")
+									.withValue(RecordStruct.record().with("_RankMultiplier", 3)),
+							WhereField.of("dcmTitleTr", locale)
+									.withValue(RecordStruct.record().with("_RankMultiplier", 3)),
+							WhereField.of("dcmDescription"),
+							WhereField.of("dcmDescriptionTr", locale)
+					)
+					.withValueTwo(rec.getFieldAsString("Term"));
+
 			ServiceHub.call(
 					SelectDirectRequest.of("dcmProduct")
 							.withSelect(SelectFields.select()
@@ -547,13 +560,7 @@ public class Products {
 							)
 							.withWhere(WhereAnd.of(
 									WhereEqual.of("dcmShowInStore", true),
-									WhereTerm.term()
-										.withFields(
-												WhereField.of("dcmTitle")
-														.withValue(RecordStruct.record().with("_RankMultiplier", 3)),
-												WhereField.of("dcmDescription")
-										)
-										.withValueTwo(rec.getFieldAsString("Term"))
+									term
 							))
 							.toServiceRequest()
 							.withOutcome(callback)

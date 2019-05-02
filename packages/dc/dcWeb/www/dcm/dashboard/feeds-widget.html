@@ -1,0 +1,106 @@
+<dc.MixIn Badges="Admin,Editor">
+	<dc.Fragment>
+		<div class="dc-dashboard-widget">
+			<h2>Principle Feeds</h2>
+
+			<table id="lstDcmFeedsWidget" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Feed</th>
+						<th scope="col">Last Entry</th>
+						<th scope="col">Published On</th>
+						<th scope="col">Actions</th>
+					</tr>
+				</thead>
+				<tbody id="lstDcmFeedsWidgetBody" />
+			</table>
+		</div>
+	</dc.Fragment>
+
+	<Function Name="dcmFeedsWidgetLoad" Mode="Load"><![CDATA[
+			var page = this;
+
+			page.Store.RefreshList.push(function() {
+				dc.comm.call('dcmServices.Feed.LoadFeedDashboard', null, function(rmsg) {
+					if (rmsg.Code != 0) {
+						// don't alert
+						return;
+					}
+
+					//console.dir(rmsg.Result);
+
+					$feedtable = $('#lstDcmFeedsWidgetBody');
+
+					$feedtable.empty();
+
+					if (rmsg.Result) {
+						for (var i = 0; i < rmsg.Result.length; i++) {
+							var draft = rmsg.Result[i];
+
+							$feedtable.dcappend(
+								$('<tr>').attr('data-alias', draft.Feed).dcappend(
+									$('<td>').dcappend(draft.FeedName),
+									$('<td>').dcappend(
+									 	$('<a>')
+											.attr("href", "#")
+											.text(draft.Title ? draft.Title : '')
+											.click(draft, function(e) {
+												window.location = e.data.LocalPath;		// TODO may need adjustment someday
+
+												e.preventDefault();
+												return false;
+											})
+									),
+									$('<td>').text(draft.Published
+										? moment.utc(draft.Published, 'YYYYMMDDTHHmmssSSSZ', true).local().format('MM-DD-YYYY, h:mm a')
+										: ''),
+									$('<td>').dcappend(
+										$('<a>')
+											.attr("href", "#")
+											.attr("tabindex", "0")
+											.attr("role", "button")
+											.attr("class", "pure-button-default pure-button dc-button")
+											.dcappend(dc.util.Icon.use('fas-plus'))
+											.click(draft, function(e) {
+												var alias = $(e.currentTarget).closest('tr').attr('data-alias');
+
+												dc.pui.Dialog.loadPage('/dcm/feeds/add-feed/' + alias, {
+													Path: '/' + alias,
+													Callback: function(path) {
+														window.location = path;
+													}
+												});
+
+												e.preventDefault();
+												return false;
+											}),
+										' ',
+										$('<a>')
+											.attr("href", "#")
+											.attr("tabindex", "0")
+											.attr("role", "button")
+											.attr("class", "pure-button-default pure-button dc-button")
+											.dcappend(dc.util.Icon.use('fas-list'))
+											.click(draft, function(e) {
+												var alias = $(e.currentTarget).closest('tr').attr('data-alias');
+
+												dc.pui.Dialog.loadPage('/dcm/feeds/list-feed/' + alias, {
+													Path: '/' + alias,
+													xCallback: function(path) {
+														// TODO entry.Layer.refreshPage();
+													}
+												});
+
+												e.preventDefault();
+												return false;
+											})
+									)
+								)
+							);
+						}
+					}
+				});
+			});
+	]]></Function>
+
+</dc.MixIn>

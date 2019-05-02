@@ -1,17 +1,57 @@
 <dc.Html Badges="Admin,Editor">
 	<Meta Name="Title">
-		<Tr Locale="en" Value="Edit Show" />
+		<Tr Locale="eng" Value="Edit Show" />
 	</Meta>
 
 	<Require Script="/js/vendor/sortable.min.js" />
 
 	<dc.Body class="dcuiWide">
+		<div style="display: none;">
+			<dc.Icon Path="far/image" />
+		</div>
+
+		<dc.Style>
+.dcm-file-list {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: flex-start;
+	align-content: stretch;
+	align-items: flex-start;
+}
+
+.dcm-file-list a.dc-selected {
+	background-color: #e8f0fe;
+}
+
+.dcm-file-list a.dcm-file {
+	width: 152px;
+	margin: 1.2rem;
+}
+
+.dcm-file-list a.dcm-file svg {
+	font-size: 96px;
+	padding: 0 16px;
+	color: black;
+}
+
+.dcm-file-list div.dcm-file-title {
+	padding: .8rem 1.2rem;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 1.3rem;
+	overflow: hidden;
+	text-align: center;
+}
+
+		</dc.Style>
+
 		<dc.PagePanel>
 			<dcf.Form>
 				<dcf.FormButtons>
 					<dc.Button Click="DoSelectImage" Label="Select Image From Gallery" />
 					<dc.Button Click="DoAddImage" Label="Upload New Image" />
-					<dc.Button Click="DoDelete" Label="Delete" />
+					<dc.Button Click="DoDelete" Label="Remove Image(s)" />
 					<dc.Button Click="AfterSave" Label="Close" />
 					<dc.Button Click="DoSaveShow" Label="Save" Scope="Primary" />
 				</dcf.FormButtons>
@@ -90,85 +130,89 @@
 			list.empty();
 
 			if (entry.Store.Show) {
+				var fileHighlightFunc = function(e) {
+					if (! e.metaKey)
+						$('#imageDesEList a').not(e.currentTarget).removeClass('dc-selected');
+
+					$(e.currentTarget).toggleClass('dc-selected');
+
+					e.preventDefault();
+					return false;
+				};
+
+				var fileClickFunc = function(e) {
+					 //	console.log('xyz');
+
+					 if (entry.Store.SortTime) {
+						if (new Date().getTime() - entry.Store.SortTime.getTime() < 500) {
+							entry.Store.SortTime = null;
+							return;
+						 }
+					 }
+
+					var pageurl = entry.Store.Gallery.Meta.PropertyEditor
+									? entry.Store.Gallery.Meta.PropertyEditor : '/dcm/shows/edit-image';
+
+					dc.pui.Dialog.loadPage(pageurl, {
+						Image: e.data,
+						Show: entry.Store.Show,
+						Gallery: entry.Store.Gallery
+					});
+
+					e.preventDefault();
+					return false;
+				};
+
+				// to keep the scope of imgel, make function
+				var lfunc = function(path, fileel) {
+					dc.util.Image.load(path + '.v/thumb.jpg',
+						function(img) {
+							if (img) {
+								fileel.find('svg').replaceWith($('<img>').attr('src', img.src));
+							}
+						});
+				};
+
 				for (var i = 0; i < entry.Store.Show.Images.length; i++) {
 					var img = entry.Store.Show.Images[i];
 
-					var litm = $('<a href="#" class="dcm-file"></a>');
-
-					litm.attr('data-img-alias', img);
-
 					var path = '/galleries' + entry.Params.Path + '/' + img;
 
-					var imgel = $('<img src="/imgs/dots.png" />');
+					var fileel = $('<a>')
+						.attr('href', '#')
+						.addClass('dcm-file')
+						.attr('data-img-alias', img)
+						.attr('data-img-path', path)
+						.attr('data-id', dc.util.Uuid.create())
+						.attr('title', img)
+						.click(img, fileHighlightFunc)
+						.dblclick(img, fileClickFunc)
+						.dcappend(
+							dc.util.Icon.use('far-image')
+								.addClass('fa5-lg fa5-fw'),
+							$('<div>')
+								.addClass('dcm-file-title')
+								.text(img)
+						);
 
-					litm.append(imgel);
+					list.append(fileel);
 
-					// to keep the scope of imgel, make function
-					var lfunc = function(path, imgel) {
-						dc.util.Image.load(path + '.v/thumb.jpg',
-							function(img) {
-								if (img)
-									imgel.attr('src', img.src);
-								else
-									imgel.attr('src', '/imgs/question.png');
-							});
-					};
-
-					lfunc(path, imgel);
-
-					var itmtitle = $('<div class="dcm-file-title"></div>');
-					itmtitle.text(img);
-					litm.append(itmtitle);
-
-					litm.click(img, function(e) {
-					    //	console.log('xyz');
-
-					    if (entry.Store.SortTime) {
-					    	if (new Date().getTime() - entry.Store.SortTime.getTime() < 500) {
-						    	entry.Store.SortTime = null;
-						    	return;
-						    }
-					    }
-
-						var pageurl = entry.Store.Gallery.Meta.PropertyEditor
-										? entry.Store.Gallery.Meta.PropertyEditor : '/dcm/shows/edit-image';
-
-						dc.pui.Dialog.loadPage(pageurl, {
-							Image: e.data,
-							Show: entry.Store.Show,
-							Gallery: entry.Store.Gallery
-						});
-
-						e.preventDefault();
-						return false;
-					});
-
-					// TODO make it so we can delete only one entry if the alias shows up twice
-					/*
-					var anchr2 = $('<a href="#">Delete</a>')
-
-					anchr2.click(img, function(e) {
-						dc.pui.Popup.confirm('Are you sure you want to remove ' + dc.util.Web.escapeHtml(e.data.Alias) + '?', function(confirm) {
-							if (! confirm)
-								return;
-
-							entry.Store.Changed = true;
-
-							$('#imageDesEList li[data-img-alias="' + e.data.Alias + '"]').remove();
-
-							entry.callPageFunc('ReorderImages');
-						});
-
-						e.preventDefault();
-						return false;
-					});
-
-					litm.append(anchr2);
-					*/
-
-					list.append(litm);
+					lfunc(path, fileel);		// lazy load the image thumb
 				}
 			}
+	]]></Function>
+	<Function Name="GetSelectedAliases"><![CDATA[
+			var entry = this;
+
+			var list = [ ];
+
+			$('#imageDesEList a.dc-selected').each(function() {
+				var alias = $(this).attr('data-img-alias');
+
+				list.push(alias);
+			});
+
+			return list;
 	]]></Function>
 	<Function Name="ReorderImages"><![CDATA[
 			var entry = this;
@@ -204,7 +248,7 @@
 	<Function Name="DoSelectImage"><![CDATA[
 			var entry = this;
 
-			dc.pui.Dialog.loadPage('/dcm/cms/galleries/Chooser', {
+			dc.pui.Dialog.loadPage('/dcm/galleries/chooser', {
 				Path: entry.Store.Gallery.Path,
 				Chained: true,
 				Variation: entry.Store.Show.Variation,
@@ -221,7 +265,7 @@
 	<Function Name="DoAddImage"><![CDATA[
 			var entry = this;
 
-			dc.pui.Dialog.loadPage('/dcm/cms/galleries/QuickUpload', {
+			dc.pui.Dialog.loadPage('/dcm/galleries/quick-upload', {
 				Gallery: entry.Store.Gallery,
 				Variation: entry.Store.Show.Variation,
 				Callback: function(files) {				// just a list of names
@@ -237,11 +281,25 @@
 	<Function Name="DoDelete"><![CDATA[
 			var entry = this;
 
-			if (!entry.Params.Alias) {
-				entry.callPageFunc('AfterSave');
+			var files = entry.callPageFunc('GetSelectedAliases');
+
+			if (files.length == 0) {
+				dc.pui.Popup.alert('Select images to remove.');
 				return;
 			}
 
+			dc.pui.Popup.confirm('Are you sure you want to remove the selected images? Images will not be deleted from gallery, only from this show.', function(confirm) {
+				if (! confirm)
+					return;
+
+				$('#imageDesEList a.dc-selected').remove();
+
+				entry.callPageFunc('ReorderImages');
+
+				entry.Store.Changed = true;
+			});
+
+			/* move delete show into gallery
 			dc.pui.Popup.confirm('Are you sure you want to delete this Show?', function(confirm) {
 				if (! confirm)
 					return;
@@ -257,5 +315,6 @@
 						entry.callPageFunc('AfterSave');
 				});
 			});
+			*/
 	]]></Function>
 </dc.Html>

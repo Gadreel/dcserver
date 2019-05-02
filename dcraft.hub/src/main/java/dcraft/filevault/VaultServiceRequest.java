@@ -16,14 +16,9 @@
 ************************************************************************ */
 package dcraft.filevault;
 
-import dcraft.db.DatabaseAdapter;
 import dcraft.filestore.CommonPath;
 import dcraft.service.ServiceRequest;
 import dcraft.struct.RecordStruct;
-
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  *
