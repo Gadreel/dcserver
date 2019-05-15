@@ -283,6 +283,7 @@
 			<Definition Code="img-p2g" Class="dcraft.struct.format.ImagePathToGallery" />
 			<Definition Code="phE164" Class="dcraft.struct.format.PhoneE164" />
 			<Definition Code="url" Class="dcraft.struct.format.Url" />
+			<Definition Code="padnum" Class="dcraft.struct.format.NumberPad" />
 
 			<!--
 			// TODO format date/time to chrono

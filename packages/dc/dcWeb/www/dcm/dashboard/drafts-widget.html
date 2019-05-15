@@ -1,12 +1,14 @@
 <dc.MixIn Badges="Admin,Editor">
 	<dc.Fragment>
 		<div class="dc-dashboard-widget">
-			<h2>Open Drafts</h2>
+			<h2>CMS</h2>
+
+			<p id="lblDcmDraftsWidgetMode">Mode:</p>
 
 			<table id="lstDcmDraftsWidget" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
 				<thead>
 					<tr>
-						<th scope="col">Path</th>
+						<th scope="col">Open Drafts</th>
 						<th scope="col">Last Edit</th>
 						<th scope="col">Actions</th>
 					</tr>
@@ -20,6 +22,8 @@
 			var page = this;
 
 			page.Store.RefreshList.push(function() {
+				$('#lblDcmDraftsWidgetMode').text('Mode: Widget Editor ' + (dc.cms.Loader.Enabled ? 'Enabled' : 'Disabled'));
+
 				dc.comm.call('dcmServices.Feed.LoadDrafts', null, function(rmsg) {
 					if (rmsg.Code != 0) {
 						// don't alert

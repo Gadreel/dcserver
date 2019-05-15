@@ -592,7 +592,9 @@ public class Memory implements IReader {
 	    	}
     	}
     	catch (Exception x) {
-			Logger.error("MEMORY unable to convert to characters");		
+			Logger.error("MEMORY unable to convert to characters");
+			//System.out.println("size: " + this.getLength() + " : " + HexUtil.bufferToHex(this));
+			//System.out.println("so far: " + sb.toString());
 			sb = null;
     	}
     	

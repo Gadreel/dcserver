@@ -289,6 +289,13 @@ public class FeedUtilDb {
 		}
 
 		db.retireRecord("dcmFeed", oid.toString());
+		
+		FeedUtilDb.discardHistory(db.getRequest().getInterface(), db, ochan.getName(1), opath.subpath(2).toString(), null, new OperationOutcomeStruct() {
+			@Override
+			public void callback(Struct result) throws OperatingContextException {
+				// NA
+			}
+		});
 	}
 	
 	// Command History

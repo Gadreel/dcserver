@@ -6,6 +6,8 @@ import dcraft.db.DatabaseException;
 import dcraft.db.IRequestContext;
 import dcraft.db.proc.ExpressionResult;
 import dcraft.db.proc.IFilter;
+import dcraft.db.proc.filter.CurrentRecord;
+import dcraft.db.proc.filter.Unique;
 import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.util.ByteUtil;
@@ -646,7 +648,9 @@ public class ThreadUtil {
 		}
 	}
 
-	static public void traverseThreadIndex(IRequestContext request, TablesAdapter db, IVariableAware scope, String party, String folder, IFilter out) throws OperatingContextException {
+	static public void traverseThreadIndex(TablesAdapter db, IVariableAware scope, String party, String folder, IFilter out) throws OperatingContextException {
+		IRequestContext request = db.getRequest();
+		
 		String did = request.getTenant();
 
 		if (StringUtil.isEmpty(party) || StringUtil.isEmpty(folder))
@@ -680,5 +684,38 @@ public class ThreadUtil {
 		catch (Exception x) {
 			Logger.error("traverseThreadIndex error: " + x);
 		}
+	}
+	
+	static public ListStruct loadMessages(TablesAdapter db, ListStruct parties, String folder) throws OperatingContextException {
+		ListStruct resp = ListStruct.list();
+		
+		for (int i = 0; i < parties.size(); i++) {
+			String party = parties.getItemAsString(i);
+			Unique collector = Unique.unique();
+			
+			ThreadUtil.traverseThreadIndex(db, OperationContext.getOrThrow(), party, folder, CurrentRecord.current().withNested(collector));
+			
+			for (Object vid : collector.getValues()) {
+				String id = Struct.objectToString(vid);
+				
+				String oid = Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmOriginator"));
+				
+				resp.with(
+						RecordStruct.record()
+								.with("Id", id)
+								.with("Party", party)
+								.with("MessageType", db.getStaticScalar("dcmThread", id, "dcmMessageType"))
+								.with("Title", db.getStaticScalar("dcmThread", id, "dcmTitle"))
+								.with("Originator", oid)
+								.with("OriginatorName", db.getStaticScalar("dcUser", oid, "dgaDisplayName"))
+								.with("Modified", db.getStaticScalar("dcmThread", id, "dcmModified"))
+								.with("Created", db.getStaticScalar("dcmThread", id, "dcmCreated"))
+								.with("Read", Struct.objectToBooleanOrFalse(db.getStaticList("dcmThread", id, "dcmRead", party)))
+								.with("Attributes", db.getStaticScalar("dcmThread", id, "dcmSharedAttributes"))
+				);
+			}
+		}
+	
+		return resp;
 	}
 }

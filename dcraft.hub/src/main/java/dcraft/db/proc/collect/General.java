@@ -88,12 +88,12 @@ public class General implements ICollector {
 	public RecordStruct parse(IParentAwareWork state, XElement code) throws OperatingContextException {
 		RecordStruct clause = RecordStruct.record()
 				.with("Func", "dcCollectorGeneral")
-				.with("Field", StackUtil.stringFromElement(state, code, "Field"))
-				.with("SubId", StackUtil.stringFromElement(state, code, "SubId"))
-				.with("From", StackUtil.stringFromElement(state, code, "From"))
-				.with("To", StackUtil.stringFromElement(state, code, "To"))
-				.with("Max", StackUtil.stringFromElement(state, code, "Max"));
-				//.with("Reverse", StackUtil.stringFromElement(state, code, "Reverse"))
+				.with("Field", StackUtil.refFromElement(state, code, "Field"))
+				.with("SubId", StackUtil.refFromElement(state, code, "SubId"))
+				//.with("Reverse", StackUtil.refFromElement(state, code, "Reverse"))
+				.with("Max", StackUtil.refFromElement(state, code, "Max", true))
+				.with("From", StackUtil.refFromElement(state, code, "From", true))
+				.with("To", StackUtil.refFromElement(state, code, "To", true));
 
 		if (code.hasNotEmptyAttribute("Values")) {
 			String values = code.getAttribute("Values");

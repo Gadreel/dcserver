@@ -89,6 +89,7 @@ public class GalleryWidget extends Base implements ICMSAware {
 				img.with("Gallery", meta);
 				img.with("Variant", vdata);
 				img.with("Show", show);
+				img.with("Position", cidx);
 				
 				RecordStruct imgmeta = (RecordStruct) GalleryUtil.getMeta(cpath + ".v",
 						OperationContext.getOrThrow().selectAsString("Controller.Request.View"));
@@ -179,7 +180,12 @@ public class GalleryWidget extends Base implements ICMSAware {
 			.withAttribute("data-ext", StackUtil.stringFromSource(state,"Extension"))
 			.withAttribute("data-path", StackUtil.stringFromSource(state,"Path"))
 			.withAttribute("data-show", StackUtil.stringFromSource(state,"Show"));
-		
+
+		String xvari = StackUtil.stringFromSource(state,"ExpandVariant");
+
+		if (StringUtil.isNotEmpty(xvari))
+			this.attr("data-dc-expanded", xvari);
+
 		String size = StackUtil.stringFromSource(state,"Size", "1-3");
 		
 		if (this.children != null) {

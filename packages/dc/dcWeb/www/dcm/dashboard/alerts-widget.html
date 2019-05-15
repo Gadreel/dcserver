@@ -1,0 +1,95 @@
+<dc.MixIn Badges="Admin,Editor">
+	<Require Icons="fas/eye,fas/times" />
+
+	<dc.Fragment>
+		<div class="dc-dashboard-widget">
+			<h2>Alerts</h2>
+
+			<table id="lstDcmAlertsWidget" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Alert</th>
+						<th scope="col">When</th>
+						<th scope="col">Actions</th>
+					</tr>
+				</thead>
+				<tbody id="lstDcmAlertsWidgetBody" />
+			</table>
+		</div>
+	</dc.Fragment>
+
+	<Function Name="dcmAlertsWidgetLoad" Mode="Load"><![CDATA[
+			var page = this;
+
+			page.Store.AlertWidget = function() {
+				dc.comm.call('dcmServices.Dashboard.LoadAlerts', null, function(rmsg) {
+					if (rmsg.Code != 0) {
+						// don't alert
+						return;
+					}
+
+					//console.dir(rmsg.Result);
+
+					$feedtable = $('#lstDcmAlertsWidgetBody');
+
+					$feedtable.empty();
+
+					if (rmsg.Result) {
+						// TODO list total alerts someplace - or no alerts...
+
+						// top five
+						for (var i = 0; (i < rmsg.Result.length) && (i < 5); i++) {
+							var draft = rmsg.Result[i];
+
+							$feedtable.dcappend(
+								$('<tr>').attr('data-alias', draft.Feed).dcappend(
+									$('<td>').dcappend(
+										$('<a>')
+											.attr("href", "#")
+											.attr("tabindex", "0")
+											.attr("role", "button")
+											.text(draft.Title)
+											.click(draft, function(e) {
+												dc.pui.Dialog.loadPage('/dcm/dashboard/alerts-widget-view-alert/' + e.data.MessageType + '/' + e.data.Id, {
+													Callback: function(path) {
+														page.Store.AlertWidget();
+													}
+												});
+
+												e.preventDefault();
+												return false;
+											})
+									),
+									$('<td>').text(moment.utc(draft.Modified, 'YYYYMMDDTHHmmssSSSZ', true).local().format('MM-DD-YYYY, h:mm a')),
+									$('<td>').dcappend(
+										$('<a>')
+											.attr("href", "#")
+											.attr("tabindex", "0")
+											.attr("role", "button")
+											.attr("class", "pure-button-default pure-button dc-button")
+											.dcappend(dc.util.Icon.use('fas-times'))
+											.click(draft, function(e) {
+												dc.comm.call('dcmServices.Dashboard.ArchiveAlerts', [ e.data.Id ], function(rmsg) {
+													if (rmsg.Code > 0) {
+														dc.pui.Popup.alert('Unable to archive alert: ' + rmsg.Message);
+														return;
+													}
+
+													page.Store.AlertWidget();
+												});
+
+												e.preventDefault();
+												return false;
+											})
+									)
+								)
+							);
+						}
+					}
+				});
+			};
+
+			page.Store.RefreshList.push(page.Store.AlertWidget);
+	]]></Function>
+
+</dc.MixIn>

@@ -9,6 +9,7 @@
 		<dc.Style>
 #dcDcmDashboard .dc-dashboard-widget {
 	border-bottom: 1px solid #999;
+	height: 100%;
 }
 
 @media screen and (max-width: 719px) {
@@ -22,28 +23,13 @@
 
 			<dc.RowLayout Collapse="Medium">
 				<dc.Column Size="1-2" Pad="Large">
-					<div class="dc-dashboard-widget">
-						<h2>CMS Mode</h2>
-
-						<p>Widget Editor Enabled</p>
-					</div>
+					<dc.IncludeFragmentInline Path="/dcm/dashboard/alerts-widget" />
 				</dc.Column>
 				<dc.Column Size="1-2" Pad="Large">
-					<div class="dc-dashboard-widget">
-						<h2>Alerts</h2>
-
-						<p>Currently no alerts</p>
-					</div>
+					<dc.IncludeFragmentInline Path="/dcm/dashboard/forms-widget" />
 				</dc.Column>
 				<dc.Column Size="1-2" Pad="Large">
 					<dc.IncludeFragmentInline Path="/dcm/dashboard/drafts-widget" />
-				</dc.Column>
-				<dc.Column Size="1-2" Pad="Large">
-					<div class="dc-dashboard-widget">
-						<h2>Managed Forms</h2>
-
-						<p>[Coming soon - recently submitted form]</p>
-					</div>
 				</dc.Column>
 				<dc.Column Size="1-1" Pad="Large">
 					<dc.IncludeFragmentInline Path="/dcm/dashboard/feeds-widget" />

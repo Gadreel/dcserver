@@ -221,6 +221,39 @@ public class MoodleUtil {
 		callback.returnEmpty();
 	}
 
+	static public void unenrollUser(String alt, String userid, String courseid, OperationOutcomeEmpty callback) {
+		try {
+				/*
+				enrolments[0][roleid]= 5		student
+				enrolments[0][userid]= int
+				enrolments[0][courseid]= int
+
+				enrol_manual_enrol_users
+				 */
+
+			StringBuilder body = new StringBuilder();
+
+			body.append("enrolments[0][roleid]=5");
+			body.append('&');
+			body.append("enrolments[0][userid]=" + URLEncoder.encode(userid, "UTF-8"));
+			body.append('&');
+			body.append("enrolments[0][courseid]=" + URLEncoder.encode(courseid, "UTF-8"));
+
+			// parse and close response stream
+			CompositeStruct resp = MoodleUtil.execute(alt, "enrol_manual_unenrol_users", body.toString(), 5);
+
+			// returns null unless error
+			if (resp != null) {
+				Logger.error("Moodle Resp:\n" + resp.toPrettyString());
+			}
+		}
+		catch (Exception x) {
+			Logger.error("Error calling service, Moodle error: " + x);
+		}
+
+		callback.returnEmpty();
+	}
+
 	static public void editEnrollUser(String alt, String userid, String courseid, OperationOutcomeEmpty callback) {
 		try {
 				/*

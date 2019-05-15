@@ -10,7 +10,6 @@ import dcraft.script.work.OperationsWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.struct.Struct;
 import dcraft.xml.XElement;
-import sun.rmi.runtime.Log;
 
 public class CallService extends OperationsInstruction {
 	static public CallService tag() {

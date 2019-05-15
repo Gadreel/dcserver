@@ -927,6 +927,12 @@ public class Vaults  {
 					String ftransactionId = transactionId;
 					
 					FileDescriptor fi = this.getResult();
+
+					if (! fi.exists()) {
+						Logger.error("Your request appears valid but does not map to a file.  Unable to complete.");
+						fcb.returnEmpty();
+						return;
+					}
 					
 					vault.beforeStartDownload(fi, params, new OperationOutcome<FileDescriptor>() {
 						@Override

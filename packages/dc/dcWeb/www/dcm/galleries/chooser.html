@@ -1,8 +1,8 @@
-<dc.Html Badges="Editor,Admin">
-	<Meta Name="Title"> 
+<dc.Html Badges="User">
+	<Meta Name="Title">
 		<Tr Locale="en" Value="Image Chooser" />
 	</Meta>
-	
+
 	<dc.Body class="dcuiWide">
 		<dc.PagePanel>
 			<dcf.Form>
@@ -12,46 +12,46 @@
 					<dc.Button Click="DoClose" Label="Close" Scope="Primary" />
 				</dcf.FormButtons>
 			</dcf.Form>
-			
+
 			<h4 id="lblDepGcPath" />
-			
+
 			<h3>Folders</h3>
-			
+
 			<div id="lstDepGcFolders" class="dcm-file-list" />
-			
+
 			<h3>Images</h3>
-			
+
 			<div id="lstDepGcImages" class="dcm-file-list" />
 		</dc.PagePanel>
 	</dc.Body>
-	
+
 	<Function Name="Load"><![CDATA[
 			var entry = this;
 
-			// if not thawing then initialize			
+			// if not thawing then initialize
 			if (!entry.Store.Path) {
 				if (this.Params.Path)
 					entry.Store.Path = this.Params.Path;
 				else
 					entry.Store.Path = '/';
-					
+
 				entry.Store.RootPath = entry.Store.Path;
 			}
-			
+
 			this.callPageFunc('LoadList');
 	]]></Function>
 	<Function Name="LoadList"><![CDATA[
 			var entry = this;
-		
+
 			$('#lblDepGcPath').text('Path: ' + entry.Store.Path);
-		
+
 			$('#lstDepGcImages,#lstDepGcFolders').empty();
-			
-			dc.comm.sendMessage({ 
+
+			dc.comm.sendMessage({
 				Service: 'dcCoreServices',
 				Feature: 'Vaults',
 				Op: 'ListFiles',
-				Body: { 
+				Body: {
 					Vault: 'Galleries',
 					Path: entry.Store.Path
 				}
@@ -60,101 +60,101 @@
 					dc.pui.Popup.alert(resp.Message);
 					return;
 				}
-				
+
 				var items = resp.Body;
 				var sfield = entry.Store.SortField ? entry.Store.SortField : 'FileName';
-				
+
 				// sort
 				items.sort(dc.util.List.sortObjects(sfield));
 
 				// chained - no up or down folders
 				// rooted - no up folders from starting folder
 				var showpar = ! entry.Params.Chained && (! entry.Params.Rooted || (entry.Store.RootPath != entry.Store.Path));
-				
+
 				// ########## FOLDERS ##########
-				
+
 				var flist = $('#lstDepGcFolders');
-				
+
 				// add parent folder
 				if (showpar && (entry.Store.Path.length > 1)) {
 					var litm = $('<a href="#" class="dcm-folder"><div class="dcm-file-title">.. [parent]</div></a>');
-					
+
 					litm.click(item, function(e) {
 						var curr = entry.Store.Path;
-						
+
 						if (curr.length == 1)
 							return;
-							
+
 						var path = curr.substr(0, curr.lastIndexOf('/'));
-						
+
 						if (!path)
 							path = '/';
-							
+
 						entry.Store.Path = path;
 						entry.callPageFunc('LoadList');
-						
+
 						e.preventDefault();
 						return false;
 					});
-					
+
 					flist.append(litm);
 				}
-				
+
 				// display
 				for (var i = 0; i < items.length; i++) {
 					var item = items[i];
-					
+
 					if (entry.Params.Chained || ! item.IsFolder)
 						continue;
-						
+
 					var litm = $('<a href="#" class="dcm-folder"></a>');
-					
+
 					var itmtitle = $('<div class="dcm-file-title"></div>');
 					itmtitle.text(item.FileName);
-					
+
 					litm.append(itmtitle);
-					
+
 					litm.click(item, function(e) {
 						var path = '/' + e.data.FileName;
-					
+
 						if (entry.Store.Path.length > 1)
 							path = entry.Store.Path + '/' + e.data.FileName;
-								
+
 						entry.Store.Path = path;
 						entry.callPageFunc('LoadList');
-						
+
 						e.preventDefault();
 						return false;
 					});
-					
+
 					flist.append(litm);
 				}
-				
+
 				// ########## IMAGES ##########
-				
+
 				var flist = $('#lstDepGcImages');
-				
+
 				// display
 				for (var i = 0; i < items.length; i++) {
 					var item = items[i];
-					
+
 					if (item.IsFolder)
 						continue;
-					
+
 					var litm = $('<a href="#" class="dcm-file"></a>');
-						
+
 					var path = '/galleries/' + item.FileName;
-				
+
 					if (entry.Store.Path.length > 1)
 						path = '/galleries' + entry.Store.Path + '/' + item.FileName;
-					
+
 					var imgel = $('<img src="/imgs/dots.png" />');
-					
+
 					litm.append(imgel);
-					
+
 					// to keep the scope of imgel, make function
 					var lfunc = function(path, imgel) {
-						dc.util.Image.load(path + '.v/thumb.jpg', 
+						dc.util.Image.load(path + '.v/thumb.jpg',
 							function(img) {
 								if (img)
 									imgel.attr('src', img.src);
@@ -162,24 +162,24 @@
 									imgel.attr('src', '/imgs/question.png');
 							});
 					};
-					
+
 					lfunc(path, imgel);
-					
+
 					litm.click(item, function(e) {
 						var path = '/' + e.data.FileName;
-					
+
 						if (entry.Store.Path.length > 1)
 							path = entry.Store.Path + '/' + e.data.FileName;
-								
+
 						if (entry.Params.Callback) {
 							entry.Layer.back();
-							
+
 							entry.callPageFunc('ChooseFiles', [ e.data.FileName ]);
 						}
 						else {
 							entry.Store.PopPath = path;
 
-							dc.pui.Dialog.loadPage('/dcm/galleries/image-detail', { 
+							dc.pui.Dialog.loadPage('/dcm/galleries/image-detail', {
 								Gallery: entry.Store.Gallery,
 								Path: path,
 								Name: e.data.FileName,
@@ -188,87 +188,87 @@
 								}
 							});
 						}
-						
+
 						e.preventDefault();
 						return false;
 					});
-					
+
 					var itmtitle = $('<div class="dcm-file-title"></div>');
 					itmtitle.text(item.FileName);
-					
+
 					litm.append(itmtitle);
-					
+
 					/*
 					litm.append('<td>' + dc.transfer.fmtFileSize(item.Size) + '</td>');
-				
+
 					litm.append('<td>' + dc.util.Date.formatZLocalMedium(item.LastModified) + '</td>');
 					*/
-					
+
 					flist.append(litm);
 				}
-			});	
-			
+			});
+
 			this.callPageFunc('LoadMeta');
 	]]></Function>
 	<Function Name="LoadMeta"><![CDATA[
 			var entry = this;
-			
-			var vlist = $('#sectDesGcVList');		
-	
+
+			var vlist = $('#sectDesGcVList');
+
 			vlist.empty();
 			vlist.append('<li><h3><i class="fa fa-spinner fa-spin"></i></h3></li>');
-			
-			var slist = $('#sectDesGcSList');		
-	
+
+			var slist = $('#sectDesGcSList');
+
 			slist.empty();
 			slist.append('<li><h3><i class="fa fa-spinner fa-spin"></i></h3></li>');
-			
+
 			dc.cms.image.Loader.loadGallery(entry.Store.Path, function(gallery, resp) {
 				entry.Store.Gallery = gallery;
-				
+
 				if (resp.Result > 0) {
 					dc.pui.Popup.alert(resp.Message);
 					return;
 				}
-				
+
 				vlist.empty();
 				slist.empty();
-				
+
 				if (! gallery) {
 					vlist.append('<li>[none]</li>');
 					slist.append('<li>[none]</li>');
 					return;
 				}
-				
+
 				var gsettings = gallery.Meta;
-			
-				// variations shows list 
-				
+
+				// variations shows list
+
 				if (gsettings.Variations && (gsettings.Variations.length)) {
 					for (var i1 = 0; i1 < gsettings.Variations.length; i1++) {
-						var v = gsettings.Variations[i1]; 
-					
+						var v = gsettings.Variations[i1];
+
 						var litm = $('<li></li>');
-						
+
 						var anchr = $('<a href="#"><h2>' + dc.util.Web.escapeHtml(v.Name) + '</h2>'
-								+ '<p>Alias: ' + dc.util.Web.escapeHtml(v.Alias) + ', Dimensions: ' 
+								+ '<p>Alias: ' + dc.util.Web.escapeHtml(v.Alias) + ', Dimensions: '
 								+ dc.cms.image.Util.formatVariation(v) + '</p>'
 								+ '</a>')
-						
+
 						anchr.click(v, function(e) {
-							dc.pui.Dialog.loadPage('/dcm/galleries/edit-variation', { 
+							dc.pui.Dialog.loadPage('/dcm/galleries/edit-variation', {
 								Path: entry.Store.Path,
 								Gallery: entry.Store.Gallery,
 								Alias: e.data.Alias,
 								Callback: function(g) {
 									entry.callPageFunc('LoadMeta');
 								}
-							});	
-							
+							});
+
 							e.preventDefault();
 							return false;
 						});
-						
+
 						litm.append(anchr);
 						vlist.append(litm);
 					}
@@ -276,34 +276,34 @@
 				else {
 					vlist.append('<li>[none]</li>');
 				}
-				
+
 				// --------------------------------------------
-				// slide shows list 
-				
+				// slide shows list
+
 				if (gsettings.Shows && (gsettings.Shows.length)) {
 					for (var i1 = 0; i1 < gsettings.Shows.length; i1++) {
-						var v = gsettings.Shows[i1]; 
-					
+						var v = gsettings.Shows[i1];
+
 						var litm = $('<li></li>');
-						
+
 						var anchr = $('<a href="#"><h2>' + dc.util.Web.escapeHtml(v.Title) + '</h2>'
 								+ '<p>Alias: ' + dc.util.Web.escapeHtml(v.Alias) + ', Variation: ' + v.Variation + '</p>'
 								+ '</a>')
-						
+
 						anchr.click(v, function(e) {
-							dc.pui.Dialog.loadPage('/dcm/shows/edit', { 
-								Path: entry.Store.Path, 
+							dc.pui.Dialog.loadPage('/dcm/shows/edit', {
+								Path: entry.Store.Path,
 								Gallery: entry.Store.Gallery,
 								Alias: e.data.Alias,
 								Callback: function(g) {
 									entry.callPageFunc('LoadMeta');
-								} 
-							});	
-							
+								}
+							});
+
 							e.preventDefault();
 							return false;
 						});
-						
+
 						litm.append(anchr);
 						slist.append(litm);
 					}
@@ -315,20 +315,20 @@
 	]]></Function>
 	<Function Name="ChooseFiles" Params="files"><![CDATA[
 			var entry = this;
-			
+
 			if (! entry.Params.Callback)
 				return;
-			
+
 			// find the best variation match
 			var vari = entry.Store.Gallery.topVariation(entry.Params.Variation);
-				
+
 			// TODO show menu
-			
+
 			if (! vari)
 				return;
 
 			var ext = vari.Extension;
-			
+
 			if (! ext)
 				ext = entry.Store.Gallery.Meta.Extension;
 
@@ -336,37 +336,37 @@
 				ext = 'jpg';
 
 			var ilist = [ ];
-			
+
 			for (var i = 0; i < files.length; i++) {
 				ilist.push({
 					FileName: files[i],
 					FullPath: entry.Store.Gallery.Path + '/' + files[i] + '.v/' + vari.Alias + '.' + ext
 				});
 			}
-			
+
 			entry.Params.Callback({
 				Gallery: entry.Store.Gallery,
 				Images: ilist
 			});
 	]]></Function>
-	<Function Name="DoRefresh"><![CDATA[			
+	<Function Name="DoRefresh"><![CDATA[
 			var entry = this;
-		
+
 			entry.callPageFunc('LoadList');
 	]]></Function>
 	<Function Name="DoDelete"><![CDATA[
 			var entry = this;
-			
+
 			if (entry.Store.Path == '/') {
 				dc.pui.Popup.alert('Cannot delete root folder.');
 				return;
 			}
-			
+
 			dc.pui.Popup.confirm('Are you sure you want to delete this folder (with all images)?', function(confirm) {
 				if (! confirm)
 					return;
-					
-				dc.comm.sendMessage({ 
+
+				dc.comm.sendMessage({
 					Service: 'dcCoreServices',
 					Feature: 'Vaults',
 					Op: 'DeleteFolder',
@@ -379,13 +379,13 @@
 						dc.pui.Popup.alert(resp.Message);
 						return;
 					}
-				
+
 					// go to parent
 					var path = entry.Store.Path.substr(0, entry.Store.Path.lastIndexOf('/'));
-						
+
 					if (!path)
 						path = "/";
-					
+
 					entry.Store.Path = path;
 					entry.callPageFunc('LoadList');
 				});
@@ -393,70 +393,70 @@
 	]]></Function>
 	<Function Name="DoAddFolder"><![CDATA[
 			var entry = this;
-			
-			dc.pui.Dialog.loadPage('/dcm/galleries/add-folder', { 
+
+			dc.pui.Dialog.loadPage('/dcm/galleries/add-folder', {
 				Path: this.Store.Path,
 				Callback: function(path) {
 					entry.Store.Path = path;
-					
+
 					entry.callPageFunc('LoadList');
 				}
-			});	
+			});
 	]]></Function>
-	<Function Name="DoUpload"><![CDATA[			
+	<Function Name="DoUpload"><![CDATA[
 			var entry = this;
-		
-			dc.pui.Dialog.loadPage('/dcm/galleries/quick-upload', { 
+
+			dc.pui.Dialog.loadPage('/dcm/galleries/quick-upload', {
 				Gallery: entry.Store.Gallery,
 				Path: entry.Store.Path,
 				Variation: entry.Params.Variation,
 				Callback: function(files) {				// just a list of names
 					if (entry.Params.Callback) {
 						entry.Layer.back();
-						
+
 						entry.Params.Callback({
 							Gallery: entry.Store.Gallery,
 							Images: files
 						});
-						
+
 						return;
 					}
-					
+
 					entry.callPageFunc('LoadList');
 				}
 			});
 	]]></Function>
 	<Function Name="DoAddVari"><![CDATA[
 			var entry = this;
-		
-			dc.pui.Dialog.loadPage('/dcm/galleries/edit-variation', { 
+
+			dc.pui.Dialog.loadPage('/dcm/galleries/edit-variation', {
 				Path: entry.Store.Path,
 				Gallery: entry.Store.Gallery,
 				Callback: function(g) {
 					entry.callPageFunc('LoadMeta');
 				}
-			});	
+			});
 	]]></Function>
 	<Function Name="DoAddShow"><![CDATA[
 			var entry = this;
-		
-			dc.pui.Dialog.loadPage('/dcm/shows/add', { 
-				Path: entry.Store.Path, 
+
+			dc.pui.Dialog.loadPage('/dcm/shows/add', {
+				Path: entry.Store.Path,
 				Gallery: entry.Store.Gallery,
 				Callback: function(g) {
 					entry.callPageFunc('LoadMeta');
-				} 
-			});	
+				}
+			});
 	]]></Function>
 	<Function Name="DoClose"><![CDATA[
 			var entry = this;
-			
+
 			entry.Layer.back();
 	]]></Function>
 	<Function Name="DoEditDataFile"><![CDATA[
-			dc.pui.Dialog.loadPage('/dcm/files/edit-file', { Path: '/galleries' + this.Store.Path + '/data.json', Create: true });	
+			dc.pui.Dialog.loadPage('/dcm/files/edit-file', { Path: '/galleries' + this.Store.Path + '/data.json', Create: true });
 	]]></Function>
 	<Function Name="DoEditMetaFile"><![CDATA[
-			dc.pui.Dialog.loadPage('/dcm/files/edit-file', { Path: '/galleries' + this.Store.Path + '/meta.json', Create: true });	
+			dc.pui.Dialog.loadPage('/dcm/files/edit-file', { Path: '/galleries' + this.Store.Path + '/meta.json', Create: true });
 	]]></Function>
 </dc.Html>

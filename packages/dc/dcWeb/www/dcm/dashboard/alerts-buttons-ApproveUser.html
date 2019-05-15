@@ -1,0 +1,23 @@
+<dc.MixIn>
+	<dc.Fragment>
+		<dc.Button Click="DoApproveUser" Label="Approve Account" />
+	</dc.Fragment>
+	<Function Name="DoApproveUser" Params="e"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcCoreServices.Authentication.Confirm', {
+					Uuid: '{$TheThread.Uuid}',
+					Code: 'x'
+				}, function(resp) {
+					if ((resp.Code > 0) || ! resp.Result) {
+						dc.pui.Popup.alert('Unable to confirm: ' + resp.Message);
+					}
+					else {
+						dc.pui.Dialog.loadPage('/dcw/user/edit-user', {
+							Id: resp.Result.UserId
+						});
+					}
+				});
+
+	]]></Function>
+</dc.MixIn>

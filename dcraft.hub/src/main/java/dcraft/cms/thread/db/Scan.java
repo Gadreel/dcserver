@@ -65,7 +65,7 @@ public class Scan implements ICollector {
 						List<String> parties = ThreadUtil.getChannelAccess(db, scope, chan);
 						
 						for (String party : parties)
-							ThreadUtil.traverseThreadIndex(task, db, scope, party, folder, filter);
+							ThreadUtil.traverseThreadIndex(db, scope, party, folder, filter);
 						
 						break;
 					}

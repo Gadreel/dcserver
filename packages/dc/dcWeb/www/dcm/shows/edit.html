@@ -1,4 +1,4 @@
-<dc.Html Badges="Admin,Editor">
+<dc.Html Badges="User">
 	<Meta Name="Title">
 		<Tr Locale="eng" Value="Edit Show" />
 	</Meta>
@@ -52,6 +52,7 @@
 					<dc.Button Click="DoSelectImage" Label="Select Image From Gallery" />
 					<dc.Button Click="DoAddImage" Label="Upload New Image" />
 					<dc.Button Click="DoDelete" Label="Remove Image(s)" />
+					<dc.Button Click="DoReplace" Label="Review Image" />
 					<dc.Button Click="AfterSave" Label="Close" />
 					<dc.Button Click="DoSaveShow" Label="Save" Scope="Primary" />
 				</dcf.FormButtons>
@@ -316,5 +317,24 @@
 				});
 			});
 			*/
+	]]></Function>
+	<Function Name="DoReplace" Params="e"><![CDATA[
+			var entry = this;
+
+			var files = entry.callPageFunc('GetSelectedAliases');
+
+			if (files.length != 1) {
+				dc.pui.Popup.alert('Select a single image to review.');
+				return;
+			}
+
+			dc.pui.Dialog.loadPage('/dcm/galleries/image-detail', {
+				Gallery: entry.Store.Gallery,
+				Path: entry.Store.Gallery.Path + '/' + files[0],
+				Name: files[0],
+				Callback: function(g) {
+					// TODO reload thumb - entry.callPageFunc('LoadList');
+				}
+			});
 	]]></Function>
 </dc.Html>

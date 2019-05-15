@@ -38,7 +38,6 @@ import dcraft.tenant.Site;
 import dcraft.tenant.Tenant;
 import dcraft.tenant.TenantHub;
 import dcraft.xml.XElement;
-import sun.rmi.runtime.Log;
 
 import java.util.HashMap;
 

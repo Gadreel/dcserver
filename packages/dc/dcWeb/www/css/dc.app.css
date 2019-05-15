@@ -1165,16 +1165,20 @@ div, p {
 }
 
 code {
-    display: block;
-    margin: 1.6rem 0;
-    white-space: pre-wrap;
+	display: block;
+	margin: 1.6rem 0;
+	white-space: pre-wrap;
+}
+
+main {
+	outline: none;
 }
 
 .dc-no-select, .dc-no-select * {
-  -moz-user-select: none;
-  -ms-user-select: none;
-  -webkit-user-select: none;
-  user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	-webkit-user-select: none;
+	user-select: none;
 }
 
 .dc-element-hidden {

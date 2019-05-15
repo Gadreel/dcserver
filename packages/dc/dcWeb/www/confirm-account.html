@@ -12,43 +12,50 @@
 	</dc.Body>
 
 	<Function Name="Load"><![CDATA[
-			var entry = this;
+			var entry = this
 
 			var grecover = dc.util.Web.getQueryParam('code');
-			var user = dc.util.Web.getQueryParam('user');
+			var grequest = dc.util.Web.getQueryParam('request');
 
-			if (grecover && user) {
-				// TODO this won't work, add a service call
-				dc.user.signin(user, grecover, false, function() {
-					if (dc.user.isVerified()) {
-						dc.pui.Dialog.loadPage('/dcw/user/edit-password', {
-							Callback: function() {
-								entry.callPageFunc('AfterCheck');
-							}
-						});
+			if (grecover && grequest) {
+				dc.comm.call('dcCoreServices.Authentication.Confirm', {
+						Uuid: grequest,
+						Code: grecover
+					}, function(resp) {
+						if ((resp.Code > 0) || ! resp.Result) {
+							$('#sectMsg').empty().dcappend(
+								$('<p>')
+									.text('Confirmation code did not work, perhaps the code expired.')
+							);
+						}
+						else {
+							dc.user.setUserInfo(resp.Result);
 
-						$('#sectMsg').empty().dcappend(
-							$('<p>').dcappend(
-								'Confirmation completed. ',
-								$('<a>')
-									.attr('href', '#')
-									.text('Continue')
-							)
-						);
-					}
-					else {
-						$('#sectMsg').html('<p>Confirmation code did not work, perhaps the code expired.</p>');
-					}
-				});
+							dc.pui.Dialog.loadPage('/dcw/user/edit-password', {
+								Callback: function() {
+									entry.callPageFunc('AfterCheck');
+								}
+							});
+
+							$('#sectMsg').empty().dcappend(
+								$('<p>').dcappend(
+									'Confirmation completed. ',
+									$('<a>')
+										.attr('href', '#')
+										.text('Continue')
+								)
+							);
+						}
+					});
 			}
 			else {
 				$('#sectMsg').html('<p>Confirmation code is incomplete.</p>');
 			}
 	]]></Function>
-	<Function Name="AfterCheck">
+	<Function Name="AfterCheck"><![CDATA[
 			if (dc.handler.confirmEvent)
 				dc.handler.confirmEvent();
 			else
 				window.location = '/';		// try to get this page out of the history
-	</Function>
+	]]></Function>
 </dcui>

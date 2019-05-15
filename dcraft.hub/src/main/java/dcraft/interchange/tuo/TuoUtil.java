@@ -262,6 +262,9 @@ public class TuoUtil {
 			else {
 				// parse and close response stream
 				CompositeStruct resp = CompositeParser.parseJson(con.getInputStream());
+
+				if (resp instanceof RecordStruct)
+					resp = ListStruct.list(resp);		// turn it into a list
 				
 				if (resp == null) {
 					Logger.error("Error processing api call: incomplete response.");

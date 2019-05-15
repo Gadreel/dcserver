@@ -12,7 +12,6 @@ import dcraft.struct.RecordStruct;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
-import sun.print.UnixPrintService;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.DataOutputStream;

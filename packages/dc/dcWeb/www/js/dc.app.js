@@ -3439,52 +3439,47 @@ dc.pui.Tags = {
 
 		document.head.appendChild(script);
 	},
-	'dc.GalleryThumbs': function(entry, node) {
-		dc.pui.Tags['dc.GallerySection'](entry, node);
-	},
-	'dc.GallerySection': function(entry, node) {
-		$(node).find('.dc-section-gallery-list a').on("click", function(e) {
-			//console.log('img: ' + $(this).attr('data-image') + " show: "
-			//	+ $(node).attr('data-show') + " path: " + $(node).attr('data-path'));
+	'dcm.GalleryWidget': function(entry, node) {
+		$(node).find('img').on("click", function(e) {
+			var expanded = $(node).attr('data-dc-expanded');
 
-			var sposanchor = $(this).closest('.dc-gallery-image-anchor').get(0);
-			var spos = sposanchor ? $(sposanchor).index() : $(this).index();
+			if (expanded) {
+				var itemlevel = $(this).closest('.dc-image-item').get(0);
 
-			var show = {
-				Path: $(node).attr('data-path'),
-				Show: $(node).attr('data-show'),
-				Variant: $(node).attr('data-variant'),
-				Extension: $(node).attr('data-ext'),
-				StartPos: spos,
-				Images: []
-			};
+				if (! itemlevel)
+					itemlevel = $(this).get(0);
 
-			$(node).find('.dc-section-gallery-list img').each(function() {
-				var idata = $(this).attr('data-dc-image-data');
+				var show = {
+					Path: $(node).attr('data-path'),
+					Show: $(node).attr('data-show'),
+					Variant: expanded,
+					Extension: $(node).attr('data-ext'),
+					StartPos: $(itemlevel).index(),
+					Images: []
+				};
 
-				if (!idata)
-					return;
+				$(node).find('.dc-image-item').each(function() {
+					var idata = $(this).attr('data-dc-image-data');
 
-				var ii = JSON.parse(idata);
+					if (!idata)
+						return;
 
-				show.Images.push(ii);
-			});
+					var ii = JSON.parse(idata);
 
-			// load the variant and extension info
-			var vname = show.Variant ? show.Variant : 'full';
-
-			vname += show.Extension ? show.Extension : '.jpg';
-
-			if (dc.handler && dc.handler.tags && dc.handler.tags.ViewImage && dc.handler.tags.ViewImage.open)
-				dc.handler.tags.ViewImage.open(entry, node, show);
-			else
-				dc.pui.FullScreen.loadPage('/dcw/ViewImage', {
-					//Path: '/galleries' + show.Path + '/' + show.Images[show.StartPos] + '.v/' + vname
-					View: show
+					show.Images.push(ii);
 				});
 
-			e.preventDefault();
-			return false;
+				if (show.Images.length > 0) {
+					dc.pui.FullScreen.loadPage('/dcw/view-image', {
+						View: show
+					});
+
+					e.preventDefault();
+					return false;
+				}
+			}
+
+			return true;
 		});
 	},
 	'dcm.ImageWidget': function(entry, node) {

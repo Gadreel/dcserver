@@ -87,6 +87,8 @@ public class UserDataUtil {
 				"State", "dcState", "Zip", "dcZip", "Notices", "dcNotices");
 		
 		//req.withUpdateField("dcCreated", TimeUtil.now());
+		
+		// TODO update location if applicable
 
 		if (data.hasField("Badges"))
 			req.withSetList("dcBadges", data.getFieldAsList("Badges"));
@@ -186,6 +188,8 @@ public class UserDataUtil {
 			req.withSetList("dcBadges", badges);
 		}
 		
+		// TODO update location if applicable
+		
 		if (data.hasField("Locale"))
 			req.withSetList("dcLocale", data.getFieldAsList("Locale"));
 		
@@ -202,10 +206,17 @@ public class UserDataUtil {
 		data should contain Email, Phone, FirstName and LastName
 	 */
 	static public String startConfirmAccount(TablesAdapter db, RecordStruct data) throws OperatingContextException {
+		if (data.isFieldEmpty("Code")) {
+			String code = StringUtil.buildSecurityCode(6);
+			
+			data.with("Code", code);
+		}
+		
 		String title = "Sign Up: " + data.getFieldAsString("FirstName") + " " + data.getFieldAsString("LastName");
 
 		String msg = "Email: " + data.getFieldAsString("Email") + "\n"
-				+ "Phone: " + data.getFieldAsString("Phone") + "\n";
+				+ "Phone: " + data.getFieldAsString("Phone") + "\n"
+				+ "Code: " + data.getFieldAsString("Code") + "\n";
 
 		if (data.isNotFieldEmpty("Title"))
 			title = data.getFieldAsString("Title");
@@ -213,12 +224,8 @@ public class UserDataUtil {
 		if (data.isNotFieldEmpty("Message"))
 			msg = data.getFieldAsString("Message");
 
-		String code = StringUtil.buildSecurityCode(6);
-
-		data.with("Code", code);
-
 		// don't deliver this yet, have user confirm first
-		ZonedDateTime future = LocalDate.of(3000, 1, 1).atStartOfDay(ZoneId.of("UTC"));
+		ZonedDateTime future = TimeUtil.now();   // LocalDate.of(3000, 1, 1).atStartOfDay(ZoneId.of("UTC"));
 
 		String id = ThreadUtil.createThread(db, title,
 				false, "ApproveUser", Constants.DB_GLOBAL_ROOT_RECORD, future, null);
@@ -261,7 +268,7 @@ public class UserDataUtil {
 
 		data.with("UserId", userid);
 		data.with("FirstName", db.getStaticScalar("dcUser", userid, "dcFirstName"));
-		data.with("LastName", db.getStaticScalar("dcUser", userid, "dcLatstName"));
+		data.with("LastName", db.getStaticScalar("dcUser", userid, "dcLastName"));
 		data.with("Email", db.getStaticScalar("dcUser", userid, "dcEmail"));
 		data.with("Phone", db.getStaticScalar("dcUser", userid, "dcPhone"));
 
@@ -281,7 +288,7 @@ public class UserDataUtil {
 		data.with("Code", code);
 
 		// don't deliver this yet, have user confirm first
-		ZonedDateTime future = LocalDate.of(3000, 1, 1).atStartOfDay(ZoneId.of("UTC"));
+		ZonedDateTime future = TimeUtil.now();   // LocalDate.of(3000, 1, 1).atStartOfDay(ZoneId.of("UTC"));
 
 		String id = ThreadUtil.createThread(db, title,
 				false, "RecoverUser", Constants.DB_GLOBAL_ROOT_RECORD, future, null);

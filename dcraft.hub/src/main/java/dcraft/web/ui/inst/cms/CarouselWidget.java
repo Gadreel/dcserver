@@ -43,7 +43,12 @@ public class CarouselWidget extends Base implements ICMSAware {
 	
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
-		String gallery = StackUtil.stringFromSource(state,"Gallery");
+		String gallery = StackUtil.stringFromSource(state,"Path");
+
+		// old code support
+		if (StringUtil.isEmpty(gallery))
+			gallery = StackUtil.stringFromSource(state,"Gallery");
+
 		String alias = StackUtil.stringFromSource(state,"Show");
 		
 		RecordStruct page = (RecordStruct) StackUtil.queryVariable(state, "Page");
@@ -67,12 +72,14 @@ public class CarouselWidget extends Base implements ICMSAware {
 
 		String variname = "full";
 		
-		if (this.hasNotEmptyAttribute("Variation"))
-			variname = StackUtil.stringFromSource(state, "Variation");
+		if (this.hasNotEmptyAttribute("Variant"))
+			variname = StackUtil.stringFromSource(state, "Variant");
 		
 		boolean preloadenabled = this.hasNotEmptyAttribute("Preload")
 				? "true".equals(StackUtil.stringFromSource(state,"Preload").toLowerCase())
 				: false;
+
+		String ext = StackUtil.stringFromSource(state, "Extension", "jpg");
 
 		XElement ariatemplate = this.selectFirst("AriaTemplate");
 
@@ -134,8 +141,9 @@ public class CarouselWidget extends Base implements ICMSAware {
 						viewer.withAttribute("src", "data:image/jpeg;base64," + data);
 					}
 				}
-				
-				String ext = meta.getFieldAsString("Extension", "jpg");
+
+				//if (Str)
+				//String ext = meta.getFieldAsString("Extension", "jpg");
 				
 				Base list = W3.tag("div").withClass("dcm-widget-carousel-list");
 				
@@ -212,6 +220,12 @@ public class CarouselWidget extends Base implements ICMSAware {
 		if (ariatemplateused)
 			this.with(arialist);
 
+		this
+				.withAttribute("data-variant", variname)
+				.withAttribute("data-ext", ext)
+				.withAttribute("data-path", gallery)
+				.withAttribute("data-show", alias);
+
 		UIUtil.markIfEditable(state, this, "widget");
 	}
 	
@@ -221,39 +235,62 @@ public class CarouselWidget extends Base implements ICMSAware {
 		this
 			.withClass("dc-widget", "dcm-widget-carousel")
 			.withAttribute("data-dc-enhance", "true")
-			.withAttribute("data-dc-tag", this.getName());
-    	
+			.withAttribute("data-dc-tag", this.getName())
+			.withAttribute("data-property-editor", StackUtil.stringFromSource(state,"PropertyEditor"));
+
 		this.setName("div");
     }
 	
 	
 	@Override
 	public void canonicalize() throws OperatingContextException {
-		XElement template = this.selectFirst("Template");
+		XElement template = this.selectFirst("AriaTemplate");
 		
 		if (template == null) {
 			// set default
-			/* create a template system
-			this.with(Base.tag("Template").with(
-					W3.tag("a")
-							.withAttribute("href", "#")
-							.withAttribute("data-image-alias", "{$Image.Alias}")
-							.withAttribute("data-image-info", "{$Image.Data}")
-							.with(
-									W3Closed.tag("img")
-											.withClass("pure-img-inline")
-											.withAttribute("src", "{$Image.Path}")
-									//.withAttribute("srcset", usesrcset ? "{$Image.SourceSet}" : null)
-							)
+			this.with(Base.tag("AriaTemplate").with(
+					W3.tag("div")
+							.withAttribute("role", "listitem")
+							.withText("{$Image.Title}")
 			));
-			*/
 		}
 	}
 	
 	@Override
 	public boolean applyCommand(CommonPath path, XElement root, RecordStruct command) throws OperatingContextException {
+		XElement part = this;
+
 		String cmd = command.getFieldAsString("Command");
-		
+
+		if ("Reorder".equals(cmd)) {
+			ListStruct neworder = command.selectAsList("Params.Order");
+
+			if (neworder == null) {
+				Logger.error("New order is missing");
+				return true;		// command was handled
+			}
+
+			List<XElement> children = this.selectAll("Image");
+
+			// remove all images
+			for (XElement el : children)
+				this.remove(el);
+
+			// add images back in new order
+			for (int i = 0; i < neworder.size(); i++) {
+				int pos = neworder.getItemAsInteger(i).intValue();
+
+				if (pos >= children.size()) {
+					Logger.warn("bad gallery positions");
+					break;
+				}
+
+				part.with(children.get(pos));
+			}
+
+			return true;		// command was handled
+		}
+
 		if ("UpdatePart".equals(cmd)) {
 			// TODO check that the changes made are allowed - e.g. on TextWidget
 			RecordStruct params = command.getFieldAsRecord("Params");
@@ -270,19 +307,73 @@ public class CarouselWidget extends Base implements ICMSAware {
 				
 				return true;
 			}
-			
-			if ("Template".equals(area)) {
+
+			if ("SetImage".equals(area)) {
+				String alias = params.getFieldAsString("Alias");
+				XElement fnd = null;
+
+				for (XElement xel : this.selectAll("Image")) {
+					if (alias.equals(xel.getAttribute("Alias"))) {
+						fnd = xel;
+						break;
+					}
+				}
+
+				if (fnd == null) {
+					fnd = XElement.tag("Image");
+
+					if (params.getFieldAsBooleanOrFalse("AddTop"))
+						this.with(fnd);
+					else
+						this.add(0, fnd);
+				}
+
+				fnd.clearAttributes();
+
+				// rebuild attrs
+				fnd.attr("Alias", alias);
+
+				RecordStruct props = params.getFieldAsRecord("Properties");
+
+				if (props != null) {
+					for (FieldStruct fld : props.getFields()) {
+						fnd.attr(fld.getName(), Struct.objectToString(fld.getValue()));
+					}
+				}
+
+				return true;
+			}
+
+			if ("RemoveImage".equals(area)) {
+				String alias = params.getFieldAsString("Alias");
+				XElement fnd = null;
+
+				for (XElement xel : this.selectAll("Image")) {
+					if (alias.equals(xel.getAttribute("Alias"))) {
+						fnd = xel;
+						break;
+					}
+				}
+
+				if (fnd != null) {
+					this.remove(fnd);
+				}
+
+				return true;
+			}
+
+			if ("AriaTemplate".equals(area)) {
 				this.canonicalize();    // so all Tr's have a Locale
 				
-				String targetcontent = params.getFieldAsString("Template");
+				String targetcontent = params.getFieldAsString("AriaTemplate");
 				
-				String template = "<Template>" + targetcontent + "</Template>";
+				String template = "<AriaTemplate>" + targetcontent + "</AriaTemplate>";
 				
 				try (OperationMarker om = OperationMarker.clearErrors()) {
 					XElement txml = ScriptHub.parseInstructions(template);
 					
 					if (!om.hasErrors() && (txml != null)) {
-						XElement oldtemp = this.selectFirst("Template");
+						XElement oldtemp = this.selectFirst("AriaTemplate");
 						
 						if (oldtemp != null)
 							this.remove(oldtemp);

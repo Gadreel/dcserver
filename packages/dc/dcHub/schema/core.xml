@@ -646,6 +646,31 @@
 							</Field>
 						</RecordResponse>
 					</Op>
+					<Op Name="Confirm">
+						<Description>
+							Confirm an account.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Uuid" Type="dcMetaString" />
+							<Field Name="Code" Type="dcMetaString" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="UserId" Type="Id" />
+							<Field Name="Username" Type="dcUser:dcUsername" />
+							<Field Name="FirstName" Type="dcUser:dcFirstName" />
+							<Field Name="LastName" Type="dcUser:dcLastName" />
+							<Field Name="Email" Type="dcUser:dcEmail" />
+							<Field Name="Locale">
+								<List Type="dcUser:dcLocale" />
+							</Field>
+							<Field Name="Chronology">
+								<List Type="dcUser:dcChronology" />
+							</Field>
+							<Field Name="Badges">
+								<List Type="dcUser:dcBadges" />
+							</Field>
+						</RecordResponse>
+					</Op>
 					<Op Name="Recover">
 						<Description>
 							Verify credentials, start a session (AuthToken) indirectly as Verify is called implicitly.

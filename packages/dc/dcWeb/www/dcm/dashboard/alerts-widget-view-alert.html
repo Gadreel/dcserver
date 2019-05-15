@@ -1,0 +1,102 @@
+<dc.Html Badges="Admin" NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Alert Detail" />
+	</Meta>
+
+	<Require Icons="fas/pencil-alt,fas/list,fas/plus" />
+
+	<dcs.Var Name="ThreadId" Type="String" />
+
+	<dcs.If Target="$Page.OriginalPathParts.4" IsEmpty="false">
+		<dcs.With Target="$ThreadId" SetTo="$Page.OriginalPathParts.4" />
+	</dcs.If>
+
+	<dcdb.LoadRecord Table="dcmThread" Id="$ThreadId" Result="TheThread">
+		<Select Field="dcmUuid" As="Uuid" />
+		<Select Field="dcmMessageType" As="MessageType" />
+		<Select Field="dcmTitle" As="Title" />
+		<Select Field="dcmRead" SubId="/NoticesPool" As="Read"  />
+		<Select Field="dcmModified" As="Modified" />
+		<Select Field="dcmCreated" As="Created" />
+		<Select Field="dcmSharedAttributes" As="Attributes" />
+		<SelectGroup Field="dcmContent" Key="Stamp" As="Content">
+			<Select Field="dcmContent" As="Message" />
+			<Select Field="dcmContentType" As="ContentType" />
+			<SelectSubquery Field="dcmContentOriginator" As="Originator">
+				<Select Field="Id" />
+				<Select Field="dcFirstName" As="FirstName" />
+				<Select Field="dcLastName" As="LastName" />
+			</SelectSubquery>
+		</SelectGroup>
+	</dcdb.LoadRecord>
+
+	<dcdb.UpdateRecord Table="dcmThread" Id="$ThreadId">
+		<Update Field="dcmRead" SubId="/NoticesPool" Value="true" />
+	</dcdb.UpdateRecord>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcs.If Target="$TheThread" IsEmpty="true">
+				<dc.Out>
+					Not found.
+				</dc.Out>
+			</dcs.If>
+			<dcs.Else>
+				<dc.Out>
+					<div id="sectDetail">
+						<b>Date:</b> {$TheThread.Created|dt:MMM dd, h:mm a}
+						<br />
+						<b>Title:</b> {$TheThread.Title|xmlescape:}
+						<br />
+						<br />
+						<b>Message(s):</b>
+						<br />
+
+						<dcs.For Name="i" From="$TheThread.Content.Last" To="0" Step="-1">
+							<dc.Out>
+								<dc.TextWidget Mode="$TheThread.Content.$i.ContentType"><Tr><![CDATA[
+_{$TheThread.Content.$i.Originator.FirstName|xmlescape:} {$TheThread.Content.$i.Originator.LastName|xmlescape:} @ {$TheThread.Content.$i.Stamp|dt:MMM dd, h:mm a}_
+
+{$TheThread.Content.$i.Message|xmlescape:}
+
+---
+								]]></Tr></dc.TextWidget>
+							</dc.Out>
+						</dcs.For>
+					</div>
+
+					<dcf.FormButtons>
+						<dc.IncludeFragmentInline Path="/dcm/dashboard/alerts-buttons-{$TheThread.MessageType}" />
+
+						<dc.Button id="optArchive" Label="Archive"  Click="DoArchive" />
+					</dcf.FormButtons>
+				</dc.Out>
+			</dcs.Else>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+	]]></Function>
+	<Function Name="DoArchive"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcmServices.Dashboard.ArchiveAlerts', [ '{$ThreadId}' ], function(rmsg) {
+				if (rmsg.Code > 0) {
+					dc.pui.Popup.alert('Unable to archive alert: ' + rmsg.Message);
+					return;
+				}
+
+				page.callPageFunc('AfterSave');
+			});
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback();
+	]]></Function>
+</dc.Html>

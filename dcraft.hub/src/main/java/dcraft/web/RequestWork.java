@@ -267,6 +267,8 @@ public class RequestWork extends ChainWork {
 								@Override
 								public void run(TaskContext taskctx) throws OperatingContextException {
 									if (taskctx.hasExitErrors()) {
+										wctrl.sendRequestBadRead();
+
 										taskctx.returnEmpty();
 										return;
 									}

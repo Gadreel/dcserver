@@ -169,6 +169,9 @@
 		<Procedure Name="dcmServices.Feed.LoadDrafts" Execute="dcraft.cms.feed.db.LoadDrafts" />
 		<Procedure Name="dcmServices.Feed.LoadFeedDashboard" Execute="dcraft.cms.feed.db.LoadFeedDashboard" />
 
+		<Procedure Name="dcmServices.Dashboard.LoadAlerts" Execute="dcraft.cms.dashboard.db.LoadAlerts" />
+		<Procedure Name="dcmServices.Dashboard.ArchiveAlerts" Execute="dcraft.cms.dashboard.db.ArchiveAlerts" />
+
 		<Procedure Name="dcCoreServices.ManagedForm.Submit" Execute="dcraft.cms.db.forms.Submit" />
 		<Procedure Name="dcCoreServices.ManagedForm.Complete" Execute="dcraft.cms.db.forms.Complete" />
 
@@ -494,6 +497,33 @@
 								<Field Name="Published" Type="dcmFeed:dcmPublishAt" />
 							</Record>
 						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+			<Feature Name="Dashboard">
+				<Secure Badges="Editor,Admin">
+					<Op Name="LoadAlerts">
+						<Description>
+							List of alerts (InBox of NoticesPool).
+						</Description>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id"  />
+								<Field Name="Title" Type="dcmThread:dcmTitle" Required="True" />
+								<Field Name="MessageType" Type="dcMetaString" />
+								<Field Name="Modified" Type="dcmThread:dcmModified" />
+								<Field Name="Read" Type="dcmThread:dcmRead" />
+								<Field Name="Attributes" Type="dcmThread:dcmSharedAttributes" />
+							</Record>
+						</ListResponse>
+					</Op>
+				</Secure>
+				<Secure Badges="Admin">
+					<Op Name="ArchiveAlerts">
+						<Description>
+							List of alerts (InBox of NoticesPool).
+						</Description>
+						<ListRequest Type="dcMetaString" />
 					</Op>
 				</Secure>
 			</Feature>

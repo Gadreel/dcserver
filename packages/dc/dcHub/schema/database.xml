@@ -372,6 +372,7 @@
 		<Procedure Name="dcSetGlobalPassword" Execute="dcraft.db.proc.call.SetGlobalPassword" />
 		<Procedure Name="dcIndexValueCounter" Execute="dcraft.db.proc.call.IndexValueCounter" />
 
+		<Procedure Name="dcCoreServices.Authentication.Confirm" Execute="dcraft.core.db.auth.Confirm" />
 		<Procedure Name="dcCoreServices.Authentication.Recover" Execute="dcraft.core.db.auth.Recover" />
 		<Procedure Name="dcCoreServices.Authentication.FacebookSignIn" Execute="dcraft.core.db.auth.FacebookSignIn" />
 		<Procedure Name="dcCoreServices.Authentication.LinkFacebookAccount" Execute="dcraft.core.db.auth.LinkFacebookAccount" />
