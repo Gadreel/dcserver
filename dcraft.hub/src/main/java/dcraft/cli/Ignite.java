@@ -22,45 +22,21 @@
 package dcraft.cli;
 
 import dcraft.api.ApiSession;
-import dcraft.custom.release.ServerHelper;
-import dcraft.db.DbServiceRequest;
-import dcraft.db.request.DataRequest;
-import dcraft.db.request.common.RequestFactory;
-import dcraft.db.rocks.ConnectionManager;
-import dcraft.db.util.DbUtil;
-import dcraft.filestore.CommonPath;
 import dcraft.hub.ILocalCommandLine;
 import dcraft.hub.ResourceHub;
-import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.ignite.IInitializeDeploymentCli;
-import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationOutcome;
-import dcraft.hub.op.OperationOutcomeEmpty;
-import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.script.Script;
-import dcraft.script.ScriptHub;
-import dcraft.struct.Struct;
-import dcraft.task.Task;
-import dcraft.task.TaskContext;
-import dcraft.task.TaskHub;
-import dcraft.task.TaskObserver;
+import dcraft.hub.ignite.IServerHelper;
 import dcraft.task.run.WorkHub;
 import dcraft.util.*;
 import dcraft.xml.XElement;
-import dcraft.xml.XmlPrinter;
 import dcraft.xml.XmlReader;
 
-import java.io.IOException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class Ignite implements ILocalCommandLine {
 	@Override
@@ -152,8 +128,8 @@ public class Ignite implements ILocalCommandLine {
 
 		if (! opt.startsWith("y"))
 			return;
-
-		ServerHelper ssh = new ServerHelper();
+		
+		IServerHelper ssh = (IServerHelper) ResourceHub.getResources().getClassLoader().getInstance("dcraft.custom.release.ServerHelper");
 
 		if (! ssh.init()) {
 			System.out.println("Missing or incomplete matrix config - a matrix file is required.");

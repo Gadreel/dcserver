@@ -5,7 +5,6 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 import dcraft.cms.thread.db.ThreadUtil;
 import dcraft.db.Constants;
@@ -23,8 +22,6 @@ import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.mem.MemoryStoreFile;
-import dcraft.filevault.GalleryVault;
-import dcraft.filevault.Vault;
 import dcraft.filevault.VaultUtil;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.*;
@@ -49,9 +46,7 @@ import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
-import dcraft.util.cb.CountDownCallback;
 import dcraft.xml.XElement;
-import z.gei.db.estimator.product.List;
 
 public class OrderUtil {
 	static public void processAuthOrder(ICallContext request, TablesAdapter db, RecordStruct order, OperationOutcomeStruct callback) throws OperatingContextException {

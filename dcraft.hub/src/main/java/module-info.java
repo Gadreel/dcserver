@@ -12,12 +12,16 @@ module dcraft.hub {
   requires org.bouncycastle.pkix;
   requires org.threeten.extra;
   requires org.apache.commons.codec;
+  requires org.apache.commons.compress;
   requires pdfbox;
   requires jsch;
   requires rocksdbjni;
-  requires acme4j.client;
-  requires acme4j.utils;
-  requires commons.compress;
   requires commons.daemon;
   requires commons.logging;
+  requires org.shredzone.acme4j;
+  requires org.shredzone.acme4j.utils;
+  requires java.ipv6;
+  requires slf4j.api;
+  requires activation;
+  requires java.mail;
 }

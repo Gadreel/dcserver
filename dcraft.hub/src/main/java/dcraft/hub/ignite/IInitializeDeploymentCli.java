@@ -17,12 +17,11 @@
 package dcraft.hub.ignite;
 
 import dcraft.api.ApiSession;
-import dcraft.custom.release.ServerHelper;
 import dcraft.xml.XElement;
 
 import java.nio.file.Path;
 import java.util.Scanner;
 
 public interface IInitializeDeploymentCli {
-	void run(Scanner scan, Path template, XElement settings, ServerHelper server, XElement deployment, ApiSession client) throws Exception;
+	void run(Scanner scan, Path template, XElement settings, IServerHelper server, XElement deployment, ApiSession client) throws Exception;
 }

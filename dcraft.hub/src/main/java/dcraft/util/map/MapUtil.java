@@ -4,7 +4,6 @@ import dcraft.struct.CompositeParser;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.util.net.NetUtil;
-import z.dga.Util;
 
 public class MapUtil {
 	
