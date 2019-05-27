@@ -390,6 +390,37 @@ public class ThreadUtil {
 		}
 	}
 
+	public static void sendDeliveryNotice(TablesAdapter db, String id, String party) throws OperatingContextException {
+		List<XElement> channels = ResourceHub.getResources().getConfig().getTagListDeep("Threads/Channel");
+
+		String type = Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmMessageType"));
+
+		XElement typedef = ThreadUtil.getMessageTypeDef(type);
+
+		if (typedef != null) {
+			String notices = typedef.getAttribute("Notices", "default");
+
+			if ("no".equals(notices))
+				return;
+
+			String channel = ThreadUtil.partyToPrefix(party);
+
+			for (XElement chandef : channels) {
+				if (channel.equals(chandef.getAttribute("Prefix"))) {
+					String notices2 = chandef.getAttribute("Notices", "no");
+
+					// if neither is yes then next party
+					if (! "yes".equals(notices2) && ! "yes".equals(notices))
+						break;
+
+					ThreadUtil.sendDeliveryNotice(db, id, party, chandef, typedef);
+
+					break;
+				}
+			}
+		}
+	}
+
 	public static void sendDeliveryNotice(TablesAdapter db, String id, String party, XElement chandef, XElement typedef) throws OperatingContextException {
 		//Main main = Main.tag();
 

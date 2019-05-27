@@ -59,7 +59,7 @@ DC_ERR="$DC_BASE/logs/hub-daemon.err"
 DC_TMP="$DC_BASE/temp"
 DC_PID="$DC_BASE/logs/hub-daemon.pid"
 
-JAVA_BIN="$JAVA_HOME/bin/java"
+JAVA_BIN="$JAVA_HOME/jre/bin/java"
 JSVC="$DC_BASE/jsvc64"
 
 CMD=$1

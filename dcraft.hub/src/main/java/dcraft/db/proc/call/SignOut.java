@@ -13,6 +13,12 @@ import dcraft.util.StringUtil;
 public class SignOut implements IUpdatingStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
+		signout(request);
+		
+		callback.returnEmpty();
+	}
+	
+	static public void signout(ICallContext request) throws OperatingContextException {
 		OperationContext ctx = OperationContext.getOrThrow();
 		UserContext uc = ctx.getUserContext();
 		
@@ -34,7 +40,5 @@ public class SignOut implements IUpdatingStoredProc {
 		
 		if (sess != null)
 			sess.userChanged();
-		
-		callback.returnEmpty();
 	}
 }

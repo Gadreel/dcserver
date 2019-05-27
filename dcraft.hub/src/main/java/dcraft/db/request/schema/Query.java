@@ -141,7 +141,7 @@ public class Query extends RecordStruct {
 	
 	static public RecordStruct createWhereValue(IParentAwareWork state, XElement code, String name) throws OperatingContextException {
 		return RecordStruct.record()
-				.with("Value", StackUtil.stringFromElement(state, code, name));
+				.with("Value", StackUtil.refFromElement(state, code, name));
 	}
 	
 	static public void addWhere(ListStruct children, IParentAwareWork state, XElement code) throws OperatingContextException {

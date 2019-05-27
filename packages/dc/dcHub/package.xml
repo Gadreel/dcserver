@@ -276,7 +276,9 @@
 			<Definition Code="empty" Class="dcraft.struct.format.EmptyFormatter" />
 			<Definition Code="ifempty" Class="dcraft.struct.format.IfEmptyFormatter" />
 			<Definition Code="join" Class="dcraft.struct.format.JoinFormatter" />
+			<Definition Code="encodejson" Class="dcraft.struct.format.EncodeJsonFormatter" />
 			<Definition Code="decodejson" Class="dcraft.struct.format.DecodeJsonFormatter" />
+			<Definition Code="md" Class="dcraft.struct.format.MarkDown" />
 			<Definition Code="decrypt" Class="dcraft.struct.format.Decrypt" />
 			<Definition Code="encrypt" Class="dcraft.struct.format.Encrypt" />
 			<Definition Code="img-g2p" Class="dcraft.struct.format.ImageGalleryToPath" />

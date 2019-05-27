@@ -8,6 +8,23 @@ public class Util {
 		if (StringUtil.isEmpty(v))
 			return v;
 		
-		return v.replace("\\n", "\n").replace("\\t", "\t").replace("\\\\", "\\");
+		return v
+				.replace("\\n", "\n")
+				.replace("\\t", "\t")
+				.replace("\\\\", "\\")
+				.replace("\\\"", "\"")
+				;
+	}
+	
+	static public String encodeJsonString(String v) {
+		if (StringUtil.isEmpty(v))
+			return v;
+		
+		return v
+				.replace("\n", "\\n")
+				.replace("\t", "\\t")
+				.replace("\\", "\\\\")
+				.replace("\"", "\\\"")
+				;
 	}
 }

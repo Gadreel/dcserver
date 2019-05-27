@@ -2969,7 +2969,7 @@ dc.pui.Tags = {
 		var linkto = $(node).attr('data-dc-to');
 		var link = $(node).attr('href');
 
-		if (link && (dc.util.String.startsWith(link, 'http:') || dc.util.String.startsWith(link, 'https:') || dc.util.String.startsWith(link, 'mailto:') || dc.util.String.endsWith(link, '.pdf')))
+		if (link && ! $(node).attr('target') && (dc.util.String.startsWith(link, 'http:') || dc.util.String.startsWith(link, 'https:') || dc.util.String.startsWith(link, 'mailto:') || dc.util.String.endsWith(link, '.pdf')))
 			$(node).attr('target', '_blank');
 
 		if (click || page) {
@@ -3033,7 +3033,7 @@ dc.pui.Tags = {
 						return false;
 					});
 				}
-				else {
+				else if (! $(node).attr('target')) {
 					$(node).attr('target', '_blank');
 				}
 			}

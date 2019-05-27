@@ -7,7 +7,7 @@
 	<Packages Use="main-packages" />
 
 	<Service.Template Id="main-sessions" Inherit="dc-sessions" />
-	<Service.Template Id="main-core" Inherit="dc-core-simple" />
+	<Service.Template Id="main-core" Inherit="dc-core-db" />
 
 	<Service Use="main-sessions" />
 	<Service Use="main-core" />

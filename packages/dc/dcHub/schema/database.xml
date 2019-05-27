@@ -351,7 +351,6 @@
 		<Procedure Name="dcStartSession" Execute="dcraft.db.proc.call.StartSession" />
 		<Procedure Name="dcSignOut" Execute="dcraft.db.proc.call.SignOut" />
 		<Procedure Name="dcVerifySession" Execute="dcraft.db.proc.call.VerifySession" />
-		<Procedure Name="dcInitiateConfirm" Execute="dcraft.db.proc.call.InitiateConfirm" />
 
 		<Procedure Name="dcAddTenant" Execute="dcraft.db.proc.call.AddTenant" />
 		<Procedure Name="dcReindexTenant" Execute="dcraft.db.proc.call.ReindexTenant" />
@@ -382,9 +381,16 @@
 		<Procedure Name="dcCoreServices.Users.Load" Execute="dcraft.core.db.user.Load" />
 		<Procedure Name="dcCoreServices.Users.Update" Execute="dcraft.core.db.user.Update" />
 		<Procedure Name="dcCoreServices.Users.Add" Execute="dcraft.core.db.user.Add" />
+		<Procedure Name="dcCoreServices.Users.Retire" Execute="dcraft.core.db.user.Retire" />
+		<Procedure Name="dcCoreServices.Users.RetireSelf" Execute="dcraft.core.db.user.RetireSelf" />
+		<Procedure Name="dcCoreServices.Users.Revive" Execute="dcraft.core.db.user.Revive" />
 		<Procedure Name="dcCoreServices.Users.Search" Execute="dcraft.core.db.user.Search" />
 		<Procedure Name="dcCoreServices.Users.SignUp" Execute="dcraft.core.db.user.SignUp" />
 		<Procedure Name="dcCoreServices.Users.InitiateRecovery" Execute="dcraft.core.db.user.InitiateRecovery" />
+		<Procedure Name="dcCoreServices.Users.UsernameLookup" Execute="dcraft.core.db.user.UsernameLookup" />
+		<Procedure Name="dcCoreServices.Users.SetBadges" Execute="dcraft.core.db.user.SetBadges" />
+		<Procedure Name="dcCoreServices.Users.AddBadges" Execute="dcraft.core.db.user.AddBadges" />
+		<Procedure Name="dcCoreServices.Users.RemoveBadges" Execute="dcraft.core.db.user.RemoveBadges" />
 
 		<Procedure Name="dcCoreServices.Management.Backup" Execute="dcraft.core.db.admin.Backup" />
 
@@ -541,19 +547,6 @@
 						</RecordResponse>
 					</Op>
 					-->
-					<Op Name="dcInitiateConfirm">
-						<Description>
-							Start a user "lost password" recovery sequence.  Typically
-							the user has 30 minutes to use the code or it expires.
-						</Description>
-						<RecordRequest Inherits="dcdbCallBasic">
-							<Field Name="Username" Type="dcSmallString" Required="True" />
-						</RecordRequest>
-						<RecordResponse>
-							<Field Name="Id" Type="Id" />
-							<Field Name="Code" Type="dcUser:dcConfirmCode" />
-						</RecordResponse>
-					</Op>
 					<Op Name="dcAddTenant">
 						<Description>
 							Add tenant record in database.

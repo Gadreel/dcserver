@@ -74,16 +74,6 @@ public class RequestFactory {
 				.withParam("LongExpireThreshold", threshold);
 	}
 	
-	/**
-	 * Initiate sign on recovery.
-	 * 
-	 * @param username identifying info entered by user (username or email)
-	 */
-	static public DataRequest initiateRecoveryRequest(String username) {
-		return DataRequest.of("dcInitiateConfirm")
-				.withParam("Username", username.toLowerCase());
-	}
-	
 	static public DataRequest removeFromSet(String table, String field, String id, ListStruct values) {
 		return removeFromSet(table, field, ListStruct.list(id), values);
 	}

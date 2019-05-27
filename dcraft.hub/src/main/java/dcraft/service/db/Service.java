@@ -1,4 +1,4 @@
-package dcraft.service.simple;
+package dcraft.service.db;
 
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
@@ -7,8 +7,10 @@ import dcraft.hub.resource.ConfigResource;
 import dcraft.log.Logger;
 import dcraft.service.BaseDataService;
 import dcraft.service.base.Vaults;
-import dcraft.service.BaseService;
 import dcraft.service.ServiceRequest;
+import dcraft.service.simple.Authentication;
+import dcraft.service.simple.CoreDatabase;
+import dcraft.service.simple.Tenants;
 import dcraft.struct.ListStruct;
 import dcraft.struct.Struct;
 import dcraft.task.TaskContext;
@@ -95,11 +97,6 @@ public class Service extends BaseDataService {
 	
 	@Override
 	public boolean handle(ServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
-		if ("Users".equals(request.getFeature())) {
-			if (Users.handle(request, callback, this.db))
-				return true;
-		}
-		
 		if ("Tenants".equals(request.getFeature()))
 			if (Tenants.handle(request, callback, this.db))
 				return true;
