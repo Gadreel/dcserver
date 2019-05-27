@@ -1,9 +1,9 @@
 # dcServer
 Web server, database and CMS
 
-## Schedule
+## Status
 
-With 14 production clients, dcServer is proving to be a successful multipurpose web server. While our source code is open and published we are not yet ready to provide builds. This project will undergo a migration to OpenJDK 11 during 2019, focusing on the Corretto 11 release. Once the migration is complete we will provide builds and documentation.
+With 20 production websites, dcServer is proving to be a successful multipurpose web server. The project has recently been migrated to OpenJDK 11 (spring 2019), using the Corretto 11 release. The source code compiles. Project lacks documentation on how to run and code using dcServer - planned for summer and fall of 2019.
 
 ## Download 
 
