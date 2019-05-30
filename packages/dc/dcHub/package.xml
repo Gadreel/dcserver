@@ -30,7 +30,7 @@
 		<File Path="NOTICE.md"/>
 	</DependsOn>
 
-	<Config Locale="en" Chronology="UTC">
+	<Config Locale="eng" Chronology="UTC">
 		<CommandLine ClientClass="dcraft.cli.HubUtil" Mode="tenant" />
 
 		<Service.Definition Id="dc-database-rocks" Name="dcDatabase" RunClass="dcraft.db.rocks.Service" />
@@ -41,9 +41,7 @@
 
 		<Service.Definition Id="dc-mail" Name="dcEmail" RunClass="dcraft.mail.MailService" />
 
-		<!--
 		<Service.Definition Id="dc-core-db" Name="dcCoreServices" RunClass="dcraft.service.db.Service" />
-		-->
 
 		<Service.Definition Id="dc-core-simple" Name="dcCoreServices" RunClass="dcraft.service.simple.Service" />
 

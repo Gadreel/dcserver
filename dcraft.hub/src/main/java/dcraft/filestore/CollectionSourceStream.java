@@ -19,13 +19,13 @@ package dcraft.filestore;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcome;
-import dcraft.scriptold.StackEntry;
 import dcraft.stream.IStreamSource;
 import dcraft.stream.IStreamUp;
 import dcraft.stream.ReturnOption;
 import dcraft.stream.StreamFragment;
 import dcraft.stream.file.FileSlice;
 import dcraft.stream.file.TransformFileStream;
+import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 
 public class CollectionSourceStream extends TransformFileStream implements IStreamSource {
@@ -46,7 +46,7 @@ public class CollectionSourceStream extends TransformFileStream implements IStre
 	
 	// for use with dcScript
 	@Override
-	public void init(StackEntry stack, XElement el) {
+	public void init(IParentAwareWork stack, XElement el) {
 		// anything we need to gleam from the xml?
 	}
 	

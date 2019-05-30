@@ -25,14 +25,14 @@ import dcraft.filestore.FileStoreFile;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
-import dcraft.scriptold.StackEntry;
-import dcraft.stream.IStreamDest;
+import dcraft.script.StackUtil;
 import dcraft.stream.ReturnOption;
 import dcraft.stream.file.BaseFileStream;
 import dcraft.stream.file.FileSlice;
 import dcraft.stream.file.IFileStreamDest;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.NullStruct;
+import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 
 import java.io.IOException;
@@ -61,13 +61,13 @@ public class AwsDestStream extends BaseFileStream implements IFileStreamDest {
 	
 	// for use with dcScript
 	@Override
-	public void init(StackEntry stack, XElement el) throws OperatingContextException {
+	public void init(IParentAwareWork stack, XElement el) throws OperatingContextException {
 			// TODO autorelative and rethink the RelativeTo
-		if (stack.boolFromElement(el, "Relative", true) || el.getName().startsWith("X")) {
+		if (StackUtil.boolFromElement(stack, el, "Relative", true) || el.getName().startsWith("X")) {
         	this.userelpath = true;
         }
 
-        Struct src = stack.refFromElement(el, "RelativeTo");
+        Struct src = StackUtil.refFromElement(stack, el, "RelativeTo");
         
         if ((src != null) && !(src instanceof NullStruct)) {
             if (src instanceof FileStore)

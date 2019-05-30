@@ -24,7 +24,6 @@ import dcraft.script.work.BlockWork;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
-import dcraft.scriptold.StackBlockEntry;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;

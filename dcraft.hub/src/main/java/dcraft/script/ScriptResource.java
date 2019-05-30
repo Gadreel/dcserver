@@ -5,10 +5,8 @@ import dcraft.hub.ResourceHub;
 import dcraft.hub.resource.ResourceBase;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.log.Logger;
-import dcraft.scriptold.IOperator;
-import dcraft.scriptold.mutator.Substring;
+import dcraft.script.mutator.Substring;
 import dcraft.struct.format.IFormatter;
-import dcraft.util.ISettingsObfuscator;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
@@ -35,7 +33,7 @@ public class ScriptResource extends ResourceBase {
 		
 		// TODO move and load from packages/settings
 		HashMap<String, IOperator> stringextensions = new HashMap<String, IOperator>();
-		stringextensions.put("Substring", new Substring());
+		// TODO stringextensions.put("Substring", new Substring());
 		
 		this.operationExtensions.put("String", stringextensions);
 	}

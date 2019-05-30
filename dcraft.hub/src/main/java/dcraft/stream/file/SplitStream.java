@@ -18,17 +18,15 @@ package dcraft.stream.file;
 
 import dcraft.filestore.FileDescriptor;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.scriptold.StackEntry;
+import dcraft.script.StackUtil;
 import dcraft.stream.ReturnOption;
 import dcraft.struct.scalar.IntegerStruct;
+import dcraft.task.IParentAwareWork;
 import dcraft.util.FileUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
 import io.netty.buffer.ByteBuf;
-
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 
 public class SplitStream extends TransformFileStream {
 	protected int seqnum = 1;
@@ -71,14 +69,14 @@ public class SplitStream extends TransformFileStream {
     }
 
 	@Override
-	public void init(StackEntry stack, XElement el) {
-		this.seqnum = (int) stack.intFromElement(el, "StartAt", this.seqnum);
+	public void init(IParentAwareWork stack, XElement el) throws OperatingContextException {
+		this.seqnum = (int) StackUtil.intFromElement(stack, el, "StartAt", this.seqnum);
 		
-		String size = stack.stringFromElement(el, "Size", "10MB");
+		String size = StackUtil.stringFromElement(stack, el, "Size", "10MB");
 		
 		this.size = FileUtil.parseFileSize(size);
 		
-		String temp = stack.stringFromElement(el, "Template");
+		String temp = StackUtil.stringFromElement(stack, el, "Template");
 		
 		if (StringUtil.isNotEmpty(temp))
 			this.template = temp;

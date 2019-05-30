@@ -6,8 +6,9 @@ import java.security.NoSuchAlgorithmException;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.log.Logger;
-import dcraft.scriptold.StackEntry;
+import dcraft.script.StackUtil;
 import dcraft.stream.ReturnOption;
+import dcraft.task.IParentAwareWork;
 import dcraft.util.HexUtil;
 import dcraft.xml.XElement;
 import io.netty.buffer.ByteBuf;
@@ -37,8 +38,8 @@ public class HashStream extends TransformFileStream {
 	}
 	
 	@Override
-	public void init(StackEntry stack, XElement el) {
-		String algo = stack.stringFromElement(el, "Algorithm", "SHA-256");
+	public void init(IParentAwareWork stack, XElement el) throws OperatingContextException {
+		String algo = StackUtil.stringFromElement(stack, el, "Algorithm", "SHA-256");
 		
 		try {
 			this.md = MessageDigest.getInstance(algo);

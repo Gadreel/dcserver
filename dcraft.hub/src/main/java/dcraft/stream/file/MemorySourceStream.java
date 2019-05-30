@@ -17,12 +17,12 @@
 package dcraft.stream.file;
 
 import dcraft.struct.scalar.BinaryStruct;
+import dcraft.task.IParentAwareWork;
 import io.netty.buffer.ByteBuf;
 import dcraft.filestore.FileDescriptor;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
-import dcraft.scriptold.StackEntry;
 import dcraft.stream.IStreamSource;
 import dcraft.stream.ReturnOption;
 import dcraft.util.Memory;
@@ -73,7 +73,7 @@ public class MemorySourceStream extends BaseFileStream implements IStreamSource 
 	
 	// for use with dcScript
 	@Override
-	public void init(StackEntry stack, XElement el) {
+	public void init(IParentAwareWork stack, XElement el) {
 		// anything we need to gleam from the xml?
 	}
 	

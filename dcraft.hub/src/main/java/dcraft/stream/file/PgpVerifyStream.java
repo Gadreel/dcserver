@@ -22,6 +22,7 @@ import java.nio.file.Path;
 
 import dcraft.hub.resource.KeyRingResource;
 import dcraft.struct.scalar.StringStruct;
+import dcraft.task.IParentAwareWork;
 import dcraft.util.HexUtil;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
@@ -31,7 +32,6 @@ import dcraft.filestore.FileDescriptor;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
-import dcraft.scriptold.StackEntry;
 import dcraft.stream.ReturnOption;
 import dcraft.util.pgp.KeyRingCollection;
 import dcraft.xml.XElement;
@@ -50,7 +50,7 @@ public class PgpVerifyStream extends TransformFileStream {
 	protected KeyRingResource keyresource = null;
 
 	@Override
-	public void init(StackEntry stack, XElement el) {
+	public void init(IParentAwareWork stack, XElement el) {
 	}
     
     public PgpVerifyStream withKeyRings(KeyRingCollection v) {

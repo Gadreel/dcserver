@@ -16,10 +16,11 @@
 ************************************************************************ */
 package dcraft.stream.file;
 
+import dcraft.script.StackUtil;
+import dcraft.task.IParentAwareWork;
 import io.netty.buffer.ByteBuf;
 import dcraft.filestore.FileDescriptor;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.scriptold.StackEntry;
 import dcraft.stream.ReturnOption;
 import dcraft.xml.XElement;
 
@@ -34,8 +35,8 @@ public class FunnelStream extends TransformFileStream {
 	// down, except at EOF of course.  see remnant in UngzipStream for an example of this sort of buffer gathering
 	
 	@Override
-	public void init(StackEntry stack, XElement el) {
-		this.aperture = (int) stack.intFromElement(el, "Aperture", this.aperture);
+	public void init(IParentAwareWork stack, XElement el) throws OperatingContextException {
+		this.aperture = (int) StackUtil.intFromElement(stack, el, "Aperture", this.aperture);
 	}
 	
 	public boolean hasMore() {

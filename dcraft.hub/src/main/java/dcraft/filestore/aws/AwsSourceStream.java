@@ -21,11 +21,11 @@ import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
-import dcraft.scriptold.StackEntry;
 import dcraft.stream.IStreamSource;
 import dcraft.stream.ReturnOption;
 import dcraft.stream.file.BaseFileStream;
 import dcraft.stream.file.FileSlice;
+import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 import io.netty.buffer.ByteBuf;
 
@@ -55,7 +55,7 @@ public class AwsSourceStream extends BaseFileStream implements IStreamSource {
 	
 	// for use with dcScript
 	@Override
-	public void init(StackEntry stack, XElement el) {
+	public void init(IParentAwareWork stack, XElement el) {
 		// anything we need to gleam from the xml?
 	}
 	

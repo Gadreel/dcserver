@@ -24,10 +24,13 @@ import dcraft.script.inst.doc.Base;
 import dcraft.task.IWork;
 import dcraft.task.IWorkBuilder;
 import dcraft.util.IOUtil;
+import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 import dcraft.xml.XmlReader;
 
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 public class Script implements IWorkBuilder {
@@ -95,7 +98,7 @@ public class Script implements IWorkBuilder {
 	protected CharSequence source = null;
 	protected Instruction xml = null;
 	/* TODO rework
-	protected Map<String,Instruction> functions = new HashMap<String,Instruction>();
+	protected Map<String,Instruction> functions = new HashMap<>();
 	protected Main main = null;
 	*/
 
@@ -126,6 +129,64 @@ public class Script implements IWorkBuilder {
 		return this.source;
 	}
 	
+	/*
+	public Instruction getMain() {
+		return this.main;
+	}
+	
+	public Instruction getFunction(String name) {
+		return this.functions.get(name);
+	}
+	
+	public boolean compile(XElement doc, String src) {
+		this.xml = doc;
+		this.source = src;
+		this.main = null;
+		this.functions.clear();
+		
+		if (doc == null) {
+			Logger.error(1, "No scriptold document provided, cannot compile.");
+			return false;
+		}
+		
+		for (XElement func : doc.selectAll("Function")) {
+			String fname = func.getAttribute("Name");
+			
+			if (StringUtil.isEmpty(fname))
+				continue;
+        	
+        	/* cleaning up ---
+	        Instruction ni = ScriptHub.createInstruction(func);
+	        ni.setXml(func);
+	        
+	        if (! ni.compile())
+	        	return false;
+	        
+        	this.functions.put(fname, ni);
+        	* /
+		}
+		
+		XElement node = doc.find("Main");
+		
+		if (node == null) {
+			Logger.errorTr(506);
+			return false;
+		}
+
+        	/* cleaning up ---
+        Instruction ni = ScriptHub.createInstruction(node);
+        ni.setXml(node);
+        
+        if (! ni.compile())
+        	return false;
+
+        this.main = ni;
+        * /
+		
+		return true;
+	}
+	*/
+
 	@Override
 	public IWork toWork() {
 		return this.xml.createStack(null);

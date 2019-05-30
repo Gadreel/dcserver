@@ -5,9 +5,9 @@ import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationMarker;
 import dcraft.log.Logger;
 import dcraft.schema.DataType;
-import dcraft.scriptold.StackEntry;
 import dcraft.stream.ReturnOption;
 import dcraft.struct.RecordStruct;
+import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 
 public class VerifyRecordStream extends TransformRecordStream {
@@ -23,7 +23,7 @@ public class VerifyRecordStream extends TransformRecordStream {
 	}
 	
 	@Override
-	public void init(StackEntry stack, XElement el) {
+	public void init(IParentAwareWork stack, XElement el) {
 		/* TODO
 		String algo = stack.stringFromElement(el, "Algorithm", "SHA-256");
 		

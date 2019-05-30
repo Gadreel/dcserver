@@ -19,11 +19,10 @@ package dcraft.stream.record;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
-import dcraft.scriptold.StackEntry;
-import dcraft.stream.IStreamDest;
 import dcraft.stream.IStreamDown;
 import dcraft.stream.ReturnOption;
 import dcraft.struct.RecordStruct;
+import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 
 import java.util.function.Consumer;
@@ -38,7 +37,7 @@ public class RecordDumpStream extends BaseRecordStream implements IRecordStreamD
 	}
 	
     @Override
-    public void init(StackEntry stack, XElement el) {
+    public void init(IParentAwareWork stack, XElement el) {
     }
     
     @Override

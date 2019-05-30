@@ -23,6 +23,7 @@ import java.time.ZoneId;
 import javax.crypto.Cipher;
 
 import dcraft.hub.resource.KeyRingResource;
+import dcraft.task.IParentAwareWork;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -34,11 +35,8 @@ import dcraft.db.util.ByteUtil;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
-import dcraft.scriptold.StackEntry;
 import dcraft.stream.ReturnOption;
-import dcraft.util.HexUtil;
 import dcraft.util.Memory;
-import dcraft.util.TimeUtil;
 import dcraft.util.chars.Utf8Decoder;
 import dcraft.util.pgp.KeyRingCollection;
 import dcraft.util.pgp.PublicKeyEncryptedSession;
@@ -93,7 +91,7 @@ public class PgpDecryptStream extends TransformFileStream {
     }
 
 	@Override
-	public void init(StackEntry stack, XElement el) {
+	public void init(IParentAwareWork stack, XElement el) {
 		// TODO
 	}
 

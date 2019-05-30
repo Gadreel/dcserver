@@ -14,10 +14,13 @@
 #    * Andy White
 #
 ************************************************************************ */
-package dcraft.scriptold;
+package dcraft.script;
 
 import dcraft.hub.op.OperatingContextException;
+import dcraft.struct.Struct;
+import dcraft.task.IParentAwareWork;
+import dcraft.xml.XElement;
 
-public interface IInstructionCallback {
-	void resume() throws OperatingContextException;
+public interface IOperator {
+	void operation(IParentAwareWork stack, XElement code, Struct dest) throws OperatingContextException;
 }

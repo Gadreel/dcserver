@@ -20,6 +20,7 @@ import dcraft.filestore.FileStoreFile;
 import dcraft.log.Logger;
 import dcraft.stream.file.IFileStreamConsumer;
 import dcraft.struct.RecordStruct;
+import dcraft.task.IParentAwareWork;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http2.Http2ConnectionHandler;
@@ -29,7 +30,6 @@ import io.netty.util.concurrent.GenericFutureListener;
 import dcraft.filestore.FileDescriptor;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
-import dcraft.scriptold.StackEntry;
 import dcraft.stream.file.BaseFileStream;
 import dcraft.stream.file.FileSlice;
 import dcraft.task.TaskContext;
@@ -58,7 +58,7 @@ public class Http2DestStream extends BaseFileStream implements IStreamDest<FileS
 	
 	// for use with dcScript
 	@Override
-	public void init(StackEntry stack, XElement el) {
+	public void init(IParentAwareWork stack, XElement el) {
 		// TODO 
 	}
 	

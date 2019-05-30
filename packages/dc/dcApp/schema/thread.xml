@@ -55,8 +55,11 @@
 
 		<Collector Name="dcmScanThread" Execute="dcraft.cms.thread.db.Scan" />
 
-		<Procedure Name="dcmServices.Thread.Deliver" Execute="dcraft.cms.thread.db.Deliver" />
+		<Procedure Name="dcmServices.Thread.Create" Execute="dcraft.cms.thread.db.Create" />
+		<Procedure Name="dcmServices.Thread.AddParties" Execute="dcraft.cms.thread.db.AddParties" />
 		<Procedure Name="dcmServices.Thread.AddContent" Execute="dcraft.cms.thread.db.AddContent" />
+		<Procedure Name="dcmServices.Thread.BuildDeliver" Execute="dcraft.cms.thread.db.BuildDeliver" />
+		<Procedure Name="dcmServices.Thread.Deliver" Execute="dcraft.cms.thread.db.Deliver" />
 		<Procedure Name="dcmServices.Thread.ChangeFolder" Execute="dcraft.cms.thread.db.ChangeFolder" />
 		<Procedure Name="dcmServices.Thread.Reindex" Execute="dcraft.cms.thread.db.Reindex" />
 		<Procedure Name="dcmServices.Thread.ArchiveMessages" Execute="dcraft.cms.thread.db.ArchiveMessages" />
@@ -269,14 +272,37 @@
 		<Service Name="dcmServices">
 			<Feature Name="Thread">
 				<Secure Badges="Admin,Developer">
-					<Op Name="Deliver">
+					<Op Name="Create">
 						<Description>
-							Send a message, trigger notices.
+							Create new thread.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Title" Type="dcmThread:dcmTitle" />
+							<Field Name="Type" Type="dcmThread:dcmMessageType" />
+							<Field Name="From" Type="dcmThread:dcmOriginator" />
+							<Field Name="SharedAttributes" Type="AnyRecord" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+							<Field Name="Uuid" Type="dcMetaString" />
+						</RecordResponse>
+					</Op>
+					<Op Name="AddParties">
+						<Description>
+							Add parties to a thread.
 						</Description>
 						<RecordRequest Required="True">
 							<Field Name="Id" Type="Id" />
 							<Field Name="Uuid" Type="dcMetaString" />
-							<Field Name="IndexOnly" Type="Boolean" />
+							<Field Name="Parties" Required="True">
+								<List>
+									<Record>
+										<Field Name="Party" Type="dcmThread:dcmParty" />
+										<Field Name="Folder" Type="dcmThread:dcmFolder" />
+										<Field Name="PartyLabels" Type="dcmThread:dcmPartyLabels" />
+									</Record>
+								</List>
+							</Field>
 						</RecordRequest>
 					</Op>
 					<Op Name="AddContent">
@@ -289,6 +315,25 @@
 							<Field Name="Content" Type="String" Required="True" />
 							<Field Name="ContentType" Type="dcMetaString" />
 							<Field Name="Originator" Type="Id" />
+						</RecordRequest>
+					</Op>
+					<Op Name="BuildDeliver">
+						<Description>
+							Send a message, trigger notices.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+							<Field Name="Uuid" Type="dcMetaString" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Deliver">
+						<Description>
+							Send a message, trigger notices.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+							<Field Name="Uuid" Type="dcMetaString" />
+							<Field Name="IndexOnly" Type="Boolean" />
 						</RecordRequest>
 					</Op>
 					<Op Name="ChangeFolder">

@@ -16,6 +16,8 @@
 ************************************************************************ */
 package dcraft.stream.file;
 
+import dcraft.script.StackUtil;
+import dcraft.task.IParentAwareWork;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -30,7 +32,6 @@ import dcraft.filestore.FileDescriptor;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
-import dcraft.scriptold.StackEntry;
 import dcraft.stream.ReturnOption;
 import dcraft.util.FileUtil;
 import dcraft.util.StringUtil;
@@ -79,8 +80,8 @@ public class UngzipStream extends TransformFileStream {
     }
     
 	@Override
-	public void init(StackEntry stack, XElement el) {
-		this.nameHint = stack.stringFromElement(el, "NameHint");
+	public void init(IParentAwareWork stack, XElement el) throws OperatingContextException {
+		this.nameHint = StackUtil.stringFromElement(stack, el, "NameHint");
 	}
     
 	@Override

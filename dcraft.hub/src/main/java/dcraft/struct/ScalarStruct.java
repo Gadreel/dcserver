@@ -19,9 +19,6 @@ package dcraft.struct;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.schema.DataType;
 import dcraft.schema.RootType;
-import dcraft.scriptold.StackEntry;
-import dcraft.task.IParentAwareWork;
-import dcraft.xml.XElement;
 
 
 abstract public class ScalarStruct extends Struct implements Comparable {

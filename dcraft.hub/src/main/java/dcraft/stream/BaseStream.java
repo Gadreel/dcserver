@@ -17,11 +17,12 @@
 package dcraft.stream;
 
 import dcraft.hub.op.OperatingContextException;
-import dcraft.scriptold.StackEntry;
+import dcraft.script.work.StackWork;
 import dcraft.stream.IStream;
 import dcraft.stream.IStreamDown;
 import dcraft.stream.IStreamUp;
 import dcraft.struct.RecordStruct;
+import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 
 abstract public class BaseStream extends RecordStruct implements IStream {
@@ -51,8 +52,8 @@ abstract public class BaseStream extends RecordStruct implements IStream {
 	}
 	
 	@Override
-	public void init(StackEntry stack, XElement el) throws OperatingContextException {
-		// NA
+	public void init(IParentAwareWork stack, XElement el) throws OperatingContextException {
+	
 	}
 	
 	@Override

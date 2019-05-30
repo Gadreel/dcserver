@@ -23,16 +23,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.StandardWatchEventKinds;
-import java.util.function.Consumer;
 
-import dcraft.filestore.FileDescriptor;
 import dcraft.filestore.FileStore;
 import dcraft.filestore.FileStoreFile;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
-import dcraft.scriptold.StackEntry;
-import dcraft.stream.IStreamDest;
+import dcraft.script.StackUtil;
 import dcraft.stream.StreamUtil;
 import dcraft.stream.file.BaseFileStream;
 import dcraft.stream.file.FileSlice;
@@ -40,6 +37,7 @@ import dcraft.stream.ReturnOption;
 import dcraft.stream.file.IFileStreamDest;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.NullStruct;
+import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 
 public class LocalDestStream extends BaseFileStream implements IFileStreamDest {
@@ -69,13 +67,13 @@ public class LocalDestStream extends BaseFileStream implements IFileStreamDest {
 	
 	// for use with dcScript
 	@Override
-	public void init(StackEntry stack, XElement el) throws OperatingContextException {
+	public void init(IParentAwareWork stack, XElement el) throws OperatingContextException {
 			// TODO autorelative and re-think RelativeTo, shouldn't a stream always come from a file so this is redundant?
-		if (stack.boolFromElement(el, "Relative", true) || el.getName().startsWith("X")) {
+		if (StackUtil.boolFromElement(stack, el, "Relative", true) || el.getName().startsWith("X")) {
         	this.userelpath = true;
         }
 
-        Struct src = stack.refFromElement(el, "RelativeTo");
+        Struct src = StackUtil.refFromElement(stack, el, "RelativeTo");
         
         if ((src != null) && !(src instanceof NullStruct)) {
             if (src instanceof FileStore)

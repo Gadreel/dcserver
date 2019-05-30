@@ -17,11 +17,11 @@
 package dcraft.stream;
 
 import dcraft.hub.op.OperatingContextException;
-import dcraft.scriptold.StackEntry;
+import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 
 public interface IStream {
-	void init(StackEntry stack, XElement el) throws OperatingContextException;
+	void init(IParentAwareWork stack, XElement el) throws OperatingContextException;
 	
 	void setUpstream(IStreamUp upstream) throws OperatingContextException;
 	IStreamUp getUpstream() throws OperatingContextException;

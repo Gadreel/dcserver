@@ -18,8 +18,8 @@ package dcraft.stream.file;
 
 import dcraft.filestore.FileDescriptor;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.scriptold.StackEntry;
 import dcraft.stream.ReturnOption;
+import dcraft.task.IParentAwareWork;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
@@ -49,7 +49,7 @@ public class JoinStream extends TransformFileStream {
     }
 
 	@Override
-	public void init(StackEntry stack, XElement el) {
+	public void init(IParentAwareWork stack, XElement el) {
 	}
     
 	// make sure we don't return without first releasing the file reference content

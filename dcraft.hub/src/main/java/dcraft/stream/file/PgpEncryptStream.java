@@ -16,6 +16,8 @@
 ************************************************************************ */
 package dcraft.stream.file;
 
+import dcraft.script.StackUtil;
+import dcraft.task.IParentAwareWork;
 import dcraft.util.StringUtil;
 import io.netty.buffer.ByteBuf;
 
@@ -29,7 +31,6 @@ import dcraft.filestore.FileDescriptor;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
-import dcraft.scriptold.StackEntry;
 import dcraft.stream.ReturnOption;
 import dcraft.util.FileUtil;
 import dcraft.util.pgp.EncryptedFileStream;
@@ -67,8 +68,8 @@ public class PgpEncryptStream extends TransformFileStream {
 	}
  
 	@Override
-	public void init(StackEntry stack, XElement el) {
-		String keyPath = stack.stringFromElement(el, "Keyring");
+	public void init(IParentAwareWork stack, XElement el) throws OperatingContextException {
+		String keyPath = StackUtil.stringFromElement(stack, el, "Keyring");
 		
 		try {
 			this.pgp.loadPublicKey(Paths.get(keyPath));
@@ -80,7 +81,7 @@ public class PgpEncryptStream extends TransformFileStream {
 			Logger.error("Unabled to load keyfile: " + x);
 		}
 		
-		this.nameHint = stack.stringFromElement(el, "NameHint");
+		this.nameHint = StackUtil.stringFromElement(stack, el, "NameHint");
 	}
     
 	@Override

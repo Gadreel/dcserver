@@ -16,15 +16,12 @@
 ************************************************************************ */
 package dcraft.stream.file;
 
-import dcraft.filestore.FileDescriptor;
-import dcraft.filestore.FileStoreFile;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
-import dcraft.scriptold.StackEntry;
 import dcraft.stream.IStreamDest;
-import dcraft.stream.IStreamDown;
 import dcraft.stream.ReturnOption;
+import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 
 import java.util.function.Consumer;
@@ -74,7 +71,7 @@ public class NullDest extends BaseFileStream implements IStreamDest<FileSlice>, 
 	}
 
 	@Override
-	public void init(StackEntry stack, XElement el) {
+	public void init(IParentAwareWork stack, XElement el) {
 		// TODO Auto-generated method stub
 		
 	}

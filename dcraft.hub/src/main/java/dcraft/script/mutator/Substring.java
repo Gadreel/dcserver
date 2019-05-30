@@ -14,23 +14,24 @@
 #    * Andy White
 #
 ************************************************************************ */
-package dcraft.scriptold.mutator;
+package dcraft.script.mutator;
 
 import dcraft.hub.op.OperatingContextException;
-import dcraft.scriptold.IOperator;
-import dcraft.scriptold.StackEntry;
+import dcraft.script.IOperator;
+import dcraft.script.StackUtil;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.StringStruct;
+import dcraft.task.IParentAwareWork;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
 public class Substring implements IOperator {
 
 	@Override
-	public void operation(StackEntry stack, XElement code, Struct dest) throws OperatingContextException {
-		int from = (int) stack.intFromElement(code, "From", 0); 
-		int to = (int) stack.intFromElement(code, "To", 0); 
-		int length = (int) stack.intFromElement(code, "Length", 0); 
+	public void operation(IParentAwareWork stack, XElement code, Struct dest) throws OperatingContextException {
+		int from = (int) StackUtil.intFromElement(stack, code, "From", 0);
+		int to = (int) StackUtil.intFromElement(stack, code, "To", 0);
+		int length = (int) StackUtil.intFromElement(stack, code, "Length", 0);
 				
 		if (dest instanceof StringStruct) {
 			StringStruct idest = (StringStruct)dest;
@@ -49,6 +50,6 @@ public class Substring implements IOperator {
 			System.out.println("Using override Substring!");
 		}
 		
-		stack.resume();
+		// TODO review stack.resume();
 	}
 }

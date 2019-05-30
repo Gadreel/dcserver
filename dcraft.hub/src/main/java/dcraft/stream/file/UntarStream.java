@@ -17,6 +17,7 @@
 package dcraft.stream.file;
 
 import dcraft.hub.app.ApplicationHub;
+import dcraft.task.IParentAwareWork;
 import dcraft.util.HexUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.chars.Utf8Decoder;
@@ -33,12 +34,9 @@ import org.apache.commons.compress.utils.ArchiveUtils;
 import dcraft.filestore.FileDescriptor;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
-import dcraft.scriptold.StackEntry;
 import dcraft.stream.ReturnOption;
 import dcraft.xml.XElement;
 
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.Charset;
 import java.time.ZoneId;
 
 public class UntarStream extends TransformFileStream {
@@ -68,7 +66,7 @@ public class UntarStream extends TransformFileStream {
     }
 
 	@Override
-	public void init(StackEntry stack, XElement el) {
+	public void init(IParentAwareWork stack, XElement el) {
 	}
 	
 	@Override

@@ -3,7 +3,6 @@ package dcraft.stream;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
-import dcraft.scriptold.StackEntry;
 import dcraft.struct.RecordStruct;
 import dcraft.xml.XElement;
 
