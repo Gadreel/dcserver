@@ -469,6 +469,14 @@ public class Utf8Decoder implements ICharDecoder {
 		return decoder.processBytes(buffer);
 	}
 	
+	public static CharSequence decode(byte[] buffer, int length) {
+		if (buffer == null)
+			return null;
+
+		Utf8Decoder decoder = new Utf8Decoder();
+		return decoder.processBytes(buffer, length);
+	}
+
 	// TODO by directly reading the byte buf, no copy
 	public static CharSequence decode(ByteBuf buffer) {
 		byte[] dest = new byte[buffer.readableBytes()];

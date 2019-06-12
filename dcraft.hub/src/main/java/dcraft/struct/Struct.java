@@ -212,7 +212,7 @@ abstract public class Struct implements IPartSelector {
 		
 		if (o instanceof CharSequence) {
 			try {
-				return new Long(o.toString());
+				return Long.parseLong(o.toString());
 			}
 			catch (Exception x) {
 			}

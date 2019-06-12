@@ -201,7 +201,7 @@ dc.schema.Manager.load([
         "Id" : "Boolean",
         "Kind" : 1
       },
-      { "CoreType" : { "DataRestrictions" : [ { "AllowDecimal" : false } ],
+      { "CoreType" : { "DataRestrictions" : [ { "AllowDecimal" : false }, { "Min" : -9007199254740991 }, { "Max" : 9007199254740991 } ],
             "RootType" : 2
           },
         "Id" : "Integer",

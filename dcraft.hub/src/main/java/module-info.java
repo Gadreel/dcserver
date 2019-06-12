@@ -24,4 +24,5 @@ module dcraft.hub {
   requires slf4j.api;
   requires activation;
   requires java.mail;
+  requires jgit;
 }

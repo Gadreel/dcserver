@@ -11,7 +11,11 @@
 		<StringType Id="BigString" />
 
 		<NumberType Id="Integer" Class="dcraft.struct.scalar.IntegerStruct">
-			<NumberRestriction Conform="Integer" />
+			<!--
+				min and max are compatible with JS safe min and max, +/- ~9 quadrillion
+				https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isSafeInteger
+			-->
+			<NumberRestriction Conform="Integer" Min="-9007199254740991" Max="9007199254740991" />
 		</NumberType>
 
 		<NumberType Id="BigInteger" Class="dcraft.struct.scalar.BigIntegerStruct">
@@ -130,8 +134,8 @@
 			<StringRestriction Pattern="\d{5}" />
 		</StringType>
 
-		<StringType Id="dcEmail">
-			<StringRestriction Pattern="(([^<>()\[\]\\.,;:\s@\&quot;]+(\.[^<>()\[\]\\.,;:\s@\&quot;]+)*)|(\&quot;.+\&quot;))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))" />
+		<StringType Id="dcEmail" Searchable="False">
+			<StringRestriction Pattern="(([^<>()\[\]\\.,;:\s@\&quot;]+(\.[^<>()\[\]\\.,;:\s@\&quot;]+)*)|(\&quot;.+\&quot;))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))" MaxLength="64" />
 		</StringType>
 
 		<StringType Id="dcEmailBasic" Searchable="False">

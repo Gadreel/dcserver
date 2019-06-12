@@ -181,8 +181,8 @@ public class CoreType {
 		
 		// make sure we are using the correct class to do the validation
 		in = this.reuseOrWrap(dt, in);
-		
-		if (this.validateData(in.toInternalValue(this.root)))
+
+		if (this.validateData((in != null) ? in.toInternalValue(this.root) : null))
 			return in.validateData(dt);
 		
 		return false;
@@ -297,8 +297,8 @@ public class CoreType {
 		
 		// make sure we are using the correct class to do the validation
 		in = this.reuseOrWrap(dt, in);
-		
-		if (this.validateData(in.toInternalValue(this.root)))
+
+		if (this.validateData((in != null) ? in.toInternalValue(this.root) : null))
 			return in;
 		
 		return null;

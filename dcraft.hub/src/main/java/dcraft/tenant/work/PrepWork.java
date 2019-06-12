@@ -23,6 +23,7 @@ import dcraft.struct.Struct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.*;
 import dcraft.tenant.*;
+import dcraft.tool.certs.CertUtil;
 import dcraft.util.ISettingsObfuscator;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
@@ -580,51 +581,12 @@ public class PrepWork extends StateWork {
 				if (site.queryVariable("SiteCopyright") == null)
 					site.addVariable("SiteCopyright", StringStruct.of(ZonedDateTime.now().getYear() + ""));
 
-				TrustResource trustres = resources.getOrCreateTierTrust();
-
 				// TODO load trusted keys/prints
 
 				// TODO load all certs, just match the passwords as
 
-				for (XElement certinfo : sconfig.getTagListLocal("Certificate")) {
-					String certname = certinfo.getAttribute("Name");
+				CertUtil.loadTierCerts(sconfig, scpath, resources);
 
-					if (StringUtil.isNotEmpty(certname)) {
-						Path certpath = scpath.resolve(certname);
-
-						if ((certpath == null) || Files.notExists(certpath)) {
-							Logger.error("Unable to locate certificate: " + certname);
-						}
-						else {
-							SslEntry entry = SslEntry.ofJks(trustres, certpath,
-									certinfo.getAttribute("Password"), certinfo.getAttribute("PlainPassword"));
-
-							if (entry == null) {
-								Logger.error("Unable to load certificate: " + certname);
-							}
-							else {
-								trustres.withSsl(entry, certinfo.getAttributeAsBooleanOrFalse("Default"));
-							}
-						}
-					}
-				}
-				
-				// load standard cert
-				{
-					Path certpath = scpath.resolve("certs.jks");
-					
-					if (Files.exists(certpath)) {
-						SslEntry entry = SslEntry.ofJks(trustres, certpath,null, new String(ResourceHub.getResources().getKeyRing().getPassphrase()));
-						
-						if (entry == null) {
-							Logger.error("Unable to load default certificate");
-						}
-						else {
-							trustres.withSsl(entry, false);
-						}
-					}
-				}
-			
 				// TODO make sure services are stopped when site/tenant reload
 				
 				ServiceResource srres = site.getResourcesOrCreate(resources).getOrCreateTierServices();

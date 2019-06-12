@@ -121,6 +121,30 @@ public class BigCommerceOrdersSyncWork extends StateWork {
 		
 		Logger.info("Loading order items for: " + orderid);
 		
+		/*
+			https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes
+			
+			429	Too Many Requests
+		
+			https://developer.bigcommerce.com/api-docs/getting-started/best-practices
+		
+			API Rate Limits
+			Apps that authenticate with OAuth are rate-limited, based on a quota that is refreshed every few seconds. The maximum quota for a store will vary depending on the store’s plan.
+			
+			Enterprise plans and Enterprise Sandboxes (Enterprise-Test): Unlimited (7mil / 30sec)
+			Pro plans: 60k per hour (450 / 30sec)
+			All other sandboxes (Dev/Partner/Employee): 20k per hour (150 / 30sec)
+			Plus & Standard plans: 20k per hour (150 / 30sec)
+		 */
+		
+		try {
+			Thread.sleep(205);		// so we fall under 5 / sec
+		}
+		catch (InterruptedException x) {
+			Logger.error("Interrupted");
+			return StateWorkStep.STOP;
+		}
+		
 		BigCommerceUtil.loadOrderProducts(settingsalt, orderid, new OperationOutcomeList() {
 			@Override
 			public void callback(ListStruct bcresult) throws OperatingContextException {

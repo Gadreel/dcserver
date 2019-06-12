@@ -16,11 +16,15 @@ import dcraft.task.Task;
 import dcraft.task.TaskContext;
 import dcraft.task.TaskHub;
 import dcraft.task.TaskObserver;
+import dcraft.util.StringUtil;
 
 import java.util.HashMap;
 
 public class VaultUtil {
 	static public void transfer(String vname, FileStoreFile upfile, CommonPath destpath, String token, OperationOutcomeStruct callback) throws OperatingContextException {
+		if (StringUtil.isNotEmpty(token))
+			VaultUtil.setSessionToken(token);
+
 		ServiceHub.call(VaultServiceRequest.ofStartUpload(vname)
 				.withPath(destpath)
 				.withSize(upfile.getSize())

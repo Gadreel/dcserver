@@ -289,7 +289,7 @@ public class BigCommerceUtil {
 			int responseCode = con.getResponseCode();
 			
 			if (responseCode != 200) {
-				Logger.error("Error processing api call: Unable to load orders.");
+				Logger.error("Error processing api call: Unable to load orders. Code: " + responseCode + " - limit " + con.getHeaderField("X-Rate-Limit-Requests-Left"));
 				callback.returnEmpty();
 			}
 			else {

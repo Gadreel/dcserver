@@ -109,7 +109,30 @@ TLS 1.3
 		
 		return null;
 	}
-	
+
+	public SslEntry matchSsl(String hostname) {
+		for (SslEntry entry : this.sslcerts) {
+			if (entry.keynameMatch(hostname))
+				return entry;
+		}
+
+		TrustResource p = this.getParentResource();
+
+		if (p != null)
+			return p.lookupSsl(hostname);
+
+		return null;
+	}
+
+	public SslEntry matchTierSsl(String hostname) {
+		for (SslEntry entry : this.sslcerts) {
+			if (entry.keynameMatch(hostname))
+				return entry;
+		}
+
+		return null;
+	}
+
 	public String getAlgorithm() {
 		if (this.algorithm != null)
 			return this.algorithm;
@@ -146,11 +169,11 @@ TLS 1.3
 		return Arrays.asList(TrustResource.DEFAULT_CIPHERS);
 	}
 
-	public List<SslEntry> getSslCerts() {
+	public List<SslEntry> getTierSslCerts() {
 		return new ArrayList<>(this.sslcerts);
 	}
 
-	public List<TrustEntry> getTrustCerts() {
+	public List<TrustEntry> getTierTrustCerts() {
 		return new ArrayList<>(this.trustedcerts);
 	}
 
@@ -166,5 +189,18 @@ TLS 1.3
 		
 		return plist;
 	}
-	
+
+	public void clearSslCerts() {
+		this.sslcerts = new ArrayList<>();
+	}
+
+	public void switchSslCerts(List<SslEntry> newssls) {
+		this.sslcerts = newssls;
+	}
+
+	@Override
+	public void cleanup() {
+		// TODO what should be removed?
+		super.cleanup();
+	}
 }

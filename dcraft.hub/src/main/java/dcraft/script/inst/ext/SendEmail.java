@@ -19,6 +19,7 @@ package dcraft.script.inst.ext;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.log.Logger;
 import dcraft.mail.SmtpWork;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
@@ -32,7 +33,15 @@ import dcraft.struct.Struct;
 import dcraft.struct.scalar.AnyStruct;
 import dcraft.struct.scalar.BinaryStruct;
 import dcraft.util.StringUtil;
+import dcraft.web.ui.HtmlPrinter;
+import dcraft.web.ui.JsonPrinter;
 import dcraft.xml.XElement;
+import dcraft.xml.XmlPrinter;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 public class SendEmail extends Instruction {
 	static public SendEmail tag() {
@@ -90,7 +99,21 @@ public class SendEmail extends Instruction {
 				XElement template = Struct.objectToXml(htmldoc);
 
 				if (template != null) {
-					html = template.toPrettyString();
+					//html = template.toPrettyString();
+					
+					HtmlPrinter prt = new HtmlPrinter();
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					
+					try (PrintStream ps = new PrintStream(baos, true, "UTF-8")) {
+						prt.setFormatted(true);
+						prt.setOut(ps);
+						prt.print(template);
+						
+						html = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+					}
+					catch (UnsupportedEncodingException x) {
+						Logger.warn("encoding restricted: " + x);
+					}
 				}
 			}
 

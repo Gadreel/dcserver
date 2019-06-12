@@ -6,6 +6,7 @@ import dcraft.script.inst.Main;
 import dcraft.script.inst.Sleep;
 import dcraft.task.ChainWork;
 import dcraft.task.TaskContext;
+import dcraft.tool.certs.CertCheckWork;
 
 public class BackupWork extends ChainWork {
 	@Override
