@@ -1,0 +1,364 @@
+<dc.Html Badges="SysAdmin">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Certificates" />
+	</Meta>
+
+	<Require Icons="fas/certificate,fas/check" />
+
+	<dc.Body>
+		<dc.PagePanel>
+			<h2>Certificate Service</h2>
+
+			<div id="sectDcrCertService" />
+
+			<h2>Missing Certificates</h2>
+
+			<table id="lstDcrCertsMissing" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Site</th>
+						<th scope="col">Domains</th>
+						<th scope="col">Actions</th>
+					</tr>
+				</thead>
+				<tbody id="lstDcrCertsMissingBody" />
+			</table>
+
+			<h2>Loaded Certificates</h2>
+
+			<table id="lstDcrCerts" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Expiration</th>
+						<th scope="col">Site</th>
+						<th scope="col">Domains</th>
+						<th scope="col">Actions</th>
+					</tr>
+				</thead>
+				<tbody id="lstDcrCertsBody" />
+			</table>
+			<h2>Manual Certificates</h2>
+
+			<table id="lstDcrCertsServices" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Service</th>
+						<th scope="col">Enabled</th>
+						<th scope="col">Terms</th>
+						<th scope="col">Actions</th>
+					</tr>
+				</thead>
+				<tbody id="lstDcrCertsServicesBody" />
+			</table>
+
+			<!-- probably not helpful
+			<h2>Manual Certificates</h2>
+
+			<table id="lstDcrCertsManual" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Site</th>
+						<th scope="col">Domains</th>
+						<th scope="col">Actions</th>
+					</tr>
+				</thead>
+				<tbody id="lstDcrCertsManualBody" />
+			</table>
+			-->
+
+			<!--
+				TODO make sure we prompt for terms of service is there is no ACME account registered with LE
+			-->
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.callPageFunc('DoCertsLoad');
+	]]></Function>
+	<Function Name="DoCertsLoad"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcmServices.Dashboard.LoadCerts', null, function(rmsg) {
+				if (rmsg.Code != 0) {
+					// don't alert
+					return;
+				}
+
+				//console.dir(rmsg.Result);
+
+				$feedtable = $('#lstDcrCertsBody');
+
+				$feedtable.empty();
+
+				if (rmsg.Result) {
+					rmsg.Result.sort(dc.util.List.sortObjects('Tenant'));
+
+					// top five
+					for (var i = 0; i < rmsg.Result.length; i++) {
+						var item = rmsg.Result[i];
+
+						$feedtable.dcappend(
+							$('<tr>').attr('data-alias', item.Feed).dcappend(
+								$('<td>').text(moment.utc(item.Expiration, 'YYYYMMDDTHHmmssSSSZ', true).local().format('MM-DD-YYYY, h:mm a')),
+								$('<td>').text(item.Tenant + '/' + item.Site),
+								$('<td>').dcappend(
+									$('<a>')
+										.attr("href", "#")
+										.attr("tabindex", "0")
+										.attr("role", "button")
+										.text(item.Domains.join(', '))
+										.click(item, function(e) {
+											/* TODO - view details about cert (Thumbprint, all domains, start date, service that issued cert)
+											dc.pui.Dialog.loadPage('/dcm/dashboard/alerts-widget-view-alert/' + e.data.MessageType + '/' + e.data.Id, {
+												Callback: function(path) {
+													page.callPageFunc('DoCertsLoad');
+												}
+											});
+											*/
+
+											e.preventDefault();
+											return false;
+										})
+								),
+								$('<td>').dcappend(
+									$('<a>')
+										.attr("href", "#")
+										.attr("tabindex", "0")
+										.attr("role", "button")
+										.attr("class", "pure-button-default pure-button dc-button")
+										.dcappend(dc.util.Icon.use('fas-certificate'))
+										.click(item, function(e) {
+											page.callPageFunc('dcrCertsDoRenew', e.data);
+
+											e.preventDefault();
+											return false;
+										})
+								)
+							)
+						);
+					}
+				}
+			});
+
+			dc.comm.call('dcmServices.Dashboard.LoadMissingCerts', null, function(rmsg) {
+				if (rmsg.Code != 0) {
+					// don't alert
+					return;
+				}
+
+				//console.dir(rmsg.Result);
+
+				$feedtable = $('#lstDcrCertsMissingBody');
+				$feedtable2 = $('#lstDcrCertsManualBody');
+
+				$feedtable.empty();
+				$feedtable2.empty();
+
+				if (rmsg.Result) {
+					rmsg.Result.sort(dc.util.List.sortObjects('Tenant'));
+
+					// top five
+					for (var i = 0; i < rmsg.Result.length; i++) {
+						var item = rmsg.Result[i];
+
+						var buildEntry = function(item, listname) {
+							return $('<tr>').attr('data-alias', item.Feed).dcappend(
+								$('<td>').text(item.Tenant + '/' + item.Site),
+								$('<td>').text(item[listname].join(', ')),
+								$('<td>').dcappend(
+									$('<a>')
+										.attr("href", "#")
+										.attr("tabindex", "0")
+										.attr("role", "button")
+										.attr("class", "pure-button-default pure-button dc-button")
+										.dcappend(dc.util.Icon.use('fas-certificate'))
+										.click(item, function(e) {
+											page.callPageFunc('dcrCertsDoAllocate', e.data);
+
+											e.preventDefault();
+											return false;
+										})
+								)
+							);
+						};
+
+						if (item.AutoDomains.length) {
+							$feedtable.dcappend(buildEntry(item, 'AutoDomains'));
+						}
+
+						/* probably not helpful
+						if (item.ManualDomains.length) {
+							$feedtable2.dcappend(buildEntry(item, 'ManualDomains'));
+						}
+						*/
+					}
+				}
+			});
+
+			dc.comm.call('dcmServices.Dashboard.LoadCertService', null, function(rmsg) {
+				if (rmsg.Code != 0) {
+					// don't alert
+					return;
+				}
+
+				//console.dir(rmsg.Result);
+
+				$feedtable = $('#lstDcrCertsServicesBody');
+
+				$feedtable.empty();
+
+				if (rmsg.Result) {
+					rmsg.Result.sort(dc.util.List.sortObjects('Title'));
+
+					// top five
+					for (var i = 0; i < rmsg.Result.length; i++) {
+						var item = rmsg.Result[i];
+
+						$feedtable.dcappend(
+							$('<tr>').attr('data-alias', item.Feed).dcappend(
+								$('<td>').text(item.Title),
+								$('<td>').text(item.Enabled),
+								$('<td>').dcappend(
+									$('<a>')
+										.attr("href", item.Terms)
+										.attr("target", "_blank")
+										.text(item.Terms)
+								),
+								$('<td>').dcappend(
+									$('<a>')
+										.attr("href", "#")
+										.attr("tabindex", "0")
+										.attr("role", "button")
+										.attr("class", "pure-button-default pure-button dc-button")
+										.dcappend(dc.util.Icon.use('fas-check'))
+										.click(item, function(e) {
+											page.callPageFunc('dcrEnableService', e.data);
+
+											e.preventDefault();
+											return false;
+										})
+								)
+							)
+						);
+					}
+				}
+			});
+	]]></Function>
+	<Function Name="dcrCertsDoAllocate" Params="item"><![CDATA[
+			var page = this;
+
+			dc.pui.Popup.alert('Domain must point to the production server for this step to work.', function() {
+				item.Domains = item.AutoDomains;
+
+				page.callPageFunc('dcrCertsDoRenew', item);
+			});
+	]]></Function>
+	<Function Name="dcrCertsDoRenew" Params="item"><![CDATA[
+			var page = this;
+
+			dc.pui.Popup.confirm('Are you sure you want to renew this certificate?', function(confirm) {
+				if (! confirm)
+					return;
+
+				var steps = [ {
+					Alias: 'Renew',
+					Title: 'Renew Certificate',
+					Params: item,
+					Func: function(step) {
+						var task = this;
+
+						dc.comm.call('dcmServices.Dashboard.RenewCert', {
+							Tenant: step.Params.Tenant,
+							Site: step.Params.Site,
+							Domains: step.Params.Domains
+						}, function(rmsg) {
+							if (rmsg.Code > 0) {
+								task.Result = {
+									Result: 1,
+									Message: 'Unable to renew certificate: ' + rmsg.Message
+								};
+
+								task.kill();
+							}
+							else {
+								task.Result = {
+									Result: 0
+								};
+
+								task.resume();
+							}
+						});
+					}
+				} ];
+
+				var processtask = new dc.lang.Task(steps);
+
+				processtask.Store = { };
+				processtask.Result = null;
+
+				dc.pui.Popup.await('Please wait while processing certificate request.', function() {
+					dc.pui.Apps.Busy = false;
+
+					if (processtask.Result.Result > 0)
+						dc.pui.Popup.alert('Unable to renew certificate: ' + processtask.Result.Message);
+					else
+						page.callPageFunc('DoCertsLoad');
+
+				}, null, processtask);
+			});
+	]]></Function>
+	<Function Name="dcrEnableService" Params="item"><![CDATA[
+			var page = this;
+
+			dc.pui.Popup.confirm('Are you sure you want to enable this service?', function(confirm) {
+				if (! confirm)
+					return;
+
+				var steps = [ {
+					Alias: 'Enable',
+					Title: 'Enable Certificate Service',
+					Params: item,
+					Func: function(step) {
+						var task = this;
+
+						dc.comm.call('dcmServices.Dashboard.EnableCertService', {
+							Service: step.Params.Alias
+						}, function(rmsg) {
+							if (rmsg.Code > 0) {
+								task.Result = {
+									Result: 1,
+									Message: 'Unable to enable service: ' + rmsg.Message
+								};
+
+								task.kill();
+							}
+							else {
+								task.Result = {
+									Result: 0
+								};
+
+								task.resume();
+							}
+						});
+					}
+				} ];
+
+				var processtask = new dc.lang.Task(steps);
+
+				processtask.Store = { };
+				processtask.Result = null;
+
+				dc.pui.Popup.await('Please wait while processing request.', function() {
+					dc.pui.Apps.Busy = false;
+
+					if (processtask.Result.Result > 0)
+						dc.pui.Popup.alert('Unable to enable service: ' + processtask.Result.Message);
+					else
+						page.callPageFunc('DoCertsLoad');
+
+				}, null, processtask);
+			});
+	]]></Function>
+</dc.Html>

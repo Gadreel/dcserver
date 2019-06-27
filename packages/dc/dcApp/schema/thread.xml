@@ -55,6 +55,8 @@
 
 		<Collector Name="dcmScanThread" Execute="dcraft.cms.thread.db.Scan" />
 
+		<Composer Name="dcmThreadAccess" Execute="dcraft.cms.thread.db.comp.MessageAccess" />
+
 		<Procedure Name="dcmServices.Thread.Create" Execute="dcraft.cms.thread.db.Create" />
 		<Procedure Name="dcmServices.Thread.AddParties" Execute="dcraft.cms.thread.db.AddParties" />
 		<Procedure Name="dcmServices.Thread.AddContent" Execute="dcraft.cms.thread.db.AddContent" />

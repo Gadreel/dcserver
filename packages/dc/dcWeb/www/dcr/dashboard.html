@@ -1,46 +1,47 @@
-<dc.Html Badges="Developer,SysAdmin">
+<dc.Html Badges="SysAdmin">
 	<Meta Name="Title">
-		<Tr Locale="en" Value="Root Dashboard" />
+		<Tr Locale="eng" Value="Root Dashboard" />
 	</Meta>
 
 	<dc.Body>
-		<dc.PagePanel>
-			<dcf.Text id="txtFeed" Label="Feed Alias" Name="Feed" />
+		<dc.Style>
+#dcDcrDashboard .dc-dashboard-widget {
+	border-bottom: 1px solid #999;
+	height: 100%;
+}
 
-			<dcf.FormButtons>
-				<dc.Button Label="Reindex Feeds" Click="DoReindex" />
-				<!--
-				<dc.Button Label="Reindex All" Click="DoReindexAll" />
-			-->
-			</dcf.FormButtons>
+@media screen and (max-width: 719px) {
+	#dcDcrDashboard .dc-layout-collapse-medium .pure-u {
+		width: 100%;
+	}
+}
+		</dc.Style>
+		<dc.PagePanel id="dcDcrDashboard">
+			<Button Icon="fas/recycle" Click="OnRefresh" />
 
-			<p>
-				Coming soon - notices, status...
-			</p>
+			<dc.RowLayout Collapse="Medium">
+				<dc.Column Size="1-2" Pad="Large">
+					<dc.IncludeFragmentInline Path="/dcr/dashboard/certs-widget" />
+				</dc.Column>
+			</dc.RowLayout>
 		</dc.PagePanel>
 	</dc.Body>
 
+	<Function Name="dcrPreload" Mode="Load"><![CDATA[
+			var page = this;
+
+			page.Store.RefreshList = [ ];
+	]]></Function>
 	<Function Name="Load"><![CDATA[
 			var page = this;
 
+			page.callPageFunc('OnRefresh');
 	]]></Function>
-	<Function Name="DoReindex"><![CDATA[
+	<Function Name="OnRefresh" Params="e"><![CDATA[
 			var page = this;
 
-			dc.comm.sendMessage({
-				Service: 'dcmServices',
-				Feature: 'Feed',
-				Op: 'Reindex',
-				Body: {
-					Feed: $('#txtFeed').val()
-				}
-			}, function(rmsg) {
-				if (rmsg.Result > 0) {
-					dc.pui.Popup.alert('Unable to complete indexing: ' + rmsg.Message);
-				}
-				else {
-					dc.pui.Popup.alert('Indexing Completed');
-				}
-			});
+			for (var i = 0; i < page.Store.RefreshList.length; i++) {
+				page.Store.RefreshList[i].call();
+			}
 	]]></Function>
 </dc.Html>

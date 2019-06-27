@@ -59,6 +59,14 @@ import dcraft.xml.XElement;
  *
  */
 public class ListStruct extends CompositeStruct implements Iterable<Object> {
+	static public ListStruct list(Collection<? extends Object> items) {
+		ListStruct ret = new ListStruct();
+		
+		ret.withCollection(items);
+		
+		return ret;
+	}
+	
 	static public ListStruct list(Object... items) {
 		ListStruct ret = new ListStruct();
 		

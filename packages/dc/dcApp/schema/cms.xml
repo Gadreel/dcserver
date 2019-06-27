@@ -171,6 +171,11 @@
 
 		<Procedure Name="dcmServices.Dashboard.LoadAlerts" Execute="dcraft.cms.dashboard.db.LoadAlerts" />
 		<Procedure Name="dcmServices.Dashboard.ArchiveAlerts" Execute="dcraft.cms.dashboard.db.ArchiveAlerts" />
+		<Procedure Name="dcmServices.Dashboard.LoadCerts" Execute="dcraft.cms.dashboard.db.LoadCerts" />
+		<Procedure Name="dcmServices.Dashboard.LoadMissingCerts" Execute="dcraft.cms.dashboard.db.LoadMissingCerts" />
+		<Procedure Name="dcmServices.Dashboard.LoadCertService" Execute="dcraft.cms.dashboard.db.LoadCertService" />
+		<Procedure Name="dcmServices.Dashboard.RenewCert" Execute="dcraft.cms.dashboard.db.RenewCert" />
+		<Procedure Name="dcmServices.Dashboard.EnableCertService" Execute="dcraft.cms.dashboard.db.EnableCertService" />
 
 		<Procedure Name="dcCoreServices.ManagedForm.Submit" Execute="dcraft.cms.db.forms.Submit" />
 		<Procedure Name="dcCoreServices.ManagedForm.Complete" Execute="dcraft.cms.db.forms.Complete" />
@@ -518,12 +523,82 @@
 						</ListResponse>
 					</Op>
 				</Secure>
-				<Secure Badges="Admin">
+				<Secure Badges="Admin,Developer">
 					<Op Name="ArchiveAlerts">
 						<Description>
 							List of alerts (InBox of NoticesPool).
 						</Description>
 						<ListRequest Type="dcMetaString" />
+					</Op>
+					<Op Name="LoadCerts">
+						<Description>
+							List of certificates.
+						</Description>
+						<ListResponse>
+							<Record>
+								<Field Name="Flagged" Type="Boolean"  />
+								<Field Name="Thumbprint" Type="dcMetaString"  />
+								<Field Name="Tenant" Type="dcMetaString" />
+								<Field Name="Site" Type="dcMetaString" />
+								<Field Name="Subject" Type="dcString" />
+								<Field Name="Domains">
+									<List Type="dcString" />
+								</Field>
+								<Field Name="Issuer" Type="dcString" />
+								<Field Name="Issued" Type="DateTime" />
+								<Field Name="Expiration" Type="DateTime" />
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="LoadMissingCerts">
+						<Description>
+							List of domains without certificates.
+						</Description>
+						<ListResponse>
+							<Record>
+								<Field Name="Tenant" Type="dcMetaString" />
+								<Field Name="Site" Type="dcMetaString" />
+								<Field Name="AutoDomains">
+									<List Type="dcString" />
+								</Field>
+								<Field Name="ManualDomains">
+									<List Type="dcString" />
+								</Field>
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="LoadCertService">
+						<Description>
+							List of services for creating certificates.
+						</Description>
+						<ListResponse>
+							<Record>
+								<Field Name="Alias" Type="dcMetaString" />
+								<Field Name="Title" Type="dcSmallString" />
+								<Field Name="Terms" Type="dcString" />
+								<Field Name="Enabled" Type="Boolean" />
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="RenewCert">
+						<Description>
+							Renew a cert for a tentant and site.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Tenant" Type="dcMetaString" Required="True" />
+							<Field Name="Site" Type="dcMetaString" Required="True" />
+							<Field Name="Domains" Required="True">
+								<List Type="dcString" />
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="EnableCertService">
+						<Description>
+							Enable a certificate allocation service.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Service" Type="dcMetaString" Required="True" />
+						</RecordRequest>
 					</Op>
 				</Secure>
 			</Feature>

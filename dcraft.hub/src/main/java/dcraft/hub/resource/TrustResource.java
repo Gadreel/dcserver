@@ -119,7 +119,7 @@ TLS 1.3
 		TrustResource p = this.getParentResource();
 
 		if (p != null)
-			return p.lookupSsl(hostname);
+			return p.matchSsl(hostname);
 
 		return null;
 	}

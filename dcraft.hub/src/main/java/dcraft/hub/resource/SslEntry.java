@@ -17,6 +17,7 @@
 package dcraft.hub.resource;
 
 import dcraft.hub.app.ApplicationHub;
+import dcraft.tool.certs.CertUtil;
 import io.netty.handler.ssl.*;
 
 import java.io.ByteArrayInputStream;
@@ -205,20 +206,13 @@ public class SslEntry {
 				  String subject = cert.getSubjectDN().toString();
 				  String thumbprint = KeyUtil.getCertThumbprint(cert);
 				  
-				  X500Name x500name = new JcaX509CertificateHolder(cert).getSubject();
-				  RDN cn = x500name.getRDNs(BCStyle.CN)[0];
-				  String scn = IETFUtils.valueToString(cn.getFirst().getValue());
 				  
 				  //Logger.info("Key: " + subject + " : " + thumbprint);
 				  Logger.debug("Key: " + alias + " Subject: " + subject + " Thumbprint: " + thumbprint);
 				  
 				  this.issuedCerts.add(cert);
 				  
-				  this.keynames.add(scn);
-				  
-				  for (String alt : SslEntry.getSubjectAlternativeNames(cert)) {
-				  	this.keynames.add(alt);
-				  }
+				  this.keynames.addAll(CertUtil.getNames(cert));
 				  
 					  /*
 					  if ((key instanceof PrivateKey) && "PKCS#8".equals(key.getFormat())) {
@@ -261,60 +255,4 @@ public class SslEntry {
             Logger.error("Failed to initialize the SSLContext: " + x);
         }    	
     }
-	
-    // TODO move to library
-	public static List<String> getSubjectAlternativeNames(X509Certificate certificate) {
-		List<String> identities = new ArrayList<>();
-		
-		try {
-			Collection<List<?>> altNames = certificate.getSubjectAlternativeNames();
-			
-			if (altNames == null)
-				return identities;
-			
-			for (List item : altNames) {
-				Integer type = (Integer) item.get(0);
-				
-				if (type == 0 || type == 2) {
-					if (item.toArray()[1] instanceof String) {
-						identities.add((String) item.toArray()[1]);
-						continue;
-					}
-					
-					/*
-					try {
-						if(item.toArray()[1] instanceof byte[]) {
-							ASN1InputStream decoder = new ASN1InputStream((byte[]) item.toArray()[1]);
-							
-							ASN1Primitive encoded = decoder.readObject();
-							
-							// problems here
-							DEREncodableVector encoded = decoder.readObject();
-							encoded = ((DERSequence) encoded).getObjectAt(1);
-							encoded = ((DERTaggedObject) encoded).getObject();
-							encoded = ((DERTaggedObject) encoded).getObject();
-							
-							String identity = ((DERUTF8String) encoded).getString();
-							identities.add(identity);
-						}
-					}
-					catch (UnsupportedEncodingException e) {
-						Logger.error("Error decoding subjectAltName" + e.getLocalizedMessage());
-					}
-					catch (Exception e) {
-						Logger.error("Error decoding subjectAltName" + e.getLocalizedMessage());
-					}
-					*/
-				}
-				else{
-					Logger.warn("SubjectAltName of invalid type found: " + certificate);
-				}
-			}
-		}
-		catch (CertificateParsingException e) {
-			Logger.error("Error parsing SubjectAltName in certificate: " + certificate + "\r\nerror:" + e.getLocalizedMessage());
-		}
-		
-		return identities;
-	}
 }

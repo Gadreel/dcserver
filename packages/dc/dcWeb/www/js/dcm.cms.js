@@ -443,7 +443,7 @@ dc.pui.Apps.Menus.dcmMain = {
 		},
 		{
 			Title: 'System',
-			Auth: [ 'Developer' ],
+			Auth: [ 'SysAdmin' ],
 			Op: function(e) {
 				dc.pui.App.startTab({
 					Tab: 'Dashboard',
@@ -609,6 +609,16 @@ dc.pui.Apps.Menus.dcmSystem = {
 			Alias: 'Database',
 			Title: 'Database',
 			Path: '/dcr/database'
+		},
+  		{
+			Alias: 'Feeds',
+			Title: 'Feeds',
+			Path: '/dcr/feeds'
+		},
+  		{
+			Alias: 'Certificates',
+			Title: 'Certificates',
+			Path: '/dcr/list-certs'
 		}
 	],
 	Options: [

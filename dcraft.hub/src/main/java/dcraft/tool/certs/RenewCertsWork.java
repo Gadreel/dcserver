@@ -1,29 +1,21 @@
 package dcraft.tool.certs;
 
-import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.hub.resource.SslEntry;
 import dcraft.log.Logger;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.task.ShellWork;
 import dcraft.task.StateWork;
 import dcraft.task.StateWorkStep;
 import dcraft.task.TaskContext;
 import dcraft.tenant.Site;
 import dcraft.tenant.Tenant;
 import dcraft.tenant.TenantHub;
-import dcraft.tool.backup.BackupUtil;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
-import org.shredzone.acme4j.util.KeyPairUtils;
 
-import java.io.FileReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.util.ArrayDeque;
@@ -109,6 +101,6 @@ public class RenewCertsWork extends StateWork {
 
 		Logger.info("Attempting to renew SSL cert for: " + StringUtil.join(finaldomains, ", "));
 
-		return this.chainThenNext(trun, AutoRenewSiteWork.of(site.getTenant().getAlias(), site.getAlias(), finaldomains));
+		return this.chainThenNext(trun, RenewSiteAutoWork.of(site.getTenant().getAlias(), site.getAlias(), finaldomains));
 	}
 }

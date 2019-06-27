@@ -585,7 +585,7 @@ public class PrepWork extends StateWork {
 
 				// TODO load all certs, just match the passwords as
 
-				CertUtil.loadTierCerts(sconfig, scpath, resources);
+				CertUtil.loadTierCerts(scpath, site.getTierResources());
 
 				// TODO make sure services are stopped when site/tenant reload
 				

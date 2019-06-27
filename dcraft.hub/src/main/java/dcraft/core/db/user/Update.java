@@ -7,6 +7,7 @@ import dcraft.db.request.update.DbRecordRequest;
 import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.struct.RecordStruct;
 
@@ -17,10 +18,13 @@ public class Update implements IStoredProc {
 
 		TablesAdapter db = TablesAdapter.ofNow(request);
 		
-		DbRecordRequest req = UserDataUtil.updateUserWithConditions(data);
+		try (OperationMarker om = OperationMarker.create()) {
+			DbRecordRequest req = UserDataUtil.updateUserWithConditions(data);
+			
+			if (! om.hasErrors())
+				TableUtil.updateRecord(db, req);
+		}
 		
-		TableUtil.updateRecord(db, req);
-
 		callback.returnEmpty();
 	}
 }

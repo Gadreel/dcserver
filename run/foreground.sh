@@ -5,7 +5,7 @@
 
 #
 # Check for JAVA settings
-# 
+#
 # >printenv | grep JAVA_HOME
 # >JAVA_HOME="...path to 1.8..."
 # >export JAVA_HOME
@@ -16,7 +16,7 @@ if [ ! -x "$JAVA_HOME" ] ; then
   exit 1
 fi
 
-JAVACMD="$JAVA_HOME/bin/java"
+JAVACMD="$JAVA_HOME/jre/bin/java"
 
 if [ ! -x "$JAVACMD" ] ; then
   echo "Error: JAVA_HOME is not defined correctly."

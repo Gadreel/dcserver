@@ -455,7 +455,8 @@ dc.pui.layer.Main.prototype.refreshPage = function() {
 	var layer = this;
 	var entry = layer.Current;
 
-	window.location.href = entry.Href;
+	window.location.reload(true);
+	//window.location.href = entry.Href;
 };
 
 
@@ -2609,7 +2610,8 @@ dc.pui.Form.prototype = {
 
 				if (task.Store.Form.Managed) {
 					task.Store.Form.query('a[data-dc-tag="dcf.SubmitButton"],a[data-dc-tag="dcf.SubmitCaptchaButton"]').addClass('pure-button-disabled');
-					event.Alert = 'Form successfully submitted.';
+					event.DefaultSavedMessage = 'Form successfully submitted.';
+					event.DefaultSaved = true;
 
 					if (typeof ga == 'function')
 						ga('send', 'event', 'Form', 'Submit', task.Store.Form.Name);
@@ -2649,11 +2651,12 @@ dc.pui.Form.prototype = {
 				if (event.DefaultSaved) {
 					dc.pui.Apps.Busy = false;
 
-					dc.pui.Popup.alert(task.Store.AnyChanged
-						? 'Saved' : 'No changes, nothing to save.', function()
-					{
-						task.resume();
-					});
+					var msg = task.Store.AnyChanged ? 'Saved' : 'No changes, nothing to save.';
+
+					if (event.DefaultSavedMessage)
+						msg = event.DefaultSavedMessage;
+
+					dc.pui.Popup.alert(msg, function() { task.resume(); });
 
 					return;
 				}

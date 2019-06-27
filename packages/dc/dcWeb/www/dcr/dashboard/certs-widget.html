@@ -1,0 +1,155 @@
+<dc.MixIn Badges="SysAdmin">
+	<Require Icons="fas/certificate" />
+
+	<dc.Fragment>
+		<div class="dc-dashboard-widget">
+			<h2>Certificates to Watch</h2>
+
+			<table id="lstDcrCertsWidget" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Expiration</th>
+						<th scope="col">Site</th>
+						<th scope="col">Domains</th>
+						<th scope="col">Actions</th>
+					</tr>
+				</thead>
+				<tbody id="lstDcrCertsWidgetBody" />
+			</table>
+
+			<!--
+				TODO also a list of sites that have domains but no matching certificate
+				TODO make sure we prompt for terms of service is there is no ACME account registered with LE
+			-->
+		</div>
+	</dc.Fragment>
+
+	<Function Name="dcrCertsWidgetLoad" Mode="Load"><![CDATA[
+			var page = this;
+
+			page.Store.CertWidget = function() {
+				dc.comm.call('dcmServices.Dashboard.LoadCerts', null, function(rmsg) {
+					if (rmsg.Code != 0) {
+						// don't alert
+						return;
+					}
+
+					//console.dir(rmsg.Result);
+
+					$feedtable = $('#lstDcrCertsWidgetBody');
+
+					$feedtable.empty();
+
+					if (rmsg.Result) {
+						// TODO list total alerts someplace - or no alerts...
+
+						rmsg.Result.sort(dc.util.List.sortObjects('Expiration'));
+
+						// top five
+						for (var i = 0; i < rmsg.Result.length; i++) {
+							var item = rmsg.Result[i];
+
+							if (! item.Flagged)
+								continue;
+
+							$feedtable.dcappend(
+								$('<tr>').attr('data-alias', item.Feed).dcappend(
+									$('<td>').text(moment.utc(item.Expiration, 'YYYYMMDDTHHmmssSSSZ', true).local().format('MM-DD-YYYY, h:mm a')),
+									$('<td>').text(item.Tenant + '/' + item.Site),
+									$('<td>').dcappend(
+										$('<a>')
+											.attr("href", "#")
+											.attr("tabindex", "0")
+											.attr("role", "button")
+											.text(item.Domains.join(', '))
+											.click(item, function(e) {
+												/* TODO - view details about cert (Thumbprint, all domains, start date, service that issued cert)
+												dc.pui.Dialog.loadPage('/dcm/dashboard/alerts-widget-view-alert/' + e.data.MessageType + '/' + e.data.Id, {
+													Callback: function(path) {
+														page.Store.CertWidget();
+													}
+												});
+												*/
+
+												e.preventDefault();
+												return false;
+											})
+									),
+									$('<td>').dcappend(
+										$('<a>')
+											.attr("href", "#")
+											.attr("tabindex", "0")
+											.attr("role", "button")
+											.attr("class", "pure-button-default pure-button dc-button")
+											.dcappend(dc.util.Icon.use('fas-certificate'))
+											.click(item, function(e) {
+												page.callPageFunc('dcrCertsDoRenew', e.data);
+
+												e.preventDefault();
+												return false;
+											})
+									)
+								)
+							);
+						}
+					}
+				});
+			};
+
+			page.Store.RefreshList.push(page.Store.CertWidget);
+	]]></Function>
+	<Function Name="dcrCertsDoRenew" Params="item"><![CDATA[
+			var page = this;
+
+			dc.pui.Popup.confirm('Are you sure you want to renew this certificate?', function(confirm) {
+				if (! confirm)
+					return;
+
+				var steps = [ {
+					Alias: 'Renew',
+					Title: 'Renew Certificate',
+					Params: item,
+					Func: function(step) {
+						var task = this;
+
+						dc.comm.call('dcmServices.Dashboard.RenewCert', {
+							Tenant: step.Params.Tenant,
+							Site: step.Params.Site,
+							Domains: step.Params.Domains
+						}, function(rmsg) {
+							if (rmsg.Code > 0) {
+								task.Result = {
+									Result: 1,
+									Message: 'Unable to renew certificate: ' + rmsg.Message
+								};
+
+								task.kill();
+							}
+							else {
+								task.Result = {
+									Result: 0
+								};
+
+								task.resume();
+							}
+						});
+					}
+				} ];
+
+				var processtask = new dc.lang.Task(steps);
+
+				processtask.Store = { };
+				processtask.Result = null;
+
+				dc.pui.Popup.await('Please wait while processing certificate request.', function() {
+					dc.pui.Apps.Busy = false;
+
+					if (processtask.Result.Result > 0)
+						dc.pui.Popup.alert('Unable to renew certificate: ' + processtask.Result.Message);
+					else
+						page.Store.CertWidget();
+
+				}, null, processtask);
+			});
+	]]></Function>
+</dc.MixIn>

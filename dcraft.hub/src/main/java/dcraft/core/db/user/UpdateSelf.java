@@ -8,6 +8,7 @@ import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.struct.RecordStruct;
 
@@ -20,10 +21,13 @@ public class UpdateSelf implements IStoredProc {
 
 		data.with("Id", OperationContext.getOrThrow().getUserContext().getUserId());
 		
-		DbRecordRequest req = UserDataUtil.updateUserWithConditions(data);
+		try (OperationMarker om = OperationMarker.create()) {
+			DbRecordRequest req = UserDataUtil.updateUserWithConditions(data);
 		
-		TableUtil.updateRecord(db, req);
-
+			if (! om.hasErrors())
+				TableUtil.updateRecord(db, req);
+		}
+		
 		callback.returnEmpty();
 	}
 }

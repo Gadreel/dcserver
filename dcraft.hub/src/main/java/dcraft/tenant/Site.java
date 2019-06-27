@@ -631,12 +631,19 @@ public class Site extends Base {
 		String defPort = ctrl.getServiceSettings().getAttribute("DefaultSecurePort", "443");
 
 		String orgpath = request.getFieldAsString("Path");
+		
+		// a little hacky - never redirect on an ACME challenge. could make this more generalized
+		if (orgpath.startsWith("/.well-known/acme-challenge"))
+			return null;
 
 		for (XElement config : ResourceHub.getResources().getConfig().getTagListDeep("Web")) {
 			for (XElement route : config.selectAll("Route")) {
 				if (host.equals(route.getAttribute("Name"))) {
 					if (route.hasAttribute("RedirectPath"))
 						return route.getAttribute("RedirectPath");
+
+					if (route.hasAttribute("RedirectUrl"))
+						return route.getAttribute("RedirectUrl");
 
 					if (!route.hasAttribute("ForceTls") && !route.hasAttribute("RedirectName"))
 						continue;

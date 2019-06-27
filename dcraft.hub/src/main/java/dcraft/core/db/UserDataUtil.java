@@ -9,6 +9,7 @@ import dcraft.db.request.update.UpdateRecordRequest;
 import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
+import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
@@ -181,6 +182,20 @@ public class UserDataUtil {
 					if ("SysAdmin".equals(badge)) {
 						badges.removeItem(bs);
 						break;
+					}
+				}
+			}
+			
+			// if not root user and on shared hosting then don't allow developer badge
+			if (! Constants.DB_GLOBAL_ROOT_RECORD.equals(OperationContext.getOrThrow().getUserContext().getUserId())) {
+				if (Struct.objectToBooleanOrFalse(ResourceHub.getResources().getConfig().getAttribute("SharedHosting"))) {
+					for (Struct bs : badges.items()) {
+						String badge = Struct.objectToString(bs);
+						
+						if ("Developer".equals(badge)) {
+							Logger.error("Developer badge not allowed on shored hosting.");
+							return null;
+						}
 					}
 				}
 			}

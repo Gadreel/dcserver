@@ -124,11 +124,11 @@ public class SlackUtil {
 			int responseCode = con.getResponseCode();
 
 			if (responseCode != 200) {
-				Logger.error("Error processing payment: Unable to connect to payment gateway.");
+				Logger.error("Error processing payment: Unable to connect to Slack gateway.");
 			}
 		}
 		catch (Exception x) {
-			Logger.error("Error processing payment: Unable to connect to payment gateway.");
+			Logger.error("Error processing payment: Unable to connect to Slack gateway.");
 		}
 		
 		if (callback != null)
