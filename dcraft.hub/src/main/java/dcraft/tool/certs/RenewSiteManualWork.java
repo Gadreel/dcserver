@@ -33,11 +33,9 @@ import java.util.List;
  * Only run this on development machines, relies on git to distribute keys/certs
  */
 public class RenewSiteManualWork extends StateWork {
-	static public RenewSiteManualWork of(String tenant, String site, List<String> domains) {
+	static public RenewSiteManualWork of(List<String> domains) {
 		RenewSiteManualWork work = new RenewSiteManualWork();
 
-		work.tenant = tenant;
-		work.site = site;
 		work.domains = domains;
 
 		return work;
@@ -50,8 +48,6 @@ public class RenewSiteManualWork extends StateWork {
 	protected StateWorkStep reload = null;
 	protected StateWorkStep done = null;
 
-	protected String tenant = null;
-	protected String site = null;
 	protected List<String> domains = null;
 
 	protected ServerHelper ssh = new ServerHelper();
@@ -98,12 +94,12 @@ public class RenewSiteManualWork extends StateWork {
 			return this.done;
 		}
 
-		Site siteinfo = TenantHub.resolveTenant(this.tenant).resolveSite(this.site);
+		Site siteinfo = trun.getSite();
 
-		this.wwwpath = Paths.get("/dcserver/deploy-" + ApplicationHub.getDeployment() + "/tenants/" + tenant + "/www");
+		this.wwwpath = Paths.get("/dcserver/deploy-" + ApplicationHub.getDeployment() + "/tenants/" + siteinfo.getTenant().getAlias() + "/www");
 
-		if (! "root".equals(site))
-			this.wwwpath = Paths.get("/dcserver/deploy-" + ApplicationHub.getDeployment() + "/tenants/" + tenant + "/sites/" + site + "/www");
+		if (! siteinfo.isRoot())
+			this.wwwpath = Paths.get("/dcserver/deploy-" + ApplicationHub.getDeployment() + "/tenants/" + siteinfo.getTenant().getAlias() + "/sites/" + siteinfo.getAlias() + "/www");
 
 		this.configpath = siteinfo.resolvePath("config");
 
@@ -215,7 +211,7 @@ public class RenewSiteManualWork extends StateWork {
 			java.security.cert.Certificate[] certificates = new java.security.cert.Certificate[this.certificate.getCertificateChain().size()];
 			certificates = this.certificate.getCertificateChain().toArray(certificates);
 
-			ks.setKeyEntry(this.site, this.domainKeyPair.getPrivate(), password, certificates);
+			ks.setKeyEntry(trun.getSite().getAlias(), this.domainKeyPair.getPrivate(), password, certificates);
 
 			// Store away the keystore.
 			try (FileOutputStream fos = new FileOutputStream(this.configpath.resolve("certs.jks").toFile())) {
@@ -245,7 +241,7 @@ public class RenewSiteManualWork extends StateWork {
 	}
 
 	public StateWorkStep reloadSiteCerts(TaskContext trun) throws OperatingContextException {
-		Site siteinfo = TenantHub.resolveTenant(this.tenant).resolveSite(this.site);
+		Site siteinfo = trun.getSite();
 		
 		CertUtil.loadTierCerts(this.configpath, siteinfo.getTierResources());
 		

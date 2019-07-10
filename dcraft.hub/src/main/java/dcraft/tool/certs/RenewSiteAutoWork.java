@@ -44,11 +44,9 @@ import java.security.cert.CertificateException;
 import java.util.List;
 
 public class RenewSiteAutoWork extends StateWork {
-	static public RenewSiteAutoWork of(String tenant, String site, List<String> domains) {
+	static public RenewSiteAutoWork of(List<String> domains) {
 		RenewSiteAutoWork work = new RenewSiteAutoWork();
 
-		work.tenant = tenant;
-		work.site = site;
 		work.domains = domains;
 
 		return work;
@@ -61,8 +59,6 @@ public class RenewSiteAutoWork extends StateWork {
 	protected StateWorkStep reload = null;
 	protected StateWorkStep done = null;
 
-	protected String tenant = null;
-	protected String site = null;
 	protected List<String> domains = null;
 	
 	protected Path wwwpath = null;
@@ -89,7 +85,7 @@ public class RenewSiteAutoWork extends StateWork {
 			return this.done;
 		}
 		
-		Site siteinfo = TenantHub.resolveTenant(this.tenant).resolveSite(this.site);
+		Site siteinfo = trun.getSite();
 		
 		this.wwwpath = siteinfo.resolvePath("www");
 		this.configpath = siteinfo.resolvePath("config");
@@ -210,7 +206,7 @@ public class RenewSiteAutoWork extends StateWork {
 			java.security.cert.Certificate[] certificates = new java.security.cert.Certificate[this.certificate.getCertificateChain().size()];
 			certificates = this.certificate.getCertificateChain().toArray(certificates);
 			
-			ks.setKeyEntry(this.site, this.domainKeyPair.getPrivate(), password, certificates);
+			ks.setKeyEntry(trun.getSite().getAlias(), this.domainKeyPair.getPrivate(), password, certificates);
 			
 			// store in Vault
 			
@@ -227,6 +223,8 @@ public class RenewSiteAutoWork extends StateWork {
 			
 			MemoryStoreFile msource = MemoryStoreFile.of(cpath)
 					.with(memory);
+			
+			Logger.info("Writing certificate");
 			
 			VaultUtil.transfer("SiteFiles", msource, cpath, null, new OperationOutcomeStruct() {
 				@Override
@@ -258,7 +256,7 @@ public class RenewSiteAutoWork extends StateWork {
 	}
 	
 	public StateWorkStep reloadSiteCerts(TaskContext trun) throws OperatingContextException {
-		Site siteinfo = TenantHub.resolveTenant(this.tenant).resolveSite(this.site);
+		Site siteinfo = trun.getSite();
 		
 		CertUtil.loadTierCerts(this.configpath, siteinfo.getTierResources());
 		

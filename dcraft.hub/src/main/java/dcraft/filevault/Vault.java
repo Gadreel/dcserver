@@ -6,6 +6,7 @@ import dcraft.db.fileindex.FileIndexAdapter;
 import dcraft.filestore.FileDescriptor;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.*;
+import dcraft.session.Session;
 import dcraft.stream.StreamFragment;
 import dcraft.struct.ListStruct;
 import dcraft.task.IWork;
@@ -138,8 +139,13 @@ abstract public class Vault {
 			return true;
 		
 		String token = data.getFieldAsString("Token");
-		
-		HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
+
+		Session session = OperationContext.getOrThrow().getSession();
+
+		if (session == null)
+			return false;
+
+		HashMap<String, Struct> scache = session.getCache();
 		
 		if (! scache.containsKey(token))
 			return false;
@@ -158,7 +164,12 @@ abstract public class Vault {
 	public String getTxForToken(RecordStruct data) throws OperatingContextException {
 		String token = data.getFieldAsString("Token");
 
-		HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
+		Session session = OperationContext.getOrThrow().getSession();
+
+		if (session == null)
+			return null;
+
+		HashMap<String, Struct> scache = session.getCache();
 
 		if (! scache.containsKey(token))
 			return null;

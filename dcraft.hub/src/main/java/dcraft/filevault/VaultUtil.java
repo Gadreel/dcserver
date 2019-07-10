@@ -6,6 +6,8 @@ import dcraft.hub.op.*;
 import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
 import dcraft.service.ServiceRequest;
+import dcraft.session.Session;
+import dcraft.session.SessionHub;
 import dcraft.stream.StreamFragment;
 import dcraft.stream.StreamWork;
 import dcraft.struct.RecordStruct;
@@ -22,6 +24,17 @@ import java.util.HashMap;
 
 public class VaultUtil {
 	static public void transfer(String vname, FileStoreFile upfile, CommonPath destpath, String token, OperationOutcomeStruct callback) throws OperatingContextException {
+		Session sess = OperationContext.getOrThrow().getSession();
+
+		// transfers need a session, assign one
+		if (sess == null) {
+			sess = Session.of("transfer:", callback.getOperationContext().getUserContext());
+
+			SessionHub.register(sess);
+
+			callback.getOperationContext().setSessionId(sess.getId());
+		}
+
 		if (StringUtil.isNotEmpty(token))
 			VaultUtil.setSessionToken(token);
 
@@ -144,22 +157,34 @@ public class VaultUtil {
 	}
 	
 	static public void setSessionToken(String token) throws OperatingContextException {
-		HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
-		
-		scache.put(token, BooleanStruct.of(true));
+		Session session = OperationContext.getOrThrow().getSession();
+
+		if (session != null) {
+			HashMap<String, Struct> scache = session.getCache();
+
+			scache.put(token, BooleanStruct.of(true));
+		}
 	}
 
 	static public void setSessionToken(String token, String txid) throws OperatingContextException {
-		HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
+		Session session = OperationContext.getOrThrow().getSession();
 
-		scache.put(token, BooleanStruct.of(true));
-		scache.put(token + "Tx", StringStruct.of(txid));
+		if (session != null) {
+			HashMap<String, Struct> scache = session.getCache();
+
+			scache.put(token, BooleanStruct.of(true));
+			scache.put(token + "Tx", StringStruct.of(txid));
+		}
 	}
 
 	static public void clearSessionToken(String token) throws OperatingContextException {
-		HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
+		Session session = OperationContext.getOrThrow().getSession();
 
-		scache.remove(token);
-		scache.remove(token + "Tx");
+		if (session != null) {
+			HashMap<String, Struct> scache = session.getCache();
+
+			scache.remove(token);
+			scache.remove(token + "Tx");
+		}
 	}
 }

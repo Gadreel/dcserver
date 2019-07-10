@@ -256,7 +256,8 @@ public class UserDataUtil {
 		ThreadUtil.addParty(db, id, data.getFieldAsString("Party","/NoticesPool"), "/InBox", null);
 
 		ThreadUtil.deliver(db, id, future);		// TODO make it so that thread is removed if user confirms
-
+		
+		
 		// TODO use task queue instead
 		TaskHub.submit(Task.ofSubtask("User confirm code trigger", "USER")
 				.withTopic("Batch")

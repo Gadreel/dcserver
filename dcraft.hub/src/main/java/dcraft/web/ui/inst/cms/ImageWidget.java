@@ -41,14 +41,14 @@ public class ImageWidget extends Base implements ICMSAware {
 		
 		String path = StackUtil.stringFromSource(state, "Path");
 		String vari = StackUtil.stringFromSource(state,"Variant", "full");
+		String[] rvari = StackUtil.stringFromSource(state,"ResponsiveVariants", "").split(",");
 		String xvari = StackUtil.stringFromSource(state,"ExpandVariant");
+		String xresp = StackUtil.stringFromSource(state,"ExpandResponsive");
 		String description = StackUtil.stringFromSource(state,"Description");
 		String ext = StackUtil.stringFromSource(state,"Extension", "jpg");
 		
 		RecordStruct meta = (RecordStruct) GalleryUtil.getMeta(CommonPath.from(path).getParent().toString(),
 				OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
-		
-		boolean usesrcset = false;
 		
 		if (meta != null) {
 			ext = meta.getFieldAsString("Extension", ext);
@@ -61,32 +61,32 @@ public class ImageWidget extends Base implements ICMSAware {
 
 			ext = vdata.getFieldAsString("Extension", ext);
 			
-			if ((vdata != null) && vdata.isNotFieldEmpty("Density")) {
+			if ((rvari.length > 0) && StringUtil.isNotEmpty(rvari[0])) {
+				if (! this.hasAttribute("Sizes"))
+					this.attr("Sizes", "100vw");
+				
 				StringBuilder srcset = new StringBuilder();
 				boolean first = true;
-
-				for (Struct lvl : vdata.getFieldAsList("Density").items()) {
-					RecordStruct rlvl = (RecordStruct) lvl;
-					String amt = rlvl.getFieldAsString("Level");
-
-					if (StringUtil.isEmpty(amt))
+				
+				for (int rv = 0; rv < rvari.length; rv++) {
+					RecordStruct rvdata = GalleryUtil.findVariation(meta, rvari[rv]);
+					
+					String width = rvdata.getFieldAsString("ExactWidth");
+					
+					if (StringUtil.isEmpty(width))
 						continue;
-
+					
 					if (! first)
 						srcset.append(", ");
 					else
 						first = false;
-
-					srcset.append("/galleries" + path + ".v/" + vari
-							+ "-" + amt.replace('.', '-') + "." + ext + " " + amt + "x");
+					
+					srcset.append("/galleries" + path + ".v/" + rvari[rv]
+							+ "." + ext + " " + width + "w");
 				}
-
-				img.with("SourceSet", srcset);
 				
-				usesrcset = true;
+				img.with("SourceSet", srcset);
 			}
-
-			// srcset="image-2x.png 2x, image-3x.png 3x, image-4x.png 4x"
 		}
 		
 		int apos = path.lastIndexOf('/') + 1;
@@ -94,6 +94,11 @@ public class ImageWidget extends Base implements ICMSAware {
 		img.with("Path", "/galleries" + path + ".v/" + vari + "." + ext);
 		img.with("Alias", path.substring(apos));
 		img.with("Description", description);
+
+		String sizes = StackUtil.stringFromSource(state,"Sizes");
+		
+		if (StringUtil.isNotEmpty(sizes))
+			img.with("Sizes", sizes);
 		
 		RecordStruct imgmeta = (RecordStruct) GalleryUtil.getMeta(path + ".v",
 				OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
@@ -118,6 +123,10 @@ public class ImageWidget extends Base implements ICMSAware {
 		
 		if (StringUtil.isNotEmpty(xvari))
 			this.attr("data-dc-expanded", xvari);
+		
+		// TODO support expand-opts in client side JS
+		if (StringUtil.isNotEmpty(xresp))
+			this.attr("data-dc-expand-opts", xresp);
 		
 		StackUtil.addVariable(state, "Image", img);
 
@@ -146,7 +155,8 @@ public class ImageWidget extends Base implements ICMSAware {
 							.withClass("pure-img-inline")
 							.withAttribute("alt", "{$Image.Description}")
 							.withAttribute("src", "{$Image.Path}")
-							//.withAttribute("srcset", usesrcset ? "{$Image.SourceSet}" : null)
+							.withAttribute("srcset", "{$Image.SourceSet|ifempty:}")
+							.withAttribute("sizes", "{$Image.Sizes|ifempty:}")
 			));
 		}
 	}

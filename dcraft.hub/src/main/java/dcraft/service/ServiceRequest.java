@@ -18,6 +18,7 @@ import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IWork;
 import dcraft.task.IWorkBuilder;
+import dcraft.util.StringUtil;
 
 import java.security.InvalidParameterException;
 
@@ -35,6 +36,22 @@ public class ServiceRequest implements IWorkBuilder {
 		return req;
 	}
 	
+	static public ServiceRequest of(String op) {
+		if (StringUtil.isEmpty(op))
+			return null;
+
+		String[] parts = op.split("\\.");
+
+		if (parts.length != 3)
+			return null;
+
+		ServiceRequest req = new ServiceRequest();
+		req.name = parts[0];
+		req.feature = parts[1];
+		req.op = parts[2];
+		return req;
+	}
+
 	protected String name = null;
 	protected String feature = null;
 	protected String op = null;

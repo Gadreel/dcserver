@@ -37,6 +37,26 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 public class FeedUtilDb {
+	static public String roughInFeedIndex(TablesAdapter db, String path) throws OperatingContextException {
+		CommonPath opath = toIndexPath(path);
+		
+		String oid = pathToId(db, opath, false);
+		
+		if (StringUtil.isNotEmpty(oid))
+			return oid;
+		
+		oid = db.createRecord("dcmFeed");
+
+		db.updateStaticScalar("dcmFeed", oid, "dcmAlias", opath.getName(1));
+		db.updateStaticScalar("dcmFeed", oid, "dcmPath", opath);
+		// TODO use settings to determine start path, should be null if not an entry (such as a block)
+		db.updateStaticScalar("dcmFeed", oid, "dcmLocalPath", "pages".equals(opath.getName(1)) ? opath.subpath(2) : opath.subpath(1));
+		db.updateStaticScalar("dcmFeed", oid, "dcmModified", TimeUtil.now());
+		db.updateStaticScalar("dcmFeed", oid, "dcmAuthor", OperationContext.getOrThrow().getUserContext().getUserId());
+		
+		return oid;
+	}
+	
 	static public void updateFeedIndex(TablesAdapter db, CommonPath path) throws OperatingContextException {
 		FeedUtilDb.updateFeedIndex(db, path.toString());
 	}
@@ -45,14 +65,14 @@ public class FeedUtilDb {
 		if (! path.endsWith(".html"))
 			return;
 
-		CommonPath opath = CommonPath.from("/" + OperationContext.getOrThrow().getSite().getAlias() + path.substring(0, path.length() - 5));
+		CommonPath opath = toIndexPath(path);
 		CommonPath ochan = opath.subpath(0, 2);		// site and feed
-
-		String oid = Struct.objectToString(db.firstInIndex("dcmFeed", "dcmPath", opath, false));
 
 		ZonedDateTime opubtime = null;
 
 		RecordStruct fields = RecordStruct.record();
+		
+		String oid = pathToId(db, opath, false);
 
 		if (oid == null) {
 			oid = db.createRecord("dcmFeed");
@@ -267,28 +287,24 @@ public class FeedUtilDb {
 	static public void deleteFeedIndex(TablesAdapter db, String path) throws OperatingContextException {
 		CommonPath opath = FeedUtilDb.toIndexPath(path);
 		
-		if (opath == null)
-			return;
+		String oid = pathToId(db, opath, true);
 		
 		CommonPath ochan = opath.subpath(0, 2);		// site and feed
 
-		Object oid = db.firstInIndex("dcmFeed", "dcmPath", opath, true);
-
-		if (oid == null)
-			return;
-
-		// delete from dcmFeedIndex
-		ZonedDateTime opubtime = Struct.objectToDateTime(db.getStaticScalar("dcmFeed", oid.toString(),"dcmPublishAt"));
-
-		try {
-			db.getRequest().getInterface().kill(OperationContext.getOrThrow().getUserContext().getTenantAlias(),
-					"dcmFeedIndex", ochan, db.getRequest().getInterface().inverseTime(opubtime), oid);
+		if (StringUtil.isNotEmpty(oid)) {
+			// delete from dcmFeedIndex
+			ZonedDateTime opubtime = Struct.objectToDateTime(db.getStaticScalar("dcmFeed", oid, "dcmPublishAt"));
+			
+			try {
+				db.getRequest().getInterface().kill(OperationContext.getOrThrow().getUserContext().getTenantAlias(),
+						"dcmFeedIndex", ochan, db.getRequest().getInterface().inverseTime(opubtime), oid);
+			}
+			catch (DatabaseException x) {
+				Logger.error("Error killing global: " + x);
+			}
+			
+			db.retireRecord("dcmFeed", oid);
 		}
-		catch (DatabaseException x) {
-			Logger.error("Error killing global: " + x);
-		}
-
-		db.retireRecord("dcmFeed", oid.toString());
 		
 		FeedUtilDb.discardHistory(db.getRequest().getInterface(), db, ochan.getName(1), opath.subpath(2).toString(), null, new OperationOutcomeStruct() {
 			@Override
@@ -309,6 +325,22 @@ public class FeedUtilDb {
 			path = path.substring(0, path.length() - 5);
 		
 		return CommonPath.from("/" + OperationContext.getOrThrow().getSite().getAlias() + path);
+	}
+	
+	static public String pathToId(TablesAdapter db, String path, boolean checkcurrent) throws OperatingContextException {
+		CommonPath opath = FeedUtilDb.toIndexPath(path);
+		
+		if (opath != null)
+			return Struct.objectToString(db.firstInIndex("dcmFeed", "dcmPath", opath, checkcurrent));
+		
+		return null;
+	}
+	
+	static public String pathToId(TablesAdapter db, CommonPath path, boolean checkcurrent) throws OperatingContextException {
+		if (path != null)
+			return Struct.objectToString(db.firstInIndex("dcmFeed", "dcmPath", path, checkcurrent));
+		
+		return null;
 	}
 	
 	static public String findHistory(DatabaseAdapter conn, TablesAdapter db, String feed, String path, boolean create, boolean audit) throws OperatingContextException {

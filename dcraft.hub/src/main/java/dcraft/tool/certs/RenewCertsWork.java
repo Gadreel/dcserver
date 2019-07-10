@@ -1,13 +1,18 @@
 package dcraft.tool.certs;
 
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.UserContext;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.hub.resource.SslEntry;
 import dcraft.log.Logger;
 import dcraft.struct.Struct;
 import dcraft.task.StateWork;
 import dcraft.task.StateWorkStep;
+import dcraft.task.Task;
 import dcraft.task.TaskContext;
+import dcraft.task.TaskHub;
+import dcraft.task.TaskObserver;
 import dcraft.tenant.Site;
 import dcraft.tenant.Tenant;
 import dcraft.tenant.TenantHub;
@@ -100,7 +105,22 @@ public class RenewCertsWork extends StateWork {
 		}
 
 		Logger.info("Attempting to renew SSL cert for: " + StringUtil.join(finaldomains, ", "));
-
-		return this.chainThenNext(trun, RenewSiteAutoWork.of(site.getTenant().getAlias(), site.getAlias(), finaldomains));
+		
+		TaskHub.submit(
+				// run in the proper domain
+				Task.of(OperationContext.context(UserContext.rootUser(site.getTenant().getAlias(), site.getAlias())))
+						.withId(Task.nextTaskId("CERT"))
+						.withTitle("Renew Cert")
+						.withTimeout(5)
+						.withWork(RenewSiteAutoWork.of(finaldomains)),
+				new TaskObserver() {
+					@Override
+					public void callback(TaskContext task) {
+						RenewCertsWork.this.transition(trun, StateWorkStep.REPEAT);
+					}
+				}
+		);
+		
+		return StateWorkStep.WAIT;
 	}
 }

@@ -2,33 +2,20 @@ package dcraft.cms.dashboard.db;
 
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
-import dcraft.filevault.Vault;
-import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.op.UserContext;
-import dcraft.hub.resource.SslEntry;
-import dcraft.hub.resource.TrustResource;
-import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
 import dcraft.task.IWork;
 import dcraft.task.Task;
 import dcraft.task.TaskContext;
 import dcraft.task.TaskHub;
 import dcraft.task.TaskObserver;
-import dcraft.tenant.Site;
-import dcraft.tenant.Tenant;
-import dcraft.tenant.TenantHub;
-import dcraft.tool.certs.CertUtil;
 import dcraft.tool.certs.RenewSiteAutoWork;
 import dcraft.tool.certs.RenewSiteManualWork;
-import dcraft.util.KeyUtil;
 
-import java.security.cert.X509Certificate;
-import java.time.ZonedDateTime;
-import java.util.Arrays;
 import java.util.List;
 
 public class RenewCert implements IStoredProc {
@@ -38,14 +25,18 @@ public class RenewCert implements IStoredProc {
 		
 		List<String> domains = data.getFieldAsList("Domains").toStringList();
 		
-		// TODO if production then do the AutoRenew work instead
-		
+		String tenant = data.getFieldAsString("Tenant");
+		String site = data.getFieldAsString("Site");
+
 		IWork work = ApplicationHub.isProduction()
-				? RenewSiteAutoWork.of(data.getFieldAsString("Tenant"), data.getFieldAsString("Site"), domains)
-				: RenewSiteManualWork.of(data.getFieldAsString("Tenant"), data.getFieldAsString("Site"), domains);
-		
+				? RenewSiteAutoWork.of(domains)
+				: RenewSiteManualWork.of(domains);
+
 		TaskHub.submit(
-				Task.ofSubtask("Renew Cert", "CERT")
+				// run in the proper domain
+				Task.of(OperationContext.context(UserContext.rootUser(tenant, site)))
+						.withId(Task.nextTaskId("CERT"))
+						.withTitle("Renew Cert")
 						.withTimeout(5)
 						.withWork(work),
 				new TaskObserver() {

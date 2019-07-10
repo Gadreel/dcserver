@@ -34,6 +34,15 @@
 						<dcf.Text Name="Email" Label="Email" Required="true" />
 						<dcf.Text Name="Phone" Label="Phone" />
 
+						<dcs.If Target="$UserConfig.@SignUpNotices" Equal="text">
+							<dc.Out>
+								<dcf.RadioGroup Label="Notices" Name="Notices">
+									<RadioButton Value="text" Label="Send notices to my phone as text messages." />
+									<RadioButton Value="email" Label="Send notices to my email account." />
+								</dcf.RadioGroup>
+							</dc.Out>
+						</dcs.If>
+
 						<dcs.If Target="$UserConfig.@SignUpAddress" Equal="true">
 							<dc.Out>
 								<dcf.Text Name="Address" Label="Address" />

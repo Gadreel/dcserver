@@ -392,7 +392,7 @@ public class Site extends Base {
 		if ((vault != null) && (vault instanceof FileStoreVault))
 			return (FileStoreVault) vault;
 		
-		Logger.error("Missing or badly configured Galleries Feeds");
+		Logger.error("Missing or badly configured Feeds vault");
 		return null;
 	}
 	

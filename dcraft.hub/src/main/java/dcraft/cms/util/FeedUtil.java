@@ -1,17 +1,31 @@
 package dcraft.cms.util;
 
+import dcraft.cms.feed.db.FeedUtilDb;
+import dcraft.db.BasicRequestContext;
+import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
+import dcraft.filestore.FileDescriptor;
+import dcraft.filestore.FileStoreFile;
+import dcraft.filestore.mem.MemoryStoreFile;
+import dcraft.filevault.FileStoreVault;
+import dcraft.filevault.Vault;
+import dcraft.filevault.VaultUtil;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.OperationOutcome;
+import dcraft.hub.op.OperationOutcomeEmpty;
+import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
 import dcraft.script.ScriptHub;
 import dcraft.script.StackUtil;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
+import dcraft.util.cb.CountDownCallback;
 import dcraft.web.ui.inst.ICMSAware;
 import dcraft.xml.JsonToXml;
 import dcraft.xml.XElement;
@@ -21,12 +35,181 @@ import dcraft.xml.XmlReader;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class FeedUtil {
 	public enum FieldType {
 		Shared,
 		Locale,
 		Unknown
+	}
+	
+	static public void addFeed(String path, RecordStruct params, OperationOutcomeStruct fcb) throws OperatingContextException {
+		Vault feedvault = OperationContext.getOrThrow().getSite().getFeedsVault();
+		
+		if (feedvault == null) {
+			Logger.error("Feeds vault missing.");
+			fcb.returnEmpty();
+			return;
+		}
+		
+		feedvault.getMappedFileDetail(path, params, new OperationOutcome<FileDescriptor>() {
+			@Override
+			public void callback(FileDescriptor result) throws OperatingContextException {
+				if (this.hasErrors()) {
+					fcb.returnEmpty();
+					return;
+				}
+				
+				if (this.isEmptyResult()) {
+					Logger.error("Your request appears valid but does not map to a folder.  Unable to complete.");
+					fcb.returnEmpty();
+					return;
+				}
+				
+				FileStoreFile fi = (FileStoreFile) result;
+				
+				if (fi.exists()) {
+					Logger.error("This path would overwrite an existing page. Please edit the page or remove it and then add it.");
+					fcb.returnEmpty();
+					return;
+				}
+				
+				Vault tempvault = OperationContext.getOrThrow().getSite().getVault("SiteFiles");
+				
+				if ((tempvault == null) || ! (tempvault instanceof FileStoreVault)) {
+					Logger.error("SiteFiles vault missing.");
+					fcb.returnEmpty();
+					return;
+				}
+				
+				String template = params.getFieldAsString("Template");
+				
+				if (StringUtil.isEmpty(template)) {
+					Logger.error("Missing template name.");
+					fcb.returnEmpty();
+					return;
+				}
+				
+				// TODO future copy all the feed*.html files over
+				String temppath = "/templates/" + fi.getPathAsCommon().getName(0) + "/" + template + "/feed.html";
+				
+				// only for "pages" feed
+				String wwwpath = "/templates/" + fi.getPathAsCommon().getName(0) + "/" + template + "/www.html";
+				
+				tempvault.getMappedFileDetail(temppath, params,
+						new OperationOutcome<FileDescriptor>() {
+							@Override
+							public void callback(FileDescriptor source) throws OperatingContextException {
+								if (this.hasErrors() || this.isEmptyResult()) {
+									Logger.error("Template file missing.");
+									fcb.returnEmpty();
+									return;
+								}
+								
+								((FileStoreFile) source).readAllText(new OperationOutcome<String>() {
+									@Override
+									public void callback(String result) throws OperatingContextException {
+										if (this.hasErrors() || this.isEmptyResult()) {
+											Logger.error("Template file is empty.");
+											fcb.returnEmpty();
+											return;
+										}
+										
+										XElement root = XmlReader.parse(result, false, true);
+										
+										if (root == null) {
+											Logger.error("Template file is not well formed xml.");
+											fcb.returnEmpty();
+											return;
+										}
+										
+										RecordStruct def = FeedUtil.getFeedDefinition(fi.getPathAsCommon().getName(0));
+										
+										// feeds use site default
+										String defloc = OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale();
+										
+										String currloc = params.selectAsString("TrLocale", ResourceHub.getResources().getLocale().getDefaultLocale());
+										
+										ListStruct fields = params.selectAsList("SetFields");
+										
+										if (fields != null) {
+											for (Struct fld : fields.items()) {
+												if (fld instanceof RecordStruct) {
+													RecordStruct recfld = (RecordStruct) fld;
+													
+													FeedUtil.updateField(
+															def,
+															recfld.getFieldAsString("Name"),
+															recfld.getFieldAsString("Value"),
+															root,
+															currloc,
+															defloc
+													);
+												}
+											}
+										}
+										
+										// do pages first so that FeedSearchWork can run in correct order
+										OperationOutcomeEmpty feedtransfer = new OperationOutcomeEmpty() {
+											@Override
+											public void callback() throws OperatingContextException {
+												MemoryStoreFile msource = MemoryStoreFile.of(CommonPath.from(temppath))
+														.with(root.toPrettyString());
+												
+												VaultUtil.transfer("Feeds", msource, fi.getPathAsCommon(), null,
+														new OperationOutcomeStruct() {
+															@Override
+															public void callback(Struct result) throws OperatingContextException {
+																TablesAdapter adapter = TablesAdapter.ofNow(BasicRequestContext.ofDefaultDatabase());
+																
+																FeedUtilDb.addHistory(adapter.getRequest().getInterface(), adapter, fi.getPathAsCommon().getName(0), fi.getPathAsCommon().subpath(1).toString(), ListStruct.list()
+																		.with(RecordStruct.record()
+																				.with("Command", "NoOp")
+																		)
+																);
+																
+																fcb.returnEmpty();
+															}
+														});
+											}
+										};
+										
+										CountDownCallback transfercb = new CountDownCallback(1, feedtransfer);
+										
+										// copy files to www path first, if necessary
+										if ("pages".equals(fi.getPathAsCommon().getName(0))) {
+											tempvault.getMappedFileDetail(wwwpath,
+													params,
+													new OperationOutcome<FileDescriptor>() {
+														@Override
+														public void callback(FileDescriptor wwwsource) throws OperatingContextException {
+															if (this.hasErrors() || this.isEmptyResult()) {
+																Logger.error("Template web file missing.");
+																fcb.returnEmpty();
+																return;
+															}
+															
+															CommonPath sitepath = CommonPath.from("/www").resolve(fi.getPathAsCommon().subpath(1));
+															
+															VaultUtil.transfer("SiteFiles", (FileStoreFile) wwwsource, sitepath, null, new OperationOutcomeStruct() {
+																@Override
+																public void callback(Struct result) throws OperatingContextException {
+																	transfercb.countDown();
+																}
+															});
+														}
+													});
+										}
+										else {
+											transfercb.countDown();
+										}
+									}
+								});
+							}
+						});
+			}
+		});
 	}
 	
 	static public RecordStruct metaToInfo(String feedname, String currloc, XElement root) throws OperatingContextException {
