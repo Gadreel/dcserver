@@ -59,7 +59,8 @@ public class ImageWidget extends Base implements ICMSAware {
 			img.with("Gallery", meta);
 			img.with("Variant", vdata);
 
-			ext = vdata.getFieldAsString("Extension", ext);
+			if (vdata != null)
+				ext = vdata.getFieldAsString("Extension", ext);
 			
 			if ((rvari.length > 0) && StringUtil.isNotEmpty(rvari[0])) {
 				if (! this.hasAttribute("Sizes"))

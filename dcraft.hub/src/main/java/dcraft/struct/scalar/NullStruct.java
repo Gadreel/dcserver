@@ -121,9 +121,4 @@ public class NullStruct extends ScalarStruct {
 
 		return 0;
 	}
-	
-	@Override
-	public boolean checkLogic(IParentAwareWork stack, XElement source) {
-		return false;
-	}
 }

@@ -21,12 +21,16 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationController;
 import dcraft.hub.op.UserContext;
+import dcraft.script.StackUtil;
+import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.BooleanStruct;
 import dcraft.struct.scalar.StringStruct;
+import dcraft.util.FileUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.io.ByteBufWriter;
 import dcraft.util.web.ContentTypeParser;
@@ -555,5 +559,21 @@ public class WebController extends OperationController {
 		}
 		
 		return null;
-	}	
+	}
+	
+	@Override
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
+		if ("Redirect".equals(code.getName())) {
+			String location = StackUtil.stringFromElement(stack, code, "Location");
+			
+			this.getResponse().setStatus(HttpResponseStatus.FOUND);	// not permanent
+			this.getResponse().setHeader(HttpHeaderNames.LOCATION.toString(), location);
+			this.getResponse().setHeader("Cache-Control", "no-cache");		// in case they login later, FireFox was using cache
+			this.sendRead();
+			
+			return ReturnOption.CONTINUE;
+		}
+		
+		return super.operation(stack, code);
+	}
 }

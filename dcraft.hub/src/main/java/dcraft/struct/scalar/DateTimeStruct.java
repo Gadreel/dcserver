@@ -247,9 +247,4 @@ public class DateTimeStruct extends ScalarStruct {
 		// TODO review, not perfect
 		return (int) - ChronoUnit.DAYS.between(xv, yv);
 	}
-	
-	@Override
-	public boolean checkLogic(IParentAwareWork stack, XElement source) {
-		return Struct.objectToBooleanOrFalse(this.value);
-	}
 }

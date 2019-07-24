@@ -134,12 +134,6 @@ public class AnyStruct extends ScalarStruct implements IPartSelector {
 		return 0;   // TODO compare...
 	}
 	
-	@Override
-	public boolean checkLogic(IParentAwareWork stack, XElement source) {
-		return Struct.objectToBooleanOrFalse(this.value);
-	}
-	
-	
 	/**
 	 * A way to select a child or sub child structure similar to XPath but lightweight.
 	 * Can select composites and scalars.  Use a . or / delimiter.

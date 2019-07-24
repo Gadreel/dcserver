@@ -117,6 +117,39 @@ public class DateStruct extends ScalarStruct {
 			this.adaptValue(sref);
 			return ReturnOption.CONTINUE;
 		}
+		else if ("SetYear".equals(op)) {
+			try {
+				if (code.hasAttribute("Value"))
+					this.value = this.value.withYear((int)StackUtil.intFromElement(stack, code, "Value"));
+			}
+			catch (Exception x) {
+				Logger.error("Error doing " + op + ": " + x);
+			}
+			
+			return ReturnOption.CONTINUE;
+		}
+		else if ("SetMonth".equals(op)) {
+			try {
+				if (code.hasAttribute("Value"))
+					this.value = this.value.withMonth((int)StackUtil.intFromElement(stack, code, "Value"));
+			}
+			catch (Exception x) {
+				Logger.error("Error doing " + op + ": " + x);
+			}
+			
+			return ReturnOption.CONTINUE;
+		}
+		else if ("SetDay".equals(op)) {
+			try {
+				if (code.hasAttribute("Value"))
+					this.value = this.value.withDayOfMonth((int)StackUtil.intFromElement(stack, code, "Value"));
+			}
+			catch (Exception x) {
+				Logger.error("Error doing " + op + ": " + x);
+			}
+			
+			return ReturnOption.CONTINUE;
+		}
 		else if ("Add".equals(op)) {
 			try { 
 				if (code.hasAttribute("Years")) 
@@ -275,10 +308,5 @@ public class DateStruct extends ScalarStruct {
 			return -1;
 
 		return xv.compareTo(yv);
-	}
-	
-	@Override
-	public boolean checkLogic(IParentAwareWork stack, XElement source) {
-		return Struct.objectToBooleanOrFalse(this.value);
 	}
 }

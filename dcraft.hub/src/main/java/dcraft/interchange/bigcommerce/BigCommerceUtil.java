@@ -13,6 +13,7 @@ import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
 import javax.net.ssl.HttpsURLConnection;
+import java.io.DataOutputStream;
 import java.net.URL;
 
 public class BigCommerceUtil {
@@ -238,6 +239,167 @@ public class BigCommerceUtil {
 		}
 	}
 	
+	// https://developer.bigcommerce.com/api-reference/orders/orders-api/orders/getorders
+	// 100 at a time
+	static public void loadOrdersByStatus(String alt, int status, int page, OperationOutcomeList callback) {
+		XElement bigCommerce = ApplicationHub.getCatalogSettings("BigCommerce", alt);
+		
+		if (bigCommerce == null) {
+			Logger.error("Missing BigCommerce settings.");
+			callback.returnEmpty();
+			return;
+		}
+		
+		String bcid = bigCommerce.getAttribute("Id");
+		
+		if (StringUtil.isEmpty(bcid)) {
+			Logger.error("Missing BigCommerce Id.");
+			callback.returnEmpty();
+			return;
+		}
+		
+		String bcstore = bigCommerce.getAttribute("Store");
+		
+		if (StringUtil.isEmpty(bcstore)) {
+			Logger.error("Missing BigCommerce Store.");
+			callback.returnEmpty();
+			return;
+		}
+		
+		String bctoken = bigCommerce.getAttribute("Token");
+		
+		if (StringUtil.isEmpty(bctoken)) {
+			Logger.error("Missing BigCommerce Token.");
+			callback.returnEmpty();
+			return;
+		}
+		
+		try {
+			OperationContext.getOrThrow().touch();
+			
+			URL url = new URL("https://api.bigcommerce.com/stores/" + bcstore + "/v2/orders?limit=100&status_id=" + status + "&page=" + page);
+			
+			HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
+			
+			con.setRequestMethod("GET");
+			con.setRequestProperty("User-Agent", "DivConq/1.0 (Language=Java/8)");
+			con.setRequestProperty("Content-Type", "application/json");
+			con.setRequestProperty("Accept", "application/json");
+			con.setRequestProperty("X-Auth-Client", bcid);
+			con.setRequestProperty("X-Auth-Token", bctoken);
+			
+			int responseCode = con.getResponseCode();
+			
+			if (responseCode == 204) {
+				Logger.info("Empty list.");
+				callback.returnValue(ListStruct.list());
+			}
+			else if (responseCode != 200) {
+				Logger.error("Error processing api call: Unable to load orders.");
+				callback.returnEmpty();
+			}
+			else {
+				// parse and close response stream
+				CompositeStruct resp = CompositeParser.parseJson(con.getInputStream());
+				
+				if (resp == null) {
+					Logger.error("Error processing api call: incomplete response.");
+					callback.returnEmpty();
+				}
+				else {
+					callback.returnValue((ListStruct) resp);
+				}
+			}
+		}
+		catch (Exception x) {
+			Logger.error("Error processing api call: Unable to connect to big commerce.");
+			callback.returnEmpty();
+		}
+	}
+	
+	static public void setOrderStatus(String alt, int id, int status, OperationOutcomeRecord callback) {
+		XElement bigCommerce = ApplicationHub.getCatalogSettings("BigCommerce", alt);
+		
+		if (bigCommerce == null) {
+			Logger.error("Missing BigCommerce settings.");
+			callback.returnEmpty();
+			return;
+		}
+		
+		String bcid = bigCommerce.getAttribute("Id");
+		
+		if (StringUtil.isEmpty(bcid)) {
+			Logger.error("Missing BigCommerce Id.");
+			callback.returnEmpty();
+			return;
+		}
+		
+		String bcstore = bigCommerce.getAttribute("Store");
+		
+		if (StringUtil.isEmpty(bcstore)) {
+			Logger.error("Missing BigCommerce Store.");
+			callback.returnEmpty();
+			return;
+		}
+		
+		String bctoken = bigCommerce.getAttribute("Token");
+		
+		if (StringUtil.isEmpty(bctoken)) {
+			Logger.error("Missing BigCommerce Token.");
+			callback.returnEmpty();
+			return;
+		}
+		
+		try {
+			OperationContext.getOrThrow().touch();
+			
+			URL url = new URL("https://api.bigcommerce.com/stores/" + bcstore + "/v2/orders/" + id);
+			
+			HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
+			
+			con.setRequestMethod("PUT");
+			con.setRequestProperty("User-Agent", "DivConq/1.0 (Language=Java/8)");
+			con.setRequestProperty("Content-Type", "application/json");
+			con.setRequestProperty("Accept", "application/json");
+			con.setRequestProperty("X-Auth-Client", bcid);
+			con.setRequestProperty("X-Auth-Token", bctoken);
+			
+			// Send post request
+			con.setDoOutput(true);
+			DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+			wr.writeBytes(RecordStruct.record().with("status_id", status).toPrettyString());
+			wr.flush();
+			wr.close();
+			
+			
+			int responseCode = con.getResponseCode();
+			
+			if (responseCode == 204) {
+				callback.returnEmpty();
+			}
+			else if (responseCode != 200) {
+				Logger.error("Error processing api call: Unable to update order status.");
+				callback.returnEmpty();
+			}
+			else {
+				// parse and close response stream
+				CompositeStruct resp = CompositeParser.parseJson(con.getInputStream());
+				
+				if (resp == null) {
+					Logger.error("Error processing api call: incomplete response.");
+					callback.returnEmpty();
+				}
+				else {
+					callback.returnValue((RecordStruct) resp);
+				}
+			}
+		}
+		catch (Exception x) {
+			Logger.error("Error processing api call: Unable to connect to big commerce.");
+			callback.returnEmpty();
+		}
+	}
+	
 	// https://developer.bigcommerce.com/api-reference/orders/orders-api/order-products/getordersorderidproducts
 	static public void loadOrderProducts(String alt, long order, OperationOutcomeList callback) {
 		XElement bigCommerce = ApplicationHub.getCatalogSettings("BigCommerce", alt);
@@ -296,6 +458,78 @@ public class BigCommerceUtil {
 				// parse and close response stream
 				CompositeStruct resp = CompositeParser.parseJson(con.getInputStream());
 				
+				if (resp == null) {
+					Logger.error("Error processing api call: incomplete response.");
+					callback.returnEmpty();
+				}
+				else {
+					callback.returnValue((ListStruct) resp);
+				}
+			}
+		}
+		catch (Exception x) {
+			Logger.error("Error processing api call: Unable to connect to big commerce.");
+			callback.returnEmpty();
+		}
+	}
+
+	static public void loadOrderShipping(String alt, long order, OperationOutcomeList callback) {
+		XElement bigCommerce = ApplicationHub.getCatalogSettings("BigCommerce", alt);
+
+		if (bigCommerce == null) {
+			Logger.error("Missing BigCommerce settings.");
+			callback.returnEmpty();
+			return;
+		}
+
+		String bcid = bigCommerce.getAttribute("Id");
+
+		if (StringUtil.isEmpty(bcid)) {
+			Logger.error("Missing BigCommerce Id.");
+			callback.returnEmpty();
+			return;
+		}
+
+		String bcstore = bigCommerce.getAttribute("Store");
+
+		if (StringUtil.isEmpty(bcstore)) {
+			Logger.error("Missing BigCommerce Store.");
+			callback.returnEmpty();
+			return;
+		}
+
+		String bctoken = bigCommerce.getAttribute("Token");
+
+		if (StringUtil.isEmpty(bctoken)) {
+			Logger.error("Missing BigCommerce Token.");
+			callback.returnEmpty();
+			return;
+		}
+
+		try {
+			OperationContext.getOrThrow().touch();
+
+			URL url = new URL("https://api.bigcommerce.com/stores/" + bcstore + "/v2/orders/" + order + "/shippingaddresses");
+
+			HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
+
+			con.setRequestMethod("GET");
+			con.setRequestProperty("User-Agent", "DivConq/1.0 (Language=Java/8)");
+			con.setRequestProperty("Content-Type", "application/json");
+			con.setRequestProperty("Accept", "application/json");
+			con.setRequestProperty("X-Auth-Client", bcid);
+			con.setRequestProperty("X-Auth-Token", bctoken);
+
+			int responseCode = con.getResponseCode();
+
+			if (responseCode != 200) {
+				Logger.error("Error processing api call: Unable to load orders. Code: " + responseCode + " - limit " + con.getHeaderField("X-Rate-Limit-Requests-Left"));
+				callback.returnEmpty();
+			}
+			else {
+				// parse and close response stream
+				CompositeStruct resp = CompositeParser.parseJson(con.getInputStream());
+
 				if (resp == null) {
 					Logger.error("Error processing api call: incomplete response.");
 					callback.returnEmpty();

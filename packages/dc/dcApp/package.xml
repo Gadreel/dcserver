@@ -32,6 +32,7 @@
 			<Tag Name="dc.CaptchaButton" Class="dcraft.web.ui.inst.CaptchaButton" />
 			<Tag Name="dc.Link" Class="dcraft.web.ui.inst.Link" />
 			<Tag Name="dc.MenuWidget" Class="dcraft.web.ui.inst.MenuWidget" />
+			<Tag Name="dc.MenuBarWidget" Class="dcraft.web.ui.inst.MenuBarWidget" />
 			<Tag Name="dc.PagePanel" Class="dcraft.web.ui.inst.PagePanel" />
 			<Tag Name="dc.Panel" Class="dcraft.web.ui.inst.Panel" />
 			<Tag Name="dc.Region" Class="dcraft.web.ui.inst.Region" />

@@ -26,6 +26,7 @@ import dcraft.struct.FieldStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.StringStruct;
 import dcraft.util.Memory;
 import dcraft.util.io.InputWrapper;
 import dcraft.util.io.OutputWrapper;

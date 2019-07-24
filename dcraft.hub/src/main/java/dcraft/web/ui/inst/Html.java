@@ -86,6 +86,20 @@ public class Html extends Base {
 				page.with(name, StackUtil.resolveValueToString(state, FeedUtil.bestLocaleMatch(meta, locale, defloc)));
 			}
 		}
+		
+		ListStruct tags = page.getFieldAsList("Tags");
+		
+		if (tags == null) {
+			tags = ListStruct.list();
+			page.with("Tags", tags);
+		}
+		
+		for (XElement meta : source.selectAll("Tag")) {
+			String value = meta.getAttribute("Value");
+			
+			if (StringUtil.isNotEmpty(value))
+				tags.with(value);
+		}
 	}
 
 	protected List<XElement> icondefs = new ArrayList<>();
@@ -253,6 +267,9 @@ public class Html extends Base {
 		
 		if (StringUtil.isEmpty(icon) && (domainwebconfig != null))
 			icon = domainwebconfig.getAttribute("Icon");
+		
+		if (StringUtil.isEmpty(icon) && (domainwebconfig != null))
+			icon = domainwebconfig.getAttribute("Icon16");
 		
 		if (StringUtil.isEmpty(icon))
 			icon = "/imgs/logo";

@@ -2894,7 +2894,12 @@ dc.pui.TagFuncs = {
 	},
 	'dc.MenuWidget': {
 		'toggleShow': function(entry, node) {
-			$(node).find('.dc-menu-list').toggleClass('dc-menu-mobile-disable');
+			$(node).find('> .dc-menu-list').toggleClass('dc-menu-mobile-disable');
+		}
+	},
+	'dc.MenuBarWidget': {
+		'toggleShow': function(entry, node) {
+			$(node).find('> .dc-menu-list').toggleClass('dc-menu-mobile-disable');
 		}
 	},
 	'dc.PagePanel': {
@@ -3108,16 +3113,21 @@ dc.pui.Tags = {
 			}
 		}
 	},
+	'dc.MenuBarWidget': function(entry, node) {
+		dc.pui.Tags['dc.MenuWidget'](entry, node);
+
+		// TODO call js
+	},
 	'dc.MenuWidget': function(entry, node) {
 		$(node).find('a.dc-menu-open').click(function(e) {
-			$(node).find('.dc-menu-list').toggleClass('dc-menu-mobile-disable');
+			$(node).find('> .dc-menu-list').toggleClass('dc-menu-mobile-disable');
 
 			e.preventDefault();
 			return false;
 		});
 
 		$(node).find('a.dc-menu-close').click(function(e) {
-			$(node).find('.dc-menu-list').toggleClass('dc-menu-mobile-disable');
+			$(node).find('> .dc-menu-list').toggleClass('dc-menu-mobile-disable');
 
 			e.preventDefault();
 			return false;

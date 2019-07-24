@@ -1,0 +1,115 @@
+<dc.Html Badges="SysAdmin,Admin">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Blocked IPs" />
+	</Meta>
+
+	<Require Icons="fas/times" />
+
+	<dc.Body>
+		<dc.PagePanel>
+			<table id="lstDcrCertsMissing" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Address</th>
+						<th scope="col">Last Violation</th>
+						<th scope="col">Count</th>
+						<th scope="col">Action</th>
+					</tr>
+				</thead>
+				<tbody id="lstDcrCertsMissingBody" />
+			</table>
+
+			<p>Note that only IPs with a count of 20 or greater are completely blocked.</p>
+
+			<dc.Button Label="Refresh" Click="DoIPsLoad" />
+			<dc.Button Label="Clear All" Click="dcrDoClearAll" />
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.callPageFunc('DoIPsLoad');
+	]]></Function>
+	<Function Name="DoIPsLoad"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcmServices.Dashboard.ListBlockedIP', null, function(rmsg) {
+				if (rmsg.Code != 0) {
+					// don't alert
+					return;
+				}
+
+				//console.dir(rmsg.Result);
+
+				$feedtable = $('#lstDcrCertsMissingBody');
+
+				$feedtable.empty();
+
+				if (rmsg.Result) {
+					rmsg.Result.sort(dc.util.List.sortDescObjects('Last'));
+
+					// top five
+					for (var i = 0; i < rmsg.Result.length; i++) {
+						var item = rmsg.Result[i];
+
+						$feedtable.dcappend(
+							$('<tr>').attr('data-alias', item.Feed).dcappend(
+								$('<td>').text(item.Address),
+								$('<td>').text(dc.util.Date.formatZLocalMedium(item.Last)),
+								$('<td>').text(item.Count),
+								$('<td>').dcappend(
+									$('<a>')
+										.attr("href", "#")
+										.attr("tabindex", "0")
+										.attr("role", "button")
+										.attr("class", "pure-button-default pure-button dc-button")
+										.dcappend(dc.util.Icon.use('fas-times'))
+										.click(item, function(e) {
+											page.callPageFunc('dcrDoClearIP', e.data);
+
+											e.preventDefault();
+											return false;
+										})
+								)
+							)
+						);
+					}
+				}
+			});
+	]]></Function>
+	<Function Name="dcrDoClearIP" Params="item"><![CDATA[
+			var page = this;
+
+			dc.pui.Popup.confirm('Are you sure you want to clear this address?', function(confirm) {
+				if (! confirm)
+					return;
+
+				dc.comm.call('dcmServices.Dashboard.KillBlockedIP', [ item.Address ], function(rmsg) {
+					if (rmsg.Code > 0) {
+						dc.pui.Popup.alert(rmsg.Message);
+					}
+					else {
+						page.callPageFunc('DoIPsLoad');
+					}
+				});
+			});
+	]]></Function>
+	<Function Name="dcrDoClearAll"><![CDATA[
+			var page = this;
+
+			dc.pui.Popup.confirm('Are you sure you want to clear all addresses?', function(confirm) {
+				if (! confirm)
+					return;
+
+				dc.comm.call('dcmServices.Dashboard.KillAllBlockedIP', null, function(rmsg) {
+					if (rmsg.Code > 0) {
+						dc.pui.Popup.alert(rmsg.Message);
+					}
+					else {
+						page.callPageFunc('DoIPsLoad');
+					}
+				});
+			});
+	]]></Function>
+</dc.Html>

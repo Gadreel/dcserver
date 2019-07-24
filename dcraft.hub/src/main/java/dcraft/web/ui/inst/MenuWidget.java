@@ -254,5 +254,6 @@ public class MenuWidget extends Base {
     static public class LevelInfo {
 		public String slug = "";
 		public XElement level = null;
+		public int depth = 1;
 	}
 }

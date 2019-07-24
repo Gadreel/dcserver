@@ -127,11 +127,6 @@ public abstract class XNode extends CompositeStruct {
 	}
 	
 	@Override
-	public boolean checkLogic(IParentAwareWork stack, XElement source) {
-		return false;
-	}
-	
-	@Override
 	abstract public XNode deepCopy();
 	
 	/**

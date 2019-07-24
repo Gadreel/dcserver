@@ -5,6 +5,7 @@ import dcraft.db.DatabaseAdapter;
 import dcraft.db.DatabaseException;
 import dcraft.db.proc.filter.CurrentRecord;
 import dcraft.db.proc.filter.Unique;
+import dcraft.db.request.update.DbRecordRequest;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileStore;
@@ -195,7 +196,7 @@ public class FeedUtilDb {
 
 			fields.with("dcmSharedFields", newkeys);
 		}
-
+		
 		// locale fields
 		{
 			List<String> oldkeys = db.getStaticListKeys("dcmFeed", oid, "dcmLocaleFields");
@@ -251,6 +252,40 @@ public class FeedUtilDb {
 			}
 
 			fields.with("dcmLocaleFields", newkeys);
+		}
+		
+		// tags
+		
+		{
+			List<String> oldkeys = db.getStaticListKeys("dcmFeed", oid, "dcmTags");
+			
+			RecordStruct newkeys = RecordStruct.record();
+			
+			for (XElement tag : root.selectAll("Tag")) {
+				if (tag.hasEmptyAttribute("Value"))
+					continue;
+				
+				String key = tag.getAttribute("Value");
+				
+				newkeys
+						.with(key, RecordStruct.record()
+								.with("UpdateOnly", true)
+								.with("Data", key)
+						);
+				
+				oldkeys.remove(key);
+			}
+			
+			// the remaining should be retired
+			for (String key : oldkeys) {
+				newkeys
+						.with(key, RecordStruct.record()
+								.with("UpdateOnly", true)
+								.with("Retired", true)
+						);
+			}
+			
+			fields.with("dcmTags", newkeys);
 		}
 
 		// validate, normalize and store
@@ -315,6 +350,17 @@ public class FeedUtilDb {
 	}
 	
 	// Command History
+	
+	static public CommonPath toFolderPath(String feed, String path) throws OperatingContextException {
+		return FeedUtilDb.toFolderPath("/" + feed + path);
+	}
+	
+	static public CommonPath toFolderPath(String path) throws OperatingContextException {
+		if (path.endsWith(".html"))
+			path = path.substring(0, path.length() - 5);
+		
+		return CommonPath.from(path);
+	}
 	
 	static public CommonPath toIndexPath(String feed, String path) throws OperatingContextException {
 		return FeedUtilDb.toIndexPath("/" + feed + path);

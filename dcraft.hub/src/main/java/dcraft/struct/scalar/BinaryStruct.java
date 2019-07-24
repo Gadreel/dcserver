@@ -163,9 +163,4 @@ public class BinaryStruct extends ScalarStruct {
 
 		return 0;
 	}
-	
-	@Override
-	public boolean checkLogic(IParentAwareWork stack, XElement source) {
-		return Struct.objectToBooleanOrFalse(this.value);
-	}
 }

@@ -17,6 +17,7 @@
 package dcraft.struct;
 
 import dcraft.hub.ResourceHub;
+import dcraft.script.inst.LogicBlockState;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
 import dcraft.script.work.StackWork;
@@ -744,20 +745,17 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 	}
 
 	@Override
-	public boolean checkLogic(IParentAwareWork stack, XElement source) throws OperatingContextException {
-		boolean isok = true;
-		boolean condFound = false;
-
-		if (! condFound && source.hasAttribute("HasField")) {
-			String other = StackUtil.stringFromElement(stack, source, "HasField");
-			isok = this.isNotFieldEmpty(other);
-			condFound = true;
+	public void checkLogic(IParentAwareWork stack, XElement source, LogicBlockState logicState) throws OperatingContextException {
+		if (source.hasAttribute("HasField")) {
+			if (logicState.pass) {
+				String other = StackUtil.stringFromElement(stack, source, "HasField");
+				logicState.pass = this.isNotFieldEmpty(other);
+			}
+			
+			logicState.checked = true;
 		}
 
-		if (! condFound)
-			isok = Struct.objectToBooleanOrFalse(this);
-
-		return isok;
+		super.checkLogic(stack, source, logicState);
 	}
 
 	@Override

@@ -231,9 +231,4 @@ public class BigDateTimeStruct extends ScalarStruct {
 
 		return 0;  // TODO xv.compareTo(yv);
 	}
-	
-	@Override
-	public boolean checkLogic(IParentAwareWork stack, XElement source) {
-		return Struct.objectToBooleanOrFalse(this.value);
-	}
 }

@@ -262,9 +262,4 @@ public class DecimalStruct extends ScalarStruct {
 
 		return xv.compareTo(yv);
 	}
-	
-	@Override
-	public boolean checkLogic(IParentAwareWork stack, XElement source) {
-		return Struct.objectToBooleanOrFalse(this.value);
-	}
 }

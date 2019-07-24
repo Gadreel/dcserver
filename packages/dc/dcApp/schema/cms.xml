@@ -156,6 +156,7 @@
 		</Table>
 
 		<Procedure Name="dcmUpdateFeed" Execute="dcraft.cms.feed.db.Update" />
+		<Procedure Name="dcmServices.Feed.AddFeed" Execute="dcraft.cms.feed.db.AddFeed" />
 		<Procedure Name="dcmServices.Feed.Reindex" Execute="dcraft.cms.feed.db.Reindex" />
 		<Procedure Name="dcmServices.Feed.CmsCheck" Execute="dcraft.cms.feed.db.CmsCheck" />
 		<Procedure Name="dcmServices.Feed.LoadMeta" Execute="dcraft.cms.feed.db.LoadMeta" />
@@ -176,6 +177,9 @@
 		<Procedure Name="dcmServices.Dashboard.LoadCertService" Execute="dcraft.cms.dashboard.db.LoadCertService" />
 		<Procedure Name="dcmServices.Dashboard.RenewCert" Execute="dcraft.cms.dashboard.db.RenewCert" />
 		<Procedure Name="dcmServices.Dashboard.EnableCertService" Execute="dcraft.cms.dashboard.db.EnableCertService" />
+		<Procedure Name="dcmServices.Dashboard.ListBlockedIP" Execute="dcraft.cms.dashboard.db.ListBlockedIP" />
+		<Procedure Name="dcmServices.Dashboard.KillBlockedIP" Execute="dcraft.cms.dashboard.db.KillBlockedIP" />
+		<Procedure Name="dcmServices.Dashboard.KillAllBlockedIP" Execute="dcraft.cms.dashboard.db.KillAllBlockedIP" />
 
 		<Procedure Name="dcCoreServices.ManagedForm.Submit" Execute="dcraft.cms.db.forms.Submit" />
 		<Procedure Name="dcCoreServices.ManagedForm.Complete" Execute="dcraft.cms.db.forms.Complete" />
@@ -344,6 +348,29 @@
 					</Op>
 				</Secure>
 				<Secure Badges="Editor,Admin">
+					<Op Name="AddFeed">
+						<Description>
+							Load meta, from file and apply any draft
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Feed" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcPath" Required="True" />
+							<Field Name="Publish" Type="Boolean" />
+							<!-- meta -->
+							<Field Name="Meta">
+								<List Type="AnyRecord" />
+							</Field>
+							<!-- tags -->
+							<Field Name="Tags">
+								<List Type="dcmFeed:dcmTags" />
+							</Field>
+							<!-- content -->
+							<Field Name="Commands">
+								<List Type="AnyRecord" />
+							</Field>
+						</RecordRequest>
+						<RecordResponse Type="AnyRecord" />
+					</Op>
 					<Op Name="LoadMeta">
 						<Description>
 							Load meta, from file and apply any draft
@@ -523,7 +550,7 @@
 						</ListResponse>
 					</Op>
 				</Secure>
-				<Secure Badges="Admin,Developer">
+				<Secure Badges="SysAdmin,Developer">
 					<Op Name="ArchiveAlerts">
 						<Description>
 							List of alerts (InBox of NoticesPool).
@@ -599,6 +626,31 @@
 						<RecordRequest Required="True">
 							<Field Name="Service" Type="dcMetaString" Required="True" />
 						</RecordRequest>
+					</Op>
+				</Secure>
+				<Secure Badges="Admin,Developer">
+					<Op Name="ListBlockedIP">
+						<Description>
+							Get a list of blocked IPs.
+						</Description>
+						<ListResponse>
+							<Record>
+								<Field Name="Address" Type="dcMetaString" />
+								<Field Name="Last" Type="DateTime" />
+								<Field Name="Count" Type="Integer" />
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="KillBlockedIP">
+						<Description>
+							Remove specific blocked IPs.
+						</Description>
+						<ListRequest Type="dcMetaString" Required="True" />
+					</Op>
+					<Op Name="KillAllBlockedIP">
+						<Description>
+							Remove all blocked IPs.
+						</Description>
 					</Op>
 				</Secure>
 			</Feature>

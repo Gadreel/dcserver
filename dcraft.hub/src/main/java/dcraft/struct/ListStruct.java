@@ -31,6 +31,7 @@ import dcraft.log.Logger;
 import dcraft.schema.DataType;
 import dcraft.schema.SchemaHub;
 import dcraft.schema.TypeOptionsList;
+import dcraft.script.inst.LogicBlockState;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
 import dcraft.script.work.StackWork;
@@ -556,26 +557,34 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 	}
 
 	@Override
-	public boolean checkLogic(IParentAwareWork stack, XElement source) throws OperatingContextException {
+	public void checkLogic(IParentAwareWork stack, XElement source, LogicBlockState logicState) throws OperatingContextException {
 		if (source.hasAttribute("Contains")) {
-			Struct other = StackUtil.refFromElement(stack, source, "Contains", true);
-
-			if (this.items.contains(other))
-				return true;
-
-			if ((other instanceof StringStruct) && ! other.isEmpty()) {
-				String[] options = other.toString().split(",");
-
-				for (String opt : options) {
-					if (this.items.contains(StringStruct.of(opt)))
-						return true;
+			if (logicState.pass) {
+				boolean fnd = false;
+				
+				Struct other = StackUtil.refFromElement(stack, source, "Contains", true);
+				
+				if (this.items.contains(other)) {
+					fnd = true;
 				}
+				else {
+					if ((other instanceof StringStruct) && ! other.isEmpty()) {
+						String[] options = other.toString().split(",");
+						
+						for (String opt : options) {
+							if (this.items.contains(StringStruct.of(opt)))
+								fnd = true;
+						}
+					}
+				}
+				
+				logicState.pass = fnd;
 			}
-
-			return false;
+			
+			logicState.checked = true;
 		}
 
-		return false;
+		super.checkLogic(stack, source, logicState);
 	}
 
 	@Override

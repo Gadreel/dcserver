@@ -24,6 +24,7 @@ import dcraft.log.Logger;
 import dcraft.schema.DataType;
 import dcraft.schema.RootType;
 import dcraft.schema.SchemaHub;
+import dcraft.script.inst.LogicBlockState;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
 import dcraft.script.work.StackWork;
@@ -419,49 +420,77 @@ public class StringStruct extends ScalarStruct {
 	}
 	
 	@Override
-	public boolean checkLogic(IParentAwareWork stack, XElement source) throws OperatingContextException {
-		boolean isok = true;
-		boolean condFound = false;
+	public void checkLogic(IParentAwareWork stack, XElement source, LogicBlockState logicState) throws OperatingContextException {
+		boolean caseinsensitive = StackUtil.boolFromElement(stack, source, "CaseInsensitive", false);
 		
-		if (this.value != null) {
-			boolean caseinsensitive = StackUtil.boolFromElement(stack, source, "CaseInsensitive", false);
-			
-			if (!condFound && source.hasAttribute("Contains")) {
-				String other = StackUtil.stringFromElement(stack, source, "Contains");
-	            isok = caseinsensitive ? this.value.toString().toLowerCase().contains(other.toLowerCase()) : this.value.toString().contains(other);
-	            condFound = true;
-	        }
-			if (! condFound && source.hasAttribute("In")) {
-				Struct other = StackUtil.refFromElement(stack, source, "In");
-
-				if ((other instanceof StringStruct) && ! other.isEmpty()) {
-					String[] options = other.toString().split(",");
-
-					for (String opt : options) {
-						if (caseinsensitive ? this.value.toString().equalsIgnoreCase(opt) : this.value.toString().equals(opt))
-							return true;
-					}
+		if (source.hasAttribute("Contains")) {
+			if (logicState.pass) {
+				if (this.value == null) {
+					logicState.pass = false;
 				}
-
-				return false;
+				else {
+					String other = StackUtil.stringFromElement(stack, source, "Contains");
+					logicState.pass = caseinsensitive ? this.value.toString().toLowerCase().contains(other.toLowerCase()) : this.value.toString().contains(other);
+				}
 			}
-
-			if (!condFound && source.hasAttribute("StartsWith")) {
-				String other = StackUtil.stringFromElement(stack, source, "StartsWith");
-	            isok = caseinsensitive ? this.value.toString().toLowerCase().startsWith(other.toLowerCase()) : this.value.toString().startsWith(other);
-	            condFound = true;
-	        }
 			
-			if (!condFound && source.hasAttribute("EndsWith")) {
-				String other = StackUtil.stringFromElement(stack, source, "EndsWith");
-	            isok = caseinsensitive ? this.value.toString().toLowerCase().endsWith(other.toLowerCase()) : this.value.toString().endsWith(other);
-	            condFound = true;
-	        }
+			logicState.checked = true;
 		}
 		
-		if (!condFound) 
-			isok = Struct.objectToBooleanOrFalse(this.value);
+		if (source.hasAttribute("In")) {
+			logicState.checked = true;
+			
+			if (logicState.pass) {
+				if (this.value == null) {
+					logicState.pass = false;
+				}
+				else {
+					boolean fnd = false;
+					
+					Struct other = StackUtil.refFromElement(stack, source, "In");
+					
+					if ((other instanceof StringStruct) && !other.isEmpty()) {
+						String[] options = other.toString().split(",");
+						
+						for (String opt : options) {
+							if (caseinsensitive ? this.value.toString().equalsIgnoreCase(opt) : this.value.toString().equals(opt))
+								fnd = true;
+						}
+					}
+					
+					logicState.pass = fnd;
+				}
+			}
+		}
+
+		if (source.hasAttribute("StartsWith")) {
+			if (logicState.pass) {
+				if (this.value == null) {
+					logicState.pass = false;
+				}
+				else {
+					String other = StackUtil.stringFromElement(stack, source, "StartsWith");
+					logicState.pass = caseinsensitive ? this.value.toString().toLowerCase().startsWith(other.toLowerCase()) : this.value.toString().startsWith(other);
+				}
+			}
+			
+			logicState.checked = true;
+		}
 		
-		return isok;
+		if (source.hasAttribute("EndsWith")) {
+			if (logicState.pass) {
+				if (this.value == null) {
+					logicState.pass = false;
+				}
+				else {
+					String other = StackUtil.stringFromElement(stack, source, "EndsWith");
+					logicState.pass = caseinsensitive ? this.value.toString().toLowerCase().endsWith(other.toLowerCase()) : this.value.toString().endsWith(other);
+				}
+			}
+			
+			logicState.checked = true;
+		}
+		
+		super.checkLogic(stack, source, logicState);
 	}
 }

@@ -225,6 +225,10 @@ public class QuickPDF extends RecordStruct {
 		this.addPage();
     }
 
+    public void initEmpty() throws IOException {
+		this.doc = new PDDocument();
+    }
+
 	public void load(String filepath) throws IOException, OperatingContextException {
     	Path src = OperationContext.getOrThrow().getSite().resolvePath(filepath);
 
@@ -498,7 +502,11 @@ public class QuickPDF extends RecordStruct {
     	
         this.currpos = new Position(this.pageleft + this.indent, this.currpos.getY() - this.getLineHeight());
     }
-	
+
+    public void uplines(int count) throws IOException {
+    	this.currpos = new Position(this.pageleft + this.indent, this.getPosition().getY() + (this.getLineHeight() * count));
+	}
+
     public void headerline(String line) throws IOException {
     	this.checkPage();
 

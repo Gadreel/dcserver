@@ -37,6 +37,8 @@ import dcraft.log.Logger;
 import dcraft.schema.DataType;
 import dcraft.schema.IDataExposer;
 import dcraft.schema.SchemaHub;
+import dcraft.script.StackUtil;
+import dcraft.script.inst.LogicBlockState;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
 import dcraft.struct.builder.ICompositeBuilder;
@@ -221,7 +223,21 @@ abstract public class Struct implements IPartSelector {
 		return null;
 	}
 
-	abstract public boolean checkLogic(IParentAwareWork stack, XElement source) throws OperatingContextException;
+	public void checkLogic(IParentAwareWork stack, XElement source, LogicBlockState logicState) throws OperatingContextException {
+		if (source.hasAttribute("IsNull")) {
+			if (logicState.pass)
+				logicState.pass = StackUtil.boolFromElement(stack, source, "IsNull") ? this.isNull() : ! this.isNull();
+			
+			logicState.checked = true;
+		}
+		
+		if (source.hasAttribute("IsEmpty")) {
+			if (logicState.pass)
+				logicState.pass = StackUtil.boolFromElement(stack, source, "IsEmpty") ? this.isEmpty() : ! this.isEmpty();
+			
+			logicState.checked = true;
+		}
+	}
 	
 	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		if ("Validate".equals(code.getName()))

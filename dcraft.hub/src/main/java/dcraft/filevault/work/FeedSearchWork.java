@@ -75,7 +75,7 @@ public class FeedSearchWork extends ChainWork {
 			
 			// translate above should take us home for root
 			if (path.isRoot()) {
-				Logger.errorTr(150001);
+				Logger.error("Unable to search root path");
 				return;
 			}
 			
@@ -83,7 +83,7 @@ public class FeedSearchWork extends ChainWork {
 			IIndexWork output = webSite.webFindIndexFile(path, null);
 			
 			if (om.hasErrors()) {
-				Logger.errorTr(150001);
+				Logger.error("Problem finding web page file");
 				return;
 			}
 			
@@ -94,7 +94,7 @@ public class FeedSearchWork extends ChainWork {
 			}
 			
 			if (om.hasErrors() || (output == null)) {
-				Logger.errorTr(150001);
+				Logger.error("Problem finding web page file, or file missing.");
 				return;
 			}
 			

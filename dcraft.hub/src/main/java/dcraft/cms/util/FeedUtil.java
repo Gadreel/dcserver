@@ -799,6 +799,27 @@ public class FeedUtil {
 			
 			return;
 		}
+		else if ("SaveTags".equals(cmd)) {
+			// clear tags
+			for (XElement tag : root.selectAll("Tag")) {
+				root.remove(tag);
+			}
+			
+			ListStruct taglist = command.selectAsList("Params.SetTags");
+			
+			if (taglist != null) {
+				for (int i = 0; i < taglist.size(); i++) {
+					String newmeta = taglist.getItemAsString(i);
+					
+					root.with(
+							XElement.tag("Tag")
+								.attr("Value", newmeta)
+					);
+				}
+			}
+			
+			return;
+		}
 		else if ("NoOp".equals(cmd)) {
 			// ignore - no operation
 			return;

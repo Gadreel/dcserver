@@ -443,7 +443,7 @@ dc.pui.Apps.Menus.dcmMain = {
 		},
 		{
 			Title: 'System',
-			Auth: [ 'SysAdmin' ],
+			Auth: [ 'SysAdmin', 'Admin' ],
 			Op: function(e) {
 				dc.pui.App.startTab({
 					Tab: 'Dashboard',
@@ -608,6 +608,7 @@ dc.pui.Apps.Menus.dcmSystem = {
   		{
 			Alias: 'Database',
 			Title: 'Database',
+			Auth: [ 'SysAdmin' ],
 			Path: '/dcr/database'
 		},
   		{
@@ -618,7 +619,14 @@ dc.pui.Apps.Menus.dcmSystem = {
   		{
 			Alias: 'Certificates',
 			Title: 'Certificates',
+			Auth: [ 'SysAdmin' ],
 			Path: '/dcr/list-certs'
+		},
+  		{
+			Alias: 'IPBlock',
+			Title: 'Blocked IPs',
+			Auth: [ 'SysAdmin', 'Admin' ],
+			Path: '/dcr/list-ips'
 		}
 	],
 	Options: [

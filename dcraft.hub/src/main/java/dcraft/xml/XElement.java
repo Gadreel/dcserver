@@ -1437,6 +1437,10 @@ public class XElement extends XNode {
 		return false;
 	}
 	
+	public boolean isChildEmpty() {
+		return ((this.children == null) || (this.children.size() == 0));
+	}
+
 	@Override
 	protected void doCopy(Struct n) {
 		super.doCopy(n);

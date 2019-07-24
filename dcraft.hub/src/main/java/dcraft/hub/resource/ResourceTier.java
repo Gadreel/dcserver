@@ -349,11 +349,6 @@ public class ResourceTier extends CompositeStruct {
 	}
 	
 	@Override
-	public boolean checkLogic(IParentAwareWork stack, XElement source) {
-		return false;
-	}
-	
-	@Override
 	public boolean isEmpty() {
 		return false;
 	}

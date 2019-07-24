@@ -19,6 +19,10 @@ package dcraft.struct;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.schema.DataType;
 import dcraft.schema.RootType;
+import dcraft.script.StackUtil;
+import dcraft.script.inst.LogicBlockState;
+import dcraft.task.IParentAwareWork;
+import dcraft.xml.XElement;
 
 
 abstract public class ScalarStruct extends Struct implements Comparable {
@@ -52,5 +56,64 @@ abstract public class ScalarStruct extends Struct implements Comparable {
 	
 	public int compareToIgnoreCase(Object o) {
 		return this.compareTo(o);
+	}
+	
+	@Override
+	public void checkLogic(IParentAwareWork stack, XElement source, LogicBlockState logicState) throws OperatingContextException {
+		if (source.hasAttribute("Equal")) {
+			if (logicState.pass) {
+				Struct other = StackUtil.refFromElement(stack, source, "Equal", true);
+				logicState.pass = (this.compareTo(other) == 0);  //  (var == iv);
+			}
+			
+			logicState.checked = true;
+		}
+		
+		if (source.hasAttribute("Equals")) {
+			if (logicState.pass) {
+				Struct other = StackUtil.refFromElement(stack, source, "Equals", true);
+				logicState.pass = (this.compareTo(other) == 0);  //  (var == iv);
+			}
+			
+			logicState.checked = true;
+		}
+		
+		if (source.hasAttribute("LessThan")) {
+			if (logicState.pass) {
+				Struct other = StackUtil.refFromElement(stack, source, "LessThan", true);
+				logicState.pass = (this.compareTo(other) < 0);  //  (var < iv);
+			}
+			
+			logicState.checked = true;
+		}
+		
+		if (source.hasAttribute("GreaterThan")) {
+			if (logicState.pass) {
+				Struct other = StackUtil.refFromElement(stack, source, "GreaterThan", true);
+				logicState.pass = (this.compareTo(other) > 0);  //  (var > iv);
+			}
+			
+			logicState.checked = true;
+		}
+		
+		if (source.hasAttribute("LessThanOrEqual")) {
+			if (logicState.pass) {
+				Struct other = StackUtil.refFromElement(stack, source, "LessThanOrEqual", true);
+				logicState.pass = (this.compareTo(other) <= 0);  //  (var <= iv);
+			}
+			
+			logicState.checked = true;
+		}
+		
+		if (source.hasAttribute("GreaterThanOrEqual")) {
+			if (logicState.pass) {
+				Struct other = StackUtil.refFromElement(stack, source, "GreaterThanOrEqual", true);
+				logicState.pass = (this.compareTo(other) >= 0);  //  (var >= iv);
+			}
+			
+			logicState.checked = true;
+		}
+		
+		super.checkLogic(stack, source, logicState);
 	}
 }

@@ -92,9 +92,4 @@ public class Translator extends Struct implements IPartSelector {
 	public String toString() {
 		return "_Tr";
 	}
-
-	@Override
-	public boolean checkLogic(IParentAwareWork stack, XElement source) {
-		return true;
-	}
 }

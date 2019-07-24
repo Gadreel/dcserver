@@ -460,7 +460,7 @@ public class RequestWork extends ChainWork {
 			
 			// translate above should take us home for root
 			if (path.isRoot()) {
-				Logger.errorTr(150001);
+				Logger.error(150001, "Web page is not available.");
 				return null;
 			}
 			
@@ -468,7 +468,7 @@ public class RequestWork extends ChainWork {
 			IOutputWork output = webSite.webFindFile(path, wctrl.getFieldAsRecord("Request").getFieldAsString("View"));
 			
 			if (om.hasErrors()) {
-				Logger.errorTr(150001);
+				Logger.error(150001, "Web page was not found.");
 				return null;
 			}
 			
@@ -479,7 +479,7 @@ public class RequestWork extends ChainWork {
 			}
 
 			if (om.hasErrors()) {
-				Logger.errorTr(150001);
+				Logger.error(150001, "Web page with adjusted path was not found.");
 				return null;
 			}
 
@@ -492,7 +492,7 @@ public class RequestWork extends ChainWork {
 			}
 
 			if (om.hasErrors() || (output == null)) {
-				Logger.errorTr(150001);
+				Logger.error(150001, "Not found page was not found.");
 				return null;
 			}
 

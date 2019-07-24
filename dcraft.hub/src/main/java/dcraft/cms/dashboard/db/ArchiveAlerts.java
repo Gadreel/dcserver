@@ -5,6 +5,7 @@ import dcraft.core.db.UserDataUtil;
 import dcraft.db.DatabaseAdapter;
 import dcraft.db.DatabaseException;
 import dcraft.db.ICallContext;
+import dcraft.db.proc.IStoredProc;
 import dcraft.db.proc.call.SignIn;
 import dcraft.db.request.update.DbRecordRequest;
 import dcraft.db.tables.TableUtil;
@@ -21,7 +22,7 @@ import dcraft.util.StringUtil;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-public class ArchiveAlerts extends SignIn {
+public class ArchiveAlerts implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		ListStruct data = request.getDataAsList();

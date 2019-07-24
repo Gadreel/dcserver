@@ -21,6 +21,7 @@ import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.NullStruct;
 import dcraft.xml.XElement;
 
 abstract public class LogicBlockInstruction extends BlockInstruction {
@@ -40,73 +41,20 @@ abstract public class LogicBlockInstruction extends BlockInstruction {
     }
 
     static public boolean checkLogic(InstructionWork stack, Struct target, XElement source) throws OperatingContextException {
-        boolean isok = true;
-		boolean condFound = false;
+		LogicBlockState logicState = new LogicBlockState();
 
-        if (target == null) {
-        	isok = false;
-            
-    		if (StackUtil.boolFromElement(stack, source, "IsNull") || StackUtil.boolFromElement(stack, source, "IsEmpty"))
-    			isok = ! isok;
-        }
-        else {
-        	if (target instanceof ScalarStruct) {
-        		ScalarStruct starget = (ScalarStruct) target;
+        if (target == null)
+        	target = NullStruct.instance;
 
-				if (!condFound && source.hasAttribute("Equal")) {
-					Struct other = StackUtil.refFromElement(stack, source, "Equal", true);
-					isok = (starget.compareTo(other) == 0);  //  (var == iv);
-					condFound = true;
-				}
-
-				if (!condFound && source.hasAttribute("Equals")) {
-					Struct other = StackUtil.refFromElement(stack, source, "Equals", true);
-					isok = (starget.compareTo(other) == 0);  //  (var == iv);
-					condFound = true;
-				}
-
-				if (!condFound && source.hasAttribute("LessThan")) {
-					Struct other = StackUtil.refFromElement(stack, source, "LessThan", true);
-					isok = (starget.compareTo(other) < 0);  //  (var < iv);
-					condFound = true;
-				}
-
-				if (!condFound && source.hasAttribute("GreaterThan")) {
-					Struct other = StackUtil.refFromElement(stack, source, "GreaterThan", true);
-					isok = (starget.compareTo(other) > 0);  //  (var > iv);
-					condFound = true;
-				}
-
-				if (!condFound && source.hasAttribute("LessThanOrEqual")) {
-					Struct other = StackUtil.refFromElement(stack, source, "LessThanOrEqual", true);
-					isok = (starget.compareTo(other) <= 0);  //  (var <= iv);
-					condFound = true;
-				}
-
-				if (!condFound && source.hasAttribute("GreaterThanOrEqual")) {
-					Struct other = StackUtil.refFromElement(stack, source, "GreaterThanOrEqual", true);
-					isok = (starget.compareTo(other) >= 0);  //  (var >= iv);
-					condFound = true;
-				}
-			}
-
-			if (! condFound && source.hasAttribute("IsNull")) {
-				isok = StackUtil.boolFromElement(stack, source, "IsNull") ? target.isNull() : !target.isNull();
-				condFound = true;
-			}
-			
-			if (! condFound && source.hasAttribute("IsEmpty")) {
-				isok = StackUtil.boolFromElement(stack, source, "IsEmpty") ? target.isEmpty() : !target.isEmpty();
-				condFound = true;
-			}
-
-			if (! condFound)
-				isok = target.checkLogic(stack, source);
-        }
-        
+		target.checkLogic(stack, source, logicState);
+	
+		// if there were no conditions checked then consider the value of Target for trueness
+		if (! logicState.checked)
+			logicState.pass = Struct.objectToBooleanOrFalse(target);
+  
 		if (StackUtil.boolFromElement(stack, source, "Not"))
-			isok = !isok;
+			logicState.pass = ! logicState.pass;
 
-        return isok;
+        return logicState.pass;
     }
 }
