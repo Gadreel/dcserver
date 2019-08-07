@@ -69,6 +69,7 @@
 			<Tag Name="dcm.YouTubeWidget" Class="dcraft.web.ui.inst.cms.YouTubeWidget" />
 			<Tag Name="dcm.GalleryWidget" Class="dcraft.web.ui.inst.cms.GalleryWidget" />
 			<Tag Name="dcm.StoreGalleryWidget" Class="dcraft.web.ui.inst.cms.StoreGalleryWidget" />
+			<Tag Name="dcm.HighlightWidget" Class="dcraft.web.ui.inst.cms.HighlightWidget" />
 
 			<!-- TODO
 			<Tag Name="dcm.MediaWidget" Class="dcraft.web.ui.inst.cms.MediaWidget" />

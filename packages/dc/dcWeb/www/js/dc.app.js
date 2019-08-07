@@ -3495,6 +3495,77 @@ dc.pui.Tags = {
 			return true;
 		});
 	},
+	'dcm.HighlightWidget': function(entry, node) {
+		$(node).find('.dc-widget-highlight-ctrl-left a').click(function(e) {
+			var width = $(node).find('.dc-widget-highlight-entry').outerWidth();
+
+			$(node).find('.dc-widget-highlight-list').scrollLeft($(node).find('.dc-widget-highlight-list').scrollLeft() - width);
+
+			e.preventDefault();
+			return false;
+		});
+
+		$(node).find('.dc-widget-highlight-ctrl-right a').click(function(e) {
+			var width = $(node).find('.dc-widget-highlight-entry').outerWidth();
+
+			$(node).find('.dc-widget-highlight-list').scrollLeft($(node).find('.dc-widget-highlight-list').scrollLeft() + width);
+
+			e.preventDefault();
+			return false;
+		});
+
+		var list = $(node).find('.dc-widget-highlight-list');
+
+		if (list.length == 0)
+			return;
+
+		var cx = 0, x0 = 0, locked = false;
+
+		function unify(e) {	return e.changedTouches ? e.changedTouches[0] : e };
+
+		function lock(e) {
+			x0 = unify(e).clientX;
+			locked = true;
+		};
+
+		function drag(e) {
+			e.preventDefault();
+
+			/*
+			if (locked) {
+				var dx = x0 - unify(e).clientX;
+				list.scrollLeft(cx + dx);
+			}
+			*/
+		};
+
+		function move(e) {
+			if(locked) {
+				var dx = x0 - unify(e).clientX;
+
+				var width = list.find('.dc-widget-highlight-entry').outerWidth();
+
+				//console.log('dx: ' + dx)
+
+				if (dx > 64)
+					list.scrollLeft(list.scrollLeft() + width);
+				else if (dx < -64)
+					list.scrollLeft(list.scrollLeft() - width);
+
+				locked = false;
+				//cx = list.scrollLeft();
+			}
+		};
+
+		list.get(0).addEventListener('mousedown', lock, false);
+		list.get(0).addEventListener('touchstart', lock, false);
+
+		list.get(0).addEventListener('mousemove', drag, false);
+		list.get(0).addEventListener('touchmove', drag, false);
+
+		list.get(0).addEventListener('mouseup', move, false);
+		list.get(0).addEventListener('touchend', move, false);
+	},
 	'dcm.ImageWidget': function(entry, node) {
 		$(node).on("click", function(e) {
 			var expanded = $(node).attr('data-dc-expanded');

@@ -1,5 +1,6 @@
 package dcraft.tool.certs;
 
+import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.UserContext;
@@ -7,15 +8,11 @@ import dcraft.hub.resource.ResourceTier;
 import dcraft.hub.resource.SslEntry;
 import dcraft.log.Logger;
 import dcraft.struct.Struct;
-import dcraft.task.StateWork;
-import dcraft.task.StateWorkStep;
-import dcraft.task.Task;
-import dcraft.task.TaskContext;
-import dcraft.task.TaskHub;
-import dcraft.task.TaskObserver;
+import dcraft.task.*;
 import dcraft.tenant.Site;
 import dcraft.tenant.Tenant;
 import dcraft.tenant.TenantHub;
+import dcraft.tool.backup.BackupUtil;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
@@ -42,7 +39,7 @@ public class RenewCertsWork extends StateWork {
 				processsites = StateWorkStep.of("Process a site", this::proccessSite)
 		);
 
-		this.checkdate = ZonedDateTime.now().plusDays(13);
+		this.checkdate = ZonedDateTime.now().plusDays(13);		// TODO configure
 	}
 	
 	public StateWorkStep findSites(TaskContext trun) throws OperatingContextException {
@@ -105,14 +102,16 @@ public class RenewCertsWork extends StateWork {
 		}
 
 		Logger.info("Attempting to renew SSL cert for: " + StringUtil.join(finaldomains, ", "));
-		
+
+		BackupUtil.notifyProgress(ApplicationHub.getDeployment() + " : " + ApplicationHub.getNodeId() + " : Auto Renew Cert: " + site.getTenant().getAlias() + " " + site.getAlias() + " : " + StringUtil.join(finaldomains, ", "));
+
 		TaskHub.submit(
 				// run in the proper domain
 				Task.of(OperationContext.context(UserContext.rootUser(site.getTenant().getAlias(), site.getAlias())))
 						.withId(Task.nextTaskId("CERT"))
 						.withTitle("Renew Cert")
 						.withTimeout(5)
-						.withWork(RenewSiteAutoWork.of(finaldomains)),
+						.withWork(ApplicationHub.isProduction() ? RenewSiteAutoWork.of(finaldomains) : RenewSiteManualWork.of(finaldomains)),
 				new TaskObserver() {
 					@Override
 					public void callback(TaskContext task) {

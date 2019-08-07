@@ -28,13 +28,14 @@ public class Panel extends Base {
 		// the children will move into the body, so clear out our child list
 		List<XNode> bodychildren = new ArrayList<>();
 		List<XElement> btnchildren = new ArrayList<>();
-		
-		for (XNode node : this.children) {
-			if ((node instanceof XElement) && (((XElement)node).getName().equals("Button"))) {
-				btnchildren.add((XElement) node);
-			}
-			else {
-				bodychildren.add(node);
+
+		if (this.children != null) {
+			for (XNode node : this.children) {
+				if ((node instanceof XElement) && (((XElement) node).getName().equals("Button"))) {
+					btnchildren.add((XElement) node);
+				} else {
+					bodychildren.add(node);
+				}
 			}
 		}
 		

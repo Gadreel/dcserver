@@ -352,14 +352,10 @@ public class FeedUtilDb {
 	// Command History
 	
 	static public CommonPath toFolderPath(String feed, String path) throws OperatingContextException {
-		return FeedUtilDb.toFolderPath("/" + feed + path);
-	}
-	
-	static public CommonPath toFolderPath(String path) throws OperatingContextException {
-		if (path.endsWith(".html"))
-			path = path.substring(0, path.length() - 5);
-		
-		return CommonPath.from(path);
+		if (! path.endsWith(".html"))
+			path += ".html";
+
+		return CommonPath.from("/" + feed + path);
 	}
 	
 	static public CommonPath toIndexPath(String feed, String path) throws OperatingContextException {

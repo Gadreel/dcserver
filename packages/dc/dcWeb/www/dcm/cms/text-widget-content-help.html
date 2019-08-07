@@ -4,11 +4,16 @@
 	</Meta>
 
 	<dc.Body>
+		<dc.Style>
+#genb5bba453-ef45-45c1-9d7d-6a19340e720e img.right {
+	float: right;
+}
+		</dc.Style>
 		<dc.PagePanel>
-			<dc.FullLayout Pad="Large">
+			<dc.FullLayout id="genb5bba453-ef45-45c1-9d7d-6a19340e720e" Pad="Large">
 				<dc.TextWidget>
-					<Tr>
-Markdown codes add formatting to your copy. Consider a [markdown tutorial](https://www.markdowntutorial.com/) to familuarize yourself with this widely used standard.
+					<Tr><![CDATA[
+Markdown codes add formatting to your copy. Consider a [markdown tutorial](https://www.markdowntutorial.com/) or an [introduction](https://www.markdownguide.org/getting-started) to familuarize yourself with this widely used standard.
 
 ## Text Formatting with Markdown
 
@@ -83,7 +88,35 @@ For images you have uploaded to the Gallery, just click the Gallery button above
 Produces:
 
 ![The W3C Logo](https://www.w3.org/Icons/w3c_home.png)
-					</Tr>
+
+If an image needs a class, such as "left" or "right" include that class name in a second pair of quotes, like so:
+
+```
+![The W3C Logo](https://www.w3.org/Icons/w3c_home.png "" "right")
+```
+
+Produces:
+
+![The W3C Logo](https://www.w3.org/Icons/w3c_home.png "" "right")
+
+<div style="clear: both;" />
+
+### HTML
+
+You may use html in the editor but always close your tags.
+
+```
+<br>     - incorrect
+
+<br />   - correct
+
+<p>abc         - incorrect
+<p>xyz
+
+<p>abc</p>     - correct
+<p>xyz</p>
+```
+					]]></Tr>
 				</dc.TextWidget>
 			</dc.FullLayout>
 		</dc.PagePanel>

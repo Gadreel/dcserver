@@ -2184,6 +2184,56 @@ input:focus + label.dc-input-button,
 	max-width: 100%;
 }
 
+/* for LRControl only */
+.dc-widget-highlight-lr .dc-widget-highlight-list {
+	overflow: hidden;
+	display: flex;
+	flex-wrap: nowrap;
+	margin: 0 5rem;
+	align-items: center;
+}
+
+.dc-widget-highlight-lr .dc-widget-highlight-ctrl {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	font-size: 4rem;
+	z-index: 1;
+	user-select: none;
+}
+
+.dc-widget-highlight-lr .dc-widget-highlight-ctrl a {
+	margin-left: -3.2rem;
+	user-select: none;
+	display: inline-block;
+}
+
+.dc-widget-highlight-lr .dc-widget-highlight-ctrl svg {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	user-select: none;
+}
+
+.dc-widget-highlight-lr .dc-widget-highlight-ctrl-left {
+	left: 0;
+}
+
+.dc-widget-highlight-lr .dc-widget-highlight-ctrl-right {
+	right: 0;
+}
+
+.dc-widget-highlight-lr .dc-widget-highlight-entry {
+	width: 100%;
+	display: inline-block;
+	flex: 0 0 auto;
+}
+
+.dc-widget-highlight-lr .dc-widget-highlight-entry a,
+.dc-widget-highlight-lr .dc-widget-highlight-entry a:visited {
+	border-bottom: none;
+}
+
 /* dc list view based on jQuery mobile */
 
 .dc-listview {

@@ -47,6 +47,12 @@ public class LoadTenant extends OperationsInstruction {
 
 			// in a loop this instruction may be run again, fresh and READY - check to see if so and then skip op prep
 			if (this.find("Execute") == null) {
+				if (this.hasNotEmptyAttribute("Compact"))
+					this.add(0, XElement.tag("SetField")
+							.withAttribute("Name", "Compact")
+							.withAttribute("Value", this.getAttribute("Compact"))
+					);
+
 				if (this.hasNotEmptyAttribute("Result"))
 					this.with(XElement.tag("Execute")
 							.withAttribute("Result", this.getAttribute("Result"))

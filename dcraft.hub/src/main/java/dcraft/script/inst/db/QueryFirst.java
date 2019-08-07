@@ -57,6 +57,12 @@ public class QueryFirst extends OperationsInstruction {
 							.withAttribute("Value", this.getAttribute("Table"))
 					);
 
+				if (this.hasNotEmptyAttribute("Compact"))
+					this.add(0, XElement.tag("SetField")
+							.withAttribute("Name", "Compact")
+							.withAttribute("Value", this.getAttribute("Compact"))
+					);
+
 				if (this.hasNotEmptyAttribute("Result"))
 					this.with(XElement.tag("Execute")
 							.withAttribute("Result", this.getAttribute("Result"))

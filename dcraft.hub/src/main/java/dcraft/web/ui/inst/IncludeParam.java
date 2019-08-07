@@ -31,6 +31,10 @@ public class IncludeParam extends Out {
 		
 		Struct funcwrap = StackUtil.queryVariable(state, StackUtil.stringFromSource(state, "Name"));
 
+		if (funcwrap == null) {
+			funcwrap = StackUtil.refFromSource(state, "Ref");
+		}
+
 		XElement pel = null;
 
 		if (funcwrap instanceof XElement) {

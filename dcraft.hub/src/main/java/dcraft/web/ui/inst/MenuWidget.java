@@ -3,6 +3,7 @@ package dcraft.web.ui.inst;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
+import dcraft.script.ScriptHub;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.InstructionWork;
@@ -34,7 +35,9 @@ public class MenuWidget extends Base {
 		String mnuid = StackUtil.stringFromSource(state, "id");
 		// None, Open, Close, Both
 		String ctrls = StackUtil.stringFromSource(state, "Controls", "None").toLowerCase();
-		
+		String iconsize = StackUtil.stringFromSource(state,"IconSize", "lg");
+		String icontype = StackUtil.stringFromSource(state,"IconType", "fa-square").toLowerCase();   // TODO set to `standard` as default after migration above
+
 		// include a Param if menu was built separately
 		Struct funcwrap = StackUtil.queryVariable(state, StackUtil.stringFromSource(state, "Include"));
 
@@ -51,7 +54,13 @@ public class MenuWidget extends Base {
 			this.mergeDeep(pel, false);
 		}
 
-		List<XElement> links = this.selectAll("dc.Link");
+		List<XElement> links = new ArrayList<>();
+
+		for (XElement child : this.selectAll("*")) {
+			if (child.getName().equals("dc.Link") || child.getName().equals("li")) {
+				links.add(child);
+			}
+		}
 		
 		this.children = new ArrayList<>();
 
@@ -66,7 +75,7 @@ public class MenuWidget extends Base {
 				for (XElement x : menulevel.level.selectAll("*")) {
 					String[] mnuoptions = StackUtil.stringFromElement(state, x,"Options", "").split(",");
 
-					boolean opass = // ((options.length == 1) && StringUtil.isEmpty(options[0])) &&
+					boolean opass = ((options.length == 1) && StringUtil.isEmpty(options[0])) &&
 							((mnuoptions.length == 1) && StringUtil.isEmpty(mnuoptions[0]));
 
 					for (int o1 = 0; ! opass && (o1 < options.length); o1++) {
@@ -77,13 +86,18 @@ public class MenuWidget extends Base {
 					}
 
 					if (opass) {
-						links.add(Link.tag()
-								.attr("Label", x.getAttribute("Title"))
-								.attr("Page",  x.hasNotEmptyAttribute("Page")
-										? x.getAttribute("Page")
-										: menulevel.slug + "/" + x.getAttribute("Slug")
-								)
-						);
+						if (x.getName().equals("Menu")) {
+							links.add(Link.tag()
+									.attr("Label", x.getAttribute("Title"))
+									.attr("Page", x.hasNotEmptyAttribute("Page")
+											? x.getAttribute("Page")
+											: menulevel.slug + "/" + x.getAttribute("Slug")
+									)
+							);
+						}
+						else if (x.getName().equals("li")) {
+							links.add(ScriptHub.parseInstructions(x.toString()));
+						}
 					}
 				}
 			}
@@ -103,6 +117,8 @@ public class MenuWidget extends Base {
 									.attr("aria-label", OperationContext.getOrThrow().tr("_code_60000"))
 									.withAttribute("IconLibrary", "fas")
 									.withAttribute("IconName", "bars")
+									.withAttribute("IconSize", iconsize)
+									.withAttribute("IconType", icontype)
 							)
 			);
 			
@@ -117,6 +133,12 @@ public class MenuWidget extends Base {
 		String opath = req.getFieldAsString("OriginalPath");
 
 		for (XElement mnu : links) {
+			// don't process raw list items
+			if (mnu.getName().equals("li")) {
+				ul.with(mnu);
+				continue;
+			}
+
 			if (mnu.hasAttribute("Badges")) {
 				String[] tags = StackUtil.stringFromElement(state, mnu,"Badges").split(",");
 
@@ -174,6 +196,8 @@ public class MenuWidget extends Base {
 									.attr("aria-label", OperationContext.getOrThrow().tr("_code_60001"))
 									.withAttribute("IconLibrary", "fas")
 									.withAttribute("IconName", "chevron-up")
+									.withAttribute("IconSize", iconsize)
+									.withAttribute("IconType", icontype)
 							)
 			);
 		}

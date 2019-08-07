@@ -52,8 +52,12 @@ public class ForEach extends BlockInstruction {
 		String name = StackUtil.stringFromSource(state,"Name","_forvalue");
 
 		Struct source = StackUtil.refFromSource(state,"In", true);
+		
+		if (source instanceof XElement) {
+			source = ListStruct.list(((XElement)source).selectAll("*"));
+		}
 
-		// TODO support more than just ListStruct someday
+		// TODO support more than just ListStruct and XElement someday
 		if (! (source instanceof ListStruct)) {
 			Logger.error("Expected ListStruct in ForEach");
 			return ReturnOption.DONE;

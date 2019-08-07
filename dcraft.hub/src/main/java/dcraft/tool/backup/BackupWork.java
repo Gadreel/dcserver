@@ -7,6 +7,7 @@ import dcraft.script.inst.Sleep;
 import dcraft.task.ChainWork;
 import dcraft.task.TaskContext;
 import dcraft.tool.certs.CertCheckWork;
+import dcraft.tool.certs.RenewCertsWork;
 
 public class BackupWork extends ChainWork {
 	@Override
@@ -20,6 +21,10 @@ public class BackupWork extends ChainWork {
 				.then(new CounterWork())		// before all the activity
 				.then(new DatabaseWork())
 				.then(new LogsWork())
+				.then(new RenewCertsWork())
+				.then(									// wait for renews to finish before backup
+						StackUtil.of(sleeper)
+				)
 				.then(new CertCheckWork())
 				.then(new TempCleaner())
 				.then(									// wait for deposits to finish before backup

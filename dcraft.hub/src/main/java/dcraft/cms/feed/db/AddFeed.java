@@ -35,8 +35,14 @@ public class AddFeed implements IStoredProc {
 
 		String feed = data.getFieldAsString("Feed");
 		String path = data.getFieldAsString("Path");
-		
+
+		if (! path.endsWith(".html"))
+			path += ".html";
+
+		String fpath = path;
+
 		CommonPath cpath = FeedUtilDb.toFolderPath(feed, path);
+
 		RecordStruct params = RecordStruct.record()
 				.with("Template", data.getFieldAsString("Template", "standard"));
 		
@@ -50,7 +56,7 @@ public class AddFeed implements IStoredProc {
 				
 				// add meta data
 				if (data.isNotFieldEmpty("Meta")) {
-					FeedUtilDb.addHistory(request.getInterface(), db, feed, path, ListStruct.list(
+					FeedUtilDb.addHistory(request.getInterface(), db, feed, fpath, ListStruct.list(
 							RecordStruct.record()
 									.with("Command", "SaveMeta")
 									.with("Params", RecordStruct.record()
@@ -62,7 +68,7 @@ public class AddFeed implements IStoredProc {
 				
 				// add tag data
 				if (data.isNotFieldEmpty("Tags")) {
-					FeedUtilDb.addHistory(request.getInterface(), db, feed, path, ListStruct.list(
+					FeedUtilDb.addHistory(request.getInterface(), db, feed, fpath, ListStruct.list(
 							RecordStruct.record()
 									.with("Command", "SaveTags")
 									.with("Params", RecordStruct.record()
@@ -74,10 +80,10 @@ public class AddFeed implements IStoredProc {
 				
 				// add content parts
 				if (data.isNotFieldEmpty("Commands")) {
-					FeedUtilDb.addHistory(request.getInterface(), db, feed, path, data.getFieldAsList("Commands"));
+					FeedUtilDb.addHistory(request.getInterface(), db, feed, fpath, data.getFieldAsList("Commands"));
 				}
 				
-				FeedUtilDb.saveHistory(request.getInterface(), db, feed, path, null, data.getFieldAsBooleanOrFalse("Publish"), callback);
+				FeedUtilDb.saveHistory(request.getInterface(), db, feed, fpath, null, data.getFieldAsBooleanOrFalse("Publish"), callback);
 			}
 		});
 	}
