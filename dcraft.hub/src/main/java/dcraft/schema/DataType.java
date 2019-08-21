@@ -445,24 +445,24 @@ public class DataType {
 	}
 
 	// don't call this with data == null from a field if field required - required means "not null" so put the error in
-	public boolean match(Object data) {
+	public boolean match(boolean isfinal, Object data) {
 		if (this.kind == DataKind.Record) {
 			if (data instanceof RecordStruct)
-				return this.matchRecord((RecordStruct)data);
+				return this.matchRecord(isfinal, (RecordStruct)data);
 			
 			return false;
 		}
 		
 		if (this.kind == DataKind.List) {
-			if (data instanceof RecordStruct)
-				return this.matchList((RecordStruct)data);
+			if (data instanceof ListStruct)
+				return this.matchList(isfinal, (ListStruct)data);
 
 			return false;
 		}
 		
 		if (this.kind == DataKind.Flexible) {
 			if (data instanceof Struct)
-				return this.matchFlex((Struct)data);
+				return this.matchFlex(isfinal, (Struct)data);
 
 			Logger.errorTr(420, data);		
 			return false;
@@ -471,16 +471,25 @@ public class DataType {
 		return this.matchScalar(data);
 	}
 
-	protected boolean matchRecord(RecordStruct data) {
+	protected boolean matchRecord(boolean isfinal, RecordStruct data) {
 		if (this.fields != null) {
 			
 			// match only if all required fields are present 
 			for (Field fld : this.fields.values()) {
-				if ((fld.required == ReqTypes.True) && !data.hasField(fld.name))
-					return false;
+				// check if empty, if required
+				if (data.isFieldEmpty(fld.name)) {
+					if (fld.required == ReqTypes.True)
+						return false;
+					
+					if ((fld.required == ReqTypes.Final) && isfinal)
+						return false;
+				}
 				
-				if ((fld.required == ReqTypes.IfPresent) && data.hasField(fld.name) && data.isFieldEmpty(fld.name))
-					return false;
+				// only check empty if field is present
+				if (data.hasField(fld.name) && data.isFieldEmpty(fld.name)) {
+					if ((fld.required == ReqTypes.IfPresent) || (fld.required == ReqTypes.Final))
+						return false;
+				}
 			}
 			
 			return true;
@@ -490,16 +499,25 @@ public class DataType {
 		return this.anyRec;
 	}
 
-	protected boolean matchList(CompositeStruct data) {
-		return true;		
+	protected boolean matchList(boolean isfinal, ListStruct data) {
+		return true;
 	}
 
-	protected boolean matchFlex(Struct data) {
-		if ((this.flexfield.required == ReqTypes.True) && (data == null))
-			return false;
+	protected boolean matchFlex(boolean isfinal, Struct data) {
+		// if no data,check if required
+		if ((data == null) || data.isEmpty()) {
+			if (this.flexfield.required == ReqTypes.True)
+				return false;
+			
+			if ((this.flexfield.required == ReqTypes.Final) && isfinal)
+				return false;
+		}
 		
-		if ((this.flexfield.required == ReqTypes.IfPresent) && (data != null) && data.isEmpty())
-			return false;
+		// required only if present
+		if ((data != null) && data.isEmpty()) {
+			if ((this.flexfield.required == ReqTypes.IfPresent) || (this.flexfield.required == ReqTypes.Final))
+				return false;
+		}
 		
 		return true;
 	}
@@ -514,7 +532,7 @@ public class DataType {
 	// don't call this with data == null from a field if field required - required means "not null" so put the error in
 	// returns true only if there was a non-null value present that conforms to the expected structure (record, list or scalar) 
 	// null values that do not conform should not cause an false
-	public boolean validate(Struct data) {
+	public boolean validate(boolean isfinal, boolean selectmode, Struct data) {
 		if (data == null)
 			return false;
 		
@@ -526,7 +544,7 @@ public class DataType {
 				data = ((ICompositeBuilder)data).toLocal();		
 			
 			if (data instanceof RecordStruct)
-				return this.validateRecord((RecordStruct)data);
+				return this.validateRecord(isfinal, selectmode, (RecordStruct)data);
 
 			Logger.errorTr(414, data);
 			return false;
@@ -534,7 +552,7 @@ public class DataType {
 		
 		if (this.kind == DataKind.List) {
 			if (data instanceof ListStruct)
-				return this.validateList((ListStruct)data);
+				return this.validateList(isfinal, selectmode, (ListStruct)data);
 
 			Logger.errorTr(415, data);		
 			return false;
@@ -542,7 +560,7 @@ public class DataType {
 		
 		if (this.kind == DataKind.Flexible) {
 			if (data instanceof Struct)
-				return this.validateFlex((Struct)data);
+				return this.validateFlex(isfinal, selectmode, (Struct)data);
 
 			Logger.errorTr(420, data);		
 			return false;
@@ -563,7 +581,7 @@ public class DataType {
 		return false;
 	}
 	
-	public Struct normalizeValidate(Struct data) {
+	public Struct normalizeValidate(boolean isfinal, boolean selectmode, Struct data) {
 		if (data == null)
 			return null;
 		
@@ -577,7 +595,7 @@ public class DataType {
 				data = ((ICompositeBuilder)data).toLocal();	
 			
 			if (data instanceof RecordStruct) 
-				return normalizeValidateRecord((RecordStruct)data);
+				return normalizeValidateRecord(isfinal, selectmode, (RecordStruct)data);
 
 			Logger.errorTr(414, data);
 			return null;
@@ -585,7 +603,7 @@ public class DataType {
 		
 		if (this.kind == DataKind.List) {
 			if (data instanceof ListStruct) 
-				return this.normalizeValidateList((ListStruct)data);
+				return this.normalizeValidateList(isfinal, selectmode, (ListStruct)data);
 			
 			Logger.errorTr(415, data);		
 			return null;
@@ -593,7 +611,7 @@ public class DataType {
 		
 		if (this.kind == DataKind.Flexible) {
 			if (data instanceof Struct)
-				return this.normalizeValidateFlex((Struct)data);
+				return this.normalizeValidateFlex(isfinal, selectmode, (Struct)data);
 
 			Logger.errorTr(420, data);		
 			return null;
@@ -614,13 +632,11 @@ public class DataType {
 		return null;
 	}
 
-	protected boolean validateRecord(RecordStruct data) {
+	protected boolean validateRecord(boolean isfinal, boolean selectmode, RecordStruct data) {
 		if (this.fields != null) {
 			// handles all but the case where data holds a field not allowed 
 			for (Field fld : this.fields.values()) {
-				Struct flddata = data.getField(fld.name);
-				
-				if (! fld.validate((flddata != null), flddata))
+				if (! fld.validate(data.hasField(fld.name), isfinal, selectmode, data.getField(fld.name)))
 					return false;
 			}
 			
@@ -637,7 +653,7 @@ public class DataType {
 		return true;
 	}
 
-	protected RecordStruct normalizeValidateRecord(RecordStruct data) {
+	protected RecordStruct normalizeValidateRecord(boolean isfinal, boolean selectmode, RecordStruct data) {
 		if (this.fields != null) {
 			// handles all but the case where data holds a field not allowed 
 			for (Field fld : this.fields.values()) {
@@ -645,7 +661,7 @@ public class DataType {
 		        //	Logger.debug("Validating field: " + fld.name);
 				
 				Struct s = data.getField(fld.name);
-				Struct o  = fld.normalizeValidate(data.hasField(fld.name), data.getField(fld.name));
+				Struct o  = fld.normalizeValidate(data.hasField(fld.name), isfinal, selectmode, data.getField(fld.name));
 				
 				if (s != o)
 					data.with(fld.name, o);
@@ -661,14 +677,14 @@ public class DataType {
 		return data;
 	}
 
-	protected boolean validateList(ListStruct data) {
+	protected boolean validateList(boolean isfinal, boolean selectmode, ListStruct data) {
 		if (this.items == null) {
 			Logger.errorTr(416, data);  
 			return false;
 		}
 		else {
 			for (Struct obj : data.items()) {
-				if (! this.items.validate(obj))
+				if (! this.items.validate(isfinal, selectmode, obj))
 					return false;
 			}
 		}
@@ -686,13 +702,13 @@ public class DataType {
 		return true;		
 	}
 
-	protected ListStruct normalizeValidateList(ListStruct data) {
+	protected ListStruct normalizeValidateList(boolean isfinal, boolean selectmode, ListStruct data) {
 		if (this.items == null) 
 			Logger.errorTr(416, data);   
 		else
 			for (int i = 0; i < data.size(); i++) {
 				Struct s = data.getItem(i);
-				Struct o = this.items.normalizeValidate(s);
+				Struct o = this.items.normalizeValidate(isfinal, selectmode, s);
 				
 				if (s != o)
 					data.replaceItem(i, o);
@@ -707,12 +723,12 @@ public class DataType {
 		return data;
 	}
 
-	protected boolean validateFlex(Struct data) {
-		return this.flexfield.validate((data != null), data);
+	protected boolean validateFlex(boolean isfinal, boolean selectmode, Struct data) {
+		return this.flexfield.validate((data != null), isfinal, selectmode, data);
 	}
 
-	protected Struct normalizeValidateFlex(Struct data) {
-		return this.flexfield.normalizeValidate((data != null), data);
+	protected Struct normalizeValidateFlex(boolean isfinal, boolean selectmode, Struct data) {
+		return this.flexfield.normalizeValidate((data != null), isfinal, selectmode, data);
 	}
 	
 	public Struct wrap(Object data) {

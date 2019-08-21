@@ -217,6 +217,7 @@ public class FeedUtil {
 		RecordStruct def = FeedUtil.getFeedDefinition(feedname);
 		
 		ListStruct fields = ListStruct.list();		// { Name: x, Value: y }
+		ListStruct tags = ListStruct.list();
 		
 		// feeds use site default
 		String defloc = OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale();
@@ -246,9 +247,19 @@ public class FeedUtil {
 			}
 		}
 		
+		for (XElement meta : root.selectAll("Tag")) {
+			String value = meta.getAttribute("Value");
+			
+			if (StringUtil.isEmpty(value))
+				continue;
+			
+			tags.with(value);
+		}
+		
 		return RecordStruct.record()
-				.with("Definition", def)
-				.with("Fields", fields);
+			.with("Definition", def)
+			.with("Fields", fields)
+			.with("ContentTags", tags);
 	}
 	
 	static public String bestLocaleMatch(XElement meta, String curloc, String defloc) {

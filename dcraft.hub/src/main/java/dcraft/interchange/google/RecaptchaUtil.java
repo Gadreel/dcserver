@@ -22,10 +22,16 @@ public class RecaptchaUtil {
 	static final public String PROD_ENDPOINT = "https://www.google.com/recaptcha/api/siteverify";
 
 	static public void siteVerify(String response, String alt, OperationOutcomeRecord callback) {
+		RecaptchaUtil.siteVerify(response, alt, true, callback);
+	}
+
+	static public void siteVerify(String response, String alt, boolean requireCaptcha, OperationOutcomeRecord callback) {
 		XElement gsettings = ApplicationHub.getCatalogSettings("Google", alt);
 
 		if (gsettings == null) {
-			Logger.error("Missing Google settings.");
+			if (requireCaptcha)
+				Logger.error("Missing Google settings.");
+
 			callback.returnEmpty();
 			return;
 		}
@@ -33,7 +39,9 @@ public class RecaptchaUtil {
 		XElement rsettings = gsettings.find("reCAPTCHA");
 
 		if (rsettings == null) {
-			Logger.error("Missing Google reCAPTCHA settings.");
+			if (requireCaptcha)
+				Logger.error("Missing Google reCAPTCHA settings.");
+
 			callback.returnEmpty();
 			return;
 		}

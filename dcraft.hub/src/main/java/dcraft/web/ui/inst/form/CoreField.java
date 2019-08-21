@@ -1,5 +1,6 @@
 package dcraft.web.ui.inst.form;
 
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import dcraft.hub.op.OperatingContextException;
@@ -65,6 +66,8 @@ abstract public class CoreField extends Base {
 		else 
 			this.fieldid = "gen" + RndUtil.nextUUId();
 		
+		List<XElement> hintbuttons = this.fieldinfo.selectAll("HintButton");
+
 		boolean usespacer = ! this.getAttributeAsBooleanOrFalse("NoSpacer");
 		
 		if (this.hasNotEmptyAttribute("Label"))
@@ -115,7 +118,27 @@ abstract public class CoreField extends Base {
 		
 		this.addControl(state);
 		
-		// add spacer before error message 
+		if (hintbuttons.size() > 0) {
+			// add spacer before hints
+			if (usespacer)
+				this.with(W3.tag("div").withClass("dc-spacer").withClass(cmpt));
+			
+			Base hints = Base.tag("div").withClass("dc-control");
+
+			for (XElement hint : hintbuttons) {
+				hints.with(Base.tag("a")
+						.withClass("pure-button", "dc-button dc-input-hint")
+						.withAttribute("href", "#")
+						.withAttribute("role", "button")
+						.withAttribute("tabindex", "0")
+						.withText(hint.attr("Text"))	// TODO support locales
+				);
+			}
+			
+			this.with(hints);
+		}
+		
+		// add spacer before error message
 		if (usespacer)
 			this.with(W3.tag("div").withClass("dc-spacer", "dc-valid-hidden").withClass(cmpt));
 		

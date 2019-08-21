@@ -16,6 +16,26 @@
 				<dcf.Text Name="Email" Label="Email" Required="true" />
 				<dcf.Text Name="Phone" Label="Phone" />
 
+				<dcs.If Target="$UserConfig.@SignUpNotices" Equal="text">
+					<dcs.With Target="$_Resources.Config">
+						<GetTagList Path="Notices/Definition" Result="Notices" />
+					</dcs.With>
+
+					<dc.Template Name="NoticeOpts">
+						<dcs.ForEach Name="Notice" In="$Notices">
+							<dc.Out>
+								<RadioButton Label="{$Notice.@Label}" Value="{$Notice.@Value}" />
+							</dc.Out>
+						</dcs.ForEach>
+
+						<RadioButton Value="none" Label="Do not send any notices." />
+					</dc.Template>
+
+					<dc.Out>
+						<dcf.RadioGroup Label="Notices" Name="Notices" FieldParams="NoticeOpts" />
+					</dc.Out>
+				</dcs.If>
+
 				<dcs.If Target="$UserConfig.@SignUpAddress" Equal="true">
 					<dc.Out>
 						<dcf.Text Name="Address" Label="Address" />
@@ -148,13 +168,18 @@
 				Body: e.Data
 			};
 	]]></Function>
+	<Function Name="AfterSaveRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			entry.Store.Id = (e.Data && e.Data.Id) ? e.Data.Id : entry.Params.Id;
+	]]></Function>
 	<Function Name="AfterSave"><![CDATA[
 			var entry = this;
 
 			entry.Layer.back();
 
 			if (entry.Params.Callback)
-				entry.Params.Callback();
+				entry.Params.Callback(entry.Store.Id);
 	]]></Function>
 	<Function Name="DoDelete"><![CDATA[
 			var entry = this;

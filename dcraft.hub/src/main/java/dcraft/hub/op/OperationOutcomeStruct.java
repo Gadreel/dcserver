@@ -2,6 +2,7 @@ package dcraft.hub.op;
 
 import dcraft.log.Logger;
 import dcraft.schema.DataType;
+import dcraft.service.ServiceRequest;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -9,6 +10,7 @@ import dcraft.util.cb.TimeoutPlan;
 
 abstract public class OperationOutcomeStruct extends OperationOutcome<Struct> {
 	protected DataType valuetype = null;
+	protected boolean checkfinal = true;
 	
 	public OperationOutcomeStruct() throws OperatingContextException {
 		super();
@@ -26,11 +28,16 @@ abstract public class OperationOutcomeStruct extends OperationOutcome<Struct> {
 		this.valuetype = v;
 	}
 	
+	public OperationOutcomeStruct withAsIncomplete() {
+		this.checkfinal = false;
+		return this;
+	}
+	
 	@Override
 	public void setResult(Struct v) {
 		if (this.valuetype != null) {
 			try (OperationMarker om = OperationMarker.create()) {
-				Struct nv = this.valuetype.normalizeValidate(v);
+				Struct nv = this.valuetype.normalizeValidate(this.checkfinal, ! this.checkfinal, v);
 				
 				if (om.hasErrors()){
 					Logger.error("Unable to validate and normalize operation outcome.");

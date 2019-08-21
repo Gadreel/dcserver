@@ -39,7 +39,7 @@ public class VerifyRecordStream extends TransformRecordStream {
 	@Override
 	public ReturnOption handle(RecordStruct slice) throws OperatingContextException {
 		try (OperationMarker om = OperationMarker.create()) {
-			RecordStruct nv = (RecordStruct) this.type.normalizeValidate(slice);
+			RecordStruct nv = (RecordStruct) this.type.normalizeValidate(true, false, slice);
 			
 			if (! om.hasErrors()) {
 				if (this.tabulator != null)

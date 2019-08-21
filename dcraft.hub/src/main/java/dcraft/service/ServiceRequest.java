@@ -58,6 +58,7 @@ public class ServiceRequest implements IWorkBuilder {
 	protected Struct data = null;
 	protected OpInfo def = null;
 	protected OperationOutcomeStruct outcome = null;
+	protected boolean checkfinal = true;
 	
 	// on the server, when accepting an RPC call, set this flag so specialized services know to check the user badges closer (if this is not set then we don't check access during service calls)
 	protected boolean fromRpc = false;
@@ -193,6 +194,11 @@ public class ServiceRequest implements IWorkBuilder {
 		return this.outcome;
 	}
 	
+	public ServiceRequest withAsIncomplete() {
+		this.checkfinal = false;
+		return this;
+	}
+	
 	public OperationOutcomeStruct requireOutcome() throws OperatingContextException {
 		if (this.outcome == null) {
 			this.outcome = new OperationOutcomeStruct() {
@@ -246,7 +252,7 @@ public class ServiceRequest implements IWorkBuilder {
 		
 		if (rdt != null) {
 			try (OperationMarker om = OperationMarker.create()) {
-				Struct ndata = rdt.normalizeValidate(this.data);
+				Struct ndata = rdt.normalizeValidate(this.checkfinal, false, this.data);
 				
 				// TODO find other calls to normalizeValidate and change to use OM
 				if (om.hasErrors()) {
@@ -266,6 +272,9 @@ public class ServiceRequest implements IWorkBuilder {
 		
 		if (stype != null)
 			this.requireOutcome().setResultType(stype);
+		
+		if (! this.checkfinal)
+			this.requireOutcome().withAsIncomplete();
 		
 		if (this.streamSource != null) {
 			DataType rtype = this.def.getOp().getRequestStream();

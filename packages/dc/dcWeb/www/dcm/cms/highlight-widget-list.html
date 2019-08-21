@@ -1,0 +1,229 @@
+<dc.Html Badges="Admin,Editor">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Highlighter Entries" />
+	</Meta>
+
+	<Require Script="/js/vendor/sortable.min.js" />
+
+	<dc.Body>
+		<dc.Style>
+#dcmshighEntries > div {
+	padding: 12px;
+}
+
+#dcmshighEntriesTable.dc-table-stripe tbody tr:nth-child(odd) td {
+    background-color: lightyellow;
+}
+
+#dcmshighEntries a:visited,
+#dcmshighEntries a {
+	color: black;
+}
+
+#dcmshighEntries a:hover,
+#dcmshighEntries a:focus {
+	color: #444;
+}
+
+		</dc.Style>
+		<dc.PagePanel>
+			<dcf.FormButtons>
+				<dc.Button Click="DoAdd" Label="Add Entry"  />
+				<dc.Button Label="Save and Preview" Click="DoSave" Scope="Primary" />
+			</dcf.FormButtons>
+
+			<table id="dcmshighEntriesTable" class="dc-table-break-medium dc-table dc-table-stripe dc-pui-sortable">
+				<tbody id="dcmshighEntries" />
+			</table>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load" Params="e"><![CDATA[
+			var entry = this;
+
+			/*
+			if (e.Thaw) {
+				entry.callPageFunc('LoadList');
+				return;
+			}
+			*/
+
+			entry.Store.Aliases = [ ];
+			entry.Store.Changed = false;
+
+			dc.comm.sendMessage({
+				Service: 'dcmServices',
+				Feature: 'Feed',
+				Op: 'LoadPart',
+				Body: {
+					Feed: entry.Params.Feed,
+					Path: entry.Params.Path,
+					PartId: entry.Params.Id
+				}
+			}, function(rmsg) {
+				if (rmsg.Result != 0) {
+					dc.pui.Popup.alert(rmsg.Message);
+					return;
+				}
+
+				entry.Store.Widget = dc.util.Xml.toJQuery(rmsg.Body.Part);
+
+				entry.callPageFunc('LoadList');
+			});
+   ]]></Function>
+	<Function Name="LoadList"><![CDATA[
+			var entry = this;
+
+			var list = $('#dcmshighEntries');
+
+			list.empty();
+
+			var sortable = Sortable.create(list.get(0), {
+			    onEnd: function (evt) {
+			        entry.Store.Changed = true;
+
+			        entry.callPageFunc('ReorderEntries');
+			    }
+		    });
+
+			var widget = entry.Store.Widget;
+
+			// TODO support locale selection
+			var locale = $('html').attr('lang');
+
+			var $entries = widget.find('Entry');
+
+			var editFunc = function(e) {
+				entry.Store.Callback = function() {
+					dc.pui.Dialog.loadPage('/dcm/cms/highlight-widget-content', {
+						Feed: entry.Params.Feed,
+						Path: entry.Params.Path,
+						Id: entry.Params.Id,
+						Entry: e.data,
+						Callback: function() {
+							entry.reload();
+						}
+					});
+				}
+
+				entry.callPageFunc('DoSave');
+
+				e.preventDefault();
+				return false;
+			};
+
+			var remFunc = function(e) {
+				$(e.currentTarget).closest('tr').remove();
+
+				entry.Store.Changed = true;
+
+				entry.callPageFunc('ReorderEntries');
+
+				e.preventDefault();
+				return false;
+			};
+
+			for (var i = 0; i < $entries.length; i++) {
+				var xentry = $entries.get(i);
+
+				var value = $(xentry).find('Tr[Locale="' + locale + '"]').dcvalue();
+
+				if (! value)
+					value = '';
+
+				var content = value.trim() + '\n';
+
+				list.dcappend(
+					$('<tr>')
+						.addClass('hentry')
+						.attr('data-alias', $(xentry).attr('Alias'))
+						.dcappend(
+							$('<td>').text(content),
+							$('<td>').dcappend(
+								$('<a>')
+									.attr('href', '#')
+									.click($(xentry).attr('Alias'), editFunc)
+									.text('edit'),
+								' ',
+								$('<a>')
+									.attr('href', '#')
+									.click($(xentry).attr('Alias'), remFunc)
+									.text('remove')
+							)
+						)
+				);
+			}
+	]]></Function>
+	<Function Name="ReorderEntries"><![CDATA[
+			var entry = this;
+
+			entry.Store.Aliases = [];
+
+			$('#dcmshighEntries > tr').each(function(i) {
+				var calias = $(this).attr('data-alias');
+				entry.Store.Aliases.push(calias);
+			});
+	]]></Function>
+	<Function Name="DoAdd"><![CDATA[
+		var entry = this;
+
+		entry.Store.Callback = function() {
+			dc.pui.Dialog.loadPage('/dcm/cms/highlight-widget-content', {
+				Feed: entry.Params.Feed,
+				Path: entry.Params.Path,
+				Id: entry.Params.Id,
+				Callback: function() {
+					entry.reload();
+				}
+			});
+		}
+
+		entry.callPageFunc('DoSave');
+	]]></Function>
+	<Function Name="DoSave"><![CDATA[
+		var entry = this;
+
+		if (entry.Store.Changed) {
+			//console.log('x: ' + JSON.stringify(entry.Store.Aliases));
+
+			dc.comm.call('dcmServices.Feed.AddCommandHistory', {
+				Feed: entry.Params.Feed,
+				Path: entry.Params.Path,
+				Commands: [
+					{
+						Command: 'Reorder',
+						Params: {
+							PartId: entry.Params.Id,
+							Order: entry.Store.Aliases
+						}
+					}
+				]
+			}, function(rmsg2) {
+				if (rmsg2.Result > 0) {
+					dc.pui.Popup.alert(rmsg2.Message);
+					return;
+				}
+
+				entry.Store.Changed = false;
+
+				entry.callPageFunc('DoAfterSave');
+			});
+		}
+		else {
+			entry.callPageFunc('DoAfterSave');
+		}
+	]]></Function>
+	<Function Name="DoAfterSave"><![CDATA[
+		var entry = this;
+
+		if (entry.Store.Callback) {
+			entry.Store.Callback();
+			entry.Store.Callback = null;
+			return;
+		}
+
+		entry.Layer.back();
+
+		if (entry.Params.Callback)
+			entry.Params.Callback();
+	]]></Function>
+</dc.Html>

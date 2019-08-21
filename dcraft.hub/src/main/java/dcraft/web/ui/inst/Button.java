@@ -33,6 +33,7 @@ public class Button extends Base {
 		String to = StackUtil.stringFromSource(state,"To", "#");
 		String click = StackUtil.stringFromSource(state,"Click");
 		String page = StackUtil.stringFromSource(state,"Page");
+		String iconsize = StackUtil.stringFromSource(state,"IconSize", "1x");
 		
 		this
 				.withAttribute("href", StringUtil.isNotEmpty(page) ? page : to);
@@ -45,7 +46,7 @@ public class Button extends Base {
 						.withAttribute("aria-hidden", "true")
 				);
 			else
-				this.with(UIUtil.requireSvgIcon(this, state, icon, "1x"));
+				this.with(UIUtil.requireSvgIcon(this, state, icon, "fa5-" + iconsize));
 		}
 
 		// Default, Primary, Selected (TODO Success, Info, Warning, Danger)

@@ -440,15 +440,6 @@ dc.pui.layer.Main.prototype.enhancePage = function(firstload) {
 	var loader = dc.pui.Loader;
 	var entry = layer.Current;
 	var page = loader.Pages[entry.Name];
-
-	if (typeof ga == 'function') {
-		ga('set', {
-			  page: entry.Name,
-			  title: page.Meta.Title
-		});
-
-		ga('send', 'pageview');
-	}
 };
 
 dc.pui.layer.Main.prototype.refreshPage = function() {
@@ -506,8 +497,9 @@ dc.pui.layer.Alert.prototype.open = function() {
 		$(dbpane).click(function (e) {
 			// do nothing if interior clicked
 
-			e.preventDefault();
-			return false;
+			//e.preventDefault();
+			e.stopPropagation();
+			//e.stopImmediatePropagation();
 		});
 
 		dbox.append(dbpane);
@@ -604,7 +596,11 @@ dc.pui.layer.App.prototype.loadTab = function(tabalias, params) {
 	else {
 		this.TabHistory[tabalias] = [];
 		this.History = this.TabHistory[tabalias];
-		this.loadPage(tinfo.Path, params);
+
+		if (tinfo.Op)
+			tinfo.Op.call(tinfo);
+		else
+			this.loadPage(tinfo.Path, params);
 	}
 };
 
@@ -2391,6 +2387,11 @@ dc.pui.Form.prototype = {
 							}
 						}
 
+						var captcha = task.Store.Captcha ? task.Store.Captcha : 'xyz';
+
+						if (! captcha && task.Store.Form.Captcha)
+							captcha = task.Store.Form.Captcha.Token;
+
 						// form the save message
 						event.Message = {
 							"Service":"dcCoreServices",
@@ -2398,7 +2399,7 @@ dc.pui.Form.prototype = {
 							"Op":"Submit",
 							Body: {
 								Form: task.Store.Form.Name,
-								Captcha: task.Store.Captcha ? task.Store.Captcha : task.Store.Form.Captcha.Token,
+								Captcha: captcha,
 								Title: title,
 								Data: event.Data
 							}
@@ -2613,8 +2614,10 @@ dc.pui.Form.prototype = {
 					event.DefaultSavedMessage = 'Form successfully submitted.';
 					event.DefaultSaved = true;
 
-					if (typeof ga == 'function')
-						ga('send', 'event', 'Form', 'Submit', task.Store.Form.Name);
+					gtag('event', 'Submit', {
+						'event_category': 'Form',
+						'event_label': task.Store.Form.Name
+					});
 				}
 
 				// do before save record event
@@ -3122,12 +3125,16 @@ dc.pui.Tags = {
 		$(node).find('a.dc-menu-open').click(function(e) {
 			$(node).find('> .dc-menu-list').toggleClass('dc-menu-mobile-disable');
 
+			entry.callPageFunc("onMenuWidgetToggle", e, node, 'open');
+
 			e.preventDefault();
 			return false;
 		});
 
 		$(node).find('a.dc-menu-close').click(function(e) {
 			$(node).find('> .dc-menu-list').toggleClass('dc-menu-mobile-disable');
+
+			entry.callPageFunc("onMenuWidgetToggle", e, node, 'close');
 
 			e.preventDefault();
 			return false;
@@ -3845,6 +3852,10 @@ dc.pui.controls.TextInput.prototype.init = function(entry, node) {
 		if ((e.keyCode || e.which) != '9') 		// don't validate on tab key
 			input.validate();
 	});
+
+	$(node).closest('.dc-field').find('.dc-input-hint').click(function(e) {
+		input.setValue($(this).text());
+	});
 };
 
 
@@ -4098,6 +4109,7 @@ dc.pui.controls.ListInput.prototype.init = function(entry, node) {
 	dc.pui.controls.Input.prototype.init.call(this, entry, node);
 
 	this.DefaultValue = [ ];
+	this.OriginalValue = [ ];
 
 	// override the default type
 	if (this.DataType == 'String') {
@@ -4109,7 +4121,7 @@ dc.pui.controls.ListInput.prototype.init = function(entry, node) {
 dc.pui.controls.ListInput.prototype.isChanged = function() {
 	var values = this.getValue();
 
-	if (values.length != this.OriginalValue.length)
+	if (values.length != (this.OriginalValue ? this.OriginalValue.length : 0))
 		return true;
 
 	for (var i = 0; i < values.length; i++) {
@@ -4560,23 +4572,19 @@ dc.pui.FormStore.prototype = {
 
 // ------------------- end Forms -------------------------------------------------------
 
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
 function loadGA() {
-	GoogleAnalyticsObject = 'ga';
-
-	ga = function() {
-		ga.q.push(arguments)
-	};
-
-	ga.q = [];
-	ga.l = 1 * new Date();
+	gtag('config', dc.handler.settings.ga);
 
 	var script = document.createElement('script');
-	script.src = 'https://www.google-analytics.com/analytics.js';
+	script.src = 'https://www.googletagmanager.com/gtag/js?id=' +
+		dc.handler.settings.ga
 	script.async = true;
+	script.defer = true;
 	document.head.appendChild(script);
-
-	ga('create', dc.handler.settings.ga, 'auto');
-	ga('set', 'forceSSL', true);
 }
 
 function loadGCaptcha() {

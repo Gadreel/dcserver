@@ -1,0 +1,227 @@
+<dc.Html Badges="Admin,Editor">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Text Content" />
+	</Meta>
+
+	<Require Script="/js/vendor/ace-1.1.8/ace.js" />
+
+	<dc.Body>
+		<dc.Style>
+#dcmshighEntryContent main {
+	height: 30rem;
+}
+
+#dcmshighEditSect {
+	position: absolute;
+	top: 17rem;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
+
+@media all and (min-width: 420px) {
+	#dcmshighEditSect {
+		top: 12rem;
+	}
+}
+
+@media all and (min-width: 660px) {
+	#dcmshighEditSect {
+		top: 10rem;
+	}
+}
+		</dc.Style>
+		<dc.PagePanel id="dcmshighEntryContent">
+			<dcf.FormButtons>
+				<!-- TODO create language selector -->
+				<!-- needs some work...
+				<dc.Button Click="DoSelectImage" Label="Insert Image" />
+				<dc.Button Click="DoSelectFile" Label="Link File" />
+				<dc.Button Click="DoSelectPage" Label="Link Page" />
+				-->
+				<dc.Button Click="DoHelp" Label="Help"  />
+				<dc.Button Label="Save and Preview" Click="DoSave" Scope="Primary" />
+			</dcf.FormButtons>
+
+			<!-- TODO create editor control, add Accessibility -->
+			<div id="dcmshighEditSect" />
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var entry = this;
+
+			entry.Store.Changed = false;
+			entry.Store.SetMode = false;
+			entry.Store.Editor = ace.edit('dcmshighEditSect');
+
+			var editor = entry.Store.Editor;
+
+			editor.setTheme("ace/theme/chrome");
+			editor.getSession().setMode("ace/mode/markdown");
+			editor.setShowPrintMargin(false);
+			editor.getSession().setTabSize(5);
+			editor.getSession().setUseSoftTabs(false);
+			editor.getSession().setUseWrapMode(true);
+
+			editor.on("change", function() {
+				if (!entry.Store.SetMode)
+					entry.Store.Changed = true;
+			});
+
+			if (! entry.Params.Entry) {
+				entry.Params.Entry = dc.util.Uuid.create();
+
+				entry.Store.SetMode = true;
+
+				if (entry.Params.Content)
+					editor.setValue(entry.Params.Content, -1);
+
+				entry.Store.SetMode = false;
+
+				//entry.Store.Editor.focus();
+			}
+			else {
+				var request = {
+					Service: 'dcmServices',
+					Feature: 'Feed',
+					Op: 'LoadPart',
+					Body: {
+						Feed: entry.Params.Feed,
+						Path: entry.Params.Path,
+						PartId: entry.Params.Id
+					}
+				};
+
+				dc.comm.sendMessage(request, function(rmsg) {
+					if (rmsg.Result != 0) {
+						dc.pui.Popup.alert(rmsg.Message);
+						return;
+					}
+
+					var widget = entry.Store.Widget = dc.util.Xml.toJQuery(rmsg.Body.Part);
+
+					// TODO support locale selection
+					var locale = $('html').attr('lang');
+
+					var $entries = widget.find('Entry');
+
+					for (var i = 0; i < $entries.length; i++) {
+						var xentry = $entries.get(i);
+
+						if (entry.Params.Entry != $(xentry).attr('Alias'))
+							continue;
+
+						var value = $(xentry).find('Tr[Locale="' + locale + '"]').dcvalue();
+
+						if (! value)
+							value = '';
+
+						var content = entry.Params.Content = value.trim() + '\n';
+
+						entry.Store.SetMode = true;
+
+						editor.setValue(content, -1);
+
+						entry.Store.SetMode = false;
+
+						//entry.Store.Editor.focus();
+
+						break;
+					}
+				});
+			}
+	]]></Function>
+	<Function Name="Freeze"><![CDATA[
+			var entry = this;
+
+			if (entry.Store.Editor)
+				entry.Params.Content = entry.Store.Editor.getValue();
+	]]></Function>
+	<Function Name="DoSave"><![CDATA[
+			var entry = this;
+
+			// remember the content
+			var content = entry.Params.Content = entry.Store.Editor.getValue().trim();
+
+			// TODO support locale selection
+			var locale = $('html').attr('lang');
+
+			dc.cms.Loader.saveCommands(entry.Params.Feed, entry.Params.Path, [
+				{
+					Command: 'UpdatePart',
+					Params: {
+						PartId: entry.Params.Id,
+						Area: 'SetEntry',
+						Alias: entry.Params.Entry,
+						Content: content,
+						Locale: locale
+					}
+				}
+			], function() {
+				entry.Layer.back();
+
+				if (entry.Params.Callback)
+					entry.Params.Callback();
+			});
+	]]></Function>
+	<Function Name="DoSelectImage"><![CDATA[
+			var entry = this;
+
+		    dc.pui.Dialog.loadPage('/dcm/galleries/chooser', {
+				Callback: function(res) {
+					if (res.Images) {
+						for (var i = 0; i < res.Images.length; i++) {
+							var fh = res.Images[i];
+
+							entry.Store.Editor.insert('![](/galleries' + fh.FullPath + ' "")\n');
+						}
+					}
+
+					// TODO how to let screenreader know insert occurred
+					entry.Store.Editor.focus();
+				}
+			});
+	]]></Function>
+	<Function Name="DoSelectFile"><![CDATA[
+			var entry = this;
+
+		    dc.pui.Dialog.loadPage('/dcm/files/chooser', {
+				Callback: function(files) {
+					if (files) {
+						for (var i = 0; i < files.length; i++)
+							entry.Store.Editor.insert('[click here](/files' + files[i].FullPath + ' "")\n');
+					}
+
+					entry.Store.Editor.focus();
+				}
+			});
+	]]></Function>
+	<Function Name="DoSelectPage"><![CDATA[
+			var entry = this;
+
+		    dc.pui.Dialog.loadPage('/dcm/feeds/list-feed/pages', {
+				Select: true,
+				Callback: function(files) {
+					if (files) {
+						for (var i = 0; i < files.length; i++)
+							entry.Store.Editor.insert('[click here](' + files[i].FullPath + ' "")\n');
+					}
+
+					entry.Store.Editor.focus();
+				}
+			});
+	]]></Function>
+	<Function Name="DoHelp"><![CDATA[
+			var entry = this;
+
+			dc.pui.Dialog.loadPage('/dcm/cms/text-widget-content-help.html');
+	]]></Function>
+	<Function Name="onDestroy"><![CDATA[
+			var entry = this;
+
+			if (entry.Store.Editor) {
+				entry.Store.Editor.destroy();
+				delete entry.Store.Editor;
+			}
+	]]></Function>
+</dc.Html>

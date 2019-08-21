@@ -317,7 +317,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 			
 			SignIn.updateContext(db, uid);
 			
-			db.executeTrigger("dcUser", uid, "AfterSignIn");
+			db.executeTrigger("dcUser", uid, "AfterSignIn", null);
 			
 			return token;
 		}

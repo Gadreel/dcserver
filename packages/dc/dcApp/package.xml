@@ -92,9 +92,10 @@
 			<!-- TODO
 			<Tag Name="dcm.FeedDetailWidget" Class="dcraft.web.ui.inst.feed.FeedDetail" />
 			<Tag Name="dcm.FeedParams" Class="dcraft.web.ui.inst.feed.FeedParams" />
-			<Tag Name="dcm.InstagramWidget" Class="dcraft.web.ui.inst.feed.Instagram" />
 			<Tag Name="dcm.TwitterTimelineWidget" Class="dcraft.web.ui.inst.feed.TwitterTimelineLoader" />
 			-->
+
+			<Tag Name="dcm.InstagramWidget" Class="dcraft.web.ui.inst.feed.Instagram" />
 
 			<Tag Name="dcm.SocialMediaIcon" Class="dcraft.web.ui.inst.misc.SocialMediaIcon" />
 			<Tag Name="dcm.SocialMediaWidget" Class="dcraft.web.ui.inst.misc.SocialMediaWidget" />
@@ -274,6 +275,11 @@
 			/>
 		</Feeds>
 
+		<Notices>
+			<Definition Value="text" Label="Send notices to my phone as text messages." />
+			<Definition Value="email" Label="Send notices to my email account." />
+		</Notices>
+
 		<Threads>
 			<!--
 			<Type Alias="nnn" Notices="yes|no|default for distribution" />
@@ -284,8 +290,8 @@
 			<Type Name="ApproveUser" />
 
 			<Channel Alias="users" Prefix="Usr" ExtensionType="none" ExtensionDb="dcUser" AccessClass="dcraft.cms.thread.db.access.UsrAccess" Notices="yes" NoticeClass="dcraft.cms.thread.UserNotices" />
-			<Channel Alias="admin-notices" Prefix="NoticesPool" Notices="yes" EmailList="Admin" AccessClass="dcraft.cms.thread.db.access.NoticesAccess" />
-			<Channel Alias="managed-forms" Prefix="ManagedForm" Notices="yes" AccessClass="dcraft.cms.thread.db.access.ManagedAccess" />
+			<Channel Alias="admin-notices" Prefix="NoticesPool" Notices="yes" Scopes="admin-notices" EmailList="Admin" AccessClass="dcraft.cms.thread.db.access.NoticesAccess" />
+			<Channel Alias="managed-forms" Prefix="ManagedForm" Notices="yes" Scopes="managed-forms" AccessClass="dcraft.cms.thread.db.access.ManagedAccess" />
 		</Threads>
 
 		<Vaults>

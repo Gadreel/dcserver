@@ -67,6 +67,19 @@ public class ConfigResource extends ResourceBase {
 			return ReturnOption.CONTINUE;
 		}
 		
+		if ("GetTagList".equals(code.getName())) {
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+			
+			if (StringUtil.isNotEmpty(result)) {
+				ListStruct list = ListStruct.list();
+				List<XElement> el = this.getTagList(StackUtil.stringFromElement(stack, code, "Path"));
+				list.withCollection(el);
+				StackUtil.addVariable(stack, result, list);
+			}
+			
+			return ReturnOption.CONTINUE;
+		}
+		
 		if ("GetTagDeep".equals(code.getName())) {
 			String result = StackUtil.stringFromElement(stack, code, "Result");
 			

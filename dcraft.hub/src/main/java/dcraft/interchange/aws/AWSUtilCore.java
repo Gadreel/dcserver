@@ -5,6 +5,7 @@ import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeRecord;
 import dcraft.log.Logger;
 import dcraft.struct.CompositeParser;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.HashUtil;
@@ -21,6 +22,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -96,7 +98,117 @@ public class AWSUtilCore {
 					callback.returnValue(Struct.objectToXml(response.body()));
 				});
 	}
-	
+
+	static public void createSecurityGroup(XElement connection, String region, String alias, String desc, OperationOutcome<XElement> callback) {
+		try {
+			RecordStruct options = RecordStruct.record()
+					.with("Service", "ec2")
+					.with("Region", StringUtil.isNotEmpty(region) ? region : connection.attr("Region"));
+
+			//String host = "ec2.amazonaws.com";
+			//String region = "us-east-1";
+			//String endpoint = "https://ec2.amazonaws.com";
+			String request_parameters = "Action=CreateSecurityGroup&Version=2016-11-15&GroupName=" +
+					URLEncoder.encode(alias, "UTF-8") + "&GroupDescription=" + URLEncoder.encode(desc, "UTF-8");
+
+			HttpClient httpClient = HttpClient.newHttpClient();
+			HttpRequest.Builder req = buildRequest(connection, options, "GET", request_parameters);
+
+			httpClient.sendAsync(req.build(), HttpResponse.BodyHandlers.ofString())
+					.thenAcceptAsync(response -> {
+						callback.useContext();        // restore context
+
+						System.out.println("code: " + response.statusCode());
+						//System.out.println("got: " + response.body());
+
+						callback.returnValue(Struct.objectToXml(response.body()));
+					});
+		}
+		catch (UnsupportedEncodingException x) {
+			Logger.error("encoding error: " + x);
+			callback.returnEmpty();
+		}
+	}
+
+	static public void updateSecurityGroupRuleDescriptionsIngress(XElement connection, String region, String id, ListStruct rules, OperationOutcome<XElement> callback) {
+		try {
+			RecordStruct options = RecordStruct.record()
+					.with("Service", "ec2")
+					.with("Region", StringUtil.isNotEmpty(region) ? region : connection.attr("Region"));
+
+			//String host = "ec2.amazonaws.com";
+			//String region = "us-east-1";
+			//String endpoint = "https://ec2.amazonaws.com";
+			String request_parameters = "Action=UpdateSecurityGroupRuleDescriptionsIngress&Version=2016-11-15&GroupId=" +
+					URLEncoder.encode(id, "UTF-8");
+
+			for (int i = 0; i < rules.size(); i++) {
+				RecordStruct proto = rules.getItemAsRecord(i);
+
+				ListStruct ranges = proto.getFieldAsList("IpRanges");
+
+				if (ranges == null)
+					continue;
+
+				int pos = i + 1;
+
+				request_parameters += "&IpPermissions." + pos + ".IpProtocol=" + proto.getFieldAsString("IpProtocol")
+						+ "&IpPermissions." + pos + ".FromPort=" + proto.getFieldAsString("FromPort")
+						+ "&IpPermissions." + pos + ".ToPort="  + proto.getFieldAsString("ToPort");
+
+				for (int n = 0; n < ranges.size(); n++) {
+					RecordStruct range = ranges.getItemAsRecord(n);
+
+					int rpos = n + 1;
+
+					request_parameters += "&IpPermissions." + pos + ".IpRanges." + rpos + ".CidrIp=" + proto.getFieldAsString("IpProtocol")
+							+ "&IpPermissions." + pos + ".IpRanges." + rpos + ".Description="  + proto.getFieldAsString("ToPort");
+				}
+			}
+
+			HttpClient httpClient = HttpClient.newHttpClient();
+			HttpRequest.Builder req = buildRequest(connection, options, "GET", request_parameters);
+
+			httpClient.sendAsync(req.build(), HttpResponse.BodyHandlers.ofString())
+					.thenAcceptAsync(response -> {
+						callback.useContext();        // restore context
+
+						System.out.println("code: " + response.statusCode());
+						//System.out.println("got: " + response.body());
+
+						callback.returnValue(Struct.objectToXml(response.body()));
+					});
+		}
+		catch (UnsupportedEncodingException x) {
+			Logger.error("encoding error: " + x);
+			callback.returnEmpty();
+		}
+	}
+
+	static public void allocateAddress(XElement connection, String region, OperationOutcome<XElement> callback) {
+		RecordStruct options = RecordStruct.record()
+				.with("Service", "ec2")
+				.with("Region", StringUtil.isNotEmpty(region) ? region : connection.attr("Region"));
+
+		//String host = "ec2.amazonaws.com";
+		//String region = "us-east-1";
+		//String endpoint = "https://ec2.amazonaws.com";
+		String request_parameters = "Action=AllocateAddress&Version=2016-11-15";
+
+		HttpClient httpClient = HttpClient.newHttpClient();
+		HttpRequest.Builder req = buildRequest(connection, options, "GET", request_parameters);
+
+		httpClient.sendAsync(req.build(), HttpResponse.BodyHandlers.ofString())
+				.thenAcceptAsync(response -> {
+					callback.useContext();        // restore context
+
+					System.out.println("code: " + response.statusCode());
+					//System.out.println("got: " + response.body());
+
+					callback.returnValue(Struct.objectToXml(response.body()));
+				});
+	}
+
 	// https://docs.aws.amazon.com/general/latest/gr/sigv4-signed-request-examples.html
 	// https://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
 	

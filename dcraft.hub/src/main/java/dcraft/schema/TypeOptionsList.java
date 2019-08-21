@@ -64,7 +64,7 @@ public class TypeOptionsList {
 	}
 	
 	// don't call this with data == null from a field if field required - required means "not null" so put the error in
-	public boolean validate(Struct data) {
+	public boolean validate(boolean isfinal, boolean selectmode, Struct data) {
 		if (data == null)
 			return false;
 		
@@ -74,18 +74,18 @@ public class TypeOptionsList {
 		}
 		
 		if (this.options.size() == 1) 
-			return this.options.get(0).validate(data);
+			return this.options.get(0).validate(isfinal, selectmode, data);
 		
 		for (DataType dt : this.options) {
-			if (dt.match(data)) 
-				return dt.validate(data);
+			if (dt.match(isfinal, data))
+				return dt.validate(isfinal, selectmode, data);
 		}
 		
 		Logger.errorTr(438, data);			
 		return false;
 	}
 	
-	public Struct normalizeValidate(Struct data) {
+	public Struct normalizeValidate(boolean isfinal, boolean selectmode, Struct data) {
 		if (data == null)
 			return null;
 		
@@ -95,11 +95,11 @@ public class TypeOptionsList {
 		}
 		
 		if (this.options.size() == 1) 
-			return this.options.get(0).normalizeValidate(data);
+			return this.options.get(0).normalizeValidate(isfinal, selectmode, data);
 		
 		for (DataType dt : this.options) {
-			if (dt.match(data)) 
-				return dt.normalizeValidate(data);
+			if (dt.match(isfinal, data))
+				return dt.normalizeValidate(isfinal, selectmode, data);
 		}
 		
 		Logger.errorTr(438, data);			
@@ -117,7 +117,7 @@ public class TypeOptionsList {
 			return this.options.get(0).wrap(data);
 		
 		for (DataType dt : this.options) {
-			if (dt.match(data)) 
+			if (dt.match(true, data))
 				return dt.wrap(data);
 		}
 		

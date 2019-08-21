@@ -44,7 +44,7 @@ public class Submit implements IStoredProc {
 
 		String captcha = data.getFieldAsString("Captcha");
 
-		RecaptchaUtil.siteVerify(captcha, null, new OperationOutcomeRecord() {
+		RecaptchaUtil.siteVerify(captcha, null, false, new OperationOutcomeRecord() {
 			@Override
 			public void callback(RecordStruct result) throws OperatingContextException {
 				if (this.hasErrors()) {
@@ -84,7 +84,7 @@ public class Submit implements IStoredProc {
 			// TODO message pool
 		}
 		else if (mform.hasNotEmptyAttribute("Type")) {
-			if (! SchemaHub.validateType(data.getField("Data"), mform.getAttribute("Type"))) {
+			if (! SchemaHub.validateType(true, false, data.getField("Data"), mform.getAttribute("Type"))) {
 				callback.returnEmpty();
 				return;
 			}

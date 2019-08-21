@@ -1,0 +1,85 @@
+<dc.Html Badges="User">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Reference Entry" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form AlwaysNew="true">
+				<dcf.RadioGroup Label="Type" Name="Type" Required="true">
+					<RadioButton Value="Work" Label="Work" />
+					<RadioButton Value="Personal" Label="Personal" />
+				</dcf.RadioGroup>
+
+				<dcf.Text Name="Name" Label="Name" Required="true" />
+				<dcf.Text Name="Relationship" Label="Relationship" Required="true" />
+				<dcf.Text Name="Phone" Label="Phone" />
+				<dcf.Text Name="Email" Label="Email" />
+				<dcf.Text Name="Address" Label="Address" />
+				<dcf.Text Name="City" Label="City" />
+				<dcf.Text Name="State" Label="State" DataType="dcUsaState" />
+				<dcf.Text Name="Zip" Label="Zip" DataType="dcUsaZip" />
+				<dcf.TextArea Name="Note" Label="Note" />
+
+				<dcf.FormButtons>
+					<dc.Button Label="Remove" Click="paeapRemove" />
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load" Params="e"><![CDATA[
+				var page = this;
+
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+				var page = this;
+
+				if (page.Params.Data)
+					e.Data = page.Params.Data;
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+				var page = this;
+
+				e.Data.Stamp = page.Params.Data ? page.Params.Data.Stamp : dc.util.Date.stamp();
+
+				e.Message = {
+					Service: 'dcCoreServices',
+					Feature: 'Users',
+					Op: 'SetReference',
+					Body: {
+						Id: page.Params.Id,
+						Reference: e.Data
+					}
+				};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+				var page = this;
+
+				page.Layer.back();
+
+				if (page.Params.Callback)
+					page.Params.Callback();
+	]]></Function>
+	<Function Name="paeapRemove"><![CDATA[
+				var page = this;
+
+				if (! page.Params.Data) {
+					page.callPageFunc('AfterSave');
+					return;
+				}
+
+				dc.comm.sendMessage({
+					Service: 'dcCoreServices',
+					Feature: 'Users',
+					Op: 'RetireReference',
+					Body: {
+						Id: page.Params.Id,
+						Stamp: page.Params.Data.Stamp
+					}
+				}, function(resp) {
+					page.callPageFunc('AfterSave');
+				});
+	]]></Function>
+</dc.Html>

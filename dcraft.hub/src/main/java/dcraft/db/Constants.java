@@ -35,5 +35,5 @@ public class Constants {
 	final static public String DB_GLOBAL_INDEX_SUB = "dcIndex2";
 	
 	final static public String DB_GLOBAL_ROOT_RECORD = "00000_000000000000001";  // root user id, aka root tenant id
-	//final static public String DB_GLOBAL_GUEST_USER = "00000_000000000000000";
+	final static public String DB_GLOBAL_GUEST_USER = "00000_000000000000002";
 }

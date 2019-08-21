@@ -317,6 +317,7 @@ public class Emitter {
             	XElement anchr = W3.tag("a")
 	        		.withAttribute("href", link)
 	        		.withAttribute("alt", name)
+					.withAttribute("class", (classes == null ? "" : classes))
 	        		.withAttribute("data-dc-tag", "dc.Link")
 	        		.withAttribute("data-dc-enhance", "true");
 

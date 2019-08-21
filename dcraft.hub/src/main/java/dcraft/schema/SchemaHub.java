@@ -55,7 +55,7 @@ public class SchemaHub {
 	 * @param type schema name of type
 	 * @return log of validation attempt
 	 */
-	static public boolean validateType(Struct data, String type) {
+	static public boolean validateType(boolean isfinal, boolean selectmode, Struct data, String type) {
 		SchemaResource schema = ResourceHub.getResources().getSchema();
 
 		if (schema == null) {
@@ -70,10 +70,10 @@ public class SchemaHub {
 			return false;
 		}
 	
-		return dt.validate(data);
+		return dt.validate(isfinal, selectmode, data);
 	}
 	
-	static public Struct normalizeValidateType(Struct data, String type){
+	static public Struct normalizeValidateType(boolean isfinal, boolean selectmode, Struct data, String type){
 		SchemaResource schema = ResourceHub.getResources().getSchema();
 
 		if (schema == null) {
@@ -88,7 +88,7 @@ public class SchemaHub {
 			return null;
 		}
 	
-		Struct o = dt.normalizeValidate(data);
+		Struct o = dt.normalizeValidate(isfinal, selectmode, data);
 		
 		if (o == null) {
 			Logger.error("Unable to validate and normalize data.");

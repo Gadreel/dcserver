@@ -1,0 +1,802 @@
+<Schema>
+	<Shared>
+		<StringType Id="dcUsaState" Searchable="True">
+			<StringRestriction Pattern="((A[LKZR])|(C[AOT])|(D[EC])|(FL)|(GA)|(HI)|(I[DLNA])|(K[SY])|(LA)|(M[EDAINSOT])|(N[EVHJMYCD])|(O[HKR])|(PA)|(RI)|(S[CD])|(T[NX])|(UT)|(V[TA])|(W[AVIY]))" />
+		</StringType>
+
+		<StringType Id="dcUsaZip" Searchable="True">
+			<StringRestriction Pattern="(\d{5}-\d{4}|\d{5})" />
+		</StringType>
+
+		<StringType Id="dcUsaZipPrefix">
+			<StringRestriction Pattern="\d{3}" />
+		</StringType>
+
+		<StringType Id="dcUserNoticeEnum">
+			<StringRestriction Enum="email,text,none" />
+		</StringType>
+
+		<StringType Id="dcEthnicityEnum">
+			<StringRestriction Enum="NativeAmerican,Asian,African,Latinx,Pacific,White,Other" />
+		</StringType>
+
+		<StringType Id="dcEducationTypeEnum">
+			<StringRestriction Enum="GED,High,Tech,Undergrad,Graduate,Other" />
+		</StringType>
+
+		<StringType Id="dcEducationMaxEnum">
+			<StringRestriction Enum="Middle,StartHigh,GED,DoneHigh,Tech,BS,MS" />
+		</StringType>
+
+		<StringType Id="dcReferenceTypeEnum">
+			<StringRestriction Enum="Work,Personal" />
+		</StringType>
+
+		<Record Id="dcAltAddressDef">
+			<Field Name="Stamp" Type="DateTime" Required="True" />
+			<Field Name="Label" Type="dcSmallString" Required="True" />
+			<Field Name="Address" Type="dcSmallString" Required="True" />
+			<Field Name="Address2" Type="dcSmallString" />
+			<Field Name="City" Type="dcSmallString" Required="True" />
+			<Field Name="State" Type="dcUsaState" Required="True" />
+			<Field Name="Zip" Type="dcUsaZip" Required="True" />
+			<Field Name="Note" Type="dcString" />
+		</Record>
+
+		<Record Id="dcAltPhoneDef">
+			<Field Name="Stamp" Type="DateTime" Required="True" />
+			<Field Name="Label" Type="dcSmallString" Required="True" />
+			<Field Name="Number" Type="dcTinyString" Required="True" />
+			<Field Name="Note" Type="dcString" />
+		</Record>
+
+		<Record Id="dcEducationDef">
+			<Field Name="Stamp" Type="DateTime" Required="True" />
+			<Field Name="Started" Type="LocalDate" Required="True" />
+			<Field Name="Type" Type="dcEducationTypeEnum" Required="True" />
+			<!-- not for GED -->
+			<Field Name="Name" Type="dcSmallString" />
+			<Field Name="Address" Type="dcSmallString" />
+			<Field Name="City" Type="dcSmallString" />
+			<Field Name="State" Type="dcSmallString" />
+			<Field Name="Zip" Type="dcSmallString" />
+			<Field Name="Completed" Type="Boolean" />
+			<!-- program of study -->
+			<Field Name="Program" Type="dcSmallString" />
+			<Field Name="Note" Type="dcString" />
+		</Record>
+
+		<Record Id="dcWorkExperienceDef">
+			<Field Name="Stamp" Type="DateTime" Required="True" />
+			<Field Name="Started" Type="LocalDate" Required="True" />
+			<Field Name="Ended" Type="LocalDate" />
+			<Field Name="Employer" Type="dcSmallString" Required="True" />
+			<Field Name="Address" Type="dcSmallString" />
+			<Field Name="City" Type="dcSmallString" />
+			<Field Name="State" Type="dcSmallString" />
+			<Field Name="Zip" Type="dcSmallString" />
+			<Field Name="Phone" Type="dcSmallString" />
+			<Field Name="JobTitle" Type="dcSmallString" Required="True" />
+			<!-- prompt Full time, Part time, Volunteer but leave open -->
+			<Field Name="Hours" Type="dcSmallString" />
+			<Field Name="Manager" Type="dcSmallString" />
+			<Field Name="Duties" Type="dcString" />
+			<Field Name="LeaveReason" Type="dcSmallString" />
+			<Field Name="Note" Type="dcString" />
+			<Field Name="CanContact" Type="Boolean" />
+		</Record>
+
+		<Record Id="dcReferenceDef">
+			<Field Name="Stamp" Type="DateTime" Required="True" />
+			<Field Name="Type" Type="dcReferenceTypeEnum" Required="True" />
+			<Field Name="Name" Type="dcSmallString" Required="True" />
+			<Field Name="Relationship" Type="dcSmallString" Required="True" />
+			<Field Name="Phone" Type="dcSmallString" />
+			<Field Name="Email" Type="dcSmallString" />
+			<Field Name="Address" Type="dcSmallString" />
+			<Field Name="City" Type="dcSmallString" />
+			<Field Name="State" Type="dcSmallString" />
+			<Field Name="Zip" Type="dcSmallString" />
+			<Field Name="Note" Type="dcString" />
+		</Record>
+	</Shared>
+
+	<Database>
+		<!--
+			The root Tenant has a record id of 00000_000000000000001 that is always present and is reserved (note that hub 00000 is also reserved)
+
+			tables in the root Tenant are recorded under just the table name - ^dcRecord("dcUser"
+			tables in other Tenants are recorded under table name + Tenant name - ^dcRecord("dcUser#00100_000000000000001"
+
+			therefore, for the root Tenant the config is in ^dcRecord("dcTenant","00000_000000000000001" while all other configs
+			are in there own Tenant, e.g.  ^dcRecord("dcTenant#00975_000000123000001","00975_000000123000001"
+
+			note how the record id matches the Tenant id coupled with the table name - this is on purpose and should always
+			be followed.
+
+			the root Tenant has one special field - the Tenant Index - which lists all the other Tenants.  when Tenants are
+			added or removed this index should be updated too
+		-->
+
+		<Table Id="dcTenant">
+			<Field Name="dcAlias" Type="dcMetaString" Required="True" Unique="True" />
+
+			<!-- override config -->
+			<Field Name="dcConfig" Type="Xml" />
+
+			<Field Name="dcHoursOfOperation" Type="AnyRecord" List="True" />
+
+			<!--
+				global password allows root user to share same password in all Tenants,
+				should be fairly obscure since it provides a lot of power.
+				Technically anyone able to login as root on the root Tenant has all
+				the power, this just makes that power easier to use - but it is not less
+				secure than before, having a root user at all is a blessing and concern.
+			-->
+			<!-- field used by root Tenant only, password for root user in all Tenants -->
+			<Field Name="dcGlobalPassword" Type="dcMetaString" />
+
+			<Field Name="dcLastBackup" Type="DateTime" List="True" />
+
+			<!--
+				TODO review - should our key trust be in a keystore instead?
+				do we even need this stuff?
+
+				Master allows you to login as any user on any Tenant, but to be a master you
+				must have one of the Master Client Keys and you must know the master password
+				pattern.
+			-->
+			<!-- field used by root Tenant only, keys for all users in all Tenants -->
+			<!-- Field Name="dcMasterKeys" Type="dcSmallString" List="True" / -->
+			<!-- field used by root Tenant only, password pattern for all users in all Tenants -->
+			<!-- Field Name="dcMasterPasswordPattern" Type="dcSmallString" / -->
+		</Table>
+
+		<!-- TODO plan on removing - or maybe preventing inserts?
+		<Trigger Table="dcTenant" Operation="BeforeInsert" Execute="dcraft.db.proc.trigger.BeforeTenantInsert" />
+		<Trigger Table="dcTenant" Operation="AfterInsert" Execute="dcraft.db.proc.trigger.AfterTenantInsert" />
+		-->
+
+		<!--
+			guest user = 00000_000000000000000
+			root user  = 00000_000000000000001
+
+			root user is in ^dcRecord("dcUser","00000_000000000000001"
+
+			but users may be in more than on Tenant - a user id only appears once in entire database.  the same user id in more than
+			one Tenant denotes that the SAME user belongs to more than one Tenant.
+
+			so root user in Tenant 00975_000000123000001 is ^dcRecord("dcUser#00975_000000123000001","00000_000000000000001"
+			and user 00975_000000123000999 is ^dcRecord("dcUser#00975_000000123000001","00975_000000123000999"
+			but this user may also appear in another Tenant, such as ^dcRecord("dcUser#00100_000000000000001","00975_000000123000999"
+		-->
+		<Table Id="dcUser">
+			<Field Name="dcUsername" Type="dcUsername" Required="True" Unique="True" Indexed="True" />
+			<Field Name="dcFirstName" Type="dcSmallString" />
+			<Field Name="dcLastName" Type="dcSmallString" />
+
+			<!-- Type="dcEmail" may be used in valdiation but will not allow @localhost so use small string -->
+			<Field Name="dcEmail" Type="dcEmailBasic" Indexed="True" />
+			<!-- dcEmail should be email within the Tenant, backup applies if within Tenant is bad, missing or user account is disabled TODO -->
+			<Field Name="dcBackupEmail" Type="dcEmailBasic" Indexed="True" />
+			<Field Name="dcPassword" Type="dcMetaString" />
+			<Field Name="dcLocale" Type="dcMetaString" List="True" />
+			<Field Name="dcChronology" Type="dcMetaString" List="True" />
+			<Field Name="dcDescription" Type="dcLargeString" />
+
+			<Field Name="dcAddress" Type="dcSmallString" />
+			<Field Name="dcAddress2" Type="dcSmallString" />
+			<Field Name="dcCity" Type="dcSmallString" />
+			<Field Name="dcState" Type="dcUsaState" />
+			<Field Name="dcZip" Type="dcUsaZip" />
+			<Field Name="dcZipPrefix" Type="dcUsaZipPrefix" Indexed="True" />
+			<Field Name="dcPhone" Type="dcTinyString" />
+			<Field Name="dcNotices" Type="dcUserNoticeEnum" />
+			<!-- geocoded address -->
+			<Field Name="dcLocation" Type="dcMetaString" />
+			<Field Name="dcFacebookId" Type="dcString" Unique="True" />
+			<Field Name="dcExternalId" Type="dcSmallString" List="True" />
+			<Field Name="dcCreated" Type="DateTime" />
+			<Field Name="dcLastLogin" Type="DateTime" Audit="False" />
+			<Field Name="dcConfirmed" Type="Boolean" />
+			<Field Name="dcConfirmCode" Type="dcSmallString" />
+			<Field Name="dcRecoverAt" Type="DateTime" />
+			<Field Name="dcBadges" Type="dcMetaString" List="True" Indexed="True" />
+			<Field Name="dcBadgesRetired" Type="AnyList" Audit="False" />
+
+			<!-- extras -->
+
+			<Field Name="dcDOB" Type="LocalDate" />
+			<Field Name="dcDisplayName" Type="dcSmallString" />
+			<Field Name="dcIntro" Type="dcLargeString" />
+			<!-- Gallery /users/{$UserID}/{$ImageName}.v/full.jpg -->
+			<Field Name="dcImageName" Type="dcMetaString" />
+
+			<!-- keyed by Stamp field, timestamp entered -->
+			<Field Name="dcAltAddresses" Type="dcAltAddressDef" List="True" />
+
+			<!-- keyed by Stamp field, timestamp entered -->
+			<Field Name="dcAltPhones" Type="dcAltPhoneDef" List="True" />
+
+			<Field Name="dcPrimaryLanguage" Type="dcTinyString" Indexed="True" />
+			<!-- ideally comma separated, but freetext -->
+			<Field Name="dcOtherLanguages" Type="dcSmallString" />
+			<!-- prompt for Male or Female, as these are common demographics, but leave open ended  -->
+			<Field Name="dcGender" Type="dcTinyString" Indexed="True" />
+			<!-- prompt for She/her, He/him, They/them, but leave open ended  -->
+			<Field Name="dcPronouns" Type="dcTinyString" />
+			<!-- keyed by enum value -->
+			<Field Name="dcEthnicity" Type="dcEthnicityEnum" List="True" Indexed="True" />
+			<Field Name="dcEthnicityNote" Type="dcTinyString" />
+			<Field Name="dcEducationMax" Type="dcEducationMaxEnum" Indexed="True" />
+
+			<!-- keyed by stamp field -->
+			<Field Name="dcEducation" Type="dcEducationDef" List="True" />
+
+			<!-- keyed by stamp field -->
+			<Field Name="dcWorkExperience" Type="dcWorkExperienceDef" List="True" />
+
+			<!-- keyed by Stamp field, timestamp entered -->
+			<Field Name="dcReference" Type="dcReferenceDef" List="True" />
+		</Table>
+
+		<Trigger Table="dcUser" Operation="AfterCreate" Execute="dcraft.db.proc.trigger.AfterUserCreate" />
+		<Trigger Table="dcUser" Operation="AfterUpdate" Execute="dcraft.db.proc.trigger.AfterUserUpdate" />
+		<Trigger Table="dcUser" Operation="AfterInsert" Execute="dcraft.db.proc.trigger.AfterUserInsert" />
+		<Trigger Table="dcUser" Operation="AfterRetire" Execute="dcraft.db.proc.trigger.AfterUserRetire" />
+		<Trigger Table="dcUser" Operation="AfterRevive" Execute="dcraft.db.proc.trigger.AfterUserRevive" />
+
+		<Table Id="dcState">
+			<Field Name="dcCode" Type="dcMetaString" Indexed="True" Required="True" Unique="True" />
+			<Field Name="dcName" Type="dcSmallString" Required="True" Unique="True" />
+		</Table>
+
+		<Procedure Name="dcCoreServices.Users.LoadSelf" Execute="dcraft.core.db.user.LoadSelf" />
+		<Procedure Name="dcCoreServices.Users.UpdateSelf" Execute="dcraft.core.db.user.UpdateSelf" />
+		<Procedure Name="dcCoreServices.Users.Load" Execute="dcraft.core.db.user.Load" />
+		<Procedure Name="dcCoreServices.Users.Update" Execute="dcraft.core.db.user.Update" />
+		<Procedure Name="dcCoreServices.Users.Add" Execute="dcraft.core.db.user.Add" />
+		<Procedure Name="dcCoreServices.Users.SetAltAddress" Execute="dcraft.core.db.user.SetAltAddress" />
+		<Procedure Name="dcCoreServices.Users.RetireAltAddress" Execute="dcraft.core.db.user.RetireAltAddress" />
+		<Procedure Name="dcCoreServices.Users.SetAltPhone" Execute="dcraft.core.db.user.SetAltPhone" />
+		<Procedure Name="dcCoreServices.Users.RetireAltPhone" Execute="dcraft.core.db.user.RetireAltPhone" />
+		<Procedure Name="dcCoreServices.Users.LoadEducation" Execute="dcraft.core.db.user.LoadEducation" />
+		<Procedure Name="dcCoreServices.Users.SetEducation" Execute="dcraft.core.db.user.SetEducation" />
+		<Procedure Name="dcCoreServices.Users.RetireEducation" Execute="dcraft.core.db.user.RetireEducation" />
+		<Procedure Name="dcCoreServices.Users.LoadExperience" Execute="dcraft.core.db.user.LoadExperience" />
+		<Procedure Name="dcCoreServices.Users.SetExperience" Execute="dcraft.core.db.user.SetExperience" />
+		<Procedure Name="dcCoreServices.Users.RetireExperience" Execute="dcraft.core.db.user.RetireExperience" />
+		<Procedure Name="dcCoreServices.Users.LoadReference" Execute="dcraft.core.db.user.LoadReference" />
+		<Procedure Name="dcCoreServices.Users.SetReference" Execute="dcraft.core.db.user.SetReference" />
+		<Procedure Name="dcCoreServices.Users.RetireReference" Execute="dcraft.core.db.user.RetireReference" />
+		<Procedure Name="dcCoreServices.Users.Retire" Execute="dcraft.core.db.user.Retire" />
+		<Procedure Name="dcCoreServices.Users.RetireSelf" Execute="dcraft.core.db.user.RetireSelf" />
+		<Procedure Name="dcCoreServices.Users.Revive" Execute="dcraft.core.db.user.Revive" />
+		<Procedure Name="dcCoreServices.Users.Search" Execute="dcraft.core.db.user.Search" />
+		<Procedure Name="dcCoreServices.Users.SignUp" Execute="dcraft.core.db.user.SignUp" />
+		<Procedure Name="dcCoreServices.Users.InitiateRecovery" Execute="dcraft.core.db.user.InitiateRecovery" />
+		<Procedure Name="dcCoreServices.Users.UsernameLookup" Execute="dcraft.core.db.user.UsernameLookup" />
+		<Procedure Name="dcCoreServices.Users.SetBadges" Execute="dcraft.core.db.user.SetBadges" />
+		<Procedure Name="dcCoreServices.Users.AddBadges" Execute="dcraft.core.db.user.AddBadges" />
+		<Procedure Name="dcCoreServices.Users.RemoveBadges" Execute="dcraft.core.db.user.RemoveBadges" />
+
+	</Database>
+
+	<Services>
+		<Service Name="dcCoreServices">
+			<Feature Name="Users">
+				<Secure Badges="User,Guest">
+					<Op Name="InitiateConfirm">
+						<Description>
+							Request a confirmation code.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Username" Type="dcSmallString" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="InitiateRecovery">
+						<Description>
+							Request a confirmation code.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Captcha" Type="dcString" />
+							<Field Name="Username" Type="dcSmallString" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="SignUp">
+						<Description>
+							Verify credentials, start a session (AuthToken) indirectly as Verify is called implicitly.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Captcha" Type="dcString" />
+							<Field Name="Username" Type="dcUser:dcUsername" />
+							<Field Name="FirstName" Type="dcUser:dcFirstName" />
+							<Field Name="LastName" Type="dcUser:dcLastName" />
+							<Field Name="Email" Type="dcUser:dcEmail" />
+							<Field Name="Phone" Type="dcUser:dcPhone" />
+							<Field Name="Notices" Type="dcUser:dcNotices" />
+							<Field Name="Password" Type="dcUser:dcPassword" />
+							<Field Name="Address" Type="dcUser:dcAddress" />
+							<Field Name="Address2" Type="dcUser:dcAddress2" />
+							<Field Name="City" Type="dcUser:dcCity" />
+							<Field Name="State" Type="dcUser:dcState" />
+							<Field Name="Zip" Type="dcUser:dcZip" />
+							<Field Name="Extra" Type="AnyRecord" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Uuid" Type="dcString" />
+							<Field Name="UserId" Type="Id" />
+						</RecordResponse>
+					</Op>
+				</Secure>
+				<Secure Badges="User">
+					<Op Name="LoadSelf">
+						<Description>
+							Load user's own record.
+						</Description>
+						<RecordResponse>
+							<Field Name="Id" Type="dcUser:Id" />
+							<Field Name="Username" Type="dcUser:dcUsername" />
+							<Field Name="FirstName" Type="dcUser:dcFirstName" />
+							<Field Name="LastName" Type="dcUser:dcLastName" />
+							<Field Name="Email" Type="dcUser:dcEmail" />
+							<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
+							<Field Name="Phone" Type="dcUser:dcPhone" />
+							<Field Name="Notices" Type="dcUser:dcNotices" />
+							<Field Name="Address" Type="dcUser:dcAddress" />
+							<Field Name="Address2" Type="dcUser:dcAddress2" />
+							<Field Name="City" Type="dcUser:dcCity" />
+							<Field Name="State" Type="dcUser:dcState" />
+							<Field Name="Zip" Type="dcUser:dcZip" />
+							<!-- TODO add
+							<Field Name="Chronology" Type="dcUser:dcChronology" />
+							<Field Name="Locale" Type="dcUser:dcLocale" />
+							-->
+
+							<Field Name="DOB" Type="dcUser:dcDOB" />
+							<Field Name="DisplayName" Type="dcUser:dcDisplayName" />
+							<Field Name="Intro" Type="dcUser:dcIntro" />
+							<Field Name="ImageName" Type="dcUser:dcImageName" />
+							<Field Name="AltAddresses">
+								<List Type="dcUser:dcAltAddresses" />
+							</Field>
+							<Field Name="AltPhones">
+								<List Type="dcUser:dcAltPhones" />
+							</Field>
+							<Field Name="PrimaryLanguage" Type="dcUser:dcPrimaryLanguage" />
+							<Field Name="OtherLanguages" Type="dcUser:dcOtherLanguages" />
+							<Field Name="Gender" Type="dcUser:dcGender" />
+							<Field Name="Pronouns" Type="dcUser:dcPronouns" />
+							<Field Name="Ethnicity">
+								<List Type="dcUser:dcEthnicity" />
+							</Field>
+							<Field Name="EthnicityNote" Type="dcUser:dcEthnicityNote" />
+							<Field Name="EducationMax" Type="dcUser:dcEducationMax" />
+						</RecordResponse>
+					</Op>
+					<Op Name="UpdateSelf">
+						<Description>
+							Update a user's own record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Username" Type="dcUser:dcUsername" Required="IfPresent" />
+							<Field Name="FirstName" Type="dcUser:dcFirstName" Required="IfPresent" />
+							<Field Name="LastName" Type="dcUser:dcLastName" Required="IfPresent" />
+							<Field Name="Email" Type="dcUser:dcEmail" Required="IfPresent" />
+							<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
+							<Field Name="Phone" Type="dcUser:dcPhone" />
+							<Field Name="Notices" Type="dcUser:dcNotices" />
+							<Field Name="Password" Type="dcUser:dcPassword" Required="IfPresent" />
+							<Field Name="Address" Type="dcUser:dcAddress" />
+							<Field Name="Address2" Type="dcUser:dcAddress2" />
+							<Field Name="City" Type="dcUser:dcCity" />
+							<Field Name="State" Type="dcUser:dcState" />
+							<Field Name="Zip" Type="dcUser:dcZip" />
+							<!-- TODO add
+							<Field Name="Chronology" Type="dcUser:dcChronology" />
+							<Field Name="Locale" Type="dcUser:dcLocale" />
+							-->
+							<!-- extras -->
+							<Field Name="DOB" Type="dcUser:dcDOB" />
+							<Field Name="DisplayName" Type="dcUser:dcDisplayName" />
+							<Field Name="Intro" Type="dcUser:dcIntro" />
+							<Field Name="ImageName" Type="dcUser:dcImageName" />
+							<Field Name="PrimaryLanguage" Type="dcUser:dcPrimaryLanguage" />
+							<Field Name="OtherLanguages" Type="dcUser:dcOtherLanguages" />
+							<Field Name="Gender" Type="dcUser:dcGender" />
+							<Field Name="Pronouns" Type="dcUser:dcPronouns" />
+							<Field Name="Ethnicity">
+								<List Type="dcUser:dcEthnicity" />
+							</Field>
+							<Field Name="EthnicityNote" Type="dcUser:dcEthnicityNote" />
+							<Field Name="EducationMax" Type="dcUser:dcEducationMax" />
+						</RecordRequest>
+					</Op>
+					<Op Name="RetireSelf">
+						<Description>
+							Remove user's own record.
+						</Description>
+					</Op>
+					<Op Name="SetAltPhone">
+						<Description>
+							Update / add a user's phone record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+							<Field Name="Phone" Type="dcAltPhoneDef" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="RetireAltPhone">
+						<Description>
+							Remove a user's phone record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+							<Field Name="Stamp" Type="DateTime" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="SetAltAddress">
+						<Description>
+							Update / add a user's address record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+							<Field Name="Address" Type="dcAltAddressDef" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="RetireAltAddress">
+						<Description>
+							Remove a user's address record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+							<Field Name="Stamp" Type="DateTime" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="LoadEducation">
+						<Description>
+							Load a user's education records.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+						</RecordRequest>
+						<ListResponse Type="dcEducationDef" />
+					</Op>
+					<Op Name="SetEducation">
+						<Description>
+							Update / add a user's education record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+							<Field Name="Education" Type="dcEducationDef" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="RetireEducation">
+						<Description>
+							Remove a user's education record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+							<Field Name="Stamp" Type="DateTime" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="LoadExperience">
+						<Description>
+							Load a user's experience  records.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+						</RecordRequest>
+						<ListResponse Type="dcWorkExperienceDef" />
+					</Op>
+					<Op Name="SetExperience">
+						<Description>
+							Update / add a user's experience  record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+							<Field Name="Experience" Type="dcWorkExperienceDef" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="RetireExperience">
+						<Description>
+							Remove a user's experience record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+							<Field Name="Stamp" Type="DateTime" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="LoadReference">
+						<Description>
+							Load a user's reference records.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+						</RecordRequest>
+						<ListResponse Type="dcReferenceDef" />
+					</Op>
+					<Op Name="SetReference">
+						<Description>
+							Update / add a user's reference record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+							<Field Name="Reference" Type="dcReferenceDef" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="RetireReference">
+						<Description>
+							Remove a user's reference record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+							<Field Name="Stamp" Type="DateTime" Required="True" />
+						</RecordRequest>
+					</Op>
+				</Secure>
+				<Secure Badges="Admin">
+					<Op Name="Load">
+						<Description>
+							Load a user's record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="dcUser:Id" />
+							<Field Name="Username" Type="dcUser:dcUsername" />
+							<Field Name="FirstName" Type="dcUser:dcFirstName" />
+							<Field Name="LastName" Type="dcUser:dcLastName" />
+							<Field Name="Email" Type="dcUser:dcEmail" />
+							<Field Name="Phone" Type="dcUser:dcPhone" />
+							<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
+							<Field Name="Notices" Type="dcUser:dcNotices" />
+							<Field Name="Address" Type="dcUser:dcAddress" />
+							<Field Name="Address2" Type="dcUser:dcAddress2" />
+							<Field Name="City" Type="dcUser:dcCity" />
+							<Field Name="State" Type="dcUser:dcState" />
+							<Field Name="Zip" Type="dcUser:dcZip" />
+							<!-- TODO
+							<Field Name="Chronology" Type="dcUser:dcChronology" />
+							<Field Name="Locale" Type="dcUser:dcLocale" />
+							-->
+							<Field Name="Description" Type="dcUser:dcDescription" />
+							<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
+							<!--
+							<Field Name="Groups">
+								<List Type="dcGroup:dcName" />
+							</Field>
+							-->
+							<Field Name="Badges">
+								<List Type="dcUser:dcBadges" />
+							</Field>
+							<!-- extras -->
+							<Field Name="DOB" Type="dcUser:dcDOB" />
+							<Field Name="DisplayName" Type="dcUser:dcDisplayName" />
+							<Field Name="Intro" Type="dcUser:dcIntro" />
+							<Field Name="ImageName" Type="dcUser:dcImageName" />
+							<Field Name="AltAddresses">
+								<List Type="dcUser:dcAltAddresses" />
+							</Field>
+							<Field Name="AltPhones">
+								<List Type="dcUser:dcAltPhones" />
+							</Field>
+							<Field Name="PrimaryLanguage" Type="dcUser:dcPrimaryLanguage" />
+							<Field Name="OtherLanguages" Type="dcUser:dcOtherLanguages" />
+							<Field Name="Gender" Type="dcUser:dcGender" />
+							<Field Name="Pronouns" Type="dcUser:dcPronouns" />
+							<Field Name="Ethnicity">
+								<List Type="dcUser:dcEthnicity" />
+							</Field>
+							<Field Name="EthnicityNote" Type="dcUser:dcEthnicityNote" />
+							<Field Name="EducationMax" Type="dcUser:dcEducationMax" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Update">
+						<Description>
+							Update a user's record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+							<Field Name="Username" Type="dcUser:dcUsername" Required="IfPresent" />
+							<Field Name="FirstName" Type="dcUser:dcFirstName" />
+							<Field Name="LastName" Type="dcUser:dcLastName" />
+							<Field Name="Email" Type="dcUser:dcEmail" />
+							<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
+							<Field Name="Phone" Type="dcUser:dcPhone" />
+							<Field Name="Notices" Type="dcUser:dcNotices" />
+							<Field Name="Password" Type="dcUser:dcPassword" />
+							<Field Name="Address" Type="dcUser:dcAddress" />
+							<Field Name="Address2" Type="dcUser:dcAddress2" />
+							<Field Name="City" Type="dcUser:dcCity" />
+							<Field Name="State" Type="dcUser:dcState" />
+							<Field Name="Zip" Type="dcUser:dcZip" />
+							<!-- TODO
+							<Field Name="Chronology" Type="dcUser:dcChronology" />
+							<Field Name="Locale" Type="dcUser:dcLocale" />
+							-->
+							<Field Name="Description" Type="dcUser:dcDescription" />
+							<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
+							<Field Name="Badges">
+								<List Type="dcUser:dcBadges" />
+							</Field>
+							<!-- extras -->
+							<Field Name="DOB" Type="dcUser:dcDOB" />
+							<Field Name="DisplayName" Type="dcUser:dcDisplayName" />
+							<Field Name="Intro" Type="dcUser:dcIntro" />
+							<Field Name="ImageName" Type="dcUser:dcImageName" />
+							<Field Name="PrimaryLanguage" Type="dcUser:dcPrimaryLanguage" />
+							<Field Name="OtherLanguages" Type="dcUser:dcOtherLanguages" />
+							<Field Name="Gender" Type="dcUser:dcGender" />
+							<Field Name="Pronouns" Type="dcUser:dcPronouns" />
+							<Field Name="Ethnicity">
+								<List Type="dcUser:dcEthnicity" />
+							</Field>
+							<Field Name="EthnicityNote" Type="dcUser:dcEthnicityNote" />
+							<Field Name="EducationMax" Type="dcUser:dcEducationMax" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Add">
+						<Description>
+							Add a user record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Username" Type="dcUser:dcUsername" Required="True" />
+							<Field Name="FirstName" Type="dcUser:dcFirstName" />
+							<Field Name="LastName" Type="dcUser:dcLastName" />
+							<Field Name="Email" Type="dcUser:dcEmail" />
+							<Field Name="BackupEmail" Type="dcUser:dcBackupEmail" />
+							<Field Name="Phone" Type="dcUser:dcPhone" />
+							<Field Name="Notices" Type="dcUser:dcNotices" />
+							<Field Name="Address" Type="dcUser:dcAddress" />
+							<Field Name="Address2" Type="dcUser:dcAddress2" />
+							<Field Name="City" Type="dcUser:dcCity" />
+							<Field Name="State" Type="dcUser:dcState" />
+							<Field Name="Zip" Type="dcUser:dcZip" />
+							<Field Name="Password" Type="dcUser:dcPassword" />
+							<!-- TODO
+							<Field Name="Chronology" Type="dcUser:dcChronology" />
+							<Field Name="Locale" Type="dcUser:dcLocale" />
+							-->
+							<Field Name="Description" Type="dcUser:dcDescription" />
+							<Field Name="Confirmed" Type="dcUser:dcConfirmed" />
+							<Field Name="ConfirmCode" Type="dcUser:dcConfirmCode" />
+							<Field Name="Badges">
+								<List Type="dcUser:dcBadges" />
+							</Field>
+							<!-- extras -->
+							<Field Name="DOB" Type="dcUser:dcDOB" />
+							<Field Name="DisplayName" Type="dcUser:dcDisplayName" />
+							<Field Name="Intro" Type="dcUser:dcIntro" />
+							<Field Name="ImageName" Type="dcUser:dcImageName" />
+							<Field Name="PrimaryLanguage" Type="dcUser:dcPrimaryLanguage" />
+							<Field Name="OtherLanguages" Type="dcUser:dcOtherLanguages" />
+							<Field Name="Gender" Type="dcUser:dcGender" />
+							<Field Name="Pronouns" Type="dcUser:dcPronouns" />
+							<Field Name="Ethnicity">
+								<List Type="dcUser:dcEthnicity" />
+							</Field>
+							<Field Name="EthnicityNote" Type="dcUser:dcEthnicityNote" />
+							<Field Name="EducationMax" Type="dcUser:dcEducationMax" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="dcUser:Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Retire">
+						<Description>
+							Remove (retire) user's record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Revive">
+						<Description>
+							Undo retirement of user's record.
+						</Description>
+						<RecordRequest>
+							<Field Name="Id" Type="dcUser:Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="SetBadges">
+						<Description>
+							Set (replace) the authorization tags for each user listed.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Users" Required="True">
+								<List Type="dcUser:Id" />
+							</Field>
+							<Field Name="Badges" Required="True">
+								<List Type="dcUser:dcBadges" />
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="AddBadges">
+						<Description>
+							Add the authorization tags for each user listed.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Users" Required="True">
+								<List Type="dcUser:Id" />
+							</Field>
+							<Field Name="Badges" Required="True">
+								<List Type="dcUser:dcBadges" />
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="RemoveBadges">
+						<Description>
+							Remove the authorization tags for each user listed.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Users" Required="True">
+								<List Type="dcUser:Id" />
+							</Field>
+							<Field Name="Badges" Required="True">
+								<List Type="dcUser:dcBadges" />
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="UsernameLookup">
+						<Description>
+							Find user record id based on a user name.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Username" Type="dcUser:dcUsername" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="UserId" Type="dcUser:Id" />
+						</RecordResponse>
+					</Op>
+					<!--
+					<Op Name="ListUsers">
+						<Description>
+							Load a list all user records, no matter how many.  Use with discretion.
+						</Description>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="dcUser:Id" />
+								<Field Name="Username" Type="dcUser:dcUsername" />
+								<Field Name="FirstName" Type="dcUser:dcFirstName" />
+								<Field Name="LastName" Type="dcUser:dcLastName" />
+								<Field Name="Email" Type="dcUser:dcEmail" />
+							</Record>
+						</ListResponse>
+					</Op>
+					-->
+					<Op Name="Search">
+						<Description>
+							Load a list all user records for the given badges.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Term" Type="dcSmallString" />
+							<Field Name="Badges">
+								<List Type="dcTinyString" />
+							</Field>
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="dcUser:Id" />
+								<Field Name="Username" Type="dcUser:dcUsername" />
+								<Field Name="FirstName" Type="dcUser:dcFirstName" />
+								<Field Name="LastName" Type="dcUser:dcLastName" />
+								<Field Name="Email" Type="dcUser:dcEmail" />
+								<Field Name="Phone" Type="dcUser:dcPhone" />
+								<Field Name="Address" Type="dcUser:dcAddress" />
+								<Field Name="City" Type="dcUser:dcCity" />
+								<Field Name="State" Type="dcUser:dcState" />
+								<Field Name="Zip" Type="dcUser:dcZip" />
+								<Field Name="Location" Type="dcUser:dcLocation" />
+								<Field Name="Badges">
+									<List Type="dcUser:dcBadges" />
+								</Field>
+							</Record>
+						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+		</Service>
+	</Services>
+</Schema>

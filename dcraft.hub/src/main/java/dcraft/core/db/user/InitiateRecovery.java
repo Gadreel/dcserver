@@ -23,7 +23,7 @@ public class InitiateRecovery implements IStoredProc {
 		if ((userconfig != null) && userconfig.getAttributeAsBooleanOrFalse("RecoveryCaptcha")) {
 			String captcha = data.getFieldAsString("Captcha");
 
-			RecaptchaUtil.siteVerify(captcha, null, new OperationOutcomeRecord() {
+			RecaptchaUtil.siteVerify(captcha, null, false, new OperationOutcomeRecord() {
 				@Override
 				public void callback(RecordStruct result) throws OperatingContextException {
 					if (this.hasErrors()) {

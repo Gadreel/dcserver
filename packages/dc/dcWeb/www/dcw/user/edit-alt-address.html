@@ -1,0 +1,86 @@
+<dc.Html Badges="User">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Address Entry" />
+	</Meta>
+
+	<dc.Body>
+		<dc.Style>
+
+		</dc.Style>
+
+		<dc.PagePanel>
+			<dcf.Form AlwaysNew="true">
+				<dcf.Text Name="Label" Label="Label" Required="true" placeholder="choose from below or use your own terms">
+					<HintButton Text="Mailing" />
+					<HintButton Text="Permanent" />
+				</dcf.Text>
+
+				<dcf.Text Name="Address" Label="Address 1" Required="true" />
+				<dcf.Text Name="Address2" Label="Address 2" />
+				<dcf.Text Name="City" Label="City" Required="true" />
+				<dcf.Text Name="State" Label="State" Required="true" DataType="dcUsaState" />
+				<dcf.Text Name="Zip" Label="Zip" Required="true" DataType="dcUsaZip" />
+				<dcf.TextArea Name="Note" Label="Note" />
+
+				<dcf.FormButtons>
+					<dc.Button Label="Remove" Click="paeapRemove" />
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load" Params="e"><![CDATA[
+				var page = this;
+
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+				var page = this;
+
+				if (page.Params.Data)
+					e.Data = page.Params.Data;
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+				var page = this;
+
+				e.Data.Stamp = page.Params.Data ? page.Params.Data.Stamp : dc.util.Date.stamp();
+
+				e.Message = {
+					Service: 'dcCoreServices',
+					Feature: 'Users',
+					Op: 'SetAltAddress',
+					Body: {
+						Id: page.Params.Id,
+						Address: e.Data
+					}
+				};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+				var page = this;
+
+				page.Layer.back();
+
+				if (page.Params.Callback)
+					page.Params.Callback();
+	]]></Function>
+	<Function Name="paeapRemove"><![CDATA[
+				var page = this;
+
+				if (! page.Params.Data) {
+					page.callPageFunc('AfterSave');
+					return;
+				}
+
+				dc.comm.sendMessage({
+					Service: 'dcCoreServices',
+					Feature: 'Users',
+					Op: 'RetireAltAddress',
+					Body: {
+						Id: page.Params.Id,
+						Stamp: page.Params.Data.Stamp
+					}
+				}, function(resp) {
+					page.callPageFunc('AfterSave');
+				});
+	]]></Function>
+</dc.Html>

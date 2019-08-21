@@ -94,6 +94,24 @@
 				}
 			};
 
+			var commands = [
+				{
+					Command: 'SaveMeta',
+					Params: savedata.Params
+				}
+			];
+
+			if (e.Data.hasOwnProperty('ContentTags')) {
+				commands.push({
+					Command: 'SaveTags',
+					Params: {
+						SetTags: e.Data.ContentTags
+					}
+				});
+
+				delete e.Data.ContentTags;
+			}
+
 			for (var fldname in e.Data) {
 				if (e.Data.hasOwnProperty(fldname)) {
 					savedata.Params.SetFields.push({
@@ -112,12 +130,7 @@
 				Body: {
 					Feed: entry.Params.Feed,
 					Path: entry.Params.Path,
-					Commands: [
-						{
-							Command: 'SaveMeta',
-							Params: savedata.Params
-						}
-					]
+					Commands: commands
 				}
 			};
 	]]></Function>

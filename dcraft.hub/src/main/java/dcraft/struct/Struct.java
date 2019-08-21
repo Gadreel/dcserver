@@ -74,6 +74,11 @@ abstract public class Struct implements IPartSelector {
 		this.explicitType = v;
 		return this;
 	}	
+
+	public Struct withType(String v) {
+		this.explicitType = SchemaHub.getTypeOrError(v);
+		return this;
+	}
 	
 	public boolean hasExplicitType() {
 		return (this.explicitType != null);
@@ -164,7 +169,24 @@ abstract public class Struct implements IPartSelector {
 			return false;
 		}
 		
-		return type.validate(this);
+		return type.validate(true, false, this);
+	}
+	
+	public boolean validateIncomplete() {
+		return this.validateIncomplete(this.explicitType);
+	}
+	
+	public boolean validateIncomplete(String type) {
+		return this.validateIncomplete(SchemaHub.getTypeOrError(type));
+	}
+	
+	public boolean validateIncomplete(DataType type) {
+		if (type == null) {
+			Logger.errorTr(522);
+			return false;
+		}
+		
+		return type.validate(false, false, this);
 	}
 	
 	// statics

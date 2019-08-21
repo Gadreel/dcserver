@@ -1437,6 +1437,60 @@ dc.pui.TagFuncs['dcm.StoreGalleryWidget']['doCmsGetPositions'] = function(entry,
 };
 
 
+if (! dc.pui.TagFuncs['dcm.HighlightWidget'])
+	dc.pui.TagFuncs['dcm.HighlightWidget'] = { };
+
+dc.pui.TagFuncs['dcm.HighlightWidget']['doCmsInitWidget'] = function(entry, node) {
+	var widget = this;
+
+	// after so we don't get drag and drop
+	$(node).dcappend(
+		dc.cms.Loader.createEditToolBar([
+			{
+				Icon: 'fa-pencil',
+				Title: 'Content',
+				Auth: [ 'Admin', 'Editor' ],
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+
+					params.Callback = function() {
+						dc.pui.Loader.MainLayer.refreshPage();
+					};
+
+					dc.pui.Dialog.loadPage('/dcm/cms/highlight-widget-list/' + params.Feed, params);
+				}
+			},
+			{
+				Icon: 'fa-cog',
+				Title: 'Properties',
+				Auth: [ 'Developer' ],
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+
+					params.Callback = function() {
+						dc.pui.Loader.MainLayer.refreshPage();
+					};
+
+					dc.pui.Dialog.loadPage('/dcm/cms/highlight-widget-props/' + params.Feed, params);
+				}
+			}
+		])
+	);
+};
+
+dc.pui.TagFuncs['dcm.HighlightWidget']['getParams'] = function(entry, node) {
+	var pel = $(node).closest('*[data-cms-type="feed"]').get(0);
+
+	if (! pel)
+		return null;
+
+	return {
+		Feed: $(pel).attr('data-cms-feed'),
+		Path: $(pel).attr('data-cms-path'),
+		Id: $(node).attr('id')
+	};
+};
+
 if (! dc.pui.TagFuncs['dcm.IncludeFeed'])
 	dc.pui.TagFuncs['dcm.IncludeFeed'] = { };
 
@@ -1446,7 +1500,8 @@ dc.pui.TagFuncs['dcm.IncludeFeed']['doCmsEdit'] = function(entry, node) {
 	if (! pel)
 		return;
 
-	dc.pui.SimpleApp.loadPage('/dcm/feeds/edit-feed/' + $(pel).attr('data-cms-feed'), {
+	// SimpleApp
+	dc.pui.Dialog.loadPage('/dcm/feeds/edit-feed/' + $(pel).attr('data-cms-feed'), {
 		Feed: $(pel).attr('data-cms-feed'),
 		Path: $(pel).attr('data-cms-path'),
 		Callback: function(path) {

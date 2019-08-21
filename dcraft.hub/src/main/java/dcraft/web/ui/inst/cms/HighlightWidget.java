@@ -219,14 +219,26 @@ public class HighlightWidget extends Base implements ICMSAware {
 			
 			// add images back in new order
 			for (int i = 0; i < neworder.size(); i++) {
-				int pos = neworder.getItemAsInteger(i).intValue();
+				String alias = neworder.getItemAsString(i);
+				boolean fnd = false;
 
-				if (pos >= children.size()) {
-					Logger.warn("bad gallery positions");
+				for (int n = 0; n < children.size(); n++) {
+					XElement child = children.get(n);
+					String ealias = child.attr("Alias");
+
+					if (StringUtil.isEmpty(ealias))
+						continue;
+
+					if (! ealias.equals(alias))
+						continue;
+
+					part.with(child);
+
 					break;
 				}
 
-				part.with(children.get(pos));
+				if (! fnd)
+					Logger.warn("bad gallery positions");
 			}
 			
 			return true;		// command was handled
@@ -283,12 +295,6 @@ public class HighlightWidget extends Base implements ICMSAware {
 						fnd.attr(fld.getName(), Struct.objectToString(fld.getValue()));
 					}
 				}
-				
-				
-				
-				
-				
-				
 				
 				String targetcontent = params.getFieldAsString("Content");
 				String targetlocale = params.getFieldAsString("Locale");

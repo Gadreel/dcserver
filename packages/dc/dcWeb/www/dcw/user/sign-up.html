@@ -35,11 +35,22 @@
 						<dcf.Text Name="Phone" Label="Phone" />
 
 						<dcs.If Target="$UserConfig.@SignUpNotices" Equal="text">
+							<dcs.With Target="$_Resources.Config">
+								<GetTagList Path="Notices/Definition" Result="Notices" />
+							</dcs.With>
+
+							<dc.Template Name="NoticeOpts">
+								<dcs.ForEach Name="Notice" In="$Notices">
+									<dc.Out>
+										<RadioButton Label="{$Notice.@Label}" Value="{$Notice.@Value}" />
+									</dc.Out>
+								</dcs.ForEach>
+
+								<RadioButton Value="none" Label="Do not send any notices." />
+							</dc.Template>
+
 							<dc.Out>
-								<dcf.RadioGroup Label="Notices" Name="Notices">
-									<RadioButton Value="text" Label="Send notices to my phone as text messages." />
-									<RadioButton Value="email" Label="Send notices to my email account." />
-								</dcf.RadioGroup>
+								<dcf.RadioGroup Label="Notices" Name="Notices" FieldParams="NoticeOpts" Required="true" />
 							</dc.Out>
 						</dcs.If>
 
@@ -108,7 +119,7 @@
 							<dc.Out>
 								<dcf.Instructions>
 									<Tr><![CDATA[
-You will get an confirmation email. Please confirm the account by following the link. Your account will not be activated until you do.
+{$_Tr.dcwFormSignUpConfirm}
 									]]></Tr>
 								</dcf.Instructions>
 							</dc.Out>
@@ -176,6 +187,11 @@ You will get an confirmation email. Please confirm the account by following the 
 				Body: e.Data
 			};
 	]]></Function>
+	<Function Name="AfterSaveRecord" Params="result"><![CDATA[
+			var entry = this;
+
+			entry.Params.Result = result;
+	]]></Function>
 	<Function Name="AfterSave"><![CDATA[
 			var entry = this;
 
@@ -185,20 +201,22 @@ You will get an confirmation email. Please confirm the account by following the 
 			if (p1) {
 				if (entry.Params.Callback) {
 					entry.Layer.back();
-					entry.Params.Callback();
+					entry.Params.Callback(entry.Params.Result);
 				}
 				else {
 					window.location.reload(true);
 				}
-
-				return;
 			}
+			else if (dc.handler && dc.handler.user && dc.handler.user.SignUpConfirm) {
+				dc.handler.user.SignUpConfirm(entry.Params.Result);
+			}
+			else {
+				dc.pui.Popup.alert("Sign up submitted, a notice should arrive shortly.", function() {
+					entry.Layer.back();
 
-			dc.pui.Popup.alert("Sign up submitted, an email should arrive shortly.", function() {
-				entry.Layer.back();
-
-				if (entry.Params.Callback)
-					entry.Params.Callback();
-			});
+					if (entry.Params.Callback)
+						entry.Params.Callback(entry.Params.Result);
+				});
+			}
 	]]></Function>
 </dc.Html>

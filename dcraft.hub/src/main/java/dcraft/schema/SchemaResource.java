@@ -19,6 +19,7 @@ package dcraft.schema;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -51,7 +52,14 @@ import dcraft.xml.XmlReader;
  * for for a given project and deployed as part of the conf directory.
  * 
  * This class oversees the management of all the known data types as well as database
- * tables, stored procedures and services (including web services). 
+ * tables, stored procedures and services (including web services).
+ *
+ *
+ * NOTE: there are effectively two levels of schema, top level and tenant level. Sites and other tiers should not
+ * have schema because for schema to fully function it should be reloaded and recompiled at each level (to get overrides).
+ * However, it is possible to add to schema at user or site level and it will mostly work, just not all the overrides. It
+ * is not a best practice, but could work.
+ *
  */
 public class SchemaResource extends ResourceBase {
 	static public SchemaResource fromFile(Path fl) {
@@ -79,14 +87,18 @@ public class SchemaResource extends ResourceBase {
 	protected ServiceSchema service = new ServiceSchema(this);
 	
 	// types with ids
-	protected HashMap<String, DataType> knownTypes = new HashMap<String, DataType>();
+	protected HashMap<String, DataType> knownTypes = new HashMap<>();
+	
+	protected List<XElement> definitions = new ArrayList<>();
+
+	protected boolean blockParent = false;
 
 	public SchemaResource() {
 		this.setName("Schema");
 	}
 	
 	public SchemaResource getParentResource() {
-		if (this.tier == null)
+		if ((this.tier == null) || this.blockParent)
 			return null;
 		
 		ResourceTier pt = this.tier.getParent();
@@ -95,6 +107,19 @@ public class SchemaResource extends ResourceBase {
 			return pt.getSchema();
 		
 		return null;
+	}
+
+	public SchemaResource withBlockParent() {
+		this.blockParent = true;
+		return this;
+	}
+
+	public void addDefinition(XElement def) {
+		this.definitions.add(def);
+	}
+	
+	public Collection<XElement> getDefinitions() {
+		return this.definitions;
 	}
 	
 	public boolean hasTable(String table) {
@@ -274,7 +299,7 @@ public class SchemaResource extends ResourceBase {
 		List<DbTrigger> t = this.db.getTriggers(table, operation);		
 		
 		if (t == null)
-			t = new ArrayList<DbTrigger>();
+			t = new ArrayList<>();
 		
 		SchemaResource parent = this.getParentResource();
 

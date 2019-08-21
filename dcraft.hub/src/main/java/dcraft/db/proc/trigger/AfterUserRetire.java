@@ -8,12 +8,13 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.struct.ListStruct;
+import dcraft.struct.Struct;
 
 import java.util.List;
 
 public class AfterUserRetire implements ITrigger {
 	@Override
-	public boolean execute(TablesAdapter db, String table, String id) throws OperatingContextException {
+	public boolean execute(TablesAdapter db, String table, String id, Struct context) throws OperatingContextException {
 		if ("dcUser".equals(table)) {
 			UserDataUtil.retireUserTrigger(db, id);
 		}

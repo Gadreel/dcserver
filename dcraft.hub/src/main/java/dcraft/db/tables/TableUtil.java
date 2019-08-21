@@ -72,7 +72,7 @@ public class TableUtil {
 
 		boolean isUpdate = StringUtil.isNotEmpty(id);
 
-		// TODO db.executeTrigger(table, isUpdate ? "BeforeUpdate" : "BeforeInsert", request);
+		db.executeTrigger(table, id, isUpdate ? "BeforeUpdate" : "BeforeInsert", fields);
 
 		// check for errors here?
 		if (! db.checkFieldsInternal(table, fields, params.getFieldAsString("Id"))) {
@@ -168,7 +168,7 @@ public class TableUtil {
 		// ===========================================
 		//  run after trigger
 		// ===========================================
-		// TODO db.executeTrigger(table, isUpdate ? "AfterUpdate" : "AfterInsert", request);
+		db.executeTrigger(table, id, isUpdate ? "AfterUpdate" : "AfterInsert", fields);
 
 		// TODO maybe check for errors here? originally exited on errors
 

@@ -13,7 +13,7 @@ import java.util.List;
 
 public class AfterUserRevive implements ITrigger {
 	@Override
-	public boolean execute(TablesAdapter db, String table, String id) throws OperatingContextException {
+	public boolean execute(TablesAdapter db, String table, String id, Struct context) throws OperatingContextException {
 		if ("dcUser".equals(table)) {
 			UserDataUtil.reviveUserTrigger(db, id);
 		}

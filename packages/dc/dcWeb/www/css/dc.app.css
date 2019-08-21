@@ -1350,6 +1350,15 @@ main {
 	width: 100%;
 }
 
+.dc-field .dc-control .dc-input-hint {
+	border: dashed medium darkgray;
+	border-radius: 20px;
+	margin-right: 12px;
+	margin-bottom: 12px;
+	padding-top: 0.4rem;
+	padding-bottom: 0.4rem;
+}
+
 .dc-form-buttons {
 	text-align: right;
 	padding: .9rem 1.4rem;

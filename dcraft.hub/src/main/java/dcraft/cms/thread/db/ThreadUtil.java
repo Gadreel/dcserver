@@ -301,6 +301,43 @@ public class ThreadUtil {
 		return party;
 	}
 	
+	public static List<String> getAllAccess(TablesAdapter db, IVariableAware scope, String... accessScope) throws OperatingContextException {
+		List<String> list = new ArrayList<>();
+
+		List<XElement> channels = ResourceHub.getResources().getConfig().getTagListDeep("Threads/Channel");
+		
+		for (XElement channel : channels) {
+			if (channel.hasNotEmptyAttribute("Scopes")) {
+				String[] scopes = channel.getAttribute("Scopes").split(",");
+				
+				if (scopes.length > 0) {
+					boolean fnd = false;
+					
+					for (int i1 = 0; i1 < scopes.length; i1++) {
+						String s1 = scopes[i1].trim();
+						
+						for (int i2 = 0; i2 < accessScope.length; i2++) {
+							if (s1.equals(accessScope[i2])) {
+								fnd = true;
+								break;
+							}
+						}
+						
+						if (fnd)
+							break;
+					}
+					
+					if (!fnd)
+						continue;
+				}
+			}
+			
+			list.addAll(ThreadUtil.getChannelAccess(db, scope, channel));
+		}
+	
+		return list;
+	}
+	
 	public static List<String> getChannelAccess(TablesAdapter db, IVariableAware scope, XElement chandef) throws OperatingContextException {
 		List<String> list = new ArrayList<>();
 		
@@ -738,7 +775,7 @@ public class ThreadUtil {
 								.with("MessageType", db.getStaticScalar("dcmThread", id, "dcmMessageType"))
 								.with("Title", db.getStaticScalar("dcmThread", id, "dcmTitle"))
 								.with("Originator", oid)
-								.with("OriginatorName", db.getStaticScalar("dcUser", oid, "dgaDisplayName"))
+								.with("OriginatorName", db.getStaticScalar("dcUser", oid, "dcLastName"))
 								.with("Modified", db.getStaticScalar("dcmThread", id, "dcmModified"))
 								.with("Created", db.getStaticScalar("dcmThread", id, "dcmCreated"))
 								.with("Read", Struct.objectToBooleanOrFalse(db.getStaticList("dcmThread", id, "dcmRead", party)))

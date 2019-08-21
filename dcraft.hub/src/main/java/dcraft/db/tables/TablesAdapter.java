@@ -82,7 +82,7 @@ public class TablesAdapter {
 			
 			String nid = nodeId + "_" + StringUtil.leftPad(id.toString(), 15, '0');
 			
-			this.executeTrigger(table, nid,"AfterCreate");
+			this.executeTrigger(table, nid,"AfterCreate", null);
 			
 			return nid;
 		}
@@ -115,7 +115,7 @@ public class TablesAdapter {
 					return;
 				}
 				
-				Struct cor = SchemaHub.normalizeValidateType(value, schema.getTypeId()); 
+				Struct cor = SchemaHub.normalizeValidateType(true, false, value, schema.getTypeId());
 				
 				if (cor == null) 
 					return;
@@ -1787,7 +1787,7 @@ public class TablesAdapter {
 		if (! this.isRetired(table, id)) {
 			this.setStaticScalar(table, id, "Retired", true);
 			
-			this.executeTrigger(table, id,"AfterRetire");
+			this.executeTrigger(table, id,"AfterRetire", null);
 		}
 	}
 
@@ -1795,7 +1795,7 @@ public class TablesAdapter {
 		if (this.isRetired(table, id)) {
 			this.setStaticScalar(table, id, "Retired", false);
 			
-			this.executeTrigger(table, id, "AfterRevive");
+			this.executeTrigger(table, id, "AfterRevive",null);
 		}
 	}
 
@@ -2287,7 +2287,7 @@ public class TablesAdapter {
 		}
 	}
 	
-	public void executeTrigger(String table, String id, String op) {
+	public void executeTrigger(String table, String id, String op, Struct context) {
 		SchemaResource schema = ResourceHub.getResources().getSchema();
 		List<DbTrigger> trigs = schema.getDbTriggers(table, op);
 		
@@ -2297,7 +2297,7 @@ public class TablesAdapter {
 			try {
 				Class<?> spclass = Class.forName(spname);				
 				ITrigger sp = (ITrigger) spclass.newInstance();
-				sp.execute(this, table, id);
+				sp.execute(this, table, id, context);
 			} 
 			catch (Exception x) {
 				Logger.error("Unable to load/start trigger class: " + x);

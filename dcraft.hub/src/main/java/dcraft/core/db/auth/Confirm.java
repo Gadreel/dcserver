@@ -9,12 +9,15 @@ import dcraft.db.proc.call.SignIn;
 import dcraft.db.request.update.DbRecordRequest;
 import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
+import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.task.Task;
+import dcraft.task.TaskHub;
 import dcraft.util.StringUtil;
 
 import java.time.ZonedDateTime;
@@ -49,18 +52,16 @@ public class Confirm extends SignIn {
 			callback.returnEmpty();
 			return;
 		}
-
+		
+		boolean proxy = OperationContext.getOrThrow().getUserContext().isTagged("Admin", "Staff");
+		
 		// TODO check age of the recovery message, limit access to two hours (or configure)
-		
-		List<String> parties = db.getStaticListKeys("dcmThread", id, "dcmFolder");
-		
-		for (String party : parties)
-			ThreadUtil.updateFolder(db, id, party, "/Archive", true);
 
 		RecordStruct attrs = Struct.objectToRecord(db.getStaticScalar("dcmThread", id, "dcmSharedAttributes"));
 
 		if (attrs != null) {
-			if (data.getFieldAsString("Code").equals(attrs.getFieldAsString("Code")) || OperationContext.getOrThrow().getUserContext().isTagged("Admin")) {
+			// code must match, or confirm must be by staff/admin user
+			if (data.getFieldAsString("Code").equals(attrs.getFieldAsString("Code")) || proxy) {
 				String uid = attrs.getFieldAsString("UserId");
 				
 				// if already confirmed then don't create new user
@@ -78,16 +79,39 @@ public class Confirm extends SignIn {
 					
 					db.setStaticScalar("dcmThread", id, "dcmSharedAttributes", attrs);
 				}
+				
+				// archive the notice
+				ThreadUtil.updateFolder(db, id, "/NoticesPool", "/Archive", false);
+				
+				/*
+				List<String> parties = db.getStaticListKeys("dcmThread", id, "dcmFolder");
+				
+				for (String party : parties)
+					ThreadUtil.updateFolder(db, id, party, "/Archive", true);
+					
+				 */
+				
+				// TODO use task queue instead
+				TaskHub.submit(Task.ofSubtask("User confirmed code trigger", "USER")
+						.withTopic("Batch")
+						.withMaxTries(5)
+						.withTimeout(10)        // TODO this should be graduated - 10 minutes moving up to 30 minutes if fails too many times
+						.withParams(RecordStruct.record()
+								.with("Id", id)
+						)
+						.withScript(CommonPath.from("/dcw/user/event-user-confirmed.dcs.xml")));
 
-				// sign in if not confirmed by admin
-				SignIn.signIn(request, db, uid, ! OperationContext.getOrThrow().getUserContext().isTagged("Admin"));
-
-				if (! OperationContext.getOrThrow().getUserContext().isTagged("Admin"))
+				// sign in if not confirmed by admin or staff
+				if (! proxy) {
+					SignIn.signIn(request, db, uid, true);
+					
 					callback.returnValue(OperationContext.getOrThrow().getUserContext()
-						.deepCopyFields("UserId", "Username", "FirstName", "LastName", "Email",
-							"Locale", "Chronology", "Badges"));
-				else
+							.deepCopyFields("UserId", "Username", "FirstName", "LastName", "Email",
+									"Locale", "Chronology", "Badges"));
+				}
+				else {
 					callback.returnValue(RecordStruct.record().with("UserId", uid));
+				}
 
 				return;
 			}
@@ -103,7 +127,7 @@ public class Confirm extends SignIn {
 			}
 		}
 		else {
-			Logger.error("Account fields missing.");
+			Logger.error("Account data missing.");
 
 			try {
 				conn.set("root", "dcIPTrust", origin, ZonedDateTime.now(), 1);

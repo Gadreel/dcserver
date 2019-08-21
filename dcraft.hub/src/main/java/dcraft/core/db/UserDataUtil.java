@@ -20,6 +20,7 @@ import dcraft.task.Task;
 import dcraft.task.TaskHub;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
+import dcraft.util.map.MapUtil;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -85,11 +86,12 @@ public class UserDataUtil {
 				.withConditionallySetFields(data, "FirstName", "dcFirstName",
 				"LastName", "dcLastName", "Email", "dcEmail", "BackupEmail", "dcBackupEmail", "Phone", "dcPhone",
 				"Description", "dcDescription", "Address", "dcAddress", "Address2", "dcAddress2", "City", "dcCity",
-				"State", "dcState", "Zip", "dcZip", "Notices", "dcNotices");
+				"State", "dcState", "Zip", "dcZip", "Notices", "dcNotices", "DOB", "dcDOB", "DisplayName", "dcDisplayName",
+				"Intro", "dcIntro", "ImageName", "dcImageName", "PrimaryLanguage", "dcPrimaryLanguage",
+				"OtherLanguages", "dcOtherLanguages", "Gender", "dcGender", "Pronouns", "dcPronouns",
+				"EthnicityNote", "dcEthnicityNote", "EducationMax", "dcEducationMax");
 		
 		//req.withUpdateField("dcCreated", TimeUtil.now());
-		
-		// TODO update location if applicable
 
 		if (data.hasField("Badges"))
 			req.withSetList("dcBadges", data.getFieldAsList("Badges"));
@@ -99,6 +101,9 @@ public class UserDataUtil {
 		
 		if (data.hasField("Chronology"))
 			req.withSetList("dcChronology", data.getFieldAsList("Chronology"));
+		
+		if (data.hasField("Ethnicity"))
+			req.withSetList("dcEthnicity", data.getFieldAsList("Ethnicity"));
 
 		if (StringUtil.isNotEmpty(fpword)) {
 			req.withUpdateField("dcPassword", OperationContext.getOrThrow().getUserContext().getTenant().getObfuscator().hashPassword(fpword));
@@ -138,7 +143,10 @@ public class UserDataUtil {
 				.withConditionallyUpdateFields(data, "FirstName", "dcFirstName",
 						"LastName", "dcLastName", "Email", "dcEmail", "BackupEmail", "dcBackupEmail", "Phone", "dcPhone",
 						"Description", "dcDescription", "Address", "dcAddress", "Address2", "dcAddress2", "City", "dcCity",
-						"State", "dcState", "Zip", "dcZip", "Notices", "dcNotices");
+						"State", "dcState", "Zip", "dcZip", "Notices", "dcNotices", "DOB", "dcDOB", "DisplayName", "dcDisplayName",
+						"Intro", "dcIntro", "ImageName", "dcImageName", "PrimaryLanguage", "dcPrimaryLanguage",
+						"OtherLanguages", "dcOtherLanguages", "Gender", "dcGender", "Pronouns", "dcPronouns",
+						"EthnicityNote", "dcEthnicityNote", "EducationMax", "dcEducationMax");
 
 		if (StringUtil.isNotEmpty(uname))
 			req.withSetField("dcUsername", uname.trim().toLowerCase());
@@ -211,6 +219,9 @@ public class UserDataUtil {
 		if (data.hasField("Chronology"))
 			req.withSetList("dcChronology", data.getFieldAsList("Chronology"));
 		
+		if (data.hasField("Ethnicity"))
+			req.withSetList("dcEthnicity", data.getFieldAsList("Ethnicity"));
+		
 		if (StringUtil.isNotEmpty(pword))
 			req.withUpdateField("dcPassword", OperationContext.getOrThrow().getUserContext().getTenant().getObfuscator().hashPassword(pword));
 		
@@ -257,6 +268,7 @@ public class UserDataUtil {
 
 		ThreadUtil.deliver(db, id, future);		// TODO make it so that thread is removed if user confirms
 		
+		Logger.info("Sending confirm code: " + data.getFieldAsString("Code"));
 		
 		// TODO use task queue instead
 		TaskHub.submit(Task.ofSubtask("User confirm code trigger", "USER")
@@ -332,5 +344,27 @@ public class UserDataUtil {
 				.withScript(CommonPath.from("/dcw/user/event-user-recover.dcs.xml")));
 
 		return id;
+	}
+	
+	static public void updateUserLocation(TablesAdapter db, String id) throws OperatingContextException {
+		if (! db.isCurrent("dcUser", id) || ! MapUtil.geocodeEnabled())
+			return;
+		
+		String address = Struct.objectToString(db.getStaticScalar("dcUser", id, "dcAddress"));
+		String city = Struct.objectToString(db.getStaticScalar("dcUser", id, "dcCity"));
+		String state = Struct.objectToString(db.getStaticScalar("dcUser", id, "dcState"));
+		String zip = Struct.objectToString(db.getStaticScalar("dcUser", id, "dcZip"));
+
+		if (StringUtil.isEmpty(address) || StringUtil.isEmpty(city) || StringUtil.isEmpty(state) || StringUtil.isEmpty(zip)) {
+			db.retireStaticScalar("dcUser", id, "dcLocation");
+		}
+		else {
+			String loc = MapUtil.getLatLong(address, city, state, zip);
+			
+			if (loc != null)
+				db.setStaticScalar("dcUser", id, "dcLocation", loc);
+			else
+				db.retireStaticScalar("dcUser", id, "dcLocation");
+		}
 	}
 }

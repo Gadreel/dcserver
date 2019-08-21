@@ -89,8 +89,10 @@
 
 						$('#sectProcessSuccess').show().focus();
 
-						if (ga)
-							ga('send', 'event', 'Order', 'Submit', id);
+						gtag('event', 'Submit', {
+							'event_category': 'Order',
+							'event_label': id
+						});
 
 						// TODO review, does not seem too work
 						dc.user.updateUser();

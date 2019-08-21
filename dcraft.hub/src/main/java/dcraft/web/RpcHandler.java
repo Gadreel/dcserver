@@ -156,6 +156,7 @@ public class RpcHandler implements IContentDecoder {
 		
 		ServiceRequest request = ServiceRequest.of(msg.getFieldAsString("Service"), msg.getFieldAsString("Feature"), msg.getFieldAsString("Op"))
 				.withData(msg.getField("Body"))
+				.withAsIncomplete()		// service doesn't have to be final data, that can be a separate app logic check
 				.withFromRpc();
 		
 		// for SendForget don't wait for a callback, just return success

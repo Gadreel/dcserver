@@ -34,6 +34,8 @@ public class Schema {
 		if (def == null)
 			return;
 		
+		this.manager.addDefinition(def);
+		
 		XElement shared = def.find("Shared");
 		
 		if (shared != null) {

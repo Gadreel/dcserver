@@ -30,7 +30,21 @@ public class Load implements IStoredProc {
 				.with("dcAddress2", "Address2")
 				.with("dcCity", "City")
 				.with("dcState", "State")
-				.with("dcZip", "Zip");
+				.with("dcZip", "Zip")
+				.with("dcNotices", "Notices")
+				.withAs("DOB", "dcDOB")
+				.withAs("DisplayName", "dcDisplayName")
+				.withAs("Intro", "dcIntro")
+				.withAs("ImageName", "dcImageName")
+				.withAs("AltAddresses", "dcAltAddresses")
+				.withAs("AltPhones", "dcAltPhones")
+				.withAs("PrimaryLanguage", "dcPrimaryLanguage")
+				.withAs("OtherLanguages", "dcOtherLanguages")
+				.withAs("Gender", "dcGender")
+				.withAs("Pronouns", "dcPronouns")
+				.withAs("EducationMax", "dcEducationMax")
+				.withAs("Ethnicity", "dcEthnicity")
+				.withAs("EthnicityNote", "dcEthnicityNote");
 
 		callback.returnValue(
 				TableUtil.getRecord(db, OperationContext.getOrThrow(), "dcUser", id, selectFields)

@@ -258,7 +258,7 @@ public class CallEight {
 		 *  NEW SchemaHub provides validation services so we'll use it to validate that the
 		 *  requested chef name conforms to the zName data type.
 		 */
-		SchemaHub.validateType(Struct.objectToStruct(chef), "zName");
+		SchemaHub.validateType(true, true, Struct.objectToStruct(chef), "zName");
 		
 		/*
 		 * NEW We are effectively inside a ContextMarker now - recall that OperationOutcome
@@ -327,7 +327,7 @@ public class CallEight {
 					 * The call to validateType will result in 4NN errors if
 					 * data is invalid.
 					 */
-					if (SchemaHub.validateType(data, "zChefRatings")) {
+					if (SchemaHub.validateType(true, true, data, "zChefRatings")) {
 						listoutcome.returnValue(data);
 					}
 					else {

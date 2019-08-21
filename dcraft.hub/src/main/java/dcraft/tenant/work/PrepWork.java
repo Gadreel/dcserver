@@ -61,8 +61,8 @@ public class PrepWork extends StateWork {
 				.withStep(StateWorkStep.of("Config Tenant From DB", this::dbConfigTenant))
 				.withStep(StateWorkStep.of("Load Obfuscator", this::loadObfuscator))
 				.withStep(StateWorkStep.of("Load PGP Keys", this::loadPGPKeys))
+				.withStep(StateWorkStep.of("Load Packages", this::loadPackages))		// before schema to pickup new schema
 				.withStep(StateWorkStep.of("Load Schema", this::loadSchema))
-				.withStep(StateWorkStep.of("Load Packages", this::loadPackages))
 				.withStep(StateWorkStep.of("Load Script", this::loadScript))
 				.withStep(StateWorkStep.of("Load Services", this::loadServices))
 				.withStep(StateWorkStep.of("Load Sites", this::loadSites))
@@ -220,38 +220,67 @@ public class PrepWork extends StateWork {
 		Path cpath = this.tenant.resolvePath("config");
 
 		// --- load tenant level schema, if any ---
+		// we reload and recompile all data types per tenant so that the tenant's overrides on data types can take effect naturally
+		// does mean extra memory is used, but is very efficient use of data typing
 
 		try {
-			SchemaResource sm = null;
+			// TODO before creating a schema resource and duplicating all the data types
+			// first consider checking if there are any schema files for the tenant - if not then skip all this
 
+			// block the parent so that type lookups don't get doubled
+			SchemaResource sm = resources.getOrCreateTierSchema().withBlockParent();
+
+			// server level packages
+			// load in package order so that later packages override the original
+			for (XElement def : ResourceHub.getTopResources().getSchema().getDefinitions()) {
+				sm.loadSchema("inherit-top", def);		// TODO this could be better named / organized
+			}
+
+			// tenant level packages
+			// load in package order so that later packages override the original
+			for (Package pkg : resources.getOrCreateTierPackages().getTierList()) {
+				Path sdir = pkg.getPath().resolve("schema");
+				
+				Logger.trace("Checking for schemas in: " + sdir.toAbsolutePath());
+				
+				if (Files.exists(sdir)) {
+					// TODO make sure that we get in canonical order
+					
+					try {
+						Files.walk(sdir).forEach(sf -> {
+							if (sf.getFileName().toString().endsWith(".xml")) {
+								Logger.trace("Loading schema: " + sf.toAbsolutePath());
+								sm.loadSchema(sf);
+							}
+						});
+					}
+					catch (IOException x) {
+						Logger.warn("Unable to get folder listing: " + x);
+					}
+				}
+			}
+
+			// tenant level custom schema
 			Path shpath = cpath.resolve("schema.xml");
 
 			if (Files.exists(shpath)) {
-				sm = resources.getOrCreateTierSchema();
-
 				Logger.trace("Loading schema: " + shpath.toAbsolutePath());
 				sm.loadSchema(shpath);
-
 			}
-
+			
+			// tenant level custom schema - extras
 			Path shsubpath = cpath.resolve("schema");
 
 			if (Files.exists(shsubpath)) {
-				sm = resources.getOrCreateTierSchema();
-
-				SchemaResource fsm = sm;
-
 				try (Stream<Path> strm = Files.list(shsubpath)) {
 					strm.forEach(entry -> {
 						Logger.trace("Loading schema: " + entry.toAbsolutePath());
-						fsm.loadSchema(entry);
+						sm.loadSchema(entry);
 					});
 				}
 			}
 
-			if (sm != null) {
-				sm.compile();
-			}
+			sm.compile();
 		}
 		catch (Exception x) {
 			Logger.error("Error loading schema: " + x);
@@ -315,7 +344,8 @@ public class PrepWork extends StateWork {
 				config.addTop(hpackage.getDefinition().find("Config"));
 			}
 
-			this.getSchema(tenant.getResources());
+			// see next step
+			//this.getSchema(tenant.getResources());
 		}
 
 		return StateWorkStep.NEXT;
@@ -567,7 +597,8 @@ public class PrepWork extends StateWork {
 					}
 				}
 				
-				this.getSchema(site.getResourcesOrCreate(resources));
+				// sites are not allowed their own schema, not even from a package
+				//this.getSchema(site.getResourcesOrCreate(resources));
 
 				for (XElement lel : sconfig.getTagListLocal("Variables/Var")) {
 					String lname = lel.getAttribute("Name");
@@ -810,37 +841,6 @@ public class PrepWork extends StateWork {
 		//if (((this.htmlmode == HtmlMode.Dynamic) || (this.htmlmode == HtmlMode.Strict))
 		//		&& (mod != null) && mod.isScriptStyleCached())
 		//	this.buildScriptStyleCache();
-	}
-	
-	public SchemaResource getSchema(ResourceTier tier) {
-		SchemaResource sm = tier.getOrCreateTierSchema();
-		
-		// load in package order so that later packages override the original
-		for (Package pkg : tier.getOrCreateTierPackages().getTierList()) {
-			Path sdir = pkg.getPath().resolve("schema");
-			
-			Logger.trace("Checking for schemas in: " + sdir.toAbsolutePath());
-			
-			if (Files.exists(sdir)) {
-				// TODO make sure that we get in canonical order
-				
-				try {
-					Files.walk(sdir).forEach(sf -> {
-						if (sf.getFileName().toString().endsWith(".xml")) {
-							Logger.trace( "Loading schema: " + sf.toAbsolutePath());
-							sm.loadSchema(sf);
-						}
-					});
-				}
-				catch (IOException x) {
-					Logger.warn("Unable to get folder listing: " + x);
-				}
-			}
-		}
-		
-		sm.compile();
-		
-		return sm;
 	}
 
 	/*

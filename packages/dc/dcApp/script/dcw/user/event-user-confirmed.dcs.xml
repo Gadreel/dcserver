@@ -1,0 +1,4 @@
+<dcs.Script Title="Confirmed User Code">
+	<dcs.Info>Confirmed user request: {$_Param.Id}!</dcs.Info>
+
+</dcs.Script>

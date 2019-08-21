@@ -30,11 +30,12 @@ public class Field {
 	enum ReqTypes {
 		True(1),
 		False(2),
-		IfPresent(3);
+		IfPresent(3),
+		Final(4);
 	    
 	    private int code;
 
-	    private ReqTypes(int c) {
+	    ReqTypes(int c) {
 	      code = c;
 	    }
 
@@ -78,7 +79,9 @@ public class Field {
 			this.required = ReqTypes.True;
 		else if ("ifpresent".equals(req))
 			this.required = ReqTypes.IfPresent;
-		
+		else if ("final".equals(req))
+			this.required = ReqTypes.Final;
+
 		String t1 = fel.getAttribute("Type");
 		
 		if (StringUtil.isNotEmpty(t1)) {
@@ -102,9 +105,9 @@ public class Field {
 	}
 		
 	// don't call this with data == null from a field if field required - required means "not null" so put the error in
-	public boolean validate(boolean present, Struct data) {
+	public boolean validate(boolean present, boolean isfinal, boolean selectmode, Struct data) {
 		if (data == null) 
-			return this.valueUnresolved(present, data);
+			return this.valueUnresolved(present, isfinal, selectmode, data);
 		
 		if (this.options.size() == 0) {
 			Logger.errorTr(423, data);			
@@ -112,16 +115,16 @@ public class Field {
 		}
 		
 		if (this.options.size() == 1) { 
-			if (! this.options.get(0).validate(data))
-				return this.valueUnresolved(present, data);
+			if (! this.options.get(0).validate(isfinal, selectmode, data))
+				return this.valueUnresolved(present, isfinal, selectmode, data);
 			
 			return true;
 		}
 		
 		for (DataType dt : this.options) {
-			if (dt.match(data)) {
-				if (! dt.validate(data))
-					return this.valueUnresolved(present, data);
+			if (dt.match(isfinal, data)) {
+				if (! dt.validate(isfinal, selectmode, data))
+					return this.valueUnresolved(present, isfinal, selectmode, data);
 				
 				return true;
 			}
@@ -132,9 +135,9 @@ public class Field {
 	}
 		
 	// don't call this with data == null from a field if field required - required means "not null" so put the error in
-	public Struct normalizeValidate(boolean present, Struct data) {
+	public Struct normalizeValidate(boolean present, boolean isfinal, boolean selectmode, Struct data) {
 		if (data == null) {
-			this.valueUnresolved(present, data);
+			this.valueUnresolved(present, isfinal, selectmode, data);
 			return null;
 		}   
 		
@@ -144,10 +147,10 @@ public class Field {
 		}
 		
 		if (this.options.size() == 1) { 
-			Struct nv = this.options.get(0).normalizeValidate(data);
+			Struct nv = this.options.get(0).normalizeValidate(isfinal, selectmode, data);
 			
 			if (nv == null) {
-				this.valueUnresolved(present, data);
+				this.valueUnresolved(present, isfinal, selectmode, data);
 				return null;
 			}
 			
@@ -155,11 +158,11 @@ public class Field {
 		}
 		
 		for (DataType dt : this.options) {
-			if (dt.match(data)) {
-				Struct nv = dt.normalizeValidate(data);
+			if (dt.match(isfinal, data)) {
+				Struct nv = dt.normalizeValidate(isfinal, selectmode, data);
 				
 				if (nv == null) {
-					this.valueUnresolved(present, data);
+					this.valueUnresolved(present, isfinal, selectmode, data);
 					return null;
 				}
 				
@@ -171,7 +174,7 @@ public class Field {
 		return null;
 	}
 	
-	protected boolean valueUnresolved(boolean present, Object data) {
+	protected boolean valueUnresolved(boolean present, boolean isfinal, boolean selectmode, Object data) {
 		if (data != null) {
 			Logger.errorTr(440, data);			
 			return false;
@@ -180,7 +183,10 @@ public class Field {
 		if (this.required == ReqTypes.False)
 			return true;
 		
-		if (this.required == ReqTypes.IfPresent && ! present)
+		if (((this.required == ReqTypes.IfPresent) || (this.required == ReqTypes.Final)) && ! present)
+			return true;
+		
+		if ((this.required == ReqTypes.Final) && selectmode)
 			return true;
 		
 		Logger.errorTr(424, data, this.name);
@@ -198,7 +204,7 @@ public class Field {
 			return this.options.get(0).wrap(data);
 		
 		for (DataType dt : this.options) {
-			if (dt.match(data)) 
+			if (dt.match(true, data))
 				return dt.wrap(data);
 		}
 		

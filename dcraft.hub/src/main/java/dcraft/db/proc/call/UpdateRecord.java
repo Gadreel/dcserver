@@ -51,7 +51,7 @@ public class UpdateRecord implements IUpdatingStoredProc {
 		// ===========================================
 		//  run before trigger
 		// ===========================================
-		db.executeTrigger(table, id, isUpdate ? "BeforeUpdate" : "BeforeInsert");
+		db.executeTrigger(table, id, isUpdate ? "BeforeUpdate" : "BeforeInsert", fields);
 		
 		// TODO maybe check for errors here?
 		
@@ -140,7 +140,7 @@ public class UpdateRecord implements IUpdatingStoredProc {
 		// ===========================================
 		//  run after trigger
 		// ===========================================
-		db.executeTrigger(table, id, isUpdate ? "AfterUpdate" : "AfterInsert");
+		db.executeTrigger(table, id, isUpdate ? "AfterUpdate" : "AfterInsert", fields);
 		
 		// TODO maybe check for errors here? originally exited on errors
 		
