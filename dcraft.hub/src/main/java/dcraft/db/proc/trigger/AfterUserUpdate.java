@@ -2,8 +2,10 @@ package dcraft.db.proc.trigger;
 
 import dcraft.core.db.UserDataUtil;
 import dcraft.db.proc.ITrigger;
+import dcraft.db.proc.call.SignIn;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -44,14 +46,20 @@ public class AfterUserUpdate implements ITrigger {
 						if (StringUtil.isEmpty(displayName)) {
 							String firstName = Struct.objectToString(db.getStaticScalar(table, id, "dcFirstName"));
 							
-							if (StringUtil.isNotEmpty(firstName))
+							if (StringUtil.isNotEmpty(firstName)) {
 								db.updateStaticScalar(table, id, "dcDisplayName", firstName);
+							}
 						}
 					}
 				}
 			}
 		}
-		
+
+		if (id.equals(OperationContext.getOrThrow().getUserContext().getUserId())) {
+			// get proper context in
+			SignIn.updateContext(db, id);
+		}
+
 		return true;
 	}
 }

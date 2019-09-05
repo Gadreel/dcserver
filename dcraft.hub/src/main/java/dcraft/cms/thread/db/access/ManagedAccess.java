@@ -19,4 +19,9 @@ public class ManagedAccess implements IChannelAccess {
 		
 		return parties;
 	}
+	
+	@Override
+	public String formatParty(TablesAdapter adapter, IVariableAware scope, String party) throws OperatingContextException {
+		return "Managed Forms Pool";
+	}
 }

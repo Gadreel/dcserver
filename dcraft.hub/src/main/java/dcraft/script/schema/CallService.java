@@ -34,28 +34,32 @@ public class CallService extends RecordStruct {
 				String name = StackUtil.stringFromElement(state, code, "Result");
 				
 				state.setState(ExecuteState.RESUME);
-				
-				ServiceHub.call(ServiceRequest.of(
+
+				ServiceRequest request =  ServiceRequest.of(
 						this.getFieldAsString("Service"),
 						this.getFieldAsString("Feature"),
 						this.getFieldAsString("Op")
-						)
-								.withData(this.getField("Params"))
-								.withOutcome(
-										new OperationOutcomeStruct() {
-											@Override
-											public void callback(Struct result) throws OperatingContextException {
-												// not sure if this is useful
-												if (result == null)
-													result = NullStruct.instance;
-												
-												if (StringUtil.isNotEmpty(name))
-													StackUtil.addVariable(state, name, result);
-												
-												OperationContext.getAsTaskOrThrow().resume();
-											}
-										})
-				);
+				)
+						.withData(this.getField("Params"))
+						.withOutcome(
+								new OperationOutcomeStruct() {
+									@Override
+									public void callback(Struct result) throws OperatingContextException {
+										// not sure if this is useful
+										if (result == null)
+											result = NullStruct.instance;
+
+										if (StringUtil.isNotEmpty(name))
+											StackUtil.addVariable(state, name, result);
+
+										OperationContext.getAsTaskOrThrow().resume();
+									}
+								});
+
+				if (! StackUtil.boolFromElement(state, code, "IsFinal", false))
+						request.withAsIncomplete();		// service doesn't have to be final data, that can be a separate app logic check
+
+				ServiceHub.call(request);
 				
 				return ReturnOption.AWAIT;
 			}

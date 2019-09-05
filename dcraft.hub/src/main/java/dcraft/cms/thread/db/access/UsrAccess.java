@@ -5,6 +5,7 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.struct.Struct;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,5 +18,13 @@ public class UsrAccess implements IChannelAccess {
 		parties.add("/Usr/" + OperationContext.getOrThrow().getUserContext().getUserId());
 		
 		return parties;
+	}
+	
+	@Override
+	public String formatParty(TablesAdapter adapter, IVariableAware scope, String party) throws OperatingContextException {
+		String uid = party.substring(5);
+		
+		return Struct.objectToString(adapter.getStaticScalar("dcUser", uid, "dcFirstName")) + " "
+				+ Struct.objectToString(adapter.getStaticScalar("dcUser", uid, "dcLastName"));
 	}
 }

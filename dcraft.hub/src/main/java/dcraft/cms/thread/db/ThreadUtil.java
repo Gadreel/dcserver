@@ -351,33 +351,6 @@ public class ThreadUtil {
 		
 		return list;
 	}
-	
-	public static List<String> collectMessageAccess(TablesAdapter db, IVariableAware scope, String mid) throws OperatingContextException {
-		List<String> list = new ArrayList<>();
-		
-		List<String> parties = db.getStaticListKeys("dcmThread", mid, "dcmParty");
-		
-		for (String party : parties) {
-			XElement chandef = ThreadUtil.getChannelDefFromParty(party);
-			
-			if ((chandef != null) && ! chandef.hasEmptyAttribute("AccessClass")) {
-				Object accessClass = ResourceHub.getResources().getClassLoader().getInstance(chandef.attr("AccessClass"));
-				
-				if (accessClass instanceof IChannelAccess) {
-					List<String> accessparties = ((IChannelAccess) accessClass).collectParties(db, scope);
-					
-					for (String ap : accessparties) {
-						if (ap.equals(party)) {
-							list.add(party);
-							break;
-						}
-					}
-				}
-			}
-		}
-		
-		return list;
-	}
 
 	public static void deliveryNotice(TablesAdapter db, String id) throws OperatingContextException {
 		List<XElement> channels = ResourceHub.getResources().getConfig().getTagListDeep("Threads/Channel");
@@ -785,5 +758,67 @@ public class ThreadUtil {
 		}
 	
 		return resp;
+	}
+	
+	public static List<String> collectMessageAccess(TablesAdapter db, IVariableAware scope, String mid) throws OperatingContextException {
+		List<String> list = new ArrayList<>();
+		
+		List<String> parties = db.getStaticListKeys("dcmThread", mid, "dcmParty");
+		
+		for (String party : parties) {
+			XElement chandef = ThreadUtil.getChannelDefFromParty(party);
+			
+			if ((chandef != null) && ! chandef.hasEmptyAttribute("AccessClass")) {
+				Object accessClass = ResourceHub.getResources().getClassLoader().getInstance(chandef.attr("AccessClass"));
+				
+				if (accessClass instanceof IChannelAccess) {
+					List<String> accessparties = ((IChannelAccess) accessClass).collectParties(db, scope);
+					
+					for (String ap : accessparties) {
+						if (ap.equals(party)) {
+							list.add(party);
+							break;
+						}
+					}
+				}
+			}
+		}
+		
+		return list;
+	}
+	
+	static public List<String> formatParties(TablesAdapter db, IVariableAware scope, String id, boolean meToo, boolean noOrigin) throws OperatingContextException {
+		List<String> list = new ArrayList<>();
+		
+		String uid = OperationContext.getOrThrow().getUserContext().getUserId();
+		String oid = Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmOriginator"));
+
+		List<String> parties = db.getStaticListKeys("dcmThread", id, "dcmParty");
+		
+		for (String party : parties) {
+			if (party.startsWith("/Usr/")) {
+				String pid = party.substring(5);
+				
+				if (! meToo && uid.equals(pid))
+					continue;
+				
+				if (noOrigin && oid.equals(pid))
+					continue;
+			}
+			
+			// TODO optimize so we don't lookup every time?
+			
+			XElement chandef = ThreadUtil.getChannelDefFromParty(party);
+			
+			if ((chandef != null) && ! chandef.hasEmptyAttribute("AccessClass")) {
+				Object accessClass = ResourceHub.getResources().getClassLoader().getInstance(chandef.attr("AccessClass"));
+				
+				if (accessClass instanceof IChannelAccess) {
+					list.add(((IChannelAccess) accessClass).formatParty(db, scope, party));
+				}
+			}
+		}
+		
+		return list;
 	}
 }
