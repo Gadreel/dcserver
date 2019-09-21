@@ -534,12 +534,12 @@ public class Emitter {
                 	break;
                 }
                 
-                if ((c < 'a' || c > 'z') && (c < 'A' || c > 'Z'))
+                if ((c < 'a' || c > 'z') && (c < 'A' || c > 'Z') && (c < '0' || c > '9'))
                     return -1;
             }
         }
         
-        parent.appendRaw(in.substring(start, pos + 1));
+        parent.appendEntity(in.substring(start, pos + 1));
 
         return pos;
     }
@@ -747,42 +747,42 @@ public class Emitter {
                 
                 break;
             case X_COPY:
-            	parent.appendRaw("&copy;");
+            	parent.appendEntity("&copy;");
                 pos += 2;
                 break;
             case X_REG:
-                parent.appendRaw("&reg;");
+                parent.appendEntity("&reg;");
                 pos += 2;
                 break;
             case X_TRADE:
-                parent.appendRaw("&trade;");
+                parent.appendEntity("&trade;");
                 pos += 3;
                 break;
             case X_NDASH:
-                parent.appendRaw("&ndash;");
+                parent.appendEntity("&ndash;");
                 pos++;
                 break;
             case X_MDASH:
-                parent.appendRaw("&mdash;");
+                parent.appendEntity("&mdash;");
                 pos += 2;
                 break;
             case X_HELLIP:
-                parent.appendRaw("&hellip;");
+                parent.appendEntity("&hellip;");
                 pos += 2;
                 break;
             case X_LAQUO:
-                parent.appendRaw("&laquo;");
+                parent.appendEntity("&laquo;");
                 pos++;
                 break;
             case X_RAQUO:
-                parent.appendRaw("&raquo;");
+                parent.appendEntity("&raquo;");
                 pos++;
                 break;
             case X_RDQUO:
-                parent.appendRaw("&rdquo;");
+                parent.appendEntity("&rdquo;");
                 break;
             case X_LDQUO:
-                parent.appendRaw("&ldquo;");
+                parent.appendEntity("&ldquo;");
                 break;
             case ESCAPE:
                 pos++;

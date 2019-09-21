@@ -146,7 +146,7 @@ public class StripeUtil {
 							}
 							else {
 								// TODO remove sout
-								System.out.println("Stripe Resp:\n" + resp.toPrettyString());
+								//System.out.println("Stripe Resp:\n" + resp.toPrettyString());
 
 								if (resp.hasField("error")) {
 									Logger.error("Unable to confirm payment token: " + resp.selectAsString("error.message"));

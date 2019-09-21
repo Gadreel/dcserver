@@ -1235,11 +1235,11 @@ public class TablesAdapter {
 
 		return TableUtil.normalizeFormatRaw(table, id, field, val, format);
 	}
-	
+
 	public byte[] getStaticScalarRaw(String table, String id, String field) throws OperatingContextException {
 		return this.getStaticScalarRaw(table, id, field, "Data");
 	}
-	
+
 	public byte[] getStaticScalarRaw(String table, String id, String field, String area) throws OperatingContextException {
 		// checks the Retired flag 
 		BigDecimal stamp = this.getStaticScalarStamp(table, id, field);
@@ -1256,7 +1256,31 @@ public class TablesAdapter {
 		
 		return null;
 	}
-	
+
+	public Object getStaticScalar(String table, String id, String field, BigDecimal stamp, String format) throws OperatingContextException {
+		byte[] val = this.getStaticScalarRaw(table, id, field, stamp);
+
+		return TableUtil.normalizeFormatRaw(table, id, field, val, format);
+	}
+
+	public byte[] getStaticScalarRaw(String table, String id, String field, BigDecimal stamp) throws OperatingContextException {
+		return this.getStaticScalarRaw(table, id, field, stamp, "Data");
+	}
+
+	public byte[] getStaticScalarRaw(String table, String id, String field, BigDecimal stamp, String area) throws OperatingContextException {
+		if (stamp == null)
+			return null;
+
+		try {
+			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, stamp, area);
+		}
+		catch (DatabaseException x) {
+			Logger.error("getStaticScalar error: " + x);
+		}
+
+		return null;
+	}
+
 	public RecordStruct getStaticScalarExtended(String table, String id, String field, String format) throws OperatingContextException {
 		BigDecimal stamp = this.getStaticScalarStamp(table, id, field);
 		
@@ -1327,7 +1351,31 @@ public class TablesAdapter {
 		
 		return null;
 	}
-	
+
+	public Object getStaticList(String table, String id, String field, String subid, BigDecimal stamp, String format) throws OperatingContextException {
+		byte[] val = this.getStaticListRaw(table, id, field, subid, stamp);
+
+		return TableUtil.normalizeFormatRaw(table, id, field, val, format);
+	}
+
+	public byte[] getStaticListRaw(String table, String id, String field, String subid, BigDecimal stamp) throws OperatingContextException {
+		return this.getStaticListRaw(table, id, field, subid, stamp, "Data");
+	}
+
+	public byte[] getStaticListRaw(String table, String id, String field, String subid, BigDecimal stamp, String area) throws OperatingContextException {
+		if (stamp == null)
+			return null;
+
+		try {
+			return this.request.getInterface().getRaw(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, area);
+		}
+		catch (DatabaseException x) {
+			Logger.error("getStaticList error: " + x);
+		}
+
+		return null;
+	}
+
 	public RecordStruct getStaticListExtended(String table, String id, String field, String subid, String format) throws OperatingContextException {
 		BigDecimal stamp = this.getListStamp(table, id, field, subid);
 		
@@ -1600,12 +1648,34 @@ public class TablesAdapter {
 		
 		return null;
 	}
-	
+
+	public List<BigDecimal> getListStamps(String table, String id, String field, String subid) throws OperatingContextException {
+		List<BigDecimal> ret = new ArrayList<>();
+
+		try {
+			byte[] stamp = this.request.getInterface().nextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, null);
+
+			while (stamp != null) {
+				Object sid = ByteUtil.extractValue(stamp);
+
+				ret.add(Struct.objectToDecimal(sid));
+
+				stamp = this.request.getInterface().nextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, sid);
+			}
+		}
+		catch (DatabaseException x) {
+			Logger.error("getDynamicList error: " + x);
+		}
+
+
+		return ret;
+	}
+
 	public List<String> getDynamicListKeys(String table, String id, String field) throws OperatingContextException {
 		List<String> ret = new ArrayList<>();
 		
 		try {
-			byte[] subid = this.request.getInterface().nextPeerKey(DB_GLOBAL_RECORD, this.request.getTenant(), table, id, field, null);
+			byte[] subid = this.request.getInterface().nextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, null);
 			
 			while (subid != null) {
 				Object sid = ByteUtil.extractValue(subid);
@@ -1616,7 +1686,7 @@ public class TablesAdapter {
 			}
 		}
 		catch (DatabaseException x) {
-			Logger.error("getDynamicList error: " + x);
+			Logger.error("getDynamicListKeys error: " + x);
 		}
 		
 		return ret;

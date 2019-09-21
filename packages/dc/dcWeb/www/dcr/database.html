@@ -12,6 +12,11 @@
 				<dc.Button Label="Reindex All" Click="DoReindexAll" />
 			</dcf.FormButtons>
 
+			<dcf.FormButtons>
+				<input id="inputIndexTable" type="text" />
+				<dc.Button Label="Reindex Tenant Table" Click="DoReindexTable" />
+			</dcf.FormButtons>
+
 			<p>
 				Coming soon - stats
 			</p>
@@ -29,6 +34,25 @@
 				Service: 'dcDatabase',
 				Feature: 'ExecuteProc',
 				Op: 'dcReindexTenant'
+			}, function(rmsg) {
+				if (rmsg.Result > 0) {
+					dc.pui.Popup.alert('Unable to complete indexing: ' + rmsg.Message);
+				}
+				else {
+					dc.pui.Popup.alert('Indexing Completed');
+				}
+			});
+	]]></Function>
+	<Function Name="DoReindexTable"><![CDATA[
+			var page = this;
+
+			dc.comm.sendMessage({
+				Service: 'dcDatabase',
+				Feature: 'ExecuteProc',
+				Op: 'dcReindexTenantTable',
+				Body: {
+					Table: $('#inputIndexTable').val()
+				}
 			}, function(rmsg) {
 				if (rmsg.Result > 0) {
 					dc.pui.Popup.alert('Unable to complete indexing: ' + rmsg.Message);

@@ -184,7 +184,9 @@
 												return;
 											}
 
-											entry.callPageFunc('LoadList', true);
+											//entry.callPageFunc('LoadList', true);
+
+											$(e.target).closest('li').remove();
 										});
 									}
 								});

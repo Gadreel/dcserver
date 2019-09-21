@@ -537,7 +537,17 @@ public class XElement extends XNode {
 		
 		return this;
 	}
-	
+
+	public XElement withEntity(String v) {
+		if (v != null) {
+			XText tx = new XText();
+			tx.appendEntity(v);
+			this.add(tx);
+		}
+
+		return this;
+	}
+
 	public XElement withCData(String v) {
 		this.add(new XText(true, v));
 		
@@ -606,6 +616,21 @@ public class XElement extends XNode {
 		}
 		
 		this.withCData(s);
+	}
+
+	public void appendEntity(String s) {
+		if ((this.children != null) && (this.children.size() > 0)) {
+			XNode node = this.children.get(this.children.size() - 1);
+
+			if (node instanceof XText) {
+				XText t = (XText) node;
+
+				t.appendEntity(s);
+				return;
+			}
+		}
+
+		this.withEntity(s);
 	}
 
 	/**
