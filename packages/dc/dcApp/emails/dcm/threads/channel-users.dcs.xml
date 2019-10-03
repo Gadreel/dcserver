@@ -9,13 +9,18 @@
 		<Select Field="dcLastName" As="LastName" />
 		<Select Field="dcEmail" As="Email" />
 		<Select Field="dcPhone" As="Phone" />
-		<Select Field="dcNotices" As="Notices" />
+		<Select Field="dcNotices" As="Method" />
 	</dcdb.LoadRecord>
 
+	<dcs.With Target="$TheUser">
+		<SetField Name="Name" Value="{$TheUser.FirstName} {$TheUser.LastName}" />
+	</dcs.Var>
+
+	<dcs.Var Name="Notify" Type="List">
+		<AddItem Value="$TheUser" />
+	</dcs.Var>
+
 	<dcs.With Target="$Data">
-		<SetField Name="PartyName" Value="{$TheUser.FirstName} {$TheUser.LastName}" />
-		<SetField Name="PartyEmail" Value="{$TheUser.Email}" />
-		<SetField Name="PartyPhone" Value="{$TheUser.Phone}" />
-		<SetField Name="PartyNotices" Value="{$TheUser.Notices}" />
+		<SetField Name="Notify" Value="$Notify" />
 	</dcs.With>
 </dcs.Library>

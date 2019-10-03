@@ -172,6 +172,7 @@
 		-->
 		<Table Id="dcUser">
 			<Field Name="dcUsername" Type="dcUsername" Required="True" Unique="True" Indexed="True" />
+			<Field Name="dcUsernameRetired" Type="dcUsername" />
 			<Field Name="dcFirstName" Type="dcSmallString" />
 			<Field Name="dcLastName" Type="dcSmallString" />
 
@@ -245,6 +246,11 @@
 		<Trigger Table="dcUser" Operation="AfterInsert" Execute="dcraft.db.proc.trigger.AfterUserInsert" />
 		<Trigger Table="dcUser" Operation="AfterRetire" Execute="dcraft.db.proc.trigger.AfterUserRetire" />
 		<Trigger Table="dcUser" Operation="AfterRevive" Execute="dcraft.db.proc.trigger.AfterUserRevive" />
+
+		<!-- currently not meaningful, may cause always success
+		<Trigger Table="dcUser" Operation="CheckWriteRecord" Execute="dcraft.db.proc.trigger.CheckWriteUserRecord" />
+		<Trigger Table="dcUser" Operation="CheckReadRecord" Execute="dcraft.db.proc.trigger.CheckReadUserRecord" />
+		-->
 
 		<Table Id="dcState">
 			<Field Name="dcCode" Type="dcMetaString" Indexed="True" Required="True" Unique="True" />

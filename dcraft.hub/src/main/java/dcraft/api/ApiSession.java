@@ -48,12 +48,12 @@ abstract public class ApiSession extends RecordStruct implements AutoCloseable {
 		return this.nodeid;
 	}
 	
-	public void call(IServiceRequestBuilder builder) {
+	public void call(IServiceRequestBuilder builder) throws OperatingContextException {
 		this.call(builder.toServiceRequest());
 	}
 	
-	abstract public void call(ServiceRequest request);
-	abstract public void transfer(String channel, StreamFragment source, StreamFragment dest, OperationOutcomeEmpty callback);
+	abstract public void call(ServiceRequest request) throws OperatingContextException;
+	abstract public void transfer(String channel, StreamFragment source, StreamFragment dest, OperationOutcomeEmpty callback) throws OperatingContextException;
 	
 	public boolean signin(String user, String pass) {
 		ServiceRequest request = ServiceRequest.of("dcCoreServices", "Authentication", "SignIn")
@@ -102,11 +102,11 @@ abstract public class ApiSession extends RecordStruct implements AutoCloseable {
 		return this.lastResult;
 	}
 	
-	public void transferUp(String channel, StreamFragment source, OperationOutcomeEmpty callback) {
+	public void transferUp(String channel, StreamFragment source, OperationOutcomeEmpty callback) throws OperatingContextException {
 		this.transfer(channel, source, null, callback);
 	}
 	
-	public void transferDown(String channel, StreamFragment dest, OperationOutcomeEmpty callback) {
+	public void transferDown(String channel, StreamFragment dest, OperationOutcomeEmpty callback) throws OperatingContextException {
 		this.transfer(channel, null, dest, callback);
 	}
 	

@@ -356,7 +356,7 @@ public class TablesAdapter {
 
 					// set either retired or data, not both
 					if (retired) {
-						if (oldIsSet && auditDisabled) {
+						if ((oldIsSet && auditDisabled) || (ByteUtil.compareKeys(olderStamp, newerStamp) == 0)) {
 							this.request.getInterface().kill(did, DB_GLOBAL_RECORD, table, id, fname, stamp, "Data");
 							this.request.getInterface().kill(did, DB_GLOBAL_RECORD, table, id, fname, stamp, "Search");
 							this.request.getInterface().kill(did, DB_GLOBAL_RECORD, table, id, fname, stamp, "Index");
@@ -366,7 +366,7 @@ public class TablesAdapter {
 						this.request.getInterface().set(did, DB_GLOBAL_RECORD, table, id, fname, stamp, "Retired", retired);
 					}
 					else {						
-						if (auditDisabled)
+						if (auditDisabled || (ByteUtil.compareKeys(olderStamp, newerStamp) == 0))
 							this.request.getInterface().kill(did, DB_GLOBAL_RECORD, table, id, fname, stamp, "Retired");
 						
 						this.request.getInterface().set(did, DB_GLOBAL_RECORD, table, id, fname, stamp, "Data", newValue);
@@ -504,7 +504,7 @@ public class TablesAdapter {
 					// set either retired or data, not both
 					if (retired) {
 						// if we are retiring then get rid of old value
-						if (auditDisabled && oldIsSet) {
+						if ((auditDisabled && oldIsSet) || (ByteUtil.compareKeys(olderStamp, newerStamp) == 0)) {
 							this.request.getInterface().kill(did, DB_GLOBAL_RECORD, table, id, fname, sid, stamp, "Data");
 							this.request.getInterface().kill(did, DB_GLOBAL_RECORD, table, id, fname, sid, stamp, "Search");
 							this.request.getInterface().kill(did, DB_GLOBAL_RECORD, table, id, fname, sid, stamp, "Index");
@@ -515,7 +515,7 @@ public class TablesAdapter {
 					}
 					else {
 						// if we are not retiring then get rid of old Retired just in case it was set before
-						if (auditDisabled)
+						if (auditDisabled || (ByteUtil.compareKeys(olderStamp, newerStamp) == 0))
 							this.request.getInterface().kill(did, DB_GLOBAL_RECORD, table, id, fname, sid, stamp, "Retired");
 						
 						this.request.getInterface().set(did, DB_GLOBAL_RECORD, table, id, fname, sid, stamp, "Data", newValue);

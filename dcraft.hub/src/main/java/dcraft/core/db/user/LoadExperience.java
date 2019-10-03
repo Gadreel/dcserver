@@ -18,16 +18,14 @@ public class LoadExperience implements IStoredProc {
 		RecordStruct data = request.getDataAsRecord();
 
 		String id = data.getFieldAsString("Id");
-		UserContext uc = OperationContext.getOrThrow().getUserContext();
-		
-		// TODO configure tags that can edit Extras
-		if (! uc.isTagged("Admin") && ! uc.getUserId().equals(id)) {
-			Logger.error("Not permitted to edit this record.");
+
+		TablesAdapter db = TablesAdapter.ofNow(request);
+
+		if (! TableUtil.canReadRecord(db, "dcUser", id, "dcCoreServices.Users.LoadExperience", null, request.isFromRpc())) {
+			Logger.error("Not permitted to load this record.");
 			callback.returnEmpty();
 			return;
 		}
-
-		TablesAdapter db = TablesAdapter.ofNow(request);
 
 		RecordStruct user = TableUtil.getRecord(db, OperationContext.getOrThrow(), "dcUser", id, SelectFields.select().with("dcWorkExperience"));
 

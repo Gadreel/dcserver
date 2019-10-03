@@ -1,6 +1,6 @@
 <dcs.Library>
 	<!--
-		we have PartyName, PartyNotices, PartyEmail, PartyPhone, PartyEmailList
+		we have Notify.Name, Notify.Notices, Notify.Email, Notify.Phone, Notify.EmailList
 	-->
 
 	<!-- do nothing -->

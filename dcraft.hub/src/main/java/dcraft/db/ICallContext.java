@@ -12,4 +12,7 @@ import java.math.BigDecimal;
 
 public interface ICallContext extends IRequestContext {
 	OperationOutcomeStruct getOutcome();
+
+	void setFromRpc(boolean v);
+	boolean isFromRpc();
 }

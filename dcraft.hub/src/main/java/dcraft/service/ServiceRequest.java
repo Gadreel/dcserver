@@ -158,7 +158,9 @@ public class ServiceRequest implements IWorkBuilder {
 		this.fromRpc = false;
 		return this;
 	}
-	
+
+	public void setFromRpc(boolean v) { this.fromRpc = v; }
+
 	public boolean isFromRpc() {
 		return this.fromRpc;
 	}

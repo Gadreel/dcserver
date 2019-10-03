@@ -19,17 +19,15 @@ public class RetireExperience implements IStoredProc {
 		RecordStruct data = request.getDataAsRecord();
 		
 		String id = data.getFieldAsString("Id");
-		UserContext uc = OperationContext.getOrThrow().getUserContext();
-		
-		// TODO configure tags that can edit Extras
-		if (! uc.isTagged("Admin") && ! uc.getUserId().equals(id)) {
-			Logger.error("Not permitted to edit this record.");
+
+		TablesAdapter db = TablesAdapter.ofNow(request);
+
+		if (! TableUtil.canWriteRecord(db, "dcUser", id, "dcCoreServices.Users.RetireExperience", null, request.isFromRpc())) {
+			Logger.error("Not permitted to update this record.");
 			callback.returnEmpty();
 			return;
 		}
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
-	
 		DbRecordRequest req = UpdateRecordRequest.update()
 				.withTable("dcUser")
 				.withId(data.getFieldAsString("Id"))

@@ -3,6 +3,7 @@ package dcraft.db;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.service.ServiceRequest;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -29,9 +30,19 @@ public class BasicCallContext extends BasicRequestContext implements ICallContex
 	}
 	
 	protected OperationOutcomeStruct outcome = null;
-	
+	protected boolean fromRpc = false;
+
 	@Override
 	public OperationOutcomeStruct getOutcome() {
 		return this.outcome;
 	}
+
+	@Override
+	public boolean isFromRpc() {
+		return this.fromRpc;
+	}
+
+	@Override
+	public void setFromRpc(boolean v) { this.fromRpc = v; }
+
 }

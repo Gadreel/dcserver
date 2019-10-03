@@ -8,6 +8,7 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.log.Logger;
 import dcraft.struct.RecordStruct;
 
 public class Load implements IStoredProc {
@@ -18,6 +19,12 @@ public class Load implements IStoredProc {
 		String id = data.getFieldAsString("Id");
 
 		TablesAdapter db = TablesAdapter.ofNow(request);
+
+		if (! TableUtil.canReadRecord(db, "dcUser", id, "dcCoreServices.Users.Load", null, request.isFromRpc())) {
+			Logger.error("Not permitted to load this record.");
+			callback.returnEmpty();
+			return;
+		}
 
 		SelectFields selectFields = SelectFields.select()
 				.with("dcUsername", "Username")

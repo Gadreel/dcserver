@@ -304,7 +304,7 @@ public class MoodleUtil {
 			body.append("userid=" + URLEncoder.encode(userid + "", "UTF-8"));
 
 			// parse and close response stream
-			CompositeStruct resp = MoodleUtil.execute(alt, "core_enrol_get_users_courses", body.toString(), 5);
+			CompositeStruct resp = MoodleUtil.execute(alt, "core_enrol_get_users_courses", body.toString(), -1);
 
 			if (resp == null) {
 				Logger.error("Error processing text: Moodle sent an incomplete response.");

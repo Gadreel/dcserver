@@ -15,12 +15,7 @@ import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
-import dcraft.schema.DataType;
-import dcraft.schema.DbComposer;
-import dcraft.schema.DbField;
-import dcraft.schema.DbFilter;
-import dcraft.schema.SchemaResource;
-import dcraft.schema.TableView;
+import dcraft.schema.*;
 import dcraft.struct.DataUtil;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
@@ -540,5 +535,83 @@ public class TableUtil {
 		}
 		
 		return count;
+	}
+
+	// if any trigger passed then all do - thus can add overrides at the application level
+	static public boolean canWriteRecord(TablesAdapter db, String table, String id, String op, String tag, boolean fromrpc) throws OperatingContextException {
+		RecordStruct context = RecordStruct.record()
+				.with("Op", op)
+				.with("Tag", tag)
+				.with("FromRPC", fromrpc);
+
+		return TableUtil.canWriteRecord(db, table, id, context);
+	}
+
+	static public boolean canWriteRecord(TablesAdapter db, String table, String id, RecordStruct context) throws OperatingContextException {
+		SchemaResource schema = ResourceHub.getResources().getSchema();
+		List<DbTrigger> trigs = schema.getDbTriggers(table, "CheckWriteRecord");
+		boolean can = true;
+
+		for (DbTrigger trig : trigs) {
+			can = false;		// if there are any triggers at all, then fail unless we find 1 pass
+
+			String spname = trig.execute;
+
+			try {
+				Class<?> spclass = Class.forName(spname);
+				ITrigger sp = (ITrigger) spclass.newInstance();
+
+				if (sp.execute(db, table, id, context))
+					return true;
+			}
+			catch (OperatingContextException x) {
+				throw x;
+			}
+			catch (Exception x) {
+				Logger.error("Unable to load/start trigger class: " + x);
+			}
+		}
+
+		Logger.error("Unable to update record.");
+		return can;
+	}
+
+	// if any trigger passed then all do - thus can add overrides at the application level
+	static public boolean canReadRecord(TablesAdapter db, String table, String id, String op, String tag, boolean fromrpc) throws OperatingContextException {
+		RecordStruct context = RecordStruct.record()
+				.with("Op", op)
+				.with("Tag", tag)
+				.with("FromRPC", fromrpc);
+
+		return TableUtil.canReadRecord(db, table, id, context);
+	}
+
+	static public boolean canReadRecord(TablesAdapter db, String table, String id, RecordStruct context) throws OperatingContextException {
+		SchemaResource schema = ResourceHub.getResources().getSchema();
+		List<DbTrigger> trigs = schema.getDbTriggers(table, "CheckReadRecord");
+		boolean can = true;
+
+		for (DbTrigger trig : trigs) {
+			can = false;		// if there are any triggers at all, then fail unless we find 1 pass
+
+			String spname = trig.execute;
+
+			try {
+				Class<?> spclass = Class.forName(spname);
+				ITrigger sp = (ITrigger) spclass.newInstance();
+
+				if (sp.execute(db, table, id, context))
+					return true;
+			}
+			catch (OperatingContextException x) {
+				throw x;
+			}
+			catch (Exception x) {
+				Logger.error("Unable to load/start trigger class: " + x);
+			}
+		}
+
+		Logger.error("Unable to read record.");
+		return can;
 	}
 }

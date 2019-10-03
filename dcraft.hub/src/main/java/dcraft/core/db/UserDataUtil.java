@@ -40,6 +40,11 @@ public class UserDataUtil {
 		for (String badge : badges) {
 			db.retireStaticList("dcUser", id, "dcBadges", badge);
 		}
+
+		String uname = Struct.objectToString(db.getStaticScalar("dcUser", id, "dcUsername"));
+
+		db.setStaticScalar("dcUser", id, "dcUsernameRetired", uname);
+		db.setStaticScalar("dcUser", id, "dcUsername", id + "@user.retired");
 	}
 	
 	static public void reviveUserTrigger(TablesAdapter db, String id) throws OperatingContextException {
@@ -50,6 +55,11 @@ public class UserDataUtil {
 				db.updateStaticList("dcUser", id, "dcBadges", badge.toString(), badge.toString());
 			}
 		}
+
+		String uname = Struct.objectToString(db.getStaticScalar("dcUser", id, "dcUsernameRetired"));
+
+		// tries but may fail
+		db.setStaticScalar("dcUser", id, "dcUsername", uname);
 	}
 	
 	/*

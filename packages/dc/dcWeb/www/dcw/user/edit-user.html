@@ -1,4 +1,4 @@
-<dc.Html Badges="Admin">
+<dc.Html Badges="User">
 	<dcs.With Target="$_Resources.Config">
 		<GetTag Path="Users" Result="UserConfig" />
 	</dcs.With>
@@ -100,19 +100,23 @@
 				<dcf.Password Name="Password" Label="New Password" autocomplete="new-password" placeholder="Enter only to change password" />
 				<dcf.Password Name="ConfirmPassword" autocomplete="new-password" Label="Confirm Password" />
 
-				<dcs.With Target="$_Resources.Config">
-					<GetTagDeep Path="Badges/Definition" Result="Badges" />
-				</dcs.With>
+				<dcs.If Target="$_User.Badges" Contains="Admin,Developer">
+					<dc.Out>
+						<dcs.With Target="$_Resources.Config">
+							<GetTagDeep Path="Badges/Definition" Result="Badges" />
+						</dcs.With>
 
-				<dc.Template Name="BadgeOpts">
-					<dcs.ForEach Name="Badge" In="$Badges">
-						<dc.Out>
-							<Checkbox Label="{$Badge.@Label}" Value="{$Badge.@Value}" />
-						</dc.Out>
-					</dcs.ForEach>
-				</dc.Template>
+						<dc.Template Name="BadgeOpts">
+							<dcs.ForEach Name="Badge" In="$Badges">
+								<dc.Out>
+									<Checkbox Label="{$Badge.@Label}" Value="{$Badge.@Value}" />
+								</dc.Out>
+							</dcs.ForEach>
+						</dc.Template>
 
-				<dcf.CheckGroup Label="Badges" Name="Badges" FieldParams="BadgeOpts" />
+						<dcf.CheckGroup Label="Badges" Name="Badges" FieldParams="BadgeOpts" />
+					</dc.Out>
+				</dcs.If>
 
 				<dcf.FormButtons>
 					<dc.Button Click="DoDelete" Label="Delete" />
@@ -189,7 +193,10 @@
 				return;
 			}
 
-			dc.pui.Popup.confirm('Are you sure you want to delete this User?', function() {
+			dc.pui.Popup.confirm('Are you sure you want to delete this User?', function(confirm) {
+				if (! confirm)
+					return;
+
 				dc.comm.sendMessage({
 					Service: 'dcCoreServices',
 					Feature: 'Users',

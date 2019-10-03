@@ -52,7 +52,7 @@
 		</dcs.If>
 
 		<!--
-			this will give us PartyName, PartyNotices, PartyEmail, PartyPhone, PartyEmailList
+			this will give us list of Notify with: Name, Method, Email, Phone, EmailList
 		-->
 
 		<dcs.Include Path="/dcm/threads/channel-{$_Param.Channel.@Alias}" />
@@ -71,6 +71,8 @@
 			this will send using the above info
 		-->
 
-		<dcs.Include Path="/dcm/threads/notifier-{$Data.PartyNotices}" />
+		<dcs.ForEach Name="Notify" In="$Data.Notify">
+			<dcs.Include Path="/dcm/threads/notifier-{$Notify.Method}" Reusable="true" />
+		</dcs.ForEach>
 	</dcs.Else>
 </dcs.Script>

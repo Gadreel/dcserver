@@ -19,17 +19,15 @@ public class SetExperience implements IStoredProc {
 		RecordStruct data = request.getDataAsRecord();
 		
 		String id = data.getFieldAsString("Id");
-		UserContext uc = OperationContext.getOrThrow().getUserContext();
-		
-		// TODO configure tags that can edit Extras
-		if (! uc.isTagged("Admin") && ! uc.getUserId().equals(id)) {
-			Logger.error("Not permitted to edit this record.");
+
+		TablesAdapter db = TablesAdapter.ofNow(request);
+
+		if (! TableUtil.canWriteRecord(db, "dcUser", id, "dcCoreServices.Users.SetExperience", null, request.isFromRpc())) {
+			Logger.error("Not permitted to update this record.");
 			callback.returnEmpty();
 			return;
 		}
-		
-		TablesAdapter db = TablesAdapter.ofNow(request);
-	
+
 		RecordStruct experience = data.getFieldAsRecord("Experience");
 		
 		DbRecordRequest req = UpdateRecordRequest.update()

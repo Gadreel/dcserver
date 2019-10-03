@@ -9,6 +9,7 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.log.Logger;
 import dcraft.struct.RecordStruct;
 
 public class Update implements IStoredProc {
@@ -16,8 +17,16 @@ public class Update implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
+		String id = data.getFieldAsString("Id");
+
 		TablesAdapter db = TablesAdapter.ofNow(request);
-		
+
+		if (! TableUtil.canWriteRecord(db, "dcUser", id, "dcCoreServices.Users.Update", null, request.isFromRpc())) {
+			Logger.error("Not permitted to update this record.");
+			callback.returnEmpty();
+			return;
+		}
+
 		try (OperationMarker om = OperationMarker.create()) {
 			DbRecordRequest req = UserDataUtil.updateUserWithConditions(data);
 			

@@ -1,6 +1,8 @@
 <dcs.Library>
 	<!--
-		we have PartyName, PartyNotices, PartyEmail, PartyPhone, PartyEmailList
+		we have Notify.Name, Notify.Notices, Notify.Email, Notify.Phone, Notify.EmailList
+
+		TODO translate for the given Notify
 	-->
 
 	<dcs.With Target="$TextNotice-Email-Title">
@@ -13,11 +15,11 @@
 
 	<!-- TODO code for $HtmlNotice-Email-Title  -->
 
-	<dcs.If Target="$Data.PartyEmail" IsEmpty="false">
-		<dcs.SendEmail To="{$Data.PartyEmail}" ReplyTo="{$Data.ReplyTo}" Subject="{$TrTitle}" Body="{$TrTextMessage}" xHtmlMessage="TODO" />
+	<dcs.If Target="$Notify.Email" IsEmpty="false">
+		<dcs.SendEmail To="{$Notify.Email}" ReplyTo="{$Data.ReplyTo}" Subject="{$TrTitle}" Body="{$TrTextMessage}" xHtmlMessage="TODO" />
 	</dcs.If>
 
-	<dcs.If Target="$Data.PartyEmailList" IsEmpty="false">
-		<dcs.SendEmail ToList="{$Data.PartyEmailList}" ReplyTo="{$Data.ReplyTo}" Subject="{$TrTitle}" Body="{$TrTextMessage}" xHtmlMessage="TODO" />
+	<dcs.If Target="$Notify.EmailList" IsEmpty="false">
+		<dcs.SendEmail ToList="{$Notify.EmailList}" ReplyTo="{$Data.ReplyTo}" Subject="{$TrTitle}" Body="{$TrTextMessage}" xHtmlMessage="TODO" />
 	</dcs.If>
 </dcs.Library>
