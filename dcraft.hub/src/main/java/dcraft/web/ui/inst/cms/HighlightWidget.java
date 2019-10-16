@@ -86,7 +86,7 @@ public class HighlightWidget extends Base implements ICMSAware {
 		}
 
 		XElement list =  W3.tag("div")
-				.withClass("dc-widget-highlight-list");
+				.withClass("dc-widget-highlight-list", "pure-g");
 
 		this.with(list);
 
@@ -144,7 +144,7 @@ public class HighlightWidget extends Base implements ICMSAware {
 	
 	@Override
 	public void renderAfterChildren(InstructionWork state) throws OperatingContextException {
-		this.withClass("pure-g", "dc-widget", "dc-widget-highlight")
+		this.withClass("dc-widget", "dc-widget-highlight")
 			.withAttribute("data-dc-enhance", "true")
 			.withAttribute("data-dc-tag", this.getName());
 

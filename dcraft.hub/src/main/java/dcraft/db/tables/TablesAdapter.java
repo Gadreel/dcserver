@@ -1291,7 +1291,8 @@ public class TablesAdapter {
 			return RecordStruct.record()
 				.with("Data", this.getStaticScalar(table, id, field, format))
 				.with("Tags", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, stamp, "Tags"))
-				.with("Retired", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, stamp, "Retired"));
+				.with("Retired", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, stamp, "Retired"))
+				.with("Stamp", stamp);
 		}
 		catch (DatabaseException x) {
 			Logger.error("getStaticScalar error: " + x);
@@ -1387,7 +1388,8 @@ public class TablesAdapter {
 				.with("SubId", subid)
 				.with("Data", this.getStaticList(table, id, field, subid, format))
 				.with("Tags", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Tags"))
-				.with("Retired", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Retired"));
+				.with("Retired", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Retired"))
+				.with("Stamp", stamp);
 		}
 		catch (DatabaseException x) {
 			Logger.error("getStaticList error: " + x);
@@ -1474,7 +1476,8 @@ public class TablesAdapter {
 				.with("Data", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Data"))
 				.with("Tags", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Tags"))
 				.with("Retired", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Retired"))
-				.with("From", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "From"));
+				.with("From", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "From"))
+				.with("Stamp", stamp);
 		}
 		catch (DatabaseException x) {
 			Logger.error("getDynamicScalar error: " + x);
@@ -1600,7 +1603,8 @@ public class TablesAdapter {
 				.with("Tags", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Tags"))
 				.with("Retired", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "Retired"))
 				.with("From", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "From"))
-				.with("To", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "To"));
+				.with("To", this.request.getInterface().get(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, stamp, "To"))
+				.with("Stamp", stamp);
 		}
 		catch (DatabaseException x) {
 			Logger.error("getDynamicList error: " + x);

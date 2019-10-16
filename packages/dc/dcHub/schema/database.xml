@@ -38,6 +38,7 @@
 			<Field Name="When" Type="BigDateTime" />
 		</Record>
 
+		<!-- not used? not found in a ssearch -->
 		<Record Id="dcdbDataField">
 			<Field Name="Tags">
 				<List Type="dcMetaString" />

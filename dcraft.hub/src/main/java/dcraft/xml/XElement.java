@@ -204,7 +204,7 @@ public class XElement extends XNode {
 		if (this.attributes == null)
 			this.createAttrHash();
 
-		this.attributes.put(name, XNode.quote(value));
+		this.attributes.put(name, XNode.quoteExtra(value));
 	}
 	
 	public void setRawAttribute(String name, String value) {
@@ -224,7 +224,7 @@ public class XElement extends XNode {
 		if (this.attributes == null)
 			this.createAttrHash();
 
-		this.attributes.put(name, XNode.quote(value));
+		this.attributes.put(name, XNode.quoteExtra(value));
 		
 		return this;
 	}

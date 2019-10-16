@@ -168,7 +168,45 @@ public abstract class XNode extends CompositeStruct {
 		
 		return sb.toString();
 	}
-	
+
+	public static String quoteExtra(CharSequence string) {
+		if (string == null)
+			return null;
+
+		StringBuilder sb = new StringBuilder();
+
+		for (int i = 0; i < string.length(); i++) {
+			char ch = string.charAt(i);
+			switch (ch) {
+				case '&':
+					sb.append("&amp;");
+					break;
+				case '<':
+					sb.append("&lt;");
+					break;
+				case '>':
+					sb.append("&gt;");
+					break;
+				case '"':
+					sb.append("&quot;");
+					break;
+				case '\'':
+					sb.append("&#39;");
+					break;
+				case '\n':
+					sb.append("&#10;");
+					break;
+				case '\r':
+					sb.append("&#13;");
+					break;
+				default:
+					sb.append(ch);
+			}
+		}
+
+		return sb.toString();
+	}
+
 	public static String quote(char ch) {
 		switch (ch) {
 			case '&':

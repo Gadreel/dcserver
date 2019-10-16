@@ -70,9 +70,9 @@ public class XmlToJson {
 				if (el.hasAttributes()) {
 					this.jsb.field("attributes");
 					this.jsb.startRecord();
-					
+
 					for (Entry<String, String> aentry : el.getAttributes().entrySet())
-						this.jsb.field(aentry.getKey(), this.valueMacro(aentry.getValue(), el));
+						this.jsb.field(aentry.getKey(), this.valueMacro(el.attr(aentry.getKey()), el));
 					
 					this.jsb.endRecord();
 				}

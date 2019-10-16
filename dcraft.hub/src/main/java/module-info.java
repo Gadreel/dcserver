@@ -25,4 +25,6 @@ module dcraft.hub {
   requires activation;
   requires java.mail;
   requires jgit;
+  requires jxl;
+  requires org.jsoup;
 }
