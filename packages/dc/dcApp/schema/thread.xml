@@ -66,6 +66,7 @@
 		<Procedure Name="dcmServices.Thread.ChangeFolder" Execute="dcraft.cms.thread.db.ChangeFolder" />
 		<Procedure Name="dcmServices.Thread.Reindex" Execute="dcraft.cms.thread.db.Reindex" />
 		<Procedure Name="dcmServices.Thread.ArchiveMessages" Execute="dcraft.cms.thread.db.ArchiveMessages" />
+		<Procedure Name="dcmServices.Thread.LoadMessages" Execute="dcraft.cms.thread.db.LoadMessages" />
 	</Database>
 
 	<Shared>
@@ -355,6 +356,31 @@
 						<Description>
 							Clear and reindex entire thread table.
 						</Description>
+					</Op>
+					<Op Name="LoadMessages">
+						<Description>
+							Change folder for a party to a thread.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Folder" Type="dcMetaString" Required="True" />
+							<Field Name="Parties">
+								<List Type="dcMetaString" Required="True" />
+							</Field>
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id"  />
+								<Field Name="Title" Type="dcmThread:dcmTitle" Required="True" />
+								<Field Name="Party" Type="dcMetaString" />
+								<Field Name="MessageType" Type="dcMetaString" />
+								<Field Name="Created" Type="dcmThread:dcmCreated"  />
+								<Field Name="Modified" Type="dcmThread:dcmModified" />
+								<Field Name="Read" Type="dcmThread:dcmRead" />
+								<Field Name="Attributes" Type="dcmThread:dcmSharedAttributes" />
+								<Field Name="Originator" Type="Id" />
+								<Field Name="OriginatorName" Type="dcString" />
+							</Record>
+						</ListResponse>
 					</Op>
 				</Secure>
 				<Secure Badges="User">

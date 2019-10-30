@@ -923,6 +923,41 @@ dc.pui.TagFuncs['dcm.YouTubeWidget']['getParams'] = function(entry, node) {
 	};
 };
 
+if (! dc.pui.TagFuncs['dcm.VimeoWidget'])
+	dc.pui.TagFuncs['dcm.VimeoWidget'] = { };
+
+dc.pui.TagFuncs['dcm.VimeoWidget']['doCmsInitWidget'] = function(entry, node) {
+	var widget = this;
+
+	// after so we don't get drag and drop
+	$(node).dcappend(
+		dc.cms.Loader.createEditToolBar([
+			{
+				Icon: 'fa-cog',
+				Title: 'Properties',
+				Auth: [ 'Admin', 'Editor' ],
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+					dc.pui.Dialog.loadPage('/dcm/cms/vimeo-widget-props/' + params.Feed, params);
+				}
+			}
+		])
+	);
+};
+
+dc.pui.TagFuncs['dcm.VimeoWidget']['getParams'] = function(entry, node) {
+	var pel = $(node).closest('*[data-cms-type="feed"]').get(0);
+
+	if (! pel)
+		return null;
+
+	return {
+		Feed: $(pel).attr('data-cms-feed'),
+		Path: $(pel).attr('data-cms-path'),
+		Id: $(node).attr('id')
+	};
+};
+
 if (! dc.pui.TagFuncs['dcm.GalleryWidget'])
 	dc.pui.TagFuncs['dcm.GalleryWidget'] = { };
 

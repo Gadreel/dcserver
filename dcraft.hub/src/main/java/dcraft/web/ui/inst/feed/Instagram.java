@@ -18,6 +18,7 @@ import dcraft.script.inst.doc.Base;
 import dcraft.util.TimeUtil;
 import dcraft.web.ui.inst.ICMSAware;
 import dcraft.web.ui.inst.IncludeParam;
+import dcraft.web.ui.inst.Link;
 import dcraft.web.ui.inst.W3;
 import dcraft.web.ui.inst.cms.GalleryWidget;
 import dcraft.xml.XElement;
@@ -149,9 +150,10 @@ public class Instagram extends Base implements ICMSAware {
 		if (template == null) {
 			// set default
 			this.with(Base.tag("Template").with(
-					W3.tag("div")
+					Link.tag()
 							.withClass("dcm-widget-instagram-entry")
 							.attr("data-id", "{$Entry.id}")
+							.attr("To", "{$Entry.link}")
 							.with(
 									W3.tag("img")
 											.withClass("pure-img-inline")
