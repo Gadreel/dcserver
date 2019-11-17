@@ -83,8 +83,11 @@ public class IncludeFragment extends Base {
 
 					// pull out the merge parts
 					blayout.mergeWithRoot(state, this.getRoot(state), usemeta);
-					
-					// pull out the UI and copy into us, leave dcuif and Skeleton out
+
+					for (XElement func : layout.selectAll("dcs.Function"))
+						this.add(func);
+
+							// pull out the UI and copy into us, leave dcuif and Skeleton out
 					XElement frag = layout.find("dc.Fragment");
 					
 					if (frag != null) {

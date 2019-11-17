@@ -2,7 +2,10 @@ package dcraft.web.ui.inst.cms;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
+import dcraft.cms.util.GalleryImageConsumer;
 import dcraft.cms.util.GalleryUtil;
 import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
@@ -28,6 +31,7 @@ import dcraft.web.ui.inst.W3;
 import dcraft.web.ui.inst.W3Closed;
 import dcraft.xml.XElement;
 import dcraft.xml.XNode;
+import dcraft.xml.XmlToJson;
 
 public class CarouselWidget extends Base implements ICMSAware {
 	static public CarouselWidget tag() {
@@ -70,10 +74,7 @@ public class CarouselWidget extends Base implements ICMSAware {
 			this
 				.withAttribute("data-dcm-centering", StackUtil.stringFromSource(state, "Centering"));
 
-		String variname = "full";
-		
-		if (this.hasNotEmptyAttribute("Variant"))
-			variname = StackUtil.stringFromSource(state, "Variant");
+		String vari = StackUtil.stringFromSource(state,"Variant", "full");
 		
 		boolean preloadenabled = this.hasNotEmptyAttribute("Preload")
 				? "true".equals(StackUtil.stringFromSource(state,"Preload").toLowerCase())
@@ -88,7 +89,13 @@ public class CarouselWidget extends Base implements ICMSAware {
 	 	W3 arialist = (W3) W3.tag("div").withClass("dc-element-hidden")
 				.attr("role", "list").attr("aria-label", "banner images");
 
-		boolean ariatemplateused = false;
+		AtomicBoolean ariatemplateused = new AtomicBoolean(false);
+
+		List<XElement> images = this.selectAll("Image");
+
+		// clear so not in html output
+		for (XElement img : images)
+			this.remove(img);
 
 		//System.out.println("using show: " + alias);
 
@@ -97,99 +104,102 @@ public class CarouselWidget extends Base implements ICMSAware {
 			.withAttribute("data-dcm-period", StackUtil.stringFromSource(state,"Period"))
 			.withAttribute("data-dcm-gallery", gallery)
 			.withAttribute("data-dcm-show", alias);
-		
+
 		RecordStruct meta = (RecordStruct) GalleryUtil.getMeta(gallery, OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
-		
-		//RecordStruct vdata = GalleryUtil.findVariation(meta, variname);
-		
-		RecordStruct showmeta = GalleryUtil.findShow(meta, alias);
-		
-		if (showmeta != null) {
-			ListStruct images = showmeta.getFieldAsList("Images");
-			
-			if ((images != null) && ! images.isEmpty() && StringUtil.isNotEmpty(variname)) {
-				Base viewer = W3Closed.tag("img");
-				
-				viewer
-					.withClass("dcm-widget-carousel-img")
-					.attr("alt","")
-					.attr("aria-hidden","true");
-				
-				Base fader = W3Closed.tag("img");
-				
-				fader
-					.withClass("dcm-widget-carousel-fader")
-					.attr("alt","")
-					.attr("aria-hidden","true");
-				
-				// TODO add a randomize option
-				
+
+		Base viewer = W3Closed.tag("img");
+
+		viewer
+				.withClass("dcm-widget-carousel-img")
+				.attr("alt","")
+				.attr("aria-hidden","true");
+
+		Base fader = W3Closed.tag("img");
+
+		fader
+				.withClass("dcm-widget-carousel-fader")
+				.attr("alt","")
+				.attr("aria-hidden","true");
+
+		Base list = W3.tag("div").withClass("dcm-widget-carousel-list");
+
+		list.attr("role", "list")
+				.attr("aria-hidden", "true");
+
+		this.with(fader).with(viewer).with(list);
+
+		AtomicLong currimg = new AtomicLong();
+
+		GalleryImageConsumer galleryImageConsumer = new GalleryImageConsumer() {
+			@Override
+			public void accept(RecordStruct meta, RecordStruct show, RecordStruct img) throws OperatingContextException {
+				long cidx = currimg.incrementAndGet();
+
+				String cpath = img.getFieldAsString("Path");
+
+				String ext = meta.getFieldAsString("Extension", "jpg");
+
+				// TODO support alt ext (from the gallery meta.json)
+				img.with("Path", "/galleries" + cpath + ".v/" + vari + "." + ext);
+				img.with("Gallery", meta);
+				//img.with("Variant", vdata);
+				img.with("Show", show);
+				img.with("Position", cidx);
+
+				// TODO use a utility function for this, take default local fields, then override
+				// TODO with current locale
+				// lookup the default locale for this site
+				RecordStruct imgmeta = (RecordStruct) GalleryUtil.getMeta(cpath + ".v",
+						OperationContext.getOrThrow().selectAsString("Controller.Request.View"));
+
+				// lookup the default locale for this site
+				if (imgmeta != null)
+					imgmeta = imgmeta.getFieldAsRecord(OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale());
+
+				// TODO find overrides to the default and merge them into imgmeta
+
+				RecordStruct data = (imgmeta != null) ? imgmeta : RecordStruct.record();
+
+				if (img.isNotFieldEmpty("Element")) {
+					data.with("Element", img.getField("Element"));
+
+					String centerhint = img.selectAsString("Element.attributes.CenterHint");
+
+					if (StringUtil.isNotEmpty(centerhint))
+						data.with("CenterHint", centerhint);
+				}
+
+				img.with("Data", data);
+
 				// TODO support a separate preload image, that is not a variation but its own thing
 				// such as checkered logos in background
-				
-				String topimg = images.getItemAsString(0);
-				
-				if (preloadenabled) {
-					Path preload = OperationContext.getOrThrow().getSite().findSectionFile("galleries", gallery + "/" +
-							topimg + ".v/preload.jpg", OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
-					
+
+				if ((cidx == 1) && preloadenabled) {
+					Path preload = OperationContext.getOrThrow().getSite().findSectionFile("galleries", cpath + ".v/preload.jpg",
+							OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
+
 					if (preload != null) {
 						Memory mem = IOUtil.readEntireFileToMemory(preload);
-						
-						String data = Base64.encodeToString(mem.toArray(), false);
-						
-						viewer.withAttribute("src", "data:image/jpeg;base64," + data);
+
+						String idata = Base64.encodeToString(mem.toArray(), false);
+
+						viewer.withAttribute("src", "data:image/jpeg;base64," + idata);
 					}
 				}
 
-				//if (Str)
-				//String ext = meta.getFieldAsString("Extension", "jpg");
-				
-				Base list = W3.tag("div").withClass("dcm-widget-carousel-list");
-				
-				list.attr("role", "list")
-						.attr("aria-hidden", "true");
+				// TODO use aria templates
 
-				int cidx = 0;
+				Base iel = W3Closed.tag("img");
 
-				for (Struct simg : images.items()) {
-					String img = simg.toString();
-					
-					RecordStruct imgmeta = (RecordStruct) GalleryUtil.getMeta(gallery + "/" + img + ".v",
-							OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
+				iel
+					.withAttribute("role", "listitem")
+					.withAttribute("src", img.getFieldAsString("Path"))
+					.withAttribute("alt", data.selectAsString("Description"))
+					.withAttribute("data-dc-image-data", data.toString());
 
-					// TODO use a utility function for this, take default local fields, then override
-					// TODO with current locale
-					// lookup the default locale for this site
-					if (imgmeta != null)
-						imgmeta = imgmeta.getFieldAsRecord(OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale());
-					
-					// TODO find overrides to the default and merge them into imgmeta
-					
-					/*
-					RecordStruct data = RecordStruct.record()
-							.with("Alias", img)
-							.with("Path", "/galleries" + gallery + ".v/" + img + "." + ext)
-							//.with("Gallery", meta)
-							//.with("Variant", vdata)
-							.with("Show", alias)
-							.with("Data", (imgmeta != null) ? imgmeta : RecordStruct.record());
-					*/
-					
-					RecordStruct data = (imgmeta != null) ? imgmeta : RecordStruct.record();
-					
-					// TODO use aria templates
-					
-					Base iel = W3Closed.tag("img");
-					
-					iel
-							.withAttribute("role", "listitem")
-						.withAttribute("src", "/galleries" + gallery + "/" + img + ".v/" + variname + "." + ext)
-						.withAttribute("alt", data.selectAsString("Description"))
-						.withAttribute("data-dc-image-data", data.toString());
-					
-					list.with(iel);
+				list.with(iel);
 
+				try {
 					// setup image for expand
 					StackUtil.addVariable(state, "image-" + cidx, data);
 
@@ -207,24 +217,45 @@ public class CarouselWidget extends Base implements ICMSAware {
 						for (XNode node : entry.getChildren())
 							arialist.with(node);
 
-						ariatemplateused = true;
+						ariatemplateused.set(true);
 					}
-
-					cidx++;
 				}
-				
-				this.with(fader).with(viewer).with(list);
+				catch (OperatingContextException x) {
+					Logger.warn("Could not reference image data: " + x);
+				}
+			}
+		};
+
+		// TODO add a randomize option
+
+		if (StringUtil.isNotEmpty(alias)) {
+			GalleryUtil.forEachGalleryShowImage(meta, gallery, alias, galleryImageConsumer);
+		}
+		else {
+			RecordStruct showrec = RecordStruct.record()
+					.with("Title", "Default")
+					.with("Alias", "default")
+					.with("Variation", vari);
+
+			for (XElement img : images) {
+				galleryImageConsumer.accept(meta, showrec, RecordStruct.record()
+						.with("Alias", img.getAttribute("Alias"))
+						.with("Path", gallery + "/" + img.getAttribute("Alias"))
+						.with("Element", XmlToJson.convertXml(img,true))
+				);
 			}
 		}
 
-		if (ariatemplateused)
+		if (ariatemplateused.get())
 			this.with(arialist);
 
 		this
-				.withAttribute("data-variant", variname)
+				.withAttribute("data-variant", vari)
 				.withAttribute("data-ext", ext)
-				.withAttribute("data-path", gallery)
-				.withAttribute("data-show", alias);
+				.withAttribute("data-path", gallery);
+
+		if (StringUtil.isNotEmpty(alias))
+			this.withAttribute("data-show", alias);
 
 		UIUtil.markIfEditable(state, this, "widget");
 	}

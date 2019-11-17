@@ -2706,6 +2706,7 @@ ol.dc-listview > li img:first-child + * ~ * {
 	#dcuiMain .dcuiCmsToolbar a:visited {
 		color: white !important;
 		color: var(--dcm-inline-link-color) !important;
+		border-bottom: none;
 	}
 
 	#dcuiMain .dcuiCmsToolbar a:hover,

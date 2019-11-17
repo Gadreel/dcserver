@@ -16,7 +16,9 @@
 ************************************************************************ */
 package dcraft.script.inst.file;
 
+import dcraft.filestore.CollectionSourceStream;
 import dcraft.filestore.FileStoreFile;
+import dcraft.filestore.IFileCollection;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
@@ -57,22 +59,29 @@ public class Stream extends Instruction {
 			Struct source = StackUtil.refFromSource(stack,  "Source");		// must be stream frag or binary or text
 			Struct dest = StackUtil.refFromSource(stack,  "Destination");		// must be stream frag
 
-			if (source instanceof BinaryStruct) {
-				source = MemorySourceStream.fromBinary((BinaryStruct) source);
-			}
-			else if (source instanceof FileStoreFile) {
-				source = ((FileStoreFile) source).allocStreamSrc();
-			}
-			else if (source instanceof Struct) {
-				source = MemorySourceStream.fromBinary(Utf8Encoder.encode(Struct.objectToString(source)));
+			if (! (source instanceof IStream)) {
+				if (source instanceof BinaryStruct) {
+					source = MemorySourceStream.fromBinary((BinaryStruct) source);
+				}
+				else if (source instanceof FileStoreFile) {
+					source = ((FileStoreFile) source).allocStreamSrc();
+				}
+				else if (source instanceof IFileCollection) {
+					source = CollectionSourceStream.of((IFileCollection) source);
+				}
+				else if (source instanceof Struct) {
+					source = MemorySourceStream.fromBinary(Utf8Encoder.encode(Struct.objectToString(source)));
+				}
 			}
 			
 			if (source instanceof IStream) {
 				source = StreamFragment.of((IStream) source);
 			}
 
-			if (dest instanceof FileStoreFile) {
-				dest = ((FileStoreFile) dest).allocStreamDest();
+			if (! (dest instanceof IStream)) {
+				if (dest instanceof FileStoreFile) {
+					dest = ((FileStoreFile) dest).allocStreamDest();
+				}
 			}
 			
 			if (dest instanceof IStream) {

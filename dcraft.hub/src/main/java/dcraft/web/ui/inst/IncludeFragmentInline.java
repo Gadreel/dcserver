@@ -72,8 +72,12 @@ public class IncludeFragmentInline extends Out {
 					// pull out the UI and copy into us, leave dcuif and Skeleton out
 					XElement frag = layout.find("dc.Fragment");
 					
-					if (frag != null)
+					if (frag != null) {
 						this.replace(frag);
+
+						for (XElement func : layout.selectAll("dcs.Function"))
+							this.add(0, func);
+					}
 				}
 				else {
 					Logger.warn("Unable to merge include, root must be an advanced UI tag.");

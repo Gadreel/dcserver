@@ -154,10 +154,6 @@ public class LocalStoreFile extends FileStoreFile {
 		this.withConfirmed(true);
     }
 
-	public String getFullPath() {
-		return this.getFieldAsString("FullPath");
-	}
-	
 	public Path getLocalPath() {
 		return this.localpath;
 	}
@@ -180,7 +176,7 @@ public class LocalStoreFile extends FileStoreFile {
 	}
 	
 	@Override
-	public IFileCollection scanner() {
+	public LocalStoreScanner scanner() {
 		if (this.isFolder())
 			return LocalStoreScanner.of(this.getDriver(), this.getPathAsCommon());
 		

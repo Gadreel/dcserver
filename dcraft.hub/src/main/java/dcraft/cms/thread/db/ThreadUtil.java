@@ -727,20 +727,37 @@ public class ThreadUtil {
 		}
 	}
 	
+	static public int countMessages(TablesAdapter db, ListStruct parties, String folder) throws OperatingContextException {
+		Unique collector = Unique.unique();
+
+		for (int i = 0; i < parties.size(); i++) {
+			ThreadUtil.traverseThreadIndex(db, OperationContext.getOrThrow(), parties.getItemAsString(i), folder, CurrentRecord.current().withNested(collector));
+		}
+	
+		return collector.getValues().size();
+	}
+
 	static public ListStruct loadMessages(TablesAdapter db, ListStruct parties, String folder) throws OperatingContextException {
 		ListStruct resp = ListStruct.list();
-		
+
+		// get a message only once, even if it relates to multiple parties
+		Unique collector = Unique.unique();
+
 		for (int i = 0; i < parties.size(); i++) {
 			String party = parties.getItemAsString(i);
-			Unique collector = Unique.unique();
-			
-			ThreadUtil.traverseThreadIndex(db, OperationContext.getOrThrow(), party, folder, CurrentRecord.current().withNested(collector));
-			
-			for (Object vid : collector.getValues()) {
+
+			Unique collector2 = Unique.unique();
+			ThreadUtil.traverseThreadIndex(db, OperationContext.getOrThrow(), party, folder, CurrentRecord.current().withNested(collector2));
+
+			for (Object vid : collector2.getValues()) {
 				String id = Struct.objectToString(vid);
-				
+
+				// skip already seen
+				if (collector.contains(id))
+					continue;
+
 				String oid = Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmOriginator"));
-				
+
 				resp.with(
 						RecordStruct.record()
 								.with("Id", id)
@@ -755,11 +772,13 @@ public class ThreadUtil {
 								.with("Attributes", db.getStaticScalar("dcmThread", id, "dcmSharedAttributes"))
 				);
 			}
+
+			collector.addAll(collector2);
 		}
-	
+
 		return resp;
 	}
-	
+
 	public static List<String> collectMessageAccess(TablesAdapter db, IVariableAware scope, String mid) throws OperatingContextException {
 		List<String> list = new ArrayList<>();
 		

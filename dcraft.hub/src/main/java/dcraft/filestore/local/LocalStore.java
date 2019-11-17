@@ -147,7 +147,15 @@ public class LocalStore extends FileStore {
 		this.doCopy(cp);
 		return cp;
 	}
-	
+
+	@Override
+	protected void doCopy(Struct n) {
+		LocalStore cp = (LocalStore) n;
+		cp.localpath = this.localpath;
+
+		super.doCopy(n);
+	}
+
 	@Override
 	public boolean close(OperationOutcomeEmpty callback) {
 		if (this.isTemp())
@@ -399,7 +407,7 @@ public class LocalStore extends FileStore {
 	}
 
 	@Override
-	public FileStoreFile rootFolder() {
+	public LocalStoreFile rootFolder() {
 		return LocalStoreFile.of(this, CommonPath.ROOT);
 	}
 	

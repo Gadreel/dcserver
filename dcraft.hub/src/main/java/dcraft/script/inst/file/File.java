@@ -19,6 +19,8 @@ package dcraft.script.inst.file;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileDescriptor;
 import dcraft.filestore.FileStoreFile;
+import dcraft.filestore.local.LocalStore;
+import dcraft.filestore.local.LocalStoreFile;
 import dcraft.filestore.mem.MemoryStoreFile;
 import dcraft.filevault.Vault;
 import dcraft.filevault.VaultUtil;
@@ -33,6 +35,7 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.OperationsWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.stream.StreamUtil;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
@@ -41,8 +44,11 @@ import dcraft.struct.scalar.NullStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.Task;
 import dcraft.task.TaskHub;
+import dcraft.util.FileUtil;
 import dcraft.util.Memory;
 import dcraft.xml.XElement;
+
+import java.nio.file.Path;
 
 public class File extends OperationsInstruction {
 	static public File tag() {
@@ -118,6 +124,22 @@ public class File extends OperationsInstruction {
 					state.getStore().with("Second", true);
 					return ReturnOption.CONTINUE;
 				}
+			}
+			else if (this.getAttributeAsBooleanOrFalse("Temp")) {
+				String ext = StackUtil.stringFromSource(state, "TempExt", "bin");
+
+				Path tempfile = FileUtil.allocateTempFile(ext);
+
+				//String path = StackUtil.stringFromSource(state, "Path", "/temp.bin");
+
+				LocalStoreFile result = StreamUtil.localFile(tempfile);
+
+				StackUtil.addVariable(state, name, result);
+
+				((OperationsWork) state).setTarget(result);
+
+				state.getStore().with("Second", true);
+				return ReturnOption.CONTINUE;
 			}
 
 			Logger.errorTr(520);

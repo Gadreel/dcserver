@@ -36,6 +36,7 @@ import dcraft.log.Logger;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import z.gei.db.estimator.product.List;
 
 /**
  * CSV4180Writer provides a simple way to export CSV values to a file or
@@ -55,9 +56,15 @@ public class CSVWriter extends BufferedWriter {
 			for (Struct s : records.items()) {
 				RecordStruct rec = (RecordStruct) s;
 
-				for (String fld : fields) 
-					wrt.writeField(Struct.objectToString(rec.getField(fld)));
-				
+				for (String fld : fields) {
+					Struct data = rec.getField(fld);
+
+					if (data instanceof ListStruct)
+						wrt.writeField(((ListStruct) data).join(", "));
+					else
+						wrt.writeField(Struct.objectToString(data));
+				}
+
 				wrt.newLine();
 			};
 			

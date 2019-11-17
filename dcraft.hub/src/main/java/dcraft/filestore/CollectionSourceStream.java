@@ -57,6 +57,15 @@ public class CollectionSourceStream extends TransformFileStream implements IStre
 		super.close();
 	}
 
+	public CollectionSourceStream withFiles(FileStoreFile... src) {
+		if (this.source instanceof FileCollection)
+			((FileCollection) this.source).withFiles(src);
+
+		// TODO error
+
+		return this;
+	}
+
 	/**
 	 * Someone downstream wants more data
 	 */

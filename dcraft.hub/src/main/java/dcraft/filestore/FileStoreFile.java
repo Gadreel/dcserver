@@ -22,6 +22,7 @@ import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.ReturnOption;
@@ -32,15 +33,14 @@ import dcraft.stream.IStreamUp;
 import dcraft.stream.StreamFragment;
 import dcraft.stream.file.FileSlice;
 import dcraft.stream.file.IFileStreamDest;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.task.IParentAwareWork;
 import dcraft.task.Task;
 import dcraft.task.TaskHub;
 import dcraft.util.*;
 import dcraft.xml.XElement;
 
+import java.util.Arrays;
 import java.util.List;
 
 abstract public class FileStoreFile extends FileDescriptor {
@@ -62,7 +62,21 @@ abstract public class FileStoreFile extends FileDescriptor {
 	abstract public void remove(OperationOutcomeEmpty callback) throws OperatingContextException;
 	abstract public void getAttribute(String name, OperationOutcome<Struct> callback) throws OperatingContextException;
 	abstract public void getFolderListing(OperationOutcome<List<FileStoreFile>> callback) throws OperatingContextException;
-	
+
+	/* (non-Javadoc)
+	 * @see dcraft.struct.CompositeStruct#select(dcraft.struct.PathPart[])
+	 */
+	@Override
+	public Struct select(PathPart... path) {
+		if (path.length == 0)
+			return this;
+
+		if ("Store".equals(path[0].getField()))
+			return this.driver;
+
+		return super.select(path);
+	}
+
 	@Override
     protected void doCopy(Struct n) {
     	super.doCopy(n);

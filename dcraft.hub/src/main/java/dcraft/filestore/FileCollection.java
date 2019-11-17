@@ -23,9 +23,15 @@ import java.util.function.Predicate;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcome;
+import dcraft.log.Logger;
+import dcraft.schema.SchemaHub;
+import dcraft.script.StackUtil;
+import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.stream.StreamUtil;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.xml.XElement;
 
 /**
  * 
@@ -38,7 +44,7 @@ public class FileCollection extends RecordStruct implements IFileCollection {
 	protected int pos = 0;
 	
 	public FileCollection() {
-		// TODO this.setType(Hub.instance.getSchema().getType("dciFileSystemScanner"));
+		this.withType(SchemaHub.getType("dcFileCollection"));
 	}
 	
 	// does not engage filter
@@ -107,7 +113,28 @@ public class FileCollection extends RecordStruct implements IFileCollection {
 		
 		callback.setResult(null);
 	}
-	
+
+	@Override
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
+        if ("WithFile".equals(code.getName())) {
+            Struct var = StackUtil.refFromElement(stack, code, "Value", true);
+
+            if (var instanceof FileStoreFile) {
+            	this.withFiles((FileStoreFile) var);
+            }
+            else if (var instanceof FileStore) {
+            	this.withFiles(((FileStore) var).rootFolder());		// TODO really we want a scanner
+            }
+            else {
+                Logger.error("Invalid hash target!");
+            }
+
+            return ReturnOption.CONTINUE;
+        }
+
+		return super.operation(stack, code);
+	}
+
     @Override
     protected void doCopy(Struct n) {
     	super.doCopy(n);

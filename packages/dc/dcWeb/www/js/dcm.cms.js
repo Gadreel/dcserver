@@ -1223,13 +1223,19 @@ dc.pui.TagFuncs['dcm.CarouselWidget']['doCmsInitWidget'] = function(entry, node)
 					var params = entry.callTagFunc(widget, 'getParams');
 					//dc.pui.Dialog.loadPage('/dcm/cms/carousel-widget-list/' + params.Feed, params);
 
-					dc.pui.Dialog.loadPage('/dcm/shows/edit', {
-						Path: $(node).attr('data-dcm-gallery'),
-						Alias: $(node).attr('data-dcm-show'),
-						Callback: function(g) {
-							dc.pui.Loader.MainLayer.refreshPage();
-						}
-					});
+					if ($(node).attr('data-dcm-show')) {
+						dc.pui.Dialog.loadPage('/dcm/shows/edit', {
+							Path: $(node).attr('data-dcm-gallery'),
+							Alias: $(node).attr('data-dcm-show'),
+							Callback: function(g) {
+								dc.pui.Loader.MainLayer.refreshPage();
+							}
+						});
+					}
+					else {
+						var params = entry.callTagFunc(widget, 'getParams');
+						dc.pui.Dialog.loadPage('/dcm/cms/carousel-widget-list/' + params.Feed, params);
+					}
 				}
 			},
 			/*

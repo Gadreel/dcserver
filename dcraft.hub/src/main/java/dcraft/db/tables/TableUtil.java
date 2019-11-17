@@ -572,7 +572,9 @@ public class TableUtil {
 			}
 		}
 
-		Logger.error("Unable to update record.");
+		if (! can)
+			Logger.error("Unable to update record.");
+
 		return can;
 	}
 
@@ -611,7 +613,9 @@ public class TableUtil {
 			}
 		}
 
-		Logger.error("Unable to read record.");
+		if (! can)
+			Logger.error("Unable to read record.");
+
 		return can;
 	}
 }

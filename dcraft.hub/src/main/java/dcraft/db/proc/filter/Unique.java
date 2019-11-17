@@ -27,7 +27,19 @@ public class Unique extends BasicFilter {
 	public boolean isEmpty() {
 		return this.unique.isEmpty();
 	}
-	
+
+	public boolean contains(Object v) {
+		return this.unique.contains(v);
+	}
+
+	public boolean addAll(Collection<Object> v) {
+		return this.unique.addAll(v);
+	}
+
+	public boolean addAll(Unique v) {
+		return this.unique.addAll(v.unique);
+	}
+
 	// order is meaningless, but if you want just one of the elements
 	public Object getOne() {
 		for (Object o : this.unique)

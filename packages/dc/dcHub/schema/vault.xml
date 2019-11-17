@@ -14,6 +14,8 @@
 			<Field Name="Exists" Type="Boolean" />
 		</Record>
 
+		<Record Id="dcFileCollection" Class="dcraft.filestore.FileCollection" />
+
 		<Record Id="dcLocalStoreFile" Inherits="dcFileDescriptor" Class="dcraft.filestore.local.LocalStoreFile" />
 
 		<Record Id="dcLocalStoreScanner" Class="dcraft.filestore.local.LocalStoreScanner" />
@@ -29,6 +31,16 @@
 		<Record Id="dcAwsStoreScanner" Class="dcraft.filestore.aws.AwsStoreScanner" />
 
 		<Record Id="dcAwsStore" Class="dcraft.filestore.aws.AwsStore">
+			<Field Name="Scanner" Type="dcLocalStoreScanner" />
+		</Record>
+
+		<Record Id="dcArchiveStoreFile" Inherits="dcFileDescriptor" Class="dcraft.filestore.zip.ArchiveStoreFile">
+			<!-- Field Name="AwsETag" Type="dcTinyString" / -->
+		</Record>
+
+		<Record Id="dcArchiveStoreScanner" Class="dcraft.filestore.zip.ArchiveStoreScanner" />
+
+		<Record Id="dcArchiveStore" Class="dcraft.filestore.zip.ArchiveStore">
 			<Field Name="Scanner" Type="dcLocalStoreScanner" />
 		</Record>
 
