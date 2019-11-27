@@ -432,6 +432,8 @@ public class Site extends Base {
 					.withAttribute("rel", "stylesheet")
 					.attr("href", "/css/dc.cache.css?_dcver=" + OperationContext.getOrThrow().getSite().getWebVersion())
 			);
+
+			// TODO replace with dc-cache once tenant auto reload is in place
 		}
 		else {
 			for (XElement gel : this.webglobals) {
@@ -519,6 +521,8 @@ public class Site extends Base {
 						.attr("defer", "defer")
 						.attr("src", "/js/dc.cache.js?_dcver=" + OperationContext.getOrThrow().getSite().getWebVersion())
 			);
+
+			// TODO replace with dc-cache once tenant auto reload is in place
 		}
 		else {
 			for (XElement gel : this.webglobals) {

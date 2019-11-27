@@ -1,6 +1,11 @@
 package dcraft.web.ui.inst.cms;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -20,10 +25,7 @@ import dcraft.struct.FieldStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.util.Base64;
-import dcraft.util.IOUtil;
-import dcraft.util.Memory;
-import dcraft.util.StringUtil;
+import dcraft.util.*;
 import dcraft.script.inst.doc.Base;
 import dcraft.web.ui.UIUtil;
 import dcraft.web.ui.inst.ICMSAware;
@@ -81,6 +83,8 @@ public class CarouselWidget extends Base implements ICMSAware {
 				: false;
 
 		String ext = StackUtil.stringFromSource(state, "Extension", "jpg");
+
+		String imgcache = StackUtil.stringFromSource(state, "ImageCache", "Max").toLowerCase();
 
 		XElement ariatemplate = this.selectFirst("AriaTemplate");
 
@@ -140,7 +144,27 @@ public class CarouselWidget extends Base implements ICMSAware {
 				String ext = meta.getFieldAsString("Extension", "jpg");
 
 				// TODO support alt ext (from the gallery meta.json)
-				img.with("Path", "/galleries" + cpath + ".v/" + vari + "." + ext);
+
+				String lpath = cpath + ".v/" + vari + "." + ext;
+
+				Path imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
+						OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
+
+				try {
+					if ("max".equals(imgcache)) {
+						FileTime fileTime = Files.getLastModifiedTime(imgpath);
+
+						img.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
+					}
+					else {
+						img.with("Path", "/galleries" + lpath);
+					}
+				}
+				catch (IOException x) {
+					Logger.warn("Problem finding image file: " + lpath);
+					img.with("Path", "/galleries" + lpath);
+				}
+
 				img.with("Gallery", meta);
 				//img.with("Variant", vdata);
 				img.with("Show", show);

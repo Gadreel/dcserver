@@ -65,7 +65,11 @@ public class StaticOutputAdapter implements IOutputWork {
 			resp.setHeader("Vary", "Origin");		// needed for Edge 17 loading fonts
 			
 			// TODO configure this someday
-			if ("text/css".equals(mtype) || "application/javascript".equals(mtype) || "application/json".equals(mtype))
+
+			// dc-cache indicates max cache life - 1 yr
+			if (request.getFieldAsRecord("Parameters").isNotFieldEmpty("dc-cache"))
+				resp.setHeader("Cache-Control", "public, max-age=31536000");
+			else if ("text/css".equals(mtype) || "application/javascript".equals(mtype) || "application/json".equals(mtype))
 				resp.setHeader("Cache-Control", "no-cache");
 			else
 				resp.setHeader("Cache-Control", "max-age=900");

@@ -15,6 +15,7 @@ import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
 import dcraft.script.inst.doc.Base;
+import dcraft.util.TimeUtil;
 import dcraft.web.ui.UIUtil;
 import dcraft.web.ui.inst.ICMSAware;
 import dcraft.web.ui.inst.W3;
@@ -22,6 +23,13 @@ import dcraft.xml.XElement;
 import dcraft.xml.XNode;
 import dcraft.xml.XmlReader;
 import org.xml.sax.XMLReader;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 public class ImageWidget extends Base implements ICMSAware {
 	static public ImageWidget tag() {
@@ -91,8 +99,23 @@ public class ImageWidget extends Base implements ICMSAware {
 		}
 		
 		int apos = path.lastIndexOf('/') + 1;
-		
-		img.with("Path", "/galleries" + path + ".v/" + vari + "." + ext);
+
+		String lpath = path + ".v/" + vari + "." + ext;
+
+		Path imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
+				OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
+
+		try {
+			FileTime fileTime = Files.getLastModifiedTime(imgpath);
+
+			img.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
+		}
+		catch (IOException x) {
+			Logger.warn("Problem finding image file: " + lpath);
+			img.with("Path", "/galleries" + lpath);
+		}
+
+		//img.with("Path", "/galleries" + path + ".v/" + vari + "." + ext);
 		img.with("Alias", path.substring(apos));
 		img.with("Description", description);
 

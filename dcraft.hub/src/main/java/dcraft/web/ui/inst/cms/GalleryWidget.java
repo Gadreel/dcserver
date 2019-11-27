@@ -19,6 +19,7 @@ import dcraft.struct.Struct;
 import dcraft.struct.builder.JsonStreamBuilder;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
+import dcraft.util.TimeUtil;
 import dcraft.util.io.OutputWrapper;
 import dcraft.web.ui.JsonPrinter;
 import dcraft.web.ui.UIUtil;
@@ -33,6 +34,11 @@ import dcraft.xml.XmlUtil;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -81,11 +87,26 @@ public class GalleryWidget extends Base implements ICMSAware {
 					return;
 				
 				String cpath = img.getFieldAsString("Path");
-				
-				String ext = meta.getFieldAsString("Extension", "jpg");
-				
+
 				// TODO support alt ext (from the gallery meta.json)
-				img.with("Path", "/galleries" + cpath + ".v/" + vari + "." + ext);
+				String ext = meta.getFieldAsString("Extension", "jpg");
+
+				String lpath = cpath + ".v/" + vari + "." + ext;
+
+				Path imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
+						OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
+
+				try {
+					FileTime fileTime = Files.getLastModifiedTime(imgpath);
+
+					img.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
+				}
+				catch (IOException x) {
+					Logger.warn("Problem finding image file: " + lpath);
+					img.with("Path", "/galleries" + lpath);
+				}
+
+				//img.with("Path", "/galleries" + cpath + ".v/" + vari + "." + ext);
 				img.with("Gallery", meta);
 				img.with("Variant", vdata);
 				img.with("Show", show);
