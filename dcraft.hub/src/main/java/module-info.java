@@ -13,7 +13,7 @@ module dcraft.hub {
   requires org.threeten.extra;
   requires org.apache.commons.codec;
   requires org.apache.commons.compress;
-  requires pdfbox;
+  requires org.apache.pdfbox;
   requires jsch;
   requires rocksdbjni;
   requires commons.daemon;
@@ -21,7 +21,7 @@ module dcraft.hub {
   requires org.shredzone.acme4j;
   requires org.shredzone.acme4j.utils;
   requires java.ipv6;
-  requires slf4j.api;
+  requires org.slf4j;
   requires activation;
   requires java.mail;
   requires jgit;
