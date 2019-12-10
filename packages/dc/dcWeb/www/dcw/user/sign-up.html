@@ -25,13 +25,13 @@
 					<dcf.Form>
 						<dcs.If Target="$UserConfig.@UserNameMode" Not="true" Equal="email">
 							<dc.Out>
-								<dcf.Text Name="Username" Label="User Name" Required="true" />
+								<dcf.Text Name="Username" Label="User Name" Required="true" DataType="dcUsername" />
 							</dc.Out>
 						</dcs.If>
 
 						<dcf.Text Name="FirstName" Label="First Name" Required="true" />
 						<dcf.Text Name="LastName" Label="Last Name" Required="true" />
-						<dcf.Text Name="Email" Label="Email" Required="true" />
+						<dcf.Text Name="Email" Label="Email" Required="true" DataType="dcEmail" />
 						<dcf.Text Name="Phone" Label="Phone" />
 
 						<dcs.If Target="$UserConfig.@SignUpNotices" Equal="text">

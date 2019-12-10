@@ -556,7 +556,20 @@ public class FeedUtil {
 					
 					ret.with(key, entry.getValue());
 				}
-				
+
+				ListStruct mapping = ListStruct.list();
+
+				for (XElement map : def.selectAll("FieldMap")) {
+					if (map.hasNotEmptyAttribute("Name") && map.hasNotEmptyAttribute("Field")) {
+						mapping.with(RecordStruct.record()
+								.with("Name", map.attr("Name"))
+								.with("Field", map.attr("Field"))
+						);
+					}
+				}
+
+				ret.with("FieldMap", mapping);
+
 				break;
 			}
 		}

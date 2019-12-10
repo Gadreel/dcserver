@@ -46,14 +46,50 @@ public class ShellWork implements IWork {
 				.with("Args", arglist)
 				.with("ErrorOffset", errorOffset);
 	}
-	
+
 	static public String quoteArg(String v) {
 		if (StringUtil.isEmpty(v))
 			v = "null";
 		
 		return "\"" + v.replace("\"", "\"\"") + "\"";			// TODO could be ^ instead??
 	}
-	
+
+	static public ProcessBuilder paramsToProcessBuilder(RecordStruct params) {
+		List<String> oparams  = new ArrayList<>();
+
+		String cmd = params.getFieldAsString("Command");
+
+		if (cmd.endsWith(".bat") || cmd.endsWith(".bat\"")) {
+			oparams.add("cmd.exe");
+			oparams.add("/c");
+		}
+		else if (cmd.endsWith(".sh") || cmd.endsWith(".sh\"")) {
+			oparams.add("sh");
+			oparams.add("-c");
+		}
+
+		oparams.add(cmd);
+
+		ListStruct args = params.getFieldAsList("Args");
+
+		for (int i = 0; i < args.size(); i++) {
+			String v = args.getItemAsString(i);
+
+			if (StringUtil.isEmpty(v)) {
+				Logger.error("Missing value for parameter: " + (i + 1));
+				return null;
+			}
+
+			oparams.add(v);
+		}
+
+		ProcessBuilder pb = new ProcessBuilder(oparams);
+		pb.redirectErrorStream(true);
+		pb.directory(new File(params.getFieldAsString("WorkingFolder")));
+
+		return pb;
+	}
+
 	static public ShellWork work() {
 		return new ShellWork();
 	}
@@ -67,40 +103,15 @@ public class ShellWork implements IWork {
 	@Override
 	public void run(TaskContext trun) {
 		RecordStruct params = trun.getTask().getParamsAsRecord();
-		List<String> oparams  = new ArrayList<>();
 
-		String cmd = params.getFieldAsString("Command");
-		
-		if (cmd.endsWith(".bat") || cmd.endsWith(".bat\"")) {
-			oparams.add("cmd.exe");
-			oparams.add("/c");
+		ProcessBuilder pb = ShellWork.paramsToProcessBuilder(params);
+
+		if (pb == null) {
+			// TODO error code and set last
+			trun.complete();
+			return;
 		}
-		else if (cmd.endsWith(".sh") || cmd.endsWith(".sh\"")) {
-			oparams.add("sh");
-			oparams.add("-c");
-		}
-		
-		oparams.add(cmd);
-		
-		ListStruct args = params.getFieldAsList("Args");
-		
-		for (int i = 0; i < args.size(); i++) {
-			String v = args.getItemAsString(i);
-			
-			if (StringUtil.isEmpty(v)) {
-				Logger.error("Missing value for parameter: " + (i + 1));
-				// TODO error code and set last
-				trun.complete();
-				return;
-			}
-			
-			oparams.add(v);
-		}
-		
-		ProcessBuilder pb = new ProcessBuilder(oparams);
-		pb.redirectErrorStream(true);
-		pb.directory(new File(params.getFieldAsString("WorkingFolder")));
-		
+
 		this.sfuture = ApplicationHub.getClock().schedulePeriodicInternal(new Runnable() {
 			@Override
 			public void run() {

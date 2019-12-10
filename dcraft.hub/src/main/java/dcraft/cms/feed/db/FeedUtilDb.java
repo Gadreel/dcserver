@@ -132,6 +132,7 @@ public class FeedUtilDb {
 		}
 
 		RecordStruct feedDef = FeedUtil.getFeedDefinition(opath.getName(1));
+		ListStruct fieldMap = feedDef.getFieldAsList("FieldMap");
 
 		// shared fields
 		{
@@ -149,6 +150,13 @@ public class FeedUtilDb {
 
 				if (ftype != FeedUtil.FieldType.Shared)
 					continue;
+
+				// TODO
+				/*
+			<FieldMap Field="fhpShow" Name="Show" />
+			<FieldMap Field="fhpBrand" Name="Brand" />
+
+				 */
 
 				String value = meta.getValue();
 
@@ -176,6 +184,22 @@ public class FeedUtilDb {
 							.with("Data", data)
 					);
 				}
+				else {
+					for (int i = 0; i < fieldMap.size(); i++) {
+						RecordStruct map = fieldMap.getItemAsRecord(i);
+
+						if (name.equals(map.getFieldAsString("Name"))) {
+							// TODO support List too - now assumes Scalar
+
+							fields.with(map.getFieldAsString("Field"), RecordStruct.record()
+									.with("UpdateOnly", true)
+									.with("Data", value)
+							);
+
+							break;
+						}
+					}
+				}
 			}
 
 			// the remaining should be retired
@@ -187,11 +211,28 @@ public class FeedUtilDb {
 						);
 
 				// un-publish if removed
-				if ("PublishAt".equals(key))
+				if ("PublishAt".equals(key)) {
 					fields.with("dcmPublishAt", RecordStruct.record()
 							.with("UpdateOnly", true)
 							.with("Retired", true)
 					);
+				}
+				else {
+					for (int i = 0; i < fieldMap.size(); i++) {
+						RecordStruct map = fieldMap.getItemAsRecord(i);
+
+						if (key.equals(map.getFieldAsString("Name"))) {
+							// TODO support List too - now assumes Scalar
+
+							fields.with(map.getFieldAsString("Field"), RecordStruct.record()
+									.with("UpdateOnly", true)
+									.with("Retired", true)
+							);
+
+							break;
+						}
+					}
+				}
 			}
 
 			fields.with("dcmSharedFields", newkeys);

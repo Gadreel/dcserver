@@ -10,10 +10,10 @@
 	<dc.Body>
 		<dc.PagePanel>
 			<dcf.Form>
-				<dcf.Text Name="Username" Label="Username" Required="true" />
+				<dcf.Text Name="Username" Label="Username" Required="true" DataType="dcUsername" />
 				<dcf.Text Name="FirstName" Label="First Name" Required="true" />
 				<dcf.Text Name="LastName" Label="Last Name" Required="true" />
-				<dcf.Text Name="Email" Label="Email" Required="true" />
+				<dcf.Text Name="Email" Label="Email" Required="true" DataType="dcEmail" />
 				<dcf.Text Name="Phone" Label="Phone" />
 
 				<dcs.If Target="$UserConfig.@SignUpNotices" Equal="text">

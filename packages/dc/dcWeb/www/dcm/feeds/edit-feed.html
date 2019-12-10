@@ -156,7 +156,7 @@
 			*/
 
 			dc.pui.Dialog.loadPage('/dcm/galleries/chooser', {
-				//Path: path,
+				Path: '{$Feeds.$FeedPos.@Gallery|ifempty:/}',
 				Callback: function(res) {
 					var topvari = res.Gallery.Meta.Variations[0];
 

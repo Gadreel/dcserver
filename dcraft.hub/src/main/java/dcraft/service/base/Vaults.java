@@ -144,7 +144,7 @@ public class Vaults  {
 			listFiles(vault, rec, request.isFromRpc(), new OperationOutcome<List<? extends FileDescriptor>>() {
 				@Override
 				public void callback(List<? extends FileDescriptor> result) throws OperatingContextException {
-					if (! this.hasErrors()) {
+					if (! this.isEmptyResult()) {
 						ListStruct files = new ListStruct();
 						
 						for (FileDescriptor file : result) {

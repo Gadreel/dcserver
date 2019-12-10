@@ -157,6 +157,7 @@
 			var page = this;
 
 		    dc.pui.Dialog.loadPage('/dcm/galleries/chooser', {
+			 	Path: '{$Feeds.$FeedPos.@Gallery|ifempty:/}',
 				Callback: function(res) {
 					if (res.Images && res.Images.length) {
 						var fh = res.Images[0];

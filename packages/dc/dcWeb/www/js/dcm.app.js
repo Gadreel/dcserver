@@ -366,13 +366,16 @@ dc.pui.Tags['dcm.CarouselWidget'] = function(entry, node) {
 	if (dc.handler && dc.handler.tags && dc.handler.tags.CarouselWidget && dc.handler.tags.CarouselWidget.init)
 		dc.handler.tags.CarouselWidget.init(entry, node, show, icache, {
 			switchImage: function(idx) {
-				animatefade(idx);
+				if (animatefade)
+					animatefade(idx);
 			},
 			nextImage: function() {
-				animatefade(nextImage());
+				if (animatefade)
+					animatefade(nextImage());
 			},
 			prevImage: function() {
-				animatefade(prevImage());
+				if (animatefade)
+					animatefade(prevImage());
 			}
 		});
 
@@ -461,7 +464,7 @@ dc.pui.Tags['dcm.CarouselWidget'] = function(entry, node) {
 			Op: function() {
 				if (switchblock)
 					tryAnimate(1000);
-				else
+				else if (animatefade)
 					animatefade();
 			}
 		});

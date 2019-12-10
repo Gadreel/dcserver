@@ -882,7 +882,19 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 			
 			return ReturnOption.CONTINUE;
 		}
-		
+
+		if ("FieldsToList".equals(code.getName())) {
+			String handle = StackUtil.stringFromElement(stack, code, "Handle");
+
+			if (handle != null) {
+				ListStruct fields = ListStruct.list(this.fields.keySet());
+
+				StackUtil.addVariable(stack, handle, fields);
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+
 		return super.operation(stack, code);
 	}
 

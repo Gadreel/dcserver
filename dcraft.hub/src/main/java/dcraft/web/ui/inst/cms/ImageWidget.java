@@ -101,14 +101,22 @@ public class ImageWidget extends Base implements ICMSAware {
 		int apos = path.lastIndexOf('/') + 1;
 
 		String lpath = path + ".v/" + vari + "." + ext;
+		String fpath = "/galleries" + lpath;
 
 		Path imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
 				OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
 
+		if (imgpath == null) {
+			fpath = "/imgs/blank.png";
+
+			imgpath = OperationContext.getOrThrow().getSite().findSectionFile("www", "/imgs/blank.png",
+					OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
+		}
+
 		try {
 			FileTime fileTime = Files.getLastModifiedTime(imgpath);
 
-			img.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
+			img.with("Path", fpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
 		}
 		catch (IOException x) {
 			Logger.warn("Problem finding image file: " + lpath);
