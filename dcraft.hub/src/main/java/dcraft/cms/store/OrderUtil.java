@@ -412,9 +412,10 @@ public class OrderUtil {
 				//System.out.println(OperationContext.getOrThrow().toPrettyString());
 				triggerEvent(refid);
 
-				Site site = OperationContext.getOrThrow().getSite();
-				String event = site.getAlias() + " - order submission completed: " + refid + " - " + callback.getMessages().toPrettyString();
-				SlackUtil.serverEvent(null, event, null);
+				// not needed for now, too much info
+				//Site site = OperationContext.getOrThrow().getSite();
+				//String event = site.getAlias() + " - order submission completed: " + refid + " - " + callback.getMessages().toPrettyString();
+				//SlackUtil.serverEvent(null, event, null);
 				
 				callback.returnResult();
 			}

@@ -71,8 +71,10 @@
 			this will send using the above info
 		-->
 
-		<dcs.ForEach Name="Notify" In="$Data.Notify">
-			<dcs.Include Path="/dcm/threads/notifier-{$Notify.Method}" Reusable="true" />
-		</dcs.ForEach>
+		<dcs.If Target="$Data.Notify" IsEmpty="false">
+			<dcs.ForEach Name="Notify" In="$Data.Notify">
+				<dcs.Include Path="/dcm/threads/notifier-{$Notify.Method}" Reusable="true" />
+			</dcs.ForEach>
+		</dcs.If>
 	</dcs.Else>
 </dcs.Script>

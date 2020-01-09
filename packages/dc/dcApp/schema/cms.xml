@@ -160,6 +160,7 @@
 		<Procedure Name="dcmServices.Feed.Reindex" Execute="dcraft.cms.feed.db.Reindex" />
 		<Procedure Name="dcmServices.Feed.CmsCheck" Execute="dcraft.cms.feed.db.CmsCheck" />
 		<Procedure Name="dcmServices.Feed.LoadMeta" Execute="dcraft.cms.feed.db.LoadMeta" />
+		<Procedure Name="dcmServices.Feed.LoadInfo" Execute="dcraft.cms.feed.db.LoadInfo" />
 		<Procedure Name="dcmServices.Feed.SaveMeta" Execute="dcraft.cms.feed.db.SaveMeta" />
 		<Procedure Name="dcmServices.Feed.LoadPart" Execute="dcraft.cms.feed.db.LoadPart" />
 		<Procedure Name="dcmServices.Feed.AddCommandHistory" Execute="dcraft.cms.feed.db.AddCommandHistory" />
@@ -382,6 +383,18 @@
 							<Field Name="When" Type="DateTime" />
 						</RecordRequest>
 						<RecordResponse Type="AnyRecord" />
+					</Op>
+					<Op Name="LoadInfo">
+						<Description>
+							Load feed info
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Feed" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcPath" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="FeedId" Type="Id" />
+						</RecordResponse>
 					</Op>
 					<Op Name="SaveMeta">
 						<Description>

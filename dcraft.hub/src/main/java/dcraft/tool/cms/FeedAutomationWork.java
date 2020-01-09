@@ -127,9 +127,13 @@ public class FeedAutomationWork extends StateWork {
 				Path npath = Paths.get("./" + gnpath);
 				Path opath = Paths.get("./" + gopath);
 
+				if (diff.getChangeType() == DiffEntry.ChangeType.DELETE)
+					npath = opath;
+
 				// looking for feeds only
-				if (npath.getNameCount() < 7)
+				if (npath.getNameCount() < 7) {
 					continue;
+				}
 
 				String nfilename = npath.getName(1).toString();
 

@@ -672,6 +672,9 @@ public class Site extends Base {
 				if (orgpath.equals(route.getAttribute("Path"))) {
 					if (route.hasAttribute("RedirectPath"))
 						return route.getAttribute("RedirectPath");
+
+					if (route.hasAttribute("RedirectUrl"))
+						return route.getAttribute("RedirectUrl");
 				}
 			}
 
