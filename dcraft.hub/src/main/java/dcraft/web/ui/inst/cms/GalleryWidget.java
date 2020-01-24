@@ -96,12 +96,18 @@ public class GalleryWidget extends Base implements ICMSAware {
 				Path imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
 						OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
 
-				try {
-					FileTime fileTime = Files.getLastModifiedTime(imgpath);
+				if ((imgpath != null) && Files.exists(imgpath)) {
+					try {
+						FileTime fileTime = Files.getLastModifiedTime(imgpath);
 
-					img.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
+						img.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
+					}
+					catch (IOException x) {
+						Logger.warn("Problem finding image file: " + lpath);
+						img.with("Path", "/galleries" + lpath);
+					}
 				}
-				catch (IOException x) {
+				else {
 					Logger.warn("Problem finding image file: " + lpath);
 					img.with("Path", "/galleries" + lpath);
 				}

@@ -327,7 +327,7 @@ public class OrderUtil {
 			return;
 		}
 		else {
-			userid = db.firstInIndex("dcUser", "dcUsername", cinfo.getFieldAsString("Email").toLowerCase(), true);
+			userid = db.firstInIndex("dcUser", "dcUsername", cinfo.getFieldAsString("Email").trim().toLowerCase(), true);
 
 			if (userid != null) {
 				String cid = userid.toString();

@@ -29,7 +29,7 @@ public class StartSession implements IStoredProc {
 		
 		String token = null;
 		String uid = params.getFieldAsString("UserId");
-		String uname = params.getFieldAsString("Username").toLowerCase();
+		String uname = params.getFieldAsString("Username").trim().toLowerCase();
 		
 		try (OperationMarker om = OperationMarker.create()) {
 			if (request.isReplicating()) {

@@ -92,31 +92,40 @@ public class ByteUtil {
 		return (key[part.length] == Constants.DB_TYPE_MARKER_ALPHA);
 	}
 	
-	static public boolean dataStartsWith(byte[] key, byte[] part) {
-		if (part.length > key.length)
+	static public boolean dataStartsWith(byte[] data, byte[] part) {
+		if ((data == null) || (part == null))
+			return false;
+
+		if (data == null)
+			return false;
+
+		if (part.length > data.length)
 			return false;
 		
 		for (int i = 0; i < part.length; i++) {
-			if (key[i] != part[i])
+			if (data[i] != part[i])
 				return false;
 		}
 		
 		return true;
 	}
 	
-	static public boolean dataEndsWith(byte[] key, byte[] part) {
-		if (part.length > key.length)
+	static public boolean dataEndsWith(byte[] data, byte[] part) {
+		if ((data == null) || (part == null))
+			return false;
+
+		if (part.length > data.length)
 			return false;
 		
-		int offset = key.length - part.length;
+		int offset = data.length - part.length;
 		
 		// make sure we are comparing same data type
-		if (key[0] != part[0])
+		if (data[0] != part[0])
 			return false;
 		
 		// greater than 0, 0 is the data type which we don't care about here
 		for (int i = part.length - 1; i > 0; i--) {
-			if (key[i + offset] != part[i])
+			if (data[i + offset] != part[i])
 				return false;
 		}
 		
@@ -124,28 +133,28 @@ public class ByteUtil {
 	}
 	
 	// key contains a part at offset
-	static public boolean dataContains(byte[] key, byte[] part) {
-		if ((key == null) || (part == null))
+	static public boolean dataContains(byte[] data, byte[] part) {
+		if ((data == null) || (part == null))
 			return false;
 		
-		if (part.length > key.length)
+		if (part.length > data.length)
 			return false;
 		
 		// make sure we are comparing same data type
-		if (key[0] != part[0])
+		if (data[0] != part[0])
 			return false;
 		
 		// try from every position in key
-		for (int i = 1; i < key.length; i++) {
+		for (int i = 1; i < data.length; i++) {
 			boolean match = true;
 			
 			for (int i2 = 1; i2 < part.length; i2++) {
-				if (i + i2 - 1 >= key.length) {
+				if (i + i2 - 1 >= data.length) {
 					match = false;
 					break;
 				}
 				
-				if (key[i + i2 - 1] != part[i2]) {
+				if (data[i + i2 - 1] != part[i2]) {
 					match = false;
 					break;
 				}
@@ -159,30 +168,30 @@ public class ByteUtil {
 	}
 
 	// count key contains a part at offset
-	static public int dataContainsCount(byte[] key, byte[] part) {
-		if ((key == null) || (part == null))
+	static public int dataContainsCount(byte[] data, byte[] part) {
+		if ((data == null) || (part == null))
 			return 0;
 
-		if (part.length > key.length)
+		if (part.length > data.length)
 			return 0;
 
 		// make sure we are comparing same data type
-		if (key[0] != part[0])
+		if (data[0] != part[0])
 			return 0;
 
 		int matches = 0;
 
 		// try from every position in key
-		for (int i = 1; i < key.length; i++) {
+		for (int i = 1; i < data.length; i++) {
 			boolean match = true;
 
 			for (int i2 = 1; i2 < part.length; i2++) {
-				if (i + i2 - 1 >= key.length) {
+				if (i + i2 - 1 >= data.length) {
 					match = false;
 					break;
 				}
 
-				if (key[i + i2 - 1] != part[i2]) {
+				if (data[i + i2 - 1] != part[i2]) {
 					match = false;
 					break;
 				}
@@ -200,31 +209,31 @@ public class ByteUtil {
 	}
 	
 	// count key contains a part at offset
-	static public int dataContainsScore(byte[] key, byte[] part) {
-		if ((key == null) || (part == null))
+	static public int dataContainsScore(byte[] data, byte[] part) {
+		if ((data == null) || (part == null))
 			return 0;
 		
-		if (part.length > key.length)
+		if (part.length > data.length)
 			return 0;
 		
 		// make sure we are comparing same data type
-		if (key[0] != part[0])
+		if (data[0] != part[0])
 			return 0;
 		
 		int score = 0;
 		int matches = 0;
 		
 		// try from every position in key
-		for (int i = 1; i < key.length; i++) {
+		for (int i = 1; i < data.length; i++) {
 			boolean match = true;
 			
 			for (int i2 = 1; i2 < part.length; i2++) {
-				if (i + i2 - 1 >= key.length) {
+				if (i + i2 - 1 >= data.length) {
 					match = false;
 					break;
 				}
 				
-				if (key[i + i2 - 1] != part[i2]) {
+				if (data[i + i2 - 1] != part[i2]) {
 					match = false;
 					break;
 				}
@@ -237,14 +246,14 @@ public class ByteUtil {
 				i += part.length;
 
 				// up to start
-				while ((i < key.length) && (key[i] != 59)) {
+				while ((i < data.length) && (data[i] != 59)) {
 					i++;
 				}
 				
 				i++;
 				
 				// up to end
-				while ((i < key.length) && (key[i] != 59)) {
+				while ((i < data.length) && (data[i] != 59)) {
 					i++;
 				}
 				
@@ -253,11 +262,11 @@ public class ByteUtil {
 				int semi2 = i;
 				
 				// up to end
-				while ((i < key.length) && (key[i] != 124)) {
+				while ((i < data.length) && (data[i] != 124)) {
 					i++;
 				}
 				
-				String num = new String(key, semi2, i - semi2, Charset.forName("UTF-8"));
+				String num = new String(data, semi2, i - semi2, Charset.forName("UTF-8"));
 
 				try {
 					int nv = Integer.parseInt(num);

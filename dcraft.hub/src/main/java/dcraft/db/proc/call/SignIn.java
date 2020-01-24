@@ -48,7 +48,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 		if (StringUtil.isNotEmpty(password))
 			password = password.trim();
 		
-		String uname = params.getFieldAsString("Username").toLowerCase();
+		String uname = params.getFieldAsString("Username").trim().toLowerCase();
 		
 		if (StringUtil.isNotEmpty(uname))
 			uname = uname.trim();

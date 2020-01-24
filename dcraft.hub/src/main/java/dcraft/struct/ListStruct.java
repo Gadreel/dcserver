@@ -592,7 +592,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		if ("Set".equals(code.getName())) {
 			this.clear();
 			
-			String json = StackUtil.resolveValueToString(stack, code.getText());
+			String json = StackUtil.resolveValueToString(stack, code.getText(), true);
 			
 			if (StringUtil.isNotEmpty(json)) {
 				ListStruct pjson = (ListStruct) CompositeParser.parseJson(" [ " + json + " ] ");

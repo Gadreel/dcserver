@@ -78,7 +78,7 @@ public class FacebookSignIn extends SignIn {
 			uid = userid.toString();
 		}
 		else {
-			userid = db.firstInIndex("dcUser", "dcUsername", userInfo.getFieldAsString("email").toLowerCase(), false);
+			userid = db.firstInIndex("dcUser", "dcUsername", userInfo.getFieldAsString("email").trim().toLowerCase(), false);
 
 			if (userid != null) {
 				uid = userid.toString();

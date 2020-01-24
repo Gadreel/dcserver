@@ -763,7 +763,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 		if ("Set".equals(code.getName())) {
 			this.clear();
 			
-			String json = StackUtil.resolveValueToString(stack, code.getText());
+			String json = StackUtil.resolveValueToString(stack, code.getText(), true);
 			
 			if (StringUtil.isNotEmpty(json)) {
 				json = json.trim();

@@ -19,11 +19,8 @@ public class UsernameLookup implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 		
-		String uname = data.getFieldAsString("Username").toLowerCase();
-		
-		if (StringUtil.isNotEmpty(uname))
-			uname = uname.trim();
-		
+		String uname = data.getFieldAsString("Username").trim().toLowerCase();
+
 		TablesAdapter db = TablesAdapter.ofNow(request);
 		
 		Object userid = db.firstInIndex("dcUser", "dcUsername", uname, false);
