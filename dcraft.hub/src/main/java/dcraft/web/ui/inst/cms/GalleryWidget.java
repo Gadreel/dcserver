@@ -117,7 +117,8 @@ public class GalleryWidget extends Base implements ICMSAware {
 				img.with("Variant", vdata);
 				img.with("Show", show);
 				img.with("Position", cidx);
-				
+				img.with("BasePath", cpath);
+
 				RecordStruct imgmeta = (RecordStruct) GalleryUtil.getMeta(cpath + ".v",
 						OperationContext.getOrThrow().selectAsString("Controller.Request.View"));
 				

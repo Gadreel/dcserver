@@ -3035,10 +3035,15 @@ dc.pui.Tags = {
 					$(node).click(link, function(e) {
 						entry.LastFocus = $(node);
 
-						if (linkto)
+						if ($(e.currentTarget).attr('target') == '_blank') {
+							window.open(e.data, '_blank').focus();
+						}
+						else if (linkto) {
 							window.location = e.data;		// want to reload
-						else
+						}
+						else {
 							entry.Layer.loadPage(e.data);
+						}
 
 						e.preventDefault();
 						return false;
