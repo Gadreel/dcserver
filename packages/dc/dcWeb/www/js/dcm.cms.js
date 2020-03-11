@@ -2126,6 +2126,9 @@ dc.cms.image.Gallery.prototype.createThumbsTask = function(path, plan, token, bu
 						else if (item.Alias == 'original') {
 							tvar = 'original';
 						}
+						else if (item.Alias == 'large') {
+							tvar = 'large';
+						}
 						else if ((item.Alias == 'full') && (tvar == null)) {
 							tvar = 'full';
 						}

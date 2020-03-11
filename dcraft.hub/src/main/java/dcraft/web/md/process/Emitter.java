@@ -342,11 +342,13 @@ public class Emitter {
         }
         else {		// X_IMAGE a captioned image
         	XElement div = W3.tag("div")
-	    		.withAttribute("class", "pure-img-inline " + (classes == null ? "" : classes));
-	    		
-	    	div.add(W3.tag("img")
-	    		.withAttribute("src", link)
-	    		.withAttribute("alt", name));
+	    		.withAttribute("class", (classes == null ? "" : classes))
+				.with(
+	    			W3.tag("img")
+						.withAttribute("src", link)
+						.withAttribute("alt", name)
+						.withAttribute("class", "pure-img-inline")
+				);
 	    	
 	        if (comment != null)
 	        	div.add(W3.tag("div").withText(comment));

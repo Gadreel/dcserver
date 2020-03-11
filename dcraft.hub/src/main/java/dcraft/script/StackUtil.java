@@ -190,7 +190,7 @@ public class StackUtil {
 			
 			lpos = epos + 1;
 			
-			String varname = val.substring(bpos + 2, epos).trim();
+			String varname = val.substring(bpos + 2, epos);  //.trim();
 			
 			// TODO add support for formatting - {$varname|op:LeftPad:Size=7:With=*|op}
 			//String fmtcmd = null;
