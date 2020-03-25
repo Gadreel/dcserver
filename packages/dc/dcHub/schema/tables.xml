@@ -248,8 +248,8 @@
 		<Trigger Table="dcUser" Operation="AfterRevive" Execute="dcraft.db.proc.trigger.AfterUserRevive" />
 
 		<!-- currently not meaningful, may cause always success
-		<Trigger Table="dcUser" Operation="CheckWriteRecord" Execute="dcraft.db.proc.trigger.CheckWriteUserRecord" />
-		<Trigger Table="dcUser" Operation="CheckReadRecord" Execute="dcraft.db.proc.trigger.CheckReadUserRecord" />
+		<Trigger Table="dcUser" Operation="CheckWriteRecord" ExecuteHint="Can" Execute="dcraft.db.proc.trigger.CheckWriteUserRecord" />
+		<Trigger Table="dcUser" Operation="CheckReadRecord" ExecuteHint="Can" Execute="dcraft.db.proc.trigger.CheckReadUserRecord" />
 		-->
 
 		<Table Id="dcState">

@@ -7,7 +7,9 @@ import dcraft.db.proc.IStoredProc;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileStoreFile;
+import dcraft.filevault.Transaction;
 import dcraft.filevault.Vault;
+import dcraft.filevault.VaultUtil;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.*;
 import dcraft.interchange.google.RecaptchaUtil;
@@ -74,6 +76,27 @@ public class Complete implements IStoredProc {
 
 		ThreadUtil.updateDeliver(db, id, now);
 
-		callback.returnEmpty();
+		// finish deposit
+		Vault vault = OperationContext.getOrThrow().getSite().getVault("ManagedForms");
+
+		if (vault != null) {
+			String token = data.getFieldAsString("Token");
+
+			String txid = VaultUtil.getSessionTokenTx(token);
+
+			Transaction tx = vault.buildUpdateTransaction(txid, null);
+
+			tx.commitTransaction(new OperationOutcomeEmpty() {
+				@Override
+				public void callback() throws OperatingContextException {
+					vault.clearToken(data);
+
+					callback.returnEmpty();
+				}
+			});
+		}
+		else {
+			callback.returnEmpty();
+		}
 	}
 }

@@ -312,6 +312,7 @@
 						</Description>
 						<RecordRequest Required="True">
 							<Field Name="Form" Type="dcTinyString" Required="True" />
+							<Field Name="Token" Type="dcSmallString" Required="True" />
 							<Field Name="Uuid" Type="dcSmallString" Required="True" />
 						</RecordRequest>
 					</Op>

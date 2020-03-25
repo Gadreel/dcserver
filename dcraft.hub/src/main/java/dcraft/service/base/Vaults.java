@@ -58,8 +58,9 @@ public class Vaults  {
 		Vault vault = site.getVault(rec.getFieldAsString("Vault"));
 
 		if (vault == null) {
-			Logger.error("Missing vault.");
-			return true;
+			Logger.warn("Missing vault. Request: " + request.getFeature() + " - " + request.getOp() + " - " + rec.toPrettyString());
+			callback.returnEmpty();
+			return false;
 		}
 		
 		String op = request.getOp();

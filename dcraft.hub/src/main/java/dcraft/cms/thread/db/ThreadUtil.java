@@ -666,7 +666,7 @@ public class ThreadUtil {
 		}
 	}
 
-	public static void deleteThread(TablesAdapter db, String id) throws OperatingContextException {
+	public static void clearThreadIndex(TablesAdapter db, String id) throws OperatingContextException {
 		try {
 			String tenant = OperationContext.getOrThrow().getTenant().getAlias();
 
@@ -681,12 +681,16 @@ public class ThreadUtil {
 
 				db.getRequest().getInterface().kill(tenant, "dcmThreadA", party, folder, oldrevmod, id);
 			}
-
-			TableUtil.retireRecord(db,"dcmThread", id);
 		}
 		catch (DatabaseException x) {
 			Logger.error("Unable to deliver thread: " + x);
 		}
+	}
+
+	public static void retireThread(TablesAdapter db, String id) throws OperatingContextException {
+		ThreadUtil.clearThreadIndex(db, id);
+
+		TableUtil.retireRecord(db,"dcmThread", id);
 	}
 
 	static public void traverseThreadIndex(TablesAdapter db, IVariableAware scope, String party, String folder, IFilter out) throws OperatingContextException {

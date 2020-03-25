@@ -30,6 +30,9 @@ import dcraft.task.IParentAwareWork;
 import dcraft.util.RndUtil;
 import dcraft.xml.XElement;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 public class IntegerStruct extends ScalarStruct {
 	static public IntegerStruct of(Long v) {
 		IntegerStruct struct = new IntegerStruct();
@@ -160,8 +163,15 @@ public class IntegerStruct extends ScalarStruct {
 					? StackUtil.refFromElement(stack, code, "Value")
 					: StackUtil.resolveReference(stack, code.getText());
 
+			String mode = StackUtil.stringFromElement(stack, code, "Mode", "Standard");
+
 			try {
-				this.value /= Struct.objectToInteger(sref);			
+				if (! "Standard".equals(mode)) {
+					this.value = BigDecimal.valueOf(this.value).divide(Struct.objectToDecimal(sref), RoundingMode.valueOf(mode)).longValue();
+				}
+				else {
+					this.value /= Struct.objectToInteger(sref);
+				}
 			}
 			catch (Exception x) {
 				Logger.error("Error doing " + code.getName() + ": " + x);

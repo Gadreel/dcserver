@@ -548,29 +548,7 @@ public class TableUtil {
 	}
 
 	static public boolean canWriteRecord(TablesAdapter db, String table, String id, RecordStruct context) throws OperatingContextException {
-		SchemaResource schema = ResourceHub.getResources().getSchema();
-		List<DbTrigger> trigs = schema.getDbTriggers(table, "CheckWriteRecord");
-		boolean can = true;
-
-		for (DbTrigger trig : trigs) {
-			can = false;		// if there are any triggers at all, then fail unless we find 1 pass
-
-			String spname = trig.execute;
-
-			try {
-				Class<?> spclass = Class.forName(spname);
-				ITrigger sp = (ITrigger) spclass.newInstance();
-
-				if (sp.execute(db, table, id, context))
-					return true;
-			}
-			catch (OperatingContextException x) {
-				throw x;
-			}
-			catch (Exception x) {
-				Logger.error("Unable to load/start trigger class: " + x);
-			}
-		}
+		boolean can = db.executeCanTrigger(table, id, "CheckWriteRecord", context);
 
 		if (! can)
 			Logger.error("Unable to update record.");
@@ -589,29 +567,7 @@ public class TableUtil {
 	}
 
 	static public boolean canReadRecord(TablesAdapter db, String table, String id, RecordStruct context) throws OperatingContextException {
-		SchemaResource schema = ResourceHub.getResources().getSchema();
-		List<DbTrigger> trigs = schema.getDbTriggers(table, "CheckReadRecord");
-		boolean can = true;
-
-		for (DbTrigger trig : trigs) {
-			can = false;		// if there are any triggers at all, then fail unless we find 1 pass
-
-			String spname = trig.execute;
-
-			try {
-				Class<?> spclass = Class.forName(spname);
-				ITrigger sp = (ITrigger) spclass.newInstance();
-
-				if (sp.execute(db, table, id, context))
-					return true;
-			}
-			catch (OperatingContextException x) {
-				throw x;
-			}
-			catch (Exception x) {
-				Logger.error("Unable to load/start trigger class: " + x);
-			}
-		}
+		boolean can = db.executeCanTrigger(table, id, "CheckReadRecord", context);
 
 		if (! can)
 			Logger.error("Unable to read record.");

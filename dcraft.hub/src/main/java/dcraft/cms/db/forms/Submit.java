@@ -10,6 +10,7 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.mem.MemoryStoreFile;
+import dcraft.filevault.Transaction;
 import dcraft.filevault.Vault;
 import dcraft.filevault.VaultUtil;
 import dcraft.hub.ResourceHub;
@@ -123,13 +124,10 @@ public class Submit implements IStoredProc {
 		
 		MemoryStoreFile msource = MemoryStoreFile.of(path)
 				.with(data.toPrettyString());
+
+		VaultUtil.prepTxTransfer(id);
 		
-		// TODO ideally we would use a form Tx here so that the managed form could add files to the transaction
-		//token.with("TxId",
-		
-		VaultUtil.setSessionToken(id);
-		
-		VaultUtil.transfer("ManagedForms", msource, path, id, new OperationOutcomeStruct() {
+		VaultUtil.transferAfterToken("ManagedForms", msource, path, id, new OperationOutcomeStruct() {
 			@Override
 			public void callback(Struct result) throws OperatingContextException {
 				callback.returnValue(RecordStruct.record()

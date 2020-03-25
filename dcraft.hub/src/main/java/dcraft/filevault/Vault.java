@@ -164,17 +164,7 @@ abstract public class Vault {
 	public String getTxForToken(RecordStruct data) throws OperatingContextException {
 		String token = data.getFieldAsString("Token");
 
-		Session session = OperationContext.getOrThrow().getSession();
-
-		if (session == null)
-			return null;
-
-		HashMap<String, Struct> scache = session.getCache();
-
-		if (! scache.containsKey(token))
-			return null;
-
-		return Struct.objectToString(scache.get(token + "Tx"));
+		return VaultUtil.getSessionTokenTx(token);
 	}
 
 	public void clearToken(RecordStruct data) throws OperatingContextException {

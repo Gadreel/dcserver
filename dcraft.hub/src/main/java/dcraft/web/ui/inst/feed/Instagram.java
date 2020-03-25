@@ -23,10 +23,10 @@ import dcraft.web.ui.inst.W3;
 import dcraft.web.ui.inst.cms.GalleryWidget;
 import dcraft.xml.XElement;
 import dcraft.xml.XNode;
+import z.gei.db.estimator.product.List;
 
 import java.net.URL;
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Instagram extends Base implements ICMSAware {
@@ -62,7 +62,7 @@ public class Instagram extends Base implements ICMSAware {
 			ZonedDateTime lastrefresh = Struct.objectToDateTime(requestContext.getInterface().get(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Stamp"));
 
 			// if less than 15 minutes since last product sku cache, skip reload
-			if ((lastrefresh != null) && lastrefresh.isAfter(TimeUtil.now().minusMinutes(15))) {
+			if ((lastrefresh != null) && lastrefresh.isAfter(TimeUtil.now().minusMinutes(60))) {
 				data = Struct.objectToList(requestContext.getInterface().get(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Data"));
 			}
 			else {
@@ -75,24 +75,70 @@ public class Instagram extends Base implements ICMSAware {
 					return;
 				}
 
-				String token = isettings.attr("Token");
+				// try new Basic Display first
+				String basictoken = isettings.attr("BasicToken");
+				boolean newdata = false;
 
-				if (StringUtil.isEmpty(token)) {
-					Logger.warn("Missing Instagram token.");
-					return;
+				if (StringUtil.isNotEmpty(basictoken)) {
+					// TODO currently returns last 25, support less (Max) to make fewer calls - future support more
+					URL url = new URL("https://graph.instagram.com/me?fields=media&access_token=" + basictoken);
+
+					CompositeStruct res = CompositeParser.parseJson(url);
+
+					//if (res != null)
+					//	System.out.println("I: " + res.toPrettyString());
+
+					ListStruct mediadata = res.selectAsList("media/data");
+
+					data = ListStruct.list();
+
+					for (int i = 0; i < mediadata.size(); i++) {
+						String mid = mediadata.selectAsString(i + "/id");
+
+						RecordStruct media = Struct.objectToRecord(requestContext.getInterface().get(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Media-" + mid));
+
+						if (media == null) {
+							url = new URL("https://graph.instagram.com/" + mid
+									+ "?fields=media_type,media_url,caption,permalink,thumbnail_url,timestamp&access_token=" + basictoken);
+
+							res = CompositeParser.parseJson(url);
+
+							requestContext.getInterface().set(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Media-" + mid, res);
+
+							data.with(res);
+
+							newdata = true;
+						}
+						else {
+							data.with(media);
+						}
+					}
+				}
+				// use old IG API if not basic token
+				else {
+					String token = isettings.attr("Token");
+
+					if (StringUtil.isEmpty(token)) {
+						Logger.warn("Missing Instagram token.");
+						return;
+					}
+
+					URL url = new URL("https://api.instagram.com/v1/users/self/media/recent/?access_token=" + token);
+
+					CompositeStruct res = CompositeParser.parseJson(url);
+
+					//if (res != null)
+					//	System.out.println("I: " + res.toPrettyString());
+
+					data = ((RecordStruct) res).getFieldAsList("data");
+
+					newdata = true;
 				}
 
-				URL url = new URL("https://api.instagram.com/v1/users/self/media/recent/?access_token=" + token);
-
-				CompositeStruct res = CompositeParser.parseJson(url);
-
-				//if (res != null)
-				//	System.out.println("I: " + res.toPrettyString());
-
-				data = ((RecordStruct) res).getFieldAsList("data");
+				if (newdata)
+					requestContext.getInterface().set(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Data", data);
 
 				requestContext.getInterface().set(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Stamp", TimeUtil.now());
-				requestContext.getInterface().set(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Data", data);
 			}
 
 			//System.out.println(data != null ? "present" : "missing");

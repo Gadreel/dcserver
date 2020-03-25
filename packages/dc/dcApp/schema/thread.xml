@@ -18,6 +18,7 @@
 			<Field Name="dcmEndDate" Type="DateTime" />
 			<!-- if set, this message can be archived automatically after this date -->
 			<Field Name="dcmExpireDate" Type="DateTime" Indexed="True" />
+			<Field Name="dcmExpiredDate" Type="DateTime" Indexed="True" />
 
 			<Field Name="dcmLabels" Type="dcMetaString" />
 			<Field Name="dcmSharedAttributes" Type="AnyRecord" />
@@ -58,6 +59,8 @@
 		<Composer Name="dcmThreadAccess" Execute="dcraft.cms.thread.db.comp.MessageAccess" />
 		<Composer Name="dcmThreadParties" Execute="dcraft.cms.thread.db.comp.ThreadParties" />
 
+		<Trigger Table="dcmThread" Operation="BeforeDelete" Execute="dcraft.cms.thread.db.trigger.BeforeDelete" />
+
 		<Procedure Name="dcmServices.Thread.Create" Execute="dcraft.cms.thread.db.Create" />
 		<Procedure Name="dcmServices.Thread.AddParties" Execute="dcraft.cms.thread.db.AddParties" />
 		<Procedure Name="dcmServices.Thread.AddContent" Execute="dcraft.cms.thread.db.AddContent" />
@@ -67,6 +70,7 @@
 		<Procedure Name="dcmServices.Thread.Reindex" Execute="dcraft.cms.thread.db.Reindex" />
 		<Procedure Name="dcmServices.Thread.ArchiveMessages" Execute="dcraft.cms.thread.db.ArchiveMessages" />
 		<Procedure Name="dcmServices.Thread.LoadMessages" Execute="dcraft.cms.thread.db.LoadMessages" />
+		<Procedure Name="dcmServices.Thread.CheckExpired" Execute="dcraft.cms.thread.db.CheckExpired" />
 	</Database>
 
 	<Shared>
@@ -276,6 +280,11 @@
 		<Service Name="dcmServices">
 			<Feature Name="Thread">
 				<Secure Badges="Admin,Developer">
+					<Op Name="CheckExpired">
+						<Description>
+							Check for and remove expire threads.
+						</Description>
+					</Op>
 					<Op Name="Create">
 						<Description>
 							Create new thread.

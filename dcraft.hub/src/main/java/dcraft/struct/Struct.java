@@ -620,9 +620,13 @@ abstract public class Struct implements IPartSelector {
 			o = ((java.sql.Timestamp)o).toInstant();
 		
 		// prefer instant over taccess to ensure UTC
+		if (o instanceof LocalDate)
+			return  ((LocalDate) o).atStartOfDay(ZoneId.of("UTC"));
+
+		// prefer instant over taccess to ensure UTC
 		if (o instanceof Instant)
 			return ZonedDateTime.ofInstant((Instant) o, ZoneId.of("UTC"));
-		
+
 		if (o instanceof TemporalAccessor)
 			return ZonedDateTime.from((TemporalAccessor) o);
 		

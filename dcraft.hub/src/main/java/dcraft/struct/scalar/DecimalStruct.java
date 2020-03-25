@@ -17,6 +17,7 @@
 package dcraft.struct.scalar;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.log.Logger;
@@ -161,7 +162,7 @@ public class DecimalStruct extends ScalarStruct {
 					: StackUtil.resolveReference(stack, code.getText(), true);
 
 			try {
-				this.value = this.value.divide(Struct.objectToDecimal(sref), 6, BigDecimal.ROUND_HALF_EVEN);
+				this.value = this.value.divide(Struct.objectToDecimal(sref), 6, RoundingMode.HALF_EVEN);
 			}
 			catch (Exception x) {
 				Logger.error("Error doing " + code.getName() + ": " + x);

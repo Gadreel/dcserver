@@ -2576,6 +2576,7 @@ dc.pui.Form.prototype = {
 							Op: "Complete",
 							Body: {
 								Form: task.Store.Form.Name,
+								Token: task.Store.Current.AfterData.Token,
 								Uuid: task.Store.Current.AfterData.Uuid
 							}
 						},
@@ -4352,7 +4353,7 @@ dc.pui.controls.Uploader.prototype.onAfterSave = function(e) {
 		});
 	}
 
-	var uploadtask = dc.transfer.Util.uploadFiles(files, 'ManagedForm', e.Data.Token, function() {
+	var uploadtask = dc.transfer.Util.uploadFiles(files, 'ManagedForms', e.Data.Token, function() {
 		task.resume();
 	});
 

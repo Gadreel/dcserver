@@ -133,26 +133,27 @@ public class SendEmail extends Instruction {
 					.with("Subject", subject)
 					.with("Html", html)
 					.with("Text", text);
-			
-			ListStruct attachments = ListStruct.list();
-			
-			for (XElement op : this.selectAll("*")) {
-				if ("Attachment".equals(op.getName())) {
-					Struct attach = StackUtil.refFromElement(stack, op, "Target");
-					
-					if (attach instanceof BinaryStruct)
-						attachments.with(RecordStruct.record()
-								.with("Name", StackUtil.stringFromElement(stack, op, "Name"))
-								.with("Mime", StackUtil.stringFromElement(stack, op, "Mime"))
-								.with("Content", attach)
-						);
-					else if (attach != null)
-						attachments.with(RecordStruct.record()
-								.with("Name", StackUtil.stringFromElement(stack, op, "Name"))
-								.with("Mime", StackUtil.stringFromElement(stack, op, "Mime"))
-								.with("File", attach)
-						);
-				}
+
+			ListStruct attachments = Struct.objectToList(StackUtil.resolveReference(stack,  this.attr("Attachments"), true));
+
+			if (attachments == null)
+				attachments = ListStruct.list();
+
+			for (XElement op : this.selectAll("Attachment")) {
+				Struct attach = StackUtil.refFromElement(stack, op, "Target");
+
+				if (attach instanceof BinaryStruct)
+					attachments.with(RecordStruct.record()
+							.with("Name", StackUtil.stringFromElement(stack, op, "Name"))
+							.with("Mime", StackUtil.stringFromElement(stack, op, "Mime"))
+							.with("Content", attach)
+					);
+				else if (attach != null)
+					attachments.with(RecordStruct.record()
+							.with("Name", StackUtil.stringFromElement(stack, op, "Name"))
+							.with("Mime", StackUtil.stringFromElement(stack, op, "Mime"))
+							.with("File", attach)
+					);
 			}
 			
 			if (attachments.size() > 0)

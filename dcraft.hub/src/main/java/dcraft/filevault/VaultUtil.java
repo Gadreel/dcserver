@@ -28,16 +28,41 @@ public class VaultUtil {
 
 		// transfers need a session, assign one
 		if (sess == null) {
-			sess = Session.of("transfer:", callback.getOperationContext().getUserContext());
+			sess = Session.of("transfer:", OperationContext.getOrThrow().getUserContext());
 
 			SessionHub.register(sess);
 
-			callback.getOperationContext().setSessionId(sess.getId());
+			OperationContext.getOrThrow().setSessionId(sess.getId());
 		}
 
 		if (StringUtil.isNotEmpty(token))
 			VaultUtil.setSessionToken(token);
 
+		VaultUtil.transferAfterToken(vname, upfile, destpath, token, callback);
+	}
+
+	static public void prepTxTransfer(String token) throws OperatingContextException {
+		String txid = Transaction.createTransactionId();
+
+		VaultUtil.prepTxTransfer(token, txid);
+	}
+
+	static public void prepTxTransfer(String token, String txid) throws OperatingContextException {
+		Session sess = OperationContext.getOrThrow().getSession();
+
+		// transfers need a session, assign one
+		if (sess == null) {
+			sess = Session.of("transfer:", OperationContext.getOrThrow().getUserContext());
+
+			SessionHub.register(sess);
+
+			OperationContext.getOrThrow().setSessionId(sess.getId());
+		}
+
+		VaultUtil.setSessionToken(token, txid);
+	}
+
+	static public void transferAfterToken(String vname, FileStoreFile upfile, CommonPath destpath, String token, OperationOutcomeStruct callback) throws OperatingContextException {
 		ServiceHub.call(VaultServiceRequest.ofStartUpload(vname)
 				.withPath(destpath)
 				.withSize(upfile.getSize())
@@ -186,5 +211,19 @@ public class VaultUtil {
 			scache.remove(token);
 			scache.remove(token + "Tx");
 		}
+	}
+
+	static public String getSessionTokenTx(String token) throws OperatingContextException {
+		Session session = OperationContext.getOrThrow().getSession();
+
+		if (session == null)
+			return null;
+
+		HashMap<String, Struct> scache = session.getCache();
+
+		if (! scache.containsKey(token))
+			return null;
+
+		return Struct.objectToString(scache.get(token + "Tx"));
 	}
 }

@@ -27,7 +27,7 @@ import dcraft.xml.XmlUtil;
 public class Feed extends Base {
 	static public Feed tag() {
 		Feed el = new Feed();
-		el.setName("dcm.Feed");
+		el.setName("dcm.FeedWidget");
 		return el;
 	}
 	

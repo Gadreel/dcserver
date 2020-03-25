@@ -241,9 +241,11 @@
 		<Procedure Name="dcReindexTenant" Execute="dcraft.db.proc.call.ReindexTenant" />
 		<Procedure Name="dcReindexAll" Execute="dcraft.db.proc.call.ReindexAll" />
 		<Procedure Name="dcReindexTenantTable" Execute="dcraft.db.proc.call.ReindexTenantTable" />
+		<Procedure Name="dcReindexTenantTableField" Execute="dcraft.db.proc.call.ReindexTenantTableField" />
 		<Procedure Name="dcLoadRecord" Execute="dcraft.db.proc.call.LoadRecord" />
 		<Procedure Name="dcSelectDirect" Execute="dcraft.db.proc.call.SelectDirect" />
 		<Procedure Name="dcListDirect" Execute="dcraft.db.proc.call.ListDirect" />
+		<Procedure Name="dcDeleteRecord" Execute="dcraft.db.proc.call.DeleteRecord" />
 		<Procedure Name="dcRetireRecord" Execute="dcraft.db.proc.call.RetireRecord" />
 		<Procedure Name="dcReviveRecord" Execute="dcraft.db.proc.call.ReviveRecord" />
 		<Procedure Name="dcInsertRecord" Execute="dcraft.db.proc.call.UpdateRecord" />
@@ -441,9 +443,17 @@
 					</Op>
 					<Op Name="dcReindexTenantTable">
 						<Description>
-							kills and rebuilds the index for all tables in the Tenant.
+							kills and rebuilds the index for all records in one table in the Tenant.
 						</Description>
 						<RecordRequest Inherits="dcdbCall" />
+					</Op>
+					<Op Name="dcReindexTenantTableField">
+						<Description>
+							kills and rebuilds the index for one field in all records in one tables in the Tenant.
+						</Description>
+						<RecordRequest Inherits="dcdbCall">
+							<Field Name="Field" Type="dcMetaString" />
+						</RecordRequest>
 					</Op>
 					<Op Name="dcLoadRecord">
 						<Description>
@@ -494,6 +504,16 @@
 							<Field Name="Historical" Type="Boolean" />
 						</RecordRequest>
 						<ListResponse Type="Any" />
+					</Op>
+					<Op Name="dcDeleteRecord">
+						<Description>
+							Delete records.
+						</Description>
+						<RecordRequest Inherits="dcdbCall">
+							<Field Name="Ids" Required="True">
+								<List Type="Id" />
+							</Field>
+						</RecordRequest>
 					</Op>
 					<Op Name="dcRetireRecord">
 						<Description>

@@ -1,19 +1,19 @@
 package dcraft.db.proc.filter;
 
 import dcraft.db.proc.BasicFilter;
+import dcraft.db.proc.BasicFilterSubAware;
 import dcraft.db.proc.ExpressionResult;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.time.BigDateTime;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Unique extends BasicFilter {
-	static public Unique unique() {
-		return new Unique();
+public class UniqueSubAware extends BasicFilterSubAware {
+	static public UniqueSubAware unique() {
+		return new UniqueSubAware();
 	}
 	
 	// TODO enhance by making this use ^dcTemp for large number of records
@@ -36,7 +36,7 @@ public class Unique extends BasicFilter {
 		return this.unique.addAll(v);
 	}
 
-	public boolean addAll(Unique v) {
+	public boolean addAll(UniqueSubAware v) {
 		return this.unique.addAll(v.unique);
 	}
 
@@ -53,12 +53,12 @@ public class Unique extends BasicFilter {
 	}
 	
 	@Override
-	public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, Object val) throws OperatingContextException {
+	public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, Object val, Object subid) throws OperatingContextException {
 		// we have already returned this one
 		if (this.unique.contains(val))
 			return ExpressionResult.REJECTED;
 		
-		ExpressionResult nres = this.nestOrAccept(adapter, scope, table, val);
+		ExpressionResult nres = this.nestOrAccept(adapter, scope, table, val, subid);
 		
 		if (nres.accepted)
 			this.unique.add(val);
