@@ -258,6 +258,7 @@
 			<Field Name="Timeout" Type="Integer" />
 			<Field Name="MaxTries" Type="Integer" />
 			<Field Name="Throttle" Type="Integer" />
+			<Field Name="RetryPlan" Type="dcTinyString" />
 
 			<!-- work queue only -->
 			<Field Name="ClaimPath" Type="dcString" />

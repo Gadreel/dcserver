@@ -536,7 +536,16 @@ public class Task extends RecordStruct {
 	public int getTimeoutMS() {
 		return (int) this.getFieldAsInteger("Timeout", 1)  * 60 * 1000; // convert to ms
 	}
-	
+
+	public String getRetryPlan() {
+		return this.getFieldAsString("RetryPlan");
+	}
+
+	public Task withRetryPlan(String v) {
+		this.with("RetryPlan", v);
+		return this;
+	}
+
 	/*
 	 * Deadline is v minutes until the task must complete, see Timeout also
 	 * 

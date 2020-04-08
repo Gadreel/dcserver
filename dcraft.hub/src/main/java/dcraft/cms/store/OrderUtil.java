@@ -8,12 +8,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import dcraft.cms.thread.db.ThreadUtil;
 import dcraft.db.Constants;
-import dcraft.db.DatabaseException;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.call.SignIn;
 import dcraft.db.request.DataRequest;
 import dcraft.db.request.common.AddUserRequest;
-import dcraft.db.request.common.RequestFactory;
 import dcraft.db.request.query.*;
 import dcraft.db.request.update.DbRecordRequest;
 import dcraft.db.request.update.InsertRecordRequest;
@@ -31,7 +29,6 @@ import dcraft.interchange.stripe.StripeUtil;
 import dcraft.interchange.ups.UpsUtil;
 import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
-import dcraft.service.plugin.Operation;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.Task;
@@ -41,7 +38,7 @@ import dcraft.util.Base64;
 import dcraft.util.Memory;
 import dcraft.util.TimeUtil;
 
-import dcraft.interchange.authorize.AuthUtil;
+import dcraft.interchange.authorize.AuthUtilXml;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -234,7 +231,7 @@ public class OrderUtil {
 				// TODO store order items as independent records? order audits? other fields/tables to fill in?
 				// put order into a thread and box
 
-				AuthUtil.authXCard(pel.getAttribute("AuthorizeAlternate"), refid, (RecordStruct) order, new OperationOutcomeRecord() {
+				AuthUtilXml.authXCard(pel.getAttribute("AuthorizeAlternate"), refid, (RecordStruct) order, new OperationOutcomeRecord() {
 					@Override
 					public void callback(RecordStruct res) throws OperatingContextException {
 						OperationContext.getOrThrow().touch();

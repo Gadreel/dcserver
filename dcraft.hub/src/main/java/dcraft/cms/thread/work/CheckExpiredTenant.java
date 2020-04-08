@@ -38,6 +38,8 @@ public class CheckExpiredTenant implements IWork {
 
 		db.traverseIndexRange(OperationContext.getOrThrow(), "dcmThread", "dcmExpireDate", null, TimeUtil.now(), CurrentRecord.current().withNested(collector));
 
+		int count = 0;
+
 		for (Object val : collector.getValues()) {
 			String tid = val.toString();
 
@@ -52,6 +54,12 @@ public class CheckExpiredTenant implements IWork {
 				db.retireStaticScalar("dcmThread", tid, "dcmExpireDate");
 				db.updateStaticScalar("dcmThread", tid, "dcmExpiredDate", now);
 			}
+
+			if (count % 100 == 0) {
+				taskctx.touch();
+			}
+
+			count++;
 		}
 
 		taskctx.returnEmpty();

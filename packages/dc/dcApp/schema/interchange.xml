@@ -1,0 +1,19 @@
+<Schema>
+	<Database>
+		<!-- extend tenant, use same id as was in the root domain for this domain -->
+		<Table Id="dcTenant">
+      <!-- keyed by store ident
+          flag = true if the token seems bad
+      -->
+			<Field Name="dcmQBRefreshToken" Group="dcmQBToken" Type="dcSmallString" List="True" />
+			<Field Name="dcmQBRefreshExpire" Group="dcmQBToken" Type="dcDateTime" List="True" />
+			<Field Name="dcmQBAccessToken" Group="dcmQBToken" Type="dcString" List="True" />
+      <Field Name="dcmQBAccessExpire" Group="dcmQBToken" Type="dcDateTime" List="True" />
+      <Field Name="dcmQBAccessFlag" Group="dcmQBToken" Type="Boolean" List="True" />
+
+      <!-- keyed by store ident
+      -->
+			<Field Name="dcmAuthLastBatch" Group="dcmAuthBatch" Type="dcSmallString" List="True" />
+		</Table>
+  </Database>
+</Schema>

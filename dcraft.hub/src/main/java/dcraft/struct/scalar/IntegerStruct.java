@@ -222,8 +222,11 @@ public class IntegerStruct extends ScalarStruct {
 				
 				if (code.hasAttribute("To")) 
 						to = Struct.objectToInteger(StackUtil.refFromElement(stack, code, "To"));
-				
-				this.value = RndUtil.testrnd.nextInt((int) (to - from)) + from;
+
+				if (StackUtil.boolFromElement(stack, code, "Quick"))
+					this.value = RndUtil.testrnd.nextInt((int) (to - from)) + from;
+				else
+					this.value = RndUtil.random.nextInt((int) (to - from)) + from;
 			}
 			catch (Exception x) {
 				Logger.error("Error doing " + code.getName() + ": " + x);
