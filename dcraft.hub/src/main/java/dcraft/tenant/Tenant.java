@@ -165,27 +165,27 @@ public class Tenant extends Base {
 		List<XElement> vaults = this.getResources().getConfig().getTagListDeep("Vaults/Tenant");
 
 		for (XElement bucket : vaults) {
-			String alias = bucket.getAttribute("Id");
+			String id = bucket.getAttribute("Id");
 
-			if (StringUtil.isEmpty(alias) || this.vaults.containsKey(alias))
+			if (StringUtil.isEmpty(id) || this.vaults.containsKey(id))
 				continue;
 
 			Vault b = Vault.of(this.getRootSite(), bucket);
 
 			if (b != null)
-				this.vaults.put(alias, b);
+				this.vaults.put(id, b);
 		}
 
 		return this.vaults.values();
 	}
 
 	@Override
-	public Vault getVault(String alias) throws OperatingContextException {
+	public Vault getVault(String id) throws OperatingContextException {
 		// like tenant database - this is shared data
-		Vault b = this.vaults.get(alias);
+		Vault b = this.vaults.get(id);
 		
 		if (b == null) {
-			XElement bucket = this.getResources().getConfig().findId("Vaults/Tenant", alias);
+			XElement bucket = this.getResources().getConfig().findId("Vaults/Tenant", id);
 
 			if (bucket == null)
 				return null;
@@ -193,7 +193,7 @@ public class Tenant extends Base {
 			b = Vault.of(this.getRootSite(), bucket);
 
 			if (b != null)
-				this.vaults.put(alias, b);
+				this.vaults.put(id, b);
 		}
 		
 		return b;

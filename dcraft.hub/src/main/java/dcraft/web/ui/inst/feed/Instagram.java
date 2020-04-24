@@ -96,14 +96,18 @@ public class Instagram extends Base implements ICMSAware {
 						String mid = mediadata.selectAsString(i + "/id");
 
 						RecordStruct media = Struct.objectToRecord(requestContext.getInterface().get(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Media-" + mid));
+						ZonedDateTime ts = Struct.objectToDateTime(requestContext.getInterface().get(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Media-" + mid, "Stamp"));
 
-						if (media == null) {
+						ZonedDateTime ex = TimeUtil.now().minusDays(15);
+
+						if ((media == null) || (ts == null) || (ts.isBefore(ex))) {
 							url = new URL("https://graph.instagram.com/" + mid
 									+ "?fields=media_type,media_url,caption,permalink,thumbnail_url,timestamp&access_token=" + basictoken);
 
 							res = CompositeParser.parseJson(url);
 
 							requestContext.getInterface().set(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Media-" + mid, res);
+							requestContext.getInterface().set(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Media-" + mid, "Stamp", TimeUtil.now());
 
 							data.with(res);
 

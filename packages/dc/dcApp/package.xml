@@ -302,6 +302,8 @@
 			<Site Id="SiteFiles" VaultClass="dcraft.filevault.SiteVault" ReadBadges="Developer" WriteBadges="Developer" RootFolder="/"  />
 			<Tenant Id="StoreOrders" VaultClass="dcraft.filevault.FileStoreVault" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />
 			<Tenant Id="ManagedForms" VaultClass="dcraft.filevault.ManagedFormVault" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />
+			<RootMap Id="TenantGalleries" Alias="Galleries" />
+			<RootMap Id="TenantFiles" Alias="Files" />
 		</Vaults>
 	</Config>
 </Package>

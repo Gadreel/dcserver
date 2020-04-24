@@ -299,15 +299,15 @@ public class Site extends Base {
 		List<XElement> vaults = this.getResources().getConfig().getTagListDeep("Vaults/Site");
 
 		for (XElement bucket : vaults) {
-			String alias = bucket.getAttribute("Id");
+			String id = bucket.getAttribute("Id");
 
-			if (StringUtil.isEmpty(alias) || this.vaults.containsKey(alias))
+			if (StringUtil.isEmpty(id) || this.vaults.containsKey(id))
 				continue;
 
 			Vault b = Vault.of(this, bucket);
 
 			if (b != null)
-				this.vaults.put(alias, b);
+				this.vaults.put(id, b);
 		}
 
 		List<Vault> copy = new ArrayList<>();
@@ -324,15 +324,15 @@ public class Site extends Base {
 		List<XElement> vaults = this.getResources().getConfig().getTagListDeep("Vaults/Site");
 
 		for (XElement bucket : vaults) {
-			String alias = bucket.getAttribute("Id");
+			String id = bucket.getAttribute("Id");
 
-			if (StringUtil.isEmpty(alias) || this.vaults.containsKey(alias))
+			if (StringUtil.isEmpty(id) || this.vaults.containsKey(id))
 				continue;
 
 			Vault b = Vault.of(this, bucket);
 
 			if (b != null)
-				this.vaults.put(alias, b);
+				this.vaults.put(id, b);
 		}
 
 		List<Vault> copy = new ArrayList<>();
@@ -345,25 +345,31 @@ public class Site extends Base {
 	}
 
 	@Override
-	public Vault getVault(String alias) throws OperatingContextException {
+	public Vault getVault(String id) throws OperatingContextException {
 		// like tenant database - this is shared data
-		Vault b = this.vaults.get(alias);
+		Vault b = this.vaults.get(id);
 
 		if (b == null) {
-			XElement bucket = this.getResources().getConfig().findId("Vaults/Site", alias);
+			XElement bucket = this.getResources().getConfig().findId("Vaults/Site", id);
 
 			if (bucket != null) {
 				b = Vault.of(this, bucket);
 
 				if (b != null)
-					this.vaults.put(alias, b);
+					this.vaults.put(id, b);
+			}
+
+			XElement map = this.getResources().getConfig().findId("Vaults/RootMap", id);
+
+			if (map != null) {
+				return this.getTenant().getRootSite().getVault(map.getAttribute("Alias"));
 			}
 		}
 
 		if (b != null)
 			return b;
 
-		return this.getTenant().getVault(alias);
+		return this.getTenant().getVault(id);
 	}
 	
 	public FileStoreVault getGalleriesVault() throws OperatingContextException {

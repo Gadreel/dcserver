@@ -438,6 +438,22 @@ public class Response extends RecordStruct {
 			return ReturnOption.CONTINUE;
 		}
 		
+		if ("SetCookie".equals(code.getName())) {
+			String name = StackUtil.stringFromElement(stack, code, "Name");
+			String value = StackUtil.stringFromElement(stack, code, "Value");
+
+			Cookie cookie = new DefaultCookie(name, (value != null) ? value : "");
+			cookie.setPath(StackUtil.stringFromElement(stack, code, "Path", "/"));
+			cookie.setHttpOnly(StackUtil.boolFromElement(stack, code, "HttpOnly", true));
+
+			// help pass security tests if Secure by default when using https
+			cookie.setSecure(StackUtil.boolFromElement(stack, code, "Secure", true));
+
+			setCookie(cookie);
+
+			return ReturnOption.CONTINUE;
+		}
+
 		return super.operation(stack, code);
 	}
 }

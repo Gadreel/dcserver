@@ -1667,13 +1667,15 @@ dc.cms.image = {
 	// TODO static methods of image
 
 	Loader: {
-		loadGallery: function(galleryPath, callback, search) {
+		loadGallery: function(galleryPath, callback, search, vault) {
+			vault = vault ? vault : 'Galleries';
+
 			dc.comm.sendMessage({
 				Service: 'dcCoreServices',
 				Feature: 'Vaults',
 				Op: 'Custom',
 				Body: {
-					Vault: 'Galleries',
+					Vault: vault,
 					Command: 'LoadMeta',
 					Path: galleryPath,
 					Params: {
@@ -1684,9 +1686,9 @@ dc.cms.image = {
 				var gallery = null;
 
 				if ((resp.Result > 0) || ! resp.Body || ! resp.Body.Extra)
-					gallery = new dc.cms.image.Loader.defaultGallery(galleryPath);
+					gallery = new dc.cms.image.Loader.defaultGallery(galleryPath, vault);
 				else
-					gallery = new dc.cms.image.Gallery(galleryPath, resp.Body.Extra);
+					gallery = new dc.cms.image.Gallery(galleryPath, resp.Body.Extra, vault);
 
 				var thv = gallery.findVariation('thumb');
 
@@ -1704,7 +1706,7 @@ dc.cms.image = {
 				callback(gallery, resp);
 			});
 		},
-		defaultGallery: function(galleryPath) {
+		defaultGallery: function(galleryPath, vault) {
 			return new dc.cms.image.Gallery(galleryPath, {
 				"UploadPlans":  [
 					 {
@@ -1735,7 +1737,7 @@ dc.cms.image = {
 						"Name": "Thumbnail"
 					 }
 				 ]
-			 });
+			 }, vault);
 		}
 	},
 	Util: {
@@ -1806,9 +1808,10 @@ dc.cms.image = {
 	}
 };
 
-dc.cms.image.Gallery = function(path, meta) {
+dc.cms.image.Gallery = function(path, meta, vault) {
 	this.Path = path;
 	this.Meta = meta;
+	this.Vault = vault ? vault : 'Galleries';
 	this.Transfer = null;   // current transfer bucket
 };
 
@@ -1978,7 +1981,7 @@ dc.cms.image.Gallery.prototype.imageDetail = function(name, cb) {
 		Feature: 'Vaults',
 		Op: 'Custom',
 		Body: {
-			Vault: 'Galleries',
+			Vault: this.Vault,
 			Command: 'ImageDetail',
 			Path: this.Path + '/' + name + '.v'
 		}
@@ -1993,7 +1996,7 @@ dc.cms.image.Gallery.prototype.save = function(cb) {
 		Feature: 'Vaults',
 		Op: 'Custom',
 		Body: {
-			Vault: 'Galleries',
+			Vault: this.Vault,
 			Command: 'SaveMeta',
 			Path: this.Path,
 			Params: this.Meta
@@ -2004,7 +2007,7 @@ dc.cms.image.Gallery.prototype.save = function(cb) {
 	});
 };
 
-dc.cms.image.Gallery.prototype.createProcessUploadTask = function(blobs, plan, token, bucket) {
+dc.cms.image.Gallery.prototype.createProcessUploadTask = function(blobs, plan, token) {
 	var or = new dc.lang.OperationResult();
 
 	var steps = [ ];
@@ -2074,7 +2077,7 @@ dc.cms.image.Gallery.prototype.createProcessUploadTask = function(blobs, plan, t
 
 	processtask.Store = {
 		Plan: plan,
-		Vault: bucket,
+		Vault: this.Vault,
 		Gallery: this,
 		Token: token
 	};
@@ -2086,7 +2089,7 @@ dc.cms.image.Gallery.prototype.createProcessUploadTask = function(blobs, plan, t
 	return or;
 };
 
-dc.cms.image.Gallery.prototype.createThumbsTask = function(path, plan, token, bucket) {
+dc.cms.image.Gallery.prototype.createThumbsTask = function(path, plan, token) {
 	var or = new dc.lang.OperationResult();
 
 	var steps = [ ];
@@ -2213,7 +2216,7 @@ dc.cms.image.Gallery.prototype.createThumbsTask = function(path, plan, token, bu
 				Feature: 'Vaults',
 				Op: 'ListFiles',
 				Body: {
-					Vault: 'Galleries',
+					Vault: 'Galleries',		// TODO this.Vault?
 					Path: step.Params.Folder
 				}
 			}, function(resp) {
@@ -2251,7 +2254,7 @@ dc.cms.image.Gallery.prototype.createThumbsTask = function(path, plan, token, bu
 
 	thumbtask.Store = {
 		Path: path,
-		Vault: bucket ? bucket : 'Galleries',
+		Vault: this.Vault,
 		Gallery: this,
 		Token: token,
 		Plan: plan
@@ -2262,7 +2265,7 @@ dc.cms.image.Gallery.prototype.createThumbsTask = function(path, plan, token, bu
 	return or;
 };
 
-dc.cms.image.Gallery.prototype.createUploadTask = function(files, token, bucket) {
+dc.cms.image.Gallery.prototype.createUploadTask = function(files, token) {
 	var or = new dc.lang.OperationResult();
 
 	var steps = [ ];
@@ -2315,7 +2318,7 @@ dc.cms.image.Gallery.prototype.createUploadTask = function(files, token, bucket)
 	var uploadtask = new dc.lang.Task(steps);
 
 	uploadtask.Store = {
-		Vault: bucket ? bucket : 'Galleries',
+		Vault: this.Vault,
 		Gallery: this,
 		Token: token,
 		Blob: null
