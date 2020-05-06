@@ -5,9 +5,25 @@
 
 	<Require Script="/js/vendor/marked.min.js" />
 
+	<dcs.Var Name="ProductAlias" Type="String" />
+
+	<dcs.If Target="$Page.OriginalPathParts.3" IsEmpty="false">
+		<dcs.With Target="$ProductAlias" SetTo="$Page.OriginalPathParts.3" />
+	</dcs.If>
+
+	<dcs.Var Name="pdata" Type="Record">
+		<SetField Name="Alias" Value="$ProductAlias" />
+	</dcs.Var>
+
+	<dcs.CallService Service="dcmStoreServices" Feature="Product" Op="Lookup" Params="$pdata" Result="Product" />
+
+	<dcs.Var Name="dcFormParam" Type="Record" SetTo="$Product.CustomFields">
+		<SetField Name="Record" Value="Options" />
+	</dcs.Var>
+
 	<dc.Body>
 		<dc.PagePanel>
-			<dcf.Form>
+			<dcf.Form RecordOrder="Options,Default">
 				<dc.Region Hint="Item Quantity form">
 					<dc.RowLayout Collapse="Narrow">
 						<dc.Column Size="1-4" Pad="Medium" aria-hidden="true">
@@ -20,6 +36,10 @@
 							<dcf.Label Label="Instructions" Name="Instructions" />
 							<dcf.Label Label="Price" Name="Price" />
 							<dcf.Text Label="Quantity" Name="Quantity" Type="Decimal" Required="true" />
+							<div id="sectCustomFields">
+								<dcs.Include Path="/dcm/forms/builder" />
+							</div>
+							<dcf.Label Label="Total" Name="Total" />
 						</dc.Column>
 					</dc.RowLayout>
 				</dc.Region>
@@ -38,6 +58,8 @@
 	<Function Name="Load"><![CDATA[
 			var page = this;
 
+			page.Store.Product = {$Product};
+
 			dc.cms.cart.Cart.load();	// make sure it is loaded
 
 			if (page.Params.Product) {
@@ -46,34 +68,69 @@
 			else {
 				$('#btnShpCartUp2,#btnShpCartClose2b').hide();
 			}
+
+			page.form().inputQuery('Quantity').change(function(e) {
+				page.callPageFunc('UpdateTotal');
+
+				e.preventDefault();
+				return false;
+			});
+
+			$('#sectCustomFields input, #sectCustomFields select').change(function(e) {
+				page.callPageFunc('UpdateTotal');
+
+				e.preventDefault();
+				return false;
+			});
+	]]></Function>
+	<Function Name="UpdateTotal"><![CDATA[
+			var page = this;
+
+			var qty = page.form().getValue('Quantity');
+			var price = page.Store.Product.Price;
+			var options = page.form().getValues('Options');
+
+			if (options && page.Store.Product.CustomFields.Controls) {
+				var keys = Object.getOwnPropertyNames(options);
+
+				for (var i = 0; i < page.Store.Product.CustomFields.Controls.length; i++) {
+					var fld = page.Store.Product.CustomFields.Controls[i];
+
+					for (var f = 0; f < keys.length; f++) {
+						var oid = keys[f];
+						var oval = options[oid];
+
+						if (oid == fld.Id) {
+							if (fld.Options && fld.Options.length) {
+								for (var n = 0; n < fld.Options.length; n++) {
+									if (fld.Options[n].Value == oval)
+										price += fld.Options[n].Price;
+								}
+							}
+							else if (fld.Price && oval) {
+								price += fld.Price;
+							}
+
+							break;
+						}
+					}
+				}
+			}
+
+			page.form().setValue('Total', '$' + dc.util.Number.formatMoney(qty * price));
+
+	]]></Function>
+	<Function Name="LoadRecord-Options" Params="e"><![CDATA[
+			var page = this;
+
+			if (page.Params.Product) {
+				e.Data = page.Params.Product.CustomFields;
+			}
 	]]></Function>
 	<Function Name="LoadRecord" Params="e"><![CDATA[
 			var page = this;
 
 			e.AsNew = true;
-
-			if (page.Params.Product) {
-				e.Data = page.Params.Product;
-			}
-			else {
-				e.Message = {
-					Service: 'dcmStoreServices',
-					Feature: 'Product',
-					Op: 'Lookup',
-					Body: {
-						Id: page.Params.Id,
-						Alias: page.Params.Alias
-					}
-				}
-			}
-	]]></Function>
-	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
-			var page = this;
-
-			if (page.Params.Product)
-				page.Store.Product = page.Params.Product;
-			else
-				page.Store.Product = e.Data;
 
 			var img = 'main';
 
@@ -90,6 +147,11 @@
 				Price: '$' + dc.util.Number.formatMoney(page.Store.Product.Price),
 				Quantity: page.Params.Product ? page.Params.Product.Quantity : 1
 			};
+	]]></Function>
+	<Function Name="AfterLoad" Params="e"><![CDATA[
+			var page = this;
+
+			page.callPageFunc('UpdateTotal');
 	]]></Function>
 	<Function Name="DoAddCont" Params="e"><![CDATA[
 			var page = this;
@@ -116,12 +178,14 @@
 			var page = this;
 
 			if (page.Params.Product) {
-				page.Params.Product.Quantity = e.Data.Quantity
+				page.Params.Product.Quantity = e.Data.Quantity;
+				page.Params.Product.CustomFields = page.form().getValues('Options');
 			}
 			else {
 				dc.cms.cart.Cart.addItem({
 					Product: page.Store.Product.Id,
-					Quantity: e.Data.Quantity
+					Quantity: e.Data.Quantity,
+					CustomFields: page.form().getValues('Options')
 				});
 			}
 	]]></Function>

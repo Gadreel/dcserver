@@ -1,0 +1,181 @@
+<dc.Html Badges="Clerk,Admin">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Custom Fields" />
+	</Meta>
+
+	<Require Script="/js/vendor/sortable.min.js" />
+
+	<dc.Body>
+		<dc.PagePanel>
+			<table id="lstCustomFields" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Label</th>
+						<th scope="col">Field Type</th>
+						<th scope="col">Data Type</th>
+						<th scope="col">Actions</th>
+					</tr>
+				</thead>
+				<tbody id="lstCustomFieldsBody" class="dc-pui-sortable " />
+			</table>
+
+			<br />
+
+			<dcf.Form>
+				<dcf.FormButtons Hint="form options" AlwaysNew="true">
+					<dcf.Select Name="FieldType" Label="Field Type">
+						<option value="Text">Text</option>
+						<option value="TextPattern">Text Pattern</option>
+						<option value="TextArea">Multi-line Text Area</option>
+						<option value="YesNo">Yes/No</option>
+						<option value="Checkbox">Checkbox</option>
+						<option value="Select">Select</option>
+						<option value="CheckGroup">Check Group</option>
+						<option value="RadioGroup">Radio Group</option>
+					</dcf.Select>
+
+					<dc.Button Label="Save Positions" Click="DoSavePositions" />
+					<dc.Button Label="Close" Click="DoClose" />
+					<dc.Button Label="Add" Click="DoAddClick" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.Store.LastPos = 0;
+
+			$('#lstCustomFieldsBody').empty();
+
+			var sortable = Sortable.create($('#lstCustomFieldsBody').get(0), {
+			    onEnd: function (evt) {
+			        page.Store.OrderChanged = true;
+			    }
+		    });
+
+			dc.comm.sendMessage({
+				Service: 'dcmStoreServices',
+				Feature: 'Product',
+				Op: 'LoadCustomFields',
+				Body: {
+					BasicForm: page.Params.Id
+				}
+			}, function(resp) {
+				if (resp.Result > 0) {
+					dc.pui.Popup.alert(resp.Message);
+					return;
+				}
+
+				for (var i = 0; i < resp.Body.length; i++) {
+					var item = resp.Body[i];
+
+					var ipos = dc.util.Number.toNumberStrict(item.Position);
+
+					if (ipos > page.Store.LastPos)
+						page.Store.LastPos = ipos;
+
+					$('#lstCustomFieldsBody').dcappend(
+						$('<tr>').attr('data-id', item.Id).dcappend(
+							$('<td>').text(item.Label),
+							$('<td>').text(item.FieldType),
+							$('<td>').text(item.DataType),
+							$('<td>').dcappend(
+								$('<a>')
+									.attr('href', '#')
+									.text('Edit')
+									.click(item, function(e) {
+										dc.pui.Dialog.loadPage('/dcm/store/custom-field/edit-' + e.data.FieldType, {
+											Id: e.data.Id,
+											Callback: function(field) {
+												//page.reload();
+											}
+										});
+
+										e.preventDefault();
+										return false;
+									}),
+								$(' <span>&nbsp;&nbsp;</span> '),
+								$('<a>')
+									.attr('href', '#')
+									.text('Remove')
+									.click(item, function(e) {
+										dc.pui.Popup.confirm('Are you sure you want to delete this option?', function(confirm) {
+											if (! confirm)
+												return;
+
+											dc.comm.sendMessage({
+												Service: 'dcmStoreServices',
+												Feature: 'Product',
+												Op: 'RemoveCustomField',
+												Body: {
+													Id: e.data.Id
+												}
+											}, function(rmsg) {
+												if (rmsg.Result > 0) {
+													dc.pui.Popup.alert('Unable to remove option: ' + rmsg.Message);
+													return;
+
+												}
+
+												page.reload();
+											});
+										});
+
+										e.preventDefault();
+										return false;
+									})
+							)
+						)
+					);
+				}
+			});
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Data = {
+				FieldType: 'Text'
+			};
+	]]></Function>
+	<Function Name="DoClose" Params="e"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+	]]></Function>
+	<Function Name="DoSavePositions" Params="e"><![CDATA[
+			var page = this;
+			var list = $.map($('#lstCustomFieldsBody tr'), function(el, pos) { return { Id: $(el).attr('data-id'), Position: pos } });
+
+			dc.comm.sendMessage({
+				Service: 'dcmStoreServices',
+				Feature: 'Product',
+				Op: 'UpdateCustomFieldPositions',
+				Body: list,
+			}, function(rmsg) {
+				if (rmsg.Result > 0) {
+					dc.pui.Popup.alert('Unable to update positions: ' + rmsg.Message);
+					return;
+
+				}
+
+				page.reload();
+			});
+	]]></Function>
+	<Function Name="DoAddClick" Params="e"><![CDATA[
+			var page = this;
+
+			var fieldtype = page.form().getValue('FieldType');
+
+			page.Store.LastPos++;
+
+			dc.pui.Dialog.loadPage('/dcm/store/custom-field/edit-' + fieldtype, {
+				BasicForm: page.Params.Id,
+				Position: page.Store.LastPos,
+				Callback: function(field) {
+					//page.reload();
+				}
+			});
+	]]></Function>
+</dc.Html>

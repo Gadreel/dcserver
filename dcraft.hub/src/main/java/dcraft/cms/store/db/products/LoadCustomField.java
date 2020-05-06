@@ -39,6 +39,7 @@ public class LoadCustomField implements IStoredProc {
 						.withAs("Label","dcmOptionLabel")
 						.withAs("Value","dcmOptionValue")
 						.withAs("Price","dcmOptionPrice")
+						.with("dcmOptionDisabled", "Disabled")
 				);
 
 		callback.returnValue(TableUtil.getRecord(db, OperationContext.getOrThrow(), "dcmProductCustomFields", id, flds));

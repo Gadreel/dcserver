@@ -5,7 +5,7 @@ if (! dc.image)
 	dc.image = { };
 
 dc.image.Tasks = {
-	createVariationsTask: function(blob, variants, format, quality) {
+	createVariationsTask: function(blob, variants, format, quality, backfill) {
 		var or = new dc.lang.OperationResult();
 
 		var steps = [ ];
@@ -46,6 +46,9 @@ dc.image.Tasks = {
 
 					if (task.Store.MetaData && task.Store.MetaData.exif)
 						options.orientation = task.Store.MetaData.exif.get('Orientation');
+
+					if (backfill)
+						options.RenderBackground = backfill;
 
 					var sizing = step.Params.Sizing;
 
@@ -344,7 +347,8 @@ dc.image.htmlToImage = function(html, width, height, callback) {
     destX,
     destY,
     destWidth,
-    destHeight
+    destHeight,
+		options
   ) {
   	// %%% APW
   	//console.log('render: ' + canvas.width + ',' + canvas.height + ' - '
@@ -354,8 +358,7 @@ dc.image.htmlToImage = function(html, width, height, callback) {
 
 	var ctx = canvas.getContext('2d');
 
-    // %%% APW fill back color
-  	ctx.fillStyle = 'white';
+	ctx.fillStyle = options.RenderBackground ? options.RenderBackground : 'white';
 
 	//draw background / rect on entire canvas
 	ctx.fillRect(destX, destY, destWidth, destHeight);
@@ -503,7 +506,8 @@ dc.image.htmlToImage = function(html, width, height, callback) {
             0,
             0,
             canvas.width,
-            canvas.height
+            canvas.height,
+						options
           );
 
           //console.log('copy');  // %%% APW
@@ -525,7 +529,8 @@ dc.image.htmlToImage = function(html, width, height, callback) {
             0,
             0,
             sourceWidth,
-            sourceHeight
+            sourceHeight,
+						options
           );
         }
       }
@@ -545,7 +550,8 @@ dc.image.htmlToImage = function(html, width, height, callback) {
         0,
         0,
         destWidth,
-        destHeight
+        destHeight,
+				options
       );
     }
     img.width = destWidth;

@@ -1,0 +1,47 @@
+<dc.Html Badges="Admin,Staff">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Enter Option Def" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form AlwaysNew="true">
+				<dcf.Text Label="Label" Name="Label" Required="true" />
+				<dcf.Text Label="Value" Name="Value" Required="true" />
+				<dcf.Text Label="Price" Name="Price" DataType="Decimal" />
+				<dcf.YesNo Label="Disabled" Name="Disabled" />
+
+				<dcf.FormButtons Hint="form options">
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load" Params="e"><![CDATA[
+			var page = this;
+
+			page.Store.Save = null;
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Data = page.Params.Option ? page.Params.Option : { };
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (page.Params.Option)
+				e.Data.Id = page.Params.Option.Id;
+
+			page.Store.Save = e.Data;
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback(page.Store.Save);
+	]]></Function>
+</dc.Html>

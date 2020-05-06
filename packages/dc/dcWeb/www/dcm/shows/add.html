@@ -1,8 +1,8 @@
 <dc.Html Badges="Admin,Editor">
-	<Meta Name="Title"> 
+	<Meta Name="Title">
 		<Tr Locale="en" Value="Add Show" />
 	</Meta>
-	
+
 	<dc.Body>
 		<dc.PagePanel>
 			<dcf.Form>
@@ -10,7 +10,7 @@
 					<dc.Button Click="AfterSave" Label="Cancel" />
 					<dcf.SubmitButton Label="Save" />
 				</dcf.FormButtons>
-				
+
 				<dcf.Text Name="Title" Label="Title" Required="true" />
 				<dcf.Text Name="Alias" Label="Alias" Required="true" Pattern="[\w-]+" />
 			</dcf.Form>
@@ -18,46 +18,46 @@
 	</dc.Body>
 	<Function Name="Load"><![CDATA[
 			var entry = this;
-		
+
 			entry.Store.Gallery = entry.Params.Gallery;
-			
+
 			// TODO support load Gallery when missing parameter
 			//dc.cms.image.Loader.loadGallery(entry.Store.Path, function(gallery, resp) {
-		
-			entry.form().query('Title').focus();				
+
+			entry.form().query('Title').focus();
 	]]></Function>
 	<Function Name="LoadRecord" Params="e"><![CDATA[
 			var entry = this;
-				
+
 			e.Data = {};			// we are adding a new vari
 			e.AsNew = true;
-			 
-			if (entry.Params.Alias) 
+
+			if (entry.Params.Alias)
 				e.Data = entry.Store.Gallery.findShow(entry.Params.Alias);
 	]]></Function>
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 			var entry = this;
-			
+
 			entry.Store.Gallery.updateShow(e.Data);
 
 			entry.Store.Gallery.save(function(resp) {
-				if (resp.Result > 0) 
+				if (resp.Result > 0)
 					dc.pui.Popup.alert(resp.Message, function() {
 						e.Task.resume();
 					});
-				else 
+				else
 					e.Task.resume();
-			});		
-			
+			});
+
 			e.Wait = true;
 	]]></Function>
 	<Function Name="AfterSave"><![CDATA[
 			var entry = this;
 			var alias = entry.form().input('Alias').getValue();
-			
+
 			entry.Layer.back();
-			
-			dc.pui.Dialog.loadPage('/dcm/show/edit', { 
+
+			dc.pui.Dialog.loadPage('/dcm/shows/edit', { 
 				Path: entry.Store.Gallery.Path,
 				Gallery: entry.Store.Gallery,
 				Alias: alias,
@@ -65,6 +65,6 @@
 					if (entry.Params.Callback)
 						entry.Params.Callback(entry.Store.Gallery);
 				}
-			});	
+			});
 	]]></Function>
 </dc.Html>

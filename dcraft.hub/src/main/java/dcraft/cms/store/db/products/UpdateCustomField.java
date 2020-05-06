@@ -67,6 +67,7 @@ public class UpdateCustomField implements IStoredProc {
 				req.withUpdateField("dcmOptionLabel", optid, option.getFieldAsString("Label"));
 				req.withUpdateField("dcmOptionValue", optid, option.getFieldAsString("Value"));
 				req.withUpdateField("dcmOptionPrice", optid, option.getFieldAsString("Price"));
+				req.withUpdateField("dcmOptionDisabled", optid, option.getFieldAsString("Disabled"));
 			}
 		}
 

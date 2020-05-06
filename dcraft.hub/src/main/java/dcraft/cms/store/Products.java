@@ -401,6 +401,7 @@ public class Products {
 									.with("dcmOptionLabel", "Label")
 									.with("dcmOptionValue", "Value")
 									.with("dcmOptionPrice", "Price")
+									.with("dcmOptionDisabled", "Disabled")
 							)
 					);
 			

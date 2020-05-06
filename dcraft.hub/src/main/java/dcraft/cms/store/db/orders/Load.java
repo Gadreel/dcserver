@@ -15,6 +15,8 @@ import dcraft.struct.FieldStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.BooleanStruct;
+import dcraft.struct.scalar.StringStruct;
 import dcraft.util.StringUtil;
 
 import java.math.BigDecimal;
@@ -44,6 +46,7 @@ public class Load implements IStoredProc {
 				.with("dcmGrandTotal", "GrandTotal")
 				.with("dcmAudit", "Audit")
 				.with("dcmShipmentInfo", "Shipments")
+				.with("dcmExtra", "Extra")
 				.withGroup("dcmItemEntryId", "Items", "EntryId", SelectFields.select()
 						.with("dcmItemProduct", "Product")
 						.with("dcmItemQuantity", "Quantity")
@@ -76,6 +79,7 @@ public class Load implements IStoredProc {
 											.withAs("Label","dcmOptionLabel")
 											.withAs("Value","dcmOptionValue")
 											.withAs("Price","dcmOptionPrice")
+											.with("dcmOptionDisabled", "Disabled")
 									)
 							)
 						)
@@ -111,33 +115,56 @@ public class Load implements IStoredProc {
 				ListStruct fields = pinfo.getFieldAsList("Fields");
 				ListStruct formattedcustoms = ListStruct.list();
 
-				for (FieldStruct custom : customs.getFields()) {
-					for (int fd = 0; fd < fields.size(); fd++) {
-						RecordStruct fld = fields.getItemAsRecord(fd);
+				// sort and loop fields to keep stuff in proper order
+				fields.sortRecords("Position", false);
 
+				for (int fd = 0; fd < fields.size(); fd++) {
+					RecordStruct fld = fields.getItemAsRecord(fd);
+
+					for (FieldStruct custom : customs.getFields()) {
 						if (custom.getName().equals(fld.getFieldAsString("Id"))) {
-							//System.out.println("calc: " + fld.getFieldAsString("Label"));
-							BigDecimal price = BigDecimal.ZERO;
-
-							if (fld.isNotFieldEmpty("Price")) {
-								price = fld.getFieldAsDecimal("Price");
-							}
-							else if (fld.isNotFieldEmpty("Options")) {
+							if (fld.isNotFieldEmpty("Options")) {
 								ListStruct options = fld.getFieldAsList("Options");
 
 								for (int n = 0; n < options.size(); n++) {
 									RecordStruct opt = options.getItemAsRecord(n);
 
-									if (custom.getValue().equals(opt.getField("Value")))
-										price = opt.getFieldAsDecimal("Price");
+									if (custom.getValue().equals(opt.getField("Value"))) {
+										formattedcustoms.with(
+												RecordStruct.record()
+														.with("Id", fld.getFieldAsString("Id"))
+														.with("Label", fld.getFieldAsString("Label"))
+														.with("DisplayValue", opt.getFieldAsString("Label"))
+														.with("Price", opt.getFieldAsDecimal("Price", BigDecimal.ZERO))
+														.with("Value", opt.getField("Value"))
+										);
+
+										break;
+									}
 								}
 							}
+							else {
+								boolean pass = ((custom.getValue() instanceof BooleanStruct) && Struct.objectToBooleanOrFalse(custom.getValue()))
+										|| ((custom.getValue() instanceof StringStruct) && StringUtil.isNotEmpty(Struct.objectToString(custom.getValue())));
 
-							formattedcustoms.with(RecordStruct.record()
-									.with("Label", fld.getField("Label"))
-									.with("Value", custom.getValue())
-									.with("Price", price)
-							);
+								if (pass) {
+									Struct value = custom.getValue();
+									String display = Struct.objectToString(value);
+
+									if (value instanceof BooleanStruct) {
+										display = Struct.objectToBooleanOrFalse(value) ? "yes" : "no";
+									}
+
+									formattedcustoms.with(
+											RecordStruct.record()
+													.with("Id", fld.getFieldAsString("Id"))
+													.with("Label", fld.getFieldAsString("Label"))
+													.with("DisplayValue", display)
+													.with("Price", fld.getFieldAsDecimal("Price", BigDecimal.ZERO))
+													.with("Value", value)
+									);
+								}
+							}
 						}
 					}
 				}

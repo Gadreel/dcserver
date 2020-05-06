@@ -80,17 +80,21 @@ public class Instagram extends Base implements ICMSAware {
 				boolean newdata = false;
 
 				if (StringUtil.isNotEmpty(basictoken)) {
-					// TODO currently returns last 25, support less (Max) to make fewer calls - future support more
-					URL url = new URL("https://graph.instagram.com/me?fields=media&access_token=" + basictoken);
+					long cache = isettings.getAttributeAsInteger("Cache", 25);
+					String userid = isettings.attr("UserId");
+
+					data = ListStruct.list();
+
+					//URL url = new URL("https://graph.instagram.com/me?fields=media&limit=" + cache + "&access_token=" + basictoken);
+
+					URL url = new URL("https://graph.instagram.com/v1.0/" + userid + "/media?fields=media&limit=" + cache + "&access_token=" + basictoken);
 
 					CompositeStruct res = CompositeParser.parseJson(url);
 
 					//if (res != null)
 					//	System.out.println("I: " + res.toPrettyString());
 
-					ListStruct mediadata = res.selectAsList("media/data");
-
-					data = ListStruct.list();
+					ListStruct mediadata = res.selectAsList("data");
 
 					for (int i = 0; i < mediadata.size(); i++) {
 						String mid = mediadata.selectAsString(i + "/id");

@@ -1,0 +1,78 @@
+<dc.Html Badges="Clerk,Admin">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Yes/No Entry" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form AlwaysNew="true">
+				<dcf.Text Label="Label" Name="Label" Required="true" />
+				<dcf.Text Label="Long Label" Name="LongLabel" />
+				<dcf.YesNo Label="Required" Name="Required" />
+				<dcf.Text Label="Price" Name="Price" DataType="Decimal" />
+
+				<dcf.FormButtons Hint="form options">
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (page.Params.Id) {
+				e.Message = {
+					Service: 'dcmStoreServices',
+					Feature: 'Product',
+					Op: 'LoadCustomField',
+					Body: {
+						Id: page.Params.Id
+					}
+				};
+			}
+			else {
+				e.Data = {
+					Required: false
+				};
+			}
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (page.Params.Id) {
+				e.Data.Id = page.Params.Id;
+
+				e.Message = {
+					Service: 'dcmStoreServices',
+					Feature: 'Product',
+					Op: 'UpdateCustomField',
+					Body: e.Data
+				};
+			}
+			else {
+				e.Data.Product = page.Params.Product;
+				e.Data.BasicForm = page.Params.BasicForm;
+				e.Data.Position = page.Params.Position;
+				e.Data.FieldType = 'Checkbox';
+
+				e.Message = {
+					Service: 'dcmStoreServices',
+					Feature: 'Product',
+					Op: 'AddCustomField',
+					Body: e.Data
+				};
+			}
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback();
+	]]></Function>
+</dc.Html>

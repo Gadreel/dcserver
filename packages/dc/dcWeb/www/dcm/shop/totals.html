@@ -128,6 +128,18 @@
 				for (var i = 0; i < cart.Items.length; i++) {
 					var item = cart.Items[i];
 
+					var optionslist = null;
+
+					if (item.CustomFieldsDisplay && item.CustomFieldsDisplay.length) {
+						optionslist = $('<ul>');
+
+						for (var oi = 0; oi < item.CustomFieldsDisplay.length; oi++) {
+							var oitm = item.CustomFieldsDisplay[oi];
+
+							optionslist.dcappend($('<li>').text(oitm.Label + ': ' + oitm.DisplayValue));
+						}
+					}
+
 					$tbl.dcappend(
 						$('<tr>').dcappend(
 							$('<td>').dcappend(
@@ -142,6 +154,7 @@
 								$('<b>').addClass('dc-table-cell-label').text('Description'),
 								' ',
 								item.Title,
+								optionslist,
 								$('<br>'),
 								$('<br>'),
 								$(dc.util.Web.markedExt(item.Instructions))

@@ -116,6 +116,9 @@ public class CompositeParser {
 		try {
 			HttpURLConnection con = (HttpURLConnection) url.openConnection();
 			 
+			con.setUseCaches(false);
+			con.setDefaultUseCaches(false);
+
 			con.setRequestMethod("GET");
 			con.setRequestProperty("User-Agent", "Mozilla/5.0");
     	    con.setRequestProperty("Accept", "application/json");

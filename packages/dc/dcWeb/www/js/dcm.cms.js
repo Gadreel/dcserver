@@ -2443,7 +2443,8 @@ dc.cms.image.Gallery.prototype.createPlanTask = function(blob, name, plan) {
 						varis.push(task.Store.Gallery.findVariation(vlist[n]));
 
 					var ctaskres = dc.image.Tasks.createVariationsTask(task.Store.Blob, varis,
-						task.Store.Gallery.Meta.Extension, task.Store.Gallery.Meta.Quality);
+						task.Store.Gallery.Meta.Extension, task.Store.Gallery.Meta.Quality,
+						task.Store.Gallery.Meta.Backfill);
 
 					if (ctaskres.hasErrors()) {
 						task.error('Unable to create variations.');

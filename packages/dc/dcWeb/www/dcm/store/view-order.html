@@ -328,8 +328,8 @@
 				if (item.CustomFields) {
 					for (var i5 = 0; i5 < item.CustomFields.length; i5++) {
 						var cfield = item.CustomFields[i5];
-
-						customfields.dcappend(cfield.Label + ': ' + cfield.Value, $('<br>'));
+						
+						customfields.dcappend(cfield.Label + ': ' + cfield.DisplayValue, $('<br>'));
 					}
 				}
 

@@ -53,16 +53,18 @@
 			<dcs.ElseIf Target="$Control.Type" Equal="Select">
 				<dc.Template Name="CtrlOpts">
 					<dcs.ForEach Name="Option" In="$Control.Options">
-						<dcs.If Target="$Option.Price" IsEmpty="false">
-							<dc.Out>
-								<option value="{$Option.Value}">{$Option.Label} - ${$Option.Price|dec:Money}</option>
-							</dc.Out>
+						<dcs.If Not="true" Target="$Option.Disabled">
+							<dcs.If Target="$Option.Price" IsEmpty="false">
+								<dc.Out>
+									<option value="{$Option.Value}">{$Option.Label} - ${$Option.Price|dec:Money}</option>
+								</dc.Out>
+							</dcs.If>
+							<dcs.Else>
+								<dc.Out>
+									<option value="{$Option.Value}">{$Option.Label}</option>
+								</dc.Out>
+							</dcs.Else>
 						</dcs.If>
-						<dcs.Else>
-							<dc.Out>
-								<option value="{$Option.Value}">{$Option.Label}</option>
-							</dc.Out>
-						</dcs.Else>
 					</dcs.ForEach>
 				</dc.Template>
 
@@ -77,16 +79,18 @@
 			<dcs.ElseIf Target="$Control.Type" Equal="CheckGroup">
 				<dc.Template Name="CtrlOpts">
 					<dcs.ForEach Name="Option" In="$Control.Options">
-						<dcs.If Target="$Option.Price" IsEmpty="false">
-							<dc.Out>
-								<Checkbox Value="{$Option.Value}" Label="{$Option.Label} - ${$Option.Price|dec:Money}" />
-							</dc.Out>
+						<dcs.If Not="true" Target="$Option.Disabled">
+							<dcs.If Target="$Option.Price" IsEmpty="false">
+								<dc.Out>
+									<Checkbox Value="{$Option.Value}" Label="{$Option.Label} - ${$Option.Price|dec:Money}" />
+								</dc.Out>
+							</dcs.If>
+							<dcs.Else>
+								<dc.Out>
+									<Checkbox Value="{$Option.Value}" Label="{$Option.Label}" />
+								</dc.Out>
+							</dcs.Else>
 						</dcs.If>
-						<dcs.Else>
-							<dc.Out>
-								<Checkbox Value="{$Option.Value}" Label="{$Option.Label}" />
-							</dc.Out>
-						</dcs.Else>
 					</dcs.ForEach>
 				</dc.Template>
 
@@ -112,16 +116,18 @@
 			<dcs.ElseIf Target="$Control.Type" Equal="RadioGroup">
 				<dc.Template Name="CtrlOpts">
 					<dcs.ForEach Name="Option" In="$Control.Options">
-						<dcs.If Target="$Option.Price" IsEmpty="false">
-							<dc.Out>
-								<RadioButton Value="{$Option.Value}" Label="{$Option.Label} - ${$Option.Price|dec:Money}" />
-							</dc.Out>
+						<dcs.If Not="true" Target="$Option.Disabled">
+							<dcs.If Target="$Option.Price" IsEmpty="false">
+								<dc.Out>
+									<RadioButton Value="{$Option.Value}" Label="{$Option.Label} - ${$Option.Price|dec:Money}" />
+								</dc.Out>
+							</dcs.If>
+							<dcs.Else>
+								<dc.Out>
+									<RadioButton Value="{$Option.Value}" Label="{$Option.Label}" />
+								</dc.Out>
+							</dcs.Else>
 						</dcs.If>
-						<dcs.Else>
-							<dc.Out>
-								<RadioButton Value="{$Option.Value}" Label="{$Option.Label}" />
-							</dc.Out>
-						</dcs.Else>
 					</dcs.ForEach>
 				</dc.Template>
 

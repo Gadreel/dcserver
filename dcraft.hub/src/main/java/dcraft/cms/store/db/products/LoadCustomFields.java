@@ -40,6 +40,7 @@ public class LoadCustomFields implements IStoredProc {
 						.withAs("Label","dcmOptionLabel")
 						.withAs("Value","dcmOptionValue")
 						.withAs("Price","dcmOptionPrice")
+						.with("dcmOptionDisabled", "Disabled")
 				);
 		
 		Unique collector = Unique.unique();

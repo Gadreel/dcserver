@@ -30,6 +30,7 @@ import dcraft.interchange.ups.UpsUtil;
 import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
 import dcraft.struct.FieldStruct;
+import dcraft.struct.scalar.BooleanStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.Task;
 import dcraft.task.TaskHub;
@@ -691,6 +692,7 @@ public class OrderUtil {
 							.withAs("Label","dcmOptionLabel")
 							.withAs("Value","dcmOptionValue")
 							.withAs("Price","dcmOptionPrice")
+							.with("dcmOptionDisabled", "Disabled")
 					)
 				);
 
@@ -738,30 +740,63 @@ public class OrderUtil {
 			if (item.isNotFieldEmpty("CustomFields")) {
 				RecordStruct customs = item.getFieldAsRecord("CustomFields");
 				ListStruct fields = prodrec.getFieldAsList("Fields");
+				ListStruct displays = ListStruct.list();
 
-				for (FieldStruct custom : customs.getFields()) {
-					for (int fd = 0; fd < fields.size(); fd++) {
-						RecordStruct fld = fields.getItemAsRecord(fd);
+				// sort and loop fields to keep stuff in proper order
+				fields.sortRecords("Position", false);
 
+				for (int fd = 0; fd < fields.size(); fd++) {
+					RecordStruct fld = fields.getItemAsRecord(fd);
+
+					for (FieldStruct custom : customs.getFields()) {
 						if (custom.getName().equals(fld.getFieldAsString("Id"))) {
 							//System.out.println("calc: " + fld.getFieldAsString("Label"));
 
-							if (fld.isNotFieldEmpty("Price")) {
-								price = price.add(fld.getFieldAsDecimal("Price"));
-							}
-							else if (fld.isNotFieldEmpty("Options")) {
+							if (fld.isNotFieldEmpty("Options")) {
 								ListStruct options = fld.getFieldAsList("Options");
 
 								for (int n = 0; n < options.size(); n++) {
 									RecordStruct opt = options.getItemAsRecord(n);
 
-									if (custom.getValue().equals(opt.getField("Value")) && opt.isNotFieldEmpty("Price"))
-										price = price.add(opt.getFieldAsDecimal("Price"));
+									if (custom.getValue().equals(opt.getField("Value"))) {
+										displays.with(
+												RecordStruct.record()
+														.with("Id", fld.getFieldAsString("Id"))
+														.with("Label", fld.getFieldAsString("Label"))
+														.with("DisplayValue", opt.getFieldAsString("Label"))
+														.with("Price", opt.getFieldAsDecimal("Price", BigDecimal.ZERO))
+														.with("Value", opt.getField("Value"))
+										);
+
+										price = price.add(opt.getFieldAsDecimal("Price", BigDecimal.ZERO));
+
+										break;
+									}
+								}
+							}
+							else {
+								boolean pass = ((custom.getValue() instanceof BooleanStruct) && Struct.objectToBooleanOrFalse(custom.getValue()))
+										|| ((custom.getValue() instanceof StringStruct) && StringUtil.isNotEmpty(Struct.objectToString(custom.getValue())));
+
+								if (pass) {
+									displays.with(
+											RecordStruct.record()
+													.with("Id", fld.getFieldAsString("Id"))
+													.with("Label", fld.getFieldAsString("Label"))
+													.with("DisplayValue", Struct.objectToString(custom.getValue()))
+													.with("Price", fld.getFieldAsDecimal("Price", BigDecimal.ZERO))
+													.with("Value", custom.getValue())
+									);
+
+									price = price.add(fld.getFieldAsDecimal("Price", BigDecimal.ZERO));
 								}
 							}
 						}
 					}
 				}
+
+				if (displays.size() > 0)
+					item.with("CustomFieldsDisplay", displays);
 
 				item.with("Price", price);
 			}

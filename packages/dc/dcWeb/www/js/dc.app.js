@@ -622,7 +622,7 @@ dc.pui.layer.App.prototype.startTab = function(context) {
 
 	this.clearHistory();
 
-	app.loadTab(context.Tab);
+	app.loadTab(context.Tab, context.Params);
 };
 
 dc.pui.layer.App.prototype.manifestPage = function(entry, frompop) {

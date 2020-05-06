@@ -1,0 +1,264 @@
+<dc.Html Badges="Clerk,Admin">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Check Group Entry" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form AlwaysNew="true">
+				<dcf.Text Label="Label" Name="Label" Required="true" />
+				<dcf.YesNo Label="Required" Name="Required" />
+				<dcf.YesNo Label="Horizontal" Name="Horizontal" />
+
+				<dcf.Custom Label="Options">
+					<table id="lstOptions" class="dc-table-break-std dc-table dc-table-reflow dc-table-stripe">
+						<thead>
+							<th>Label</th>
+							<th>Price</th>
+							<th>Action &nbsp;&nbsp;
+								<dc.Button Icon="fa-plus" Click="DoAddOption" />
+							</th>
+						</thead>
+						<tbody id="lstOptionsBody">
+						</tbody>
+					</table>
+				</dcf.Custom>
+
+				<dcf.FormButtons Hint="form options">
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (page.Params.Id) {
+				e.Message = {
+					Service: 'dcmStoreServices',
+					Feature: 'Product',
+					Op: 'LoadCustomField',
+					Body: {
+						Id: page.Params.Id
+					}
+				};
+			}
+			else {
+				page.Store.Options = [ ];
+
+				e.Data = {
+					Required: false
+				};
+			}
+	]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			page.Store.Options = e.Data.Options ? e.Data.Options : [ ];
+
+			page.callPageFunc('UpdateOptions');
+	]]></Function>
+	<Function Name="UpdateOptions"><![CDATA[
+			var page = this;
+
+			if (! page.Store.Options || page.Store.Options.length == 0) {
+				$('#lstOptionsBody').empty().dcappend($('<tr>')
+					.dcappend($('<td>')
+						.attr('colspan', '3')
+						.text('[none]')
+					)
+				);
+			}
+			else {
+				$('#lstOptionsBody').empty();
+
+				//page.Store.Options.sort(dc.util.List.sortObjects('Position'));
+
+				for (var n = 0; n < page.Store.Options.length; n++) {
+					var item = page.Store.Options[n];
+
+					$('#lstOptionsBody').dcappend($('<tr>')
+						.dcappend(
+							$('<td>').text(item.Label),
+							$('<td>').text('$' + dc.util.Number.formatMoney(item.Price)),
+							$('<td>').dcappend(
+								$('<a>')
+									.attr('href', '#')
+ 									.attr('class', 'pure-button-default pure-button dc-button')
+									.click(n, function(e) {
+										var idx = e.data;
+										var prod = page.Store.Options[idx];
+
+										dc.pui.Dialog.loadPage('/dcm/store/custom-field/option-editor', {
+											Option: prod,
+											Callback: function(res) {
+												if (res) {
+													dc.comm.sendMessage({
+														Service: 'dcmStoreServices',
+														Feature: 'Product',
+														Op: 'UpdateCustomField',
+														Body: {
+															Id: page.Params.Id,
+															SetOptions: [ res ]
+														}
+													}, function(rmsg) {
+														if (rmsg.Result > 0) {
+															dc.pui.Popup.alert('Unable to update option: ' + rmsg.Message);
+															return;
+														}
+
+														page.Store.Options[idx] = res;
+														page.callPageFunc('UpdateOptions');
+													});
+												}
+											}
+										});
+
+										e.preventDefault();
+										return false;
+									})
+									.dcappend(
+										$('<i>').attr('class','fa fa-pencil')
+									),
+								$(' <span>&nbsp;&nbsp;</span> '),
+								$('<a>')
+									.attr('href', '#')
+ 									.attr('class', 'pure-button-default pure-button dc-button')
+									.click(n, function(e) {
+										var idx = e.data;
+										var prod = page.Store.Options[idx];
+
+										dc.pui.Popup.confirm('Are you sure you want to delete this option?', function(confirm) {
+											if (! confirm)
+												return;
+
+											dc.comm.sendMessage({
+												Service: 'dcmStoreServices',
+												Feature: 'Product',
+												Op: 'UpdateCustomField',
+												Body: {
+													Id: page.Params.Id,
+													RemoveOptions: [ prod.Id ]
+												}
+											}, function(rmsg) {
+												if (rmsg.Result > 0) {
+													dc.pui.Popup.alert('Unable to remove option: ' + rmsg.Message);
+													return;
+												}
+
+												page.Store.Options.splice(idx, 1);
+												page.callPageFunc('UpdateOptions');
+											});
+										});
+
+										e.preventDefault();
+										return false;
+									})
+									.dcappend(
+										$('<i>').attr('class','fa fa-minus')
+									)
+							)
+						)
+					);
+				}
+			}
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (page.Params.Id) {
+				e.Data.Id = page.Params.Id;
+
+				e.Message = {
+					Service: 'dcmStoreServices',
+					Feature: 'Product',
+					Op: 'UpdateCustomField',
+					Body: e.Data
+				};
+			}
+			else {
+				e.Data.Product = page.Params.Product;
+				e.Data.BasicForm = page.Params.BasicForm;
+				e.Data.Position = page.Params.Position;
+				e.Data.FieldType = 'CheckGroup';
+
+				e.Message = {
+					Service: 'dcmStoreServices',
+					Feature: 'Product',
+					Op: 'AddCustomField',
+					Body: e.Data
+				};
+			}
+	]]></Function>
+	<Function Name="AfterSaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (e.Data && e.Data.Id) {
+				page.Store.NewId = e.Data.Id;
+			}
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			if (page.Store.NewId && ! page.Store.NewFlag) {
+				page.Params.Id = page.Store.NewId;
+
+				dc.pui.Popup.alert("Field added, you may now add options, or edit the item or close the form.");
+
+				page.Store.NewFlag = true;
+				return;
+			}
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback();
+	]]></Function>
+	<Function Name="DoAddOption"><![CDATA[
+			var page = this;
+
+			if (! page.Params.Id) {
+				dc.pui.Popup.alert('Please save the product before adding an option.');
+				return;
+			}
+
+			dc.pui.Dialog.loadPage('/dcm/store/custom-field/option-editor', {
+				Callback: function(res) {
+					if (res) {
+						var max = 0;
+
+						for (var n = 0; n < page.Store.Options.length; n++) {
+							var nid = dc.util.Number.toNumber(page.Store.Options[n].Id);
+
+							if (nid > max)
+								max = nid;
+						}
+
+						res.Id = dc.util.String.lpad((max + 1) + '', '0', 4);
+
+						dc.comm.sendMessage({
+							Service: 'dcmStoreServices',
+							Feature: 'Product',
+							Op: 'UpdateCustomField',
+							Body: {
+								Id: page.Params.Id,
+								SetOptions: [ res ]
+							}
+						}, function(rmsg) {
+							if (rmsg.Result > 0) {
+								dc.pui.Popup.alert('Unable to update option: ' + rmsg.Message);
+								return;
+							}
+
+							page.Store.Options.push(res);
+							page.callPageFunc('UpdateOptions');
+						});
+					}
+				}
+			});
+	]]></Function>
+</dc.Html>

@@ -208,6 +208,7 @@
 			<Field Name="dcmOptionLabel" Group="Options" Type="dcSmallString" List="True" />
 			<Field Name="dcmOptionValue" Group="Options" Type="dcMetaString" List="True" />
 			<Field Name="dcmOptionPrice" Group="Options" Type="Decimal" List="True" />
+			<Field Name="dcmOptionDisabled" Group="Options" Type="Boolean" List="True" />
 		</Table>
 
 		<Table Id="dcmDiscount">
@@ -274,9 +275,11 @@
 		<Procedure Name="dcmStoreServices.Product.AddCustomField" Execute="dcraft.cms.store.db.products.AddCustomField" />
 		<Procedure Name="dcmStoreServices.Product.UpdateCustomField" Execute="dcraft.cms.store.db.products.UpdateCustomField" />
 		<Procedure Name="dcmStoreServices.Product.RemoveCustomField" Execute="dcraft.cms.store.db.products.RemoveCustomField" />
+		<Procedure Name="dcmStoreServices.Product.UpdateCustomFieldPositions" Execute="dcraft.cms.store.db.products.UpdateCustomFieldPositions" />
 
 		<Composer Name="dcmStoreImage" Execute="dcraft.cms.store.db.comp.StoreImage" />
 		<Composer Name="dcmProductPrice" Execute="dcraft.cms.store.db.comp.ProductPrice" />
+		<Composer Name="dcmOrderItemCustomFields" Execute="dcraft.cms.store.db.comp.OrderItemCustomFields" />
 	</Database>
 
 	<Shared>
@@ -375,6 +378,18 @@
 
 			<Field Name="Extra" Type="AnyRecord" />
 			<Field Name="CustomFields" Type="AnyRecord" />
+
+			<Field Name="CustomFieldsDisplay">
+				<List>
+					<Record>
+						<Field Name="Id" Type="Id" />
+						<Field Name="Label" Type="dcSmallString" />
+						<Field Name="DisplayValue" Type="dcSmallString" />
+						<Field Name="Value" Type="Any" />
+						<Field Name="Price" Type="Decimal" />
+					</Record>
+				</List>
+			</Field>
 		</Record>
 
 		<Record Id="dcmOrderCustomerInfo" >
@@ -574,8 +589,10 @@
 			<Field Name="CustomFields">
 				<List>
 					<Record>
+						<Field Name="Id" Type="Id" />
 						<Field Name="Label" Type="dcSmallString" />
-						<Field Name="Value" Type="dcSmallString" />
+						<Field Name="DisplayValue" Type="dcSmallString" />
+						<Field Name="Value" Type="Any" />
 						<Field Name="Price" Type="Decimal" />
 					</Record>
 				</List>
@@ -689,6 +706,7 @@
 							<Field Name="Shipments">
 								<List Type="dcmOrderShipmentInfo" />
 							</Field>
+							<Field Name="Extra" Type="dcmOrder:dcmExtra" />
 						</RecordResponse>
 					</Op>
 					<Op Name="ResendReceipts">
@@ -831,7 +849,6 @@
 							<Field Name="Mode" Type="dcmCategory:dcmMode" Required="IfPresent" />
 							<Field Name="Parent" Type="dcmCategory:dcmParent" />
 							<Field Name="Description" Type="dcmCategory:dcmDescription" />
-							<!--  TODO  Field Name="CustomDisplayField" Type="AnyList" / -->
 							<Field Name="ShipAmount" Type="dcmCategory:dcmShipAmount" />
 							<Field Name="Image" Type="dcmCategory:dcmImage" />
 							<Field Name="ShowInStore" Type="dcmCategory:dcmShowInStore" />
@@ -848,7 +865,6 @@
 							<Field Name="Mode" Type="dcmCategory:dcmMode" Required="True" />
 							<Field Name="Parent" Type="dcmCategory:dcmParent" />
 							<Field Name="Description" Type="dcmCategory:dcmDescription" />
-							<!--  TODO  Field Name="CustomDisplayField" Type="AnyList" / -->
 							<Field Name="ShipAmount" Type="dcmCategory:dcmShipAmount" />
 							<Field Name="Image" Type="dcmCategory:dcmImage" />
 							<Field Name="ShowInStore" Type="dcmCategory:dcmShowInStore" />
@@ -1107,6 +1123,7 @@
 											<Field Name="Label" Type="dcmProductCustomFields:dcmOptionLabel" />
 											<Field Name="Value" Type="dcmProductCustomFields:dcmOptionValue" />
 											<Field Name="Price" Type="dcmProductCustomFields:dcmOptionPrice" />
+											<Field Name="Disabled" Type="dcmProductCustomFields:dcmOptionDisabled" />
 										</Record>
 									</List>
 								</Field>
@@ -1140,6 +1157,7 @@
 										<Field Name="Label" Type="dcmProductCustomFields:dcmOptionLabel" />
 										<Field Name="Value" Type="dcmProductCustomFields:dcmOptionValue" />
 										<Field Name="Price" Type="dcmProductCustomFields:dcmOptionPrice" />
+										<Field Name="Disabled" Type="dcmProductCustomFields:dcmOptionDisabled" />
 									</Record>
 								</List>
 							</Field>
@@ -1169,6 +1187,7 @@
 										<Field Name="Label" Type="dcmProductCustomFields:dcmOptionLabel" Required="True" />
 										<Field Name="Value" Type="dcmProductCustomFields:dcmOptionValue" Required="True" />
 										<Field Name="Price" Type="dcmProductCustomFields:dcmOptionPrice" />
+										<Field Name="Disabled" Type="dcmProductCustomFields:dcmOptionDisabled" />
 									</Record>
 								</List>
 							</Field>
@@ -1202,6 +1221,7 @@
 										<Field Name="Label" Type="dcmProductCustomFields:dcmOptionLabel" Required="True" />
 										<Field Name="Value" Type="dcmProductCustomFields:dcmOptionValue" Required="True" />
 										<Field Name="Price" Type="dcmProductCustomFields:dcmOptionPrice" />
+										<Field Name="Disabled" Type="dcmProductCustomFields:dcmOptionDisabled" />
 									</Record>
 								</List>
 							</Field>
@@ -1217,6 +1237,17 @@
 						<RecordRequest Required="True">
 							<Field Name="Id" Type="Id" />
 						</RecordRequest>
+					</Op>
+					<Op Name="UpdateCustomFieldPositions">
+						<Description>
+							Update all positions of custom fields in a product/form.
+						</Description>
+						<ListRequest Required="True">
+							<Record>
+								<Field Name="Id" Type="Id" Required="True" />
+								<Field Name="Position" Type="dcmProductCustomFields:dcmPosition" Required="True" />
+							</Record>
+						</ListRequest>
 					</Op>
 				</Secure>
 				<Secure Badges="User,Guest">

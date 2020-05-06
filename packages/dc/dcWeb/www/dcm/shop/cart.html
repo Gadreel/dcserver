@@ -5,7 +5,7 @@
 
 	<Require Script="/js/vendor/marked.min.js" />
 
-	<dc.Body>
+	<dc.Body class="dcuiWide">
 		<dc.PagePanel>
 			<dcf.FormButtons Hint="Cart options">
 				<dc.Button Label="Empty Cart" Click="DoEmpty" />
@@ -82,6 +82,18 @@
 				for (var i = 0; i < dc.cms.cart.Cart._cart.Items.length; i++) {
 					var item = dc.cms.cart.Cart._cart.Items[i];
 
+					var optionslist = null;
+
+					if (item.CustomFieldsDisplay && item.CustomFieldsDisplay.length) {
+						optionslist = $('<ul>');
+
+						for (var oi = 0; oi < item.CustomFieldsDisplay.length; oi++) {
+							var oitm = item.CustomFieldsDisplay[oi];
+
+							optionslist.dcappend($('<li>').text(oitm.Label + ': ' + oitm.DisplayValue));
+						}
+					}
+
 					$tbl.dcappend(
 						$('<tr>').dcappend(
 							$('<td>').dcappend(
@@ -96,6 +108,7 @@
 								$('<b>').addClass('dc-table-cell-label').text('Description'),
 								' ',
 								item.Title,
+								optionslist,
 								$('<br>'),
 								$('<br>'),
 								$(dc.util.Web.markedExt(item.Instructions))

@@ -1996,7 +1996,27 @@ public class TablesAdapter {
 			Logger.error("traverseRecords error: " + x);
 		}
 	}
-	
+
+	public void traverseRecordsReverse(IVariableAware scope, String table, IFilter out) throws OperatingContextException {
+		String did = this.request.getTenant();
+
+		try {
+			byte[] id = this.request.getInterface().prevPeerKey(did, DB_GLOBAL_RECORD, table, null);
+
+			while (id != null) {
+				Object oid = ByteUtil.extractValue(id);
+
+				if (! out.check(this, scope, table, oid).resume)
+					return;
+
+				id = this.request.getInterface().prevPeerKey(did, DB_GLOBAL_RECORD, table, oid);
+			}
+		}
+		catch (Exception x) {
+			Logger.error("traverseRecords error: " + x);
+		}
+	}
+
 	public IFilter traverseIndex(IVariableAware scope, String table, String fname, Object val, IFilter out) throws OperatingContextException {
 		return this.traverseIndex(scope, table, fname, val, null, out);
 	}
