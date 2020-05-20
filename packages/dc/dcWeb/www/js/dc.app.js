@@ -322,6 +322,9 @@ dc.pui.layer.Base.prototype = {
 
 			dc.pui.Loader.exposeTopLayer();
 		}
+		else {
+			dc.pui.Loader.MainLayer.Current.callPageFunc('onClose');
+		}
 	},
 
 	current: function() {
@@ -3183,10 +3186,13 @@ dc.pui.Tags = {
 
 				if (inp.Code != 0) {
 					dc.pui.Popup.alert(inp.Message, function() {
-						if (form.OnFocus)
+						if (form.OnFocus) {
 							form.PageEntry.callPageFunc(form.OnFocus, inp.Input);
-						else
-							form.inputQuery(inp.Input.Field).focus();
+						}
+						else {
+							var fmname = (inp.Input.Record != 'Default') ? inp.Input.Record + '.' + inp.Input.Field : inp.Input.Field;
+							form.inputQuery(fmname).focus();
+						}
 					});
 
 					vpass = false;
@@ -3325,10 +3331,13 @@ dc.pui.Tags = {
 
 					if (inp.Code != 0) {
 						dc.pui.Popup.alert(inp.Message, function() {
-							if (form.OnFocus)
+							if (form.OnFocus) {
 								form.PageEntry.callPageFunc(form.OnFocus, inp.Input);
-							else
-								form.inputQuery(inp.Input.Field).focus();
+							}
+							else {
+								var fmname = (inp.Input.Record != 'Default') ? inp.Input.Record + '.' + inp.Input.Field : inp.Input.Field;
+								form.inputQuery(fmname).focus();
+							}
 						});
 
 						break;

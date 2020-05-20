@@ -34,6 +34,7 @@ import dcraft.stream.file.MemoryDestStream;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.BinaryStruct;
 import dcraft.struct.scalar.NullStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.TaskContext;
@@ -321,6 +322,49 @@ public class EncryptedVaultFile extends FileStoreFile {
 			return ReturnOption.CONTINUE;
 		}
 
+		if ("ReadBinary".equals(code.getName())) {
+			if (this.exists()) {
+		        Struct var = StackUtil.refFromElement(stack, code, "Target", true);
+
+		        //System.out.println("e: " + var);
+
+				if ((var == null) || (var instanceof NullStruct)) {
+					readAllBinary(new OperationOutcome<Memory>() {
+						@Override
+						public void callback(Memory result) throws OperatingContextException {
+							String handle = StackUtil.stringFromElement(stack, code, "Result");
+
+							if (handle != null)
+								StackUtil.addVariable(stack, handle, BinaryStruct.of(result));
+
+							stack.setState(ExecuteState.DONE);
+							OperationContext.getAsTaskOrThrow().resume();
+						}
+					});
+
+					return ReturnOption.AWAIT;
+				}
+				else if (var instanceof BinaryStruct) {
+					readAllBinary(new OperationOutcome<Memory>() {
+						@Override
+						public void callback(Memory result) throws OperatingContextException {
+							((BinaryStruct)var).adaptValue(result);
+
+							stack.setState(ExecuteState.RESUME);
+							OperationContext.getAsTaskOrThrow().resume();
+						}
+					});
+
+					return ReturnOption.AWAIT;
+				}
+				else {
+					Logger.error("Unable to ReadText, bad target.");
+				}
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+
 		/*
 		if ("Delete".equals(code.getName())) {
 			try {
@@ -343,7 +387,7 @@ public class EncryptedVaultFile extends FileStoreFile {
 		
 		return super.operation(stack, code);
 	}
-		
+
 	@Override
 	public void readAllText(OperationOutcome<String> callback) throws OperatingContextException {
 		StreamFragment streamFragment = this.localdriver.vault.toSourceStream(this);

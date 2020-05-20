@@ -32,6 +32,7 @@ import dcraft.web.HtmlMode;
 import dcraft.web.IIndexWork;
 import dcraft.web.IOutputWork;
 import dcraft.web.IWebWorkBuilder;
+import dcraft.web.adapter.ManifestOutputAdapter;
 import dcraft.web.adapter.ScriptCacheOutputAdapter;
 import dcraft.web.adapter.StyleCacheOutputAdapter;
 import dcraft.web.adapter.WizardOutputAdapter;
@@ -808,6 +809,20 @@ public class PrepWork extends StateWork {
 			@Override
 			public IOutputWork buildOutputAdapter(Site site, Path file, CommonPath loc, String view) throws OperatingContextException {
 				IOutputWork work = new WizardOutputAdapter();
+				work.init(site, file, loc, view);
+				return work;
+			}
+
+			@Override
+			public IIndexWork buildIndexAdapter(Site site, Path file, CommonPath loc, String view) {
+				return null;  // does not apply
+			}
+		});
+
+		site.addDynamicAdapater("/dcw/manifest.json", new IWebWorkBuilder() {
+			@Override
+			public IOutputWork buildOutputAdapter(Site site, Path file, CommonPath loc, String view) throws OperatingContextException {
+				IOutputWork work = new ManifestOutputAdapter();
 				work.init(site, file, loc, view);
 				return work;
 			}

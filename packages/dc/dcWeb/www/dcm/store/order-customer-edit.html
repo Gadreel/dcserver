@@ -1,0 +1,66 @@
+<dc.Html Badges="Clerk,Admin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Customer Update" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form AlwaysNew="True">
+				<dcf.Text Label="Email" Name="Email" Required="true" />
+				<dcf.Text Label="First Name" Name="FirstName" Required="true" />
+				<dcf.Text Label="Last Name" Name="LastName" Required="true" />
+				<dcf.Text Label="Phone" Name="Phone" Required="true" />
+
+				<dcf.FormButtons>
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.Store.CustomerInfo = { };
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Message = {
+				Service: 'dcmStoreServices',
+				Feature: 'Orders',
+				Op: 'Load',
+				Body: {
+					Id: page.Params.Id
+				}
+			};
+	]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Data = page.Store.CustomerInfo = e.Data.CustomerInfo;
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			// preserve additional customer fields
+			$.extend(page.Store.CustomerInfo, e.Data);
+
+			e.Message = {
+				Service: 'dcmStoreServices',
+				Feature: 'Orders',
+				Op: 'Update',
+				Body: {
+					Id: page.Params.Id,
+					CustomerInfo: page.Store.CustomerInfo
+				}
+			};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback();
+	]]></Function>
+</dc.Html>

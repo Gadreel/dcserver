@@ -39,6 +39,7 @@ import dcraft.stream.file.IFileStreamDest;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.BinaryStruct;
 import dcraft.struct.scalar.NullStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.IParentAwareWork;
@@ -358,6 +359,29 @@ public class LocalStoreFile extends FileStoreFile {
 				}
 			}
 			
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("ReadBinary".equals(code.getName())) {
+			if (this.getFieldAsBooleanOrFalse("Exists")) {
+		        Struct var = StackUtil.refFromElement(stack, code, "Target", true);
+
+		        //System.out.println("e: " + var);
+
+				if ((var == null) || (var instanceof NullStruct)) {
+			        String handle = StackUtil.stringFromElement(stack, code, "Result");
+
+					if (handle != null)
+			            StackUtil.addVariable(stack, handle, BinaryStruct.of(IOUtil.readEntireFileToMemory(this.localpath)));
+				}
+				else if (var instanceof BinaryStruct) {
+					((BinaryStruct)var).adaptValue(IOUtil.readEntireFileToMemory(this.localpath));
+				}
+				else {
+					Logger.error("Unable to ReadBinary, bad target.");
+				}
+			}
+
 			return ReturnOption.CONTINUE;
 		}
 

@@ -127,7 +127,7 @@ public class StripeUtil {
 					+ "&source=" + URLEncoder.encode(token, "UTF-8")
 					+ "&description=" + URLEncoder.encode(desc, "UTF-8");
 
-			HttpRequest req = StripeUtil.buildBasicRequest(alt, body).build();
+			HttpRequest req = StripeUtil.buildBasicRequest(alt, "/charges", body).build();
 
 			// Send post request
 			HttpClient.newHttpClient().sendAsync(req, HttpResponse.BodyHandlers.ofString())
@@ -170,7 +170,76 @@ public class StripeUtil {
 		}
 	}
 
-	static public HttpRequest.Builder buildBasicRequest(String alt, String post) {
+	/* returns
+	{
+	  "id": "re_1GkXSD2eZvKYlo2CWrwiwmma",
+	  "object": "refund",
+	  "amount": 100,
+	  "balance_transaction": null,
+	  "charge": "ch_1GkXSC2eZvKYlo2Cto42czMm",
+	  "created": 1589902445,
+	  "currency": "usd",
+	  "metadata": {},
+	  "payment_intent": null,
+	  "reason": null,
+	  "receipt_number": null,
+	  "source_transfer_reversal": null,
+	  "status": "succeeded",
+	  "transfer_reversal": null
+	}
+	 */
+	static public void refundCharge(String alt, String chargeid, BigDecimal amount, OperationOutcomeRecord callback) {
+		try {
+			// switch amount to cents
+			String body = "charge=" + URLEncoder.encode(chargeid, "UTF-8");
+
+			if (amount != null)
+				body += "&amount=" + URLEncoder.encode(amount.multiply(BigDecimal.valueOf(100)).toBigInteger().toString(), "UTF-8");
+
+			HttpRequest req = StripeUtil.buildBasicRequest(alt, "/refunds", body).build();
+
+			// Send post request
+			HttpClient.newHttpClient().sendAsync(req, HttpResponse.BodyHandlers.ofString())
+					.thenAcceptAsync(response -> {
+						callback.useContext();		// restore our operation context
+
+						int responseCode = response.statusCode();
+						String respBody = response.body();
+
+						if (StringUtil.isNotEmpty(respBody)) {
+							RecordStruct resp = Struct.objectToRecord(respBody);
+
+							if (resp == null) {
+								Logger.error("Error processing refund: Stripe sent an incomplete response.");
+								callback.returnEmpty();
+							}
+							else {
+								// TODO remove sout
+								//System.out.println("Stripe Resp:\n" + resp.toPrettyString());
+
+								if (resp.hasField("error")) {
+									Logger.error("Unable to confirm refund: " + resp.selectAsString("error.message"));
+									callback.returnEmpty();
+								}
+								else {
+									callback.returnValue(resp);
+								}
+							}
+						}
+						else {
+							Logger.error("Error processing refund: Problem with Stripe gateway.");
+							Logger.error("Stripe Response: " + responseCode);
+							callback.returnEmpty();
+						}
+					});
+		}
+		catch (Exception x) {
+			Logger.error("Error calling service, Stripe error: " + x);
+			callback.returnEmpty();
+		}
+	}
+
+	static public HttpRequest.Builder buildBasicRequest(String alt, String path, String post) {
 		XElement stripe = ApplicationHub.getCatalogSettings("CMS-Stripe", alt);
 
 		if (stripe == null) {
@@ -185,7 +254,7 @@ public class StripeUtil {
 			return null;
 		}
 
-		String endpoint = "https://api.stripe.com/v1/charges";
+		String endpoint = "https://api.stripe.com/v1" + path;
 
 		String authStringEnc = Base64.encodeToString(Utf8Encoder.encode(auth + ":"), false);
 

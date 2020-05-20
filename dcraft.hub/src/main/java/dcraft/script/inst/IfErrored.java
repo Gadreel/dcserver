@@ -43,6 +43,9 @@ public class IfErrored extends LogicBlockInstruction {
 		if (state.getState() == ExecuteState.READY) {
 			boolean pass = OperationContext.getAsTaskOrThrow().hasExitErrors();
 
+			if (StackUtil.boolFromSource(state, "Not"))
+				pass = ! pass;
+
 			state.getStore().with("Pass", pass);
 			
 			if (! pass)

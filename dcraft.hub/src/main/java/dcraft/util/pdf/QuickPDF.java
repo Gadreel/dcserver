@@ -8,6 +8,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -233,6 +236,17 @@ public class QuickPDF extends RecordStruct {
     	Path src = OperationContext.getOrThrow().getSite().resolvePath(filepath);
 
 		this.doc = PDDocument.load(src.toFile());
+
+		this.switchPage(1);
+	}
+
+	public void switchPage(int i) throws IOException {
+		this.closePage();
+
+		this.page = this.doc.getPage(i - 1);
+		this.stream = new PDPageContentStream(doc, page, AppendMode.APPEND, true, false);
+		this.pagenum = i;
+		this.currpos = new Position(this.pageleft + this.indent, this.pagetop);
 	}
 
     public void save(String filepath) throws IOException {
@@ -1004,12 +1018,26 @@ public class QuickPDF extends RecordStruct {
 			if (StringUtil.isNotEmpty(base64)) {
 				try (InputStream is = new ByteArrayInputStream(Base64.decode(base64))) {
 					BufferedImage img = ImageIO.read(is);
-					
+
 					if (code.hasNotEmptyAttribute("Width")) {
-						long w = StackUtil.intFromElement(state, code, "Width", 100);
-						long h = StackUtil.intFromElement(state, code, "Height", 100);
-						
-						img = ImageUtil.resize(img, (int) w, (int) h);
+						Long w = StackUtil.intFromElement(state, code, "Width", -1);
+						Long h = StackUtil.intFromElement(state, code, "Height", -1);
+
+						if ((w != -1) && (h != -1)) {
+							img = ImageUtil.resize(img, w.intValue(), h.intValue());
+						}
+						else if (w != -1) {
+							BigDecimal ratio = BigDecimal.valueOf(img.getWidth()).divide(BigDecimal.valueOf(img.getHeight()), RoundingMode.HALF_UP);
+
+							h = BigDecimal.valueOf(w).divide(ratio, RoundingMode.HALF_UP).longValue();
+							img = ImageUtil.resize(img, w.intValue(), h.intValue());
+						}
+						else if (h != -1) {
+							BigDecimal ratio = BigDecimal.valueOf(img.getWidth()).divide(BigDecimal.valueOf(img.getHeight()), RoundingMode.HALF_UP);
+
+							w = BigDecimal.valueOf(h).multiply(ratio).longValue();
+							img = ImageUtil.resize(img, w.intValue(), h.intValue());
+						}
 					}
 					
 					this.image(img);
@@ -1018,7 +1046,7 @@ public class QuickPDF extends RecordStruct {
 					Logger.error("Error writing image in PDF: " + x);
 				}
 			}
-			else {
+			else  {
 				FileStoreFile file = (FileStoreFile) StackUtil.refFromElement(state, code, "File");
 				
 				// TODO support other file systems
@@ -1031,10 +1059,24 @@ public class QuickPDF extends RecordStruct {
 						BufferedImage img = ImageIO.read(is);
 						
 						if (code.hasNotEmptyAttribute("Width")) {
-							long w = StackUtil.intFromElement(state, code, "Width", 100);
-							long h = StackUtil.intFromElement(state, code, "Height", 100);
-							
-							img = ImageUtil.resize(img, (int) w, (int) h);
+							Long w = StackUtil.intFromElement(state, code, "Width", -1);
+							Long h = StackUtil.intFromElement(state, code, "Height", -1);
+
+							if ((w != -1) && (h != -1)) {
+								img = ImageUtil.resize(img, w.intValue(), h.intValue());
+							}
+							else if (w != -1) {
+								BigDecimal ratio = BigDecimal.valueOf(img.getWidth()).divide(BigDecimal.valueOf(img.getHeight()), RoundingMode.HALF_UP);
+
+								h = BigDecimal.valueOf(w).divide(ratio, RoundingMode.HALF_UP).longValue();
+								img = ImageUtil.resize(img, w.intValue(), h.intValue());
+							}
+							else if (h != -1) {
+								BigDecimal ratio = BigDecimal.valueOf(img.getWidth()).divide(BigDecimal.valueOf(img.getHeight()), RoundingMode.HALF_UP);
+
+								w = BigDecimal.valueOf(h).multiply(ratio).longValue();
+								img = ImageUtil.resize(img, w.intValue(), h.intValue());
+							}
 						}
 						
 						this.image(img);
@@ -1043,8 +1085,77 @@ public class QuickPDF extends RecordStruct {
 						Logger.error("Error writing image in PDF: " + x);
 					}
 				}
+				else {
+					BinaryStruct bin = (BinaryStruct) StackUtil.refFromElement(state, code, "Memory");
+
+					// TODO support other file systems
+					if (bin != null) {
+						Memory mem = bin.getValue();
+
+						try (InputStream is = new ByteArrayInputStream(mem.toArray())) {
+							BufferedImage img = ImageIO.read(is);
+
+							if (code.hasNotEmptyAttribute("Width")) {
+								Long w = StackUtil.intFromElement(state, code, "Width", -1);
+								Long h = StackUtil.intFromElement(state, code, "Height", -1);
+
+								if ((w != -1) && (h != -1)) {
+									img = ImageUtil.resize(img, w.intValue(), h.intValue());
+								}
+								else if (w != -1) {
+									BigDecimal ratio = BigDecimal.valueOf(img.getWidth()).divide(BigDecimal.valueOf(img.getHeight()), RoundingMode.HALF_UP);
+
+									h = BigDecimal.valueOf(w).divide(ratio, RoundingMode.HALF_UP).longValue();
+									img = ImageUtil.resize(img, w.intValue(), h.intValue());
+								}
+								else if (h != -1) {
+									BigDecimal ratio = BigDecimal.valueOf(img.getWidth()).divide(BigDecimal.valueOf(img.getHeight()), RoundingMode.HALF_UP);
+
+									w = BigDecimal.valueOf(h).multiply(ratio).longValue();
+									img = ImageUtil.resize(img, w.intValue(), h.intValue());
+								}
+							}
+
+							this.image(img);
+						}
+						catch (IOException x) {
+							Logger.error("Error writing image in PDF: " + x);
+						}
+					}
+				}
 			}
 			
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("SwitchPage".equals(code.getName())) {
+			long page = StackUtil.intFromElement(state, code, "Number");
+
+			try {
+				this.switchPage((int) page);
+			}
+			catch (IOException x3) {
+				Logger.error("Error moving PDF: " + x3);
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("SetPos".equals(code.getName())) {
+			String x = StackUtil.stringFromElement(state, code, "X");
+			String y = StackUtil.stringFromElement(state, code, "Y");
+			String yoff = StackUtil.stringFromElement(state, code, "YOffset");
+
+			try {
+				if (StringUtil.isNotEmpty(yoff))
+					this.currpos = new Position(Float.valueOf(x), this.currpos.getY() - Float.valueOf(yoff));
+				else
+					this.currpos = new Position(Float.valueOf(x), Float.valueOf(y));
+			}
+			catch (NumberFormatException x2) {
+				Logger.warn("Bad coords: " + x + "," + y);
+			}
+
 			return ReturnOption.CONTINUE;
 		}
 
@@ -1063,7 +1174,7 @@ public class QuickPDF extends RecordStruct {
 				Logger.warn("Bad coords: " + x + "," + y);
 			}
 			catch (IOException x3) {
-				Logger.error("Error moving PDF: " + x);
+				Logger.error("Error moving PDF: " + x3);
 			}
 
 			return ReturnOption.CONTINUE;

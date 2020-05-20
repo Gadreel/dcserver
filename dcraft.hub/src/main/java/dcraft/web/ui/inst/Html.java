@@ -311,6 +311,18 @@ public class Html extends Base {
 								.withAttribute("rel", "icon")
 								.withAttribute("href", icon + "152.png")
 						);
+
+				if (domainwebconfig.getAttributeAsBooleanOrFalse("SolidIcons")) {
+					head.with(W3.tag("link")
+							.withAttribute("sizes", "180x180")
+							.withAttribute("rel", "apple-touch-icon")
+							.withAttribute("href", icon  + "180solid.png")
+						)
+						.with(W3.tag("link")
+							.withAttribute("rel", "manifest")
+							.withAttribute("href", "/dcw/manifest.json")
+						);
+				}
 			}
 		}
 		
@@ -333,6 +345,7 @@ public class Html extends Base {
 					.withAttribute("href", icon)
 			);
 		}
+
 		
 		/*
 		 * 	Essential Meta Tags

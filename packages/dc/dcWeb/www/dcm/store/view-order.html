@@ -10,6 +10,8 @@
 					<dcf.Form>
 						<dcf.FormButtons Hint="Form options">
 							<dc.Button Label="Cancel Order" Click="DoCancel" />
+							<dc.Button Label="Refund" Click="DoRefund" />
+							<dc.Button Label="Print Order" Click="DoPrint" />
 							<dc.Button Label="Resend Notices" Click="DoResend" />
 							<dc.Button Label="Quick Complete" Click="DoQuickComplete" />
 							<dc.Button Label="Close" Click="AfterSave" />
@@ -72,17 +74,18 @@
 							</dc.Region>
 
 							<dc.FullLayout id="layoutCustomerComments" Pad="Large">
+								<dc.Link Label="edit comment" Click="DoEditComments" />
 								<p id="sectCustomerComments" />
 							</dc.FullLayout>
 
 							<dc.RowLayout Collapse="Medium" Pad="Large">
 								<dc.Column Pad="Large" Size="1-2">
-									<b>Order</b>
+									<b>Order</b> <dc.Link Label="edit" Click="DoEditCustomer" />
 
 									<p id="sectCustomer" />
 								</dc.Column>
 								<dc.Column Pad="Large" Size="1-2">
-									<b>Delivery</b>
+									<b>Delivery</b> <dc.Link Label="edit" Click="DoEditDelivery" />
 
 									<p id="sectDelivery" />
 								</dc.Column>
@@ -328,7 +331,7 @@
 				if (item.CustomFields) {
 					for (var i5 = 0; i5 < item.CustomFields.length; i5++) {
 						var cfield = item.CustomFields[i5];
-						
+
 						customfields.dcappend(cfield.Label + ': ' + cfield.DisplayValue, $('<br>'));
 					}
 				}
@@ -448,6 +451,15 @@
 	<Function Name="DoCancel"><![CDATA[
 			var page = this;
 
+			dc.pui.Dialog.loadPage('/dcm/store/order-cancel', {
+				Id: page.Params.Order.Id,
+				Callback: function(res) {
+					page.callPageFunc('AfterSave')
+					//page.reload();
+				}
+			});
+
+			/*
 			dc.pui.Popup.confirm('Are you sure you want to cancel this Order?', function(confirm) {
 				if (! confirm)
 					return;
@@ -470,6 +482,57 @@
 					page.callPageFunc('AfterSave')
 				});
 			});
+			*/
+	]]></Function>
+
+	<Function Name="DoRefund"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcm/store/order-refund', {
+				Id: page.Params.Order.Id,
+				Callback: function(res) {
+					page.reload();
+				}
+			});
+	]]></Function>
+
+	<Function Name="DoEditCustomer"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcm/store/order-customer-edit', {
+				Id: page.Params.Order.Id,
+				Callback: function(res) {
+					page.reload();
+				}
+			});
+	]]></Function>
+
+	<Function Name="DoEditDelivery"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcm/store/order-ship-edit', {
+				Id: page.Params.Order.Id,
+				Callback: function(res) {
+					page.reload();
+				}
+			});
+	]]></Function>
+
+	<Function Name="DoEditComments"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcm/store/order-comment-edit', {
+				Id: page.Params.Order.Id,
+				Callback: function(res) {
+					page.reload();
+				}
+			});
+	]]></Function>
+
+	<Function Name="DoPrint"><![CDATA[
+			var page = this;
+
+			window.open('/dcm/store/print-order/' + page.Params.Order.Id);
 	]]></Function>
 
 	<Function Name="DoQuickComplete"><![CDATA[

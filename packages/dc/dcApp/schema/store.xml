@@ -98,6 +98,11 @@
 
 			<!-- sid = stamp -->
 			<Field Name="dcmAudit" Type="dcmOrderAudit" List="True" />
+
+			<!-- sid = stamp -->
+			<Field Name="dcmRefundOn" Group="dcmRefund" Type="DateTime" List="True" />
+			<Field Name="dcmRefundAmount" Group="dcmRefund" Type="Decimal" List="True" />
+			<Field Name="dcmRefundId" Group="dcmRefund" Type="dcSmallString" List="True" />
 		</Table>
 
 		<!-- rethink this, move into order above (no we need some per item tracking)
@@ -258,6 +263,8 @@
 		<Procedure Name="dcmStoreServices.Orders.ResendReceipts" Execute="dcraft.cms.store.db.orders.ResendReceipts" />
 		<Procedure Name="dcmStoreServices.Orders.UpdateItems" Execute="dcraft.cms.store.db.orders.UpdateItems" />
 		<Procedure Name="dcmStoreServices.Orders.UpdateStatus" Execute="dcraft.cms.store.db.orders.UpdateStatus" />
+		<Procedure Name="dcmStoreServices.Orders.Refund" Execute="dcraft.cms.store.db.orders.Refund" />
+		<Procedure Name="dcmStoreServices.Orders.Update" Execute="dcraft.cms.store.db.orders.Update" />
 
 		<Procedure Name="dcmStoreServices.Orders.Track" Execute="dcraft.cms.store.db.orders.Track" />
 		<Procedure Name="dcmStoreServices.Orders.PayPalStandard" Execute="dcraft.cms.store.db.orders.PayPalStandard" />
@@ -709,6 +716,15 @@
 							<Field Name="Extra" Type="dcmOrder:dcmExtra" />
 						</RecordResponse>
 					</Op>
+					<Op Name="Update">
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="CustomerInfo" Type="dcmOrderCustomerInfo" />
+							<Field Name="Delivery" Type="dcmDeliveryEnum" />
+							<Field Name="ShippingInfo" Type="dcmOrderShippingInfo" />
+							<Field Name="Comment" Type="dcLargeString" />
+						</RecordRequest>
+					</Op>
 					<Op Name="ResendReceipts">
 						<RecordRequest Required="True">
 							<Field Name="Id" Type="Id" Required="True" />
@@ -798,6 +814,14 @@
 							<Field Name="ViewCode" Type="dcSmallString" />
 							<Field Name="UploadToken" Type="dcTinyString" />
 						</RecordResponse>
+					</Op>
+					<Op Name="Refund">
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<!-- empty if FULL refund or void -->
+							<Field Name="Amount" Type="Decimal" />
+							<Field Name="Cancel" Type="Boolean" />
+						</RecordRequest>
 					</Op>
 				</Secure>
 			</Feature>

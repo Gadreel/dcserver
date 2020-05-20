@@ -23,6 +23,7 @@ import dcraft.filestore.mem.MemoryStoreFile;
 import dcraft.filevault.VaultUtil;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.*;
+import dcraft.interchange.authorize.AuthUtil;
 import dcraft.interchange.paypal.PayPalUtil;
 import dcraft.interchange.slack.SlackUtil;
 import dcraft.interchange.stripe.StripeUtil;
@@ -754,24 +755,55 @@ public class OrderUtil {
 
 							if (fld.isNotFieldEmpty("Options")) {
 								ListStruct options = fld.getFieldAsList("Options");
+								boolean pass = false;
+								Struct value = custom.getValue();
+								Struct valueout = null;
+								String display = null;
+								BigDecimal mprice = BigDecimal.ZERO;
 
 								for (int n = 0; n < options.size(); n++) {
 									RecordStruct opt = options.getItemAsRecord(n);
 
-									if (custom.getValue().equals(opt.getField("Value"))) {
-										displays.with(
-												RecordStruct.record()
-														.with("Id", fld.getFieldAsString("Id"))
-														.with("Label", fld.getFieldAsString("Label"))
-														.with("DisplayValue", opt.getFieldAsString("Label"))
-														.with("Price", opt.getFieldAsDecimal("Price", BigDecimal.ZERO))
-														.with("Value", opt.getField("Value"))
-										);
+									if (value instanceof ListStruct) {
+										ListStruct outlist = ListStruct.list();
+										valueout = outlist;
 
-										price = price.add(opt.getFieldAsDecimal("Price", BigDecimal.ZERO));
+										ListStruct inlist = Struct.objectToList(value);
 
-										break;
+										for (int v = 0; v < inlist.size(); v++) {
+											Struct vval = inlist.getItem(v);
+
+											if (vval.equals(opt.getField("Value"))) {
+												if (StringUtil.isEmpty(display))
+													display = opt.getFieldAsString("Label");
+												else
+													display += ", " + opt.getFieldAsString("Label");
+
+												mprice = mprice.add(opt.getFieldAsDecimal("Price", BigDecimal.ZERO));
+												outlist.with(opt.getField("Value"));
+												pass = true;
+											}
+										}
 									}
+									else if (value.equals(opt.getField("Value"))) {
+										display = opt.getFieldAsString("Label");
+										mprice = opt.getFieldAsDecimal("Price", BigDecimal.ZERO);
+										valueout = opt.getField("Value");
+										pass = true;
+									}
+								}
+
+								if (pass) {
+									displays.with(
+											RecordStruct.record()
+													.with("Id", fld.getFieldAsString("Id"))
+													.with("Label", fld.getFieldAsString("Label"))
+													.with("DisplayValue", display)
+													.with("Price", mprice)
+													.with("Value", valueout)
+									);
+
+									price = price.add(mprice);
 								}
 							}
 							else {
@@ -981,12 +1013,15 @@ public class OrderUtil {
 			if ((shipinfo != null) && !shipinfo.isFieldEmpty("State"))
 				state = shipinfo.getFieldAsString("State");
 
+			/* TODO review, never use for pickup. use ship for shipping. maybe for download?
 			if (StringUtil.isEmpty(state)) {
 				RecordStruct billinfo = order.getFieldAsRecord("BillingInfo");	// not required
 
 				if ((billinfo != null) && !billinfo.isFieldEmpty("State"))
 					state = billinfo.getFieldAsString("State");
 			}
+
+			 */
 
 			if (StringUtil.isEmpty(state) && "Pickup".equals(order.getFieldAsString("Delivery")))
 				state = sset.getAttribute("PickupState");
@@ -1031,5 +1066,124 @@ public class OrderUtil {
 
 		// coupons
 		*/
+	}
+
+	// returns the timestamp of the refund in the order record
+	static public void processRefund(ICallContext request, TablesAdapter db, String orderid, BigDecimal amount, OperationOutcomeString callback) throws OperatingContextException {
+		OperationContext context = OperationContext.getOrThrow();
+
+		context.touch();
+
+		if ((amount != null) && (amount.compareTo(BigDecimal.ZERO) == 0)) {
+			callback.returnEmpty();
+			return;
+		}
+
+		String payid = Struct.objectToString(db.getStaticScalar("dcmOrder", orderid, "dcmPaymentId"));
+		RecordStruct pinfo = Struct.objectToRecord(db.getStaticScalar("dcmOrder", orderid, "dcmPaymentInfo"));
+
+		// TODO lookup user and see if they are in "test" mode - this way some people can run test orders through system
+
+		XElement sset = ApplicationHub.getCatalogSettings("CMS-Store");
+
+		if (sset == null) {
+			Logger.error("Missing store settings.");
+			callback.returnEmpty();
+			return;
+		}
+
+		String pmethod = pinfo.getFieldAsString("PaymentMethod", "Manual");
+
+		XElement pel = null;
+
+		for (XElement poel : sset.selectAll("Payment")) {
+			String pomode = poel.getAttribute("Alias", poel.getAttribute("Method", "Manual"));
+
+			if (pmethod.equalsIgnoreCase(pomode)) {
+				pel = poel;
+				break;
+			}
+		}
+
+		if (pel == null) {
+			Logger.error("Missing store payment settings.");
+			callback.returnEmpty();
+			return;
+		}
+
+		pmethod = pel.getAttribute("Method", pmethod);
+
+		if ("Manual".equals(pmethod)) {
+			Logger.error("Manual refund must be manually resolved.");
+		}
+		else if ("Authorize".equals(pmethod)) {
+			// TODO store order items as independent records? order audits? other fields/tables to fill in?
+			// put order into a thread and box
+
+			AuthUtil.cancelPartialTransaction(orderid.substring(15), payid, amount, pel.getAttribute("AuthorizeAlternate"), new OperationOutcomeRecord() {
+				@Override
+				public void callback(RecordStruct res) throws OperatingContextException {
+					OperationContext.getOrThrow().touch();
+
+					if (this.hasErrors())
+						callback.returnEmpty();
+					else
+						OrderUtil.postRefundStep(request, db, orderid, res.getFieldAsString("transId"), res.getFieldAsDecimal("_dcAmount"), callback);
+				}
+			});
+
+			return;
+		}
+		else if ("Stripe".equals(pmethod)) {
+			// TODO store order items as independent records? order audits? other fields/tables to fill in?
+			// put order into a thread and box
+
+			StripeUtil.refundCharge(pel.getAttribute("StripeAlternate"), payid, amount, new OperationOutcomeRecord() {
+				@Override
+				public void callback(RecordStruct res) throws OperatingContextException {
+					OperationContext.getOrThrow().touch();
+
+					if (this.hasErrors()) {
+						callback.returnEmpty();
+					}
+					else {
+						BigDecimal amt = res.getFieldAsDecimal("amount");
+
+						// stripe thinks in cents
+						if (amt != null)
+							amt = amt.divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+						OrderUtil.postRefundStep(request, db, orderid, res.getFieldAsString("id"), amt, callback);
+					}
+				}
+			});
+
+			return;
+		}
+		else if ("PayPal".equals(pmethod)) {
+			Logger.error("PayPal refund not currently supported.");
+		}
+
+		callback.returnEmpty();
+	}
+
+	static public void postRefundStep(ICallContext request, TablesAdapter db, String orderid, String txid, BigDecimal amount, OperationOutcomeString callback) throws OperatingContextException {
+		ZonedDateTime stamp = TimeUtil.now();
+		String key = TimeUtil.stampFmt.format(stamp);
+
+		db.updateStaticList("dcmOrder", orderid, "dcmRefundOn", key, stamp);
+		db.updateStaticList("dcmOrder", orderid, "dcmRefundAmount", key, amount);
+		db.updateStaticList("dcmOrder", orderid, "dcmRefundId", key, txid);
+
+		RecordStruct audit = RecordStruct.record()
+				.with("Origin", "Store")
+				.with("Stamp", stamp)
+				.with("Internal", true)
+				.with("Comment", "Refunded $" + amount.toPlainString() + " - " + txid)
+				.with("Status", db.getStaticScalar("dcmOrder", orderid, "dcmStatus"));
+
+		db.updateStaticList("dcmOrder", orderid, "dcmAudit", key, audit);
+
+		callback.returnValue(key);
 	}
 }

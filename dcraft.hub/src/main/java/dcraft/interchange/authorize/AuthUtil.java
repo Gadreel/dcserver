@@ -382,6 +382,45 @@ public class AuthUtil {
         });
     }
 
+    public static void cancelPartialTransaction(String refid, String txid, BigDecimal amt, String alt, OperationOutcomeRecord callback) throws OperatingContextException {
+        getTransactionDetail(txid, alt, new OperationOutcomeRecord() {
+            @Override
+            public void callback(RecordStruct result) throws OperatingContextException {
+                if (result == null) {
+                    callback.returnEmpty();
+                    return;
+                }
+
+                if ("capturedPendingSettlement".equals(result.selectAsString("transactionStatus"))) {
+                    if (amt == null) {
+                        voidTransaction(refid, txid, alt, new OperationOutcomeRecord() {
+                            @Override
+                            public void callback(RecordStruct result) throws OperatingContextException {
+                                result.with("_dcAmount", result.getFieldAsDecimal("settleAmount"));
+                                callback.returnValue(result);
+                            }
+                        });
+                    }
+                    else {
+                        Logger.error("Unable to refund until charge is cleared.");
+                        callback.returnEmpty();
+                    }
+                }
+                else {
+                    BigDecimal amt2 = (amt != null) ? amt : result.getFieldAsDecimal("settleAmount");
+
+                    refundTransaction(refid, txid, amt2, result, alt, new OperationOutcomeRecord() {
+                        @Override
+                        public void callback(RecordStruct result2) throws OperatingContextException {
+                            result.with("_dcAmount", amt2);
+                            callback.returnValue(result);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
     static public JsonBuilder startRequestBody(String alt, String method) {
         XElement auth = ApplicationHub.getCatalogSettings("CMS-Authorize", alt);
 

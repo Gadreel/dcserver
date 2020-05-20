@@ -103,15 +103,23 @@
 						if (oid == fld.Id) {
 							if (fld.Options && fld.Options.length) {
 								for (var n = 0; n < fld.Options.length; n++) {
-									if (fld.Options[n].Value == oval)
+									if (dc.util.Struct.isList(oval)) {
+										for (var v = 0; v < oval.length; v++) {
+											if (fld.Options[n].Value == oval[v]) {
+												price += fld.Options[n].Price;
+											}
+										}
+									}
+									else if (fld.Options[n].Value == oval) {
 										price += fld.Options[n].Price;
+									}
 								}
 							}
 							else if (fld.Price && oval) {
 								price += fld.Price;
 							}
 
-							break;
+							// not for checkboxes --- break;
 						}
 					}
 				}
@@ -152,6 +160,12 @@
 			var page = this;
 
 			page.callPageFunc('UpdateTotal');
+
+			if (! page.Store.Product.Price) {
+				if (page.Store.Product.CustomFields && page.Store.Product.CustomFields.Controls.length) {
+					page.form().inputQuery('Price').closest('.dc-field').hide();
+				}
+			}
 	]]></Function>
 	<Function Name="DoAddCont" Params="e"><![CDATA[
 			var page = this;

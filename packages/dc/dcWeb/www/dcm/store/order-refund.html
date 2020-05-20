@@ -1,0 +1,62 @@
+<dc.Html Badges="Clerk,Admin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Order Refund" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<p>Partially refund this order? This will not cancel the order.</p>
+			<dcf.Form AlwaysNew="True">
+				<dcf.Text Label="Refund Amount" Name="Amount" DataType="Decimal" />
+
+				<dcf.FormButtons>
+					<dcf.SubmitButton Label="Refund Order" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Message = {
+				Service: 'dcmStoreServices',
+				Feature: 'Orders',
+				Op: 'Load',
+				Body: {
+					Id: page.Params.Id
+				}
+			};
+	]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Data = {
+				Amount: e.Data.CalcInfo.GrandTotal
+			};
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Data.Id = page.Params.Id;
+			e.Data.Cancel = false;
+
+			e.Message = {
+				Service: 'dcmStoreServices',
+				Feature: 'Orders',
+				Op: 'Refund',
+				Body: e.Data
+			};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback();
+	]]></Function>
+</dc.Html>
