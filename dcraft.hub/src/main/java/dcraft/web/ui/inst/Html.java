@@ -501,7 +501,7 @@ $(document).ready(function() {
 						XElement captcha = googlesetting.find("reCAPTCHA");
 
 						if ((captcha != null) && captcha.getAttributeAsBooleanOrFalse("Tracking") && !  captcha.getAttributeAsBooleanOrFalse("Disabled"))
-							ps.append("dc.handler.settings.gcaptcha = '" + captcha.getAttribute("SiteKey") + "';\n");
+							ps.append("dc.handler.settings.captcha = '" + captcha.getAttribute("SiteKey") + "';\n");
 					}
 
 					ps.append("\n");

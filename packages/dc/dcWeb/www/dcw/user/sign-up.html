@@ -114,6 +114,10 @@
 								<dcf.Text Name="Zip" Label="Zip" DataType="dcUsaZip" />
 							</dc.Out>
 						</dcs.If>
+						
+						<dcf.Custom>
+							<dc.Recaptcha id="recaptchaSignUp" CheckEnabled="true" Func="DoSubmit" />
+						</dcf.Custom>
 
 						<dcs.If Target="$UserConfig.@SignUpConfirm" Equal="true">
 							<dc.Out>
@@ -130,8 +134,6 @@
 								<dcf.Password Name="ConfirmPassword" Label="Confirm Password" autocomplete="new-password" Required="true" />
 							</dc.Out>
 						</dcs.Else>
-
-						<dc.Recaptcha id="recaptchaSignUp" Func="DoSubmit" />
 
 						<dcf.FormButtons>
 							<dc.Button Label="Sign Up" Scope="Primary" Click="DoRecaptcha" />

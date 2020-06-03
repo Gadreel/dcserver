@@ -704,6 +704,9 @@ public class QuickPDF extends RecordStruct {
 		PDAcroForm acroForm = docCatalog.getAcroForm();
 		PDField field = acroForm.getField( name );
 
+		if (StringUtil.isNotEmpty(value))
+			value = PdfUtil.stripAllRestrictedPDFChars(value).toString();
+
 		if( field != null ) {
 			field.setValue(value);
 		}

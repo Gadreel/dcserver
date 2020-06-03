@@ -294,7 +294,7 @@
 							Store the data for the form.
 						</Description>
 						<RecordRequest Required="True">
-							<Field Name="Captcha" Type="dcString" Required="True" />
+							<Field Name="Captcha" Type="String" Required="True" />
 							<Field Name="Form" Type="dcTinyString" Required="True" />
 							<Field Name="Title" Type="dcString" Required="True" />
 							<Field Name="Data" Type="AnyRecord" Required="True" />

@@ -19,24 +19,30 @@ import java.net.URL;
 import java.net.URLEncoder;
 
 public class RecaptchaUtil {
-	static final public String PROD_ENDPOINT = "https://www.google.com/recaptcha/api/siteverify";
+	static final public String PROD_ENDPOINT_G = "https://www.google.com/recaptcha/api/siteverify";
+	static final public String PROD_ENDPOINT_H = "https://hcaptcha.com/siteverify";
 
 	static public void siteVerify(String response, String alt, OperationOutcomeRecord callback) {
 		RecaptchaUtil.siteVerify(response, alt, true, callback);
 	}
 
 	static public void siteVerify(String response, String alt, boolean requireCaptcha, OperationOutcomeRecord callback) {
-		XElement gsettings = ApplicationHub.getCatalogSettings("Google", alt);
+		XElement capsettings = ApplicationHub.getCatalogSettings("CAPTCHA", alt);
 
-		if (gsettings == null) {
+		if (capsettings == null)
+			capsettings = ApplicationHub.getCatalogSettings("Google", alt);
+
+		if (capsettings == null) {
 			if (requireCaptcha)
-				Logger.error("Missing Google settings.");
+				Logger.error("Missing Captcha settings.");
 
 			callback.returnEmpty();
 			return;
 		}
 
-		XElement rsettings = gsettings.find("reCAPTCHA");
+		String service = capsettings.getAttribute("Service", "reCAPTCHA");		// google for now, until migrate away
+
+		XElement rsettings = capsettings.find(service);
 
 		if (rsettings == null) {
 			if (requireCaptcha)
@@ -64,7 +70,7 @@ public class RecaptchaUtil {
 		}
 
 		try {
-			String endpoint = RecaptchaUtil.PROD_ENDPOINT;
+			String endpoint = "hCAPTCHA".equals(service) ? RecaptchaUtil.PROD_ENDPOINT_H : RecaptchaUtil.PROD_ENDPOINT_G;
 
 			String body = "secret=" + URLEncoder.encode(secretKey, "UTF-8")
 					+ "&response=" + URLEncoder.encode(response, "UTF-8");

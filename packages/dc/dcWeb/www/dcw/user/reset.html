@@ -18,7 +18,9 @@
 			<dcf.Form Name="Reset">
 				<dcf.Text Name="Username" Label="Email" placeholder="email or username" Required="true" />
 
-				<dc.Recaptcha id="recaptchaReset" Func="DoSubmit" />
+				<dcf.Custom>
+					<dc.Recaptcha id="recaptchaReset" CheckEnabled="true" Func="DoSubmit" />
+				</dcf.Custom>
 
 				<dcf.FormButtons>
 					<dc.Button Label="Cancel" Click="onCancel" />

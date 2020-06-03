@@ -305,7 +305,7 @@
 							Request a confirmation code.
 						</Description>
 						<RecordRequest Required="True">
-							<Field Name="Captcha" Type="dcString" />
+							<Field Name="Captcha" Type="String" />
 							<Field Name="Username" Type="dcSmallString" Required="True" />
 						</RecordRequest>
 					</Op>
@@ -314,7 +314,7 @@
 							Verify credentials, start a session (AuthToken) indirectly as Verify is called implicitly.
 						</Description>
 						<RecordRequest Required="True">
-							<Field Name="Captcha" Type="dcString" />
+							<Field Name="Captcha" Type="String" />
 							<Field Name="Username" Type="dcUser:dcUsername" />
 							<Field Name="FirstName" Type="dcUser:dcFirstName" />
 							<Field Name="LastName" Type="dcUser:dcLastName" />

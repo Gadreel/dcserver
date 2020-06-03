@@ -259,6 +259,7 @@
 
 		<Formatters>
 			<Definition Code="ascii" Class="dcraft.struct.format.AsciiFormatter" />
+			<Definition Code="pdftext" Class="dcraft.struct.format.PdfTextFormatter" />
 			<Definition Code="dec" Class="dcraft.struct.format.DecimalFormatter" />
 			<Definition Code="dt" Class="dcraft.struct.format.DateTimeFormatter" />
 			<Definition Code="ld" Class="dcraft.struct.format.LocalDateFormatter" />

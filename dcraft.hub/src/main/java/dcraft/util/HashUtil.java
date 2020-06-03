@@ -101,7 +101,7 @@ public class HashUtil {
     }
 	
 	/**
-	 * Calculate an SHA-512 on a string, return a hex formated string of the SHA
+	 * Calculate an SHA-128 on a string, return a hex formated string of the SHA
 	 * 
 	 * @param str source to hash
 	 * @return hex SHA value
@@ -121,7 +121,7 @@ public class HashUtil {
     }
 	
 	/**
-	 * Calculate an SHA-512 on a stream, return a hex formated string of the SHA
+	 * Calculate an SHA-128 on a stream, return a hex formated string of the SHA
 	 * 
 	 * @param str source to hash
 	 * @return hex SHA value

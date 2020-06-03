@@ -30,7 +30,7 @@ import dcraft.interchange.stripe.StripeUtil;
 import dcraft.interchange.ups.UpsUtil;
 import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
-import dcraft.struct.FieldStruct;
+import dcraft.struct.*;
 import dcraft.struct.scalar.BooleanStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.Task;
@@ -41,9 +41,6 @@ import dcraft.util.Memory;
 import dcraft.util.TimeUtil;
 
 import dcraft.interchange.authorize.AuthUtilXml;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
@@ -785,7 +782,7 @@ public class OrderUtil {
 											}
 										}
 									}
-									else if (value.equals(opt.getField("Value"))) {
+									else if ((value instanceof ScalarStruct) && value.equals(opt.getField("Value"))) {
 										display = opt.getFieldAsString("Label");
 										mprice = opt.getFieldAsDecimal("Price", BigDecimal.ZERO);
 										valueout = opt.getField("Value");

@@ -519,7 +519,7 @@
 		</Record>
 
 		<Record Id="dcmOrderInfo" >
-			<Field Name="Captcha" Type="dcString" />
+			<Field Name="Captcha" Type="String" />
 
 			<Field Name="Items" Required="True">
 				<List Type="dcmOrderItemInfo" />

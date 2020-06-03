@@ -878,8 +878,8 @@ dc.pui.Loader = {
 		if (dc.handler && dc.handler.settings && dc.handler.settings.ga)
 			loadGA();
 
-		if (dc.handler && dc.handler.settings && dc.handler.settings.gcaptcha)
-			loadGCaptcha();
+		if (dc.handler && dc.handler.settings && dc.handler.settings.captcha)
+			loadCaptcha();
 
 		dc.comm.init(function() {
 			if (dc.handler && dc.handler.init)
@@ -3426,7 +3426,7 @@ dc.pui.Tags = {
 
 		// TODO for now assume Google, later add other types
 
-		window.dcRecaptchaCallback = function() {
+		var captchaCallback = function() {
 			var skey = $(node).attr('data-sitekey');
 
 			if (! skey)
@@ -3460,19 +3460,7 @@ dc.pui.Tags = {
 			$(node).attr('data-widgetid', widgetid);
 		};
 
-		var rpath = 'https://www.google.com/recaptcha/api.js';
-
-		if (dc.pui.Loader.Libs[rpath]) {
-			dcRecaptchaCallback();
-			return;
-		}
-
-		var script = document.createElement('script');
-		script.src = rpath + '?onload=dcRecaptchaCallback&render=explicit';
-		script.async = true;
-		script.defer = true;
-
-		document.head.appendChild(script);
+		loadCaptcha($(node).attr('data-service'), key, captchaCallback);
 	},
 	'dcm.GalleryWidget': function(entry, node) {
 		$(node).find('img').on("click", function(e) {
@@ -4362,9 +4350,7 @@ dc.pui.controls.Uploader.prototype.onAfterSave = function(e) {
 		});
 	}
 
-	var uploadtask = dc.transfer.Util.uploadFiles(files, 'ManagedForms', e.Data.Token, function() {
-		task.resume();
-	});
+	var uploadtask = dc.transfer.Util.uploadFiles(files, 'ManagedForms', e.Data.Token);
 
 	uploadtask.ParentTask = task;
 	uploadtask.ParentStep = e.Step;
@@ -4374,11 +4360,35 @@ dc.pui.controls.Uploader.prototype.onAfterSave = function(e) {
 
 	e.Step.Tasks.push(uploadtask);
 
-	uploadtask.run();
+	//uploadtask.run();
+
+	dc.pui.Popup.await('Large files may take some time, please wait until the upload is complete.', function() {
+		task.resume();		// resume the Save task
+	}, 'Uploading Files', uploadtask);
+
 };
 
 dc.pui.controls.Uploader.prototype.addFiles = function(values) {
 	var ctrl = this;
+
+	var maxsize = dc.util.Number.toNumberStrict($('#fld' + this.Id).attr('data-max-size'));
+	var calcsize = 0;
+
+	// 0 means no limit
+	if (maxsize > 0) {
+		for (var i = 0; i < ctrl.Files.length; i++) {
+			calcsize += ctrl.Files[i].size;
+		}
+
+		for (var i = 0; i < values.length; i++) {
+			calcsize += values[i].size;
+		}
+
+		if (calcsize > maxsize) {
+			dc.pui.Popup.alert('Total file size too large, please reduce size before upload.');
+			return;
+		}
+	}
 
 	for (var i = 0; i < values.length; i++) {
 		var file = values[i];
@@ -4602,10 +4612,30 @@ function loadGA() {
 	document.head.appendChild(script);
 }
 
-function loadGCaptcha() {
+function loadCaptcha(service, sitekey, callback) {
+	if (! sitekey && dc.handler && dc.handler.settings && dc.handler.settings.captcha)
+		sitekey = dc.handler.settings.captcha;
+
+	if (! callback)
+		callback = function() { };
+
+	window.dcCaptchaCallback = callback;
+
+	var rpath = (service == 'hCAPTCHA')
+			? 'https://hcaptcha.com/1/api.js'
+			: 'https://www.google.com/recaptcha/api.js';
+
+	sitekey = (service == 'hCAPTCHA')
+			? 'explicit'
+			: sitekey;
+
+	if (dc.pui.Loader.Libs[rpath]) {
+		window.dcCaptchaCallback();
+		return;
+	}
+
 	var script = document.createElement('script');
-	script.src = 'https://www.google.com/recaptcha/api.js?render=' +
-		dc.handler.settings.gcaptcha;
+	script.src = rpath + '?onload=dcCaptchaCallback&render=' + sitekey;
 	script.async = true;
 	script.defer = true;
 	document.head.appendChild(script);
