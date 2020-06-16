@@ -1206,6 +1206,212 @@ dc.pui.TagFuncs['dcm.GalleryWidget']['doCmsGetPositions'] = function(entry, node
  	return $(node).find('> *[data-cms-img-pos]').map(function() { return $(this).attr('data-cms-img-pos'); }).get();
 };
 
+if (! dc.pui.TagFuncs['dcm.ListWidget'])
+	dc.pui.TagFuncs['dcm.ListWidget'] = { };
+
+dc.pui.TagFuncs['dcm.ListWidget']['doCmsInitWidget'] = function(entry, node) {
+	var widget = this;
+
+	// after so we don't get drag and drop
+	$(node).dcappend(
+		dc.cms.Loader.createEditToolBar([
+			{
+				Icon: 'fa-plus',
+				Title: 'Add',
+				Auth: [ 'Admin', 'Editor' ],
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+
+					var path = $(node).attr('data-path');
+					var propeditor = $(node).attr('data-property-editor');
+
+					if (propeditor)
+						propeditor = '/dcm/cms/list-widget-entry-props/' + propeditor;
+					else
+						propeditor = '/dcm/cms/list-widget-entry-props';
+
+					dc.pui.Dialog.loadPage(propeditor, {
+						Feed: params.Feed,
+						Path: params.Path,
+						PartId: params.Id,
+						Callback: function() {
+							dc.pui.Loader.MainLayer.refreshPage();
+						}
+					});
+				}
+			},
+			{
+				Icon: 'fa-file-text-o',
+				Title: 'Template',
+				Auth: [ 'Developer' ],
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+					dc.pui.SimpleApp.loadPage('/dcm/cms/list-widget-template/' + params.Feed, params);
+				}
+			},
+			{
+				Icon: 'fa-cog',
+				Title: 'Properties',
+				Auth: [ 'Developer' ],
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+					dc.pui.Dialog.loadPage('/dcm/cms/list-widget-props/' + params.Feed, params);
+				}
+			}
+		])
+	);
+
+	// look for Id's - include band (parent) must have id
+	if (! $(node).attr('data-cms-reorder-enabled')) {
+		console.log('reorder enable');
+
+		var pos = 0;
+
+		$(node).find('> *:not(.dcuiCmsToolbar)').each(function() {
+			var imgnode = this;
+
+			$(imgnode)
+				.attr('data-cms-img-pos', pos + '')
+				.dcappend($('<div>')
+					.attr('role', 'list')
+					.addClass('dcuiCmsToolbar dcuiCmsToolbarBottom')
+					.dcappend(
+						$('<div>')
+							.attr('role', 'listitem')
+							.dcappend(
+								$('<a>')
+									.attr('href', '#')
+									.attr('role', 'button')
+									//.attr('aria-label', opt.Title)
+									//.addClass('opt.Kind')
+									.dcappend(
+										$('<i>')
+										 	.addClass('fa fa-pencil'),  // + opt.Icon),
+									)
+									.click(function(e) {
+										var imgalias = $(imgnode).attr('data-dcm-alias');
+
+										if (! imgalias) {
+											dc.pui.Popup.alert('Missing alias, cannot edit.');
+										}
+										else {
+											var params = entry.callTagFunc(widget, 'getParams');
+
+											var path = $(node).attr('data-path');
+											var propeditor = $(node).attr('data-property-editor');
+
+											if (propeditor)
+												propeditor = '/dcm/cms/list-widget-entry-props/' + propeditor;
+											else
+												propeditor = '/dcm/cms/list-widget-entry-props';
+
+											dc.pui.Dialog.loadPage(propeditor, {
+												Feed: params.Feed,
+												Path: params.Path,
+												PartId: params.Id,
+												Entry: imgalias,
+												Callback: function() {
+													dc.pui.Loader.MainLayer.refreshPage();
+												}
+											});
+										}
+
+										e.preventDefault();
+										return false;
+									})
+							),
+						$('<div>')
+							.attr('role', 'listitem')
+							.dcappend(
+								$('<a>')
+									.attr('href', '#')
+									.attr('role', 'button')
+									//.attr('aria-label', opt.Title)
+									//.addClass('opt.Kind')
+									.dcappend(
+										$('<i>')
+										 	.addClass('fa fa-times'),  // + opt.Icon),
+									)
+									.click(function(e) {
+										var imgalias = $(imgnode).attr('data-dcm-alias');
+
+										if (! imgalias) {
+											dc.pui.Popup.alert('Missing alias, cannot edit.');
+										}
+										else {
+											var params = entry.callTagFunc(widget, 'getParams');
+
+											dc.cms.Loader.saveCommands(params.Feed, params.Path, [
+												{
+													Command: 'UpdatePart',
+													Params: {
+														PartId: params.Id,
+														Area: 'RemoveEntry',
+														Alias: imgalias
+													}
+												}
+											], function() {
+												dc.pui.Loader.MainLayer.refreshPage();
+											});
+										}
+
+										e.preventDefault();
+										return false;
+									})
+								)
+					)
+				);
+			pos++;
+		});
+
+		$(node).attr('data-cms-reorder-enabled', 'true');
+	}
+
+	// TODO provide for destroy - dc.cms.Loader.Sortable = Sortable.create
+
+	Sortable.create(node, {
+		filter: ".dc-unsortable",
+		onEnd: function (evt) {
+			// allocate a unique command for this re-order
+			var partid = $(node).attr('id');
+			var cmd = dc.cms.Loader.trackCommnd(partid + '-order');
+
+			// update the positions
+			cmd.Params = {
+				PartId: partid,
+				Order: entry.callTagFunc(node, 'doCmsGetPositions')
+			};
+
+			// queue first time only
+			if (! cmd.Command) {
+				cmd.Command = 'Reorder';
+
+				var params = entry.callTagFunc(node, 'getParams');
+
+				dc.cms.Loader.queueCommands(params.Feed, params.Path, [ cmd ]);
+			}
+		}
+	});
+};
+
+dc.pui.TagFuncs['dcm.ListWidget']['getParams'] = function(entry, node) {
+	var pel = $(node).closest('*[data-cms-type="feed"]').get(0);
+
+	if (! pel)
+		return null;
+
+	return {
+		Feed: $(pel).attr('data-cms-feed'),
+		Path: $(pel).attr('data-cms-path'),
+		Id: $(node).attr('id')
+	};
+};
+
+dc.pui.TagFuncs['dcm.ListWidget']['doCmsGetPositions'] = function(entry, node) {
+ 	return $(node).find('> *[data-cms-img-pos]').map(function() { return $(this).attr('data-cms-img-pos'); }).get();
+};
+
+
 if (! dc.pui.TagFuncs['dcm.CarouselWidget'])
 	dc.pui.TagFuncs['dcm.CarouselWidget'] = { };
 
@@ -1498,7 +1704,14 @@ dc.pui.TagFuncs['dcm.HighlightWidget']['doCmsInitWidget'] = function(entry, node
 						dc.pui.Loader.MainLayer.refreshPage();
 					};
 
-					dc.pui.Dialog.loadPage('/dcm/cms/highlight-widget-list/' + params.Feed, params);
+					var propeditor = $(node).attr('data-property-editor');
+
+					if (propeditor)
+						propeditor = '/dcm/cms/highlight-widget-list/' + params.Feed + '/' + propeditor;
+					else
+						propeditor = '/dcm/cms/highlight-widget-list/' + params.Feed;
+
+					dc.pui.Dialog.loadPage(propeditor, params);
 				}
 			},
 			{
@@ -1512,7 +1725,14 @@ dc.pui.TagFuncs['dcm.HighlightWidget']['doCmsInitWidget'] = function(entry, node
 						dc.pui.Loader.MainLayer.refreshPage();
 					};
 
-					dc.pui.Dialog.loadPage('/dcm/cms/highlight-widget-props/' + params.Feed, params);
+					var propeditor = $(node).attr('data-property-editor');
+
+					if (propeditor)
+						propeditor = '/dcm/cms/highlight-widget-props/' + params.Feed + '/' + propeditor;
+					else
+						propeditor = '/dcm/cms/highlight-widget-props/' + params.Feed;
+
+					dc.pui.Dialog.loadPage(propeditor, params);
 				}
 			}
 		])

@@ -3,6 +3,7 @@ package dcraft.web.ui.inst.form;
 import java.util.Map.Entry;
 
 import dcraft.hub.op.OperatingContextException;
+import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.util.HexUtil;
 import dcraft.script.inst.doc.Base;
@@ -35,12 +36,18 @@ public class CheckControl extends Base {
 		CheckControl ic = (input instanceof CheckControl) ? (CheckControl) input : new CheckControl();
 
 		ic.withAttribute("type", "checkbox");
-		
-		if (! input.hasNotEmptyAttribute("value") && input.hasNotEmptyAttribute("Value"))
-			ic.withAttribute("value", input.getAttribute("Value"));
-		
+
+		String value = "NA";
+
+		if (input.hasNotEmptyAttribute("value"))
+			value = StackUtil.stringFromElement(state, input, "value");
+		else if (input.hasNotEmptyAttribute("Value"))
+			value = StackUtil.stringFromElement(state, input, "Value");
+
+		ic.withAttribute("value", value);
+
 		if (! input.hasNotEmptyAttribute("id")) 
-			ic.withAttribute("id", fld.fieldid + "-" + HexUtil.encodeHex(ic.getAttribute("value")));
+			ic.withAttribute("id", fld.fieldid + "-" + HexUtil.encodeHex(value));
 		
 		if (! input.hasNotEmptyAttribute("name") && fld.hasNotEmptyAttribute("Name"))
 			ic.withAttribute("name", fld.getAttribute("Name"));

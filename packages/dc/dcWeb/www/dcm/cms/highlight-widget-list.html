@@ -5,6 +5,18 @@
 
 	<Require Script="/js/vendor/sortable.min.js" />
 
+	<dcs.Var Name="FeedName" Type="String" />
+
+	<dcs.If Target="$Page.OriginalPathParts.3" IsEmpty="false">
+		<dcs.With Target="$FeedName" SetTo="$Page.OriginalPathParts.3" />
+	</dcs.If>
+
+	<dcs.Var Name="Alias" Type="String" />
+
+	<dcs.If Target="$Page.OriginalPathParts.4" IsEmpty="false">
+		<dcs.With Target="$Alias" SetTo="$Page.OriginalPathParts.4" />
+	</dcs.If>
+
 	<dc.Body>
 		<dc.Style>
 #dcmshighEntries > div {
@@ -94,7 +106,7 @@
 
 			var editFunc = function(e) {
 				entry.Store.Callback = function() {
-					dc.pui.Dialog.loadPage('/dcm/cms/highlight-widget-content', {
+					dc.pui.Dialog.loadPage('/dcm/cms/highlight-widget-content/{$Alias|ifempty:na}', {
 						Feed: entry.Params.Feed,
 						Path: entry.Params.Path,
 						Id: entry.Params.Id,
@@ -167,7 +179,7 @@
 		var entry = this;
 
 		entry.Store.Callback = function() {
-			dc.pui.Dialog.loadPage('/dcm/cms/highlight-widget-content', {
+			dc.pui.Dialog.loadPage('/dcm/cms/highlight-widget-content/{$Alias|ifempty:na}', {
 				Feed: entry.Params.Feed,
 				Path: entry.Params.Path,
 				Id: entry.Params.Id,

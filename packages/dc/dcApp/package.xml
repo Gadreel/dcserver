@@ -70,7 +70,9 @@
 			<Tag Name="dcm.VimeoWidget" Class="dcraft.web.ui.inst.cms.VimeoWidget" />
 			<Tag Name="dcm.GalleryWidget" Class="dcraft.web.ui.inst.cms.GalleryWidget" />
 			<Tag Name="dcm.StoreGalleryWidget" Class="dcraft.web.ui.inst.cms.StoreGalleryWidget" />
+			<Tag Name="dcm.StoreCategoryWidget" Class="dcraft.web.ui.inst.cms.StoreCategoryWidget" />
 			<Tag Name="dcm.HighlightWidget" Class="dcraft.web.ui.inst.cms.HighlightWidget" />
+			<Tag Name="dcm.ListWidget" Class="dcraft.web.ui.inst.cms.ListWidget" />
 
 			<!-- TODO
 			<Tag Name="dcm.MediaWidget" Class="dcraft.web.ui.inst.cms.MediaWidget" />

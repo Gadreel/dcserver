@@ -145,8 +145,9 @@ public class HighlightWidget extends Base implements ICMSAware {
 	@Override
 	public void renderAfterChildren(InstructionWork state) throws OperatingContextException {
 		this.withClass("dc-widget", "dc-widget-highlight")
-			.withAttribute("data-dc-enhance", "true")
-			.withAttribute("data-dc-tag", this.getName());
+				.withAttribute("data-property-editor", StackUtil.stringFromSource(state,"PropertyEditor"))
+				.withAttribute("data-dc-enhance", "true")
+				.withAttribute("data-dc-tag", this.getName());
 
 		String display = StackUtil.stringFromSource(state,"Display", "None").toLowerCase();
 		

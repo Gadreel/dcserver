@@ -255,6 +255,10 @@ public class ServiceRequest implements IWorkBuilder {
 		if (rdt != null) {
 			try (OperationMarker om = OperationMarker.create()) {
 				Struct ndata = rdt.normalizeValidate(this.checkfinal, false, this.data);
+
+				// TODO this check should probably be in normalizeValidate, but that requires other checking
+				if ((this.data == null) && (rdt.isRequired()))
+					Logger.error("Data body is missing.");
 				
 				// TODO find other calls to normalizeValidate and change to use OM
 				if (om.hasErrors()) {

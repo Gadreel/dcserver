@@ -362,6 +362,10 @@ public class DataType {
 		return null;
 	}
 
+	public boolean isRequired() {
+		return this.definition.getAttributeAsBooleanOrFalse("Required");
+	}
+
 	protected void compileRecord() {
 		List<String> inhlist = new ArrayList<>();
 		

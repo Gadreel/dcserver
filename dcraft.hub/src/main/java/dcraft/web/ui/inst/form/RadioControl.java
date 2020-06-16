@@ -3,6 +3,7 @@ package dcraft.web.ui.inst.form;
 import java.util.Map.Entry;
 
 import dcraft.hub.op.OperatingContextException;
+import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.StackWork;
 import dcraft.util.HexUtil;
@@ -36,12 +37,18 @@ public class RadioControl extends Base {
 		RadioControl ic = (input instanceof RadioControl) ? (RadioControl) input : new RadioControl();
 
 		ic.withAttribute("type", "radio");
-		
-		if (! input.hasNotEmptyAttribute("value") && input.hasNotEmptyAttribute("Value"))
-			ic.withAttribute("value", input.getAttribute("Value"));
-		
+
+		String value = "NA";
+
+		if (input.hasNotEmptyAttribute("value"))
+			value = StackUtil.stringFromElement(state, input, "value");
+		else if (input.hasNotEmptyAttribute("Value"))
+			value = StackUtil.stringFromElement(state, input, "Value");
+
+		ic.withAttribute("value", value);
+
 		if (! input.hasNotEmptyAttribute("id")) 
-			ic.withAttribute("id", fld.fieldid + "-" + HexUtil.encodeHex(ic.getAttribute("value")));
+			ic.withAttribute("id", fld.fieldid + "-" + HexUtil.encodeHex(value));
 		
 		if (! input.hasNotEmptyAttribute("name") && fld.hasNotEmptyAttribute("Name"))
 			ic.withAttribute("name", fld.getAttribute("Name"));
@@ -52,7 +59,7 @@ public class RadioControl extends Base {
 		if (! input.hasNotEmptyAttribute("disabled") && fld.hasNotEmptyAttribute("disabled"))
 			ic.withAttribute("disabled", fld.getAttribute("disabled"));
 		
-		// copy attributes over, only if not the same object
+		// copy attributes over, only if not the same object TODO ???
 		if (ic != input) {
 			for (Entry<String, String> entry : input.getAttributes().entrySet()) {
 				if (Character.isLowerCase(entry.getKey().charAt(0))) {

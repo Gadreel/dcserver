@@ -128,8 +128,9 @@ public class Load implements IStoredProc {
 
 								for (int n = 0; n < options.size(); n++) {
 									RecordStruct opt = options.getItemAsRecord(n);
+									Struct value = custom.getValue();
 
-									if (custom.getValue().equals(opt.getField("Value"))) {
+									if ((value != null) && value.equals(opt.getField("Value"))) {
 										formattedcustoms.with(
 												RecordStruct.record()
 														.with("Id", fld.getFieldAsString("Id"))

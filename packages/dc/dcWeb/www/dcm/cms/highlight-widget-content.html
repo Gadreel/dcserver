@@ -5,6 +5,12 @@
 
 	<Require Script="/js/vendor/ace-1.1.8/ace.js" />
 
+	<dcs.Var Name="Alias" Type="String" />
+
+	<dcs.If Target="$Page.OriginalPathParts.3" IsEmpty="false">
+		<dcs.With Target="$Alias" SetTo="$Page.OriginalPathParts.3" />
+	</dcs.If>
+
 	<dc.Body>
 		<dc.Style>
 #dcmshighEntryContent main {
@@ -42,6 +48,14 @@
 				<dc.Button Click="DoHelp" Label="Help"  />
 				<dc.Button Label="Save and Preview" Click="DoSave" Scope="Primary" />
 			</dcf.FormButtons>
+
+			<!--
+			<dcs.If Target="$Alias" IsEmpty="false">
+				<dc.Out>
+					<dc.IncludeFragment Path="/dcm/cms/highlight-widget-entry/{$Alias}" />
+				</dc.Out>
+			</dcs.If>
+		-->
 
 			<!-- TODO create editor control, add Accessibility -->
 			<div id="dcmshighEditSect" />

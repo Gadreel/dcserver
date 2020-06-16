@@ -68,7 +68,8 @@ public class GalleryWidget extends Base implements ICMSAware {
 		String vari = StackUtil.stringFromSource(state,"Variant", "full");
 		String path = StackUtil.stringFromSource(state,"Path");
 		String show = StackUtil.stringFromSource(state,"Show");
-		
+		String missing = StackUtil.stringFromSource(state,"Missing");
+
 		RecordStruct meta = (RecordStruct) GalleryUtil.getMeta(path,
 				OperationContext.getOrThrow().selectAsString("Controller.Request.View"));
 		
@@ -96,7 +97,27 @@ public class GalleryWidget extends Base implements ICMSAware {
 				Path imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
 						OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
 
-				if ((imgpath != null) && Files.exists(imgpath)) {
+				boolean found = false;
+
+				if ((imgpath == null) || ! Files.exists(imgpath)) {
+					if (StringUtil.isNotEmpty(missing)) {
+						cpath = path + "/" + missing;
+
+						lpath = cpath + ".v/" + vari + "." + ext;
+
+						imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
+								OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
+
+						if ((imgpath != null) && Files.exists(imgpath)) {
+							found = true;
+						}
+					}
+				}
+				else {
+					found = true;
+				}
+
+				if (found) {
 					try {
 						FileTime fileTime = Files.getLastModifiedTime(imgpath);
 
