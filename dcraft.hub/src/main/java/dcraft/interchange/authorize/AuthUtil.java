@@ -362,11 +362,17 @@ public class AuthUtil {
                     return;
                 }
 
+                //System.out.println("1: " + result.getFieldAsDecimal("settleAmount").toPlainString());
+
                 if ("capturedPendingSettlement".equals(result.selectAsString("transactionStatus"))) {
                     voidTransaction(refid, txid, alt, new OperationOutcomeRecord() {
                         @Override
-                        public void callback(RecordStruct result) throws OperatingContextException {
-                            callback.returnValue(result.getFieldAsDecimal("authAmount"));
+                        public void callback(RecordStruct result2) throws OperatingContextException {
+                            //System.out.println("2: " + result.getFieldAsDecimal("settleAmount").toPlainString());
+
+                            //System.out.println("3: " + result2.getFieldAsDecimal("authAmount").toPlainString());
+
+                            callback.returnValue(result.getFieldAsDecimal("settleAmount"));
                         }
                     });
                 }

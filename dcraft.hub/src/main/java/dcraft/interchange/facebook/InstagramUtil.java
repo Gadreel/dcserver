@@ -1,19 +1,83 @@
 package dcraft.interchange.facebook;
 
+import dcraft.db.Constants;
+import dcraft.db.tables.TablesAdapter;
+import dcraft.hub.app.ApplicationHub;
+import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeRecord;
+import dcraft.hub.op.OperationOutcomeString;
 import dcraft.interchange.mailchimp.MailChimpUtil;
 import dcraft.log.Logger;
 import dcraft.struct.CompositeParser;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
+import dcraft.util.StringUtil;
+import dcraft.util.TimeUtil;
+import dcraft.xml.XElement;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.ZonedDateTime;
 
 public class InstagramUtil {
+    static public void checkGetToken(TablesAdapter db, String alt, OperationOutcomeString callback) throws OperatingContextException {
+        XElement isettings = ApplicationHub.getCatalogSettings("Social-Instagram", alt);
+
+        if (isettings == null) {
+            Logger.warn("Missing Instagram settings.");
+            callback.returnEmpty();
+            return;
+        }
+
+        // try new Basic Display first
+        String basictoken = isettings.attr("BasicToken");
+
+        String sub = StringUtil.isNotEmpty(alt) ? alt : "default";
+
+        ZonedDateTime expire = Struct.objectToDateTime(db.getDynamicList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessExpire", sub));
+
+        if (expire != null) {
+            basictoken = Struct.objectToString(db.getDynamicList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessToken", sub));
+
+            ZonedDateTime checkdate = TimeUtil.now().plusDays(7);
+
+            // if expire in more than 7 days from now then continue
+            if (expire.compareTo(checkdate) >= 0) {
+                callback.returnValue(basictoken);
+                return;
+            }
+        }
+
+        if (StringUtil.isNotEmpty(basictoken)) {
+            InstagramUtil.refresh(basictoken, new OperationOutcomeRecord() {
+                @Override
+                public void callback(RecordStruct result) throws OperatingContextException {
+                    if (this.isNotEmptyResult()) {
+                        String token = result.getFieldAsString("access_token");
+                        long secs = result.getFieldAsInteger("expires_in");
+
+                        ZonedDateTime expire = TimeUtil.now().plusSeconds(secs);
+
+                        db.updateStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessToken", sub, token);
+                        db.updateStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessExpire", sub, expire);
+
+                        callback.returnValue(token);
+                    }
+                    else {
+                        callback.returnEmpty();
+                    }
+                }
+            });
+        }
+        else {
+            callback.returnEmpty();
+        }
+    }
+
     /*
         Refresh a long-lived Instagram User Access Token that is at least 24 hours old but has not expired. Refreshed tokens are valid for 60 days from the date at which they are refreshed.
 
@@ -40,11 +104,11 @@ public class InstagramUtil {
         {expires-in}           Integer                    The number of seconds until the long-lived token expires.
      */
 
-    static public void refresh(String token, String apikey, OperationOutcomeRecord callback) {
+    static public void refresh(String token, OperationOutcomeRecord callback) {
         try {
             OperationContext.getOrThrow().touch();
 
-            HttpRequest.Builder builder = InstagramUtil.buildRequest(apikey, "refresh_access_token?grant_type=ig_refresh_token&access_token=" + token);
+            HttpRequest.Builder builder = InstagramUtil.buildRequest( "refresh_access_token?grant_type=ig_refresh_token&access_token=" + token);
 
             // Send post request
             HttpClient.newHttpClient().sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
@@ -75,7 +139,7 @@ public class InstagramUtil {
         }
     }
 
-    static public HttpRequest.Builder buildRequest(String apikey, String method) {
+    static public HttpRequest.Builder buildRequest(String method) {
         String endpoint = "https://graph.instagram.com/" + method;
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()

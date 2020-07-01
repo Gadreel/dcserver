@@ -6,13 +6,18 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.OperationOutcomeString;
 import dcraft.interchange.bigcommerce.BigCommerceProductListWork;
+import dcraft.interchange.facebook.InstagramUtil;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Var;
+import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
+import dcraft.script.work.ReturnOption;
 import dcraft.struct.*;
 import dcraft.task.StateWorkStep;
+import dcraft.task.TaskContext;
 import dcraft.util.StringUtil;
 import dcraft.script.inst.doc.Base;
 import dcraft.util.TimeUtil;
@@ -39,6 +44,40 @@ public class Instagram extends Base implements ICMSAware {
 	@Override
 	public XElement newNode() {
 		return Instagram.tag();
+	}
+
+
+	@Override
+	public ReturnOption run(InstructionWork state) throws OperatingContextException {
+		if (state.getState() == ExecuteState.READY) {
+			BasicRequestContext requestContext = BasicRequestContext.ofDefaultDatabase();
+			TablesAdapter db = TablesAdapter.ofNow(requestContext);
+
+			String alt = StackUtil.stringFromSource(state,"AltSettings");
+
+			InstagramUtil.checkGetToken(db, alt, new OperationOutcomeString() {
+				@Override
+				public void callback(String result) throws OperatingContextException {
+					state.getStore().with("Token", result);
+					state.setState(ExecuteState.RESUME);
+
+					// run as normal
+					Instagram.this.renderBeforeChildren(state);
+					Instagram.this.gotoTop(state);
+
+					try {
+						OperationContext.getAsTaskOrThrow().resume();
+					}
+					catch (Exception x) {
+						Logger.error("Unable to resume after InstagramWidget inst: " + x);
+					}
+				}
+			});
+
+			return ReturnOption.AWAIT;
+		}
+
+		return super.run(state);
 	}
 
 	@Override
@@ -84,6 +123,11 @@ public class Instagram extends Base implements ICMSAware {
 					String userid = isettings.attr("UserId");
 
 					data = ListStruct.list();
+
+					String found = state.getStore().getFieldAsString("Token");
+
+					if (StringUtil.isNotEmpty(found))
+						basictoken = found;
 
 					//URL url = new URL("https://graph.instagram.com/me?fields=media&limit=" + cache + "&access_token=" + basictoken);
 

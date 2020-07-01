@@ -2669,7 +2669,7 @@ ol.dc-listview > li img:first-child + * ~ * {
 		border-bottom: 1px solid gray;
 	}
 
-	#dcuiMain .dcuiCmsToolbar {
+	div.dcuiLayer .dcuiCmsToolbar {
 		position: absolute;
 		right: 0;
 		top: 0;
@@ -2682,40 +2682,40 @@ ol.dc-listview > li img:first-child + * ~ * {
 		z-index: 1000;
 	}
 
-	#dcuiMain .dcuiCmsToolbarLeft {
+	div.dcuiLayer .dcuiCmsToolbarLeft {
 		left: 0;
 		right: initial;
 	}
 
-	#dcuiMain .dcuiCmsToolbarVert {
+	div.dcuiLayer .dcuiCmsToolbarVert {
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
 	}
 
-	#dcuiMain .dcuiCmsToolbar > div {
+	div.dcuiLayer .dcuiCmsToolbar > div {
 		margin: 4px 9px;
 		display: inline-block;
 	}
 
-	#dcuiMain .dcuiCmsToolbar a {
+	div.dcuiLayer .dcuiCmsToolbar a {
 		font-size: 2.2rem !important;
 	}
 
-	#dcuiMain .dcuiCmsToolbar a,
-	#dcuiMain .dcuiCmsToolbar a:visited {
-		color: white !important;
-		color: var(--dcm-inline-link-color) !important;
+	div.dcuiLayer .dcuiCmsToolbar a,
+	div.dcuiLayer .dcuiCmsToolbar a:visited {
+		color: white;
+		color: var(--dcm-inline-link-color);
 		border-bottom: none;
 	}
 
-	#dcuiMain .dcuiCmsToolbar a:hover,
-	#dcuiMain .dcuiCmsToolbar a:focus {
-		color: papayawhip !important;
-		color: var(--dcm-inline-link-hover) !important;
+	div.dcuiLayer .dcuiCmsToolbar a:hover,
+	div.dcuiLayer .dcuiCmsToolbar a:focus {
+		color: papayawhip;
+		color: var(--dcm-inline-link-hover);
 	}
 
-	#dcuiMain .dcuiCmsToolbarBottom {
+	div.dcuiLayer .dcuiCmsToolbarBottom {
 		top: initial;
 		bottom: 0;
 	}
@@ -2729,7 +2729,7 @@ ol.dc-listview > li img:first-child + * ~ * {
 		border-radius: 0px 14px 14px 0px;
 	}
 
-	#dcuiMain .dcuiCmsToolbar #dcuiCmsTabSave {
+	div.dcuiLayer .dcuiCmsToolbar #dcuiCmsTabSave {
 		display: none;
 	}
 

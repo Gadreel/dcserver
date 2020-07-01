@@ -5,6 +5,7 @@ import dcraft.db.proc.BasicFilter;
 import dcraft.db.proc.ExpressionResult;
 import dcraft.db.proc.IFilter;
 import dcraft.db.proc.IStoredProc;
+import dcraft.db.proc.filter.CurrentRecord;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
@@ -26,7 +27,7 @@ public class Reindex implements IStoredProc {
 
 		ThreadUtil.clearIndex(db);
 
-		db.traverseRecords(OperationContext.getOrThrow(), "dcmThread", new BasicFilter() {
+		db.traverseRecords(OperationContext.getOrThrow(), "dcmThread", CurrentRecord.current().withNested(new BasicFilter() {
 			@Override
 			public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, Object val) throws OperatingContextException {
 				ZonedDateTime mod = Struct.objectToDateTime(db.getStaticScalar("dcmThread", val.toString(), "dcmModified"));
@@ -38,7 +39,7 @@ public class Reindex implements IStoredProc {
 
 				return ExpressionResult.ACCEPTED;
 			}
-		});
+		}));
 
 		callback.returnEmpty();
 	}

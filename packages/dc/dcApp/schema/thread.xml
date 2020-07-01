@@ -60,6 +60,15 @@
 		<Composer Name="dcmThreadParties" Execute="dcraft.cms.thread.db.comp.ThreadParties" />
 
 		<Trigger Table="dcmThread" Operation="BeforeDelete" Execute="dcraft.cms.thread.db.trigger.BeforeDelete" />
+		<!--
+			always list expire checks for records that can be expired - reason being is that 3rd party
+			modules might add these checks, as well as tenants, and then when they do the default behavior of
+			"true" turns to "false". So keeping these keeps the default behavior consistent when overrides come in.
+
+			By default, delete is blocked and archive is used. This could be overridden by deployment settings.
+		-->
+		<Trigger Table="dcmThread" Operation="CanExpireDeleteCheck" Execute="dcraft.cms.thread.db.trigger.BlockExpire" />
+		<Trigger Table="dcmThread" Operation="CanExpireRetireCheck" Execute="dcraft.cms.thread.db.trigger.CanExpireCheck" />
 
 		<Procedure Name="dcmServices.Thread.Create" Execute="dcraft.cms.thread.db.Create" />
 		<Procedure Name="dcmServices.Thread.AddParties" Execute="dcraft.cms.thread.db.AddParties" />

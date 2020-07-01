@@ -242,6 +242,7 @@ dc.cms.Loader = {
 								.attr('role', 'button')
 								.attr('aria-label', opt.Title)
 								.addClass(opt.Kind)
+								.addClass('dc-button-toolbar dccms')
 								.dcappend(
 									$('<i>')
 									 	.addClass('fa ' + opt.Icon),
@@ -627,6 +628,12 @@ dc.pui.Apps.Menus.dcmSystem = {
 			Title: 'Blocked IPs',
 			Auth: [ 'SysAdmin', 'Admin' ],
 			Path: '/dcr/list-ips'
+		},
+  		{
+			Alias: 'GoLive',
+			Title: 'Go Live Report',
+			Auth: [ 'SysAdmin', 'Admin' ],
+			Path: '/dcr/go-live'
 		}
 	],
 	Options: [
@@ -663,6 +670,12 @@ dc.pui.Apps.Menus.dcmStore = {
 			Title: 'Products',
 			Auth: [ 'Admin', 'Clerk' ],
 			Path: '/dcm/store/categories'
+		},
+		{
+			Alias: 'ProductsAll',
+			Title: 'All Products',
+			Auth: [ 'Admin', 'Clerk' ],
+			Path: '/dcm/store/products-all'
 		},
 		{
 			Alias: 'GiftRegistry',
@@ -1067,6 +1080,7 @@ dc.pui.TagFuncs['dcm.GalleryWidget']['doCmsInitWidget'] = function(entry, node) 
 										.attr('role', 'button')
 										//.attr('aria-label', opt.Title)
 										//.addClass('opt.Kind')
+										.addClass('dc-button-toolbar dccms')
 										.dcappend(
 											$('<i>')
 											 	.addClass('fa fa-pencil'),  // + opt.Icon),
@@ -1122,6 +1136,7 @@ dc.pui.TagFuncs['dcm.GalleryWidget']['doCmsInitWidget'] = function(entry, node) 
 										.attr('role', 'button')
 										//.attr('aria-label', opt.Title)
 										//.addClass('opt.Kind')
+										.addClass('dc-button-toolbar dccms')
 										.dcappend(
 											$('<i>')
 											 	.addClass('fa fa-times'),  // + opt.Icon),
@@ -1284,6 +1299,7 @@ dc.pui.TagFuncs['dcm.ListWidget']['doCmsInitWidget'] = function(entry, node) {
 									.attr('role', 'button')
 									//.attr('aria-label', opt.Title)
 									//.addClass('opt.Kind')
+									.addClass('dc-button-toolbar dccms')
 									.dcappend(
 										$('<i>')
 										 	.addClass('fa fa-pencil'),  // + opt.Icon),
@@ -1328,6 +1344,7 @@ dc.pui.TagFuncs['dcm.ListWidget']['doCmsInitWidget'] = function(entry, node) {
 									.attr('role', 'button')
 									//.attr('aria-label', opt.Title)
 									//.addClass('opt.Kind')
+									.addClass('dc-button-toolbar dccms')
 									.dcappend(
 										$('<i>')
 										 	.addClass('fa fa-times'),  // + opt.Icon),
@@ -1567,6 +1584,7 @@ dc.pui.TagFuncs['dcm.StoreGalleryWidget']['doCmsInitWidget'] = function(entry, n
 									.attr('role', 'button')
 									//.attr('aria-label', opt.Title)
 									//.addClass('opt.Kind')
+									.addClass('dc-button-toolbar dccms')
 									.dcappend(
 										$('<i>')
 										 	.addClass('fa fa-pencil'),  // + opt.Icon),
@@ -1600,6 +1618,7 @@ dc.pui.TagFuncs['dcm.StoreGalleryWidget']['doCmsInitWidget'] = function(entry, n
 									.attr('role', 'button')
 									//.attr('aria-label', opt.Title)
 									//.addClass('opt.Kind')
+									.addClass('dc-button-toolbar dccms')
 									.dcappend(
 										$('<i>')
 										 	.addClass('fa fa-times'),  // + opt.Icon),
@@ -1681,6 +1700,281 @@ dc.pui.TagFuncs['dcm.StoreGalleryWidget']['getParams'] = function(entry, node) {
 
 dc.pui.TagFuncs['dcm.StoreGalleryWidget']['doCmsGetPositions'] = function(entry, node) {
  	return $(node).find('> *[data-cms-img-pos]').map(function() { return $(this).attr('data-cms-img-pos'); }).get();
+};
+
+if (! dc.pui.TagFuncs['dcm.StoreCategoryWidget'])
+	dc.pui.TagFuncs['dcm.StoreCategoryWidget'] = { };
+
+dc.pui.TagFuncs['dcm.StoreCategoryWidget']['doCmsInitWidget'] = function(entry, node) {
+	var widget = this;
+
+	// after so we don't get drag and drop
+	$(node).dcappend(
+		dc.cms.Loader.createEditToolBar([
+			{
+				Icon: 'fa-plus',
+				Title: 'Add',
+				Auth: [ 'Admin', 'Editor' ],
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+
+					dc.pui.Dialog.loadPage('/dcm/store/category-chooser-multi', {
+						ComplexResult: true,
+						Callback: function(res) {
+							if (res && res.hasOwnProperty('Selected')) {
+								//console.log(JSON.stringify(res.Selected));
+
+								var olddata = $(node).find('> *:not(.dcuiCmsToolbar)').map(function() {
+									return JSON.parse($(this).attr('data-record'));
+								}).get();
+
+								olddata = olddata.concat(res.Selected);
+
+								dc.cms.Loader.saveCommands(params.Feed, params.Path, [
+									{
+										Command: 'UpdatePart',
+										Params: {
+											PartId: params.Id,
+											Area: 'Data',
+											Data: olddata
+										}
+									}
+								], function() {
+									dc.pui.Loader.MainLayer.refreshPage();
+								});
+							}
+						}
+					});
+				}
+			},
+			{
+				Icon: 'fa-file-text-o',
+				Title: 'Template',
+				Auth: [ 'Developer' ],
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+					dc.pui.SimpleApp.loadPage('/dcm/cms/store-category-widget-template/' + params.Feed, params);
+				}
+			},
+			{
+				Icon: 'fa-cog',
+				Title: 'Properties',
+				Auth: [ 'Developer' ],
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+					dc.pui.Dialog.loadPage('/dcm/cms/store-category-widget-props/' + params.Feed, params);
+				}
+			}
+		])
+	);
+
+	// look for Id's - include band (parent) must have id
+	if (! $(node).attr('data-cms-reorder-enabled')) {
+		console.log('reorder enable');
+
+		var pos = 0;
+
+		$(node).find('> *:not(.dcuiCmsToolbar)').each(function() {
+			var imgnode = this;
+
+			var subsbutton = null;
+			var record = JSON.parse($(imgnode).attr('data-record'));
+
+			if (record.Mode == 'TopWithSub') {
+				subsbutton = $('<div>')
+					.attr('role', 'listitem')
+					.dcappend(
+						$('<a>')
+							.attr('href', '#')
+							.attr('role', 'button')
+							//.attr('aria-label', opt.Title)
+							//.addClass('opt.Kind')
+							.addClass('dc-button-toolbar dccms')
+							.dcappend(
+								$('<i>')
+								 	.addClass('fa fa-th'),  // + opt.Icon),
+							)
+							.click(record, function(e) {
+								var imgalias = $(imgnode).attr('data-dcm-alias');
+
+								if (! imgalias) {
+									dc.pui.Popup.alert('Missing category, cannot edit.');
+								}
+								else {
+									var params = entry.callTagFunc(widget, 'getParams');
+
+									dc.pui.Dialog.loadPage('/dcm/cms/store-category-widget-subs', {
+										Title: record.Title,
+										Subs: record.Subs,
+										Callback: function(subs) {
+											record.Subs = subs.Subs;
+
+											$(imgnode).attr('data-record', JSON.stringify(record));
+
+											var records = $(node).find('> *:not(.dcuiCmsToolbar)').map(function() {
+												return JSON.parse($(this).attr('data-record'));
+											}).get();
+
+											dc.cms.Loader.saveCommands(params.Feed, params.Path, [
+												{
+													Command: 'UpdatePart',
+													Params: {
+														PartId: params.Id,
+														Area: 'Data',
+														Data: records
+													}
+												}
+											], function() {
+												dc.pui.Loader.MainLayer.refreshPage();
+											});
+										}
+									});
+								}
+
+								e.preventDefault();
+								return false;
+							})
+						);
+			}
+
+			$(imgnode)
+				.attr('data-cms-img-pos', pos + '')
+				.dcappend($('<div>')
+					.attr('role', 'list')
+					.addClass('dcuiCmsToolbar dcuiCmsToolbarBottom')
+					.dcappend(
+						subsbutton,
+						$('<div>')
+							.attr('role', 'listitem')
+							.dcappend(
+								$('<a>')
+									.attr('href', '#')
+									.attr('role', 'button')
+									//.attr('aria-label', opt.Title)
+									//.addClass('opt.Kind')
+									.addClass('dc-button-toolbar dccms')
+									.dcappend(
+										$('<i>')
+										 	.addClass('fa fa-pencil'),  // + opt.Icon),
+									)
+									.click(function(e) {
+										var imgalias = $(imgnode).attr('data-dcm-alias');
+
+										if (! imgalias) {
+											dc.pui.Popup.alert('Missing category, cannot edit.');
+										}
+										else {
+											var params = entry.callTagFunc(widget, 'getParams');
+
+											dc.pui.Dialog.loadPage('/dcm/store/category-entry', {
+												Id: JSON.parse($(imgnode).attr('data-record')).Id,
+												Callback: function() {
+													dc.pui.Loader.MainLayer.refreshPage();
+												}
+											});
+										}
+
+										e.preventDefault();
+										return false;
+									})
+							),
+						$('<div>')
+							.attr('role', 'listitem')
+							.dcappend(
+								$('<a>')
+									.attr('href', '#')
+									.attr('role', 'button')
+									//.attr('aria-label', opt.Title)
+									//.addClass('opt.Kind')
+									.addClass('dc-button-toolbar dccms')
+									.dcappend(
+										$('<i>')
+										 	.addClass('fa fa-times'),  // + opt.Icon),
+									)
+									.click(function(e) {
+										var imgalias = $(imgnode).attr('data-dcm-alias');
+
+										if (! imgalias) {
+											dc.pui.Popup.alert('Missing alias, cannot edit.');
+										}
+										else {
+											var params = entry.callTagFunc(widget, 'getParams');
+
+											$(imgnode).remove();
+
+											var records = $(node).find('> *:not(.dcuiCmsToolbar)').map(function() {
+												return JSON.parse($(this).attr('data-record'));
+											}).get();
+
+											dc.cms.Loader.saveCommands(params.Feed, params.Path, [
+												{
+													Command: 'UpdatePart',
+													Params: {
+														PartId: params.Id,
+														Area: 'Data',
+														Data: records
+													}
+												}
+											], function() {
+												dc.pui.Loader.MainLayer.refreshPage();
+											});
+										}
+
+										e.preventDefault();
+										return false;
+									})
+								)
+					)
+				);
+			pos++;
+		});
+
+		$(node).attr('data-cms-reorder-enabled', 'true');
+	}
+
+	// TODO provide for destroy - dc.cms.Loader.Sortable = Sortable.create
+
+	Sortable.create(node, {
+		filter: ".dc-unsortable",
+		onEnd: function (evt) {
+			// allocate a unique command for this re-order
+			var partid = $(node).attr('id');
+			var cmd = dc.cms.Loader.trackCommnd(partid + '-order');
+
+			var records = $(node).find('> *:not(.dcuiCmsToolbar)').map(function() {
+				return JSON.parse($(this).attr('data-record'));
+			}).get();
+
+			// update the positions
+			cmd.Params = {
+				PartId: partid,
+				Area: 'Data',
+				Data: records
+			};
+
+			// queue first time only
+			if (! cmd.Command) {
+				cmd.Command = 'UpdatePart';
+
+				var params = entry.callTagFunc(node, 'getParams');
+
+				dc.cms.Loader.queueCommands(params.Feed, params.Path, [ cmd ]);
+			}
+		}
+	});
+};
+
+dc.pui.TagFuncs['dcm.StoreCategoryWidget']['getParams'] = function(entry, node) {
+	var pel = $(node).closest('*[data-cms-type="feed"]').get(0);
+
+	if (! pel)
+		return null;
+
+	return {
+		Feed: $(pel).attr('data-cms-feed'),
+		Path: $(pel).attr('data-cms-path'),
+		Id: $(node).attr('id')
+	};
 };
 
 

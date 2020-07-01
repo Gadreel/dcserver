@@ -22,7 +22,7 @@ public class StoreImage implements IComposer {
 						   RecordStruct field, boolean compact) throws OperatingContextException
 	{	
 		try {
-			String imagePath = Util.storeImagePath(db, table, id);
+			String imagePath = Util.storeImagePath(db, table, id, null);
 			
 			out.value(imagePath);
 		}

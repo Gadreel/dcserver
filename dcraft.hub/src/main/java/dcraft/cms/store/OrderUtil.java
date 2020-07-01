@@ -914,7 +914,9 @@ public class OrderUtil {
 					break;
 				}
 			}
+		}
 
+		if (shipsettings != null) {
 			shiptax = shipsettings.getAttributeAsBooleanOrFalse("Taxable");
 		}
 		
@@ -994,9 +996,6 @@ public class OrderUtil {
 		if (shiptotal.stripTrailingZeros().compareTo(BigDecimal.ZERO) < 0)
 			shiptotal = BigDecimal.ZERO;
 
-		if (shiptax)
-			taxcalc.set(taxcalc.get().add(shiptotal));
-
 		// look up taxes
 		BigDecimal taxat = BigDecimal.ZERO;
 
@@ -1026,12 +1025,18 @@ public class OrderUtil {
 			if (StringUtil.isNotEmpty(state)) {
 				for (XElement stel : taxtable.selectAll("State")) {
 					if (state.equals(stel.getAttribute("Alias"))) {
+						if (stel.hasAttribute("ShipTaxable"))
+							shiptax = stel.getAttributeAsBooleanOrFalse("ShipTaxable");
+
 						taxat = new BigDecimal(stel.getAttribute("Rate", "0.0"));
 						break;
 					}
 				}
 			}
 		}
+
+		if (shiptax)
+			taxcalc.set(taxcalc.get().add(shiptotal));
 
 		// TODO account for product discounts in taxcalc, apply discounts to the taxfree part first then reduce taxcalc by any remaining discount amt
 		BigDecimal taxtotal = taxcalc.get().multiply(taxat).setScale(2, RoundingMode.HALF_UP);

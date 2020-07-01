@@ -6,10 +6,14 @@
           flag = true if the token seems bad
       -->
 			<Field Name="dcmQBRefreshToken" Group="dcmQBToken" Type="dcSmallString" List="True" />
-			<Field Name="dcmQBRefreshExpire" Group="dcmQBToken" Type="dcDateTime" List="True" />
+			<Field Name="dcmQBRefreshExpire" Group="dcmQBToken" Type="DateTime" List="True" />
 			<Field Name="dcmQBAccessToken" Group="dcmQBToken" Type="dcString" List="True" />
-      <Field Name="dcmQBAccessExpire" Group="dcmQBToken" Type="dcDateTime" List="True" />
+      <Field Name="dcmQBAccessExpire" Group="dcmQBToken" Type="DateTime" List="True" />
       <Field Name="dcmQBAccessFlag" Group="dcmQBToken" Type="Boolean" List="True" />
+
+			<!-- keyed by alt -->
+			<Field Name="dcmInstagramAccessToken" Group="dcmInstagramToken" Type="dcString" List="True" Audit="False" />
+      <Field Name="dcmInstagramAccessExpire" Group="dcmInstagramToken" Type="DateTime" List="True" Audit="False" />
 
       <!-- keyed by store ident
       -->

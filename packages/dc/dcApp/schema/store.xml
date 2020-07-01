@@ -846,6 +846,7 @@
 							<Field Name="CustomDisplayField" Type="AnyList" />
 							<Field Name="ShipAmount" Type="dcmCategory:dcmShipAmount" />
 							<Field Name="Image" Type="dcmCategory:dcmImage" />
+							<Field Name="ImagePath" Type="dcString" />
 							<Field Name="ShowInStore" Type="dcmCategory:dcmShowInStore" />
 							<Field Name="Children">
 								<List>
@@ -928,6 +929,7 @@
 								<Field Name="Mode" Type="dcmCategory:dcmMode" />
 								<Field Name="Parent" Type="dcmCategory:dcmParent" />
 								<Field Name="Description" Type="dcmCategory:dcmDescription" />
+								<Field Name="ImagePath" Type="dcString" />
 							</Record>
 						</ListResponse>
 					</Op>
@@ -943,6 +945,7 @@
 								<Field Name="Mode" Type="dcmCategory:dcmMode" />
 								<Field Name="Parent" Type="dcmCategory:dcmParent" />
 								<Field Name="Description" Type="dcmCategory:dcmDescription" />
+								<Field Name="ImagePath" Type="dcString" />
 							</Record>
 						</ListResponse>
 					</Op>

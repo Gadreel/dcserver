@@ -60,7 +60,9 @@ public class Products {
 					.with("dcmShipAmount", "ShipAmount")
 					.with("dcmImage", "Image")
 					.with("dcmShowInStore", "ShowInStore")
-					.with("dcmCustomDisplayField", "CustomDisplayField", null, true);
+					.with("dcmCustomDisplayField", "CustomDisplayField", null, true)
+					.withComposer("dcmStoreImage", "ImagePath");
+
 			String tr = rec.getFieldAsString("TrLocale");
 			
 			if (StringUtil.isEmpty(tr) || tr.equals(OperationContext.getOrThrow().getTenant().getResources().getLocale().getDefaultLocale())) {
@@ -212,7 +214,9 @@ public class Products {
 								.with("dcmAlias", "Alias")
 								.with("dcmMode", "Mode")
 								.with("dcmParent", "Parent")
-								.with("dcmDescription", "Description"))
+								.with("dcmDescription", "Description")
+								.withComposer("dcmStoreImage", "ImagePath")
+						)
 						.withCollector(
 								CollectorField.collect()
 										.withField("dcmAlias")
@@ -235,6 +239,7 @@ public class Products {
 						.with("dcmMode", "Mode")
 						.with("dcmParent", "Parent")
 						.with("dcmDescription", "Description")
+						.withComposer("dcmStoreImage", "ImagePath")
 					)
 					.toServiceRequest()
 					.withOutcome(callback)

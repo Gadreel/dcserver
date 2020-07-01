@@ -30,6 +30,7 @@ public class BackupWork extends ChainWork {
 				.then(									// wait for deposits to finish before backup
 						StackUtil.of(sleeper)
 				)
+				.then(new DailyAllTenants())
 				.then(new BackupShellWork())
 		;
 	}

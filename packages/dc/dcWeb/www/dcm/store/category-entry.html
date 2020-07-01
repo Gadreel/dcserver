@@ -146,11 +146,14 @@
 	<Function Name="AfterSave"><![CDATA[
 			var page = this;
 
+			var cattitle = page.form().getValue('Title');
+
 			page.Layer.back();
 
 			if (page.Params.Callback)
 				page.Params.Callback({
-					NewId: page.Store.NewId
+					NewId: page.Store.NewId,
+					Title: cattitle
 				});
 	]]></Function>
 	<Function Name="DoSelectImage"><![CDATA[
@@ -216,8 +219,8 @@
 				//console.log('delete');
 				dc.comm.sendMessage({
 					Service: 'dcmStoreServices',
-					Feature: 'Directory',
-					Op: 'DeleteCategory',
+					Feature: 'Category',
+					Op: 'Retire',
 					Body: {
 						Id: page.Params.Id
 					}

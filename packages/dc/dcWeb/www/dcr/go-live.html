@@ -1,0 +1,241 @@
+<dc.Html Badges="SysAdmin" NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Go Live Checklist" />
+	</Meta>
+
+	<!-- for testing, load from dcTenant -->
+	<dcs.Var Name="Id" Type="String" SetTo="00112_000000000000010" />
+
+	<dcdb.LoadRecord Table="dcTaskList" Id="{$Id}" Result="CurrentData">
+		<Select Field="dcLeadTabOption" As="Lead" />
+		<Select Field="dcReviewStatus" As="Status" />
+		<Select Field="dcReviewMessage" As="Message" />
+		<Select Field="dcApprovedAt" As="ApprovedAt" />
+		<SelectSubquery Field="dcStepTask" Key="Step" As="Tabs">
+			<Select Field="Id" />
+			<Select Field="dcTitle" As="Title" />
+			<Select Field="dcChildTabOption" As="Child" />
+			<Select Field="dcReviewStatus" As="Status" />
+			<Select Field="dcReviewMessage" As="Message" />
+			<Select Field="dcApprovedAt" As="ApprovedAt" />
+		</SelectSubquery>
+	</dcdb.LoadRecord>
+
+	<dcs.Var Name="TabList" Type="List">
+		<AddItem Value="$CurrentData.Lead" />
+	</dcs.Var>
+
+	<dcs.ForEach Name="Tab" In="$CurrentData.Tabs">
+		<dcs.With Target="$TabList">
+			<AddItem Value="$Tab.Child" />
+		</dcs.With>
+	</dcs.ForEach>
+
+	<dcs.Var Name="CurrentTabs" Type="Record">
+		<SetField Name="Id" Value="$Id" />
+		<SetField Name="Tabs" Value="$TabList" />
+	</dcs.Var>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.FormButtons>
+				<dc.Button Label="Start New Report" Click="DoNewReport" />
+				<dc.Button Label="Refresh" Click="DoRefresh" />
+			</dcf.FormButtons>
+
+			<hr />
+
+			<dcs.If Target="$CurrentData" IsEmpty="true">
+				<dc.Out>
+					<p>
+						Go live report has not been started on this server.
+					</p>
+				</dc.Out>
+			</dcs.If>
+			<dcs.Else>
+				<dc.Out>
+					<h3>Current Report</h3>
+
+					<p>
+						Report Status: {$CurrentData.Status}<br/>
+						Approved: {$CurrentData.ApprovedAt}<br/>
+						Message: {$CurrentData.Message}<br/>
+					</p>
+
+					<p>
+						<dc.Button Label="Open Report" Click="DoOpenReport" />
+					</p>
+
+					<table id="lstSteps" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+						<thead>
+							<tr>
+								<th scope="col">Title</th>
+								<th scope="col">Status</th>
+								<th scope="col">Approved</th>
+								<th scope="col">Message</th>
+							</tr>
+						</thead>
+						<tbody id="lstStepsBody">
+							<dcs.ForEach Name="Tab" In="$CurrentData.Tabs">
+								<dc.Out>
+									<tr data-alias="{$Tab.Child.Alias}">
+										<td>{$Tab.Title}</td>
+										<td>{$Tab.Status}</td>
+										<td>{$Tab.ApprovedAt}</td>
+										<td>{$Tab.Message}</td>
+										<td>
+											<dc.Button Label="Review" Click="DoOpenReportStep" />
+										</td>
+									</tr>
+								</dc.Out>
+							</dcs.ForEach>
+						</tbody>
+					</table>
+				</dc.Out>
+			</dcs.Else>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.Store.TabData = {$CurrentTabs};
+	]]></Function>
+	<Function Name="DoOpenReport"><![CDATA[
+			var page = this;
+
+			page.callPageFunc('DoOpenTabs', page.Store.TabData, 'main');
+	]]></Function>
+	<Function Name="DoOpenReportStep" Params="e"><![CDATA[
+			var page = this;
+
+			page.callPageFunc('DoOpenTabs', page.Store.TabData, $(e.currentTarget).closest('tr').attr('data-alias'));
+	]]></Function>
+	<Function Name="DoOpenTabs" Params="tabdata, tabfocus"><![CDATA[
+			var page = this;
+
+			var menu = 'dcrTaskList-' + tabdata.Id;
+
+			dc.pui.Apps.Menus[menu] = {
+				Tabs: tabdata.Tabs,
+				Options: [
+					{
+						Title: 'Return to Go Live',
+						Op: function(e) {
+							dc.pui.App.startTab({
+								Tab: 'GoLive',
+								Menu: 'dcmSystem'
+							});
+						}
+					}
+				]
+			};
+
+			dc.pui.App.startTab({
+				Tab: tabfocus,
+				Menu: menu,
+				Report: tabdata.Id
+			});
+	]]></Function>
+	<Function Name="DoNewReport"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcCoreServices.TaskList.Add', {
+				Title: 'main tab',
+				Description: 'main description',
+				Params: { A: 123, b: 'echo' },
+				LeadTab: {
+					Alias: 'main',
+					Title: 'Summary',
+					Path: '/dcr/test-task-list/main/$Id'
+				},
+				Steps: [
+					{
+						Title: 'step 0 tab',
+						Description: 'step 0 description',
+						Weight: 40,
+						ChildTab: {
+							Alias: 'step-0000',
+							Title: 'Step 0',
+							Path: '/dcr/test-task-list/step-0/$Id'
+						}
+					},
+					{
+						Title: 'step 1 tab',
+						Description: 'step 1 description',
+						Weight: 20,
+						ChildTab: {
+							Alias: 'step-0001',
+							Title: 'Step 1',
+							Path: '/dcr/test-task-list/step-1/$Id'
+						}
+					},
+					{
+						Title: 'step 2 tab',
+						Description: 'step 2 description',
+						Weight: 40,
+						ChildTab: {
+							Alias: 'step-0002',
+							Title: 'Step 2',
+							Path: '/dcr/test-task-list/step-2/$Id'
+						}
+					}
+				]
+			}, function(rmsg) {
+				if (rmsg.Code > 0) {
+					dc.pui.Popup.alert('Unable to initiate report: ' + rmsg.Message);
+				}
+				else {
+					page.callPageFunc('DoOpenTabs', rmsg.Result, 'main');
+				}
+			});
+	]]></Function>
+	<Function Name="DoRefresh"><![CDATA[
+			var page = this;
+
+			page.Layer.refreshPage();
+	]]></Function>
+	<!--
+
+- google tracking code
+- loop all feeds
+	- loop each file in the feed
+		- check ids
+		- check title (report back + page path)
+		- check description (report back)
+		- missing additional meta fields?
+		- does it have WAVE check in? developer prompts (pass, skip, incomplete - plus notes - all in database)
+			- WAVE link if on prod server (but use the development url)
+		- check each widget for feedback
+			- instagram - can it connect / show
+			- are all managed forms configured
+		- reindex file, mark as indexed in checklist
+		- is CMS complete for the page - is everything editable that should be?
+		- are there any open drafts?
+	- is there at least one template? list all and title
+- site images
+	- There is a share image called share-image.jpg (1200x630px)
+		- SiteImage="/imgs/share-image.jpg" is in here in config.xml:
+			<Web HtmlMode="Dynamic" IndexUrl="https://www.littleluxuriesmadison.com/" SiteImage="/imgs/share-image.jpg" SolidIcons="true">
+ 	- There are favicons in these sizes:
+		- transparent 16x16px (logo16.png), 32x32px (logo32.png), 152x152px (logo152.png)
+		- solid 180x180px, 192x192px, 512x512px (optional)
+			- SolidIcons="true" is in here in config.xml:
+				<Web HtmlMode="Dynamic" IndexUrl="https://www.littleluxuriesmadison.com/" SiteImage="/imgs/share-image.jpg" SolidIcons="true">
+- All social media accounts urls (for which there are icons on the site) are in config.xml
+	- list all that are currently configured
+	- prompt to confirm that all links are ready
+- Check all galleries
+	- meta.json missing?
+	- thumbs?
+- SSL Certificates
+- list/check production domains
+- check all managed forms
+- check there is a production email for sending
+- check store settings (missing weight chart, payments, etc)
+- DCA specific
+	- is there an editor user?
+	- Move inline code to css file
+
+	-->
+</dc.Html>

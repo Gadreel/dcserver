@@ -755,6 +755,17 @@
 							Standard backup for logs, database and file sync.
 						</Description>
 					</Op>
+					<Op Name="GoLiveReport">
+						<Description>
+							Report on what features are ready for go live.
+						</Description>
+						<RecordResponse>
+							<Field Name="Title" Type="dcTaskList:dcTitle" />
+							<Field Name="Description" Type="dcTaskList:dcDescription" />
+							<Field Name="Params" Type="AnyRecord" />
+							<Field Name="Options" Type="AnyList" />
+						</RecordResponse>
+					</Op>
 				</Secure>
 			</Feature>
 		</Service>

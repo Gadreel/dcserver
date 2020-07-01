@@ -7,10 +7,12 @@ import dcraft.db.request.update.UpdateRecordRequest;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.local.LocalStoreFile;
+import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
@@ -21,7 +23,9 @@ import dcraft.task.Task;
 import dcraft.task.TaskHub;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
+import dcraft.xml.XElement;
 
+import java.nio.file.Path;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -122,33 +126,51 @@ public class Util {
 		
 	}
 	
-	static public String productImagePath(TablesAdapter db, String id) throws OperatingContextException {
-		return storeImagePath(db, "dcmProduct", id);
+	static public String productImagePath(TablesAdapter db, String id, String missingoverride) throws OperatingContextException {
+		return storeImagePath(db, "dcmProduct", id, missingoverride);
 	}
 	
-	static public String categoryImagePath(TablesAdapter db, String id) throws OperatingContextException {
-		return storeImagePath(db, "dcmCategory", id);
+	static public String categoryImagePath(TablesAdapter db, String id, String missingoverride) throws OperatingContextException {
+		return storeImagePath(db, "dcmCategory", id, missingoverride);
 	}
 	
-	static public String storeImagePath(TablesAdapter db, String table, String id) throws OperatingContextException {
+	static public String storeImagePath(TablesAdapter db, String table, String id, String missingoverride) throws OperatingContextException {
+		String area = "dcmCategory".equals(table) ? "category" : "product";
+
 		String image = Struct.objectToString(db.getStaticScalar(table, id, "dcmImage"));
 		String alias = Struct.objectToString(db.getStaticScalar(table, id, "dcmAlias"));
-		
-		if (StringUtil.isEmpty(image))
-			image = "main";
-		
-		String area = "dcmCategory".equals(table) ? "category" : "product";
-		
-		String imagePath = "/store/" + area + "/" + alias + "/" + image;
-		
-		// there should always be a "thumb" so check for it
-		
-		LocalStoreFile file = (LocalStoreFile) OperationContext.getOrThrow().getSite().getGalleriesVault()
-				.getFileStore().fileReference(CommonPath.from(imagePath + ".v/thumb.jpg"));
-		
-		if (! file.exists())
-			imagePath = "/store/" + area + "/not-found";
-		
-		return imagePath;
+
+		if (StringUtil.isNotEmpty(alias)) {
+			if (StringUtil.isEmpty(image))
+				image = "main";
+
+			String imagePath = "/store/" + area + "/" + alias + "/" + image;
+
+			// there should always be a "thumb" so check for it
+
+			LocalStoreFile file = (LocalStoreFile) OperationContext.getOrThrow().getSite().getGalleriesVault()
+					.getFileStore().fileReference(CommonPath.from(imagePath + ".v/thumb.jpg"));
+
+			if (file.exists())
+				return imagePath;
+		}
+
+		XElement sset = ApplicationHub.getCatalogSettings("CMS-Store");
+
+		if (sset != null) {
+			image = StringUtil.isNotEmpty(missingoverride) ? missingoverride : sset.attr("MissingCategory");
+
+			String imagePath = "/store/" + area + "/" + image;
+
+			// there should always be a "thumb" so check for it
+
+			LocalStoreFile file = (LocalStoreFile) OperationContext.getOrThrow().getSite().getGalleriesVault()
+					.getFileStore().fileReference(CommonPath.from(imagePath + ".v/thumb.jpg"));
+
+			if (file.exists())
+				return imagePath;
+		}
+
+		return  "/store/" + area + "/not-found";
 	}
 }

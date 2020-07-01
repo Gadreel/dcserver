@@ -214,7 +214,7 @@ public class ThreadUtil {
 		try {
 
 			if (! db.isCurrent("dcmThread", id)) {
-				Logger.error("Thread not found: " + id);
+				Logger.error("Thread not found or retired: " + id);
 				return;
 			}
 

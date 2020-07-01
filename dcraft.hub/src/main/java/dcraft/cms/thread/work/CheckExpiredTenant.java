@@ -45,10 +45,15 @@ public class CheckExpiredTenant implements IWork {
 
 			Logger.info("Checking expired: " + tid + " - " + Struct.objectToString(db.getStaticScalar("dcmThread", tid, "dcmExpireDate")));
 
+			String type = Struct.objectToString(db.getStaticScalar("dcmThread", tid, "dcmMessageType"));
+
 			if (db.executeCanTrigger("dcmThread", tid,"CanExpireDeleteCheck", null)) {
+				Logger.info("Deleting expired: " + tid + " - " + type + " - " + Struct.objectToString(db.getStaticScalar("dcmThread", tid, "dcmExpireDate")));
 				db.deleteRecord("dcmThread", tid);
 			}
 			else if (db.executeCanTrigger("dcmThread", tid,"CanExpireRetireCheck", null)) {
+				Logger.info("Retiring expired: " + tid + " - " + type + " - " + Struct.objectToString(db.getStaticScalar("dcmThread", tid, "dcmExpireDate")));
+
 				ThreadUtil.retireThread(db, tid);
 
 				db.retireStaticScalar("dcmThread", tid, "dcmExpireDate");

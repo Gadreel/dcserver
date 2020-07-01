@@ -265,6 +265,7 @@
 		<Procedure Name="dcCoreServices.Authentication.LinkFacebookAccount" Execute="dcraft.core.db.auth.LinkFacebookAccount" />
 
 		<Procedure Name="dcCoreServices.Management.Backup" Execute="dcraft.core.db.admin.Backup" />
+		<Procedure Name="dcCoreServices.Management.GoLiveReport" Execute="dcraft.core.db.admin.GoLiveReport" />
 
 		<Composer Name="dcListCounter" Execute="dcraft.db.proc.comp.ListCounter" Badges="Admin" />
 		<Composer Name="dcConcat" Execute="dcraft.db.proc.comp.Concat" />

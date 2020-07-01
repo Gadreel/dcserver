@@ -32,6 +32,10 @@
 			<StringRestriction Enum="Work,Personal" />
 		</StringType>
 
+		<StringType Id="dcTaskListReviewStatusEnum">
+			<StringRestriction Enum="Waiting,Ready,InProgress,Failed,Passed" />
+		</StringType>
+
 		<Record Id="dcAltAddressDef">
 			<Field Name="Stamp" Type="DateTime" Required="True" />
 			<Field Name="Label" Type="dcSmallString" Required="True" />
@@ -98,6 +102,25 @@
 			<Field Name="State" Type="dcSmallString" />
 			<Field Name="Zip" Type="dcSmallString" />
 			<Field Name="Note" Type="dcString" />
+		</Record>
+
+		<Record Id="dcTaskListOptionDef">
+			<Field Name="Alias" Type="dcMetaString" />
+			<Field Name="Title" Type="dcSmallString" />
+			<Field Name="Path" Type="dcString" />
+		</Record>
+
+		<Record Id="dcTaskListAddDef">
+			<Field Name="Title" Type="dcTaskList:dcTitle" />
+			<Field Name="Description" Type="dcTaskList:dcDescription" />
+			<Field Name="Weight" Type="dcTaskList:dcWeight" />
+			<Field Name="Params" Type="dcTaskList:dcParams" />
+			<Field Name="DebugLevel" Type="dcTaskList:dcDebugLevel" />
+			<Field Name="LeadTab" Type="dcTaskListOptionDef" />
+			<Field Name="ChildTab" Type="dcTaskListOptionDef" />
+			<Field Name="Steps">
+				<List Type="dcTaskListAddDef" />
+			</Field>
 		</Record>
 	</Shared>
 
@@ -257,6 +280,61 @@
 			<Field Name="dcName" Type="dcSmallString" Required="True" Unique="True" />
 		</Table>
 
+		<Table Id="dcTaskList">
+			<Field Name="dcTitle" Type="dcSmallString" />
+			<Field Name="dcDescription" Type="dcString" />
+			<Field Name="dcWeight" Type="Integer" />
+
+			<!-- when to cleanup this run and all children (children don't need to copy this) -->
+			<Field Name="dcExpire" Type="DateTime" Indexed="True" />
+
+			<Field Name="dcAddedBy" ForeignKey="dcUser" />
+			<Field Name="dcAddedAt" Type="DateTime" />
+
+			<Field Name="dcStartedBy" ForeignKey="dcUser" />
+			<Field Name="dcStartedAt" Type="DateTime" />
+			<Field Name="dcEndedAt" Type="DateTime" />
+
+			<Field Name="dcReviewStatus" Type="dcTaskListReviewStatusEnum" />
+			<Field Name="dcReviewMessage" Type="String" />
+			<Field Name="dcApprovedBy" ForeignKey="dcUser" />
+			<Field Name="dcApprovedAt" Type="DateTime" />
+
+			<Field Name="dcParams" Type="Any" />
+			<Field Name="dcDebugLevel" Type="dcMetaString" />
+
+			<!-- progress -->
+			<Field Name="dcLastUpdated" Type="DateTime" Audit="False" />
+			<!-- 0 - 100 percent -->
+			<Field Name="dcProgress" Group="dcSteps" Type="Integer" Audit="False" />
+			<!-- current status/work message -->
+			<Field Name="dcStatusMessage" Group="dcSteps" Type="dcSmallString" Audit="False" />
+
+			<!-- overall result -->
+			<Field Name="dcResult" Type="Any" />
+			<Field Name="dcExitCode" Type="Integer" />
+			<Field Name="dcExitMessage" Type="String" />
+
+			<!-- if this can be viewed via a Tabs interface
+					{
+						Alias: 'Dashboard',
+						Title: 'Dashboard',
+						Path: '/dcm/dashboard'
+					},
+
+					dcLeadTabOption - when this is viewed as a leading task
+			-->
+			<Field Name="dcLeadTabOption" Type="AnyRecord" />
+			<!-- when this is viewed as a child task (can be both views) -->
+			<Field Name="dcChildTabOption" Type="AnyRecord" />
+
+			<!-- list of LogMessage type for this record, keyed by stamp + entry number padded "stamp-001" -->
+			<Field Name="dcLogs" Type="LogMessage" List="True" />
+
+			<!-- keyed by sequence number formatted as 0000 - 9999, max 10000 steps-->
+			<Field Name="dcStepTask" ForeignKey="dcTaskList" List="True" />
+		</Table>
+
 		<Procedure Name="dcCoreServices.Users.LoadSelf" Execute="dcraft.core.db.user.LoadSelf" />
 		<Procedure Name="dcCoreServices.Users.UpdateSelf" Execute="dcraft.core.db.user.UpdateSelf" />
 		<Procedure Name="dcCoreServices.Users.Load" Execute="dcraft.core.db.user.Load" />
@@ -286,6 +364,8 @@
 		<Procedure Name="dcCoreServices.Users.AddBadges" Execute="dcraft.core.db.user.AddBadges" />
 		<Procedure Name="dcCoreServices.Users.RemoveBadges" Execute="dcraft.core.db.user.RemoveBadges" />
 
+		<Procedure Name="dcCoreServices.TaskList.Add" Execute="dcraft.core.db.tasklist.Add" />
+		<Procedure Name="dcCoreServices.TaskList.UpdateReview" Execute="dcraft.core.db.tasklist.UpdateReview" />
 	</Database>
 
 	<Services>
@@ -800,6 +880,33 @@
 								</Field>
 							</Record>
 						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+			<Feature Name="TaskList">
+				<Secure Badges="Admin">
+					<Op Name="Add">
+						<Description>
+							Add a task list record.
+						</Description>
+						<RecordRequest Required="True" Inherits="dcTaskListAddDef" />
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+							<Field Name="Tabs">
+								<List Type="dcTaskListOptionDef" />
+							</Field>
+						</RecordResponse>
+					</Op>
+					<Op Name="UpdateReview">
+						<Description>
+							Add a task list record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Status" Type="dcTaskList:dcReviewStatus" Required="IfPresent" />
+							<Field Name="Message" Type="dcTaskList:dcReviewMessage" />
+							<Field Name="Approved" Type="Boolean" />
+						</RecordRequest>
 					</Op>
 				</Secure>
 			</Feature>

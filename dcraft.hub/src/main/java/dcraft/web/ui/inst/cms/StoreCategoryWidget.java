@@ -71,10 +71,11 @@ public class StoreCategoryWidget extends Base implements ICMSAware {
 		
 		SelectFields fields = SelectFields.select()
 				.with("Id")
-				//.with("dcmAlias", "Alias")
+				.with("dcmAlias", "Alias")
 				.with("dcmTitle", "Title")
-				.with("dcmImage", "Image")
-				.with("dcmDescription", "Description");
+				.with("dcmMode", "Mode")
+				.with("dcmDescription", "Description")
+				.withComposer("dcmStoreImage", "Image");
 
 		//		<Table Id="dcmCategory">
 		RecordStruct select = RecordStruct.record();
@@ -101,7 +102,7 @@ public class StoreCategoryWidget extends Base implements ICMSAware {
 		BasicRequestContext requestContext = BasicRequestContext.ofDefaultDatabase();
 		TablesAdapter db = TablesAdapter.ofNow(requestContext);
 
-		fillLevel(db, categories, fields, meta, vari, path, missing);
+		categories = fillLevel(state, db, categories, fields, meta, vari, path, missing);
 
 		for (int c = 0; c < categories.size(); c++) {
 			RecordStruct category = categories.getItemAsRecord(c);
@@ -165,7 +166,11 @@ public class StoreCategoryWidget extends Base implements ICMSAware {
 		this.setName("div");
 	}
 
-	protected void fillLevel(TablesAdapter db, ListStruct categories, SelectFields fields, RecordStruct meta, String vari, String path, String missing) throws OperatingContextException {
+	protected ListStruct fillLevel(InstructionWork state, TablesAdapter db, ListStruct categories, SelectFields fields, RecordStruct meta, String vari, String path, String missing) throws OperatingContextException {
+		ListStruct result = ListStruct.list();
+
+		boolean canedit = UIUtil.canEdit(state, this);
+
 		for (int c = 0; c < categories.size(); c++) {
 			RecordStruct category = categories.getItemAsRecord(c);
 
@@ -176,7 +181,7 @@ public class StoreCategoryWidget extends Base implements ICMSAware {
 			if (StringUtil.isEmpty(id))
 				continue;
 
-			if (! Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmCategory", id, "dcmShowInStore")))
+			if (! canedit && ! Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmCategory", id, "dcmShowInStore")))
 				continue;
 
 			category.copyFields(TableUtil.getRecord(db, OperationContext.getOrThrow(), "dcmCategory", id, fields));
@@ -184,73 +189,29 @@ public class StoreCategoryWidget extends Base implements ICMSAware {
 			if (category.isNotFieldEmpty("Subs")) {
 				ListStruct subs = category.getFieldAsList("Subs");
 
-				fillLevel(db, subs, fields, meta, vari, path, missing);
+				category.with("Subs", fillLevel(state, db, subs, fields, meta, vari, path, missing));
 			}
 
 			String ext = meta.getFieldAsString("Extension", "jpg");
 
-			String image = category.getFieldAsString("Image");
+			String lpath = category.getFieldAsString("Image") + ".v/" + vari + "." + ext;
 
-			//ppath = ppath + "/" + image;
+			Path imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
+					OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
 
-			Path imgpath = null;
-			String lpath = null;
-			boolean found = false;
+			try {
+				FileTime fileTime = Files.getLastModifiedTime(imgpath);
+				category.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
 
-			if (StringUtil.isNotEmpty(image)) {
-				lpath = path + "/" + alias + "/" + image + ".v/" + vari + "." + ext;
-
-				imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
-						OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
+				result.with(category);
 			}
-
-			if (! found && ((imgpath == null) || ! Files.exists(imgpath))) {
-				lpath = path + "/" + alias + "/main.v/" + vari + "." + ext;
-
-				imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
-						OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
-
-				if ((imgpath != null) && Files.exists(imgpath)) {
-					found = true;
-				}
-			}
-			else {
-				found = true;
-			}
-
-			if (! found && ((imgpath == null) || ! Files.exists(imgpath))) {
-				if (StringUtil.isNotEmpty(missing)) {
-					lpath = path + "/" + missing + ".v/" + vari + "." + ext;
-
-					imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
-							OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
-
-					if ((imgpath != null) && Files.exists(imgpath)) {
-						found = true;
-					}
-				}
-			}
-			else {
-				found = true;
-			}
-
-			if (found) {
-				try {
-					FileTime fileTime = Files.getLastModifiedTime(imgpath);
-
-					category.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
-				}
-				catch (IOException x) {
-					Logger.warn("Problem finding image file: " + lpath);
-					category.with("Path", "/galleries" + lpath);
-				}
-			}
-			else {
+			catch (IOException x) {
 				Logger.warn("Problem finding image file: " + lpath);
 				category.with("Path", "/galleries" + lpath);
 			}
-
 		}
+
+		return result;
 	}
 
 	@Override
@@ -275,40 +236,10 @@ public class StoreCategoryWidget extends Base implements ICMSAware {
 
 	@Override
 	public boolean applyCommand(CommonPath path, XElement root, RecordStruct command) throws OperatingContextException {
-		/* TODO
 		XElement part = this;
 		
 		String cmd = command.getFieldAsString("Command");
 
-		if ("Reorder".equals(cmd)) {
-			ListStruct neworder = command.selectAsList("Params.Order");
-			
-			if (neworder == null) {
-				Logger.error("New order is missing");
-				return true;		// command was handled
-			}
-			
-			List<XElement> children = this.selectAll("Product");
-
-			// remove all images
-			for (XElement el : children)
-				this.remove(el);
-			
-			// add images back in new order
-			for (int i = 0; i < neworder.size(); i++) {
-				int pos = neworder.getItemAsInteger(i).intValue();
-
-				if (pos >= children.size()) {
-					Logger.warn("bad gallery positions");
-					break;
-				}
-
-				part.with(children.get(pos));
-			}
-			
-			return true;		// command was handled
-		}
-		
 		if ("UpdatePart".equals(cmd)) {
 			// TODO check that the changes made are allowed - e.g. on TextWidget
 			RecordStruct params = command.getFieldAsRecord("Params");
@@ -321,60 +252,6 @@ public class StoreCategoryWidget extends Base implements ICMSAware {
 					for (FieldStruct fld : props.getFields()) {
 						this.attr(fld.getName(), Struct.objectToString(fld.getValue()));
 					}
-				}
-				
-				return true;
-			}
-			
-			if ("SetProduct".equals(area)) {
-				String alias = params.getFieldAsString("Alias");
-				XElement fnd = null;
-				
-				for (XElement xel : this.selectAll("Product")) {
-					if (alias.equals(xel.getAttribute("Alias"))) {
-						fnd = xel;
-						break;
-					}
-				}
-				
-				if (fnd == null) {
-					fnd = XElement.tag("Product");
-					
-					if (params.getFieldAsBooleanOrFalse("AddTop"))
-						this.with(fnd);
-					else
-						this.add(0, fnd);
-				}
-				
-				fnd.clearAttributes();
-				
-				// rebuild attrs
-				fnd.attr("Alias", alias);
-				
-				RecordStruct props = params.getFieldAsRecord("Properties");
-				
-				if (props != null) {
-					for (FieldStruct fld : props.getFields()) {
-						fnd.attr(fld.getName(), Struct.objectToString(fld.getValue()));
-					}
-				}
-				
-				return true;
-			}
-			
-			if ("RemoveProduct".equals(area)) {
-				String alias = params.getFieldAsString("Alias");
-				XElement fnd = null;
-				
-				for (XElement xel : this.selectAll("Product")) {
-					if (alias.equals(xel.getAttribute("Alias"))) {
-						fnd = xel;
-						break;
-					}
-				}
-				
-				if (fnd != null) {
-					this.remove(fnd);
 				}
 				
 				return true;
@@ -406,9 +283,65 @@ public class StoreCategoryWidget extends Base implements ICMSAware {
 				
 				return true;
 			}
+
+			if ("Data".equals(area)) {
+				ListStruct targetcontent = params.getFieldAsList("Data");
+
+				XElement datatag = this.selectFirst("Data");
+
+				if (datatag == null) {
+					datatag = XElement.tag("Data");
+					this.with(datatag);
+				}
+
+				datatag.clearChildren();
+				datatag.withText(targetcontent.toPrettyString());
+
+				return true;
+			}
+
+			/*
+			if ("AddCategories".equals(area)) {
+				XElement datatag = this.selectFirst("Data");
+
+				if (datatag == null) {
+					datatag = XElement.tag("Data");
+					this.with(datatag);
+				}
+
+				ListStruct currlist = Struct.objectToList(datatag.getText());
+
+				if (currlist == null)
+					currlist = ListStruct.list();
+
+				ListStruct ids = params.getFieldAsList("CategoryIds");
+
+				if (ids != null) {
+					BasicRequestContext requestContext = BasicRequestContext.ofDefaultDatabase();
+					TablesAdapter db = TablesAdapter.ofNow(requestContext);
+
+					for (int i = 0; i < ids.size(); i++) {
+						String cid = ids.getItemAsString(i);
+
+						String calias = Struct.objectToString(db.getStaticScalar("dcmCategory", cid, "dcmAlias"));
+
+						//-- already present?
+
+						if (StringUtil.isNotEmpty(calias)) {
+							currlist.with(RecordStruct.record()
+									.with("Alias", calias)
+							);
+						}
+					}
+				}
+
+				datatag.withText(currlist.toPrettyString());
+
+				return true;
+			}
+			 */
 		}
-		*/
-		
+
 		return false;
 	}
 }

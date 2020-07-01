@@ -10,8 +10,8 @@
 			</dc.Region>
 
 			<dcf.FormButtons>
-				<dc.Button Label="Add Category" Click="DoAdd" />
-				<dc.Button Label="Save" Click="DoSave" Scope="Primary" />
+				<!-- dc.Button Label="Add Category" Click="DoAdd" / -->
+				<dc.Button Label="Select" Click="DoSave" Scope="Primary" />
 			</dcf.FormButtons>
 		</dc.PagePanel>
 	</dc.Body>
@@ -74,8 +74,9 @@
 
 					var litm = $('<li>').dcappend(
 						$('<a>')
+							.data(item)
 							.attr('href', '#')
-							.attr('data-id', item.Id)
+							//.attr('data-id', item.Id)
 							.attr('class', 'pure-button-default pure-button dc-button')
 							.dcappend(
 								$('<i>').attr('class', selected ? 'fa fa-check' : 'fa fa-square')
@@ -127,8 +128,9 @@
 						sublist.dcappend(
 							$('<li>').dcappend(
 								$('<a>')
+									.data(item2)
 									.attr('href', '#')
-									.attr('data-id', item2.Id)
+									//.attr('data-id', item2.Id)
 									.attr('class', 'pure-button-default pure-button dc-button')
 									.dcappend(
 										$('<i>').attr('class', selected ? 'fa fa-check' : 'fa fa-square')
@@ -176,7 +178,7 @@
 
 			$('#dcmStCatsMulti li a').each(function(item) {
 				if ($(this).find('.fa-check').length)
-					selected.push($(this).attr('data-id'));
+					selected.push($(this).data().Id);
 			});
 
 			page.Params.Selected = selected;
@@ -186,12 +188,17 @@
 
 			page.callPageFunc('DoUpdateSelected');
 
+			if (page.Params.ComplexResult) {
+				page.Params.Selected = $('#dcmStCatsMulti i.fa-check').parent().map(function() { return $(this).data(); }).get();
+			}
+
 			page.Layer.back();
 
-			if (page.Params.Callback)
+			if (page.Params.Callback) {
 				page.Params.Callback({
 					Selected: page.Params.Selected
 				});
+			}
     ]]></Function>
 	<Function Name="DoClose"><![CDATA[
 			var page = this;

@@ -1,0 +1,231 @@
+<dc.Html NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Category View Editor" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dc.Region Hint="Online store product categories">
+				<dc.Band Pad="Large" id="bandSubGallery" Width="Wide">
+					<dc.SimpleLayout>
+						<h2 id="oticatviewer" />
+
+						<div id="galleryShopSub" class="pure-g dc-widget dc-widget-gallery" />
+
+						<dcf.FormButtons>
+							<dc.Button Label="Save and Preview" Click="DoSave" Scope="Primary" />
+						</dcf.FormButtons>
+					</dc.SimpleLayout>
+				</dc.Band>
+			</dc.Region>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var entry = this;
+
+			$('#oticatviewer').text(entry.Params.Title);
+
+			if (! entry.Params.Subs)
+				entry.Params.Subs = [ ];
+
+			entry.callPageFunc('LoadImages');
+
+			var node = $('#galleryShopSub');
+
+			$(node).dcappend(
+				dc.cms.Loader.createEditToolBar([
+					{
+						Icon: 'fa-plus',
+						Title: 'Add',
+						Auth: [ 'Admin', 'Editor' ],
+						Op: function(e) {
+							entry.callPageFunc('DoReorder');
+
+							dc.pui.Dialog.loadPage('/dcm/store/category-chooser-multi', {
+								ComplexResult: true,
+								Callback: function(res) {
+									if (res && res.hasOwnProperty('Selected')) {
+										console.log(JSON.stringify(res.Selected));
+
+										for (var i = 0; i < res.Selected.length; i++) {
+											var item = res.Selected[i];
+
+											item.Path = '/galleries' + item.ImagePath + '.v/full.jpg';	// TODO get extension from meta
+										}
+
+										entry.Params.Subs = entry.Params.Subs.concat(res.Selected);
+
+										entry.callPageFunc('LoadImages');
+									}
+								}
+							});
+						}
+					}
+				])
+			);
+
+		// TODO provide for destroy - dc.cms.Loader.Sortable = Sortable.create
+
+		Sortable.create($('#galleryShopSub').get(0));
+	]]></Function>
+	<Function Name="LoadImages"><![CDATA[
+			var entry = this;
+
+			var node = $('#galleryShopSub');
+
+			node.find('> a').remove();
+
+			for (var i = 0; i < entry.Params.Subs.length; i++) {
+				var cat = entry.Params.Subs[i];
+
+				var subsbutton = null;
+
+				if (cat.Mode == 'TopWithSub') {
+					subsbutton = $('<div>')
+						.attr('role', 'listitem')
+						.dcappend(
+							$('<a>')
+								.attr('href', '#')
+								.attr('role', 'button')
+								.dcappend(
+									$('<i>')
+									 	.addClass('fa fa-th')
+								)
+								.click(cat, function(e) {
+									var imgalias = e.data.Alias;
+
+									if (! imgalias) {
+										dc.pui.Popup.alert('Missing category, cannot edit.');
+									}
+									else {
+										dc.pui.Dialog.loadPage('/dcm/cms/store-category-widget-subs', {
+											Title: e.data.Title,
+											Subs: e.data.Subs,
+											Callback: function(result) {
+												e.data.Subs = result.Subs;
+
+												entry.callPageFunc('DoReorder');
+
+												entry.callPageFunc('LoadImages');
+											}
+										});
+									}
+
+									e.preventDefault();
+									return false;
+								})
+							);
+				}
+
+				$(node).dcappend(
+					$('<a>')
+						.addClass('dc-link pure-u pure-u-1-4')
+						.css('position', 'relative')
+						.attr('data-alias', cat.Alias)
+						.attr('href', '/shop/' + cat.Alias)			// TODO enhance to be any link base
+						.dcappend(
+							$('<img>')
+								.attr('src', cat.Path)
+								.attr('alt', cat.Title)
+								.addClass('pure-img-inline'),
+							$('<span>')
+								.text(cat.Title),
+							$('<div>')
+								.attr('role', 'list')
+								.addClass('dcuiCmsToolbar dcuiCmsToolbarBottom')
+								.dcappend(
+									subsbutton,
+									$('<div>')
+										.attr('role', 'listitem')
+										.dcappend(
+											$('<a>')
+												.attr('href', '#')
+												.attr('role', 'button')
+												.dcappend(
+													$('<i>')
+													 	.addClass('fa fa-pencil')
+												)
+												.click(cat, function(e) {
+													var imgalias = e.data.Alias;
+
+													entry.callPageFunc('DoReorder');
+
+													if (! imgalias) {
+														dc.pui.Popup.alert('Missing category, cannot edit.');
+													}
+													else {
+														dc.pui.Dialog.loadPage('/dcm/store/category-entry', {
+															Id: e.data.Id,
+															Callback: function(change) {
+																if (change && change.Title)
+																	e.data.Title = change.Title;
+
+																entry.callPageFunc('LoadImages');
+															}
+														});
+													}
+
+													e.preventDefault();
+													return false;
+												})
+										),
+									$('<div>')
+										.attr('role', 'listitem')
+										.dcappend(
+											$('<a>')
+												.attr('href', '#')
+												.attr('role', 'button')
+												.dcappend(
+													$('<i>')
+													 	.addClass('fa fa-times')
+												)
+												.click(cat, function(e) {
+													entry.callPageFunc('DoReorder');
+
+													entry.Params.Subs = entry.Params.Subs.filter(function(value, index, arr) {
+														return value.Alias != e.data.Alias;
+													});
+
+													entry.callPageFunc('LoadImages');
+
+													e.preventDefault();
+													return false;
+												})
+											)
+								)
+						)
+				);
+			}
+	]]></Function>
+	<Function Name="DoReorder"><![CDATA[
+			var entry = this;
+
+			var catorder = $('#galleryShopSub > a').map(function() { return $(this).attr('data-alias'); }).get();
+			var newsubs = [ ];
+
+			for (var i = 0; i < catorder.length; i++) {
+				for (var n = 0; n < entry.Params.Subs.length; n++) {
+					var sub = entry.Params.Subs[n];
+
+					if (sub.Alias == catorder[i]) {
+						newsubs.push(sub);
+					}
+				}
+			}
+
+			entry.Params.Subs = newsubs;
+	]]></Function>
+	<Function Name="DoSave"><![CDATA[
+			var entry = this;
+
+			entry.callPageFunc('DoReorder');
+
+			entry.Layer.back();
+
+			if (entry.Params.Callback) {
+				entry.Params.Callback({
+					Subs: entry.Params.Subs
+				});
+			}
+	]]></Function>
+</dc.Html>
