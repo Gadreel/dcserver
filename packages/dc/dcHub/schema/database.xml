@@ -267,6 +267,8 @@
 		<Procedure Name="dcCoreServices.Management.Backup" Execute="dcraft.core.db.admin.Backup" />
 		<Procedure Name="dcCoreServices.Management.GoLiveReport" Execute="dcraft.core.db.admin.GoLiveReport" />
 
+		<Procedure Name="dcCoreServices.Config.LoadTenantDomains" Execute="dcraft.core.db.config.LoadTenantDomains" />
+
 		<Composer Name="dcListCounter" Execute="dcraft.db.proc.comp.ListCounter" Badges="Admin" />
 		<Composer Name="dcConcat" Execute="dcraft.db.proc.comp.Concat" />
 		<Composer Name="dcTranslate" Execute="dcraft.db.proc.comp.Translate" />

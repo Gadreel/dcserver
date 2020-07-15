@@ -93,7 +93,9 @@ public class UpdateRecord implements IUpdatingStoredProc {
 				String field = rset.getFieldAsString("Field");
 				
 				// make a copy
-				List<String> lsubids = rset.getFieldAsList("Values").toStringList();
+				ListStruct rsubitds = rset.getFieldAsList("Values");
+
+				List<String> lsubids = (rsubitds != null) ? rsubitds.toStringList() : new ArrayList<>();
 				List<String> othersubids = new ArrayList<>();
 				
 				db.traverseSubIds(table, id, field, new Function<Object,Boolean>() {

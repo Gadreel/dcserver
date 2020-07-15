@@ -1,0 +1,182 @@
+<dc.Html Badges="SysAdmin" NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Review Config" />
+	</Meta>
+
+	<dcs.Include Path="/dcr/go-live/config/library" />
+
+	<dcs.Var Name="TaskId" Type="String" SetTo="{$Page.OriginalPathParts.3}" />
+
+	<dcdb.LoadRecord Table="dcTaskList" Id="{$TaskId}" Result="StepData">
+		<Select Field="dcReviewStatus" As="Status" />
+		<Select Field="dcReviewMessage" As="Message" />
+		<Select Field="dcApprovedAt" As="ApprovedAt" />
+		<SelectSubquery Field="dcStepTask" Key="Step" As="Tabs">
+			<Select Field="Id" />
+			<Select Field="dcTitle" As="Title" />
+			<SelectGroup Field="dcStore" Key="Key" As="Store">
+				<Select Field="dcStore" As="Data" />
+			</SelectGroup>
+			<Select Field="dcReviewStatus" As="Status" />
+			<Select Field="dcReviewMessage" As="Message" />
+			<Select Field="dcApprovedAt" As="ApprovedAt" />
+			<Select Field="dcParams" As="Params" />
+		</SelectSubquery>
+	</dcdb.LoadRecord>
+
+	<!-- load functions for each step, includes prep and print - later always needed -->
+	<dcs.ForEach Name="Step" In="$CheckList">
+		<dcs.Include Path="/dcr/go-live/config/{$Step}" />
+	</dcs.ForEach>
+
+	<!-- only build the substeps if not present, first time the page is loaded -->
+	<dcs.If Target="$StepData.Tabs" IsEmpty="true">
+		<!-- reset the steps list -->
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$TaskId">
+			<Set Field="dcStepTask" />
+		</dcdb.UpdateRecord>
+
+		<!-- run each prep on each step -->
+		<dcs.ForEach Name="Step" In="$CheckList">
+			<dcs.CallFunc Name="PrepFuncs:{$Step}" Result="StepId" />
+
+			<dcs.CallFunc Name="LoadFuncs:{$Step}" Arg="$StepId" />
+		</dcs.ForEach>
+
+		<!-- now update our task's Tabs, after it has been altered by above calls -->
+		<dcdb.LoadRecord Table="dcTaskList" Id="{$TaskId}" Result="StepData2">
+			<SelectSubquery Field="dcStepTask" Key="Step" As="Tabs">
+				<Select Field="Id" />
+				<Select Field="dcTitle" As="Title" />
+				<SelectGroup Field="dcStore" Key="Key" As="Store">
+					<Select Field="dcStore" As="Data" />
+				</SelectGroup>
+				<Select Field="dcReviewStatus" As="Status" />
+				<Select Field="dcReviewMessage" As="Message" />
+				<Select Field="dcApprovedAt" As="ApprovedAt" />
+				<Select Field="dcParams" As="Params" />
+			</SelectSubquery>
+		</dcdb.LoadRecord>
+
+		<dcs.With Target="$StepData">
+			<SetField Name="Tabs" Value="$StepData2.Tabs" />
+		</dcs.With>
+	</dcs.If>
+
+	<dcs.If Target="$StepData.ApprovedAt" IsEmpty="false">
+		<dcs.With Target="$StepData">
+			<SetField Name="Approved" Value="true" />
+		</dcs.With>
+	</dcs.If>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<p>
+				Step 1b {$TaskId} - {$Step1Result} - b - {$_Controller.Request.PostData} - z
+			</p>
+
+			<table id="lstSteps" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Title</th>
+						<th scope="col">Status</th>
+						<th scope="col">Approved</th>
+						<th scope="col">Message</th>
+					</tr>
+				</thead>
+				<tbody id="lstStepsBody">
+					<dcs.ForEach Name="Tab" In="$StepData.Tabs">
+						<dc.Out>
+							<tr data-alias="{$Tab.Params.Alias}" data-id="{$Tab.Id}">
+								<td>
+									{$Tab.Id} - {$Tab.Title} - {$Tab.Params.Alias}
+
+									<dcs.ForEach Name="Step" In="$CheckList">
+										<dcs.If Target="$Step" Equal="$Tab.Params.Alias">
+											<dcs.CallFunc Name="PrintFuncs:{$Step}" Arg="$Tab" />
+										</dcs.If>
+									</dcs.ForEach>
+								</td>
+								<td>{$Tab.Status}</td>
+								<td>{$Tab.ApprovedAt} <dc.Button Label="Recheck" Click="DoRecheckStep" /></td>
+								<td>{$Tab.Message} - {$Tab.Store}</td>
+							</tr>
+						</dc.Out>
+					</dcs.ForEach>
+				</tbody>
+			</table>
+
+			<dcf.Form>
+				<dcf.RadioGroup Label="Status" Name="Status">
+					<RadioButton Label="Waiting" Value="Waiting" />
+					<RadioButton Label="Ready" Value="Ready" />
+					<RadioButton Label="InProgress" Value="InProgress" />
+					<RadioButton Label="Failed" Value="Failed" />
+					<RadioButton Label="Passed" Value="Passed" />
+				</dcf.RadioGroup>
+				<dcf.Text Label="Message" Name="Message" />
+				<dcf.YesNo Label="Approved" Name="Approved" />
+
+				<dcf.FormButtons>
+					<dcf.SubmitButton Label="Update Step" />
+				</dcf.FormButtons>
+			</dcf.Form>
+
+			<br />
+			<br />
+
+			<dcf.FormButtons>
+				<dc.Button Label="Refresh" Click="DoReindex" />
+				<dc.Button Label="Rerun" Click="DoRerun" />
+			</dcf.FormButtons>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Data = {$StepData};
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Data.Id = '{$TaskId}';
+
+			e.Message = {
+				Service: 'dcCoreServices',
+				Feature: 'TaskList',
+				Op: 'UpdateReview',
+				Body: e.Data
+			};
+	]]></Function>
+	<Function Name="DoReindex"><![CDATA[
+			var page = this;
+
+			page.Layer.refreshPage();
+	]]></Function>
+	<Function Name="DoRerun"><![CDATA[
+			var page = this;
+
+			dc.comm.callScript('/dcr/go-live/review-config-service', 'Clear', {
+				Id: '{$TaskId}'
+			}, function(resp) {
+			    console.log(resp.Code + ' - ' + (resp.Result ? resp.Result.Value : ''))
+					page.Layer.refreshPage();
+			} )
+	]]></Function>
+	<Function Name="DoRecheckStep" Params="e"><![CDATA[
+			var page = this;
+
+			dc.comm.callScript('/dcr/go-live/review-config-service', 'RecheckStep', {
+				StepId: $(e.currentTarget).closest('tr').attr('data-id'),
+				StepAlias: $(e.currentTarget).closest('tr').attr('data-alias')
+			}, function(resp) {
+			    console.log(resp.Code + ' - ' + (resp.Result ? resp.Result.Value : ''))
+					page.Layer.refreshPage();
+			} )
+	]]></Function>
+</dc.Html>

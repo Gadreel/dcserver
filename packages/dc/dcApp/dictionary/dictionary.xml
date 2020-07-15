@@ -34,6 +34,10 @@
 
 		<Entry Token="dcmShopConfirmPickup" Value="All of the items in your cart will be picked up at the store or are items that you will download. Unless instructed otherwise, we will send you and message when the order is ready for pickup." />
 
+		<Entry Token="dcwWUploaderNoFilesSel" Value="No files selected." />
+		<Entry Token="dcwWUploaderSelFiles" Value="Selected Files" />
+		<Entry Token="dcwWUploaderSelFile" Value="Selected File" />
+
 		<Entry Token="_enum_dcmOrderStatusEnum_Pending" Value="Pending" />
 		<Entry Token="_enum_dcmOrderStatusEnum_AwaitingPayment" Value="Awaiting Payment" />
 		<Entry Token="_enum_dcmOrderStatusEnum_AwaitingFulfillment" Value="Awaiting Fulfillment" />
@@ -83,6 +87,10 @@
 		<Entry Token="dcwFormSignUp" Value="Crea una cuenta" />
 		<Entry Token="dcwFormResetPassword" Value="Restaurar Contraseña" />
 		<Entry Token="dcwFormSignIn" Value="Iniciar Sesión" />
+
+		<Entry Token="dcwWUploaderNoFilesSel" Value="No archivos escogido." />
+		<Entry Token="dcwWUploaderSelFiles" Value="Escoja archivos" />
+		<Entry Token="dcwWUploaderSelFile" Value="Escoja archivo" />
 	</Locale>
 
 	<Locale Id="hmn">

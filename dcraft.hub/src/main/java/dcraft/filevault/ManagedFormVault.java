@@ -81,7 +81,7 @@ public class ManagedFormVault extends EncryptedVault {
 					.withScript(CommonPath.from(scriptpath)));
 			
 			Site site = OperationContext.getOrThrow().getSite();
-			String event = site.getAlias() + " - form submission completed: " + form;
+			String event = site.getTenant().getAlias() + "-" + site.getAlias() + " - form submission completed: " + form;
 			SlackUtil.serverEvent(null, event, null);
 		}
 	}

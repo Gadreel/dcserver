@@ -1115,6 +1115,14 @@ var dc = {
 			tr: function(token, params) {
 				var val = dc.lang.Dict._tokens[token];
 
+				return dc.lang.Dict.fill(val, params)
+			},
+			trd: function(token, defval, params) {
+				var val = dc.lang.Dict._tokens[token];
+
+				return dc.lang.Dict.fill(val ? val : defval, params)
+			},
+			fill: function(val, params) {
 				if (!dc.util.Struct.isList(params))
 					params = [];
 

@@ -1,0 +1,37 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:domain-index-step">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Primary Domain',
+				Description: 'Review the primary domain.',
+				Params: { Alias: 'domain-index-step' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:domain-index-step" Param="StepId">
+		<dcs.ConfigGetTag Tag="Web" Result="WebConfig" />
+		<!--
+		XElement domainwebconfig = ResourceHub.getResources().getConfig().getTag("Web");
+
+		if ((domainwebconfig != null) && domainwebconfig.hasNotEmptyAttribute("IndexUrl")) {
+			String indexurl = domainwebconfig.getAttribute("IndexUrl");
+
+			data.with("icon_url", indexurl + "imgs/logo152.png");
+		}
+	-->
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="Test" Value="$WebConfig" />
+			<Update Field="dcStore" SubId="PrimaryDomain" Value="b.test.com" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:domain-index-step" Param="StepInfo">
+		<dc.Out>hot coco! {$StepInfo}</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

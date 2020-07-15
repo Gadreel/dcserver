@@ -47,7 +47,7 @@ import dcraft.xml.XElement;
 public class OrderUtil {
 	static public void processAuthOrder(ICallContext request, TablesAdapter db, RecordStruct order, OperationOutcomeStruct callback) throws OperatingContextException {
 		Site site = OperationContext.getOrThrow().getSite();
-		String event = site.getAlias() + " - order submission started: " + order.getFieldAsRecord("CustomerInfo").toString();
+		String event = site.getTenant().getAlias() + "-" + site.getAlias() + " - order submission started: " + order.getFieldAsRecord("CustomerInfo").toString();
 		SlackUtil.serverEvent(null, event, null);
 		
 		try (OperationMarker om = OperationMarker.create()) {
@@ -86,7 +86,7 @@ public class OrderUtil {
 		}
 		
 		Site site = OperationContext.getOrThrow().getSite();
-		String event = site.getAlias() + " - order processing: " + orderclean.getFieldAsRecord("CustomerInfo").toString();
+		String event = site.getTenant().getAlias() + "-" + site.getAlias() + " - order processing: " + orderclean.getFieldAsRecord("CustomerInfo").toString();
 		SlackUtil.serverEvent(null, event, null);
 		
 		RecordStruct cinfo = orderclean.getFieldAsRecord("CustomerInfo");
@@ -301,7 +301,7 @@ public class OrderUtil {
 
 	static public void postAuthStep(ICallContext request, TablesAdapter db, DbRecordRequest upreq, RecordStruct order, String status, ZonedDateTime stamp, RecordStruct orderclean, Struct payment, String refid, OperationOutcomeStruct callback) throws OperatingContextException {
 		Site site = OperationContext.getOrThrow().getSite();
-		String event = site.getAlias() + " - order placed: " + refid;
+		String event = site.getTenant().getAlias() + "-" + site.getAlias() + " - order placed: " + refid;
 		SlackUtil.serverEvent(null, event, null);
 		
 		// CustomerId already set by sanitize

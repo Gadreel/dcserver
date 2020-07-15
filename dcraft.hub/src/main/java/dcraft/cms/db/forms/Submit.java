@@ -92,7 +92,7 @@ public class Submit implements IStoredProc {
 		}
 		
 		Site site = OperationContext.getOrThrow().getSite();
-		String event = site.getAlias() + " - form submission started: " + form;
+		String event = site.getTenant().getAlias() + "-" + site.getAlias() + " - form submission started: " + form;
 		SlackUtil.serverEvent(null, event, null);
 
 

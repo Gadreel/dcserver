@@ -23,11 +23,11 @@ public class YesNo extends HorizRadioGroup {
 		
 		this.fieldinfo.with(
 			W3.tag("RadioButton")
-				.withAttribute("Label", "Yes")
+				.withAttribute("Label", "{$_Tr.dcwConfirmYes}")
 				.withAttribute("Value", "true")
 		).with(
 			W3.tag("RadioButton")
-				.withAttribute("Label", "No")
+				.withAttribute("Label", "{$_Tr.dcwConfirmNo}")
 				.withAttribute("Value", "false")
 		);
 		

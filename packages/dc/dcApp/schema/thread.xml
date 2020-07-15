@@ -59,6 +59,8 @@
 		<Composer Name="dcmThreadAccess" Execute="dcraft.cms.thread.db.comp.MessageAccess" />
 		<Composer Name="dcmThreadParties" Execute="dcraft.cms.thread.db.comp.ThreadParties" />
 
+		<!-- clear special index when retiring -->
+		<Trigger Table="dcmThread" Operation="BeforeRetire" Execute="dcraft.cms.thread.db.trigger.BeforeDelete" />
 		<Trigger Table="dcmThread" Operation="BeforeDelete" Execute="dcraft.cms.thread.db.trigger.BeforeDelete" />
 		<!--
 			always list expire checks for records that can be expired - reason being is that 3rd party

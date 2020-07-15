@@ -141,6 +141,10 @@
 		<StringType Id="dcEmailBasic" Searchable="False">
 			<StringRestriction MaxLength="64" />
 		</StringType>
+		
+		<StringType Id="dcDomainUseEnum">
+			<StringRestriction Enum="Production,Local" />
+		</StringType>
 
 		<!-- core composite types -->
 
@@ -732,6 +736,23 @@
 						<RecordRequest Required="True">
 							<Field Name="Token" Type="dcString" />
 						</RecordRequest>
+					</Op>
+				</Secure>
+			</Feature>
+
+			<Feature Name="Config">
+				<Secure Badges="SysAdmin,Admin,Developer">
+					<Op Name="LoadTenantDomains">
+						<Description>
+							Load domains for the current tenant.
+						</Description>
+						<ListResponse>
+							<Record>
+								<Field Name="Domain" Type="dcSmallString" />
+								<Field Name="Certificate" Type="Boolean" />
+								<Field Name="Use" Type="dcDomainUseEnum" />
+							</Record>
+						</ListResponse>
 					</Op>
 				</Secure>
 			</Feature>

@@ -44,7 +44,7 @@ public class Uploader extends CoreField {
 					.with(
 						W3.tag("div")
 							.withClass("dc-uploader-list-header")
-							.withText(this.getAttributeAsBooleanOrFalse("Single") ? "Selected File: " : "Selected Files: ")
+							.withText(this.getAttributeAsBooleanOrFalse("Single") ? "{$_Tr.dcwWUploaderSelFile}: " : "{$_Tr.dcwWUploaderSelFiles}: ")
 					)
 					.with(
 						W3.tag("div")

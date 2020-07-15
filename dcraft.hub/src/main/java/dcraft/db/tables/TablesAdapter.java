@@ -1884,6 +1884,8 @@ public class TablesAdapter {
 
 	// retire means disable
 	public void retireRecord(String table, String id) throws OperatingContextException {
+		this.executeTrigger(table, id,"BeforeRetire", null);
+
 		if (! this.isRetired(table, id)) {
 			this.setStaticScalar(table, id, "Retired", true);
 			

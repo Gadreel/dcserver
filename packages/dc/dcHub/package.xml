@@ -218,6 +218,7 @@
 			<Tag Name="dcs.ForEach" Class="dcraft.script.inst.ForEach" />
 			<Tag Name="dcs.Function" Class="dcraft.script.inst.Function" />
 			<Tag Name="dcs.Global" Class="dcraft.script.inst.Global" />
+			<Tag Name="dcs.GlobalFunction" Class="dcraft.script.inst.GlobalFunction" />
 			<Tag Name="dcs.If" Class="dcraft.script.inst.If" />
 			<Tag Name="dcs.IfErrored" Class="dcraft.script.inst.IfErrored" />
 			<Tag Name="dcs.Include" Class="dcraft.script.inst.Include" />
@@ -248,8 +249,11 @@
 
 			<Tag Name="dcs.SendEmail" Class="dcraft.script.inst.ext.SendEmail" />
 			<Tag Name="dcs.SendText" Class="dcraft.script.inst.ext.SendText" />
+			<Tag Name="dcs.ScriptServiceSwitch" Class="dcraft.script.inst.ext.ScriptServiceSwitch" />
+			<Tag Name="dcs.ScriptServiceSuccess" Class="dcraft.script.inst.ext.ScriptServiceSuccess" />
 
 			<Tag Name="dcs.CatalogSettings" Class="dcraft.script.inst.ext.CatalogSettings" />
+			<Tag Name="dcs.ConfigGetTag" Class="dcraft.script.inst.ext.ConfigGetTag" />
 
 			<Tag Name="dcs.File" Class="dcraft.script.inst.file.File" />
 			<Tag Name="dcs.Stream" Class="dcraft.script.inst.file.Stream" />

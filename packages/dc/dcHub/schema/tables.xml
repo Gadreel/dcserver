@@ -301,6 +301,7 @@
 			<Field Name="dcApprovedAt" Type="DateTime" />
 
 			<Field Name="dcParams" Type="Any" />
+			<Field Name="dcStore" Type="Any" List="True" />
 			<Field Name="dcDebugLevel" Type="dcMetaString" />
 
 			<!-- progress -->

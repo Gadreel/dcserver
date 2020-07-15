@@ -1,0 +1,79 @@
+<dc.Html Badges="SysAdmin" NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Go Live Report" />
+	</Meta>
+
+	<dcdb.LoadRecord Table="dcTaskList" Id="{$Page.OriginalPathParts.3}" Result="CurrentData">
+		<Select Field="dcLeadTabOption" As="Lead" />
+		<Select Field="dcReviewStatus" As="Status" />
+		<Select Field="dcReviewMessage" As="Message" />
+		<Select Field="dcApprovedAt" As="ApprovedAt" />
+		<SelectSubquery Field="dcStepTask" Key="Step" As="Tabs">
+			<Select Field="Id" />
+			<Select Field="dcTitle" As="Title" />
+			<Select Field="dcChildTabOption" As="Child" />
+			<Select Field="dcReviewStatus" As="Status" />
+			<Select Field="dcReviewMessage" As="Message" />
+			<Select Field="dcApprovedAt" As="ApprovedAt" />
+		</SelectSubquery>
+	</dcdb.LoadRecord>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<p>
+				Report Status: {$CurrentData.Status}<br/>
+				Approved: {$CurrentData.ApprovedAt}<br/>
+				Message: {$CurrentData.Message}<br/>
+			</p>
+
+			<p>
+				<dc.Button Label="Close Report" Click="DoCloseReport" />
+			</p>
+
+			<table id="lstSteps" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Title</th>
+						<th scope="col">Status</th>
+						<th scope="col">Approved</th>
+						<th scope="col">Message</th>
+					</tr>
+				</thead>
+				<tbody id="lstStepsBody">
+					<dcs.ForEach Name="Tab" In="$CurrentData.Tabs">
+						<dc.Out>
+							<tr data-alias="{$Tab.Child.Alias}">
+								<td>{$Tab.Title}</td>
+								<td>{$Tab.Status}</td>
+								<td>{$Tab.ApprovedAt}</td>
+								<td>{$Tab.Message}</td>
+							</tr>
+						</dc.Out>
+					</dcs.ForEach>
+				</tbody>
+			</table>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+	]]></Function>
+	<Function Name="DoCloseReport"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcCoreServices.TaskList.UpdateReview', {
+				Id: '{$Page.OriginalPathParts.3}',
+				Status: 'Passed',
+				Message: 'test auto',
+				Approved: true
+			}, function(rmsg) {
+				if (rmsg.Code > 0) {
+					dc.pui.Popup.alert('Unable to update step: ' + rmsg.Message);
+				}
+				else {
+					page.Layer.refreshPage();
+				}
+			});
+	]]></Function>
+</dc.Html>

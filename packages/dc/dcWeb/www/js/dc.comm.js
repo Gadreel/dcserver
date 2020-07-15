@@ -34,6 +34,61 @@ dc.comm = {
 		callback();
 	},
 
+	callScript: function(path, op, params, callbackfunc, timeout) {
+		var msg = {
+			Op: op
+		};
+
+		if (params)
+			msg.Body = params;
+
+		var processRequest = function(e) {
+		    if (xhr.readyState == 4) {
+		    	try {
+			    	if (xhr.status == 200) {
+							if (callbackfunc)
+								callbackfunc(JSON.parse(xhr.responseText));
+			    	}
+			    	else {
+							if (callbackfunc)
+								callbackfunc({
+									Code: 1,
+									Message: 'Server responded with an error code.'
+				    		});
+			    	}
+		    	}
+		    	catch (x) {
+		    		/* TODO doesn't work well, calls same function again
+						if (callbackfunc)
+							callbackfunc({
+								Code: 1,
+								Message: 'Server responded with an invalid message.'
+			    		});
+		    		*/
+		    	}
+		    }
+		};
+
+		var xhr = new XMLHttpRequest();
+		xhr.open('POST', path + '?nocache=' + dc.util.Crypto.makeSimpleKey(), true);
+
+		xhr.timeout = timeout ? timeout : 60000;
+
+		xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+
+		xhr.addEventListener("readystatechange", processRequest, false);
+
+		xhr.addEventListener("ontimeout", function() {
+			if (callbackfunc)
+				callbackfunc({
+					Code: 1,
+					Message: 'Server timed out, no response.'
+    		});
+		}, false);
+
+		xhr.send(JSON.stringify(msg));
+	},
+
 	call: function(service, params, callbackfunc, timeout) {
 		var sparts = service.split('.');
 

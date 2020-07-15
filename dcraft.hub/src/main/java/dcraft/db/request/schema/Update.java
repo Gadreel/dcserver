@@ -106,10 +106,44 @@ public class Update extends RecordStruct {
 			
 			return ReturnOption.CONTINUE;
 		}
-		
+
+		if ("Set".equals(code.getName())) {
+			String name = StackUtil.stringFromElement(state, code,"Field");
+
+			if (StringUtil.isEmpty(name)) {
+				Logger.error("Missing field name in record update");
+				return ReturnOption.CONTINUE;
+			}
+
+			ListStruct sets = this.getFieldAsList("Sets");
+
+			if (sets == null) {
+				sets = ListStruct.list();
+
+				this.with("Sets", sets);
+			}
+
+			Struct values = StackUtil.resolveReference(state, code.getAttribute("Values"));
+
+			if (! (values instanceof ListStruct))
+				values = ListStruct.list();
+
+			RecordStruct data = RecordStruct.record()
+					.with("Field", name)
+					.with("Values", values);
+
+			sets.with(data);
+
+			return ReturnOption.CONTINUE;
+		}
+
 		if ("Execute".equals(code.getName())) {
 			String name = StackUtil.stringFromElement(state, code, "Result");
-			
+
+			// cannot be empty
+			if (this.isFieldEmpty("Fields"))
+				this.with("Fields", RecordStruct.record());
+
 			ServiceHub.call(DbServiceRequest.of("dcUpdateRecord")
 					.withData(this)
 					.withOutcome(

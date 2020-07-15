@@ -1,0 +1,27 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:domains-step">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Domains Check',
+				Description: 'Review the list of production domains to be sure it is complete. All public domains used by the website should be listed here.',
+				Params: { Op: 'DomainCheck', Alias: 'domains-step' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:domains-step" Param="StepId">
+		<dcs.CallService Op="dcCoreServices.Config.LoadTenantDomains" Result="Domains" />
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="DomainList" Value="$Domains" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:domains-step" Param="StepInfo">
+		<dc.Out>cool! {$StepInfo}</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

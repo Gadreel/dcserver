@@ -4,7 +4,7 @@
 	</Meta>
 
 	<!-- for testing, load from dcTenant -->
-	<dcs.Var Name="Id" Type="String" SetTo="00112_000000000000010" />
+	<dcs.Var Name="Id" Type="String" SetTo="00112_000000000000014" />
 
 	<dcdb.LoadRecord Table="dcTaskList" Id="{$Id}" Result="CurrentData">
 		<Select Field="dcLeadTabOption" As="Lead" />
@@ -141,6 +141,67 @@
 			var page = this;
 
 			dc.comm.call('dcCoreServices.TaskList.Add', {
+				Title: 'Go Live Report',
+				Description: 'Go Live Report',
+				Params: null,
+				LeadTab: {
+					Alias: 'main',
+					Title: 'Summary',
+					Path: '/dcr/go-live/main/$Id'
+				},
+				Steps: [
+					{
+						Title: 'Config',
+						Description: 'Review of config.xml',
+						Weight: 20,
+						ChildTab: {
+							Alias: 'step-0000',
+							Title: 'Config',
+							Path: '/dcr/go-live/review-config/$Id'
+						}
+					},
+					{
+						Title: 'Feeds',
+						Description: 'Review of Site Feeds',
+						Weight: 20,
+						ChildTab: {
+							Alias: 'step-0001',
+							Title: 'Feeds',
+							Path: '/dcr/go-live/review-feeds/$Id'
+						}
+					},
+					{
+						Title: 'Galleries',
+						Description: 'Review of Galleries',
+						Weight: 20,
+						ChildTab: {
+							Alias: 'step-0002',
+							Title: 'Galleries',
+							Path: '/dcr/go-live/review-galleries/$Id'
+						}
+					},
+					{
+						Title: 'DCA Specific',
+						Description: 'Additional checks that are DCA specific',
+						Weight: 20,
+						ChildTab: {
+							Alias: 'step-0003',
+							Title: 'DCA Specific',
+							Path: '/dcr/go-live/review-galleries/$Id'
+						}
+					}
+				]
+			}, function(rmsg) {
+				if (rmsg.Code > 0) {
+					dc.pui.Popup.alert('Unable to initiate report: ' + rmsg.Message);
+				}
+				else {
+					page.callPageFunc('DoOpenTabs', rmsg.Result, 'main');
+				}
+			});
+
+			/*
+			dc.comm.call('dcCoreServices.TaskList.Add', {
 				Title: 'main tab',
 				Description: 'main description',
 				Params: { A: 123, b: 'echo' },
@@ -189,6 +250,7 @@
 					page.callPageFunc('DoOpenTabs', rmsg.Result, 'main');
 				}
 			});
+			*/
 	]]></Function>
 	<Function Name="DoRefresh"><![CDATA[
 			var page = this;
@@ -197,42 +259,50 @@
 	]]></Function>
 	<!--
 
-- google tracking code
-- loop all feeds
-	- loop each file in the feed
-		- check ids
-		- check title (report back + page path)
-		- check description (report back)
-		- missing additional meta fields?
-		- does it have WAVE check in? developer prompts (pass, skip, incomplete - plus notes - all in database)
-			- WAVE link if on prod server (but use the development url)
-		- check each widget for feedback
-			- instagram - can it connect / show
-			- are all managed forms configured
-		- reindex file, mark as indexed in checklist
-		- is CMS complete for the page - is everything editable that should be?
-		- are there any open drafts?
-	- is there at least one template? list all and title
-- site images
-	- There is a share image called share-image.jpg (1200x630px)
-		- SiteImage="/imgs/share-image.jpg" is in here in config.xml:
-			<Web HtmlMode="Dynamic" IndexUrl="https://www.littleluxuriesmadison.com/" SiteImage="/imgs/share-image.jpg" SolidIcons="true">
- 	- There are favicons in these sizes:
-		- transparent 16x16px (logo16.png), 32x32px (logo32.png), 152x152px (logo152.png)
-		- solid 180x180px, 192x192px, 512x512px (optional)
-			- SolidIcons="true" is in here in config.xml:
+- config
+	- list/check production domains
+	- show primary (indexed) domains
+	- show redirects
+	- google tracking code
+	- All social media accounts urls (for which there are icons on the site) are in config.xml
+		- list all that are currently configured
+		- prompt to confirm that all links are ready
+	- site image
+	- icons
+		- extra icons
+	- SSL Certificates
+	- check all managed forms
+	- check there is a production email for sending
+	- check store settings (missing weight chart, payments, etc)
+- feeds
+	-loop all feeds
+		- loop each file in the feed
+			- check ids
+			- check title (report back + page path)
+			- check description (report back)
+			- missing additional meta fields?
+			- does it have WAVE check in? developer prompts (pass, skip, incomplete - plus notes - all in database)
+				- WAVE link if on prod server (but use the development url)
+			- check each widget for feedback
+				- instagram - can it connect / show
+				- are all managed forms configured
+			- reindex file, mark as indexed in checklist
+			- is CMS complete for the page - is everything editable that should be?
+			- are there any open drafts?
+		- is there at least one template? list all and title
+- galleries
+	- site images
+		- There is a share image called share-image.jpg (1200x630px)
+			- SiteImage="/imgs/share-image.jpg" is in here in config.xml:
 				<Web HtmlMode="Dynamic" IndexUrl="https://www.littleluxuriesmadison.com/" SiteImage="/imgs/share-image.jpg" SolidIcons="true">
-- All social media accounts urls (for which there are icons on the site) are in config.xml
-	- list all that are currently configured
-	- prompt to confirm that all links are ready
-- Check all galleries
-	- meta.json missing?
-	- thumbs?
-- SSL Certificates
-- list/check production domains
-- check all managed forms
-- check there is a production email for sending
-- check store settings (missing weight chart, payments, etc)
+	 	- There are favicons in these sizes:
+			- transparent 16x16px (logo16.png), 32x32px (logo32.png), 152x152px (logo152.png)
+			- solid 180x180px, 192x192px, 512x512px (optional)
+				- SolidIcons="true" is in here in config.xml:
+					<Web HtmlMode="Dynamic" IndexUrl="https://www.littleluxuriesmadison.com/" SiteImage="/imgs/share-image.jpg" SolidIcons="true">
+	- Check all galleries
+		- meta.json missing?
+		- thumbs?
 - DCA specific
 	- is there an editor user?
 	- Move inline code to css file
