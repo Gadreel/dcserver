@@ -15,23 +15,41 @@
 
 	<dcs.GlobalFunction Name="LoadFuncs:domain-index-step" Param="StepId">
 		<dcs.ConfigGetTag Tag="Web" Result="WebConfig" />
-		<!--
-		XElement domainwebconfig = ResourceHub.getResources().getConfig().getTag("Web");
 
-		if ((domainwebconfig != null) && domainwebconfig.hasNotEmptyAttribute("IndexUrl")) {
-			String indexurl = domainwebconfig.getAttribute("IndexUrl");
-
-			data.with("icon_url", indexurl + "imgs/logo152.png");
-		}
-	-->
+		<dcs.Var Name="PrimaryDomain" SetTo="{$WebConfig.@IndexUrl|url:domain}" />
 
 		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
-			<Update Field="dcStore" SubId="Test" Value="$WebConfig" />
-			<Update Field="dcStore" SubId="PrimaryDomain" Value="b.test.com" />
+			<Update Field="dcStore" SubId="PrimaryUrl" Value="{$WebConfig.@IndexUrl}" />
+			<Update Field="dcStore" SubId="PrimaryDomain" Value="{$WebConfig.@IndexUrl|url:domain}" />
 		</dcdb.UpdateRecord>
 	</dcs.GlobalFunction>
 
 	<dcs.GlobalFunction Name="PrintFuncs:domain-index-step" Param="StepInfo">
-		<dc.Out>hot coco! {$StepInfo}</dc.Out>
+		<dc.Out>
+			<p><!-- b>Primary Domain:</b --> {$StepInfo.Store.PrimaryDomain}</p>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:domain-index-step" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+Make sure this is the primary domain the client wishes to use and the one for which the Google Analytics tracking code is assigned. It is best practice not to include the leading www.
+
+In the config.xml file there should be only one _Web_ tag and it should have the complete, perferred URL set in the _IndexUrl_ attribute. Example:
+
+``` xml
+<Web
+	HtmlMode="Dynamic"
+	IndexUrl="https://designcraftadvertising.com/"
+	SiteImage="/imgs/share-image.jpg"
+	SolidIcons="true"
+>
+```
+
+TODO DCC link to config article
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
 	</dcs.GlobalFunction>
 </dcs.Library>

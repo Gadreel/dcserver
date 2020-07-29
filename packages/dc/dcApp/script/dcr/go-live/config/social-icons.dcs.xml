@@ -1,0 +1,101 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:social-icons">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Social Media Links',
+				Description: 'The configured social media links. Not necessarily displayed on site.',
+				Params: { Alias: 'social-icons' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:social-icons" Param="StepId">
+		<dcs.Var Name="SocialList" Type="List" />
+
+		<dcs.ConfigGetTagList Tag="Catalog" Result="Catalogs" />
+
+		<dcs.ForEach Name="Catalog" In="$Catalogs">
+			<dcs.If Target="$Catalog.@Id" StartsWith="Social-">
+				<dcs.Var Name="SocialRec" Type="Record">
+					<SetField Name="Name" Value="{$Catalog.@Id|substr:7}" />
+					<SetField Name="Url" Value="$Catalog.Settings.0.@Url" />
+				</dcs.Var>
+
+				<dcs.With Target="$SocialList">
+					<AddItem Value="$SocialRec" />
+				</dcs.With>
+			</dcs.If>
+		</dcs.ForEach>
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="SocialIcons" Value="$SocialList" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:social-icons" Param="StepInfo">
+		<dc.Out>
+			<table id="lstSocials" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Name</th>
+						<th scope="col">Url</th>
+					</tr>
+				</thead>
+				<tbody id="lstSocialsBody">
+					<dcs.ForEach Name="SocialIcon" In="$StepInfo.Store.SocialIcons">
+						<dc.Out>
+							<tr>
+								<td>{$SocialIcon.Name}</td>
+								<td>
+									{$SocialIcon.Url|ifempty:[not present]}
+									<dcs.If Target="$SocialIcon.Url" IsEmpty="false">
+										<dc.Out>
+											<dc.Link To="{$SocialIcon.Url}"><dc.Icon Path="fas/external-link-alt" /></dc.Link>
+										</dc.Out>
+									</dcs.If>
+								</td>
+							</tr>
+						</dc.Out>
+					</dcs.ForEach>
+				</tbody>
+			</table>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:social-icons" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+Typically websites have links to social media pages. The preferred widget for this is _dcm.SocialMediaWidget_ and it gets its urls from the config file. For each social media resource there is a single catalog entry whose id is prefixed with "Social-".
+
+Examples of typical resources:
+
+``` xml
+<Catalog Id="Social-Facebook-Both">
+	<Settings Url="https://www.facebook.com/designcraftadvertising" />
+</Catalog>
+
+<Catalog Id="Social-Instagram-Both">
+	<Settings Url="https://www.instagram.com/designcraftads/" />
+</Catalog>
+
+<Catalog Id="Social-Twitter-Both">
+	<Settings Url="http://www.twitter.com/designcraftads" />
+</Catalog>
+
+<Catalog Id="Social-LinkedIn-Both">
+	<Settings Url="http://www.linkedin.com/company/designcraft-advertising"	/>
+</Catalog>
+```
+
+TODO DCC link to config and catalog articles
+
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

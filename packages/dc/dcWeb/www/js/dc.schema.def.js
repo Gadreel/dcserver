@@ -266,15 +266,27 @@ dc.lang.Dict.load( [
 	{ Token: "_code_438", Value: "No data type options match.  Could not validate: {$1}" },
 	{ Token: "_code_439", Value: "Tried to wrap a non-list, unknown resolution: {$1}" },
 	{ Token: "_code_440", Value: "No data type options match.  Could not validate: {$1}" },
-	{ Token: "_code_447", Value: "Value does not match pattern" }
+	{ Token: "_code_447", Value: "Value does not match pattern" },
+  { Token: "_code_900", Value: "Large files may take some time, please wait until the upload is complete." },
+  { Token: "_code_901", Value: "Uploading Files" },
+  { Token: "_code_902", Value: "Total file size too large, please reduce size before upload." },
+  { Token: "_code_903", Value: "Edit the file name. Spaces and special characters are not allowed and will be replaced." },
+  { Token: "_code_904", Value: "File Name" },
+  { Token: "_code_905", Value: "Name" }
 	] );
 
 var lang = $('html').attr('lang');
 
 if (lang == 'spa')
 	dc.lang.Dict.load( [
-		{ Token: "_code_424", Value: "Valor obligatorio para el campo: {$2}" },
-		{ Token: "_code_447", Value: "El valor no coincide con el modelo" }
+		{ Token: "_code_424", Value: "Se requiere un valor en este espacio: {$2}" },
+		{ Token: "_code_447", Value: "El valor no coincide con el modelo" },
+    { Token: "_code_900", Value: "Los archivos grandes pueden tomar tiempo, por favor espere hasta que la carga esté completa." },
+    { Token: "_code_901", Value: "Cargando Archivos" },
+    { Token: "_code_902", Value: "El tamaño total del archivo es demasiado grande, reduzca el tamaño antes de cargarlo." },
+    { Token: "_code_903", Value: "Editar el nombre del archivo. Los espacios y caracteres especiales no están permitidos y serán reemplazados." },
+    { Token: "_code_904", Value: "Nombre del archivo" },
+    { Token: "_code_905", Value: "Nombre" }
 	]);
 else if (lang == 'hmn')
 	dc.lang.Dict.load( [

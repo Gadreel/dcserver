@@ -185,6 +185,7 @@
 
 		<Procedure Name="dcCoreServices.ManagedForm.Submit" Execute="dcraft.cms.db.forms.Submit" />
 		<Procedure Name="dcCoreServices.ManagedForm.Complete" Execute="dcraft.cms.db.forms.Complete" />
+		<Procedure Name="dcCoreServices.ManagedForm.Resend" Execute="dcraft.cms.db.forms.Resend" />
 
 		<Procedure Name="dcCoreServices.BasicCustomForm.Lookup" Execute="dcraft.cms.db.forms.BasicLookup" />
 		<Procedure Name="dcCoreServices.BasicCustomForm.Load" Execute="dcraft.cms.db.forms.BasicLoad" />
@@ -315,6 +316,15 @@
 							<Field Name="Form" Type="dcTinyString" Required="True" />
 							<Field Name="Token" Type="dcSmallString" Required="True" />
 							<Field Name="Uuid" Type="dcSmallString" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Resend">
+						<Description>
+							Resend the notice.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+							<Field Name="Uuid" Type="dcSmallString" />
 						</RecordRequest>
 					</Op>
 					<!--

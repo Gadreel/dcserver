@@ -1,0 +1,67 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:site-image">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Site Image',
+				Description: 'Website social media share image.',
+				Params: { Alias: 'site-image' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:site-image" Param="StepId">
+		<dcs.ConfigGetTag Tag="Web" Result="WebConfig" />
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="SiteImage" Value="{$WebConfig.@SiteImage}" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:site-image" Param="StepInfo">
+		<dcs.If Target="$StepInfo.Store.SiteImage" IsEmpty="true">
+			<dc.Out>
+				<p><b>Current image:</b> [not present]</p>
+			</dc.Out>
+		</dcs.If>
+		<dcs.Else>
+			<dcs.Var Name="ccode" Type="String">
+				<FillCode />
+			</dcs.Var>
+
+			<dc.Out>
+				<p>
+					<b>Current image:</b> <br />
+					<img src="{$StepInfo.Store.SiteImage}?nocache={$ccode}" />
+				</p>
+			</dc.Out>
+		</dcs.Else>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:site-image" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+The web site should have a default social media share image. This is set using the _SiteImage_ attribute. Recommended image dimensions are 1200x630px.
+
+In the config.xml file there should be only one _Web_ tag and it should have the complete, relative path set in the _SiteImage_ attribute. Example:
+
+``` xml
+<Web
+	HtmlMode="Dynamic"
+	IndexUrl="https://designcraftadvertising.com/"
+	SiteImage="/imgs/share-image.jpg"
+	SolidIcons="true"
+>
+```
+
+TODO DCC link to config article
+
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

@@ -141,7 +141,7 @@
 		<StringType Id="dcEmailBasic" Searchable="False">
 			<StringRestriction MaxLength="64" />
 		</StringType>
-		
+
 		<StringType Id="dcDomainUseEnum">
 			<StringRestriction Enum="Production,Local" />
 		</StringType>
@@ -748,7 +748,8 @@
 						</Description>
 						<ListResponse>
 							<Record>
-								<Field Name="Domain" Type="dcSmallString" />
+								<Field Name="Domain" Type="dcString" />
+								<Field Name="Site" Type="dcTinyString" />
 								<Field Name="Certificate" Type="Boolean" />
 								<Field Name="Use" Type="dcDomainUseEnum" />
 							</Record>

@@ -40,7 +40,7 @@ public class LoadTenantDomains implements IStoredProc {
 					continue;
 
 				for (XElement del : lel.selectAll("Domain")) {
-					RecordStruct dresp = expandDomain(del);
+					RecordStruct dresp = expandDomain(del, site.getAlias());
 
 					if (dresp != null)
 						resp.with(dresp);
@@ -48,7 +48,7 @@ public class LoadTenantDomains implements IStoredProc {
 			}
 
 			for (XElement del : sconfig.getTagListLocal("Domain")) {
-				RecordStruct dresp = expandDomain(del);
+				RecordStruct dresp = expandDomain(del, site.getAlias());
 
 				if (dresp != null)
 					resp.with(dresp);
@@ -58,7 +58,7 @@ public class LoadTenantDomains implements IStoredProc {
 		callback.returnValue(resp);
 	}
 
-	public RecordStruct expandDomain(XElement del) {
+	public RecordStruct expandDomain(XElement del, String site) {
 		if (del == null)
 			return null;
 
@@ -69,6 +69,7 @@ public class LoadTenantDomains implements IStoredProc {
 
 		return RecordStruct.record()
 				.with("Domain", dname)
+				.with("Site", site)
 				.with("Certificate", del.getAttributeAsBooleanOrFalse("Certificate"))
 				.with("Use", del.getAttribute("Use"));
 	}

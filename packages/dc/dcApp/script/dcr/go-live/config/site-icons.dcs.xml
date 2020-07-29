@@ -1,0 +1,94 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:site-icons">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Site Image',
+				Description: 'Website social media share image.',
+				Params: { Alias: 'site-icons' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:site-icons" Param="StepId">
+		<dcs.ConfigGetTag Tag="Web" Result="WebConfig" />
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="SolidIcons" Value="{$WebConfig.@SolidIcons}" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:site-icons" Param="StepInfo">
+		<dcs.Var Name="ccode" Type="String">
+			<FillCode />
+		</dcs.Var>
+
+		<dc.Out>
+			<p>
+				<b>Standard icons:</b> <br />
+				16x16px<br />
+				<img src="/imgs/logo16.png?nocache={$ccode}" /><br /><br />
+				32x32px<br />
+				<img src="/imgs/logo32.png?nocache={$ccode}" /><br /><br />
+				152x152px<br />
+				<img src="/imgs/logo152.png?nocache={$ccode}" /><br /><br />
+			</p>
+		</dc.Out>
+
+		<dcs.If Target="$StepInfo.Store.SolidIcons" Not="true" Equal="true">
+			<dc.Out>
+				<p><b>Solid icons:</b> [not present]</p>
+			</dc.Out>
+		</dcs.If>
+		<dcs.Else>
+			<dc.Out>
+				<p>
+					<b>Solid icons:</b> <br />
+					180x180px<br/>
+					<img src="/imgs/logo180solid.png?nocache={$ccode}" style="border: solid black 1px;" /><br /><br />
+					192x192px<br/>
+					<img src="/imgs/logo192solid.png?nocache={$ccode}" style="border: solid black 1px;" /><br /><br />
+					512x512px<br/>
+					<img src="/imgs/logo512solid.png?nocache={$ccode}" style="border: solid black 1px;" /><br /><br />
+				</p>
+			</dc.Out>
+		</dcs.Else>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:site-icons" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+The web site should have three standard icons sizes 16x16px, 32x32px and 152x152px. These generally have transparent backgrounds and are in a PNG format. They should be in the /imgs folder with the names:
+
+- logo16.png
+- logo32.png
+- logo152.png
+
+In addition there should generally be three solid icons with a white background.
+
+- logo180solid.png
+- logo192solid.png
+- logo512solid.png
+
+In the config.xml file there should be only one _Web_ tag and it should have the _SolidIcons_ attribute set to "true" If solid icons are supported. The standard icons are assumed, unless you see attributes like _Icon16_, _Icon32_ and _Icon152_. If you see any of those then consult with further documentation or a developer. Example of a typical setup for website favorites icons (favicons):
+
+``` xml
+<Web
+	HtmlMode="Dynamic"
+	IndexUrl="https://designcraftadvertising.com/"
+	SiteImage="/imgs/share-image.jpg"
+	SolidIcons="true"
+>
+```
+
+TODO DCC link to config article
+
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

@@ -1,0 +1,65 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:google-tracking">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Google Analytics',
+				Description: 'GA Tracking Code.',
+				Params: { Alias: 'google-tracking' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:google-tracking" Param="StepId">
+		<dcs.CatalogSettings Id="Google" Result="GoogleSettings" />
+
+		<dcs.Var Name="TrackingCode" Type="String" SetTo="" />
+
+		<dcs.If Target="$GoogleSettings.@TrackingCode" IsEmpty="false">
+			<dcs.With Target="$TrackingCode" SetTo="{$GoogleSettings.@TrackingCode}" />
+		</dcs.If>
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="TrackingCode" Value="{$TrackingCode}" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:google-tracking" Param="StepInfo">
+		<dc.Out>
+			<p><b>Tracking Code:</b> {$StepInfo.Store.TrackingCode|ifempty:[not present]}</p>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:google-tracking" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+Make sure the Google Analytics Tracking Code is present and correct for this website. In rare cases, such as a specialized portal website, there may be no need for a Tracking Code. However, most sites should have one.
+
+In the config.xml file there will be multipe _Catalog_ tags. Find the Google catalog, or add it if missing. There may be additional settings, do not remove those. The focus of this task is to be sure that the _TrackingCode_ attribute is set correctly. Example:
+
+``` xml
+<Catalog Id="Google-Both">
+	<Settings TrackingCode="UA-2478599-5" />
+</Catalog>
+```
+
+In some cases the the setting may use "Google-Production" instead of "Google-Both" like so:
+
+``` xml
+<Catalog Id="Google-Production">
+	<Settings TrackingCode="UA-2478599-5" />
+</Catalog>
+```
+
+If you see a "Google-Test" both not the other options then add a "Google-Production" catalog section or discuss with the developer - there may be reason why production was left out.
+
+TODO DCC link to config and catalog article
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

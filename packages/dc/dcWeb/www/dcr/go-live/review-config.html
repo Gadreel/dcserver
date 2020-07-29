@@ -3,6 +3,8 @@
 		<Tr Locale="eng" Value="Review Config" />
 	</Meta>
 
+	<Require Script="/js/vendor/prism/prism.js" Style="/css/vendor/prism/prism.css" />
+
 	<dcs.Include Path="/dcr/go-live/config/library" />
 
 	<dcs.Var Name="TaskId" Type="String" SetTo="{$Page.OriginalPathParts.3}" />
@@ -69,43 +71,139 @@
 		</dcs.With>
 	</dcs.If>
 
+	<dcs.ForEach Name="Tab" In="$StepData.Tabs">
+		<dcs.Var Name="NewStore" Type="Record" />
+
+		<dcs.ForEach Name="Entry" In="$Tab.Store">
+			<dcs.With Target="$NewStore">
+				<SetField Name="{$Entry.Key}" Value="$Entry.Data" />
+			</dcs.With>
+		</dcs.ForEach>
+
+		<dcs.With Target="$Tab">
+			<SetField Name="Store" Value="$NewStore" />
+		</dcs.With>
+	</dcs.ForEach>
+
 	<dc.Body>
 		<dc.PagePanel>
-			<p>
-				Step 1b {$TaskId} - {$Step1Result} - b - {$_Controller.Request.PostData} - z
+			<p data-id="{$TaskId}">
+				<b>Report Status:</b> {$StepData.Approved|tf:Approved,Awaiting Approval}
 			</p>
+
+			<p>
+				Review and either fix or approve each step. Most of these settings come from
+				the config.xml file of the site, however it is possible that some could come from
+				the shared.xml file of the tenant (found in the config folder of the root tenant).
+			</p>
+
+			<dc.Style>
+				#lstSteps h3 {
+					margin-top: 0;
+				}
+
+				#lstSteps .docs-button > a.after {
+					display: none;
+				}
+
+				#lstSteps .docs-body.hidden {
+					display: none;
+				}
+
+				#lstStepsBody svg.green {
+					color: green;
+				}
+
+				#lstStepsBody code.fenced {
+				    white-space: pre;
+				}
+			</dc.Style>
 
 			<table id="lstSteps" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
 				<thead>
 					<tr>
-						<th scope="col">Title</th>
 						<th scope="col">Status</th>
-						<th scope="col">Approved</th>
-						<th scope="col">Message</th>
+						<th scope="col">Report</th>
+						<th scope="col">Actions</th>
 					</tr>
 				</thead>
 				<tbody id="lstStepsBody">
 					<dcs.ForEach Name="Tab" In="$StepData.Tabs">
+						<dcs.If Target="$Tab.ApprovedAt" IsEmpty="false">
+							<dcs.With Target="$Tab">
+								<SetField Name="Approved" Value="true" />
+							</dcs.With>
+						</dcs.If>
+						<dcs.Else>
+							<dcs.With Target="$Tab">
+								<SetField Name="Approved" Value="false" />
+							</dcs.With>
+						</dcs.Else>
 						<dc.Out>
-							<tr data-alias="{$Tab.Params.Alias}" data-id="{$Tab.Id}">
+							<tr data-alias="{$Tab.Params.Alias}" data-id="{$Tab.Id}" data-approved="{$Tab.Approved|tf:1,0}">
 								<td>
-									{$Tab.Id} - {$Tab.Title} - {$Tab.Params.Alias}
+									<dc.Icon Path="far/{$Tab.Approved|tf:check-circle,circle}" class="fa5-3x {$Tab.Approved|tf:green,black}" />
+									<br/>
+									{$Tab.ApprovedAt|dt:MMM dd, hh:mm}
+								</td>
+								<td>
+									<h3>{$Tab.Title}</h3>
+
+									<dcs.If Target="$Tab.Message" IsEmpty="false">
+										<dc.Out>
+											<dc.TextWidget id="txtIntro">
+												<Tr><![CDATA[**Note:** {$Tab.Message}
+
+-----
+												]]></Tr>
+											</dc.TextWidget>
+										</dc.Out>
+									</dcs.If>
 
 									<dcs.ForEach Name="Step" In="$CheckList">
 										<dcs.If Target="$Step" Equal="$Tab.Params.Alias">
 											<dcs.CallFunc Name="PrintFuncs:{$Step}" Arg="$Tab" />
+
+											<dcs.Indirect Name="DocsFunc" Value="DocFuncs:{$Step}" />
+
+											<dcs.If Target="$DocsFunc" IsEmpty="false">
+												<dc.Out>
+													<div class="docs-button">
+														<b role="heading" aria-level="2" id="pianosFilterHeader">Help</b>
+
+														<dc.Link Click="dglcDoExpand" class="expand after">
+															<dc.Icon Path="fas/chevron-down" class="fa5-1x" />
+														</dc.Link>
+														<dc.Link Click="dglcDoExpand" class="expand start">
+															<dc.Icon Path="fas/chevron-right" class="fa5-1x" />
+														</dc.Link>
+													</div>
+
+													<div class="docs-body hidden">
+														<dcs.CallFunc Name="DocFuncs:{$Step}" Arg="$Tab" />
+													</div>
+												</dc.Out>
+											</dcs.If>
 										</dcs.If>
 									</dcs.ForEach>
 								</td>
-								<td>{$Tab.Status}</td>
-								<td>{$Tab.ApprovedAt} <dc.Button Label="Recheck" Click="DoRecheckStep" /></td>
-								<td>{$Tab.Message} - {$Tab.Store}</td>
+								<td><dc.Button Label="Recheck" Click="DoRecheckStep" /></td>
+								<td><dc.Button Label="Note" Click="DoAddNoteStep" /></td>
+								<td><dc.Button Label="Approve" Click="DoApproveStep" Scope="Primary" /></td>
 							</tr>
 						</dc.Out>
 					</dcs.ForEach>
 				</tbody>
 			</table>
 
+			<dcf.FormButtons>
+				<dc.Button Label="Edit config.xml" Click="DoEditConfig" />
+				<dc.Button Label="Edit shared.xml" Click="DoEditShared" />
+				<dc.Button Label="Rebuild Config Report" Click="DoRerun" />
+				<dc.Button Label="Approve Report" Click="DoApproveReport" Scope="Primary" />
+			</dcf.FormButtons>
+
+			<!--
 			<dcf.Form>
 				<dcf.RadioGroup Label="Status" Name="Status">
 					<RadioButton Label="Waiting" Value="Waiting" />
@@ -129,12 +227,12 @@
 				<dc.Button Label="Refresh" Click="DoReindex" />
 				<dc.Button Label="Rerun" Click="DoRerun" />
 			</dcf.FormButtons>
+			-->
 		</dc.PagePanel>
 	</dc.Body>
 
-	<Function Name="Load"><![CDATA[
+	<Function Name="Load" Params="e"><![CDATA[
 			var page = this;
-
 	]]></Function>
 	<Function Name="LoadRecord" Params="e"><![CDATA[
 			var page = this;
@@ -161,12 +259,27 @@
 	<Function Name="DoRerun"><![CDATA[
 			var page = this;
 
-			dc.comm.callScript('/dcr/go-live/review-config-service', 'Clear', {
-				Id: '{$TaskId}'
-			}, function(resp) {
-			    console.log(resp.Code + ' - ' + (resp.Result ? resp.Result.Value : ''))
+			dc.pui.Popup.confirm('Rebuild this entire report, losing all comments and approvals?', function(confirm) {
+				if (! confirm)
+					return;
+
+				dc.comm.callScript('/dcr/go-live/review-config-service', 'Clear', {
+					Id: '{$TaskId}'
+				}, function(resp) {
+				    console.log(resp.Code + ' - ' + (resp.Result ? resp.Result.Value : ''))
+						page.Layer.refreshPage();
+				});
+			});
+	]]></Function>
+	<Function Name="DoAddNoteStep" Params="e"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcr/go-live/edit-note', {
+				TaskId: $(e.currentTarget).closest('tr').attr('data-id'),
+				Callback: function(path) {
 					page.Layer.refreshPage();
-			} )
+				}
+			});
 	]]></Function>
 	<Function Name="DoRecheckStep" Params="e"><![CDATA[
 			var page = this;
@@ -177,6 +290,58 @@
 			}, function(resp) {
 			    console.log(resp.Code + ' - ' + (resp.Result ? resp.Result.Value : ''))
 					page.Layer.refreshPage();
-			} )
+			});
+	]]></Function>
+	<Function Name="DoApproveStep" Params="e"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcCoreServices.TaskList.UpdateReview', {
+				Id: $(e.currentTarget).closest('tr').attr('data-id'),
+				Approved: true
+			}, function(resp) {
+					page.Layer.refreshPage();
+			});
+	]]></Function>
+	<Function Name="DoApproveReport"><![CDATA[
+			var page = this;
+
+			if ($('#lstStepsBody > tr[data-approved="0"]').length > 0) {
+				dc.pui.Popup.alert('Approve each step first.');
+				return;
+			}
+
+			dc.pui.Popup.confirm('Approve this entire report?', function(confirm) {
+				if (! confirm)
+					return;
+
+				dc.comm.call('dcCoreServices.TaskList.UpdateReview', {
+					Id: '{$TaskId}',
+					Approved: true
+				}, function(resp) {
+						page.Layer.refreshPage();
+				});
+			});
+	]]></Function>
+	<Function Name="dglcDoExpand" Params="e"><![CDATA[
+			var page = this;
+
+			$(e.currentTarget).closest('td').find('.docs-body').toggleClass('hidden');
+			$(e.currentTarget).closest('td').find('.docs-button > a.expand').toggle();
+	]]></Function>
+	<Function Name="DoEditConfig" Params="file"><![CDATA[
+			var entry = this;
+
+			dc.pui.Dialog.loadPage('/dcm/files/edit-file', {
+				Vault: 'SiteFiles',
+				Path: '/config/config.xml'
+			});
+	]]></Function>
+	<Function Name="DoEditShared" Params="file"><![CDATA[
+			var entry = this;
+
+			dc.pui.Dialog.loadPage('/dcm/files/edit-file', {
+				Vault: 'RootSiteFiles',
+				Path: '/config/shared.xml'
+			});
 	]]></Function>
 </dc.Html>

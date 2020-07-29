@@ -14,7 +14,67 @@
 	</dcs.GlobalFunction>
 
 	<dcs.GlobalFunction Name="LoadFuncs:domains-step" Param="StepId">
-		<dcs.CallService Op="dcCoreServices.Config.LoadTenantDomains" Result="Domains" />
+		<dcs.CallService Op="dcCoreServices.Config.LoadTenantDomains" Result="AllDomains" />
+
+		<dcs.CallService Op="dcmServices.Dashboard.LoadCerts" Result="Certs" />
+
+		<dcs.Var Name="Domains" Type="List" />
+
+		<dcs.ForEach Name="TenantDomain" In="$AllDomains">
+			<dcs.If Target="$TenantDomain.Site" Equal="$_Site.Alias">
+				<!-- set defaults -->
+				<dcs.With Target="$TenantDomain">
+					<SetField Name="CertFound" Value="false" />
+					<SetField Name="RouteFound" Value="false" />
+				</dcs.With>
+
+				<dcs.With Target="$Domains">
+					<AddItem Value="$TenantDomain" />
+				</dcs.With>
+			</dcs.If>
+		</dcs.ForEach>
+
+		<dcs.ForEach Name="Cert" In="$Certs">
+			<dcs.If Target="$Cert.Tenant" Equal="$_Tenant.Alias">
+				<dcs.ForEach Name="CertDomain" In="$Cert.Domains">
+					<dcs.ForEach Name="TenantDomain" In="$Domains">
+						<dcs.If Target="$CertDomain" Equal="$TenantDomain.Domain">
+							<dcs.With Target="$TenantDomain">
+								<SetField Name="CertFound" Value="true" />
+								<SetField Name="CertExpires" Value="$Cert.Expiration" />
+							</dcs.With>
+						</dcs.If>
+					</dcs.ForEach>
+				</dcs.ForEach>
+			</dcs.If>
+		</dcs.ForEach>
+
+		<dcs.ConfigGetTag Tag="Web" Result="WebConfig" />
+
+		<dcs.Var Name="PrimaryDomain" SetTo="{$WebConfig.@IndexUrl|url:domain}" />
+
+		<dcs.ConfigGetTagList Tag="Web/Route" Result="Routes" />
+
+		<dcs.ForEach Name="Route" In="$Routes">
+			<dcs.ForEach Name="TenantDomain" In="$Domains">
+				<dcs.If Target="$Route.@Name" Equal="$TenantDomain.Domain">
+					<dcs.With Target="$TenantDomain">
+						<SetField Name="RouteFound" Value="true" />
+						<SetField Name="RouteSecure" Value="$Route.@ForceTls" />
+					</dcs.With>
+					<dcs.If Target="$Route.@Name" Equal="$PrimaryDomain">
+						<dcs.With Target="$TenantDomain">
+							<SetField Name="RouteIsPrimary" Value="true" />
+						</dcs.With>
+					</dcs.If>
+					<dcs.If Target="$Route.@RedirectName" Equal="$PrimaryDomain">
+						<dcs.With Target="$TenantDomain">
+							<SetField Name="RouteToPrimary" Value="true" />
+						</dcs.With>
+					</dcs.If>
+				</dcs.If>
+			</dcs.ForEach>
+		</dcs.ForEach>
 
 		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
 			<Update Field="dcStore" SubId="DomainList" Value="$Domains" />
@@ -22,6 +82,170 @@
 	</dcs.GlobalFunction>
 
 	<dcs.GlobalFunction Name="PrintFuncs:domains-step" Param="StepInfo">
-		<dc.Out>cool! {$StepInfo}</dc.Out>
+		<dcs.Var Name="MissingCert" Type="Boolean" SetTo="false" />
+
+		<dc.Out>
+			<table id="lstSteps" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Name</th>
+						<th scope="col">Requires Cert</th>
+						<th scope="col">Cert Found / Expires</th>
+						<th scope="col">Routing</th>
+					</tr>
+				</thead>
+				<tbody id="lstStepsBody">
+					<dcs.ForEach Name="Domain" In="$StepInfo.Store.DomainList">
+						<!-- TODO configure this filter -->
+						<dcs.If Target="$Domain.Domain" Not="true" Contains=".designcraftadvertising.com">
+							<dcs.If Target="$Domain.Use" Equal="Production">
+								<dcs.If Target="$Domain.CertFound" Not="true">
+									<dcs.With Target="$MissingCert" SetTo="true" />
+								</dcs.If>
+
+								<dc.Out>
+									<tr data-domain="{$Domain.Domain}" data-cert="{$Domain.Certificate|tf:1,0}">
+										<td>{$Domain.Domain}</td>
+										<td>{$Domain.Certificate|yn:}</td>
+										<td>{$Domain.CertFound|yn:}
+											<dcs.If Target="$Domain.CertExpires" IsEmpty="false">
+												<dc.Out> / {$Domain.CertExpires|dt:MMM dd, yyyy}</dc.Out>
+											</dcs.If>
+										</td>
+										<td>
+											{$Domain.RouteFound|yn:}
+											<dcs.If Target="$Domain.RouteSecure" Not="true">
+												<dc.Out> / not secure</dc.Out>
+											</dcs.If>
+											<dcs.If Target="$Domain.RouteIsPrimary" Not="true">
+												<dcs.If Target="$Domain.RouteToPrimary" Not="true">
+													<dc.Out> / incorrect routing</dc.Out>
+												</dcs.If>
+											</dcs.If>
+										</td>
+									</tr>
+								</dc.Out>
+							</dcs.If>
+						</dcs.If>
+					</dcs.ForEach>
+				</tbody>
+			</table>
+
+			<dcs.If Target="$MissingCert">
+				<dcs.If Target="$_Node.IsProduction">
+					<dc.Out>
+						<dcf.FormButtons>
+							<dc.Button Label="Allocate Certificates" Click="dglcdsDoMakeCert" />
+						</dcf.FormButtons>
+					</dc.Out>
+				</dcs.If>
+			</dcs.If>
+
+			<br />
+		</dc.Out>
 	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:domains-step" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+Any public usable domains for this site must be listed here.
+
+**Domains**
+
+In the config.xml file there should be one or more _Domain_ tags. There should be one entry per production domain. Each should have a _Use_ attribute set to "Production" and a _Certificate_ attribute set to "true" (unless the server carries a wild card cert for that domain, or if the domain is not public and would almost never be used).  Example:
+
+``` xml
+<Domain Name="designcraftadvertising.com" Use="Production" Certificate="true" />
+<Domain Name="www.designcraftadvertising.com" Use="Production" Certificate="true" />
+```
+
+TODO mention _Domain_ tags in _Locale_ tags. alt source for domains...
+
+**Certificates**
+
+When running this report on a production environment a button to create the certificates will appear. Only run this once all the domains listed with "Requires Cert yes" are pointing to this server. If they are not then the domain cannot be verified and the certificate will fail.
+
+**Routing**
+
+Each of the public domains must have a routing rule. The primary domain only needs a rule to switch from http to https. The other domains need an additional attribute to indicate the primary domain to redirect to.
+
+These _Route_ tags must be inside the _Web_ tag (and there can only be one _Web_ tag). For the primary domain use the _ForceTls_ attribute and set it to "true" and for the other domains include a _RedirectName_ and set it to the primary domain. Example (first rule is primary, second is alternate):
+
+``` xml
+<Web HtmlMode="Dynamic" IndexUrl="https://designcraftadvertising.com/"
+	SiteImage="/imgs/share-image.jpg" SolidIcons="true"
+>
+	<Route ForceTls="true" Name="designcraftadvertising.com" />
+	<Route ForceTls="true" Name="www.designcraftadvertising.com"
+			RedirectName="designcraftadvertising.com" />
+</Web>
+```
+
+TODO DCC link to config article
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dc.Out For="Top">
+		<Function Name="dglcdsDoMakeCert" Params="e"><![CDATA[
+				var page = this;
+
+				dc.pui.Popup.confirm('Only run this on a production machine that is publically exposed to the internet. Otherwise the process will fail. Also make sure that all the domains listed above point to this server. Are you ready to create the certificates?', function(confirm) {
+					if (! confirm)
+						return;
+
+					var steps = [ {
+						Alias: 'Renew',
+						Title: 'Renew Certificate',
+						Params: {
+							Tenant: '{$_Tenant.Alias}',
+							Site: '{$_Site.Alias}',
+							Domains: $('#lstStepsBody tr[data-cert="1"]').map(function() { return $(this).attr('data-domain') }).get()
+						},
+						Func: function(step) {
+							var task = this;
+
+							dc.comm.call('dcmServices.Dashboard.RenewCert', {
+								Tenant: step.Params.Tenant,
+								Site: step.Params.Site,
+								Domains: step.Params.Domains
+							}, function(rmsg) {
+								if (rmsg.Code > 0) {
+									task.Result = {
+										Result: 1,
+										Message: 'Unable to renew certificate: ' + rmsg.Message
+									};
+
+									task.kill();
+								}
+								else {
+									task.Result = {
+										Result: 0
+									};
+
+									task.resume();
+								}
+							});
+						}
+					} ];
+
+					var processtask = new dc.lang.Task(steps);
+
+					processtask.Store = { };
+					processtask.Result = null;
+
+					dc.pui.Popup.await('Please wait while processing certificate request.', function() {
+						dc.pui.Apps.Busy = false;
+
+						if (processtask.Result.Result > 0)
+							dc.pui.Popup.alert('Unable to renew certificate: ' + processtask.Result.Message);
+						else
+							page.Layer.refreshPage();
+
+					}, null, processtask);
+				});
+		]]></Function>
+	</dc.Out>
 </dcs.Library>

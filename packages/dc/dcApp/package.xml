@@ -306,6 +306,7 @@
 			<Tenant Id="ManagedForms" VaultClass="dcraft.filevault.ManagedFormVault" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />
 			<RootMap Id="TenantGalleries" Alias="Galleries" />
 			<RootMap Id="TenantFiles" Alias="Files" />
+			<RootMap Id="RootSiteFiles" Alias="SiteFiles" />
 		</Vaults>
 	</Config>
 </Package>

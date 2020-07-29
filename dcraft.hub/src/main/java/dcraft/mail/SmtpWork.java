@@ -321,9 +321,13 @@ public class SmtpWork extends StateWork {
 		if (smem != null) {
 			smem.setPosition(0);
 			addAttach.accept(smem);
+
+			return StateWorkStep.WAIT;
 		}
 		else if (fobj instanceof StringStruct) {
 			addAttach.accept(IOUtil.readEntireFileToMemory(Paths.get(((StringStruct) fobj).getValueAsString())));
+
+			return StateWorkStep.WAIT;
 		}
 		else if (fobj instanceof FileStoreFile) {
 			((FileStoreFile) fobj).readAllBinary(new OperationOutcome<Memory>() {
@@ -335,9 +339,13 @@ public class SmtpWork extends StateWork {
 						addAttach.accept(this.getResult());
 				}
 			});
+
+			return StateWorkStep.WAIT;
 		}
 
-		return StateWorkStep.WAIT;
+		this.currattach++;
+
+		return StateWorkStep.REPEAT;
 	}
 
 	public StateWorkStep sendEmail(TaskContext trun) throws OperatingContextException {

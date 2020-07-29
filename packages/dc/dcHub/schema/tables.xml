@@ -367,6 +367,7 @@
 
 		<Procedure Name="dcCoreServices.TaskList.Add" Execute="dcraft.core.db.tasklist.Add" />
 		<Procedure Name="dcCoreServices.TaskList.UpdateReview" Execute="dcraft.core.db.tasklist.UpdateReview" />
+		<Procedure Name="dcCoreServices.TaskList.LoadReview" Execute="dcraft.core.db.tasklist.LoadReview" />
 	</Database>
 
 	<Services>
@@ -907,6 +908,20 @@
 							<Field Name="Status" Type="dcTaskList:dcReviewStatus" Required="IfPresent" />
 							<Field Name="Message" Type="dcTaskList:dcReviewMessage" />
 							<Field Name="Approved" Type="Boolean" />
+						</RecordRequest>
+					</Op>
+					<Op Name="LoadReview">
+						<Description>
+							Load a task list record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Status" Type="dcTaskList:dcReviewStatus" Required="IfPresent" />
+							<Field Name="Message" Type="dcTaskList:dcReviewMessage" />
+							<Field Name="ApprovedBy" Type="dcTaskList:dcApprovedBy" />
+							<Field Name="ApprovedAt" Type="dcTaskList:dcApprovedAt" />
 						</RecordRequest>
 					</Op>
 				</Secure>

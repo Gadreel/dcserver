@@ -213,6 +213,8 @@ dc.pui.layer.Base.prototype = {
 
 		delete dc.pui.Loader.StalePages[options.Name];		// no longer stale
 
+		dc.pui.Loader.LoadPageId = options.Id;
+
 		var script = document.createElement('script');
 		script.src = options.Name + '?_dcui=dyn&nocache=' + dc.util.Crypto.makeSimpleKey();
 		script.id = 'page' + options.Name.replace(/\//g,'.');
@@ -4362,9 +4364,9 @@ dc.pui.controls.Uploader.prototype.onAfterSave = function(e) {
 
 	//uploadtask.run();
 
-	dc.pui.Popup.await('Large files may take some time, please wait until the upload is complete.', function() {
+	dc.pui.Popup.await(dc.lang.Dict.tr('_code_900'), function() {
 		task.resume();		// resume the Save task
-	}, 'Uploading Files', uploadtask);
+	}, dc.lang.Dict.tr('_code_901'), uploadtask);
 
 };
 
@@ -4385,7 +4387,7 @@ dc.pui.controls.Uploader.prototype.addFiles = function(values) {
 		}
 
 		if (calcsize > maxsize) {
-			dc.pui.Popup.alert('Total file size too large, please reduce size before upload.');
+			dc.pui.Popup.alert(dc.lang.Dict.tr('_code_902'));
 			return;
 		}
 	}
@@ -4408,11 +4410,11 @@ dc.pui.controls.Uploader.prototype.addFiles = function(values) {
 				.click(function(e) {
 					var idx = $(e.currentTarget).closest('tr').index();
 
-					dc.pui.Popup.input('Edit the file name. Spaces and special characters are not allowed and will be replaced.', function(newname) {
+					dc.pui.Popup.input(dc.lang.Dict.tr('_code_903'), function(newname) {
 						if (newname) {
 							ctrl.renameFile(idx, newname);
 						}
-					}, 'File Name', 'Name', ctrl.Values[idx]);
+					}, dc.lang.Dict.tr('_code_904'), dc.lang.Dict.tr('_code_905'), ctrl.Values[idx]);
 
 					e.preventDefault();
 					return false;

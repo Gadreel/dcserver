@@ -222,6 +222,7 @@
 			<Tag Name="dcs.If" Class="dcraft.script.inst.If" />
 			<Tag Name="dcs.IfErrored" Class="dcraft.script.inst.IfErrored" />
 			<Tag Name="dcs.Include" Class="dcraft.script.inst.Include" />
+			<Tag Name="dcs.Indirect" Class="dcraft.script.inst.Indirect" />
 			<Tag Name="dcs.Info" Class="dcraft.script.inst.Info" />
 			<Tag Name="dcs.Main" Class="dcraft.script.inst.Main" />
 			<Tag Name="dcs.Out" Class="dcraft.script.inst.doc.Out" />
@@ -254,6 +255,7 @@
 
 			<Tag Name="dcs.CatalogSettings" Class="dcraft.script.inst.ext.CatalogSettings" />
 			<Tag Name="dcs.ConfigGetTag" Class="dcraft.script.inst.ext.ConfigGetTag" />
+			<Tag Name="dcs.ConfigGetTagList" Class="dcraft.script.inst.ext.ConfigGetTagList" />
 
 			<Tag Name="dcs.File" Class="dcraft.script.inst.file.File" />
 			<Tag Name="dcs.Stream" Class="dcraft.script.inst.file.Stream" />

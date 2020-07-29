@@ -54,20 +54,25 @@ public class Out extends Base {
 	public void renderAfterChildren(InstructionWork state) throws OperatingContextException {
 		// copy current content up into the document
 		String forid = StackUtil.stringFromSource(state,"For");
-		String name = StackUtil.stringFromSource(state,"Name");
+		//String name = StackUtil.stringFromSource(state,"Name");
 		
 		if (StringUtil.isNotEmpty(forid)) {
 			Base root = this.getRoot(state);
-			
-			XElement pel = root.findId(forid);
-			
-			if (pel != null) {
-				if (this.children != null)
-					for (int i = 0; i < this.children.size(); i++)
-						pel.add(this.children.get(i));
+
+			if (root == this) {
+				// if is null - nothing I think, this could happen in an include script
 			}
 			else {
-				// TODO what if is null
+				XElement pel = "Top".equals(forid) ? root : root.findId(forid);
+
+				if (pel != null) {
+					if (this.children != null)
+						for (int i = 0; i < this.children.size(); i++)
+							pel.add(this.children.get(i));
+				}
+				else {
+					// TODO what if is null
+				}
 			}
 		}
 		/*

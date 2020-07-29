@@ -25,8 +25,14 @@ public class Uploader extends CoreField {
 				.withAttribute("id", this.fieldid)
 				.withAttribute("data-dc-enhance", "true")
 				.withAttribute("data-dc-tag", this.getName())
-				.withAttribute("type", "file")
-				.withAttribute("capture", "capture");
+				.withAttribute("type", "file");
+				//.withAttribute("capture", "capture");
+
+		if (this.hasAttribute("accept"))
+			input.attr("accept", this.attr("accept"));  // image/*;capture=camera
+
+		if (this.hasAttribute("capture"))
+			input.attr("capture", this.attr("capture"));
 
 		if (! this.getAttributeAsBooleanOrFalse("Single"))
 				input.withAttribute("multiple", "multiple");
