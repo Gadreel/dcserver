@@ -224,6 +224,12 @@ public class Task extends RecordStruct {
 		return this;
 	}
 	
+	public Task withNodeScript(String path) {
+		this.with("ScriptPath", path);
+
+		return this;
+	}
+
 	public Task withScript(CommonPath path) {
 		this.with("ScriptPath", path);
 		return this;
@@ -240,15 +246,20 @@ public class Task extends RecordStruct {
 				this.work = (IWork) ResourceHub.getResources().getClassLoader().getInstance(this.getWorkClassname());
 			}
 			else if (this.isNotFieldEmpty("ScriptPath")) {
-				Script scrpt = Script.of(
-						CommonPath.from(this.getFieldAsString("ScriptPath"))
-				);
-				
-				if (scrpt != null) {
-					if (this.isFieldEmpty("Title"))
-						this.with("Title", scrpt.getTitle());
-					
-					this.work = scrpt.toWork();
+				String scriptPath = this.getFieldAsString("ScriptPath");
+
+				if (scriptPath.endsWith(".xml")) {
+					Script scrpt = Script.of(CommonPath.from(scriptPath));
+
+					if (scrpt != null) {
+						if (this.isFieldEmpty("Title"))
+							this.with("Title", scrpt.getTitle());
+
+						this.work = scrpt.toWork();
+					}
+				}
+				else if (scriptPath.endsWith(".js")) {
+					this.work = NodeWork.of(CommonPath.from(scriptPath));
 				}
 			}
 			else if (this.isNotFieldEmpty("ScriptLocalPath")) {

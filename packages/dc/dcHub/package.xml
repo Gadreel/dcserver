@@ -281,6 +281,8 @@
 			<Definition Code="empty" Class="dcraft.struct.format.EmptyFormatter" />
 			<Definition Code="ifempty" Class="dcraft.struct.format.IfEmptyFormatter" />
 			<Definition Code="join" Class="dcraft.struct.format.JoinFormatter" />
+			<Definition Code="split" Class="dcraft.struct.format.SplitFormatter" />
+			<Definition Code="idx" Class="dcraft.struct.format.IndexFormatter" />
 			<Definition Code="encodejson" Class="dcraft.struct.format.EncodeJsonFormatter" />
 			<Definition Code="decodejson" Class="dcraft.struct.format.DecodeJsonFormatter" />
 			<Definition Code="md" Class="dcraft.struct.format.MarkDown" />

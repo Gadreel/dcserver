@@ -37,24 +37,76 @@
 	float: right;
 }
 
+.dcm-widget-slider .dcm-widget-slider-fader,
+.dcm-widget-slider-banner .dcm-widget-slider-img,  /* only when in banner mode for img */
 .dcm-widget-carousel .dcm-widget-carousel-fader,
 .dcm-widget-carousel .dcm-widget-carousel-img,
 .dcm-widget-banner .dcm-widget-banner-img {
 	height: 100%;
-    position: absolute;
+  position: absolute;
 }
 
+.dcm-widget-slider .dcm-widget-slider-fader,
 .dcm-widget-carousel .dcm-widget-carousel-fader {
 	z-index: 0;
 }
 
+.dcm-widget-slider .dcm-widget-slider-img,
 .dcm-widget-carousel .dcm-widget-carousel-img,
 .dcm-widget-banner .dcm-widget-banner-img {
 	z-index: 4;
 }
 
+.dcm-widget-slider .dcm-widget-slider-list,
 .dcm-widget-carousel .dcm-widget-carousel-list {
 	display: none;
+}
+
+
+/* SliderWidget */
+
+.dcm-widget-slider.dcm-widget-slider-inline img.dcm-widget-slider-fader,
+.dcm-widget-slider.dcm-widget-slider-inline img.dcm-widget-slider-img {
+	max-width: 100%;
+}
+
+.dcm-widget-slider img.autoplay {
+	transition: opacity 2.2s linear;
+}
+
+.dcm-widget-slider img.manual {
+	transition: opacity .4s linear;
+}
+
+/* for LRControl in SliderWidget only */
+
+.dcm-widget-slider-lr .dcm-widget-slider-ctrl {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	font-size: 2rem;
+	z-index: 10;
+	user-select: none;
+
+	width: 5rem;
+}
+
+.dcm-widget-slider-lr .dcm-widget-slider-ctrl a {
+	user-select: none;
+	display: inline-block;
+
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	user-select: none;
+}
+
+.dcm-widget-slider-lr .dcm-widget-slider-ctrl-left {
+	left: 0;
+}
+
+.dcm-widget-slider-lr .dcm-widget-slider-ctrl-right {
+	right: 0;
 }
 
 .dcm-widget-social-media {

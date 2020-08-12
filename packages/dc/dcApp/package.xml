@@ -63,8 +63,9 @@
 
 			<!-- cms media extended tags -->
 			<Tag Name="dcm.CarouselWidget" Class="dcraft.web.ui.inst.cms.CarouselWidget" />
-			<Tag Name="dcm.ImageWidget" Class="dcraft.web.ui.inst.cms.ImageWidget" />
 			<Tag Name="dcm.BannerWidget" Class="dcraft.web.ui.inst.cms.BannerWidget" />
+			<Tag Name="dcm.ImageWidget" Class="dcraft.web.ui.inst.cms.ImageWidget" />
+			<Tag Name="dcm.SliderWidget" Class="dcraft.web.ui.inst.cms.SliderWidget" />
 			<Tag Name="dcm.VideoWidget" Class="dcraft.web.ui.inst.cms.VideoWidget" />
 			<Tag Name="dcm.YouTubeWidget" Class="dcraft.web.ui.inst.cms.YouTubeWidget" />
 			<Tag Name="dcm.VimeoWidget" Class="dcraft.web.ui.inst.cms.VimeoWidget" />

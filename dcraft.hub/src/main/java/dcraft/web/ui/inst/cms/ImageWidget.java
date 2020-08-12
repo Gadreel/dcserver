@@ -194,7 +194,7 @@ public class ImageWidget extends Base implements ICMSAware {
 	}
 	
 	@Override
-	public void renderAfterChildren(InstructionWork state) {
+	public void renderAfterChildren(InstructionWork state) throws OperatingContextException {
 		this
 				.withClass("dc-widget", "dc-widget-image")
 				.withClass("dc-media-box", "dc-media-image")

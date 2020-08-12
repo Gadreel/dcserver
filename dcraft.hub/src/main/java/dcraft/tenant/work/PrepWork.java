@@ -371,6 +371,16 @@ public class PrepWork extends StateWork {
 
 			if (Files.exists(spath))
 				resources.getOrCreateTierScripts().withPath(spath);
+
+			spath = pkg.getPath().resolve("node-modules");
+
+			if (Files.exists(spath))
+				resources.getOrCreateTierNodes().withModule(spath);
+
+			spath = pkg.getPath().resolve("node");
+
+			if (Files.exists(spath))
+				resources.getOrCreateTierNodes().withScript(spath);
 		}
 
 		// --- load tenant level script paths, if any ---
@@ -384,7 +394,17 @@ public class PrepWork extends StateWork {
 
 		if (Files.exists(spath))
 			resources.getOrCreateTierScripts().withPath(spath);
-		
+
+		spath = this.tenant.resolvePath("node-modules");
+
+		if (Files.exists(spath))
+			resources.getOrCreateTierNodes().withModule(spath);
+
+		spath = this.tenant.resolvePath("node");
+
+		if (Files.exists(spath))
+			resources.getOrCreateTierNodes().withScript(spath);
+
 		ConfigResource config = resources.getOrCreateTierConfig();
 		
 		for (XElement lel : config.getTagListLocal("Formatters/Definition")) {
@@ -539,6 +559,11 @@ public class PrepWork extends StateWork {
 
 					if (Files.exists(spath))
 						site.getResourcesOrCreate(resources).getOrCreateTierScripts().withPath(spath);
+
+					spath = site.resolvePath("node");
+
+					if (Files.exists(spath))
+						resources.getOrCreateTierNodes().withScript(spath);
 				}
 				
 				for (XElement del : sconfig.getTagListLocal("Domain")) {

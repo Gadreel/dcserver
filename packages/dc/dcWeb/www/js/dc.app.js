@@ -3606,6 +3606,171 @@ dc.pui.Tags = {
 			return true;
 		});
 	},
+	'dcm.SliderWidget': function(entry, node) {
+		var currimg = 0;
+		var targetsrc = null;
+
+		var imagelist = $(node).find('.dcm-widget-slider-list img');
+
+		var imgel = $(node).find('img.dcm-widget-slider-img');
+		var fadel = $(node).find('img.dcm-widget-slider-fader');
+
+		var switchFromGallery = function() {
+			var src = targetsrc;
+
+			var variant = $(node).attr('data-dc-variant');
+			var ext = $(node).attr('data-dc-ext');
+
+			var pos1 = src.lastIndexOf('/');
+			var pos2 = src.lastIndexOf('?');
+
+			var newsrc = src.substr(0, pos1 + 1) + variant + '.' + ext + src.substr(pos2);
+
+			$(imgel).attr('src', newsrc);
+		};
+
+		var startSwitchCurrent = function(manual) {
+			if (manual) {
+				opset = false;
+				$(imgel).removeClass('autoplay');
+			}
+
+			targetsrc = $(imagelist.get(currimg)).attr('src');
+
+			if (manual) {
+				$(imgel).addClass('manual').css("opacity", 0);
+			}
+		};
+
+		var prevFromGallery = function(manual) {
+			if (imagelist && imagelist.length) {
+				currimg--;
+
+				if (currimg < 0)
+					currimg = imagelist.length - 1;
+
+				startSwitchCurrent(manual);
+			}
+		};
+
+		var nextFromGallery = function(manual) {
+			if (imagelist && imagelist.length) {
+				currimg++;
+
+				if (currimg >= imagelist.length)
+					currimg = 0;
+
+				startSwitchCurrent(manual);
+			}
+		};
+
+		$(node).find('.dcm-widget-slider-ctrl-left a').click(function(e) {
+			prevFromGallery(true);
+
+			e.preventDefault();
+			return false;
+		});
+
+		$(node).find('.dcm-widget-slider-ctrl-right a').click(function(e) {
+			nextFromGallery(true);
+
+			e.preventDefault();
+			return false;
+		});
+
+		var gallery = $('#' + $(node).attr('data-target'));
+
+		if (gallery.length == 1) {
+			// link clicks in the gallery to this control - TODO should be optional
+			$(gallery).find('a[data-dcm-alias]').click(function(e) {
+				currimg = $(e.currentTarget).index(); // - 1;
+				startSwitchCurrent(true);
+
+				/*
+				opset = false;
+				$(imgel).removeClass('autoplay').addClass('manual').css("opacity", 0);
+
+				targetsrc = $(e.currentTarget).find('img').attr('src');
+				*/
+
+				e.preventDefault();
+				return false;
+			});
+		}
+
+		var cx = 0, x0 = 0, locked = false;
+
+		function unify(e) {	return e.changedTouches ? e.changedTouches[0] : e };
+
+		function lock(e) {
+			x0 = unify(e).clientX;
+			locked = true;
+		};
+
+		function drag(e) {
+			e.preventDefault();
+		};
+
+		function move(e) {
+			if(locked) {
+				var dx = x0 - unify(e).clientX;
+
+				if (dx > 64) {
+					nextFromGallery(true);
+				}
+				else if (dx < -64) {
+					prevFromGallery(true);
+				}
+
+				locked = false;
+			}
+		};
+
+		$(node).get(0).addEventListener('mousedown', lock, false);
+		$(node).get(0).addEventListener('touchstart', lock, false);
+
+		$(node).get(0).addEventListener('mousemove', drag, false);
+		$(node).get(0).addEventListener('touchmove', drag, false);
+
+		$(node).get(0).addEventListener('mouseup', move, false);
+		$(node).get(0).addEventListener('touchend', move, false);
+
+		var opset = false;
+		var opcurr = 1;
+
+		$(imgel).on('transitionend', function() {
+			if (opset) {
+				if ($(imgel).hasClass('autoplay')) {
+					setTimeout(function() {
+						if ($(imgel).hasClass('autoplay')) 	// check if still has autoplay
+							$(imgel).css("opacity", 0);
+					}, 2000);
+				}
+				else {
+					//debugger;
+				}
+
+				$(fadel).attr('src', $(imgel).attr('src'));
+			}
+			else {
+				if ($(imgel).hasClass('autoplay')) {
+					nextFromGallery(false);
+				}
+
+				switchFromGallery();
+
+				$(imgel).css("opacity", 1);
+			}
+
+			opset = ! opset;
+		});
+
+		setTimeout(function() {
+			if ($(imgel).hasClass('autoplay')) {
+				$(imgel).css("opacity", 0);
+			}
+		}, 2000);
+	},
 	'dc.MediaSection': function(entry, node) {
 		$(node).find('.dc-section-gallery-list > *').each(function() {
 			var kind = $(this).attr('data-dc-kind');

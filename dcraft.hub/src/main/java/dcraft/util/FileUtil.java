@@ -559,4 +559,8 @@ public class FileUtil {
 		
 		return x;
     }
+
+    static public Path getAppPath() {
+    	return Path.of(System.getProperty("user.dir"));
+	}
  }

@@ -224,7 +224,24 @@ public class ResourceTier extends CompositeStruct {
 		
 		return r;
 	}
-	
+
+	public NodeResource getNodes() {
+		return (NodeResource) this.get("Node");
+	}
+
+	synchronized public NodeResource getOrCreateTierNodes() {
+		NodeResource r = (NodeResource) this.getTier("Node");
+
+		if (r != null)
+			return r;
+
+		r = new NodeResource();
+
+		this.with(r);
+
+		return r;
+	}
+
 	public DatabaseResource getDatabases() {
 		return (DatabaseResource) this.get("Database");
 	}
@@ -319,6 +336,9 @@ public class ResourceTier extends CompositeStruct {
 		}
 		else if ("Script".equals(fld)) {
 			o = this.get("Script");
+		}
+		else if ("Node".equals(fld)) {
+			o = this.get("Node");
 		}
 		else if ("Database".equals(fld)) {
 			o = this.get("Database");

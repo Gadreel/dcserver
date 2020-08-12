@@ -147,6 +147,16 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 
 				if (Files.exists(spath))
 					resources.getOrCreateTierScripts().withPath(spath);
+
+				spath = hpackage.getPath().resolve("node-modules");
+
+				if (Files.exists(spath))
+					resources.getOrCreateTierNodes().withModule(spath);
+
+				spath = hpackage.getPath().resolve("node");
+
+				if (Files.exists(spath))
+					resources.getOrCreateTierNodes().withScript(spath);
 			}
 		}
 		

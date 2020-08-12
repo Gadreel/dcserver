@@ -2384,8 +2384,8 @@ ol.dc-listview > li img:first-child + * ~ * {
 	opacity: -.5;
 }
 
-.dc-table-stripe tbody tr:nth-child(odd) td,
-.dc-table-stripe tbody tr:nth-child(odd) th {
+.dc-table-stripe > tbody > tr:nth-child(odd) > td,
+.dc-table-stripe > tbody > tr:nth-child(odd) > th {
     background-color: #eee;
     background-color: rgba(0,0,0,.04)
 }
@@ -2493,6 +2493,7 @@ ol.dc-listview > li img:first-child + * ~ * {
 }
 
 /* default to 1600 x 560 image */
+.dcm-widget-slider-banner,
 .dcm-widget-carousel,
 .dcm-widget-banner {
     height: 560px;
