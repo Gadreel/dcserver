@@ -72,7 +72,7 @@ public class NodeWork implements IWork {
 		}
 
 		StringBuilder nodepath = new StringBuilder();
-		nodepath.append("export NODE_PATH=$(/usr/bin/npm root --quiet -g)");
+		nodepath.append("export NODE_PATH=$(/usr/local/bin/npm root --quiet -g)");
 
 		OperationContext.getOrThrow().getResources().getNodes().buildClassPath(nodepath);
 
@@ -83,8 +83,8 @@ public class NodeWork implements IWork {
 		oparams.add("sh");
 		oparams.add("-c");
 
-		// TODO make node path configurable?
-		oparams.add(nodepath + " && /usr/bin/node ./" + script);
+		// TODO make node path configurable? - default to one set up by "n" package
+		oparams.add(nodepath + " && /usr/local/bin/node ./" + script);
 
 		ProcessBuilder pb = new ProcessBuilder(oparams);
 		pb.redirectErrorStream(true);
@@ -153,8 +153,8 @@ public class NodeWork implements IWork {
 			
 			if (ecode > 0)
 				Logger.infoTr(ecode, "Node exited with code", "Exit");
-			else
-				Logger.info("Node exited with no error", "Exit");
+			//else
+			//	Logger.info("Node exited with no error", "Exit");
 		}
 		catch (IOException x) {
 			Logger.error("Node IO Error " + x);

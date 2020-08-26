@@ -21,6 +21,7 @@
 		</StringType>
 
 		<Record Id="dcmQuickPDF" Class="dcraft.util.pdf.QuickPDF" />
+		<Record Id="dcmQuickCSV" Class="dcraft.util.csv.QuickCSV" />
 
 		<Record Id="dcmFormBuilderInfo">
 			<Field Name="Record" Type="dcMetaString" />

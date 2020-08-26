@@ -313,7 +313,7 @@ public class TableUtil {
 			@Override
 			public Boolean apply(Object fid) {
 				try {
-					if (fid == null) {
+					if ((fid == null) || ! db.isCurrent(fktable, fid.toString())) {
 						out.value(null);
 					}
 					else if (sfield != null) {
@@ -329,6 +329,23 @@ public class TableUtil {
 				}
 				catch (Exception x) {
 					Logger.error("Unable to write foreign record: " + x);
+				}
+
+				return false;
+			}
+		};
+
+		Function<Object,Boolean> foreignSinkCurrent = new Function<Object,Boolean>() {
+			@Override
+			public Boolean apply(Object fid) {
+				try {
+					if (fid != null) {
+						// if a single field the write out the field out "inlined"
+						return db.isCurrent(fktable, fid.toString());
+					}
+				}
+				catch (Exception x) {
+					Logger.error("Unable to check foreign record: " + x);
 				}
 
 				return false;
@@ -407,7 +424,7 @@ public class TableUtil {
 						else if (subselect != null) {
 							Object value = db.getDynamicList(table, id, fname, subid.toString(), format);
 							
-							if (value != null) {
+							if ((value != null) && foreignSinkCurrent.apply(value)) {
 								foreignSink.apply(value);
 								return true;
 							}

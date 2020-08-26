@@ -179,13 +179,15 @@ public class SliderWidget extends Base implements ICMSAware {
                         OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
 
                 try {
-                    if ("max".equals(imgcache)) {
-                        FileTime fileTime = Files.getLastModifiedTime(imgpath);
+                    if (imgpath != null) {
+                        if ("max".equals(imgcache)) {
+                            FileTime fileTime = Files.getLastModifiedTime(imgpath);
 
-                        img.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
-                    }
-                    else {
-                        img.with("Path", "/galleries" + lpath);
+                            img.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
+                        }
+                        else {
+                            img.with("Path", "/galleries" + lpath);
+                        }
                     }
                 }
                 catch (IOException x) {

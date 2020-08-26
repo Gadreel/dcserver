@@ -2928,6 +2928,22 @@ dc.pui.TagFuncs = {
 		'reset': function(entry, node) {
 			grecaptcha.reset();
 		}
+	},
+	'dcm.SliderWidget': {
+		'getCurrentSlideData': function(entry, node) {
+			var currimg = dc.util.Number.toNumberStrict($(node).attr('data-dc-current-slide'));
+
+			var imagelist = $(node).find('.dcm-widget-slider-list img');
+
+			var data = $(imagelist.get(currimg)).attr('data-dc-image-data');
+
+			return JSON.parse(data);
+		},
+		'pauseSlides': function(entry, node) {
+			var imgel = $(node).find('img.dcm-widget-slider-img');
+
+			$(imgel).removeClass('autoplay');
+		}
 	}
 };
 
@@ -3615,6 +3631,21 @@ dc.pui.Tags = {
 		var imgel = $(node).find('img.dcm-widget-slider-img');
 		var fadel = $(node).find('img.dcm-widget-slider-fader');
 
+		var selectInGallery = function() {
+			$(node).attr('data-dc-current-slide', currimg);
+
+			var gallery = $('#' + $(node).attr('data-target'));
+
+			if (gallery.length == 1) {
+				var gallist = $(gallery).find('a[data-dcm-alias]');
+
+				gallist.removeClass('auto-select');
+
+				if (currimg < gallist.length)
+					$(gallist.get(currimg)).addClass('auto-select');
+			}
+		}
+
 		var switchFromGallery = function() {
 			var src = targetsrc;
 
@@ -3627,6 +3658,8 @@ dc.pui.Tags = {
 			var newsrc = src.substr(0, pos1 + 1) + variant + '.' + ext + src.substr(pos2);
 
 			$(imgel).attr('src', newsrc);
+
+			selectInGallery();
 		};
 
 		var startSwitchCurrent = function(manual) {
@@ -3638,7 +3671,9 @@ dc.pui.Tags = {
 			targetsrc = $(imagelist.get(currimg)).attr('src');
 
 			if (manual) {
-				$(imgel).addClass('manual').css("opacity", 0);
+				$(imgel).addClass('manual');
+
+				$(imgel).css("opacity", 0);
 			}
 		};
 
@@ -3683,15 +3718,8 @@ dc.pui.Tags = {
 		if (gallery.length == 1) {
 			// link clicks in the gallery to this control - TODO should be optional
 			$(gallery).find('a[data-dcm-alias]').click(function(e) {
-				currimg = $(e.currentTarget).index(); // - 1;
+				currimg = $(e.currentTarget).index();
 				startSwitchCurrent(true);
-
-				/*
-				opset = false;
-				$(imgel).removeClass('autoplay').addClass('manual').css("opacity", 0);
-
-				targetsrc = $(e.currentTarget).find('img').attr('src');
-				*/
 
 				e.preventDefault();
 				return false;
@@ -3764,6 +3792,8 @@ dc.pui.Tags = {
 
 			opset = ! opset;
 		});
+
+		selectInGallery();
 
 		setTimeout(function() {
 			if ($(imgel).hasClass('autoplay')) {

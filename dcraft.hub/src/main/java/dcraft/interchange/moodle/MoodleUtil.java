@@ -1,11 +1,13 @@
 package dcraft.interchange.moodle;
 
 import dcraft.hub.app.ApplicationHub;
-import dcraft.hub.op.OperationOutcomeEmpty;
-import dcraft.hub.op.OperationOutcomeList;
-import dcraft.hub.op.OperationOutcomeRecord;
+import dcraft.hub.op.*;
+import dcraft.interchange.authorize.AuthUtil;
+import dcraft.interchange.authorize.AuthUtilXml;
 import dcraft.log.Logger;
 import dcraft.struct.*;
+import dcraft.struct.builder.BuilderStateException;
+import dcraft.struct.builder.JsonBuilder;
 import dcraft.util.Base64;
 import dcraft.util.StringUtil;
 import dcraft.util.chars.Utf8Encoder;
@@ -13,8 +15,12 @@ import dcraft.xml.XElement;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.DataOutputStream;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 public class MoodleUtil {
 	static public void findUserByEmail(String alt, String email, OperationOutcomeRecord callback) {
@@ -206,19 +212,24 @@ public class MoodleUtil {
 			body.append('&');
 			body.append("enrolments[0][courseid]=" + URLEncoder.encode(courseid, "UTF-8"));
 
-			// parse and close response stream
-			CompositeStruct resp = MoodleUtil.execute(alt, "enrol_manual_enrol_users", body.toString(), 5);
+			OperationContext.getOrThrow().touch();
 
-			// returns null unless error
-			if (resp != null) {
-				Logger.error("Moodle Resp:\n" + resp.toPrettyString());
-			}
+			HttpRequest.Builder builder = MoodleUtil.buildRequest(alt, "enrol_manual_enrol_users", body.toString());
+
+			// Send post request
+			HttpClient.newHttpClient().sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
+					.thenAcceptAsync(new MoodleEmptyResponse() {
+						@Override
+						public void callback() throws OperatingContextException {
+							callback.returnEmpty();
+						}
+					});
 		}
 		catch (Exception x) {
 			Logger.error("Error calling service, Moodle error: " + x);
-		}
 
-		callback.returnEmpty();
+			callback.returnEmpty();
+		}
 	}
 
 	static public void unenrollUser(String alt, String userid, String courseid, OperationOutcomeEmpty callback) {
@@ -228,7 +239,7 @@ public class MoodleUtil {
 				enrolments[0][userid]= int
 				enrolments[0][courseid]= int
 
-				enrol_manual_enrol_users
+				enrol_manual_unenrol_users
 				 */
 
 			StringBuilder body = new StringBuilder();
@@ -429,6 +440,41 @@ public class MoodleUtil {
 		}
 
 		callback.returnEmpty();
+	}
+
+	static public HttpRequest.Builder buildRequest(String alt, String function, String body) {
+		XElement moodlesettings = ApplicationHub.getCatalogSettings("Moodle-Services", alt);
+
+		if (moodlesettings == null) {
+			Logger.error("Missing Moodle settings.");
+			return null;
+		}
+
+		String domain = moodlesettings.getAttribute("Domain");
+
+		if (StringUtil.isEmpty(domain)) {
+			Logger.error("Missing Moodle domain.");
+			return null;
+		}
+
+		String token = moodlesettings.getAttribute("Token");
+
+		if (StringUtil.isEmpty(token)) {
+			Logger.error("Missing Moodle token.");
+			return null;
+		}
+
+		String endpoint = "https://" + domain + "/webservice/rest/server.php?wstoken=" + token
+				+ "&wsfunction=" + function + "&moodlewsrestformat=json";
+
+		HttpRequest.Builder builder = HttpRequest.newBuilder()
+				.uri(URI.create(endpoint))
+				.header("User-Agent", "dcServer/2019.1 (Language=Java/11)")
+				//.header("Accept", "application/json")
+				.header("Content-Type", "application/x-www-form-urlencoded")
+				.POST(HttpRequest.BodyPublishers.ofString(body));
+
+		return builder;
 	}
 
 	static private CompositeStruct execute(String alt, String function, String body, int minlen) {
