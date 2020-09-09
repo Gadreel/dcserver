@@ -57,6 +57,11 @@
 	</Shared>
 
 	<Database>
+		<Table Id="dcTenant">
+			<Field Name="dcmCurrentGoliveReport" ForeignKey="dcTaskList" />
+		</Table>
+
+
 		<!-- Index for Feed Files -->
 		<Table Id="dcmFeed">
 			<!-- feed alias -->
@@ -183,6 +188,8 @@
 		<Procedure Name="dcmServices.Dashboard.ListBlockedIP" Execute="dcraft.cms.dashboard.db.ListBlockedIP" />
 		<Procedure Name="dcmServices.Dashboard.KillBlockedIP" Execute="dcraft.cms.dashboard.db.KillBlockedIP" />
 		<Procedure Name="dcmServices.Dashboard.KillAllBlockedIP" Execute="dcraft.cms.dashboard.db.KillAllBlockedIP" />
+
+		<Procedure Name="dcmServices.Reports.CreateGoLive" Execute="dcraft.cms.reports.db.CreateGoLive" />
 
 		<Procedure Name="dcCoreServices.ManagedForm.Submit" Execute="dcraft.cms.db.forms.Submit" />
 		<Procedure Name="dcCoreServices.ManagedForm.Complete" Execute="dcraft.cms.db.forms.Complete" />
@@ -677,6 +684,18 @@
 						<Description>
 							Remove all blocked IPs.
 						</Description>
+					</Op>
+				</Secure>
+			</Feature>
+			<Feature Name="Reports">
+				<Secure Badges="SysAdmin,Developer">
+					<Op Name="CreateGoLive">
+						<Description>
+							Create a go-live report and make it current in tenant table.
+						</Description>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
 					</Op>
 				</Secure>
 			</Feature>

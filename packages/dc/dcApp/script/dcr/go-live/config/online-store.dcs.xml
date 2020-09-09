@@ -1,0 +1,142 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:online-store">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Online Store',
+				Description: 'Settings for online store from this tenant.',
+				Params: { Alias: 'online-store' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:online-store" Param="StepId">
+		<dcs.CatalogSettings Id="CMS-Store" Result="StoreSettings" />
+
+		<dcs.Var Name="Store" Type="Record">
+			<SetField Name="Payment" Type="String" Value="{$StoreSettings.Payment.0.@Method|ifempty:[not found]}" />
+			<SetField Name="Shipping" Type="String" Value="{$StoreSettings.Shipping|notempty:|tf:Found,Not found}" />
+			<SetField Name="TaxTable" Type="String" Value="{$StoreSettings.TaxTable|notempty:|tf:Found,Not found}" />
+		</dcs.Var>
+
+		<dcs.CatalogSettings Id="Email-List-Merchant" Result="StoreEmailSettings" />
+
+		<dcs.If Target="$StoreEmailSettings.@To" IsEmpty="false">
+			<dcs.With Target="$Store">
+				<SetField Name="EmailFound" Type="Boolean" Value="true" />
+			</dcs.With>
+		</dcs.If>
+
+		<dcs.CatalogSettings Id="CMS-{$Store.Payment}" Result="PaymentSettings" />
+
+		<dcs.If Target="$PaymentSettings" IsEmpty="false">
+			<dcs.With Target="$Store">
+				<SetField Name="PaymentFound" Type="Boolean" Value="true" />
+			</dcs.With>
+		</dcs.If>
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="Store" Value="$Store" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:online-store" Param="StepInfo">
+		<dc.Out>
+			<p>
+				<b>Payment Method:</b> {$StepInfo.Store.Store.Payment}<br/>
+				<b>Shipping:</b> {$StepInfo.Store.Store.Shipping}<br/>
+				<b>Tax Table:</b> {$StepInfo.Store.Store.TaxTable}<br/>
+				<b>Email Notices Found:</b> {$StepInfo.Store.Store.EmailFound|yn:}<br/>
+				<b>Payment Settings Found:</b> {$StepInfo.Store.Store.PaymentFound|yn:}<br/>
+			</p>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:online-store" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+If this website will be using the CMS Store module to manage online sales then there are certain settings that are needed. These settings are found in the config.xml file for the site.
+
+If online store is used there is a single catalog entry whose id is prefixed with "CMS-Store-" and postfixed with the applicable environment (Both, Production, Test) which is Typically "Both". For example:
+
+``` xml
+<Catalog Id="CMS-Store-Both">
+```
+
+There are a varity of settings needed for Payment, Shipping and Taxes. A typical example is:
+
+``` xml
+<Catalog Id="CMS-Store-Both">
+	<Settings PickupState="WI">
+		<Payment Method="Stripe" />
+		<Payment Alias="CreditCard" Method="Stripe" />
+		<Shipping Mode="PerItem">
+			<From
+				Name="designCraft"
+				Street1="707 S. Park St"
+				City="Madison"
+				State="WI"
+				Zip="53715"
+				Country="US"
+				Phone="6082511809"
+				Email="conscience@designcraftadvertising.com"
+			/>
+			<WeightTable>
+				<Limit Max="16" Price="9" />
+				<Limit Max="32" Price="10" />
+				<Limit Max="48" Price="13" />
+				<Limit Max="96" Price="15" />
+				<Limit Max="10000" Price="22" />
+			</WeightTable>
+		</Shipping>
+		<TaxTable>
+			<State Alias="WI" Rate="0.055" ShipTaxable="true" />
+		</TaxTable>
+	</Settings>
+</Catalog>
+```
+
+However, this topic needs additional details, please read the manual on stores.  TODO add articles about store setup and management
+
+In addition to the above you'll need the domain to be able to send the email notices, make sure that the Send Email section of this report is enabled. Further, in order for the merchant to get email updates about the store there needs to be a "Email-List-Merchant" catalog. Typically these are set separately for Production and Test, like this.
+
+``` xml
+<Catalog Id="Email-List-Merchant-Production">
+	<Settings To="store@designcraftadvertising.com" />
+</Catalog>
+
+<Catalog Id="Email-List-Merchant-Test">
+	<Settings To="andy@designcraftadvertising.com" />
+</Catalog>
+```
+
+Also the Payment method will need some configuration. As an example, for Stripe, it would look like this:
+
+``` xml
+<Catalog Id="CMS-Stripe-Production">
+	<Settings
+		AuthPlain="[the secret key]"
+		PublishKey="[the public key]"
+	/>
+</Catalog>
+
+<Catalog Id="CMS-Stripe-Test">
+	<Settings
+		AuthPlain="[the secret key]"
+		PublishKey="[the public key]"
+	/>
+</Catalog>
+```
+
+Generally a separate set of keys (settings) are used for Test and Production so that the testing is not counted as real transactions. TODO DCC link to store config articles
+
+TODO DCC link to config and catalog article
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

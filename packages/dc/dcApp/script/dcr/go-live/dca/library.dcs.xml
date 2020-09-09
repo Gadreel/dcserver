@@ -1,15 +1,8 @@
 <dcs.Library>
 	<dcs.Global Name="CheckList" Type="List">
 		<Set>
-			'domain-index-step',
-			'domains-step',
-			'google-tracking',
-			'site-icons',
-			'site-image',
-			'social-icons',
-			'managed-forms',
-			'send-email',
-			'online-store'
+			'editor',
+			'inline-css'
 		</Set>
 	</dcs.Global>
 

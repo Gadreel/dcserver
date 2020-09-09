@@ -307,6 +307,24 @@ public class StringStruct extends ScalarStruct {
 
 			return ReturnOption.CONTINUE;
 		}
+		else if ("LastIndexOf".equals(code.getName())) {
+			String find = StackUtil.stringFromElement(stack, code, "Find", ",");
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+
+			if (StringUtil.isNotEmpty(result)) {
+				IntegerStruct res = IntegerStruct.of(-1);
+
+				if ( StringUtil.isNotEmpty(this.value)) {
+					long from = StackUtil.intFromElement(stack, code, "From", this.value.length());
+
+					res.adaptValue(this.value.toString().lastIndexOf(find, (int) from));
+				}
+
+				StackUtil.addVariable(stack, result, res);
+			}
+
+			return ReturnOption.CONTINUE;
+		}
 		else if ("HexEncode".equals(code.getName())) {
 			if (StringUtil.isNotEmpty(this.value))
 				this.value = HexUtil.encodeHex(this.value.toString().trim());

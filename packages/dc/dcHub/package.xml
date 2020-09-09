@@ -255,7 +255,12 @@
 
 			<Tag Name="dcs.CatalogSettings" Class="dcraft.script.inst.ext.CatalogSettings" />
 			<Tag Name="dcs.ConfigGetTag" Class="dcraft.script.inst.ext.ConfigGetTag" />
+			<Tag Name="dcs.ConfigGetTagLocal" Class="dcraft.script.inst.ext.ConfigGetTagLocal" />
 			<Tag Name="dcs.ConfigGetTagList" Class="dcraft.script.inst.ext.ConfigGetTagList" />
+			<Tag Name="dcs.ConfigGetTagListDeep" Class="dcraft.script.inst.ext.ConfigGetTagListDeep" />
+			<Tag Name="dcs.ConfigGetTagListLocal" Class="dcraft.script.inst.ext.ConfigGetTagListLocal" />
+			<Tag Name="dcs.SchemaGetTypeDef" Class="dcraft.script.inst.ext.SchemaGetTypeDef" />
+			<Tag Name="dcs.ScriptFindScript" Class="dcraft.script.inst.ext.ScriptFindScript" />
 
 			<Tag Name="dcs.File" Class="dcraft.script.inst.file.File" />
 			<Tag Name="dcs.Stream" Class="dcraft.script.inst.file.Stream" />

@@ -83,20 +83,21 @@ public class StandardSettingsObfuscator extends BasicSettingsObfuscator {
 		}
 			
 		ArrayUtil.blockCopy(bkey1, 0, skey, 64, 64);
-		
+
 		if (StringUtil.isEmpty(key2)) 
 			key2 = "576f726c64";
 		else if (key2.length() > 128)
 			key2 = key2.substring(key2.length() - 128);
-		
+
 		byte[] bkey2 = HexUtil.decodeHex(key2);
 		
 		if (bkey2 == null)
 			bkey2 = DEFAULT_SALT;
-		
+
 		// standardize at 64 bytes
 		if (bkey2.length > 64) {
 			byte[] b2 = new byte[64];
+			// likely this should have been bkey2.length, but too late
 			ArrayUtil.blockCopy(bkey2, bkey1.length - 64, b2, 0, 64);
 			bkey2 = b2;
 		}
@@ -106,9 +107,9 @@ public class StandardSettingsObfuscator extends BasicSettingsObfuscator {
 			ArrayUtil.blockCopy(DEFAULT_SALT, 0, b2, 0, 64 - bkey2.length);
 			bkey2 = b2;
 		}
-		
+
 		ArrayUtil.blockCopy(bkey2, 0, skey, 0, 64);
-		
+
 		this.masterkey = skey;
 		
 		byte[] akey = new byte[32];
@@ -137,8 +138,8 @@ public class StandardSettingsObfuscator extends BasicSettingsObfuscator {
 			ArrayUtil.blockCopy(v, 16, encrypted, 0, encrypted.length);
 			
 			//System.out.println("");
-			
-			return Utf8Decoder.decode(c.doFinal(encrypted)).toString();			
+
+			return Utf8Decoder.decode(c.doFinal(encrypted)).toString();
 		}
 		catch(InvalidKeyException x) {
 			Logger.error("Invalid settings key: " + x, "Code", "202");

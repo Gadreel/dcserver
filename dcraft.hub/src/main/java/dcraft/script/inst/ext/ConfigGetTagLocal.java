@@ -17,27 +17,25 @@
 package dcraft.script.inst.ext;
 
 import dcraft.hub.ResourceHub;
-import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
-import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
-public class ConfigGetTag extends Instruction {
-	static public ConfigGetTag tag() {
-		ConfigGetTag el = new ConfigGetTag();
-		el.setName("dcs.ConfigGetTag");
+public class ConfigGetTagLocal extends Instruction {
+	static public ConfigGetTagLocal tag() {
+		ConfigGetTagLocal el = new ConfigGetTagLocal();
+		el.setName("dcs.ConfigGetTagLocal");
 		return el;
 	}
 
 	@Override
 	public XElement newNode() {
-		return ConfigGetTag.tag();
+		return ConfigGetTagLocal.tag();
 	}
 
 	@Override
@@ -45,7 +43,7 @@ public class ConfigGetTag extends Instruction {
 		if (stack.getState() == ExecuteState.READY) {
 			String tag = StackUtil.stringFromSource(stack, "Tag");
 
-			XElement settings = ResourceHub.getResources().getConfig().getTag(tag);
+			XElement settings = ResourceHub.getResources().getConfig().getTagLocal(tag);
 
 			if (settings != null) {
 				String result = StackUtil.stringFromSource(stack, "Result");

@@ -1,0 +1,51 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:editor">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Editor Account',
+				Description: 'Set up "editor" account for CMS.',
+				Params: { Alias: 'editor' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:editor" Param="StepId">
+		<dcs.Var Name="EditorFound" Type="Boolean" SetTo="false" />
+
+		<dcdb.QueryFirst Table="dcUser" Result="EditorData">
+			<Select Field="Id" />
+
+			<Collector Field="dcUsername" Values="editor" />
+		</dcdb.QueryFirst>
+
+		<dcs.If Target="$EditorData" IsEmpty="false">
+			<dcs.With Target="$EditorFound" SetTo="true" />
+		</dcs.If>
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="EditorFound" Value="$EditorFound" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:editor" Param="StepInfo">
+		<dc.Out>
+			<p>
+				<b>Editor Account Found:</b> {$StepInfo.Store.EditorFound|yn:}<br/>
+			</p>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:editor" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+Generally we create an account with a username of "editor" for our CMS customers. The standard practice is that it has both Admin and Staff badges.
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

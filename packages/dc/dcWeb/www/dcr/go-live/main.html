@@ -21,14 +21,25 @@
 	<dc.Body>
 		<dc.PagePanel>
 			<p>
-				Report Status: {$CurrentData.Status}<br/>
-				Approved: {$CurrentData.ApprovedAt}<br/>
-				Message: {$CurrentData.Message}<br/>
+				<b>Report Status:</b> {$CurrentData.Status}<br/>
+				<b>Approved:</b> {$CurrentData.ApprovedAt|dt:MMM dd, hh:mm}<br/>
 			</p>
 
-			<p>
-				<dc.Button Label="Close Report" Click="DoCloseReport" />
-			</p>
+			<dcs.If Target="$CurrentData.Message" IsEmpty="false">
+				<dc.Out>
+					<dc.TextWidget>
+						<Tr><![CDATA[**Message:** {$CurrentData.Message}
+
+-----
+						]]></Tr>
+					</dc.TextWidget>
+				</dc.Out>
+			</dcs.If>
+
+			<dcf.FormButtons>
+				<dc.Button Label="Message" Click="DoAddMessage" />
+				<dc.Button Label="Approve Report" Click="DoApproveReport" Scope="Primary" />
+			</dcf.FormButtons>
 
 			<table id="lstSteps" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
 				<thead>
@@ -41,12 +52,27 @@
 				</thead>
 				<tbody id="lstStepsBody">
 					<dcs.ForEach Name="Tab" In="$CurrentData.Tabs">
+						<dcs.If Target="$Tab.ApprovedAt" IsEmpty="false">
+							<dcs.With Target="$Tab">
+								<SetField Name="Approved" Value="true" />
+							</dcs.With>
+						</dcs.If>
+
 						<dc.Out>
 							<tr data-alias="{$Tab.Child.Alias}">
 								<td>{$Tab.Title}</td>
-								<td>{$Tab.Status}</td>
-								<td>{$Tab.ApprovedAt}</td>
-								<td>{$Tab.Message}</td>
+								<td>{$Tab.Approved|tf:Approved,Awaiting Approval}</td>
+								<td>{$Tab.ApprovedAt|dt:MMM dd, hh:mm}</td>
+								<td>
+									<dcs.If Target="$Tab.Message" IsEmpty="false">
+										<dc.Out>
+											<dc.TextWidget>
+												<Tr><![CDATA[{$Tab.Message}
+												]]></Tr>
+											</dc.TextWidget>
+										</dc.Out>
+									</dcs.If>
+								</td>
 							</tr>
 						</dc.Out>
 					</dcs.ForEach>
@@ -59,19 +85,30 @@
 			var page = this;
 
 	]]></Function>
-	<Function Name="DoCloseReport"><![CDATA[
+	<Function Name="DoApproveReport"><![CDATA[
 			var page = this;
 
-			dc.comm.call('dcCoreServices.TaskList.UpdateReview', {
-				Id: '{$Page.OriginalPathParts.3}',
-				Status: 'Passed',
-				Message: 'test auto',
-				Approved: true
-			}, function(rmsg) {
-				if (rmsg.Code > 0) {
-					dc.pui.Popup.alert('Unable to update step: ' + rmsg.Message);
-				}
-				else {
+			// TODO check status of steps?
+
+			dc.pui.Popup.confirm('Approve this entire report?', function(confirm) {
+				if (! confirm)
+					return;
+
+				dc.comm.call('dcCoreServices.TaskList.UpdateReview', {
+					Id: '{$Page.OriginalPathParts.3}',
+					Status: 'Passed',
+					Approved: true
+				}, function(resp) {
+						page.Layer.refreshPage();
+				});
+			});
+	]]></Function>
+	<Function Name="DoAddMessage" Params="e"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcr/go-live/edit-note', {
+				TaskId: '{$Page.OriginalPathParts.3}',
+				Callback: function(path) {
 					page.Layer.refreshPage();
 				}
 			});

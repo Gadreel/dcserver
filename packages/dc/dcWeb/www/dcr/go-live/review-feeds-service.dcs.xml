@@ -1,0 +1,27 @@
+<dcs.Script Badges="Admin,SysAdmin,Developer">
+	<dcs.Include Path="/dcr/go-live/feeds/library" />
+
+	<dcs.ScriptServiceSwitch>
+		<dcs.Case Equal="Echo">
+			<dcs.Var Name="Return" Type="Record">
+				<SetField Name="Value" Value="$Request.Body.Value" />
+			</dcs.Var>
+
+			<dcs.ScriptServiceSuccess Result="$Return" />
+		</dcs.Case>
+		<dcs.Case Equal="Clear">
+			<dcdb.UpdateRecord Table="dcTaskList" Id="$Request.Body.Id">
+				<Set Field="dcStepTask" />
+			</dcdb.UpdateRecord>
+
+			<dcs.ScriptServiceSuccess />
+		</dcs.Case>
+		<dcs.Case Equal="RecheckStep">
+			<dcs.Include Path="/dcr/go-live/feeds/{$Request.Body.StepAlias}" />
+
+			<dcs.CallFunc Name="LoadFuncs:{$Request.Body.StepAlias}" Arg="$Request.Body.StepId" />
+
+			<dcs.ScriptServiceSuccess />
+		</dcs.Case>
+	</dcs.ScriptServiceSwitch>
+</dcs.Script>

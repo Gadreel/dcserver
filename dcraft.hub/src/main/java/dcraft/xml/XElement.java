@@ -1081,11 +1081,16 @@ public class XElement extends XNode {
 			String partField = part.getField();
 			
 			if (partField.startsWith("@")) {
-				return StringStruct.of(this.getAttribute(partField.substring(1)));
+				String val = this.getAttribute(partField.substring(1));
+
+				return (val == null) ? null : StringStruct.of(val);
 			}
 			
-			if (partField.equals("#"))
-				return StringStruct.of(this.getText());
+			if (partField.equals("#")) {
+				String val = this.getText();
+
+				return (val == null) ? null : StringStruct.of(val);
+			}
 			
 			ListStruct nodes = ListStruct.list();
 			
@@ -1456,7 +1461,7 @@ public class XElement extends XNode {
 	@Override
 	public boolean isEmpty() {
 		if ((this.children == null) || (this.children.size() == 0)) {
-			return ((this.attributes == null) || (this.children.size() == 0));
+			return ((this.attributes == null) || (this.attributes.size() == 0));
 		}
 		
 		return false;

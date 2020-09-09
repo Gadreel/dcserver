@@ -72,7 +72,23 @@ public class ScriptResource extends ResourceBase {
 		
 		return null;
 	}
-	
+
+	public Path findScript(CommonPath path) {
+		for (int i = this.paths.size() - 1; i >= 0; i--) {
+			Path path1 = this.paths.get(i).resolve(path.toString().substring(1));
+
+			if (Files.exists(path1))
+				return path1;
+		}
+
+		ScriptResource parent = this.getParentResource();
+
+		if (parent != null)
+			return parent.findScript(path);
+
+		return null;
+	}
+
 	public Map<String, Class<? extends XElement>>  getParseMap() {
 		Map<String, Class<? extends XElement>> tagmap = new HashMap<>();
 		

@@ -34,6 +34,8 @@ dc.comm = {
 		callback();
 	},
 
+	// this is slower than RPC because it must validate the Auth token before each call
+	// that is due to the fact that the session token may have expired
 	callScript: function(path, op, params, callbackfunc, timeout) {
 		var msg = {
 			Op: op
@@ -42,51 +44,56 @@ dc.comm = {
 		if (params)
 			msg.Body = params;
 
-		var processRequest = function(e) {
-		    if (xhr.readyState == 4) {
-		    	try {
-			    	if (xhr.status == 200) {
-							if (callbackfunc)
-								callbackfunc(JSON.parse(xhr.responseText));
+		// make sure current session is not stale
+		dc.comm.sendMessage({
+			Service: 'dcCoreServices',
+			Feature: 'Authentication',
+			Op: 'Verify'
+		}, function() {
+			var xhr = new XMLHttpRequest();
+			xhr.open('POST', path + '?nocache=' + dc.util.Crypto.makeSimpleKey(), true);
+
+			xhr.timeout = timeout ? timeout : 60000;
+
+			xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+
+			xhr.addEventListener("readystatechange", function(e) {
+			    if (xhr.readyState == 4) {
+			    	try {
+				    	if (xhr.status == 200) {
+								if (callbackfunc)
+									callbackfunc(JSON.parse(xhr.responseText));
+				    	}
+				    	else {
+								if (callbackfunc)
+									callbackfunc({
+										Code: 1,
+										Message: 'Server responded with an error code.'
+					    		});
+				    	}
 			    	}
-			    	else {
+			    	catch (x) {
+			    		/* TODO doesn't work well, calls same function again
 							if (callbackfunc)
 								callbackfunc({
 									Code: 1,
-									Message: 'Server responded with an error code.'
+									Message: 'Server responded with an invalid message.'
 				    		});
+			    		*/
 			    	}
-		    	}
-		    	catch (x) {
-		    		/* TODO doesn't work well, calls same function again
-						if (callbackfunc)
-							callbackfunc({
-								Code: 1,
-								Message: 'Server responded with an invalid message.'
-			    		});
-		    		*/
-		    	}
-		    }
-		};
+			    }
+			}, false);
 
-		var xhr = new XMLHttpRequest();
-		xhr.open('POST', path + '?nocache=' + dc.util.Crypto.makeSimpleKey(), true);
+			xhr.addEventListener("ontimeout", function() {
+				if (callbackfunc)
+					callbackfunc({
+						Code: 1,
+						Message: 'Server timed out, no response.'
+	    		});
+			}, false);
 
-		xhr.timeout = timeout ? timeout : 60000;
-
-		xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
-
-		xhr.addEventListener("readystatechange", processRequest, false);
-
-		xhr.addEventListener("ontimeout", function() {
-			if (callbackfunc)
-				callbackfunc({
-					Code: 1,
-					Message: 'Server timed out, no response.'
-    		});
-		}, false);
-
-		xhr.send(JSON.stringify(msg));
+			xhr.send(JSON.stringify(msg));
+		});
 	},
 
 	call: function(service, params, callbackfunc, timeout) {

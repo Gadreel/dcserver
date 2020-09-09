@@ -1,0 +1,58 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:inline-css">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Cleanup CSS',
+				Description: 'Organization of CSS.',
+				Params: { Alias: 'inline-css' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:inline-css" Param="StepId">
+		<dcs.Var Name="CSS" Type="List" />
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="CSS" Value="$CSS" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:inline-css" Param="StepInfo">
+		<dc.Out>
+			<p>
+				When reasonable, move any CSS that has gotten into the feed files into the main.css file. Also, as reasonable, make sure to create reusable rules so that a rule may be applied to more than one page if it is at all possible it may be used on other pages.
+			</p>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:inline-css" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+Sometimes CSS is inlined within the feed or www files. For example:
+
+``` xml
+<dc.Style>
+	#lstSteps h3 {
+		margin-top: 0;
+	}
+</dc.Style>
+```
+
+Please consider making this rule more general and placing it in the main.css file. For example, attach it to a class rather than a specific list id. And limit the scope to only dcuiMain. So after it is moved to main.css it would look like this:
+
+``` css
+#dcuiMain .steps-list h3 {
+	margin-top: 0;
+}
+```
+
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

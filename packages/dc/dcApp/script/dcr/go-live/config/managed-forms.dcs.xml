@@ -1,0 +1,163 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:managed-forms">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Managed Forms',
+				Description: 'Managed Forms configuration.',
+				Params: { Alias: 'managed-forms' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:managed-forms" Param="StepId">
+		<dcs.Var Name="ManagedList" Type="List" />
+
+		<dcs.ConfigGetTagList Tag="Catalog" Result="Catalogs" />
+
+		<dcs.ForEach Name="Catalog" In="$Catalogs">
+			<dcs.If Target="$Catalog.@Id" StartsWith="CMS-ManagedForm-">
+				<dcs.Var Name="ManagedRec" Type="Record">
+					<SetField Name="Name" Value="{$Catalog.@Id|substr:16}" />
+					<SetField Name="Type" Value="$Catalog.Settings.0.@Type" />
+					<SetField Name="Script" Value="$Catalog.Settings.0.@Script" />
+				</dcs.Var>
+
+				<dcs.With Target="$ManagedRec.Name">
+					<LastIndexOf Find="-" Result="DashPos" />
+					<Substring From="0" To="$DashPos" />
+				</dcs.With>
+
+				<dcs.If Target="$ManagedRec.Type" IsEmpty="false">
+					<dcs.SchemaGetTypeDef Name="{$ManagedRec.Type}" Result="TypeData" />
+
+					<dcs.If Target="$TypeData" IsEmpty="false">
+						<dcs.With Target="$ManagedRec">
+							<SetField Name="TypeFound" Type="Boolean" Value="true" />
+						</dcs.With>
+					</dcs.If>
+				</dcs.If>
+
+				<dcs.If Target="$ManagedRec.Script" IsEmpty="false">
+					<dcs.ScriptFindScript Path="{$ManagedRec.Script}" Result="ScriptData" />
+
+					<dcs.If Target="$ScriptData" IsEmpty="false">
+						<dcs.With Target="$ManagedRec">
+							<SetField Name="ScriptFound" Type="Boolean" Value="true" />
+						</dcs.With>
+					</dcs.If>
+				</dcs.If>
+
+				<dcs.CatalogSettings Id="Email-List-ManagedForm-{$ManagedRec.Name}" Result="EmailSettings" />
+
+				<dcs.If Target="$EmailSettings.@To" IsEmpty="false">
+					<dcs.With Target="$ManagedRec">
+						<SetField Name="EmailFound" Type="Boolean" Value="true" />
+					</dcs.With>
+				</dcs.If>
+
+				<dcs.With Target="$ManagedList">
+					<AddItem Value="$ManagedRec" />
+				</dcs.With>
+			</dcs.If>
+		</dcs.ForEach>
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="ManagedForms" Value="$ManagedList" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:managed-forms" Param="StepInfo">
+		<dc.Out>
+			<table class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Form Name</th>
+						<th scope="col">Type</th>
+						<th scope="col">Type Found</th>
+						<th scope="col">Script</th>
+						<th scope="col">Script Found</th>
+						<th scope="col">Email Found</th>
+					</tr>
+				</thead>
+				<tbody>
+					<dcs.ForEach Name="Form" In="$StepInfo.Store.ManagedForms">
+						<dc.Out>
+							<tr data-domain="{$Form.Name}">
+								<td>{$Form.Name}</td>
+								<!-- TODO link to schema explorer for type -->
+								<td>{$Form.Type}</td>
+								<td>{$Form.TypeFound|yn:}</td>
+								<td>{$Form.Script}</td>
+								<td>{$Form.ScriptFound|yn:}</td>
+								<td>{$Form.EmailFound|yn:}</td>
+							</tr>
+						</dc.Out>
+					</dcs.ForEach>
+				</tbody>
+			</table>
+
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:managed-forms" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+Every ManagedForm used on the website must be listed in the config.xml file for that site (or possibly in shared.xml, but config.xml is preferred practice). A ManagedForm must have:
+
+1. data type for validating the form
+2. a script to call after the form has been submitted (typically used to notify the website owner of the submit)
+3. an email address of who to notify (for step 2)
+
+In the config.xml file there will be multipe _Catalog_ tags. Each _Catalog_ has an Id. For managed forms look for a pattern like so:
+
+``` xml
+<Catalog Id="CMS-ManagedForm-Moving-Both">
+```
+
+Where "Moving" is the name of the form. So if the form was Repair the Id would be "CMS-ManagedForm-Repair-Both" and so forth. The entry will be postfixed with the applicable environment (Both, Production, Test) which is Typically "Both".
+
+The form's _Settings_ hold the type and script details, like so:
+
+``` xml
+<Catalog Id="CMS-ManagedForm-Moving-Both">
+	<Settings Type="fhpMovingForm" Script="/fhp/event-moving-form-submitted.dcs.xml" />
+</Catalog>
+```
+
+The _Type_ given must be defined in the schema for the tenant. This is a large topic and will be documented elsewhere. TODO schema and validation for managed forms
+
+The _Script_ must be a path to a utility script (as opposed to a web script) for the tenant. Also a large topic and will be documented elsewhere. TODO utility scripts for managed forms
+
+The email address settings will typically have two entries, one for production and one for test. Look for a catalog with a Id pattern like so:
+
+``` xml
+<Catalog Id="Email-List-ManagedForm-Moving-Test">
+```
+
+Where "Moving" is the name of the form. The _Settings_ list the receipents using a semicolon delimited list. For example, the list to send to on a test server would be:
+
+``` xml
+<Catalog Id="Email-List-ManagedForm-Moving-Test">
+	<Settings To="andy@designcraftadvertising.com" />
+</Catalog>
+```
+
+And when running on a production server it uses this list:
+
+``` xml
+<Catalog Id="Email-List-ManagedForm-Moving-Production">
+	<Settings To="promovers@farleyspianos.com;andy@designcraftadvertising.com" />
+</Catalog>
+```
+
+TODO DCC link to config and catalog article
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

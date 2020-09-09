@@ -56,9 +56,7 @@ public class CatalogSettings extends Instruction {
 				String result = StackUtil.stringFromSource(stack, "Result");
 				
 				if (StringUtil.isNotEmpty(result)) {
-					Struct var = settings;
-					
-					StackUtil.addVariable(stack, result, var);
+					StackUtil.addVariable(stack, result, settings);
 				}
 			}
 			

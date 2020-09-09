@@ -1,0 +1,150 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:feed-list">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Feed List',
+				Description: 'Feeds available for this tenant/site.',
+				Params: { Alias: 'feed-list' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:feed-list" Param="StepId">
+		<dcs.Var Name="FeedList" Type="List" />
+
+		<dcs.ConfigGetTagListDeep Tag="Feeds/Definition" Result="Feeds" />
+
+		<dcs.ForEach Name="Feed" In="$Feeds">
+			<dcs.Var Name="FeedRec" Type="Record">
+				<SetField Name="Alias" Type="String" Value="$Feed.@Alias" />
+				<SetField Name="Title" Type="String" Value="$Feed.@Title" />
+				<SetField Name="Highlight" Type="Boolean" Value="$Feed.@Highlight" />
+				<SetField Name="Inherits" Type="String" Value="$Feed.@Inherits" />
+				<SetField Name="SharedFields" Type="String" Value="$Feed.@SharedFields" />
+				<SetField Name="Templates" Type="List" />
+			</dcs.Var>
+
+			<dcs.File Name="templates" Path="/templates/{$FeedRec.Alias}" In="SiteFiles">
+				<List Result="templatelist" />
+			</dcs.File>
+
+			<dcs.ForEach Name="template" In="$templatelist">
+				<dcs.With Target="$FeedRec.Templates">
+					<AddItem Value="$template.Name" />
+				</dcs.With>
+			</dcs.ForEach>
+
+			<dcs.With Target="$FeedList">
+				<AddItem Value="$FeedRec" />
+			</dcs.With>
+
+TODO check if already set, don't create again
+
+			<dcs.Var Name="FeedTracker" Type="Record">
+				<Set>
+					Title: '{$FeedRec.Title} Feed Report',
+					Description: 'Feed files analysis for go live.',
+					Params: { Alias: '{$FeedRec.Alias}' }
+				</Set>
+			</dcs.Var>
+
+			<dcs.CallService Op="dcCoreServices.TaskList.Add" Params="$FeedTracker" Result="TrackerResult" />
+
+	    <dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+	      <Update Field="dcStepTask" SubId="Tracker-{$FeedRec.Alias}" Value="$TrackerResult.Id" />
+	    </dcdb.UpdateRecord>
+		</dcs.ForEach>
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="FeedList" Value="$FeedList" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:feed-list" Param="StepInfo">
+		<dcs.With Target="$StepInfo.Store.FeedList">
+			<Sort ByField="Alias" />
+		</dcs.With>
+
+		<dc.Out>
+			<table class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Title</th>
+						<th scope="col">Fields</th>
+						<th scope="col">Highlight</th>
+						<th scope="col">Templates</th>
+						<th scope="col">Action</th>
+					</tr>
+				</thead>
+				<tbody>
+					<dcs.ForEach Name="Feed" In="$StepInfo.Store.FeedList">
+						<dc.Out>
+							<tr data-domain="{$Feed.Alias}">
+								<td>
+									{$Feed.Title}
+									<br />
+									[{$Feed.Alias}]
+								</td>
+								<td>Inherits: {$Feed.Inherits|ifempty:[na]}
+									<br/>
+									Plus: {$Feed.SharedFields|ifempty:[none]}
+								</td>
+								<td>{$Feed.Highlight|yn:}</td>
+								<td>{$Feed.Templates|join:|ifempty:[none]}</td>
+								<!-- TODO link to schema explorer for type -->
+								<td>TODO</td>
+							</tr>
+						</dc.Out>
+					</dcs.ForEach>
+				</tbody>
+			</table>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:feed-list" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+If this website will be using special feeds for events, blogs, products, announcements or other reasons then each feed will need a definition. Except for the standard feeds, these settings are found in the config.xml file for the site.
+
+This example shows four custom feeds defined for a website.
+
+``` xml
+<Feeds>
+	<Definition Alias="installation" Title="Installation" Highlight="true" Inherits="pages"
+		SharedFields="StatementPath"
+	/>
+	<Definition Alias="exhibit" Title="Exhibit" Highlight="true" Inherits="pages"
+		SharedFields="StatementPath"
+	/>
+	<Definition Alias="art" Title="Art" Highlight="true" Inherits="pages" />
+
+	<Definition Alias="events" Title="Events" Highlight="true" Inherits="pages"
+		SharedFields="EventDate,EventLocation" Gallery="/events" />
+</Feeds>
+```
+
+**Attributes**
+
+- Alias: the folder name as found in [site]/feeds/[feed alias], such as dca/feeds/events. All files related to that feed are found here.
+- Title: as the feed shows in the CMS
+- Highlight: t/f, set to true if you want the feed to show in the CMS
+- Inherits: what are the core fields for this feed, very typically this would be "pages"
+- SharedFields: what are the additional fields used by feed (comma delimited list) TODO link to custom feed fields
+
+**Templates**
+
+In most cases each feed should have one or more templates, though the standard feed named "blocks" does not have any templates. Templates go in the [site]/templates folder, using a separate folder for each template. The template gets its name from the folder. In that folder there should be a feed.xml file containing the template. A full path to the feed template file thus may look like [site]/templates/events/standard/feed.xml TODO link to feed templates.
+
+The "pages" feed does not have a default template so each site should provide one. Typically it is called "standard" (the folder name). For the pages feed there is a second file required - www.html. That file will be used in the "www" folder and may contain developer only code.
+
+TODO DCC link to config article
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

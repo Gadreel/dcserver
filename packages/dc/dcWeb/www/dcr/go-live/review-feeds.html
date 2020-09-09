@@ -1,11 +1,13 @@
 <dc.Html Badges="SysAdmin" NoCache="true">
 	<Meta Name="Title">
-		<Tr Locale="eng" Value="Review Config" />
+		<Tr Locale="eng" Value="Review Feeds" />
 	</Meta>
+
+	<!-- TODO move this to a dca package, add that package to the site at time of report generation -->
 
 	<Require Script="/js/vendor/prism/prism.js" Style="/css/vendor/prism/prism.css" />
 
-	<dcs.Include Path="/dcr/go-live/config/library" />
+	<dcs.Include Path="/dcr/go-live/feeds/library" />
 
 	<dcs.Var Name="TaskId" Type="String" SetTo="{$Page.OriginalPathParts.3}" />
 
@@ -28,7 +30,7 @@
 
 	<!-- load functions for each step, includes prep and print - later always needed -->
 	<dcs.ForEach Name="Step" In="$CheckList">
-		<dcs.Include Path="/dcr/go-live/config/{$Step}" />
+		<dcs.Include Path="/dcr/go-live/feeds/{$Step}" />
 	</dcs.ForEach>
 
 	<!-- only build the substeps if not present, first time the page is loaded -->
@@ -107,9 +109,7 @@
 			</dcs.If>
 
 			<p>
-				Review and either fix or approve each step. Most of these settings come from
-				the config.xml file of the site, however it is possible that some could come from
-				the shared.xml file of the tenant (found in the config folder of the root tenant).
+				Review and either fix or approve each step. These settings come from the config.xml file of the site, except for the standard feeds (pages and blocks). 
 			</p>
 
 			<dc.Style>
@@ -212,38 +212,10 @@
 			</table>
 
 			<dcf.FormButtons>
-				<dc.Button Label="Edit config.xml" Click="DoEditConfig" />
-				<dc.Button Label="Edit shared.xml" Click="DoEditShared" />
-				<dc.Button Label="Rebuild Config Report" Click="DoRerun" />
+				<dc.Button Label="Rebuild Feeds Report" Click="DoRerun" />
 				<dc.Button Label="Message" Click="DoAddMessage" />
 				<dc.Button Label="Approve Report" Click="DoApproveReport" Scope="Primary" />
 			</dcf.FormButtons>
-
-			<!--
-			<dcf.Form>
-				<dcf.RadioGroup Label="Status" Name="Status">
-					<RadioButton Label="Waiting" Value="Waiting" />
-					<RadioButton Label="Ready" Value="Ready" />
-					<RadioButton Label="InProgress" Value="InProgress" />
-					<RadioButton Label="Failed" Value="Failed" />
-					<RadioButton Label="Passed" Value="Passed" />
-				</dcf.RadioGroup>
-				<dcf.Text Label="Message" Name="Message" />
-				<dcf.YesNo Label="Approved" Name="Approved" />
-
-				<dcf.FormButtons>
-					<dcf.SubmitButton Label="Update Step" />
-				</dcf.FormButtons>
-			</dcf.Form>
-
-			<br />
-			<br />
-
-			<dcf.FormButtons>
-				<dc.Button Label="Refresh" Click="DoReindex" />
-				<dc.Button Label="Rerun" Click="DoRerun" />
-			</dcf.FormButtons>
-			-->
 		</dc.PagePanel>
 	</dc.Body>
 
@@ -279,7 +251,7 @@
 				if (! confirm)
 					return;
 
-				dc.comm.callScript('/dcr/go-live/review-config-service', 'Clear', {
+				dc.comm.callScript('/dcr/go-live/review-feeds-service', 'Clear', {
 					Id: '{$TaskId}'
 				}, function(resp) {
 				    console.log(resp.Code + ' - ' + (resp.Result ? resp.Result.Value : ''))
@@ -297,17 +269,6 @@
 				}
 			});
 	]]></Function>
-	<Function Name="DoRecheckStep" Params="e"><![CDATA[
-			var page = this;
-
-			dc.comm.callScript('/dcr/go-live/review-config-service', 'RecheckStep', {
-				StepId: $(e.currentTarget).closest('tr').attr('data-id'),
-				StepAlias: $(e.currentTarget).closest('tr').attr('data-alias')
-			}, function(resp) {
-			    console.log(resp.Code + ' - ' + (resp.Result ? resp.Result.Value : ''))
-					page.Layer.refreshPage();
-			});
-	]]></Function>
 	<Function Name="DoAddMessage" Params="e"><![CDATA[
 			var page = this;
 
@@ -316,6 +277,17 @@
 				Callback: function(path) {
 					page.Layer.refreshPage();
 				}
+			});
+	]]></Function>
+	<Function Name="DoRecheckStep" Params="e"><![CDATA[
+			var page = this;
+
+			dc.comm.callScript('/dcr/go-live/review-feeds-service', 'RecheckStep', {
+				StepId: $(e.currentTarget).closest('tr').attr('data-id'),
+				StepAlias: $(e.currentTarget).closest('tr').attr('data-alias')
+			}, function(resp) {
+			    console.log(resp.Code + ' - ' + (resp.Result ? resp.Result.Value : ''))
+					page.Layer.refreshPage();
 			});
 	]]></Function>
 	<Function Name="DoApproveStep" Params="e"><![CDATA[
@@ -353,21 +325,5 @@
 
 			$(e.currentTarget).closest('td').find('.docs-body').toggleClass('hidden');
 			$(e.currentTarget).closest('td').find('.docs-button > a.expand').toggle();
-	]]></Function>
-	<Function Name="DoEditConfig" Params="file"><![CDATA[
-			var entry = this;
-
-			dc.pui.Dialog.loadPage('/dcm/files/edit-file', {
-				Vault: 'SiteFiles',
-				Path: '/config/config.xml'
-			});
-	]]></Function>
-	<Function Name="DoEditShared" Params="file"><![CDATA[
-			var entry = this;
-
-			dc.pui.Dialog.loadPage('/dcm/files/edit-file', {
-				Vault: 'RootSiteFiles',
-				Path: '/config/shared.xml'
-			});
 	]]></Function>
 </dc.Html>

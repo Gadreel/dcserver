@@ -16,42 +16,46 @@
 ************************************************************************ */
 package dcraft.script.inst.ext;
 
+import dcraft.filestore.CommonPath;
 import dcraft.hub.ResourceHub;
-import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.schema.DataType;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.StringStruct;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
-public class ConfigGetTag extends Instruction {
-	static public ConfigGetTag tag() {
-		ConfigGetTag el = new ConfigGetTag();
-		el.setName("dcs.ConfigGetTag");
+import java.nio.file.Path;
+
+public class ScriptFindScript extends Instruction {
+	static public ScriptFindScript tag() {
+		ScriptFindScript el = new ScriptFindScript();
+		el.setName("dcs.ScriptFindScript");
 		return el;
 	}
 
 	@Override
 	public XElement newNode() {
-		return ConfigGetTag.tag();
+		return ScriptFindScript.tag();
 	}
 
 	@Override
 	public ReturnOption run(InstructionWork stack) throws OperatingContextException {
 		if (stack.getState() == ExecuteState.READY) {
-			String tag = StackUtil.stringFromSource(stack, "Tag");
+			String path = StackUtil.stringFromSource(stack, "Path");
 
-			XElement settings = ResourceHub.getResources().getConfig().getTag(tag);
+			Path fnd = ResourceHub.getResources().getScripts().findScript(CommonPath.from(path));
 
-			if (settings != null) {
+			if (fnd != null) {
 				String result = StackUtil.stringFromSource(stack, "Result");
 				
 				if (StringUtil.isNotEmpty(result)) {
-					StackUtil.addVariable(stack, result, settings);
+					StackUtil.addVariable(stack, result, StringStruct.of(fnd.normalize().toString()));
 				}
 			}
 			

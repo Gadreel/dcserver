@@ -1,0 +1,78 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:send-email">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Send Email',
+				Description: 'Settings for sending emails from this tenant.',
+				Params: { Alias: 'send-email' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:send-email" Param="StepId">
+		<dcs.CatalogSettings Id="Email-Send" Result="EmailSettings" />
+
+		<dcs.Var Name="Email" Type="Record">
+			<SetField Name="DefaultFrom" Type="String" Value="{$EmailSettings.@DefaultFrom|ifempty:[not found]}" />
+			<SetField Name="Method" Type="String" Value="{$EmailSettings.@Method|ifempty:[not found]}" />
+			<SetField Name="SkipToAddress" Type="String" Value="{$EmailSettings.@SkipToAddress|ifempty:[not found]}" />
+		</dcs.Var>
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="Email" Value="$Email" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:send-email" Param="StepInfo">
+		<dc.Out>
+			<p>
+				<b>Default From:</b> {$StepInfo.Store.Email.DefaultFrom|xmlescape:}<br/>
+				<b>Skip To Address:</b> {$StepInfo.Store.Email.SkipToAddress}<br/>
+				<b>Send Method:</b> {$StepInfo.Store.Email.Method}<br/>
+			</p>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:send-email" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+If this website will be sending emails to customers, such as email receipts for items purchased, then email **must** be configured to come from that tenant's domains. Do not send from the agency's (web developer's) domain. Note that if the only emails are notices to the tenant, such as managed form submissions, then it is okay to use the agency domain.
+
+If this is a dedicated deployment it is likely that the email setting may be found in the deployment config.xml file. Otherwise, such as with multiple tenants, it should be in the shared.xml file for that tenant.
+
+If email sending should be configured, there is a single catalog entry whose id is prefixed with "Email-Send-" and postfixed with the applicable environment (Both, Production, Test) which is Typically "Both". For example:
+
+``` xml
+<Catalog Id="Email-Send-Both">
+	<Settings
+		Method="Smtp"
+		DefaultFrom="designCraft Advertising &lt;info@designcraftadvertising.com&gt;"
+		SkipToAddress="@awww.com"
+		SmtpHost="email-smtp.us-east-1.amazonaws.com"
+		SmtpPort="587"
+		SmtpAuth="True"
+		SmtpDebug="False"
+		SmtpUsername="[aws username]"
+		SmtpPassword="[aws password - using a settings encryptor]"
+		Topic="Outbox"
+	/>
+</Catalog>
+```
+
+Note that _SkipToAddress_ means don't try sending emails to emails to that domain. Configure as you see fit, for example "@test.com". This way not all test accounts set up for this tenant need a valid email address, just use the skip domain for the user name and their email will not be sent to the void.
+
+Currently the only _Method_ enabled is Smtp  and it requires the SmtpHost, SmtpPort, SmtpUsername and SmtpPassword. The password should be encrypted (obsecured) using the "settings encryptor" for that deployment. TODO link to settings encryptor article
+
+The _DefaultFrom_ must be set to come from the tenant's domain. If it is not, there will likely be issues with email deliverability.
+
+TODO DCC link to config and catalog article
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

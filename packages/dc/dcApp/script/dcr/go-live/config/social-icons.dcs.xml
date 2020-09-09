@@ -25,6 +25,11 @@
 					<SetField Name="Url" Value="$Catalog.Settings.0.@Url" />
 				</dcs.Var>
 
+				<dcs.With Target="$SocialRec.Name">
+					<LastIndexOf Find="-" Result="DashPos" />
+					<Substring From="0" To="$DashPos" />
+				</dcs.With>
+
 				<dcs.With Target="$SocialList">
 					<AddItem Value="$SocialRec" />
 				</dcs.With>
@@ -70,7 +75,7 @@
 		<dc.Out>
 			<dc.TextWidget>
 				<Tr><![CDATA[
-Typically websites have links to social media pages. The preferred widget for this is _dcm.SocialMediaWidget_ and it gets its urls from the config file. For each social media resource there is a single catalog entry whose id is prefixed with "Social-".
+Typically websites have links to social media pages. The preferred widget for this is _dcm.SocialMediaWidget_ and it gets its urls from the config file. For each social media resource there is a single catalog entry whose id is prefixed with "Social-" and postfixed with the applicable environment (Both, Production, Test) which is Typically "Both".
 
 Examples of typical resources:
 
