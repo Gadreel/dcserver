@@ -5,6 +5,7 @@
 
 	<Require Script="/js/vendor/prism/prism.js" Style="/css/vendor/prism/prism.css" />
 
+	<dcs.Include Path="/dcr/go-live/library" />
 	<dcs.Include Path="/dcr/go-live/config/library" />
 
 	<dcs.Var Name="TaskId" Type="String" SetTo="{$Page.OriginalPathParts.3}" />
@@ -249,6 +250,12 @@
 
 	<Function Name="Load" Params="e"><![CDATA[
 			var page = this;
+
+			if (e.Thaw) {
+				e.Wait = true;
+				page.Layer.refreshPage();
+			}
+
 	]]></Function>
 	<Function Name="LoadRecord" Params="e"><![CDATA[
 			var page = this;

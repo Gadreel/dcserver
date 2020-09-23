@@ -1,6 +1,6 @@
 <dc.Html Badges="SysAdmin" NoCache="true">
 	<Meta Name="Title">
-		<Tr Locale="eng" Value="Review Feeds" />
+		<Tr Locale="eng" Value="Review Feed Listing" />
 	</Meta>
 
 	<!-- TODO move this to a dca package, add that package to the site at time of report generation -->
@@ -13,62 +13,35 @@
 	<dcs.Var Name="TaskId" Type="String" SetTo="{$Page.OriginalPathParts.3}" />
 
 	<dcdb.LoadRecord Table="dcTaskList" Id="{$TaskId}" Result="StepData">
+		<Select Field="dcTitle" As="Title" />
 		<Select Field="dcReviewStatus" As="Status" />
 		<Select Field="dcReviewMessage" As="Message" />
 		<Select Field="dcApprovedAt" As="ApprovedAt" />
+
 		<SelectSubquery Field="dcStepTask" Key="Step" As="Tabs">
 			<Select Field="Id" />
 			<Select Field="dcTitle" As="Title" />
+			<!--
 			<SelectGroup Field="dcStore" Key="Key" As="Store">
 				<Select Field="dcStore" As="Data" />
 			</SelectGroup>
+			-->
+			<Select Field="dcStore" SubId="Review" As="ReviewData" />
+
 			<Select Field="dcReviewStatus" As="Status" />
 			<Select Field="dcReviewMessage" As="Message" />
 			<Select Field="dcApprovedAt" As="ApprovedAt" />
 			<Select Field="dcParams" As="Params" />
 		</SelectSubquery>
+
+		<!--
+		<Select Field="dcStore" Sub="Review" As="Review" />
+
+		<SelectGroup Field="dcStore" Key="Key" As="Store">
+			<Select Field="dcStore" As="Data" />
+		</SelectGroup>
+		-->
 	</dcdb.LoadRecord>
-
-	<!-- load functions for each step, includes prep and print - later always needed -->
-	<dcs.ForEach Name="Step" In="$CheckList">
-		<dcs.Include Path="/dcr/go-live/feeds/{$Step}" />
-	</dcs.ForEach>
-
-	<!-- only build the substeps if not present, first time the page is loaded -->
-	<dcs.If Target="$StepData.Tabs" IsEmpty="true">
-		<!-- reset the steps list -->
-		<dcdb.UpdateRecord Table="dcTaskList" Id="$TaskId">
-			<Set Field="dcStepTask" />
-		</dcdb.UpdateRecord>
-
-		<!-- run each prep on each step -->
-		<dcs.ForEach Name="Step" In="$CheckList">
-			<dcs.CallFunc Name="PrepFuncs:{$Step}" Result="StepId" />
-
-			<dcs.CallFunc Name="LoadFuncs:{$Step}" Arg="$StepId" />
-		</dcs.ForEach>
-
-		<!-- now update our task's Tabs, after it has been altered by above calls -->
-		<dcdb.LoadRecord Table="dcTaskList" Id="{$TaskId}" Result="StepData2">
-			<SelectSubquery Field="dcStepTask" Key="Step" As="Tabs">
-				<Select Field="Id" />
-				<Select Field="dcTitle" As="Title" />
-				<SelectGroup Field="dcStore" Key="Key" As="Store">
-					<Select Field="dcStore" As="Data" />
-				</SelectGroup>
-				<Select Field="dcReviewStatus" As="Status" />
-				<Select Field="dcReviewMessage" As="Message" />
-				<Select Field="dcApprovedAt" As="ApprovedAt" />
-				<Select Field="dcParams" As="Params" />
-			</SelectSubquery>
-		</dcdb.LoadRecord>
-
-		<dcs.With Target="$StepData">
-			<SetField Name="Tabs" Value="$StepData2.Tabs" />
-		</dcs.With>
-	</dcs.If>
-
-		<dcs.Console>b</dcs.Console>
 
 	<dcs.If Target="$StepData.ApprovedAt" IsEmpty="false">
 		<dcs.With Target="$StepData">
@@ -76,23 +49,11 @@
 		</dcs.With>
 	</dcs.If>
 
-	<dcs.ForEach Name="Tab" In="$StepData.Tabs">
-		<dcs.Var Name="NewStore" Type="Record" />
-
-		<dcs.ForEach Name="Entry" In="$Tab.Store">
-			<dcs.With Target="$NewStore">
-				<SetField Name="{$Entry.Key}" Value="$Entry.Data" />
-			</dcs.With>
-		</dcs.ForEach>
-
-		<dcs.With Target="$Tab">
-			<SetField Name="Store" Value="$NewStore" />
-		</dcs.With>
-	</dcs.ForEach>
-
 	<dc.Body>
 		<dc.PagePanel>
 			<p data-id="{$TaskId}">
+				<b>Report:</b> {$StepData.Title}
+				<br />
 				<b>Report Status:</b> {$StepData.Approved|tf:Approved,Awaiting Approval}
 				<br />
 				<b>Report Approved:</b> {$StepData.ApprovedAt|dt:MMM dd, hh:mm}
@@ -110,7 +71,7 @@
 			</dcs.If>
 
 			<p>
-				Review and either fix or approve each step. These settings come from the config.xml file of the site, except for the standard feeds (pages and blocks).
+				Review and either fix or approve each step. These steps contain the outcome of a review of the feed file after it has been rendered (on server side only, no client) and may include notes that pertain to the page beyond the feed file itself.
 			</p>
 
 			<dc.Style>
@@ -163,7 +124,6 @@
 								<SetField Name="Approved" Value="false" />
 							</dcs.With>
 						</dcs.Else>
-
 						<dc.Out>
 							<tr data-alias="{$Tab.Params.Alias}" data-id="{$Tab.Id}" data-approved="{$Tab.Approved|tf:1,0}">
 								<td>
@@ -185,32 +145,99 @@
 										</dc.Out>
 									</dcs.If>
 
-									<dcs.ForEach Name="Step" In="$CheckList">
-										<dcs.If Target="$Step" Equal="$Tab.Params.Alias">
-											<dcs.CallFunc Name="PrintFuncs:{$Step}" Arg="$Tab" />
-
-											<dcs.Indirect Name="DocsFunc" Value="DocFuncs:{$Step}" />
-
-											<dcs.If Target="$DocsFunc" IsEmpty="false">
-												<dc.Out>
-													<div class="docs-button">
-														<b role="heading" aria-level="2" id="pianosFilterHeader">Help</b>
-
-														<dc.Link Click="dglcDoExpand" class="expand after">
-															<dc.Icon Path="fas/chevron-down" class="fa5-1x" />
-														</dc.Link>
-														<dc.Link Click="dglcDoExpand" class="expand start">
-															<dc.Icon Path="fas/chevron-right" class="fa5-1x" />
-														</dc.Link>
-													</div>
-
-													<div class="docs-body hidden">
-														<dcs.CallFunc Name="DocFuncs:{$Step}" Arg="$Tab" />
-													</div>
-												</dc.Out>
-											</dcs.If>
+									<p>
+										<dcs.If Target="$Tab.ReviewData.MissingRequiredFields" IsEmpty="false">
+											<dc.Out>
+												<b>Required Fields Not Present:</b> {$Tab.ReviewData.MissingRequiredFields|join:}
+												<dc.Icon Path="fas/times" class="fa5-lg red" />
+												<br />
+											</dc.Out>
 										</dcs.If>
-									</dcs.ForEach>
+										<dcs.If Target="$Tab.ReviewData.MissingDesiredFields" IsEmpty="false">
+											<dc.Out>
+												<b>Desired Fields Not Present:</b> {$Tab.ReviewData.MissingDesiredFields|join:}
+												<dc.Icon Path="fas/exclamation" class="fa5-lg yellow" />
+												<br />
+											</dc.Out>
+										</dcs.If>
+										<b>Database Record Present:</b> {$Tab.ReviewData.RecordPresent|yn:}
+										<dc.Icon Path="fas/{$Tab.ReviewData.RecordPresent|tf:check,times}" class="fa5-lg {$Tab.ReviewData.RecordPresent|tf:green,red}" />
+										<br />
+										<b>Draft Record Present:</b> {$Tab.ReviewData.DraftPresent|yn:}
+										<dc.Icon Path="fas/{$Tab.ReviewData.DraftPresent|tf:times,check}" class="fa5-lg {$Tab.ReviewData.DraftPresent|tf:red,green}" />
+										<br />
+									</p>
+
+									<dcs.If Target="$Tab.ReviewData.ManagedForms" IsEmpty="false">
+										<dc.Out>
+											<p>
+												<h4>Managed Forms:</h4>
+
+												<dcs.ForEach Name="ManagedForm" In="$Tab.ReviewData.ManagedForms">
+													<dc.Out>
+														<b>{$ManagedForm.Name}:</b> found definition - {$ManagedForm.Defined|yn:}
+														<dc.Icon Path="fas/{$ManagedForm.Defined|tf:check,times}" class="fa5-lg {$ManagedForm.Defined|tf:green,red}" />
+														<br />
+													</dc.Out>
+												</dcs.ForEach>
+											</p>
+										</dc.Out>
+									</dcs.If>
+
+									<p>
+										<h4>Fields Present:</h4>
+
+										<dcs.ForEach Name="Field" In="$Tab.ReviewData.Fields">
+											<dc.Out>
+												<b>{$Field.Name}:</b> {$Field.Value}
+												<br />
+											</dc.Out>
+										</dcs.ForEach>
+									</p>
+
+									<dcs.If Target="$Tab.ReviewData.DuplicateIds" IsEmpty="false">
+										<dc.Out>
+											<p>
+												<h4>Duplicate Ids:</h4>
+
+												<dcs.ForEach Name="DuplicateId" In="$Tab.ReviewData.DuplicateIds">
+													<dc.Out>
+														<b>{$DuplicateId.Id}:</b> found {$DuplicateId.Count} time(s)
+														<dc.Icon Path="fas/times" class="fa5-lg red" />
+														<br />
+													</dc.Out>
+												</dcs.ForEach>
+											</p>
+										</dc.Out>
+									</dcs.If>
+
+									<dcs.If Target="$Tab.ReviewData.Messages" IsEmpty="false">
+										<dc.Out>
+											<p>
+												<h4>Additional Messages:</h4>
+
+												<ul>
+													<dcs.ForEach Name="Message" In="$Tab.ReviewData.Messages">
+														<dc.Out>
+															<li>
+																{$Message.Message}
+																<dcs.If Target="$Message.Level" Equal="Error">
+																	<dc.Out>
+																		<dc.Icon Path="fas/times" class="fa5-lg red" />
+																	</dc.Out>
+																</dcs.If>
+																<dcs.ElseIf Target="$Message.Level" Equal="Warn">
+																	<dc.Out>
+																		<dc.Icon Path="fas/exclamation" class="fa5-lg yellow" />
+																	</dc.Out>
+																</dcs.ElseIf>
+															</li>
+														</dc.Out>
+													</dcs.ForEach>
+												</ul>
+											</p>
+										</dc.Out>
+									</dcs.If>
 								</td>
 								<td>
 									<dc.Button Label="Recheck" Click="DoRecheckStep" />
@@ -224,20 +251,55 @@
 			</table>
 
 			<dcf.FormButtons>
-				<dc.Button Label="Rebuild Feeds Report" Click="DoRerun" />
 				<dc.Button Label="Message" Click="DoAddMessage" />
 				<dc.Button Label="Approve Report" Click="DoApproveReport" Scope="Primary" />
 			</dcf.FormButtons>
+
+			<br />
+
+			<h3>Help</h3>
+
+			<p>
+				<b>Required Fields Not Present: </b> A meta field is missing but is required.
+			</p>
+
+			<p>
+				<b>Desired Fields Not Present: </b> A meta field is missing but is generally desirable.
+			</p>
+
+			<p>
+				<b>Database Record Present: </b> This should be present, if it is not then it is something that needs to be investiaged by an expert in the CMS.
+			</p>
+
+			<p>
+				<b>Draft Record Present: </b> This should NOT be present. If it then it means that feed has some updates that are in preview but are not yet published (saved to file). Please either cancel or publish the edit for that feed and recheck this entry.
+			</p>
+
+			<p>
+				<b>Managed Forms: </b> each form listed should have a definition. If it does not then it will not work. Note that forms in any part of the page count, even if not in the feed. TODO link to managed forms docs
+			</p>
+
+			<p>
+				<b>Fields Present: </b> Review that the field values make sense.
+			</p>
+
+			<p>
+				<b>Duplicate Ids: </b> each id should be unique to the entire HTML document. Review not only the feed file but also the header, footer or any other block of content.
+			</p>
+
+			<p>
+				<b>Additional Messages: </b> these are general messages collected about the feed / page. Some of them may be errors, look for the red X.
+			</p>
+
+			<p>
+				TODO link to feed file structure and use
+			</p>
+
 		</dc.PagePanel>
 	</dc.Body>
 
 	<Function Name="Load" Params="e"><![CDATA[
 			var page = this;
-
-			if (e.Thaw) {
-				e.Wait = true;
-				page.Layer.refreshPage();
-			}
 	]]></Function>
 	<Function Name="LoadRecord" Params="e"><![CDATA[
 			var page = this;
@@ -260,21 +322,6 @@
 			var page = this;
 
 			page.Layer.refreshPage();
-	]]></Function>
-	<Function Name="DoRerun"><![CDATA[
-			var page = this;
-
-			dc.pui.Popup.confirm('Rebuild this entire report, losing all comments and approvals?', function(confirm) {
-				if (! confirm)
-					return;
-
-				dc.comm.callScript('/dcr/go-live/review-feeds-service', 'Clear', {
-					Id: '{$TaskId}'
-				}, function(resp) {
-				    console.log(resp.Code + ' - ' + (resp.Result ? resp.Result.Value : ''))
-						page.Layer.refreshPage();
-				});
-			});
 	]]></Function>
 	<Function Name="DoAddNoteStep" Params="e"><![CDATA[
 			var page = this;
@@ -299,9 +346,8 @@
 	<Function Name="DoRecheckStep" Params="e"><![CDATA[
 			var page = this;
 
-			dc.comm.callScript('/dcr/go-live/review-feeds-service', 'RecheckStep', {
-				StepId: $(e.currentTarget).closest('tr').attr('data-id'),
-				StepAlias: $(e.currentTarget).closest('tr').attr('data-alias')
+			dc.comm.call('dcmServices.Feed.FeedFileIndexAndReview', {
+				StepId: $(e.currentTarget).closest('tr').attr('data-id')
 			}, function(resp) {
 			    console.log(resp.Code + ' - ' + (resp.Result ? resp.Result.Value : ''))
 					page.Layer.refreshPage();
@@ -342,5 +388,15 @@
 
 			$(e.currentTarget).closest('td').find('.docs-body').toggleClass('hidden');
 			$(e.currentTarget).closest('td').find('.docs-button > a.expand').toggle();
+	]]></Function>
+	<Function Name="DoBuildReviewFeed" Params="e"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcmServices.Feed.FeedIndexAndReview', {
+				StepId: $(e.currentTarget).closest('table').closest('tr').attr('data-id'),
+				Feed: $(e.currentTarget).closest('tr').attr('data-feed')
+			}, function(resp) {
+					page.Layer.refreshPage();
+			});
 	]]></Function>
 </dc.Html>

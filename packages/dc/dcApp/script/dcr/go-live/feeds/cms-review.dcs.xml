@@ -1,0 +1,38 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:cms-review">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'CMS Enabled Review',
+				Description: 'Review if site is fully CMS enabled.',
+				Params: { Alias: 'cms-review' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:cms-review" Param="StepId">
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:cms-review" Param="StepInfo">
+		<dc.Out>
+			<p>
+				Has the website been fully reviewed for CMS functionality? Please check every page while the CMS is enabled to see that the appropriate CMS icons / access is presented for each text block, image, gallery, block, etc. If you see a space in the main page content that cannot be edited via CMS then please consider enabling it. For all other feeds (besides "pages" and "blocks") check that the feed templates allow for editing content either through the viewable page or through the Page Properties button.
+			</p>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:cms-review" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+Note that each Widget must have a unique id before it will show as editable.
+
+TODO DCC link to CMS ready article
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

@@ -28,10 +28,7 @@ import dcraft.util.ISettingsObfuscator;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 import dcraft.util.pgp.KeyRingCollection;
-import dcraft.web.HtmlMode;
-import dcraft.web.IIndexWork;
-import dcraft.web.IOutputWork;
-import dcraft.web.IWebWorkBuilder;
+import dcraft.web.*;
 import dcraft.web.adapter.ManifestOutputAdapter;
 import dcraft.web.adapter.ScriptCacheOutputAdapter;
 import dcraft.web.adapter.StyleCacheOutputAdapter;
@@ -811,7 +808,7 @@ public class PrepWork extends StateWork {
 			}
 
 			@Override
-			public IIndexWork buildIndexAdapter(Site site, Path file, CommonPath loc, String view) {
+			public IReviewWork buildReviewAdapter(Site site, Path file, CommonPath loc, String view) throws OperatingContextException {
 				return null;  // does not apply
 			}
 		});
@@ -825,7 +822,7 @@ public class PrepWork extends StateWork {
 			}
 
 			@Override
-			public IIndexWork buildIndexAdapter(Site site, Path file, CommonPath loc, String view) {
+			public IReviewWork buildReviewAdapter(Site site, Path file, CommonPath loc, String view) throws OperatingContextException {
 				return null;  // does not apply
 			}
 		});
@@ -839,7 +836,7 @@ public class PrepWork extends StateWork {
 			}
 
 			@Override
-			public IIndexWork buildIndexAdapter(Site site, Path file, CommonPath loc, String view) {
+			public IReviewWork buildReviewAdapter(Site site, Path file, CommonPath loc, String view) throws OperatingContextException {
 				return null;  // does not apply
 			}
 		});
@@ -853,7 +850,7 @@ public class PrepWork extends StateWork {
 			}
 
 			@Override
-			public IIndexWork buildIndexAdapter(Site site, Path file, CommonPath loc, String view) {
+			public IReviewWork buildReviewAdapter(Site site, Path file, CommonPath loc, String view) throws OperatingContextException {
 				return null;  // does not apply
 			}
 		});

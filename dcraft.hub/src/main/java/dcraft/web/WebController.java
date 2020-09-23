@@ -137,7 +137,7 @@ public class WebController extends OperationController {
 	static public RecordStruct loadRequest(ChannelHandlerContext ctx, HttpRequest req, boolean secure) {
 		RecordStruct ret = RecordStruct.record();
 		
-		ret.with("Method", req.getMethod());
+		ret.with("Method", req.method());
 		
 		RecordStruct headers = RecordStruct.record();
 		
@@ -185,14 +185,15 @@ public class WebController extends OperationController {
 		
 		RecordStruct parameters = RecordStruct.record();
 		
-		QueryStringDecoder decoderQuery = new QueryStringDecoder(req.getUri());
+		QueryStringDecoder decoderQuery = new QueryStringDecoder(req.uri());
 		Map<String, List<String>> params = decoderQuery.parameters();        // TODO decode
-		
+
 		for (Map.Entry<String, List<String>> entry : params.entrySet()) {
 			parameters.with(entry.getKey(), ListStruct.list().withCollection(entry.getValue()));
 		}
 		
 		ret.with("Parameters", parameters);
+		ret.with("Query", decoderQuery.rawQuery());
 		
 		String mode = parameters.isFieldEmpty("_dcui")
 				? "html" : parameters.getFieldAsList("_dcui").getItemAsString(0);

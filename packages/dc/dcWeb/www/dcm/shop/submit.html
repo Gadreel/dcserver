@@ -94,6 +94,17 @@
 							'event_label': id
 						});
 
+						for (var i = 0; i < oldcart.Items.length; i++) {
+							var item = oldcart.Items[i];
+
+							if (item.Alias) {
+								gtag('event', 'Store', {
+									'event_category': 'Purchased',
+									'event_label': item.Alias
+								});
+							}
+						}
+
 						// TODO review, does not seem too work
 						dc.user.updateUser();
 					}

@@ -3,13 +3,17 @@ package dcraft.web;
 import dcraft.db.util.DocumentIndexBuilder;
 import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.script.Script;
 import dcraft.task.IWork;
 import dcraft.tenant.Site;
+import dcraft.util.MimeInfo;
 
 import java.nio.file.Path;
 
-public interface IIndexWork extends IWork {
+public interface IReviewWork extends IWork {
 	CommonPath getPath();
-	DocumentIndexBuilder getIndexer();
+	MimeInfo getMime();
+	Script getScript();
+
 	void init(Site site, Path file, CommonPath loc, String view) throws OperatingContextException;
 }

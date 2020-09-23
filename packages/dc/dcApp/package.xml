@@ -273,6 +273,8 @@
 			<Definition Alias="pages" Title="Web Page" Path="/"
 				LocaleFields="Title,Keywords,Description"
 				SharedFields="Image,PublishAt"
+				RequiredFields="Title"
+				DesiredFields="Description"
 			/>
 			<Definition Alias="blocks" Title="Content Block"
 				LocaleFields="Title,Description"

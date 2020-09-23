@@ -112,7 +112,7 @@ public class IncludeFeed extends Base {
 						TablesAdapter db = TablesAdapter.ofNow(request);
 						
 						
-						Unique collector = (Unique) db.traverseIndex(OperationContext.getOrThrow(), "dcmFeedHistory", "dcmPath", epath.toString(), Unique.unique().withNested(
+						Unique collector = (Unique) db.traverseIndex(OperationContext.getOrThrow(), "dcmFeedHistory", "dcmDraftPath", epath.toString(), Unique.unique().withNested(
 								CurrentRecord.current().withNested(HistoryFilter.forDraft())));
 						
 						String hid = collector.isEmpty() ? null : collector.getOne().toString();

@@ -6,18 +6,19 @@ import dcraft.db.util.DocumentIndexBuilder;
 import dcraft.filestore.CommonPath;
 import dcraft.filevault.Vault;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationMarker;
-import dcraft.log.DebugLevel;
-import dcraft.log.HubLog;
 import dcraft.log.Logger;
+import dcraft.script.Script;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.task.ChainWork;
 import dcraft.task.IWork;
 import dcraft.task.TaskContext;
 import dcraft.tenant.Site;
-import dcraft.web.IIndexWork;
+import dcraft.web.IReviewWork;
 import dcraft.web.WebController;
+import dcraft.web.ui.UIUtil;
+import dcraft.xml.XElement;
 
 /*
 	Task must be run with a WebController for controller, but not need to prep the WC vars
@@ -80,7 +81,7 @@ public class FeedSearchWork extends ChainWork {
 			}
 			
 			// try with path case as is (should be lowercase anyway)
-			IIndexWork output = webSite.webFindIndexFile(path, null);
+			IReviewWork output = webSite.webFindReviewFile(path, null);
 			
 			if (om.hasErrors()) {
 				Logger.error("Problem finding web page file");
@@ -90,7 +91,7 @@ public class FeedSearchWork extends ChainWork {
 			// try with lowercase path
 			if (output == null) {
 				path = CommonPath.from(path.toString().toLowerCase());
-				output = webSite.webFindIndexFile(path, null);
+				output = webSite.webFindReviewFile(path, null);
 			}
 			
 			if (om.hasErrors() || (output == null)) {
@@ -104,24 +105,59 @@ public class FeedSearchWork extends ChainWork {
 				Logger.debug("Executing adapter: " + output.getClass().getName());
 
 			// TODO repeat for each Site language
-			this.indexer = output.getIndexer();
+			this.indexer = DocumentIndexBuilder.index();
+
+			final IReviewWork foutput = output;
 
 			this
 					.then(output)
-					.then(new IndexWriter());
+					.then(new IWork() {
+						@Override
+						public void run(TaskContext taskctx) throws OperatingContextException {
+							Script script = foutput.getScript();
+
+							XElement root = script.getXml();
+
+							indexer.setTitle(root.selectFirst("head").selectFirst("title").getText());
+
+							for (XElement meta : root.selectFirst("head").selectAll("meta")) {
+								if ("robots".equals(meta.getAttribute("name"))) {
+									indexer.setDenyIndex(meta.getAttribute("content", "index").contains("noindex"));
+								}
+								else if ("description".equals(meta.getAttribute("name"))) {
+									indexer.setSummary(meta.getAttribute("content"));
+								}
+							}
+
+							if (root.hasNotEmptyAttribute("Badges")) {
+								String[] tags = root.getAttribute("Badges").split(",");
+
+								indexer.setBadges(ListStruct.list(tags));
+							}
+
+							if (root.hasNotEmptyAttribute("SortHint")) {
+								indexer.setSortHint(root.getAttribute("SortHint"));
+							}
+
+							UIUtil.indexFinishedDocument(root.selectFirst("body"), indexer);
+
+							indexer.endSection();	// just in case
+
+							taskctx.returnEmpty();
+						}
+					})
+					.then(new IWork() {
+						@Override
+						public void run(TaskContext taskctx) throws OperatingContextException {
+							adapter.indexSearch(FeedSearchWork.this.vault, FeedSearchWork.this.path, FeedSearchWork.this.indexer);
+
+							taskctx.returnEmpty();
+						}
+					});
 		}
 		catch (Exception x) {
 			Logger.error("Unable to process web file: " + x);
 			return;
-		}
-	}
-
-	public class IndexWriter implements IWork {
-		@Override
-		public void run(TaskContext taskctx) throws OperatingContextException {
-			adapter.indexSearch(FeedSearchWork.this.vault, FeedSearchWork.this.path, FeedSearchWork.this.indexer);
-
-			taskctx.returnEmpty();
 		}
 	}
 }

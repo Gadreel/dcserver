@@ -1,4 +1,5 @@
 <dcs.Script Badges="Admin,SysAdmin,Developer">
+	<dcs.Include Path="/dcr/go-live/library" />
 	<dcs.Include Path="/dcr/go-live/dca/library" />
 
 	<dcs.ScriptServiceSwitch>

@@ -41,22 +41,6 @@
 			<dcs.With Target="$FeedList">
 				<AddItem Value="$FeedRec" />
 			</dcs.With>
-
-TODO check if already set, don't create again
-
-			<dcs.Var Name="FeedTracker" Type="Record">
-				<Set>
-					Title: '{$FeedRec.Title} Feed Report',
-					Description: 'Feed files analysis for go live.',
-					Params: { Alias: '{$FeedRec.Alias}' }
-				</Set>
-			</dcs.Var>
-
-			<dcs.CallService Op="dcCoreServices.TaskList.Add" Params="$FeedTracker" Result="TrackerResult" />
-
-	    <dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
-	      <Update Field="dcStepTask" SubId="Tracker-{$FeedRec.Alias}" Value="$TrackerResult.Id" />
-	    </dcdb.UpdateRecord>
 		</dcs.ForEach>
 
 		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
@@ -69,10 +53,21 @@ TODO check if already set, don't create again
 			<Sort ByField="Alias" />
 		</dcs.With>
 
+		<dcdb.LoadRecord Table="dcTaskList" Id="$StepInfo.Id" Result="TrackerData">
+			<SelectGroup Field="dcStepTask" Key="Feed" As="Steps">
+				<SelectSubquery Field="dcStepTask" As="Task">
+					<Select Field="Id" />
+					<Select Field="dcReviewMessage" As="Message" />
+					<Select Field="dcApprovedAt" As="ApprovedAt" />
+				</SelectSubquery>
+			</SelectGroup>
+		</dcdb.LoadRecord>
+
 		<dc.Out>
 			<table class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
 				<thead>
 					<tr>
+						<th scope="col">Status</th>
 						<th scope="col">Title</th>
 						<th scope="col">Fields</th>
 						<th scope="col">Highlight</th>
@@ -82,23 +77,80 @@ TODO check if already set, don't create again
 				</thead>
 				<tbody>
 					<dcs.ForEach Name="Feed" In="$StepInfo.Store.FeedList">
-						<dc.Out>
-							<tr data-domain="{$Feed.Alias}">
-								<td>
-									{$Feed.Title}
-									<br />
-									[{$Feed.Alias}]
-								</td>
-								<td>Inherits: {$Feed.Inherits|ifempty:[na]}
-									<br/>
-									Plus: {$Feed.SharedFields|ifempty:[none]}
-								</td>
-								<td>{$Feed.Highlight|yn:}</td>
-								<td>{$Feed.Templates|join:|ifempty:[none]}</td>
-								<!-- TODO link to schema explorer for type -->
-								<td>TODO</td>
-							</tr>
-						</dc.Out>
+						<dcs.If Target="$Feed.Alias" Not="true" Equal="blocks">
+
+							<dcs.ForEach Name="TrackStep" In="$TrackerData.Steps">
+								<dcs.If Target="$TrackStep.Feed" Equal="Tracker-{$Feed.Alias}">
+									<dcs.With Target="$Feed">
+										<SetField Name="ReviewTask" Value="$TrackStep.Task" />
+									</dcs.With>
+								</dcs.If>
+							</dcs.ForEach>
+
+							<dcs.If Target="$Feed.ReviewTask.ApprovedAt" IsEmpty="false">
+								<dcs.With Target="$Feed">
+									<SetField Name="Approved" Value="true" />
+								</dcs.With>
+							</dcs.If>
+							<dcs.Else>
+								<dcs.With Target="$Feed">
+									<SetField Name="Approved" Value="false" />
+								</dcs.With>
+							</dcs.Else>
+
+							<dc.Out>
+								<tr data-feed="{$Feed.Alias}" data-review-task="{$Feed.ReviewTask.Id}">
+									<td>
+										<dc.Icon Path="far/{$Feed.Approved|tf:check-circle,circle}" class="fa5-3x {$Feed.Approved|tf:green,black}" />
+										<br/>
+										{$Feed.ApprovedAt|dt:MMM dd, hh:mm}
+									</td>
+									<td>
+										{$Feed.Title}
+										<br />
+										[{$Feed.Alias}]
+									</td>
+									<td>Inherits: {$Feed.Inherits|ifempty:[na]}
+										<br/>
+										Plus: {$Feed.SharedFields|ifempty:[none]}
+									</td>
+									<td>{$Feed.Highlight|yn:}</td>
+									<td>
+										{$Feed.Templates|join:|ifempty:[none]}
+										<dc.Icon Path="fas/{$Feed.Templates|empty:|tf:times,check}" class="fa5-lg {$Feed.Templates|empty:|tf:red,green}" />
+									</td>
+									<td>
+										<dcs.If Target="$Feed.ReviewTask" IsEmpty="true">
+											<dc.Out>
+												<dc.Button Label="Build Report" Click="DoBuildReviewFeed" Scope="Primary" />
+											</dc.Out>
+										</dcs.If>
+										<dcs.Else>
+											<dc.Out>
+												<dc.Button Label="Rebuild Report" Click="DoBuildReviewFeed" />
+												<dc.Button Label="View Report" Click="DoReviewFeed" Scope="Primary" />
+											</dc.Out>
+										</dcs.Else>
+									</td>
+								</tr>
+							</dc.Out>
+							<dcs.If Target="$Feed.ReviewTask.Message" IsEmpty="false">
+								<dc.Out>
+									<tr>
+										<td />
+										<td colspan="4">
+											<dc.TextWidget>
+												<Tr><![CDATA[**Note:** {$Feed.ReviewTask.Message}
+
+-----
+												]]></Tr>
+											</dc.TextWidget>
+										</td>
+										<td />
+									</tr>
+								</dc.Out>
+							</dcs.If>
+						</dcs.If>
 					</dcs.ForEach>
 				</tbody>
 			</table>
@@ -147,4 +199,62 @@ TODO DCC link to config article
 			</dc.TextWidget>
 		</dc.Out>
 	</dcs.GlobalFunction>
+
+
+		<dc.Out For="Top">
+			<Function Name="DoBuildReviewFeed" Params="e"><![CDATA[
+					var page = this;
+
+					var steps = [ {
+						Alias: 'Build',
+						Title: 'Build Feed Report',
+						Params: { },
+						Func: function(step) {
+							var task = this;
+
+							dc.comm.call('dcmServices.Feed.FeedIndexAndReview', {
+								StepId: $(e.currentTarget).closest('table').closest('tr').attr('data-id'),
+								Feed: $(e.currentTarget).closest('tr').attr('data-feed')
+							}, function(rmsg) {
+								if (rmsg.Code > 0) {
+									task.Result = {
+										Result: 1,
+										Message: 'Unable to renew certificate: ' + rmsg.Message
+									};
+
+									task.kill();
+								}
+								else {
+									task.Result = {
+										Result: 0
+									};
+
+									task.resume();
+								}
+							});
+						}
+					} ];
+
+					var processtask = new dc.lang.Task(steps);
+
+					processtask.Store = { };
+					processtask.Result = null;
+
+					dc.pui.Popup.await('Please wait while building report.', function() {
+						dc.pui.Apps.Busy = false;
+
+						if (processtask.Result.Result > 0)
+							dc.pui.Popup.alert('Unable to build report: ' + processtask.Result.Message);
+						else
+							page.Layer.refreshPage();
+
+					}, null, processtask);
+			]]></Function>
+			<Function Name="DoReviewFeed" Params="e"><![CDATA[
+					var page = this;
+
+					page.Layer.loadPage('/dcr/go-live/review-feed-list/'
+						+ $(e.currentTarget).closest('tr').attr('data-review-task'));
+			]]></Function>
+		</dc.Out>
 </dcs.Library>

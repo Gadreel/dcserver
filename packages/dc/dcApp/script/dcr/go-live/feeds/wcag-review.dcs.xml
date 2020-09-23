@@ -1,0 +1,38 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:wcag-review">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'WCAG Review',
+				Description: 'Review if site is fully WCAG enabled.',
+				Params: { Alias: 'wcag-review' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:wcag-review" Param="StepId">
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:wcag-review" Param="StepInfo">
+		<dc.Out>
+			<p>
+				Has the website been fully reviewed for Web Content Accessibility Guidelines (WCAG)? Please check every page using an automatic checker such as [WAVE.](https://wave.webaim.org/)  For all other feeds (besides "pages" and "blocks") check that the feed templates meet the WCAG by checking at least a few of the feed entries.
+			</p>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:wcag-review" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+Note: the WAVE tool will only work on a publically accessible websites, not on local / development sites.
+
+TODO DCC link to WCAG ready article
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

@@ -1,15 +1,14 @@
 package dcraft.cms.util;
 
 import dcraft.cms.feed.db.FeedUtilDb;
+import dcraft.cms.feed.work.ReindexFeedWork;
 import dcraft.db.BasicRequestContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileDescriptor;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.mem.MemoryStoreFile;
-import dcraft.filevault.FileStoreVault;
-import dcraft.filevault.Vault;
-import dcraft.filevault.VaultUtil;
+import dcraft.filevault.*;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
@@ -33,6 +32,7 @@ import dcraft.xml.XNode;
 import dcraft.xml.XmlReader;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -216,7 +216,6 @@ public class FeedUtil {
 		// feed definition with shared and locale fields
 		RecordStruct def = FeedUtil.getFeedDefinition(feedname);
 		
-		ListStruct fields = ListStruct.list();		// { Name: x, Value: y }
 		ListStruct tags = ListStruct.list();
 		
 		// feeds use site default
@@ -224,7 +223,9 @@ public class FeedUtil {
 		
 		if (StringUtil.isEmpty(currloc))
 			currloc = ResourceHub.getResources().getLocale().getDefaultLocale();
-		
+
+		Map<String, RecordStruct> fieldmap = new HashMap<>();
+
 		for (XElement meta : root.selectAll("Meta")) {
 			String name = meta.getAttribute("Name");
 			
@@ -234,19 +235,24 @@ public class FeedUtil {
 			FieldType type = FeedUtil.getFieldType(def, name);
 			
 			if (type == FieldType.Shared) {
-				fields.with(RecordStruct.record()
+				fieldmap.put(name, RecordStruct.record()
 						.with("Name", name)
 						.with("Value", meta.getValue())
 				);
 			}
 			else if (type == FieldType.Locale) {
-				fields.with(RecordStruct.record()
+				fieldmap.put(name, RecordStruct.record()
 						.with("Name", name)
 						.with("Value", FeedUtil.bestLocaleMatch(meta, currloc, defloc))
 				);
 			}
 		}
-		
+
+		ListStruct fields = ListStruct.list();		// { Name: x, Value: y }
+
+		for (String field : fieldmap.keySet())
+			fields.with(fieldmap.get(field));
+
 		for (XElement meta : root.selectAll("Tag")) {
 			String value = meta.getAttribute("Value");
 			
@@ -551,7 +557,7 @@ public class FeedUtil {
 				for (Map.Entry<String,String> entry : def.getAttributes().entrySet()) {
 					String key = entry.getKey();
 					
-					if ("LocaleFields".equals(key) || "SharedFields".equals(key))
+					if ("LocaleFields".equals(key) || "SharedFields".equals(key) || "RequiredFields".equals(key) || "DesiredFields".equals(key))
 						continue;
 					
 					ret.with(key, entry.getValue());
@@ -614,6 +620,36 @@ public class FeedUtil {
 							fields.with(fld.trim());
 						}
 					}
+
+					if (def.hasNotEmptyAttribute("DesiredFields")) {
+						ListStruct fields = ret.getFieldAsList("DesiredFields");
+
+						if (fields == null) {
+							fields = ListStruct.list();
+							ret.with("DesiredFields", fields);
+						}
+
+						String[] myfields = def.getAttribute("DesiredFields").split(",");
+
+						for (String fld : myfields) {
+							fields.with(fld.trim());
+						}
+					}
+
+					if (def.hasNotEmptyAttribute("RequiredFields")) {
+						ListStruct fields = ret.getFieldAsList("RequiredFields");
+
+						if (fields == null) {
+							fields = ListStruct.list();
+							ret.with("RequiredFields", fields);
+						}
+
+						String[] myfields = def.getAttribute("RequiredFields").split(",");
+
+						for (String fld : myfields) {
+							fields.with(fld.trim());
+						}
+					}
 				}
 				
 				return ret;
@@ -622,7 +658,13 @@ public class FeedUtil {
 		
 		return null;
 	}
-	
+
+	static public void reindexFeedFile(CommonPath path) throws  OperatingContextException {
+		IndexTransaction tx = IndexTransaction.of(OperationContext.getOrThrow().getSite().getFeedsVault());
+		tx.withUpdate(path);
+		tx.commit();
+	}
+
 	/*
 		command is reduced version of the Feeds vault custom command, only needs/looks at this part
 		

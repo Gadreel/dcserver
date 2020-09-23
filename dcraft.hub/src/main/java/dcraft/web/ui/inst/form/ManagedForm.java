@@ -6,9 +6,14 @@ import dcraft.log.Logger;
 import dcraft.schema.SchemaHub;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
+import dcraft.struct.ListStruct;
+import dcraft.struct.RecordStruct;
+import dcraft.task.IWork;
+import dcraft.task.TaskContext;
+import dcraft.web.ui.inst.IReviewAware;
 import dcraft.xml.XElement;
 
-public class ManagedForm extends Form {
+public class ManagedForm extends Form implements IReviewAware {
 	static public ManagedForm tag() {
 		ManagedForm el = new ManagedForm();
 		el.setName("dcf.ManagedForm");
@@ -48,5 +53,31 @@ public class ManagedForm extends Form {
 			this.withAttribute("data-dcf-always-new", "true");
 
 		super.renderAfterChildren(state);
+	}
+
+	@Override
+	public IWork buildReviewWork(RecordStruct result) throws OperatingContextException {
+		return new IWork() {
+			@Override
+			public void run(TaskContext taskctx) throws OperatingContextException {
+				String form = ManagedForm.this.getAttribute("data-dcf-name");
+
+				XElement mform = ApplicationHub.getCatalogSettings("CMS-ManagedForm-" + form);
+
+				ListStruct forms = result.getFieldAsList("ManagedForms");
+
+				if (forms == null) {
+					forms = ListStruct.list();
+					result.with("ManagedForms", forms);
+				}
+
+				forms.with(RecordStruct.record()
+						.with("Name", form)
+						.with("Defined", (mform != null))
+				);
+
+				taskctx.returnEmpty();
+			}
+		};
 	}
 }

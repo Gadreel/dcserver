@@ -24,6 +24,7 @@ import dcraft.script.work.InstructionWork;
 import dcraft.struct.*;
 import dcraft.struct.scalar.BooleanStruct;
 import dcraft.task.*;
+import dcraft.tenant.Site;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.web.DateParser;
@@ -250,6 +251,15 @@ public class UIUtil {
 		WebController wctrl = WebController.forChannel(null, null);		// TODO someday load service settings if needed
 
 		OperationContext wctx = OperationContext.context(UserContext.rootUser(tenant, site), wctrl);
+
+		return Task.of(wctx)
+				.withTitle(title);
+	}
+
+	static public Task mockWebRequestTask(Site site, String title) throws OperatingContextException {
+		WebController wctrl = WebController.forChannel(null, null);		// TODO someday load service settings if needed
+
+		OperationContext wctx = OperationContext.context(UserContext.rootUser(site), wctrl);
 
 		return Task.of(wctx)
 				.withTitle(title);

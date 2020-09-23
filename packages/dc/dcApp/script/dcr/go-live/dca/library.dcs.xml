@@ -5,26 +5,4 @@
 			'inline-css'
 		</Set>
 	</dcs.Global>
-
-  <!-- prep for adding steps -->
-  <dcs.Global Name="clStepCount" Type="Integer" SetTo="0" />
-
-  <dcs.Function Name="clAddStep" Param="StepData">
-    <dcs.CallService Op="dcCoreServices.TaskList.Add" Params="$StepData" Result="StepResult" />
-
-    <dcs.Var Name="StepSub" Type="String" SetTo="$clStepCount">
-      <LeftPad With="0" Size="4" />
-    </dcs.Var>
-
-    <dcdb.UpdateRecord Table="dcTaskList" Id="$TaskId">
-      <Update Field="dcStepTask" SubId="{$StepSub}" Value="$StepResult.Id" />
-    </dcdb.UpdateRecord>
-
-    <dcs.With Target="$clStepCount">
-      <Inc />
-    </dcs.With>
-
-    <dcs.Return Result="$StepResult.Id" />
-  </dcs.Function>
-
 </dcs.Library>

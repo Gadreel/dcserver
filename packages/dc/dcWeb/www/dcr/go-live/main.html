@@ -84,6 +84,11 @@
 	<Function Name="Load"><![CDATA[
 			var page = this;
 
+			if (e.Thaw) {
+				e.Wait = true;
+				page.Layer.refreshPage();
+			}
+
 	]]></Function>
 	<Function Name="DoApproveReport"><![CDATA[
 			var page = this;

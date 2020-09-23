@@ -34,6 +34,7 @@ import dcraft.task.TaskContext;
 import dcraft.tenant.Site;
 import dcraft.tenant.Tenant;
 import dcraft.tenant.TenantHub;
+import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
 
@@ -45,16 +46,26 @@ import java.util.Deque;
 import java.util.List;
 
 public class ReindexFeedWork extends StateWork {
-	static public ReindexFeedWork work(String feed, ICallContext request) {
+	static public ReindexFeedWork work(String feed, ICallContext request, TablesAdapter db) {
 		ReindexFeedWork work = new ReindexFeedWork();
 		work.feed = feed;
-		
+		work.db = db;
+
 		work.adapter = FileIndexAdapter.of(request);
-		work.db = TablesAdapter.ofNow(request);
-		
+
 		return work;
 	}
 	
+	static public ReindexFeedWork work(String feed, ICallContext request) {
+		ReindexFeedWork work = new ReindexFeedWork();
+		work.feed = feed;
+
+		work.adapter = FileIndexAdapter.of(request);
+		work.db = TablesAdapter.ofNow(request);
+
+		return work;
+	}
+
 	protected Deque<FileStoreFile> folders = new ArrayDeque<>();
 	
 	protected Site currentSite = null;
@@ -122,8 +133,12 @@ public class ReindexFeedWork extends StateWork {
 	}
 	
 	public StateWorkStep doTx(TaskContext trun) throws OperatingContextException {
+		System.out.println("start tx commit");
+
 		this.tx.commit();
-		
+
+		System.out.println("finish tx commit");
+
 		return StateWorkStep.NEXT;
 	}
 	
@@ -136,17 +151,19 @@ public class ReindexFeedWork extends StateWork {
 			this.adapter.traverseIndex(this.currentVault, CommonPath.from("/"), -1, null, new BasicFilter() {
 				@Override
 				public ExpressionResult check(FileIndexAdapter adapter, IVariableAware scope, Vault vault, CommonPath path, RecordStruct file) throws OperatingContextException {
-					if ("Present".equals(file.getFieldAsString("State"))) {
-						Path fp = ls.resolvePath(path);  // uses /feed name/feed path
-						
-						if (Files.notExists(fp)) {
-							System.out.println("- step 2 delete - " + file.getFieldAsString("State") + " - " + path);
-							
-							adapter.deleteFile(currentVault, path, now, RecordStruct.record()
-									.with("Source", "Scan")
-									.with("Op", "Delete")
-									.with("TimeStamp", now)
-									.with("Node", ApplicationHub.getNodeId()));
+					if ((file != null) && (path != null)) {
+						if ("Present".equals(file.getFieldAsString("State"))) {
+							Path fp = ls.resolvePath(path);  // uses /feed name/feed path
+
+							if ((fp == null) || Files.notExists(fp)) {
+								System.out.println("- step 2 delete - " + file.getFieldAsString("State") + " - " + path);
+
+								adapter.deleteFile(currentVault, path, now, RecordStruct.record()
+										.with("Source", "Scan")
+										.with("Op", "Delete")
+										.with("TimeStamp", now)
+										.with("Node", ApplicationHub.getNodeId()));
+							}
 						}
 					}
 					
@@ -164,22 +181,30 @@ public class ReindexFeedWork extends StateWork {
 		if (fs instanceof LocalStore) {
 			LocalStore ls = (LocalStore) fs;
 			
-			this.db.traverseRecords(null, "dcmFeed", CurrentRecord.current()
+			this.db.traverseRecords(trun, "dcmFeed", CurrentRecord.current()
 					.withNested(new dcraft.db.proc.BasicFilter() {
 						@Override
 						public ExpressionResult check(TablesAdapter db, IVariableAware scope, String table, Object val) throws OperatingContextException {
 							String path = Struct.objectToString(db.getStaticScalar(table, val.toString(),"dcmPath")) + ".html";
-							
-							CommonPath cp = CommonPath.from(path);		// uses /site/feed name/feed path
-							
-							Path fp = ls.resolvePath(cp.subpath(1));
-							
-							if (Files.notExists(fp)) {
-								System.out.println("- step 3 delete - " + fp);
-								
+							boolean found = true;
+
+							if (StringUtil.isNotEmpty(path)) {
+								CommonPath cp = CommonPath.from(path);        // uses /site/feed name/feed path
+
+								if (cp != null) {
+									Path fp = ls.resolvePath(cp.subpath(1));
+
+									if ((fp == null) || Files.notExists(fp)) {
+										System.out.println("- step 3 delete - " + fp);
+										found = false;
+									}
+								}
+							}
+
+							if (! found) {
 								db.retireRecord(table, val.toString());
 							}
-							
+
 							return ExpressionResult.accepted();
 						}
 					})

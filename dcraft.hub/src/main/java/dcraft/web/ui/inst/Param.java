@@ -6,12 +6,14 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.inst.doc.Base;
+import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.AnyStruct;
+import dcraft.task.IWork;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
-public class Param extends Base {
+public class Param extends Base implements IReviewAware {
 	static public Param tag() {
 		Param el = new Param();
 		el.setName("dc.Param");
@@ -49,5 +51,10 @@ public class Param extends Base {
 		}
 		
 		return ReturnOption.DONE;
+	}
+
+	@Override
+	public boolean isReviewHidden() throws OperatingContextException {
+		return true;
 	}
 }

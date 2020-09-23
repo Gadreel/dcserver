@@ -177,6 +177,8 @@
 		<Procedure Name="dcmServices.Feed.BulkCommandHistory" Execute="dcraft.cms.feed.db.BulkCommandHistory" />
 		<Procedure Name="dcmServices.Feed.LoadDrafts" Execute="dcraft.cms.feed.db.LoadDrafts" />
 		<Procedure Name="dcmServices.Feed.LoadFeedDashboard" Execute="dcraft.cms.feed.db.LoadFeedDashboard" />
+		<Procedure Name="dcmServices.Feed.FeedIndexAndReview" Execute="dcraft.cms.feed.db.FeedIndexAndReview" />
+		<Procedure Name="dcmServices.Feed.FeedFileIndexAndReview" Execute="dcraft.cms.feed.db.FeedFileIndexAndReview" />
 
 		<Procedure Name="dcmServices.Dashboard.LoadAlerts" Execute="dcraft.cms.dashboard.db.LoadAlerts" />
 		<Procedure Name="dcmServices.Dashboard.ArchiveAlerts" Execute="dcraft.cms.dashboard.db.ArchiveAlerts" />
@@ -190,6 +192,8 @@
 		<Procedure Name="dcmServices.Dashboard.KillAllBlockedIP" Execute="dcraft.cms.dashboard.db.KillAllBlockedIP" />
 
 		<Procedure Name="dcmServices.Reports.CreateGoLive" Execute="dcraft.cms.reports.db.CreateGoLive" />
+
+		<Procedure Name="dcmServices.Common.EmailSubscribe" Execute="dcraft.cms.common.db.EmailSubscribe" />
 
 		<Procedure Name="dcCoreServices.ManagedForm.Submit" Execute="dcraft.cms.db.forms.Submit" />
 		<Procedure Name="dcCoreServices.ManagedForm.Complete" Execute="dcraft.cms.db.forms.Complete" />
@@ -356,6 +360,29 @@
 						<RecordRequest Required="True">
 							<Field Name="Feed" Type="dcMetaString" Required="True" />
 						</RecordRequest>
+					</Op>
+					<Op Name="FeedIndexAndReview">
+						<Description>
+							Feeds to index and review.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="StepId" Type="Id" Required="True" />
+							<Field Name="Feed" Type="dcMetaString" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="FeedFileIndexAndReview">
+						<Description>
+							Feed path to index and review.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="StepId" Type="Id" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
 					</Op>
 				</Secure>
 				<Secure Badges="SysAdmin,Admin">
@@ -696,6 +723,20 @@
 						<RecordResponse>
 							<Field Name="Id" Type="Id" />
 						</RecordResponse>
+					</Op>
+				</Secure>
+			</Feature>
+			<Feature Name="Common">
+				<Secure Badges="Guest,User">
+					<Op Name="EmailSubscribe">
+						<Description>
+							Subscribe to the general email list.
+						</Description>
+						<RecordRequest Required="true">
+							<Field Name="Email" Type="dcEmail" Required="true" />
+							<Field Name="First" Type="dcSmallString" />
+							<Field Name="Last" Type="dcSmallString" />
+						</RecordRequest>
 					</Op>
 				</Secure>
 			</Feature>

@@ -28,11 +28,7 @@ import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
-import dcraft.web.HtmlMode;
-import dcraft.web.IIndexWork;
-import dcraft.web.IOutputWork;
-import dcraft.web.IWebWorkBuilder;
-import dcraft.web.WebController;
+import dcraft.web.*;
 import dcraft.web.adapter.*;
 import dcraft.web.ui.UIUtil;
 import dcraft.web.ui.inst.W3;
@@ -664,15 +660,22 @@ public class Site extends Base {
 					boolean changeTls = ((ssl == null) && tlsForce);
 
 					if (StringUtil.isNotEmpty(rname) || changeTls) {
-						String path = ((ssl != null) || tlsForce) ? "https://" : "http://";
+						boolean tlsUse = ((ssl != null) || tlsForce);
+
+						String path = tlsUse ? "https://" : "http://";
 
 						path += StringUtil.isNotEmpty(rname) ? rname : host;
 
 						// if forcing a switch, use another port
-						path += changeTls ? ":" + route.getAttribute("TlsPort", defPort) : port;
+						path += tlsUse ? ":" + route.getAttribute("TlsPort", defPort) : port;
 
-						return path + orgpath;
+						if (request.isNotFieldEmpty("Query"))
+							return path + orgpath + "?" + request.getFieldAsString("Query");
+						else
+							return path + orgpath;
 					}
+
+					continue;
 				}
 
 				if (orgpath.equals(route.getAttribute("Path"))) {
@@ -685,7 +688,10 @@ public class Site extends Base {
 			}
 
 			if ((ssl == null) && Struct.objectToBoolean(config.getAttribute("ForceTls", "False")))
-				return "https://" + host + ":" + config.getAttribute("TlsPort", defPort) + orgpath;
+				if (request.isNotFieldEmpty("Query"))
+					return "https://" + host + ":" + config.getAttribute("TlsPort", defPort) + orgpath + "?" + request.getFieldAsString("Query");
+				else
+					return "https://" + host + ":" + config.getAttribute("TlsPort", defPort) + orgpath;
 		}
 
 		return null;
@@ -771,78 +777,78 @@ public class Site extends Base {
 
 		return ioa;
 	}
-	
-	public IIndexWork webFindIndexFile(CommonPath path, String view) throws OperatingContextException {
+
+	public IReviewWork webFindReviewFile(CommonPath path, String view) throws OperatingContextException {
 		// =====================================================
 		//  if request has an extension do specific file lookup
 		// =====================================================
-		
+
 		if (Logger.isDebug())
 			Logger.debug("find file before ext check: " + path + " - " + view);
-		
+
 		// if we have an extension then we don't have to do the search below
 		// never go up a level past a file (or folder) with an extension
 		if (path.hasFileExtension()) {
 			if (this.dynadapaters.containsKey(path.toString()))
-				return this.dynadapaters.get(path.toString()).buildIndexAdapter(this, null, path, view);
-			
+				return this.dynadapaters.get(path.toString()).buildReviewAdapter(this, null, path, view);
+
 			WebFindResult wpath = this.webFindFilePath(path, view);
-			
+
 			if (wpath != null)
-				return this.webPathToIndexAdapter(view, wpath);
-			
+				return this.webPathToReviewAdapter(view, wpath);
+
 			// TODO not found file!!
 			// let caller decide if error - Logger.errorTr(150007);
 			return null;
 		}
-		
+
 		// =====================================================
 		//  if request does not have an extension look for files
 		//  that might match this path or one of its parents
 		//  using the special extensions
 		// =====================================================
-		
+
 		if (Logger.isDebug())
 			Logger.debug("find dyn file: " + path + " - " + view);
-		
+
 		WebFindResult wpath = this.webFindFilePath(path, view);
-		
+
 		if (wpath == null) {
 			// let caller decide if error - Logger.errorTr(150007);
 			return null;
 		}
-		
+
 		if (Logger.isDebug())
 			Logger.debug("find file path: " + wpath + " - " + path + " - " + view);
-		
-		return this.webPathToIndexAdapter(view, wpath);
+
+		return this.webPathToReviewAdapter(view, wpath);
 	}
-	
-	public IIndexWork webPathToIndexAdapter(String view, WebFindResult wpath) throws OperatingContextException {
-		IIndexWork ioa = null;
-		
+
+	public IReviewWork webPathToReviewAdapter(String view, WebFindResult wpath) throws OperatingContextException {
+		IReviewWork ioa = null;
+
 		String filename = wpath.file.getFileName().toString();
 		CommonPath path = wpath.path;
-		
+
 		HtmlMode hmode = this.getHtmlMode();
-		
+
 		// currently only supports Dynamic
 		if (filename.endsWith(".html")) {
 			if ((hmode == HtmlMode.Dynamic) || (hmode == HtmlMode.Strict))
-				ioa = new DynamicIndexAdapter();
+				ioa = new DynamicReviewAdapter();
 		}
 		else if (filename.endsWith(".md")) {
-			ioa = new MarkdownIndexAdapter();
+			ioa = new MarkdownReviewAdapter();
 		}
 		else {
 			return null;
 		}
-		
+
 		ioa.init(this, wpath.file, path, view);
-		
+
 		return ioa;
 	}
-	
+
 	public WebFindResult webFindFilePath(CommonPath path, String view) {
 		// figure out which section we are looking in
 		String sect = "www";

@@ -20,7 +20,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.script.Script;
 import dcraft.web.ui.UIUtil;
 
-public class MarkdownIndexAdapter extends DynamicIndexAdapter {
+public class MarkdownReviewAdapter extends DynamicReviewAdapter {
 	@Override
 	public Script getSource() throws OperatingContextException {
 		if (this.script != null)

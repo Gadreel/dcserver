@@ -16,16 +16,15 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.struct.*;
+import dcraft.task.IWork;
 import dcraft.task.StateWorkStep;
 import dcraft.task.TaskContext;
 import dcraft.util.StringUtil;
 import dcraft.script.inst.doc.Base;
 import dcraft.util.TimeUtil;
-import dcraft.web.ui.inst.ICMSAware;
-import dcraft.web.ui.inst.IncludeParam;
-import dcraft.web.ui.inst.Link;
-import dcraft.web.ui.inst.W3;
+import dcraft.web.ui.inst.*;
 import dcraft.web.ui.inst.cms.GalleryWidget;
+import dcraft.web.ui.inst.form.ManagedForm;
 import dcraft.xml.XElement;
 import dcraft.xml.XNode;
 import z.gei.db.estimator.product.List;
@@ -34,7 +33,7 @@ import java.net.URL;
 import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class Instagram extends Base implements ICMSAware {
+public class Instagram extends Base implements ICMSAware, IReviewAware {
 	static public Instagram tag() {
 		Instagram el = new Instagram();
 		el.setName("dcm.InstagramWidget");
@@ -261,4 +260,44 @@ public class Instagram extends Base implements ICMSAware {
 			));
 		}
 	}
+
+
+	@Override
+	public IWork buildReviewWork(RecordStruct reviewresult) throws OperatingContextException {
+		return new IWork() {
+			@Override
+			public void run(TaskContext taskctx) throws OperatingContextException {
+				BasicRequestContext requestContext = BasicRequestContext.ofDefaultDatabase();
+				TablesAdapter db = TablesAdapter.ofNow(requestContext);
+
+				String alt = Instagram.this.attr("AltSettings");
+
+				InstagramUtil.checkGetToken(db, alt, new OperationOutcomeString() {
+					@Override
+					public void callback(String result) throws OperatingContextException {
+						ListStruct messages = reviewresult.getFieldAsList("Messages");
+
+						if (messages == null) {
+							messages = ListStruct.list();
+							reviewresult.with("Messages", messages);
+						}
+
+						if (StringUtil.isNotEmpty(result))
+							messages.with(RecordStruct.record()
+									.with("Level", "Info")
+									.with("Message", "Instagram token found, all is well.")
+							);
+						else
+							messages.with(RecordStruct.record()
+									.with("Level", "Error")
+									.with("Message", "Instagram token not found - this is a problem, see Instagram widget documentation.")
+							);
+
+						taskctx.returnEmpty();
+					}
+				});
+			}
+		};
+	}
+
 }
