@@ -68,7 +68,7 @@ Note that _SkipToAddress_ means don't try sending emails to emails to that domai
 
 Currently the only _Method_ enabled is Smtp  and it requires the SmtpHost, SmtpPort, SmtpUsername and SmtpPassword. The password should be encrypted (obsecured) using the "settings encryptor" for that deployment. TODO link to settings encryptor article
 
-The _DefaultFrom_ must be set to come from the tenant's domain. If it is not, there will likely be issues with email deliverability.
+The _DefaultFrom_ must be set to come from a valid AWS sending domain. (TODO link to how to set up sending domains). Ideally this would be the tenant's domain, however may be the agencies domain. If it is not set up in AWS, there will likely be issues with email deliverability.
 
 TODO DCC link to config and catalog article
 				]]></Tr>

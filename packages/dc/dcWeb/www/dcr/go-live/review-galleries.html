@@ -8,7 +8,7 @@
 	<Require Script="/js/vendor/prism/prism.js" Style="/css/vendor/prism/prism.css" />
 
 	<dcs.Include Path="/dcr/go-live/library" />
-	<dcs.Include Path="/dcr/go-live/dca/library" />
+	<dcs.Include Path="/dcr/go-live/galleries/library" />
 
 	<dcs.Var Name="TaskId" Type="String" SetTo="{$Page.OriginalPathParts.3}" />
 
@@ -31,7 +31,7 @@
 
 	<!-- load functions for each step, includes prep and print - later always needed -->
 	<dcs.ForEach Name="Step" In="$CheckList">
-		<dcs.Include Path="/dcr/go-live/dca/{$Step}" />
+		<dcs.Include Path="/dcr/go-live/galleries/{$Step}" />
 	</dcs.ForEach>
 
 	<!-- only build the substeps if not present, first time the page is loaded -->
@@ -110,7 +110,7 @@
 			</dcs.If>
 
 			<p>
-				TODO galleries
+				Review and either fix or approve each gallery.
 			</p>
 
 			<dc.Style>
@@ -258,7 +258,7 @@
 				if (! confirm)
 					return;
 
-				dc.comm.callScript('/dcr/go-live/review-dca-service', 'Clear', {
+				dc.comm.callScript('/dcr/go-live/review-galleries-service', 'Clear', {
 					Id: '{$TaskId}'
 				}, function(resp) {
 				    console.log(resp.Code + ' - ' + (resp.Result ? resp.Result.Value : ''))
@@ -289,7 +289,7 @@
 	<Function Name="DoRecheckStep" Params="e"><![CDATA[
 			var page = this;
 
-			dc.comm.callScript('/dcr/go-live/review-dca-service', 'RecheckStep', {
+			dc.comm.callScript('/dcr/go-live/review-galleries-service', 'RecheckStep', {
 				StepId: $(e.currentTarget).closest('tr').attr('data-id'),
 				StepAlias: $(e.currentTarget).closest('tr').attr('data-alias')
 			}, function(resp) {

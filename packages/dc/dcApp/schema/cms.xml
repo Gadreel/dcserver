@@ -180,6 +180,8 @@
 		<Procedure Name="dcmServices.Feed.FeedIndexAndReview" Execute="dcraft.cms.feed.db.FeedIndexAndReview" />
 		<Procedure Name="dcmServices.Feed.FeedFileIndexAndReview" Execute="dcraft.cms.feed.db.FeedFileIndexAndReview" />
 
+		<Procedure Name="dcmServices.Gallery.GalleryReview" Execute="dcraft.cms.gallery.db.GalleryReview" />
+
 		<Procedure Name="dcmServices.Dashboard.LoadAlerts" Execute="dcraft.cms.dashboard.db.LoadAlerts" />
 		<Procedure Name="dcmServices.Dashboard.ArchiveAlerts" Execute="dcraft.cms.dashboard.db.ArchiveAlerts" />
 		<Procedure Name="dcmServices.Dashboard.LoadCerts" Execute="dcraft.cms.dashboard.db.LoadCerts" />
@@ -351,6 +353,18 @@
 		</Service>
 
 		<Service Name="dcmServices">
+			<Feature Name="Gallery">
+				<Secure Badges="SysAdmin,Admin">
+					<Op Name="GalleryReview">
+						<Description>
+							Review all galleries and store in step.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="StepId" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+				</Secure>
+			</Feature>
 			<Feature Name="Feed">
 				<Secure Badges="SysAdmin,Admin">
 					<Op Name="Reindex">

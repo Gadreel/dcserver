@@ -1,0 +1,7 @@
+<dcs.Library>
+	<dcs.Global Name="CheckList" Type="List">
+		<Set>
+			'gallery-list'
+		</Set>
+	</dcs.Global>
+</dcs.Library>

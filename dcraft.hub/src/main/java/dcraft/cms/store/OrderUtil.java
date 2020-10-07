@@ -46,6 +46,8 @@ import dcraft.xml.XElement;
 
 public class OrderUtil {
 	static public void processAuthOrder(ICallContext request, TablesAdapter db, RecordStruct order, OperationOutcomeStruct callback) throws OperatingContextException {
+		Logger.info("Begin order processing");
+
 		Site site = OperationContext.getOrThrow().getSite();
 		String event = site.getTenant().getAlias() + "-" + site.getAlias() + " - order submission started: " + order.getFieldAsRecord("CustomerInfo").toString();
 		SlackUtil.serverEvent(null, event, null);
@@ -75,6 +77,8 @@ public class OrderUtil {
 		ZonedDateTime now = TimeUtil.now();
 
 		RecordStruct orderclean = order.deepCopy();
+
+		Logger.info("Begin clean and save order");
 
 		// remove sensitive information before saving
 		RecordStruct cleanpay = orderclean.getFieldAsRecord("PaymentInfo");
@@ -221,6 +225,8 @@ public class OrderUtil {
 					.withId(refid)
 					.withTable("dcmOrder");
 
+			Logger.info("Begin payment processing");
+
 			if ("Manual".equals(pmethod)) {
 				upreq.withSetField("dcmStatus", "AwaitingPayment");
 
@@ -303,7 +309,9 @@ public class OrderUtil {
 		Site site = OperationContext.getOrThrow().getSite();
 		String event = site.getTenant().getAlias() + "-" + site.getAlias() + " - order placed: " + refid;
 		SlackUtil.serverEvent(null, event, null);
-		
+
+		Logger.info("Begin payment processing");
+
 		// CustomerId already set by sanitize
 		if (OperationContext.getOrThrow().getUserContext().isTagged("User")) {
 			OrderUtil.onLogStep(request, db, upreq, status, stamp, orderclean, payment, refid, callback);
@@ -395,6 +403,8 @@ public class OrderUtil {
 				.with("PaymentResponse", payment)
 				.with("Log", OperationContext.getOrThrow().getController().getMessages());
 
+		Logger.info("Saving order file");
+
 		// TODO make StoreOrders encrypted file only
 		// store in deposit file - TODO make sure this is not expanded locally, should be in encrypted deposit file only
 		MemoryStoreFile msource = MemoryStoreFile.of(CommonPath.from("/" + refid + ".json"))
@@ -419,6 +429,8 @@ public class OrderUtil {
 	}
 
 	static public void triggerEvent(String refid) throws OperatingContextException {
+
+		Logger.info("Begin order script event processing");
 
 		// TODO trigger Event to send emails separate from order placed so email (notice) can be resent
 

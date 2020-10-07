@@ -97,8 +97,7 @@ public class StandardSettingsObfuscator extends BasicSettingsObfuscator {
 		// standardize at 64 bytes
 		if (bkey2.length > 64) {
 			byte[] b2 = new byte[64];
-			// likely this should have been bkey2.length, but too late
-			ArrayUtil.blockCopy(bkey2, bkey1.length - 64, b2, 0, 64);
+			ArrayUtil.blockCopy(bkey2, bkey2.length - 64, b2, 0, 64);
 			bkey2 = b2;
 		}
 		else if (bkey2.length < 64) {

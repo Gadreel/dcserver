@@ -3644,6 +3644,8 @@ dc.pui.Tags = {
 				if (currimg < gallist.length)
 					$(gallist.get(currimg)).addClass('auto-select');
 			}
+
+			$(node).trigger('dcm:slideswitched');
 		}
 
 		var switchFromGallery = function() {

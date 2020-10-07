@@ -1,0 +1,150 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:gallery-list">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Gallery List',
+				Description: 'Galleries available for this tenant/site.',
+				Params: { Alias: 'gallery-list' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:gallery-list" Param="StepId">
+		<dcs.Var Name="Params" Type="Record">
+			<SetField Name="StepId" Value="$StepId" />
+		</dcs.Var>
+
+		<dcs.CallService Op="dcmServices.Gallery.GalleryReview" Params="$Params" Result="x" />
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="Init" Value="true" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:gallery-list" Param="StepInfo">
+		<dcdb.LoadRecord Table="dcTaskList" Id="$StepInfo.Id" Result="TrackerData">
+			<SelectGroup Field="dcStepTask" Key="Gallery" As="Steps">
+				<SelectSubquery Field="dcStepTask" As="ReviewTask">
+					<Select Field="Id" />
+					<Select Field="dcReviewMessage" As="Message" />
+					<Select Field="dcApprovedAt" As="ApprovedAt" />
+					<Select Field="dcStore" SubId="Review" As="Review" />
+				</SelectSubquery>
+			</SelectGroup>
+		</dcdb.LoadRecord>
+
+		<dc.Out>
+			<table class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Status</th>
+						<th scope="col">Path</th>
+						<th scope="col">Folder</th>
+						<th scope="col">Images</th>
+						<th scope="col">Action</th>
+					</tr>
+				</thead>
+				<tbody>
+					<dcs.ForEach Name="Gallery" In="$TrackerData.Steps">
+						<dcs.If Target="$Gallery.ReviewTask.ApprovedAt" IsEmpty="false">
+							<dcs.With Target="$Gallery">
+								<SetField Name="Approved" Value="true" />
+							</dcs.With>
+						</dcs.If>
+						<dcs.Else>
+							<dcs.With Target="$Gallery">
+								<SetField Name="Approved" Value="false" />
+							</dcs.With>
+						</dcs.Else>
+
+						<dc.Out>
+							<tr data-feed="{$Gallery.Alias}" data-id="{$Gallery.ReviewTask.Id}">
+								<td>
+									<dc.Icon Path="far/{$Gallery.Approved|tf:check-circle,circle}" class="fa5-3x {$Gallery.Approved|tf:green,black}" />
+									<br/>
+									{$Gallery.ReviewTask.ApprovedAt|dt:MMM dd, hh:mm}
+								</td>
+								<td>
+									{$Gallery.ReviewTask.Review.Path}
+								</td>
+								<td>
+									<ul>
+										<dcs.ForEach Name="Message" In="$Gallery.ReviewTask.Review.Messages">
+											<dc.Out>
+												<li>{$Message.Message}</li>
+											</dc.Out>
+										</dcs.ForEach>
+									</ul>
+								</td>
+								<td>
+									<dcs.ForEach Name="File" In="$Gallery.ReviewTask.Review.Files">
+										<dcs.If Target="$File.Messages" IsEmpty="false">
+											<dc.Out>
+												{$File.Path}<br />
+												<ul>
+													<dcs.ForEach Name="Message" In="$File.Messages">
+														<dc.Out>
+															<li>{$Message.Message}</li>
+														</dc.Out>
+													</dcs.ForEach>
+												</ul>
+											</dc.Out>
+										</dcs.If>
+									</dcs.ForEach>
+								</td>
+								<td>
+									<dc.Button Label="Approve" Click="DoApproveGallery" Scope="Primary" />
+								</td>
+							</tr>
+						</dc.Out>
+						<dcs.If Target="$Feed.ReviewTask.Message" IsEmpty="false">
+							<dc.Out>
+								<tr>
+									<td />
+									<td colspan="4">
+										<dc.TextWidget>
+											<Tr><![CDATA[**Note:** {$Feed.ReviewTask.Message}
+
+-----
+											]]></Tr>
+										</dc.TextWidget>
+									</td>
+									<td />
+								</tr>
+							</dc.Out>
+						</dcs.If>
+					</dcs.ForEach>
+				</tbody>
+			</table>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:gallery-list" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+TODO help about meta Files
+
+TODO DCC link to galleries article
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dc.Out For="Top">
+		<Function Name="DoApproveGallery" Params="e"><![CDATA[
+				var page = this;
+
+				dc.comm.call('dcCoreServices.TaskList.UpdateReview', {
+					Id: $(e.currentTarget).closest('tr').attr('data-id'),
+					Approved: true
+				}, function(resp) {
+						page.Layer.refreshPage();
+				});
+		]]></Function>
+	</dc.Out>
+</dcs.Library>
