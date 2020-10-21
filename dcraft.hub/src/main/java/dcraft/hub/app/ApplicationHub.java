@@ -53,8 +53,13 @@ import dcraft.xml.XElement;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.ServerChannel;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 
+import java.nio.channels.ServerSocketChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.WatchKey;
@@ -73,6 +78,7 @@ import dcraft.log.Logger;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 import dcraft.util.io.IFileWatcher;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 /**
  * Hub is the center of activity for DivConq applications.  Most of the built-in resources/features are available via the Hub.
@@ -261,10 +267,21 @@ public class ApplicationHub {
 	}
 	
 	static public EventLoopGroup getEventLoopGroup() {
-		if (ApplicationHub.eventLoopGroup == null)
-			ApplicationHub.eventLoopGroup = new NioEventLoopGroup();
+		if (ApplicationHub.eventLoopGroup == null) {
+			if (Epoll.isAvailable())
+				ApplicationHub.eventLoopGroup = new EpollEventLoopGroup();
+			else
+				ApplicationHub.eventLoopGroup = new NioEventLoopGroup();
+		}
 		
 		return ApplicationHub.eventLoopGroup;
+	}
+
+	static public Class<? extends ServerChannel> getServerSocketChannel() {
+		if (Epoll.isAvailable())
+			return EpollServerSocketChannel.class;
+		else
+			return  NioServerSocketChannel.class;
 	}
 
 	/**

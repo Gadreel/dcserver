@@ -1,18 +1,13 @@
 #!/bin/sh
 
-# JAVA_HOME="/usr/lib/jvm/jre"
-# export JAVA_HOME
-
+# export JAVA_HOME="/usr/lib/jvm/jre"
 #
 # Check for JAVA settings
-#
 # >printenv | grep JAVA_HOME
-# >JAVA_HOME="...path to 1.8..."
-# >export JAVA_HOME
 #
 
 if [ ! -x "$JAVA_HOME" ] ; then
-  echo "Error: JAVA_HOME is not defined correctly."
+  echo "Error: JAVA_HOME is not defined."
   exit 1
 fi
 

@@ -10,4 +10,5 @@ module dcraft.third {
   exports org.apache.lucene.analysis.en;
   exports org.apache.lucene.analysis.es;
   exports org.mindrot;
+  exports dcraft.daemon;
 }

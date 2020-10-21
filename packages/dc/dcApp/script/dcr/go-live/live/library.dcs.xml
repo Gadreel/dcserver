@@ -1,0 +1,7 @@
+<dcs.Library>
+	<dcs.Global Name="CheckList" Type="List">
+		<Set>
+			'go-live'
+		</Set>
+	</dcs.Global>
+</dcs.Library>

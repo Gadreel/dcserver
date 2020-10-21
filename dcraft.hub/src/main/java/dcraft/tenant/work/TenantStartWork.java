@@ -30,7 +30,7 @@ public class TenantStartWork extends CoreLoaderWork {
 		
 		Logger.debug( "Loading tenants file queue");
 		
-		TenantHub.loadFileQueue();
+		//TenantHub.loadFileQueue();
 		
 		TenantHub.loadDeafultTenant();
 		

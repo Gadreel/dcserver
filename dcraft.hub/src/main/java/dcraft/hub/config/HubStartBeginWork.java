@@ -10,6 +10,8 @@ import dcraft.task.TaskContext;
 import dcraft.util.ISettingsObfuscator;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
+import io.netty.channel.epoll.Epoll;
+import io.netty.handler.ssl.OpenSsl;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.io.IOException;
@@ -60,7 +62,10 @@ public class HubStartBeginWork extends CoreLoaderWork {
 			Logger.debug("User: " + System.getProperty("user.name"));
 			Logger.debug("User working dir: " + System.getProperty("user.dir"));
 		}
-		
+
+		Logger.info("/dev/epoll: " + (Epoll.isAvailable() ? "yes" : "no (" + Epoll.unavailabilityCause() + ')'));
+		Logger.info("OpenSSL: " + (OpenSsl.isAvailable() ? "yes (" + OpenSsl.versionString() + ", " + OpenSsl.version() + ')' : "no (" + OpenSsl.unavailabilityCause()) + ')');
+
 		// TODO prepare the basics, then do a prep task, then done booting
 		
 		try {

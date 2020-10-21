@@ -127,9 +127,34 @@
 		<dc.Out>
 			<dc.TextWidget>
 				<Tr><![CDATA[
-TODO help about meta Files
+Any folder that contains, or may contain, images should have a meta.json file located in that folder. It can often be as simple as:
+
+```
+{
+ "Variations":  [
+		{
+		 "MaxWidth": 440,
+		 "MaxHeight": 440,
+		 "Alias": "full",
+		 "Name": "Full"
+		},
+		{
+		 "ExactWidth": 152,
+		 "ExactHeight": 152,
+		 "Alias": "thumb",
+		 "Name": "Thumb"
+		}
+	]
+}
+```
+
+Where the "full" variant has MaxWidth and MaxHeight set to reasonable limits for that gallery. For example if the widest the image would ever be on screen is 1000px then set it to that.
+
+Some uses require additional variants and special rules, but that is a larger topic.
 
 TODO DCC link to galleries article
+
+For each image there needs to be a file for each variant. Images should be compressed.
 				]]></Tr>
 			</dc.TextWidget>
 		</dc.Out>

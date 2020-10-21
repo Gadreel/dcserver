@@ -102,7 +102,7 @@ public class Service extends BaseService {
 				ServerBootstrap b = new ServerBootstrap();
 				
 				b.group(ApplicationHub.getEventLoopGroup())
-						.channel(NioServerSocketChannel.class)
+						.channel(ApplicationHub.getServerSocketChannel())
 						.option(ChannelOption.ALLOCATOR, ApplicationHub.getBufferAllocator())
 						.option(ChannelOption.SO_BACKLOG, 1024)
 						//.option(ChannelOption.TCP_NODELAY, true)

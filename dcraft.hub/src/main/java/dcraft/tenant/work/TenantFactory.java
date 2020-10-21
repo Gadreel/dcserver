@@ -18,12 +18,13 @@ public class TenantFactory {
 	 * arrive because each update job runs from the queue - one at a time.
 	 */
 	
-	static public Task updateTenants(boolean update, List<Tenant> tenants, List<String> removes) {
+	static public Task updateTenants(boolean update, List<Tenant> tenants, List<String> removes, boolean reloadmode) {
 		UpdateWork work = new UpdateWork();
 		
 		work.setUpdate(update);
 		work.setTenants(tenants);
 		work.setRemoves(removes);
+		work.setSkipSchedule(reloadmode);
 		
 		Task task = Task.ofHubRoot()
 			.withNextId("UpdateTenants")

@@ -84,7 +84,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		return ret;
 	}
 	
-	protected List<Struct> items = new CopyOnWriteArrayList<Struct>();		// TODO can we make a more efficient list (one that allows modifications but won't crash an iterator)
+	protected List<Struct> items = new CopyOnWriteArrayList<>();		// TODO can we make a more efficient list (one that allows modifications but won't crash an iterator)
 
 	@Override
 	public DataType getType() {

@@ -91,6 +91,10 @@
 	width: 5rem;
 }
 
+.dcm-widget-slider-lr.single .dcm-widget-slider-ctrl {
+	display: none;
+}
+
 .dcm-widget-slider-lr .dcm-widget-slider-ctrl a {
 	user-select: none;
 	display: inline-block;

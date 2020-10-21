@@ -1,0 +1,333 @@
+<dc.Html Badges="SysAdmin" NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Go Live Steps" />
+	</Meta>
+
+	<Require Script="/js/vendor/prism/prism.js" Style="/css/vendor/prism/prism.css" />
+	<Require Icons="far/check-circle,far/circle" />
+
+	<dcs.Include Path="/dcr/go-live/library" />
+	<dcs.Include Path="/dcr/go-live/live/library" />
+
+	<dcs.Var Name="TaskId" Type="String" SetTo="{$Page.OriginalPathParts.3}" />
+
+	<dcdb.LoadRecord Table="dcTaskList" Id="{$TaskId}" Result="StepData">
+		<Select Field="dcReviewStatus" As="Status" />
+		<Select Field="dcReviewMessage" As="Message" />
+		<Select Field="dcApprovedAt" As="ApprovedAt" />
+		<SelectSubquery Field="dcStepTask" Key="Step" As="Tabs">
+			<Select Field="Id" />
+			<Select Field="dcTitle" As="Title" />
+			<SelectGroup Field="dcStore" Key="Key" As="Store">
+				<Select Field="dcStore" As="Data" />
+			</SelectGroup>
+			<Select Field="dcReviewStatus" As="Status" />
+			<Select Field="dcReviewMessage" As="Message" />
+			<Select Field="dcApprovedAt" As="ApprovedAt" />
+			<Select Field="dcParams" As="Params" />
+		</SelectSubquery>
+	</dcdb.LoadRecord>
+
+	<!-- load functions for each step, includes prep and print - later always needed -->
+	<dcs.ForEach Name="Step" In="$CheckList">
+		<dcs.Include Path="/dcr/go-live/live/{$Step}" />
+	</dcs.ForEach>
+
+	<!-- only build the substeps if not present, first time the page is loaded -->
+	<dcs.If Target="$StepData.Tabs" IsEmpty="true">
+		<!-- reset the steps list -->
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$TaskId">
+			<Set Field="dcStepTask" />
+		</dcdb.UpdateRecord>
+
+		<!-- run each prep on each step -->
+		<dcs.ForEach Name="Step" In="$CheckList">
+			<dcs.CallFunc Name="PrepFuncs:{$Step}" Result="StepId" />
+
+			<dcs.CallFunc Name="LoadFuncs:{$Step}" Arg="$StepId" />
+		</dcs.ForEach>
+
+		<!-- now update our task's Tabs, after it has been altered by above calls -->
+		<dcdb.LoadRecord Table="dcTaskList" Id="{$TaskId}" Result="StepData2">
+			<SelectSubquery Field="dcStepTask" Key="Step" As="Tabs">
+				<Select Field="Id" />
+				<Select Field="dcTitle" As="Title" />
+				<SelectGroup Field="dcStore" Key="Key" As="Store">
+					<Select Field="dcStore" As="Data" />
+				</SelectGroup>
+				<Select Field="dcReviewStatus" As="Status" />
+				<Select Field="dcReviewMessage" As="Message" />
+				<Select Field="dcApprovedAt" As="ApprovedAt" />
+				<Select Field="dcParams" As="Params" />
+			</SelectSubquery>
+		</dcdb.LoadRecord>
+
+		<dcs.With Target="$StepData">
+			<SetField Name="Tabs" Value="$StepData2.Tabs" />
+		</dcs.With>
+	</dcs.If>
+
+	<dcs.If Target="$StepData.ApprovedAt" IsEmpty="false">
+		<dcs.With Target="$StepData">
+			<SetField Name="Approved" Value="true" />
+		</dcs.With>
+	</dcs.If>
+
+	<dcs.ForEach Name="Tab" In="$StepData.Tabs">
+		<dcs.Var Name="NewStore" Type="Record" />
+
+		<dcs.ForEach Name="Entry" In="$Tab.Store">
+			<dcs.With Target="$NewStore">
+				<SetField Name="{$Entry.Key}" Value="$Entry.Data" />
+			</dcs.With>
+		</dcs.ForEach>
+
+		<dcs.With Target="$Tab">
+			<SetField Name="Store" Value="$NewStore" />
+		</dcs.With>
+	</dcs.ForEach>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<p data-id="{$TaskId}">
+				<b>Report Status:</b> {$StepData.Approved|tf:Approved,Awaiting Approval}
+				<br />
+				<b>Report Approved:</b> {$StepData.ApprovedAt|dt:MMM dd, hh:mm}
+			</p>
+
+			<dcs.If Target="$StepData.Message" IsEmpty="false">
+				<dc.Out>
+					<dc.TextWidget>
+						<Tr><![CDATA[**Report Message:** {$StepData.Message}
+
+-----
+						]]></Tr>
+					</dc.TextWidget>
+				</dc.Out>
+			</dcs.If>
+
+			<p>
+				These steps a give guidance to the final steps of the go live process.
+			</p>
+
+			<dc.Style>
+				#lstSteps h3 {
+					margin-top: 0;
+				}
+
+				#lstSteps .docs-button > a.after {
+					display: none;
+				}
+
+				#lstSteps .docs-body.hidden {
+					display: none;
+				}
+
+				#lstStepsBody svg.green {
+					color: green;
+				}
+
+				#lstStepsBody code.fenced {
+				    white-space: pre;
+				}
+			</dc.Style>
+
+			<table id="lstSteps" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Status</th>
+						<th scope="col">Report</th>
+						<th scope="col">Actions</th>
+					</tr>
+				</thead>
+				<tbody id="lstStepsBody">
+					<dcs.ForEach Name="Tab" In="$StepData.Tabs">
+						<dcs.If Target="$Tab.ApprovedAt" IsEmpty="false">
+							<dcs.With Target="$Tab">
+								<SetField Name="Approved" Value="true" />
+							</dcs.With>
+						</dcs.If>
+						<dcs.Else>
+							<dcs.With Target="$Tab">
+								<SetField Name="Approved" Value="false" />
+							</dcs.With>
+						</dcs.Else>
+						<dc.Out>
+							<tr data-alias="{$Tab.Params.Alias}" data-id="{$Tab.Id}" data-approved="{$Tab.Approved|tf:1,0}">
+								<td>
+									<dc.Icon Path="far/{$Tab.Approved|tf:check-circle,circle}" class="fa5-3x {$Tab.Approved|tf:green,black}" />
+									<br/>
+									{$Tab.ApprovedAt|dt:MMM dd, hh:mm}
+								</td>
+								<td>
+									<h3>{$Tab.Title}</h3>
+
+									<dcs.If Target="$Tab.Message" IsEmpty="false">
+										<dc.Out>
+											<dc.TextWidget>
+												<Tr><![CDATA[**Note:** {$Tab.Message}
+
+-----
+												]]></Tr>
+											</dc.TextWidget>
+										</dc.Out>
+									</dcs.If>
+
+									<dcs.ForEach Name="Step" In="$CheckList">
+										<dcs.If Target="$Step" Equal="$Tab.Params.Alias">
+											<dcs.CallFunc Name="PrintFuncs:{$Step}" Arg="$Tab" />
+
+											<dcs.Indirect Name="DocsFunc" Value="DocFuncs:{$Step}" />
+
+											<dcs.If Target="$DocsFunc" IsEmpty="false">
+												<dc.Out>
+													<div class="docs-button">
+														<b role="heading" aria-level="2" id="pianosFilterHeader">Help</b>
+
+														<dc.Link Click="dglcDoExpand" class="expand after">
+															<dc.Icon Path="fas/chevron-down" class="fa5-1x" />
+														</dc.Link>
+														<dc.Link Click="dglcDoExpand" class="expand start">
+															<dc.Icon Path="fas/chevron-right" class="fa5-1x" />
+														</dc.Link>
+													</div>
+
+													<div class="docs-body hidden">
+														<dcs.CallFunc Name="DocFuncs:{$Step}" Arg="$Tab" />
+													</div>
+												</dc.Out>
+											</dcs.If>
+										</dcs.If>
+									</dcs.ForEach>
+								</td>
+								<td><dc.Button Label="Recheck" Click="DoRecheckStep" /></td>
+								<td><dc.Button Label="Note" Click="DoAddNoteStep" /></td>
+								<td><dc.Button Label="Approve" Click="DoApproveStep" Scope="Primary" /></td>
+							</tr>
+						</dc.Out>
+					</dcs.ForEach>
+				</tbody>
+			</table>
+
+			<dcf.FormButtons>
+				<dc.Button Label="Rebuild Go Live Report" Click="DoRerun" />
+				<dc.Button Label="Message" Click="DoAddMessage" />
+				<dc.Button Label="Approve Report" Click="DoApproveReport" Scope="Primary" />
+			</dcf.FormButtons>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load" Params="e"><![CDATA[
+			var page = this;
+
+			if (e.Thaw) {
+				e.Wait = true;
+				page.Layer.refreshPage();
+			}
+
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Data = {$StepData};
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Data.Id = '{$TaskId}';
+
+			e.Message = {
+				Service: 'dcCoreServices',
+				Feature: 'TaskList',
+				Op: 'UpdateReview',
+				Body: e.Data
+			};
+	]]></Function>
+	<Function Name="DoReindex"><![CDATA[
+			var page = this;
+
+			page.Layer.refreshPage();
+	]]></Function>
+	<Function Name="DoRerun"><![CDATA[
+			var page = this;
+
+			dc.pui.Popup.confirm('Rebuild this entire report, losing all comments and approvals?', function(confirm) {
+				if (! confirm)
+					return;
+
+				dc.comm.callScript('/dcr/go-live/review-live-service', 'Clear', {
+					Id: '{$TaskId}'
+				}, function(resp) {
+				    console.log(resp.Code + ' - ' + (resp.Result ? resp.Result.Value : ''))
+						page.Layer.refreshPage();
+				});
+			});
+	]]></Function>
+	<Function Name="DoAddMessage" Params="e"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcr/go-live/edit-note', {
+				TaskId: '{$TaskId}',
+				Callback: function(path) {
+					page.Layer.refreshPage();
+				}
+			});
+	]]></Function>
+	<Function Name="DoAddNoteStep" Params="e"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcr/go-live/edit-note', {
+				TaskId: $(e.currentTarget).closest('tr').attr('data-id'),
+				Callback: function(path) {
+					page.Layer.refreshPage();
+				}
+			});
+	]]></Function>
+	<Function Name="DoRecheckStep" Params="e"><![CDATA[
+			var page = this;
+
+			dc.comm.callScript('/dcr/go-live/review-live-service', 'RecheckStep', {
+				StepId: $(e.currentTarget).closest('tr').attr('data-id'),
+				StepAlias: $(e.currentTarget).closest('tr').attr('data-alias')
+			}, function(resp) {
+			    console.log(resp.Code + ' - ' + (resp.Result ? resp.Result.Value : ''))
+					page.Layer.refreshPage();
+			});
+	]]></Function>
+	<Function Name="DoApproveStep" Params="e"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcCoreServices.TaskList.UpdateReview', {
+				Id: $(e.currentTarget).closest('tr').attr('data-id'),
+				Approved: true
+			}, function(resp) {
+					page.Layer.refreshPage();
+			});
+	]]></Function>
+	<Function Name="DoApproveReport"><![CDATA[
+			var page = this;
+
+			if ($('#lstStepsBody > tr[data-approved="0"]').length > 0) {
+				dc.pui.Popup.alert('Approve each step first.');
+				return;
+			}
+
+			dc.pui.Popup.confirm('Approve this entire report?', function(confirm) {
+				if (! confirm)
+					return;
+
+				dc.comm.call('dcCoreServices.TaskList.UpdateReview', {
+					Id: '{$TaskId}',
+					Approved: true
+				}, function(resp) {
+						page.Layer.refreshPage();
+				});
+			});
+	]]></Function>
+	<Function Name="dglcDoExpand" Params="e"><![CDATA[
+			var page = this;
+
+			$(e.currentTarget).closest('td').find('.docs-body').toggleClass('hidden');
+			$(e.currentTarget).closest('td').find('.docs-button > a.expand').toggle();
+	]]></Function>
+</dc.Html>

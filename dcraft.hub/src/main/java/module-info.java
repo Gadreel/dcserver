@@ -16,7 +16,6 @@ module dcraft.hub {
   requires org.apache.pdfbox;
   requires jsch;
   requires rocksdbjni;
-  requires commons.daemon;
   requires commons.logging;
   requires org.shredzone.acme4j;
   requires org.shredzone.acme4j.utils;

@@ -32,6 +32,7 @@ public class UpdateWork extends StateWork {
 	
 	protected int currentupdate = 0;
 	protected int currentclean = 0;
+	protected boolean skipSchedule = false;
 	
 	public void setUpdate(boolean v) {
 		this.update = v;
@@ -43,6 +44,10 @@ public class UpdateWork extends StateWork {
 	
 	public void setRemoves(List<String> v) {
 		this.removes = v;
+	}
+
+	public void setSkipSchedule(boolean v) {
+		this.skipSchedule = v;
 	}
 
 	@Override
@@ -149,7 +154,12 @@ public class UpdateWork extends StateWork {
 	public StateWorkStep schedules(TaskContext trun) throws OperatingContextException {
 		if (Logger.isDebug())
 			Logger.debug("Starting tenant load schedule for node");
-		
+
+		// after hub is running, when a tenant is reloaded, the is no need to reload schedules at that time
+		// in our current model anyway, so skip this. Otherwise we end up with two copies of the schedule running.
+		if (this.skipSchedule)
+			return StateWorkStep.NEXT;
+
 		// just the root
 		List<XElement> schedules = ResourceHub.getResources().getConfig().getTagListDeep("Schedules/*");
 		

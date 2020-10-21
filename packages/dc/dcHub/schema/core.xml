@@ -766,6 +766,12 @@
 						</Description>
 						<ListRequest Required="True" Type="dcTenant:dcAlias" />
 					</Op>
+					<Op Name="ReloadTenants">
+						<Description>
+							Reload a Tenant entry in TenantHub.
+						</Description>
+						<ListRequest Required="True" Type="dcTenant:dcAlias" />
+					</Op>
 					<Op Name="UpdateCore">
 						<Description>
 							Reload the core resources and then reload all tenants in TenantHub.

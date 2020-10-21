@@ -1092,7 +1092,7 @@ public class HubUtil implements ILocalCommandLine {
 					
 					break;
 				}
-				*/
+				 */
 				
 					case 2: {
 						XElement clock = StandardSettingsObfuscator.obfus().configure(null, null);

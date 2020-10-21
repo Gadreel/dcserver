@@ -16,6 +16,7 @@ import java.util.Map;
 
 import dcraft.filestore.local.LocalStore;
 import dcraft.hub.app.ApplicationHub;
+import dcraft.hub.op.IOperationObserver;
 import dcraft.log.Logger;
 import dcraft.task.TaskHub;
 import dcraft.tenant.work.TenantFactory;
@@ -92,22 +93,22 @@ public class TenantHub {
 	}
 	
 	static public void setTenants(List<Tenant> tenants) {
-		TaskHub.submit(TenantFactory.updateTenants(false, tenants, null));
+		TaskHub.submit(TenantFactory.updateTenants(false, tenants, null, true));
 	}
 	
-	static public void updateAll() {
-		TaskHub.submit(TenantFactory.updateTenants(false, new ArrayList<>(TenantHub.aliasmap.values()), null));
+	static public void loadAll() {
+		TaskHub.submit(TenantFactory.updateTenants(false, new ArrayList<>(TenantHub.aliasmap.values()), null, false));
 	}
 	
-	static public void updateTenants(Tenant... tenants) {
-		TaskHub.submit(TenantFactory.updateTenants(true, Arrays.asList(tenants), null));
+	static public void loadTenants(Tenant... tenants) {
+		TaskHub.submit(TenantFactory.updateTenants(true, Arrays.asList(tenants), null, false));
 	}
-	
+
 	static public void removeTenants(String... alias) {
 		// go through the work to get the cleanup 
-		TaskHub.submit(TenantFactory.updateTenants(false, null, Arrays.asList(alias)));
+		TaskHub.submit(TenantFactory.updateTenants(false, null, Arrays.asList(alias), true));
 	}
-	
+
 	static public void loadDeafultTenant() {
 		Collection<Tenant> newtenants = new ArrayList<>();
 		
@@ -125,7 +126,8 @@ public class TenantHub {
 		
 		TenantHub.internalSwitchTenants(newtenants);
 	}
-	
+
+	/*
 	static public void loadFileQueue() {
 		Path fqueue = TenantHub.getFileStore().resolvePath("/_fqueue");
 		
@@ -178,6 +180,8 @@ public class TenantHub {
 			Logger.error("Failed to start tenant fqueue: " + x);
 		}
 	}
+
+	 */
 	
 	static public void stopFileQueue() {
 		if (TenantHub.queuekey != null) {

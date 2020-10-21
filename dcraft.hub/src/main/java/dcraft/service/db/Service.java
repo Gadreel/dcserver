@@ -86,7 +86,7 @@ public class Service extends BaseDataService {
 			Logger.error("Unable to load tenants folder: " + x);
 		}
 		
-		TaskHub.submit(TenantFactory.updateTenants(false, list, null), new TaskObserver() {
+		TaskHub.submit(TenantFactory.updateTenants(false, list, null, false), new TaskObserver() {
 			@Override
 			public void callback(TaskContext task) {
 				db.init();
@@ -110,11 +110,50 @@ public class Service extends BaseDataService {
 				return true;
 		
 		if ("Management".equals(request.getFeature())) {
+			System.out.println("a");
+
+			if ("ReloadTenants".equals(request.getOp())) {
+				System.out.println("b");
+
+				ListStruct list = request.getDataAsList();
+
+				if (list != null) {
+					List<Tenant> tenants = new ArrayList<>();
+
+					for (int i = 0; i < list.size(); i++) {
+						String alias = list.getItemAsString(i);
+
+						if (StringUtil.isNotEmpty(alias)) {
+							Tenant tenant = TenantHub.resolveTenant(alias);
+
+							if (tenant != null) {
+								tenants.add(tenant);
+							}
+						}
+					}
+
+					TaskHub.submit(TenantFactory.updateTenants(true, tenants, null, true), new TaskObserver() {
+						@Override
+						public void callback(TaskContext task) {
+							System.out.println("d");
+
+							callback.returnEmpty();
+						}
+					});
+				}
+
+				System.out.println("c");
+
+				return true;
+			}
+
+			System.out.println("x");
+
 			if ("UpdateTenants".equals(request.getOp())) {
 				this.handleUpdateTenants(request, callback);
 				return true;
 			}
-			
+
 			if ("UpdateCore".equals(request.getOp())) {
 				this.handleUpdateCore(request, callback);
 				return true;
@@ -158,7 +197,7 @@ public class Service extends BaseDataService {
 			}
 		}
 		
-		TaskHub.submit(TenantFactory.updateTenants(true, list, null), new TaskObserver() {
+		TaskHub.submit(TenantFactory.updateTenants(true, list, null, true), new TaskObserver() {
 			@Override
 			public void callback(TaskContext task) {
 				db.init();

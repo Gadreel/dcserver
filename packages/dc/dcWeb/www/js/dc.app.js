@@ -3717,6 +3717,11 @@ dc.pui.Tags = {
 
 		var gallery = $('#' + $(node).attr('data-target'));
 
+		if (imagelist.length < 2) {
+			$(node).addClass('single');
+			$(gallery).addClass('single');
+		}
+
 		if (gallery.length == 1) {
 			// link clicks in the gallery to this control - TODO should be optional
 			$(gallery).find('a[data-dcm-alias]').click(function(e) {

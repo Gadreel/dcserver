@@ -1,0 +1,123 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:go-live">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Go Live Steps',
+				Description: 'Steps to go live.',
+				Params: { Alias: 'go-live' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:go-live" Param="StepId">
+		<dcs.Var Name="Live" Type="List" />
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="Live" Value="$Live" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:go-live" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+Things to consider:
+
+- all the production domain names that have SSL (TLS) enabled will need to switch at the same time, the automated SSL certifiate allocation will try to collect a certifiate for each and if any fail then the whole ssl cert will fail. [see note in Help below]
+- thus all the production (live) domain names need the IP of the new server added at the same time. if the customer manages the DNS then arrange for this switch ahead of time, be sure they know the entire list of domains required
+- both the www and non-www version of each domain needs to point to
+- visiting the domains before go live will cause DNS caching to occur, so avoid doing so for at least an hour before hand. DNS caching may occur at your ISP so even visiting the old site on another computer may result in caching. When this happens you'll end up being directed to the old server even after the switch has completed. This may even include using the "dig" tool
+- From your Linux/UNIX command prompt make sure that you have "dig" installled. This will be used to confirm that the IP address has changed. Give it a test run using "dig designcraftadvertising.com A" - the IP address of the website should be revealed.
+- Make the IP change, or request that the customer do so if they control the DNS
+- wait about 5 minutes after the change (past the last of the DNS records that was changed - if in some cases it could take some time to cover them all) [start with the less used domain aliases, so the downtime for the main domain is minimal]
+- use the dig tool to confirm that all the domain combinations (include checks for the www option) have changed. If you find yourself stuck on cached versions of the domain then use an online "dig" tool - http://www.kloth.net/services/dig.php
+- once all domains point to the IP of the new server then allocate the certificate. In the CMS on the new website, logged in as a developer or as root, go to the main menu. Select System and then Certificates. Under "Missing Certificates" look for the new site and click the button next to it to allocate the certifiate. It may take a minute, but once it completes the certifiate should then show in the "Loaded Certificates" section.
+- the site is now live, confirm from a browser. Try all the domains and also test the https option for domains that are included in the certifiate.
+
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:go-live" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+### SSL Note
+
+It is not a requirement that alias production domains support SSL, however, if it does not then the domain can only be used in http mode. HTTP redirects (routing rules) do not apply to https unless that domain has SSL enabled
+
+#### Example 1
+
+With this setup:
+
+``` xml
+<Domain Name="tonytrappllc.com" Use="Production" Certificate="true" />
+<Domain Name="www.tonytrappllc.com" Use="Production" Certificate="true" />
+<Domain Name="tonytrapprepairs.com" Use="Production" Certificate="false" />
+<Domain Name="www.tonytrapprepairs.com" Use="Production" Certificate="false" />
+```
+
+The server can be accessed with an initial request through:
+
+- http://tonytrappllc.com/
+- http://www.tonytrappllc.com/
+- https://tonytrappllc.com/
+- https://www.tonytrappllc.com/
+- http://tonytrapprepairs.com/
+- http://www.tonytrapprepairs.com/
+
+But NOT through:
+
+- https://tonytrapprepairs.com/
+- https://www.tonytrapprepairs.com/
+
+consider these routing rules:
+
+``` xml
+<Route Name="tonytrappllc.com" RedirectName="www.tonytrappllc.com" ForceTls="True" />
+<Route Name="www.tonytrappllc.com" ForceTls="True" />
+
+<Route Name="tonytrapprepairs.com" RedirectName="www.tonytrappllc.com" ForceTls="True" />
+<Route Name="www.tonytrapprepairs.com" RedirectName="www.tonytrappllc.com" ForceTls="True" />
+```
+
+No matter which of those initial requests come through, a visitor will be rerouted to the www.tonytrappllc.com domain with TLS (SSL) enabled. In spite of all this configuration being correct, an initial request of https://tonytrapprepairs.com/ will fail unless that domain is included in the SSL certifiate.
+
+### Example 2
+
+For this setup:
+
+``` xml
+<Domain Name="home-savings.com" Use="Production" Certificate="true" />
+<Domain Name="www.home-savings.com" Use="Production" Certificate="true" />
+<Domain Name="theresnobanklikehome.com" Use="Production" Certificate="true" />
+<Domain Name="www.theresnobanklikehome.com" Use="Production" Certificate="true" />
+```
+
+All of those domains may start with http or https for the initial request. And with these rules:
+
+``` xml
+<Route Name="home-savings.com" RedirectName="www.home-savings.com" ForceTls="True" />
+<Route Name="www.home-savings.com" ForceTls="True" />
+
+<Domain Name="theresnobanklikehome.com" RedirectName="www.home-savings.com" ForceTls="True" />
+<Domain Name="www.theresnobanklikehome.com" RedirectName="www.home-savings.com" ForceTls="True" />
+```
+
+In all cases the initial request will lead to www.home-savings.com with TLS enabled.
+
+So this should help put in context when you might want to enable a certifiate for an alias domain. If the domain is never really intended to be used and is just being held to prevent others from using it - it makes sense to link it to the website but there is no compelling reason to make it secured (certifiate). If it is reasonably possible the domain might be used at some point - part of a campaign or a new domain was recently acquired and the old domain is still linked from other websites - then enabling the certifiate makes sense even if it is not the primary domain.
+
+---
+
+
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

@@ -16,74 +16,92 @@
 ************************************************************************ */
 package dcraft.hub;
 
-import java.util.Scanner;
+import java.util.Map;
 
-import dcraft.hub.config.LocalConfigLoader;
 import dcraft.hub.config.LocalHubConfigLoader;
-import org.apache.commons.daemon.DaemonContext;
-import org.apache.commons.daemon.DaemonInitException;
+import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.hub.op.UserContext;
+import dcraft.service.ServiceHub;
+import dcraft.service.ServiceRequest;
+import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
+import dcraft.task.*;
 
 import dcraft.hub.app.ApplicationHub;
 import dcraft.log.Logger;
 
-public class Daemon implements org.apache.commons.daemon.Daemon {
-	protected DaemonContext procCtx = null;
+public class Daemon implements dcraft.daemon.IDaemon {
+	@Override
+	public void start(String instanceName) {
+		Map<String, String> env = System.getenv();
 
-	public static void main(String[] args) {
-		try {
-			Daemon.startService(args);
-			
-			try (Scanner scan = new Scanner(System.in)) {
-				System.out.println("Press enter to end Daemon");
-				scan.nextLine();
-			}
+		if (! env.containsKey("DC_DEPLOYMENT")) {
+			System.err.println("Deployment name is missing");
+			System.exit(1);
+			return;
 		}
-		catch (Exception x) {
-			
+
+		if (! env.containsKey("DC_NODE")) {
+			System.err.println("Node id is missing");
+			System.exit(1);
+			return;
 		}
-		
-		Daemon.stopService(args);
-	}
-	
-	public static void startService(String[] args) {
-		String deployment = (args.length > 0) ? args[0] : null;
-		String nodeid = (args.length > 1) ? args[1] : null;
-		
-		ApplicationHub.init(deployment, nodeid);
-		
+
+		ApplicationHub.init(env.get("DC_DEPLOYMENT"), env.get("DC_NODE"));
+
 		if (! ApplicationHub.startServer(LocalHubConfigLoader.local())) {
 			Logger.error("Unable to continue, hub not properly started, please see logs");
 			ApplicationHub.stopServer();
 			System.exit(1);
 			return;
 		}
-		
+
 		Logger.info("Daemon started");
-    }
-	
-	public static void stopService(String[] args) {
+	}
+
+	@Override
+	public void handleCommand(String command) {
+		Logger.info("Daemon got command: " + command);
+
+		RecordStruct msg = Struct.objectToRecord(command);
+
+		if (msg != null) {
+			try {
+
+				OperationContext tctx = OperationContext.context(
+						UserContext.rootUser());
+
+				TaskHub.submit(Task.ofContext(tctx)
+								.withTitle("Daemon message")
+								.withTimeout(5)    // 40 minutes
+								.withWork(new IWork() {
+									@Override
+									public void run(TaskContext taskctx) throws OperatingContextException {
+										ServiceHub.call(ServiceRequest.of(msg.getFieldAsString("Op"))
+												.withData(msg.getField("Body"))
+												.withOutcome(new OperationOutcomeStruct() {
+													@Override
+													public void callback(Struct result) throws OperatingContextException {
+														taskctx.returnEmpty();
+													}
+												})
+										);
+									}
+								})
+				);
+			}
+			catch (Exception x) {
+				Logger.error("Daemon got command but the command failed: " + x);
+			}
+		}
+	}
+
+	@Override
+	public void shutdown() {
 		Logger.info("Daemon stopping");
-		
+
 		ApplicationHub.stopServer();
-	}
-	
-	@Override
-	public void start() throws Exception {
-		Daemon.startService(this.procCtx.getArguments());
-	}
-
-	@Override
-	public void stop() throws Exception {
-		Daemon.stopService(this.procCtx.getArguments());
-	}
-
-	@Override
-	public void destroy() {
-		this.procCtx = null;
-	}
-
-	@Override
-	public void init(DaemonContext ctx) throws DaemonInitException, Exception {
-		this.procCtx = ctx;
 	}
 }

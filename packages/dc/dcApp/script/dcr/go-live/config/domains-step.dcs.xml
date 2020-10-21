@@ -182,6 +182,8 @@ These _Route_ tags must be inside the _Web_ tag (and there can only be one _Web_
 </Web>
 ```
 
+See also the "SSL Note" section of the Go Live Steps report for information on which domains to secure and which not to.
+
 TODO DCC link to config article
 				]]></Tr>
 			</dc.TextWidget>
