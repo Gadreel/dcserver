@@ -219,6 +219,17 @@ public class UIUtil {
 		return editable;
 	}
 	
+	static public boolean isEditReady(InstructionWork state, XElement element) throws OperatingContextException {
+		if (! UIUtil.canEdit(state, element))
+			return false;
+
+		String cmsmode = Struct.objectToString(StackUtil.queryVariable(null, "_Controller.Request.Cookies.dcmMode"));
+
+		// TODO add support for dates as well - look into future for schedules when selected
+
+		return ((cmsmode != null) && cmsmode.equals("now"));
+	}
+
 	static public boolean canEdit(InstructionWork state, XElement element) throws OperatingContextException {
 		Struct editable = StackUtil.resolveReference(state, "$_CMSEditable", true);
 		

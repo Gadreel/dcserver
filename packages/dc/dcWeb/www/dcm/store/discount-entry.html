@@ -1,0 +1,138 @@
+<dc.Html Badges="Clerk,Admin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Enter Discounts" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dc.Region Hint="Discount Properties form">
+					<dcf.Text Label="Title" Name="Title" Required="true" />
+					<dcf.YesNo Label="Active" Name="Active" Required="true" />
+					<dcf.Text Label="Code" Name="Code" Required="true" placeholder="no spaces or special characters except these -$%#!" />
+					<dcf.RadioGroup Label="Kind" Name="Mode"  Required="true">
+						<RadioButton Label="$ off subtotal" Value="FixedOffProduct" />
+						<RadioButton Label="% off subtotal" Value="PercentOffProduct" />
+						<RadioButton Label="$ off shipping" Value="FixedOffShipping" />
+						<RadioButton Label="% off shipping" Value="PercentOffShipping" />
+						<RadioButton Label="Flat shipping" Value="FlatShipping" />
+						<RadioButton Label="Free shipping" Value="FreeShipping" />
+					</dcf.RadioGroup>
+					<dcf.Text Label="Discount Amount" Name="Amount" DataType="Decimal" />
+					<dcf.Text Label="Minimum Order" Name="MinimumOrder" DataType="Decimal" placeholder="order must exceed this about to be usable - leave blank for no limit" />
+
+					<dcf.Text Label="Expire Date" Name="Expire" DataType="DateYMD" placeholder="YYYY-MM-DD or blank if manual expiration" />
+				</dc.Region>
+
+				<dcf.FormButtons Hint="form options">
+					<dc.Button Label="Delete" Click="DoDelete" />
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			// make alias read only if edit
+			if (page.Params.Id) {
+				page.form().inputQuery('Code').prop('readonly', 'readonly');
+			}
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (page.Params.Id) {
+				e.Message = {
+					Service: 'dcmStoreServices',
+					Feature: 'Discounts',
+					Op: 'Load',
+					Body: {
+						Id: page.Params.Id
+					}
+				};
+			}
+			else {
+				e.AsNew = true;
+				e.Data = {
+					Active: true
+				};
+			}
+	]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			// convert to date
+			if (e.Data.Expire)
+				e.Data.Expire = moment.utc(e.Data.Expire, 'YYYYMMDDTHHmmssSSSZ', true).format('YYYY-MM-DD');
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (page.Params.Id) {
+				e.Data.Id = page.Params.Id;
+			}
+			else {
+				e.Data.Type = 'Coupon';
+			}
+
+			// convert to date time
+			if (e.Data.Expire)
+				e.Data.Expire = moment.utc(e.Data.Expire, 'YYYY-MM-DD', true).format("YYYYMMDDTHHmmssSSS") + 'Z';
+
+			e.Message = {
+				Service: 'dcmStoreServices',
+				Feature: 'Discounts',
+				Op: page.Params.Id ? 'Update' : 'Add',
+				Body: e.Data
+			};
+	]]></Function>
+	<Function Name="AfterSaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (e.Data && e.Data.Id) {
+				page.Store.NewId = e.Data.Id;
+			}
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback({
+					NewId: page.Store.NewId
+				});
+	]]></Function>
+	<Function Name="DoDelete"><![CDATA[
+			var page = this;
+
+			if (! page.Params.Id) {
+				page.callPageFunc('AfterSave')
+				return;
+			}
+
+			dc.pui.Popup.confirm('Are you sure you want to delete this Discount?', function(confirm) {
+				if (! confirm)
+					return;
+
+				//console.log('delete');
+				dc.comm.sendMessage({
+					Service: 'dcmStoreServices',
+					Feature: 'Discounts',
+					Op: 'Retire',
+					Body: {
+						Id: page.Params.Id
+					}
+				}, function(resp) {
+					if (resp.Result > 0) {
+						dc.pui.Popup.alert(resp.Message);
+						return;
+					}
+
+					page.callPageFunc('AfterSave')
+				});
+			});
+	]]></Function>
+</dc.Html>

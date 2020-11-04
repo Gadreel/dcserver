@@ -678,6 +678,12 @@ dc.pui.Apps.Menus.dcmStore = {
 			Path: '/dcm/store/products-all'
 		},
 		{
+			Alias: 'Discounts',
+			Title: 'Discounts',
+			Auth: [ 'Admin', 'Clerk' ],
+			Path: '/dcm/store/discounts'
+		},
+		{
 			Alias: 'GiftRegistry',
 			Title: 'Gift Registry',
 			Auth: [ 'Admin', 'Clerk' ],

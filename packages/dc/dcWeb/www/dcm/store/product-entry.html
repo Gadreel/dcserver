@@ -41,6 +41,10 @@
 						<Checkbox Label="Download" Value="Download" />
 					</dcf.HorizCheckGroup>
 
+					<dcf.Text Label="Inventory" Name="Inventory" DataType="Integer" placeholder="leave blank unless you need to limit inventory" />
+
+					<dcf.Text Label="Order Limit" Name="OrderLimit" DataType="Integer" placeholder="if there is a limit to number that can be added to an order" />
+
 					<dcf.Text Label="Image">
 						<Input Name="Image" placeholder="defaults to `main` image if present" />
 						<Button Icon="fas/ellipsis-h" Click="DoSelectImage" />

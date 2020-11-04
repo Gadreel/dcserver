@@ -191,6 +191,13 @@
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 			var page = this;
 
+			if (dc.util.Number.isNumber(page.Store.Product.OrderLimit)) {
+				if (e.Data.Quantity > page.Store.Product.OrderLimit) {
+					e.Alert = 'Maximum quantity allowed, or available, is ' + page.Store.Product.OrderLimit;
+					return;
+				}
+			}
+
 			if (page.Params.Product) {
 				page.Params.Product.Quantity = e.Data.Quantity;
 				page.Params.Product.CustomFields = page.form().getValues('Options');

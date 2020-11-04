@@ -268,7 +268,8 @@ public class Products {
 					.withConditionallyUpdateFields(rec, "Alias", "dcmAlias", "Sku", "dcmSku", "Image", "dcmImage",
 							"Price", "dcmPrice", "ShipAmount", "dcmShipAmount", "ShipWeight", "dcmShipWeight",
 							"VariablePrice", "dcmVariablePrice", "MinimumPrice", "dcmMinimumPrice",
-							"ShipCost", "dcmShipCost", "TaxFree", "dcmTaxFree", "ShowInStore", "dcmShowInStore")
+							"ShipCost", "dcmShipCost", "TaxFree", "dcmTaxFree", "ShowInStore", "dcmShowInStore",
+							"Inventory", "dcmInventory", "OrderLimit", "dcmOrderLimit")
 					.withConditionallyUpdateTrFields(rec, locale, "Title", "dcmTitle",
 							"Description", "dcmDescription", "Instructions", "dcmInstructions")
 					.withConditionallySetList(rec, "Delivery", "dcmDelivery")
@@ -289,7 +290,8 @@ public class Products {
 					.withConditionallyUpdateFields(rec, "Alias", "dcmAlias", "Sku", "dcmSku", "Image", "dcmImage",
 							"Price", "dcmPrice", "ShipAmount", "dcmShipAmount", "ShipWeight", "dcmShipWeight",
 							"VariablePrice", "dcmVariablePrice", "MinimumPrice", "dcmMinimumPrice",
-							"ShipCost", "dcmShipCost", "TaxFree", "dcmTaxFree", "ShowInStore", "dcmShowInStore")
+							"ShipCost", "dcmShipCost", "TaxFree", "dcmTaxFree", "ShowInStore", "dcmShowInStore",
+							"Inventory", "dcmInventory", "OrderLimit", "dcmOrderLimit")
 					.withConditionallyUpdateTrFields(rec, locale, "Title", "dcmTitle",
 							"Description", "dcmDescription", "Instructions", "dcmInstructions")
 					.withConditionallySetList(rec, "Delivery", "dcmDelivery")
@@ -389,6 +391,8 @@ public class Products {
 					.with("dcmTaxFree", "TaxFree")
 					.with("dcmDelivery", "Delivery")
 					.with("dcmShowInStore", "ShowInStore")
+					.with("dcmOrderLimit", "OrderLimit")
+					.withComposer("dcmCalcOrderLimit", "OrderLimit")
 					.withReverseSubquery("CustomFields", "dcmProductCustomFields", "dcmProduct", new SelectFields()
 							.with("Id")
 							.with("dcmPosition", "Position")
@@ -406,6 +410,7 @@ public class Products {
 									.with("dcmOptionLabel", "Label")
 									.with("dcmOptionValue", "Value")
 									.with("dcmOptionPrice", "Price")
+									.withAs("Weight","dcmOptionWeight")
 									.with("dcmOptionDisabled", "Disabled")
 							)
 					);

@@ -48,7 +48,7 @@ public class StoreGalleryWidget extends Base implements ICMSAware {
 	
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
-		long maximgs = StackUtil.intFromSource(state,"Max", 24);
+		//long maximgs = StackUtil.intFromSource(state,"Max", 24);
 		
 		XElement template = this.selectFirst("Template");
 		
@@ -87,25 +87,43 @@ public class StoreGalleryWidget extends Base implements ICMSAware {
 		
 		BasicRequestContext requestContext = BasicRequestContext.ofDefaultDatabase();
 		TablesAdapter db = TablesAdapter.ofNow(requestContext);
-		
+
+		// don't hide any entry if editable is on
+		boolean editable = UIUtil.isEditReady(state, this);
+
 		for (XElement prod : products) {
 			String palias = prod.getAttribute("Alias");
+			boolean showprod = true;
 			
 			String id = Struct.objectToString(db.firstInIndex("dcmProduct", "dcmAlias", palias, true));
 			
-			if (StringUtil.isEmpty(id))
-				continue;
-			
-			if (Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmProduct", id, "dcmDisabled")))
-				continue;
+			if (StringUtil.isEmpty(id)) {
+				if (! editable)
+					continue;
 
-			if (! Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmProduct", id, "dcmShowInStore")))
-				continue;
+				showprod = false;
+			}
+			
+			if (Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmProduct", id, "dcmDisabled"))) {
+				if (! editable)
+					continue;
+
+				showprod = false;
+			}
+
+
+			if (! Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmProduct", id, "dcmShowInStore"))) {
+				if (! editable)
+					continue;
+
+				showprod = false;
+			}
 
 			long cidx = currimg.incrementAndGet();
-			
-			if (cidx > maximgs)
-				break;
+
+			// the idea of max doesn't really make sense for this wdiget
+			//if (cidx > maximgs)
+			//	break;
 			
 			String ppath = path + "/" + palias;
 
@@ -120,6 +138,9 @@ public class StoreGalleryWidget extends Base implements ICMSAware {
 			String ext = meta.getFieldAsString("Extension", "jpg");
 			
 			String image = Struct.objectToString(db.getStaticScalar("dcmProduct", id, "dcmImage"));
+
+			if (StringUtil.isEmpty(image))
+				image = "main";
 
 			ppath = ppath + "/" + image;
 			
@@ -151,8 +172,14 @@ public class StoreGalleryWidget extends Base implements ICMSAware {
 				// add nodes using the new variable
 				XElement entry = template.deepCopy();
 				
-				for (XNode node : entry.getChildren())
+				for (XNode node : entry.getChildren()) {
 					StoreGalleryWidget.this.with(node);
+
+					// if only showing because of CMS, mark it hidden
+					if (! showprod && (node instanceof Base)) {
+						((Base) node).withClass("dc-widget-hidden");
+					}
+				}
 			}
 			catch (OperatingContextException x) {
 				Logger.warn("Could not reference product data: " + x);

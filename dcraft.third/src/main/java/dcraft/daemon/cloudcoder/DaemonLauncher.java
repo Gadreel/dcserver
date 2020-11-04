@@ -27,6 +27,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Launch a daemon process in the background and create a FIFO
@@ -42,7 +43,7 @@ public class DaemonLauncher {
 	}
 
 	protected Options options = null;
-	
+
 	protected DaemonLauncher() { }
 
 	/**
@@ -133,13 +134,41 @@ public class DaemonLauncher {
 	public static void main(String[] args) throws Exception {
 		String instanceName = args[0];
 		String daemonClassName = args[1];
-		
+
+		final Thread mainThread = Thread.currentThread();
+		final AtomicBoolean shutdown = new AtomicBoolean();
+
 		// Find out our pid
 		Integer pid = Util.getPid();
-		
+
 		// Write pid file
 		Util.writePid(instanceName, pid);
-		
+
+		// SIGTERM code
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			public void run() {
+				System.out.println("SIGTERM received");
+
+				try {
+					if (! shutdown.get()) {
+						shutdown.set(true);
+
+						Util.sendCommand(instanceName, pid, "shutdown");
+
+						mainThread.join();
+					}
+				}
+				catch (DaemonException ex) {
+					System.out.println("DaemonException");
+					System.out.println(ex);
+				}
+				catch (InterruptedException ex) {
+					System.out.println("InterruptedException");
+					System.out.println(ex);
+				}
+			}
+		});
+
 		// Create FIFO
 		Util.exec(Util.MKFIFO_PATH, Util.getFifoName(instanceName, pid));
 		
@@ -153,7 +182,8 @@ public class DaemonLauncher {
 		// log) and cleanup of the FIFO and pid file.
 		try {
 			daemon.start(instanceName);
-		} catch (Throwable e) {
+		}
+		catch (Throwable e) {
 			System.out.println("Exception starting daemon");
 			e.printStackTrace(System.out);
 			System.out.flush();
@@ -161,30 +191,32 @@ public class DaemonLauncher {
 			Util.deleteFile(Util.getPidFileName(instanceName));
 			System.exit(1);
 		}
-		
+
 		// Read commands (issued by the DaemonController) from the FIFO
 		String fifoName = Util.getFifoName(instanceName, pid);
 		BufferedReader reader = null;
-		boolean shutdown = false;
-		while (!shutdown) {
+
+		while (!shutdown.get()) {
 			if (reader == null) {
 				// open the FIFO: will block until a process writes to it
 				reader = new BufferedReader(new FileReader(fifoName));
 			}
-			
+
 			// Read a command from the FIFO
 			String line = reader.readLine();
-			
+
 			if (line == null) {
 				// EOF on FIFO
 				IOUtil.closeQuietly(reader);
 				reader = null;
-			} else {
+			}
+			else {
 				// Process the command
 				line = line.trim();
 				if (!line.equals("")) {
 					if (line.equals("shutdown")) {
-						shutdown = true;
+						shutdown.set(true);
+
 						IOUtil.closeQuietly(reader);
 						reader = null;
 					} else {
@@ -194,7 +226,7 @@ public class DaemonLauncher {
 				}
 			}
 		}
-		
+
 		// Shut down the daemon
 		daemon.shutdown();
 	}

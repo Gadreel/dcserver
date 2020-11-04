@@ -46,6 +46,7 @@
 									<Field Name="Label" Type="dcmProductCustomFields:dcmOptionLabel" />
 									<Field Name="Value" Type="dcmProductCustomFields:dcmOptionValue" />
 									<Field Name="Price" Type="dcmProductCustomFields:dcmOptionPrice" />
+									<Field Name="Weight" Type="dcmProductCustomFields:dcmOptionWeight" />
 									<Field Name="Disabled" Type="dcmProductCustomFields:dcmOptionDisabled" />
 								</Record>
 							</List>

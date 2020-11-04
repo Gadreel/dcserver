@@ -1,0 +1,113 @@
+<dc.Html Badges="Clerk,Admin">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Discount Management" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.FormButtons>
+				<dc.Button Label="Add Discount" Click="DoAddCoupon" />
+			</dcf.FormButtons>
+
+			<table id="lstDiscounts" class="dc-table-break-std dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Title</th>
+						<th scope="col">Active</th>
+						<th scope="col">Code</th>
+						<th scope="col">Amount</th>
+						<th scope="col">Actions</th>
+					</tr>
+				</thead>
+				<tbody id="lstlstDiscountsBody" />
+			</table>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			var list = $('#lstlstDiscountsBody');
+
+			list.empty().dcappend(
+				$('<tr>').dcappend(
+					$('<td>').attr('colspan','5').dcappend(
+						$('<i>').attr('class', 'fa fa-spinner fa-spin fa-2x')
+					)
+				)
+			);
+
+			dc.comm.sendMessage({
+				Service: 'dcmStoreServices',
+				Feature: 'Discounts',
+				Op: 'List'
+			}, function(rmsg) {
+				if (rmsg.Result > 0) {
+					dc.pui.Popup.alert('Unable to list discounts: ' + rmsg.Message);
+					return;
+				}
+
+				var prods = rmsg.Body;
+				list.empty();
+
+				if (prods.length == 0) {
+					list.dcappend(
+						$('<tr>').dcappend(
+							$('<td>').attr('colspan','5').text('No discounts found.')
+						)
+					);
+
+					return;
+				}
+
+				// sort
+				var sfield = page.Store.SortField ? page.Store.SortField : 'EntryDate';
+				prods.sort(dc.util.List.sortDescObjects(sfield));
+
+				// output
+				for (var i = 0; i < prods.length; i++) {
+					var item = prods[i];
+
+					list.dcappend(
+						$('<tr>').dcappend(
+							$('<td>').text(item.Title),
+							$('<td>').text(item.Active ? 'yes' : 'no'),
+							$('<td>').text(item.Code),
+							$('<td>').text(dc.util.Number.formatMoney(item.Amount)),
+							$('<td>').dcappend(
+								$('<a>')
+									.attr('href', '#')
+									.attr('class', 'pure-button-default pure-button dc-button')
+									.text('Edit')
+									.click(item, function(e) {
+										dc.pui.Dialog.loadPage('/dcm/store/discount-entry', {
+											Id: e.data.Id,
+											Callback: function() {
+												page.Layer.refreshPage();
+											}
+										});
+
+										e.preventDefault();
+										return false;
+									})
+							)
+						)
+					);
+				}
+			});
+	]]></Function>
+	<Function Name="DoAddCoupon" Params="e"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcm/store/discount-entry', {
+				Callback: function() {
+					page.Layer.refreshPage();
+				}
+			});
+	]]></Function>
+	<Function Name="DoClose"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+	]]></Function>
+</dcui>

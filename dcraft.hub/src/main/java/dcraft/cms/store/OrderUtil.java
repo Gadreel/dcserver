@@ -4,11 +4,15 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import dcraft.cms.store.db.comp.CalcOrderLimit;
 import dcraft.cms.thread.db.ThreadUtil;
 import dcraft.db.Constants;
 import dcraft.db.ICallContext;
+import dcraft.db.proc.RecordScope;
 import dcraft.db.proc.call.SignIn;
 import dcraft.db.request.DataRequest;
 import dcraft.db.request.common.AddUserRequest;
@@ -398,6 +402,32 @@ public class OrderUtil {
 		<Field Name="dcmAmountUsed" Type="Decimal" />
 		*/
 
+		// inventory
+
+		ListStruct items = orderclean.getFieldAsList("Items");
+
+		for (Struct itm : items.items()) {
+			RecordStruct orgitem = Struct.objectToRecord(itm);
+
+			String prodid = orgitem.getFieldAsString("Product");
+
+			Long inventory = Struct.objectToInteger(db.getStaticScalar("dcmProduct", prodid, "dcmInventory"));
+
+			if (inventory == null) {
+				continue;
+			}
+
+			long thisqty = orgitem.getFieldAsInteger("Quantity", 0);
+			long newqty = inventory - thisqty;
+
+			db.updateStaticScalar("dcmProduct", prodid, "dcmInventory", newqty);
+
+			if (newqty <= 0)
+				db.updateStaticScalar("dcmProduct", prodid, "dcmShowInStore", false);
+		}
+
+		// auditing
+
 		RecordStruct orderlog = RecordStruct.record()
 				.with("Order", orderclean)
 				.with("PaymentResponse", payment)
@@ -665,6 +695,42 @@ public class OrderUtil {
 
 		String orderdelivery = order.getFieldAsString("Delivery");
 
+		// strip out and consolidate duplicate items for items with OrderLimits
+
+		Map<String, RecordStruct> dupchecker = new HashMap<>();
+		ListStruct reduceitems = new ListStruct();
+
+		for (Struct itm : items.items()) {
+			RecordStruct orgitem = Struct.objectToRecord(itm);
+
+			String prodid = orgitem.getFieldAsString("Product");
+
+			Long limit = CalcOrderLimit.lookup(db,"dcmProduct", prodid);
+
+			if (limit == null) {
+				reduceitems.with(orgitem);
+				continue;
+			}
+
+			RecordStruct firstitem = dupchecker.get(prodid);
+
+			if (firstitem != null) {
+				long firstqty = firstitem.getFieldAsInteger("Quantity", 0);
+				long thisqty = orgitem.getFieldAsInteger("Quantity", 0);
+
+				firstitem.with("Quantity", firstqty + thisqty);		// don't worry about the limit, that will be handled later - just consolidating here
+
+				continue;
+			}
+
+			dupchecker.put(prodid, orgitem);
+			reduceitems.with(orgitem);
+		}
+
+		items = reduceitems;
+
+		// calculate / prepare / format order items
+
 		SelectFields selectFields = SelectFields.select()
 				.with("Id", "Product")
 				.with("dcmDisabled", "Disabled")
@@ -685,6 +751,7 @@ public class OrderUtil {
 				.with("dcmShipCost", "ShipCost")
 				.with("dcmShipAmount", "ShipAmount")
 				.with("dcmShipWeight", "ShipWeight")
+				.withComposer("dcmCalcOrderLimit", "OrderLimit")
 				.withForeignField("dcmCategory", "CatShipAmount", "dcmShipAmount")
 				.withReverseSubquery("Fields",	"dcmProductCustomFields", "dcmProduct",	SelectFields.select().with("Id")
 					.withAs("Position", "dcmPosition")
@@ -702,6 +769,7 @@ public class OrderUtil {
 							.withAs("Label","dcmOptionLabel")
 							.withAs("Value","dcmOptionValue")
 							.withAs("Price","dcmOptionPrice")
+							.withAs("Weight","dcmOptionWeight")
 							.with("dcmOptionDisabled", "Disabled")
 					)
 				);
@@ -717,6 +785,18 @@ public class OrderUtil {
 			RecordStruct prodrec = TableUtil.getRecord(db, OperationContext.getOrThrow(), "dcmProduct", prodid, selectFields);
 
 			if (prodrec.getFieldAsBooleanOrFalse("Disabled"))
+				continue;
+
+			long qty = orgitem.getFieldAsInteger("Quantity", 0);
+
+			Long qtylimit = prodrec.getFieldAsInteger("OrderLimit");
+
+			if ((qtylimit != null) && (qty > qtylimit)) {
+				qty = qtylimit;
+				orgitem.with("Quantity", qty);
+			}
+
+			if (qty < 1)
 				continue;
 
 			RecordStruct item = orgitem.deepCopy();
@@ -744,7 +824,7 @@ public class OrderUtil {
 				item.removeField("SalePrice");
 			}
 
-			BigDecimal qty = item.getFieldAsDecimal("Quantity", BigDecimal.ZERO);
+			BigDecimal shipweight = prodrec.getFieldAsDecimal("ShipWeight", BigDecimal.ONE);        // default to 1 ounce
 
 			// add cost from CustomFields to price
 			if (item.isNotFieldEmpty("CustomFields")) {
@@ -769,6 +849,7 @@ public class OrderUtil {
 								Struct valueout = null;
 								String display = null;
 								BigDecimal mprice = BigDecimal.ZERO;
+								BigDecimal mweight = BigDecimal.ZERO;
 
 								for (int n = 0; n < options.size(); n++) {
 									RecordStruct opt = options.getItemAsRecord(n);
@@ -789,6 +870,7 @@ public class OrderUtil {
 													display += ", " + opt.getFieldAsString("Label");
 
 												mprice = mprice.add(opt.getFieldAsDecimal("Price", BigDecimal.ZERO));
+												mweight = mweight.add(opt.getFieldAsDecimal("Weight", BigDecimal.ZERO));
 												outlist.with(opt.getField("Value"));
 												pass = true;
 											}
@@ -797,6 +879,7 @@ public class OrderUtil {
 									else if ((value instanceof ScalarStruct) && value.equals(opt.getField("Value"))) {
 										display = opt.getFieldAsString("Label");
 										mprice = opt.getFieldAsDecimal("Price", BigDecimal.ZERO);
+										mweight = opt.getFieldAsDecimal("Weight", BigDecimal.ZERO);
 										valueout = opt.getField("Value");
 										pass = true;
 									}
@@ -809,10 +892,12 @@ public class OrderUtil {
 													.with("Label", fld.getFieldAsString("Label"))
 													.with("DisplayValue", display)
 													.with("Price", mprice)
+													.with("Weight", mweight)
 													.with("Value", valueout)
 									);
 
 									price = price.add(mprice);
+									shipweight = shipweight.add(mweight);
 								}
 							}
 							else {
@@ -842,7 +927,7 @@ public class OrderUtil {
 				item.with("Price", price);
 			}
 
-			BigDecimal total = price.multiply(qty);
+			BigDecimal total = price.multiply(BigDecimal.valueOf(qty));
 
 			item.with("Total", total);
 
@@ -862,14 +947,13 @@ public class OrderUtil {
 					// shipcost: Regular,Extra,Fixed,Free
 
 					if ("Fixed".equals(shipcost))
-						itemshipcalc.set(itemshipcalc.get().add(prodrec.getFieldAsDecimal("ShipAmount", BigDecimal.ZERO).multiply(qty)));
+						itemshipcalc.set(itemshipcalc.get().add(prodrec.getFieldAsDecimal("ShipAmount", BigDecimal.ZERO).multiply(BigDecimal.valueOf(qty))));
 					else if ("Extra".equals(shipcost))    // TODO make it so Extra is in addition to normal shipping amt
-						itemshipcalc.set(itemshipcalc.get().add(prodrec.getFieldAsDecimal("ShipAmount", BigDecimal.ZERO).multiply(qty)));
+						itemshipcalc.set(itemshipcalc.get().add(prodrec.getFieldAsDecimal("ShipAmount", BigDecimal.ZERO).multiply(BigDecimal.valueOf(qty))));
 
 					// only include weight if not Free or Fixed
 					if ("Regular".equals(shipcost) || "Extra".equals(shipcost)) {
-						BigDecimal shipweight = prodrec.getFieldAsDecimal("ShipWeight", BigDecimal.ONE);        // default to 1 ounce
-						itemshipweight.set(itemshipweight.get().add(shipweight.multiply(qty)));
+						itemshipweight.set(itemshipweight.get().add(shipweight.multiply(BigDecimal.valueOf(qty))));
 					}
 
 					//if (rec.isNotFieldEmpty("CatShipAmount"))
@@ -973,14 +1057,14 @@ public class OrderUtil {
 							
 							// amount = % off as in 20 for 20% off
 							if ("PercentOffProduct".equals(mode))
-								itmdiscount.set(itmcalc.get().multiply(amt).divide(BigDecimal.valueOf(100), RoundingMode.HALF_UP));
+								itmdiscount.set(itmcalc.get().multiply(amt).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
 							
 							if ("FixedOffShipping".equals(mode))
 								shipdiscount.set(amt);
 							
 							// amount = % off as in 20 for 20% off
 							if ("PercentOffShipping".equals(mode))
-								shipdiscount.set(shipamt.get().multiply(amt).divide(BigDecimal.valueOf(100), RoundingMode.HALF_UP));
+								shipdiscount.set(shipamt.get().multiply(amt).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
 							
 							if ("FlatShipping".equals(mode)) {
 								// even it out so that we add/subtract to a level

@@ -2817,6 +2817,7 @@ ol.dc-listview > li img:first-child + * ~ * {
 		height: calc(100vh - 85px);
 	}
 
+	.dc-widget-hidden,
 	.dc-band.dc-band-hidden {
 		filter: opacity(25%);
 	}

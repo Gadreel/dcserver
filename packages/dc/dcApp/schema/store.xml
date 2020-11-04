@@ -179,6 +179,9 @@
 			<Field Name="dcmPrice" Type="Decimal" />
 			<Field Name="dcmSalePrice" Type="Decimal" />
 
+			<Field Name="dcmInventory" Type="Integer" Audit="False" />
+			<Field Name="dcmOrderLimit" Type="Integer" />
+
 			<!-- if dcTenant:dcmShippingRateMode is PerItem -->
 			<Field Name="dcmShipAmount" Type="Decimal" />
 
@@ -213,6 +216,7 @@
 			<Field Name="dcmOptionLabel" Group="Options" Type="dcSmallString" List="True" />
 			<Field Name="dcmOptionValue" Group="Options" Type="dcMetaString" List="True" />
 			<Field Name="dcmOptionPrice" Group="Options" Type="Decimal" List="True" />
+			<Field Name="dcmOptionWeight" Group="Options" Type="Decimal" List="True" />
 			<Field Name="dcmOptionDisabled" Group="Options" Type="Boolean" List="True" />
 		</Table>
 
@@ -286,6 +290,7 @@
 
 		<Composer Name="dcmStoreImage" Execute="dcraft.cms.store.db.comp.StoreImage" />
 		<Composer Name="dcmProductPrice" Execute="dcraft.cms.store.db.comp.ProductPrice" />
+		<Composer Name="dcmCalcOrderLimit" Execute="dcraft.cms.store.db.comp.CalcOrderLimit" />
 		<Composer Name="dcmOrderItemCustomFields" Execute="dcraft.cms.store.db.comp.OrderItemCustomFields" />
 	</Database>
 
@@ -383,6 +388,8 @@
 			<!-- for donations, electronic content, etc -->
 			<Field Name="ShipCost" Type="dcmProduct:dcmShipCost" />
 
+			<Field Name="OrderLimit" Type="dcmProduct:dcmOrderLimit" />
+
 			<Field Name="Extra" Type="AnyRecord" />
 			<Field Name="CustomFields" Type="AnyRecord" />
 
@@ -394,6 +401,7 @@
 						<Field Name="DisplayValue" Type="dcSmallString" />
 						<Field Name="Value" Type="Any" />
 						<Field Name="Price" Type="Decimal" />
+						<Field Name="Weight" Type="Decimal" />
 					</Record>
 				</List>
 			</Field>
@@ -601,6 +609,7 @@
 						<Field Name="DisplayValue" Type="dcSmallString" />
 						<Field Name="Value" Type="Any" />
 						<Field Name="Price" Type="Decimal" />
+						<Field Name="Weight" Type="Decimal" />
 					</Record>
 				</List>
 			</Field>
@@ -983,6 +992,8 @@
 							<Field Name="ShipCost" Type="dcmProduct:dcmShipCost" />
 							<Field Name="TaxFree" Type="dcmProduct:dcmTaxFree" />
 							<Field Name="ShowInStore" Type="dcmProduct:dcmShowInStore" />
+							<Field Name="Inventory" Type="dcmProduct:dcmInventory" />
+							<Field Name="OrderLimit" Type="dcmProduct:dcmOrderLimit" />
 							<Field Name="Delivery">
 								<List Type="dcmProduct:dcmDelivery" />
 							</Field>
@@ -1016,6 +1027,8 @@
 							<Field Name="ShipCost" Type="dcmProduct:dcmShipCost" />
 							<Field Name="TaxFree" Type="dcmProduct:dcmTaxFree" />
 							<Field Name="ShowInStore" Type="dcmProduct:dcmShowInStore" />
+							<Field Name="Inventory" Type="dcmProduct:dcmInventory" />
+							<Field Name="OrderLimit" Type="dcmProduct:dcmOrderLimit" />
 							<Field Name="Delivery">
 								<List Type="dcmProduct:dcmDelivery" />
 							</Field>
@@ -1048,6 +1061,8 @@
 							<Field Name="ShipCost" Type="dcmProduct:dcmShipCost" />
 							<Field Name="TaxFree" Type="dcmProduct:dcmTaxFree" />
 							<Field Name="ShowInStore" Type="dcmProduct:dcmShowInStore" />
+							<Field Name="Inventory" Type="dcmProduct:dcmInventory" />
+							<Field Name="OrderLimit" Type="dcmProduct:dcmOrderLimit" />
 							<Field Name="Delivery">
 								<List Type="dcmProduct:dcmDelivery" />
 							</Field>
@@ -1150,6 +1165,7 @@
 											<Field Name="Label" Type="dcmProductCustomFields:dcmOptionLabel" />
 											<Field Name="Value" Type="dcmProductCustomFields:dcmOptionValue" />
 											<Field Name="Price" Type="dcmProductCustomFields:dcmOptionPrice" />
+											<Field Name="Weight" Type="dcmProductCustomFields:dcmOptionWeight" />
 											<Field Name="Disabled" Type="dcmProductCustomFields:dcmOptionDisabled" />
 										</Record>
 									</List>
@@ -1184,6 +1200,7 @@
 										<Field Name="Label" Type="dcmProductCustomFields:dcmOptionLabel" />
 										<Field Name="Value" Type="dcmProductCustomFields:dcmOptionValue" />
 										<Field Name="Price" Type="dcmProductCustomFields:dcmOptionPrice" />
+										<Field Name="Weight" Type="dcmProductCustomFields:dcmOptionWeight" />
 										<Field Name="Disabled" Type="dcmProductCustomFields:dcmOptionDisabled" />
 									</Record>
 								</List>
@@ -1214,6 +1231,7 @@
 										<Field Name="Label" Type="dcmProductCustomFields:dcmOptionLabel" Required="True" />
 										<Field Name="Value" Type="dcmProductCustomFields:dcmOptionValue" Required="True" />
 										<Field Name="Price" Type="dcmProductCustomFields:dcmOptionPrice" />
+										<Field Name="Weight" Type="dcmProductCustomFields:dcmOptionWeight" />
 										<Field Name="Disabled" Type="dcmProductCustomFields:dcmOptionDisabled" />
 									</Record>
 								</List>
@@ -1248,6 +1266,7 @@
 										<Field Name="Label" Type="dcmProductCustomFields:dcmOptionLabel" Required="True" />
 										<Field Name="Value" Type="dcmProductCustomFields:dcmOptionValue" Required="True" />
 										<Field Name="Price" Type="dcmProductCustomFields:dcmOptionPrice" />
+										<Field Name="Weight" Type="dcmProductCustomFields:dcmOptionWeight" />
 										<Field Name="Disabled" Type="dcmProductCustomFields:dcmOptionDisabled" />
 									</Record>
 								</List>
@@ -1331,6 +1350,7 @@
 							<Field Name="VariablePrice" Type="dcmProduct:dcmVariablePrice" />
 							<Field Name="MinimumPrice" Type="dcmProduct:dcmMinimumPrice" />
 							<Field Name="TaxFree" Type="dcmProduct:dcmTaxFree" />
+							<Field Name="OrderLimit" Type="dcmProduct:dcmOrderLimit" />
 							<Field Name="Delivery">
 								<List Type="dcmProduct:dcmDelivery" />
 							</Field>
@@ -1429,9 +1449,11 @@
 							Load a list all coupon records, no matter how many.
 							Filter by type is available.
 						</Description>
+						<!--
 						<RecordRequest Required="True">
 							<Field Name="Type" Type="dcmDiscount:dcmType" />
 						</RecordRequest>
+					-->
 						<ListResponse>
 							<Record>
 								<Field Name="Id" Type="dcmDiscount:Id" />

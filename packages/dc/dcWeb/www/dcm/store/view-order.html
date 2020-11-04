@@ -290,6 +290,14 @@
 				);
 			}
 
+			if (cart.CouponCodes && cart.CouponCodes.length) {
+				$('#sectBilling').dcappend(
+					'Coupon: ',
+					cart.CouponCodes[0],
+					$('<br><br>')
+				);
+			}
+
 			if (cart.BillingInfo) {
 				$('#sectBilling').dcappend(
 					cart.BillingInfo.FirstName + ' ' + cart.BillingInfo.LastName,

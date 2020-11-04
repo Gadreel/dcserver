@@ -15,6 +15,7 @@
 						<thead>
 							<th>Label</th>
 							<th>Price</th>
+							<th>Weight</th>
 							<th>Action &nbsp;&nbsp;
 								<dc.Button Icon="fa-plus" Click="DoAddOption" />
 							</th>
@@ -85,6 +86,7 @@
 						.dcappend(
 							$('<td>').text(item.Label),
 							$('<td>').text('$' + dc.util.Number.formatMoney(item.Price)),
+							$('<td>').text(item.Weight),
 							$('<td>').dcappend(
 								$('<a>')
 									.attr('href', '#')

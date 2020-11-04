@@ -79,6 +79,7 @@ public class Load implements IStoredProc {
 											.withAs("Label","dcmOptionLabel")
 											.withAs("Value","dcmOptionValue")
 											.withAs("Price","dcmOptionPrice")
+											.withAs("Weight","dcmOptionWeight")
 											.with("dcmOptionDisabled", "Disabled")
 									)
 							)

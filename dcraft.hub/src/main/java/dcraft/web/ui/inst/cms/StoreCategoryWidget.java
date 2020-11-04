@@ -126,8 +126,14 @@ public class StoreCategoryWidget extends Base implements ICMSAware {
 				// add nodes using the new variable
 				XElement entry = template.deepCopy();
 				
-				for (XNode node : entry.getChildren())
+				for (XNode node : entry.getChildren()) {
 					StoreCategoryWidget.this.with(node);
+
+					// if only showing because of CMS, mark it hidden
+					if (category.getFieldAsBooleanOrFalse("CMSOnly") && (node instanceof Base)) {
+						((Base) node).withClass("dc-widget-hidden");
+					}
+				}
 			}
 			catch (OperatingContextException x) {
 				Logger.warn("Could not reference product data: " + x);
@@ -169,20 +175,29 @@ public class StoreCategoryWidget extends Base implements ICMSAware {
 	protected ListStruct fillLevel(InstructionWork state, TablesAdapter db, ListStruct categories, SelectFields fields, RecordStruct meta, String vari, String path, String missing) throws OperatingContextException {
 		ListStruct result = ListStruct.list();
 
-		boolean canedit = UIUtil.canEdit(state, this);
+		boolean editable = UIUtil.isEditReady(state, this);
 
 		for (int c = 0; c < categories.size(); c++) {
 			RecordStruct category = categories.getItemAsRecord(c);
 
 			String alias = category.getFieldAsString("Alias");
+			boolean showprod = true;
 
 			String id = Struct.objectToString(db.firstInIndex("dcmCategory", "dcmAlias", alias, true));
 
-			if (StringUtil.isEmpty(id))
-				continue;
+			if (StringUtil.isEmpty(id)) {
+				if (! editable)
+					continue;
 
-			if (! canedit && ! Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmCategory", id, "dcmShowInStore")))
-				continue;
+				showprod = false;
+			}
+
+			if (! Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmCategory", id, "dcmShowInStore"))){
+				if (! editable)
+					continue;
+
+				showprod = false;
+			}
 
 			category.copyFields(TableUtil.getRecord(db, OperationContext.getOrThrow(), "dcmCategory", id, fields));
 
@@ -202,13 +217,17 @@ public class StoreCategoryWidget extends Base implements ICMSAware {
 			try {
 				FileTime fileTime = Files.getLastModifiedTime(imgpath);
 				category.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
-
-				result.with(category);
 			}
 			catch (IOException x) {
 				Logger.warn("Problem finding image file: " + lpath);
 				category.with("Path", "/galleries" + lpath);
 			}
+
+			if (showprod)
+				category.with("CMSOnly", "true");
+
+			if (showprod || editable)
+				result.with(category);
 		}
 
 		return result;

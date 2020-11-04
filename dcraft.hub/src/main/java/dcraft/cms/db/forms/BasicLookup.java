@@ -65,6 +65,7 @@ public class BasicLookup implements IStoredProc {
 								.with("dcmOptionLabel", "Label")
 								.with("dcmOptionValue", "Value")
 								.with("dcmOptionPrice", "Price")
+								.with("dcmOptionWeight", "Weight")
 						)
 				);
 		
