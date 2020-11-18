@@ -36,6 +36,7 @@ public class Load implements IStoredProc {
 				.with("dcmCategories", "Categories")
 				//.with("dcmCategoryPosition", "CategoryPosition")
 				.with("dcmPrice", "Price")
+				.with("dcmSalePrice", "SalePrice")
 				.with("dcmVariablePrice", "VariablePrice")
 				.with("dcmMinimumPrice", "MinimumPrice")
 				.with("dcmShipAmount", "ShipAmount")

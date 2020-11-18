@@ -15,6 +15,7 @@ import dcraft.filevault.Vault;
 import dcraft.filevault.VaultUtil;
 import dcraft.hub.op.*;
 import dcraft.log.Logger;
+import dcraft.script.ScriptHub;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.xml.XElement;
@@ -43,9 +44,8 @@ public class SaveMeta implements IStoredProc {
 			@Override
 			public void callback(String result) throws OperatingContextException {
 				if (this.isNotEmptyResult()) {
-					// TODO parse as UI
-					XElement root = XmlReader.parse(result, true, true);
-					
+					XElement root = ScriptHub.parseInstructions(result);
+
 					if (root == null) {
 						Logger.error("Feed file not well formed XML");
 						callback.returnEmpty();

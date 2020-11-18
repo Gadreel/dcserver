@@ -1,5 +1,6 @@
 package dcraft.cms.store.db.discounts;
 
+import dcraft.cms.store.db.Util;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
 import dcraft.db.tables.TableUtil;
@@ -15,7 +16,14 @@ public class Retire implements IStoredProc {
 
 		TablesAdapter db = TablesAdapter.ofNow(request);
 
-		TableUtil.retireRecord(db, "dcmDiscount", data.getFieldAsString("Id"));
+		String id = data.getFieldAsString("Id");
+
+		db.updateStaticScalar("dcmDiscount", id, "dcmState", "Check");
+		db.updateStaticScalar("dcmDiscount", id, "dcmActive", false);
+
+		Util.resolveDiscountRules(db);
+
+		TableUtil.retireRecord(db, "dcmDiscount", id);
 
 		callback.returnEmpty();
 	}

@@ -139,6 +139,10 @@
 					color: orange;
 				}
 
+				#lstStepsBody tr.checked {
+					filter: opacity(0.25);
+				}
+
 				#lstStepsBody code.fenced {
 				    white-space: pre;
 				}
@@ -315,7 +319,14 @@
 				Id: $(e.currentTarget).closest('tr').attr('data-id'),
 				Approved: true
 			}, function(resp) {
-					page.Layer.refreshPage();
+					$tr = $(e.currentTarget).closest('tr');
+
+					$tr.addClass('checked');
+
+					$tr.find('td:first-child svg use').attr('href', '#far-check-circle');
+					$tr.find('td:first-child svg').addClass('green').removeClass('black');
+
+					//page.Layer.refreshPage();
 			});
 	]]></Function>
 	<Function Name="DoApproveReport"><![CDATA[

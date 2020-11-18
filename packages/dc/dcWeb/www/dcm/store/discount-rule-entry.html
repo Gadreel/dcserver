@@ -1,0 +1,325 @@
+<dc.Html Badges="Clerk,Admin">
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Enter Rule" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dc.Region Hint="Discount Properties form">
+					<dcf.Text Label="Title" Name="Title" Required="true" />
+					<dcf.YesNo Label="Active" Name="Active" Required="true" />
+
+					<dcf.MultiText Label="Start">
+						<Input Name="StartDate" DataType="DateYMD" placeholder="YYYY-MM-DD or blank if immediate start" />
+						<Input Name="StartTime" DataType="TimeHHMM" placeholder="HH:MM military time or blank if no start" />
+					</dcf.MultiText>
+
+					<dcf.MultiText Label="Expire">
+						<Input Name="ExpireDate" DataType="DateYMD" placeholder="YYYY-MM-DD or blank if no expiration" />
+						<Input Name="ExpireTime" DataType="TimeHHMM" placeholder="HH:MM military time or blank if no expiration" />
+					</dcf.MultiText>
+
+					<dcf.Custom Label="Rules">
+						<table id="lstProducts" class="dc-table-break-std dc-table dc-table-reflow dc-table-stripe">
+							<thead>
+								<th>Product</th>
+								<th>Kind</th>
+								<th>Value</th>
+								<th>Action &nbsp;&nbsp;
+									<dc.Button Icon="fa-plus" Click="DoAddProduct" />
+								</th>
+							</thead>
+							<tbody id="lstProductsBody">
+							</tbody>
+						</table>
+					</dcf.Custom>
+				</dc.Region>
+
+				<dcf.FormButtons Hint="form options">
+					<dc.Button Label="Delete" Click="DoDelete" />
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			// make alias read only if edit
+			if (page.Params.Id) {
+				//page.form().inputQuery('Code').prop('readonly', 'readonly');
+			}
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (page.Params.Id) {
+				e.Message = {
+					Service: 'dcmStoreServices',
+					Feature: 'Discounts',
+					Op: 'Load',
+					Body: {
+						Id: page.Params.Id
+					}
+				};
+			}
+			else {
+				e.AsNew = true;
+				e.Data = {
+					Active: true
+				};
+			}
+	]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			// convert to date
+			if (e.Data.Start) {
+				var localstart = moment.utc(e.Data.Start, 'YYYYMMDDTHHmmssSSSZ', true).local();
+
+				e.Data.StartDate = localstart.format('YYYY-MM-DD');
+				e.Data.StartTime = localstart.format('HH:mm');
+			}
+
+			if (e.Data.Expire) {
+				var localexp = moment.utc(e.Data.Expire, 'YYYYMMDDTHHmmssSSSZ', true).local();
+
+				e.Data.ExpireDate = localexp.format('YYYY-MM-DD');
+				e.Data.ExpireTime = localexp.format('HH:mm');
+			}
+
+			page.Store.Products = e.Data.Products ? e.Data.Products : [ ];
+
+			page.callPageFunc('UpdateProducts');
+	]]></Function>
+	<Function Name="ReloadProducts"><![CDATA[
+			var page = this;
+
+			dc.comm.sendMessage({
+				Service: 'dcmStoreServices',
+				Feature: 'Discounts',
+				Op: 'Load',
+				Body: {
+					Id: page.Params.Id
+				}
+			}, function(resp) {
+				if (resp.Result > 0) {
+					return;
+				}
+
+				page.Store.Products = resp.Body.Products ? resp.Body.Products : [ ];
+
+				page.callPageFunc('UpdateProducts')
+			});
+	]]></Function>
+	<Function Name="UpdateProducts"><![CDATA[
+			var page = this;
+
+			if (! page.Store.Products || page.Store.Products.length == 0) {
+				$('#lstProductsBody').empty().dcappend($('<tr>')
+					.dcappend($('<td>')
+						.attr('colspan', '4')
+						.text('[none]')
+					)
+				);
+			}
+			else {
+				$('#lstProductsBody').empty();
+
+				//page.Store.Products.sort(dc.util.List.sortObjects('Position'));
+
+				for (var n = 0; n < page.Store.Products.length; n++) {
+					var item = page.Store.Products[n];
+
+					$('#lstProductsBody').dcappend($('<tr>')
+						.dcappend(
+							$('<td>').text(item.Product),
+							$('<td>').text(item.Mode == 'PercentOffProduct' ? 'Percent Off' : 'Fixed Price'),
+							$('<td>').text(dc.util.Number.formatMoney(item.Amount)),
+							$('<td>').dcappend(
+								$('<a>')
+									.attr('href', '#')
+									.attr('class', 'pure-button-default pure-button dc-button')
+									.click(n, function(e) {
+										var idx = e.data;
+										var prod = page.Store.Products[idx];
+
+										dc.pui.Dialog.loadPage('/dcm/store/discount-product-entry', {
+											Id: page.Params.Id,
+											ProductId: prod.ProductId,
+											Callback: function(res) {
+												page.callPageFunc('ReloadProducts')
+												/*
+												if (res == null)
+													page.Store.Products.splice(idx, 1);
+												else
+													page.Store.Products[idx] = res;
+
+												page.callPageFunc('UpdateProducts');
+												*/
+											}
+										});
+
+										e.preventDefault();
+										return false;
+									})
+									.dcappend(
+										$('<i>').attr('class','fa fa-pencil')
+									)
+							)
+						)
+					);
+				}
+			}
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (page.Params.Id) {
+				e.Data.Id = page.Params.Id;
+			}
+			else {
+				e.Data.Type = 'Rule';
+			}
+
+			// convert to date time
+			if (e.Data.hasOwnProperty('StartDate') || e.Data.hasOwnProperty('StartTime')) {
+				var sd = page.form().getValue('StartDate');
+				var st = page.form().getValue('StartTime');
+
+				if (sd && st) {
+					e.Data.Start = moment(sd + ' ' + st, 'YYYY-MM-DD HH:mm', true).utc().format("YYYYMMDDTHHmmssSSS") + 'Z';
+				}
+				else if (sd) {
+					e.Data.Start = moment(sd, 'YYYY-MM-DD', true).utc().format("YYYYMMDDTHHmmssSSS") + 'Z';
+				}
+				else {
+					e.Data.Start = null;
+				}
+			}
+
+			// convert to date time
+			if (e.Data.hasOwnProperty('ExpireDate') || e.Data.hasOwnProperty('ExpireTime')) {
+				var sd = page.form().getValue('ExpireDate');
+				var st = page.form().getValue('ExpireTime');
+
+				if (sd && st) {
+					e.Data.Expire = moment(sd + ' ' + st, 'YYYY-MM-DD HH:mm', true).utc().format("YYYYMMDDTHHmmssSSS") + 'Z';
+				}
+				else if (sd) {
+					e.Data.Expire = moment(sd, 'YYYY-MM-DD', true).utc().format("YYYYMMDDTHHmmssSSS") + 'Z';
+				}
+				else {
+					e.Data.Expire = null;
+				}
+			}
+
+			delete e.Data.StartDate;
+			delete e.Data.StartTime;
+			delete e.Data.ExpireDate;
+			delete e.Data.ExpireTime;
+
+			e.Message = {
+				Service: 'dcmStoreServices',
+				Feature: 'Discounts',
+				Op: page.Params.Id ? 'Update' : 'Add',
+				Body: e.Data
+			};
+	]]></Function>
+	<Function Name="AfterSaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (e.Data && e.Data.Id) {
+				page.Store.NewId = e.Data.Id;
+			}
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			if (page.Store.NewId && ! page.Store.NewFlag) {
+				page.Params.Id = page.Store.NewId;
+
+				dc.pui.Popup.alert("Rule added, you may now add products, or edit the rule or close the form.");
+
+				page.Store.NewFlag = true;
+				return;
+			}
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback();
+	]]></Function>
+	<Function Name="DoDelete"><![CDATA[
+			var page = this;
+
+			if (! page.Params.Id) {
+				page.callPageFunc('AfterSave')
+				return;
+			}
+
+			dc.pui.Popup.confirm('Are you sure you want to delete this Discount?', function(confirm) {
+				if (! confirm)
+					return;
+
+				//console.log('delete');
+				dc.comm.sendMessage({
+					Service: 'dcmStoreServices',
+					Feature: 'Discounts',
+					Op: 'Retire',
+					Body: {
+						Id: page.Params.Id
+					}
+				}, function(resp) {
+					if (resp.Result > 0) {
+						dc.pui.Popup.alert(resp.Message);
+						return;
+					}
+
+					page.callPageFunc('AfterSave')
+				});
+			});
+	]]></Function>
+	<Function Name="DoAddProduct"><![CDATA[
+			var page = this;
+
+			if (! page.Params.Id) {
+				dc.pui.Popup.alert('Please save the rule before adding a product.');
+				return;
+			}
+
+			dc.pui.Dialog.loadPage('/dcm/store/category-chooser-callback', {
+				Callback: function(data) {
+
+					// give thaw a chance to finish then open new dialog
+					setTimeout(function() {
+						dc.pui.Dialog.loadPage('/dcm/store/product-chooser-callback', {
+							CategoryId: data.CategoryId,
+							Callback: function(data2) {
+								// give thaw a chance to finish then open new dialog
+								setTimeout(function() {
+									/*
+									Id: data2.ProductId,
+									Alias: data2.ProductAlias,
+									*/
+
+									dc.pui.Dialog.loadPage('/dcm/store/discount-product-entry', {
+										Id: page.Params.Id,
+										ProductId: data2.ProductId,
+										Callback: function(res) {
+											// reload only the form
+											//page.form().load(function() { });
+											page.callPageFunc('ReloadProducts')
+										}
+									});
+								}, 250);
+							}
+						});
+					}, 250);
+				}
+			});
+	]]></Function>
+
+</dc.Html>

@@ -177,7 +177,7 @@
 			<Field Name="dcmVariablePrice" Type="Boolean" />
 			<Field Name="dcmMinimumPrice" Type="Decimal" />
 			<Field Name="dcmPrice" Type="Decimal" />
-			<Field Name="dcmSalePrice" Type="Decimal" />
+			<Field Name="dcmSalePrice" Type="Decimal" Audit="False" />
 
 			<Field Name="dcmInventory" Type="Integer" Audit="False" />
 			<Field Name="dcmOrderLimit" Type="Integer" />
@@ -228,6 +228,7 @@
 			<Field Name="dcmType" Type="dcmDiscountTypeEnum" Indexed="True" />
 			<Field Name="dcmMode" Type="dcmDiscountModeEnum" />
 			<Field Name="dcmActive" Type="Boolean" />
+			<Field Name="dcmState" Type="dcmDiscountStateEnum" Indexed="True" Audit="False" />
 
 			<Field Name="dcmAmount" Type="Decimal" />
 			<Field Name="dcmMinimumOrder" Type="Decimal" />
@@ -242,6 +243,11 @@
 			<Field Name="dcmWasUsed" Type="Boolean" />
 			<Field Name="dcmAmountUsed" Type="Decimal" />
 			<Field Name="dcmForCustomer" ForeignKey="dcUser" />
+
+			<!-- Products group - for rules - FixedOffProduct,PercentOffProduct only -->
+			<Field Name="dcmRuleProduct" Group="Product" Type="Id" List="True" />
+			<Field Name="dcmRuleMode" Group="Product" Type="dcmDiscountModeEnum" List="True" />
+			<Field Name="dcmRuleAmount" Group="Product" Type="Decimal" List="True" />
 		</Table>
 
 		<Table Id="dcmGiftRegistry">
@@ -279,6 +285,10 @@
 		<Procedure Name="dcmStoreServices.Discounts.Add" Execute="dcraft.cms.store.db.discounts.Add" />
 		<Procedure Name="dcmStoreServices.Discounts.Retire" Execute="dcraft.cms.store.db.discounts.Retire" />
 		<Procedure Name="dcmStoreServices.Discounts.Revive" Execute="dcraft.cms.store.db.discounts.Revive" />
+		<Procedure Name="dcmStoreServices.Discounts.LoadRuleProduct" Execute="dcraft.cms.store.db.discounts.LoadRuleProduct" />
+		<Procedure Name="dcmStoreServices.Discounts.UpdateRuleProduct" Execute="dcraft.cms.store.db.discounts.UpdateRuleProduct" />
+		<Procedure Name="dcmStoreServices.Discounts.RetireRuleProduct" Execute="dcraft.cms.store.db.discounts.RetireRuleProduct" />
+		<Procedure Name="dcmStoreServices.Discounts.ResolveAll" Execute="dcraft.cms.store.db.discounts.ResolveAll" />
 
 		<Procedure Name="dcmStoreServices.Product.Load" Execute="dcraft.cms.store.db.products.Load" />
 		<Procedure Name="dcmStoreServices.Product.LoadCustomFields" Execute="dcraft.cms.store.db.products.LoadCustomFields" />
@@ -304,11 +314,15 @@
 		</StringType>
 
 		<StringType Id="dcmDiscountTypeEnum">
-			<StringRestriction Enum="Coupon,Sale,GiftCertificate,Credit" />
+			<StringRestriction Enum="Coupon,Rule,Sale,GiftCertificate,Credit" />
 		</StringType>
 
 		<StringType Id="dcmDiscountModeEnum">
 			<StringRestriction Enum="FixedOffTotal,FixedOffProduct,PercentOffProduct,FixedOffShipping,PercentOffShipping,FlatShipping,FreeShipping" />
+		</StringType>
+
+		<StringType Id="dcmDiscountStateEnum">
+			<StringRestriction Enum="Check,Ignore" />
 		</StringType>
 
 		<StringType Id="dcmCategoryModeEnum">
@@ -987,6 +1001,7 @@
 							<Field Name="VariablePrice" Type="dcmProduct:dcmVariablePrice" />
 							<Field Name="MinimumPrice" Type="dcmProduct:dcmMinimumPrice" />
 							<Field Name="Price" Type="dcmProduct:dcmPrice" />
+							<Field Name="SalePrice" Type="dcmProduct:dcmSalePrice" />
 							<Field Name="ShipAmount" Type="dcmProduct:dcmShipAmount" />
 							<Field Name="ShipWeight" Type="dcmProduct:dcmShipWeight" />
 							<Field Name="ShipCost" Type="dcmProduct:dcmShipCost" />
@@ -1384,6 +1399,16 @@
 							<Field Name="Automatic" Type="dcmDiscount:dcmAutomatic" />
 							<Field Name="OneTimeUse" Type="dcmDiscount:dcmOneTimeUse" />
 							<Field Name="WasUsed" Type="dcmDiscount:dcmWasUsed" />
+							<Field Name="Products">
+								<List>
+									<Record>
+										<Field Name="ProductId" Type="dcmDiscount:dcmRuleProduct" />
+										<Field Name="Product" Type="dcmProduct:dcmTitle" />
+										<Field Name="Mode" Type="dcmDiscount:dcmRuleMode" />
+										<Field Name="Amount" Type="dcmDiscount:dcmRuleAmount" />
+									</Record>
+								</List>
+							</Field>
 						</RecordResponse>
 					</Op>
 					<Op Name="Update">
@@ -1393,7 +1418,7 @@
 						<RecordRequest Required="True">
 							<Field Name="Id" Type="dcmDiscount:Id" Required="True" />
 							<Field Name="Title" Type="dcmDiscount:dcmTitle" Required="IfPresent" />
-							<Field Name="Type" Type="dcmDiscount:dcmType" />
+							<Field Name="Type" Type="dcmDiscount:dcmType" Required="IfPresent" />
 							<Field Name="Mode" Type="dcmDiscount:dcmMode" Required="IfPresent" />
 							<Field Name="Active" Type="dcmDiscount:dcmActive" />
 							<Field Name="Code" Type="dcmDiscount:dcmCode" />
@@ -1412,8 +1437,8 @@
 						</Description>
 						<RecordRequest Required="True">
 							<Field Name="Title" Type="dcmDiscount:dcmTitle" Required="True" />
-							<Field Name="Type" Type="dcmDiscount:dcmType" />
-							<Field Name="Mode" Type="dcmDiscount:dcmMode" Required="True" />
+							<Field Name="Type" Type="dcmDiscount:dcmType" Required="True" />
+							<Field Name="Mode" Type="dcmDiscount:dcmMode" />
 							<Field Name="Active" Type="dcmDiscount:dcmActive" />
 							<Field Name="Code" Type="dcmDiscount:dcmCode" />
 							<Field Name="Amount" Type="dcmDiscount:dcmAmount" />
@@ -1472,6 +1497,47 @@
 								<Field Name="WasUsed" Type="dcmDiscount:dcmWasUsed" />
 							</Record>
 						</ListResponse>
+					</Op>
+
+					<Op Name="LoadRuleProduct">
+						<Description>
+							Load a rule's product record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="ProductId" Type="Id" Required="True" />
+							<Field Name="TrLocale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Title" Type="dcmProduct:dcmTitle" />
+							<Field Name="Mode" Type="dcmDiscount:dcmRuleMode" Required="IfPresent" />
+							<Field Name="Amount" Type="dcmDiscount:dcmRuleAmount" />
+						</RecordResponse>
+					</Op>
+					<Op Name="UpdateRuleProduct">
+						<Description>
+							Update a rule's product record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="ProductId" Type="Id" Required="True" />
+							<Field Name="Mode" Type="dcmDiscount:dcmRuleMode" Required="IfPresent" />
+							<Field Name="Amount" Type="dcmDiscount:dcmRuleAmount" />
+						</RecordRequest>
+					</Op>
+					<Op Name="RetireRuleProduct">
+						<Description>
+							Remove (retire) rule's product record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="ProductId" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="ResolveAll">
+						<Description>
+							Put all the rules into effect.
+						</Description>
 					</Op>
 				</Secure>
 			</Feature>

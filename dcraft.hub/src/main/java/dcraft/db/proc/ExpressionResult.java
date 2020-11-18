@@ -4,7 +4,8 @@ public class ExpressionResult {
 	static final public ExpressionResult ACCEPTED = ExpressionResult.accepted();
 	static final public ExpressionResult REJECTED = ExpressionResult.rejected();
 	static final public ExpressionResult HALT = ExpressionResult.halt();
-	
+	static final public ExpressionResult FOUND = ExpressionResult.found();
+
 	static public ExpressionResult accepted() {
 		return new ExpressionResult(true, true);
 	}
@@ -15,6 +16,10 @@ public class ExpressionResult {
 	
 	static public ExpressionResult halt() {
 		return new ExpressionResult(false, false);
+	}
+
+	static public ExpressionResult found() {
+		return new ExpressionResult(true, false);
 	}
 
 	static public ExpressionResult of(boolean accepted, boolean resume) {

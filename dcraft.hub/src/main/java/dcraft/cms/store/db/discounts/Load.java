@@ -8,6 +8,7 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 
 public class Load implements IStoredProc {
@@ -34,10 +35,25 @@ public class Load implements IStoredProc {
 				.with("dcmExpire", "Expire")
 				.with("dcmAutomatic", "Automatic")
 				.with("dcmOneTimeUse", "OneTimeUse")
-				.with("dcmWasUsed", "WasUsed");
+				.with("dcmWasUsed", "WasUsed")
+				.withGroup("dcmRuleProduct", "Products", "ProductId",
+					SelectFields.select()
+							.with("dcmRuleAmount", "Amount")
+							.with("dcmRuleMode", "Mode")
+				);
 
-		callback.returnValue(
-				TableUtil.getRecord(db, OperationContext.getOrThrow(), "dcmDiscount", id, fields)
-		);
+		RecordStruct result = TableUtil.getRecord(db, OperationContext.getOrThrow(), "dcmDiscount", id, fields);
+
+		ListStruct products = result.getFieldAsList("Products");
+
+		for (int i = 0; i < products.size(); i++) {
+			RecordStruct prod = products.getItemAsRecord(i);
+
+			String pid = prod.getFieldAsString("ProductId");
+
+			prod.with("Product", db.getStaticScalar("dcmProduct", pid, "dcmTitle"));
+		}
+
+		callback.returnValue(result);
 	}
 }

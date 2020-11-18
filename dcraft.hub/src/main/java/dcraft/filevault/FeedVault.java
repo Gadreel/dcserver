@@ -15,10 +15,12 @@ import dcraft.filevault.work.FeedSearchWork;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.*;
 import dcraft.log.Logger;
+import dcraft.script.ScriptHub;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.TaskHub;
+import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.web.ui.UIUtil;
 import dcraft.xml.*;
@@ -214,9 +216,8 @@ public class FeedVault extends FileStoreVault {
 						@Override
 						public void callback(String result) throws OperatingContextException {
 							if (this.isNotEmptyResult()) {
-								// TODO parse as UI
-								XElement root = XmlReader.parse(result, true, true);
-								
+								XElement root = ScriptHub.parseInstructions(result);
+
 								if (root == null) {
 									Logger.error("Feed file not well formed XML");
 									fcb.returnEmpty();

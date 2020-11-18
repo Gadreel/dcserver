@@ -6,7 +6,8 @@
 	<dc.Body>
 		<dc.PagePanel>
 			<dcf.FormButtons>
-				<dc.Button Label="Add Discount" Click="DoAddCoupon" />
+				<dc.Button Label="Add Coupon" Click="DoAddCoupon" />
+				<dc.Button Label="Add Rule" Click="DoAddRule" />
 			</dcf.FormButtons>
 
 			<table id="lstDiscounts" class="dc-table-break-std dc-table dc-table-reflow dc-table-stripe">
@@ -80,12 +81,22 @@
 									.attr('class', 'pure-button-default pure-button dc-button')
 									.text('Edit')
 									.click(item, function(e) {
-										dc.pui.Dialog.loadPage('/dcm/store/discount-entry', {
-											Id: e.data.Id,
-											Callback: function() {
-												page.Layer.refreshPage();
-											}
-										});
+										if (e.data.Type == 'Coupon') {
+											dc.pui.Dialog.loadPage('/dcm/store/discount-entry', {
+												Id: e.data.Id,
+												Callback: function() {
+													page.Layer.refreshPage();
+												}
+											});
+										}
+										else if (e.data.Type == 'Rule') {
+											dc.pui.Dialog.loadPage('/dcm/store/discount-rule-entry', {
+												Id: e.data.Id,
+												Callback: function() {
+													page.Layer.refreshPage();
+												}
+											});
+										}
 
 										e.preventDefault();
 										return false;
@@ -100,6 +111,15 @@
 			var page = this;
 
 			dc.pui.Dialog.loadPage('/dcm/store/discount-entry', {
+				Callback: function() {
+					page.Layer.refreshPage();
+				}
+			});
+	]]></Function>
+	<Function Name="DoAddRule" Params="e"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcm/store/discount-rule-entry', {
 				Callback: function() {
 					page.Layer.refreshPage();
 				}

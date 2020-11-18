@@ -89,11 +89,24 @@
 
 						$('#sectProcessSuccess').show().focus();
 
+						// dca events
 						gtag('event', 'Submit', {
 							'event_category': 'Order',
 							'event_label': id
 						});
 
+						if (window.fbq) {
+							fbq('track', 'Purchase', {
+								currency: 'USD',
+								value: dc.util.Number.formatMoney(oldcart.CalcInfo.GrandTotal)
+							});
+						}
+
+						// for google ecommerce
+
+						var gtagitems = [ ];
+
+						// dca events
 						for (var i = 0; i < oldcart.Items.length; i++) {
 							var item = oldcart.Items[i];
 
@@ -103,7 +116,21 @@
 									'event_label': item.Alias
 								});
 							}
+
+							gtagitems.push({
+								id: item.Alias,
+								name: item.Title
+							});
 						}
+
+						// for google ecommerce
+
+						gtag('event', 'purchase', {
+						  transaction_id: id.substr(id.length - 6),
+							value: dc.util.Number.formatMoney(oldcart.CalcInfo.GrandTotal),
+							currency: 'USD',
+						  items: gtagitems
+						});
 
 						// TODO review, does not seem too work
 						dc.user.updateUser();

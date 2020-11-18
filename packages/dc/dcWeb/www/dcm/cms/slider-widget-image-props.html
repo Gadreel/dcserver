@@ -1,0 +1,115 @@
+<dc.Html Badges="Admin,Editor">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Slider Image Properties" />
+	</Meta>
+
+	<Require Script="/js/vendor/ace-1.1.8/ace.js" />
+
+	<dcs.Var Name="Alias" Type="String" />
+
+	<dcs.If Target="$Page.OriginalPathParts.3" IsEmpty="false">
+		<dcs.With Target="$Alias" SetTo="$Page.OriginalPathParts.3" />
+	</dcs.If>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form AlwaysNew="true">
+				<dcf.Text Name="Title" Label="Title" />
+				<dcf.TextArea Name="Description" Label="Description" />
+
+				<!-- reuse the gallery property editors -->
+				<dcs.If Target="$Alias" IsEmpty="false">
+					<dc.Out>
+						<dc.IncludeFragment Path="/dcm/cms/gallery-widget-image/{$Alias}" />
+					</dc.Out>
+				</dcs.If>
+
+				<dcf.FormButtons>
+					<!-- dc.Button Label="Save" Click="DoSaveOnly" / -->
+					<dc.Button Label="Save and Preview" Click="DoSave" Scope="Primary" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var entry = this;
+
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			e.Message = {
+				Service: 'dcmServices',
+				Feature: 'Feed',
+				Op: 'LoadPart',
+				Body: {
+					Feed: entry.Params.Feed,
+					Path: entry.Params.Path,
+					PartId: entry.Params.PartId
+				}
+			};
+	]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+		var entry = this;
+
+		var widget = entry.Store.Widget = dc.util.Xml.toJQuery(e.Data.Part);
+
+		e.Data = { };
+
+		var $imgs = widget.find('Image');
+
+		for (var i = 0; i < $imgs.length; i++) {
+			if ($($imgs.get(i)).attr('Alias') == entry.Params.Image) {
+				//e.Data.Description = $($imgs.get(i)).attr('Description');
+
+				$($imgs.get(i)).each(function() {
+					$.each(this.attributes, function() {
+						//console.log(this.name, this.value);
+						e.Data[this.name] = this.value;
+					});
+				});
+			}
+		}
+	]]></Function>
+	<Function Name="DoSaveOnly"><![CDATA[
+		var entry = this;
+
+		entry.Params.Preview = false;
+
+		entry.form().submit();
+	]]></Function>
+	<Function Name="DoSave"><![CDATA[
+		var entry = this;
+
+		entry.Params.Preview = true;
+
+		entry.form().submit();
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			e.Wait = true;
+
+			dc.cms.Loader.saveCommands(entry.Params.Feed, entry.Params.Path, [
+				{
+					Command: 'UpdatePart',
+					Params: {
+						Alias: entry.Params.Image,
+						PartId: entry.Params.PartId,
+						Area: 'SetImage',
+						Properties: e.Data
+					}
+				}
+			], function() {
+				e.Task.resume();
+			});
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+		var entry = this;
+
+		if (entry.Params.Preview)
+			dc.pui.Loader.MainLayer.refreshPage();
+		else
+			dc.pui.Popup.alert('Saved');
+	]]></Function>
+</dc.Html>

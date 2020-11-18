@@ -48,12 +48,6 @@ public class FeedFileReviewWork extends ChainWork {
 	@Override
 	protected void init(TaskContext taskctx) throws OperatingContextException {
 		try (OperationMarker om = OperationMarker.create()) {
-			WebController wctrl = (WebController) taskctx.getController();
-
-			wctrl.initSearch(path);
-
-			RecordStruct req = wctrl.getFieldAsRecord("Request");
-
 			Site webSite = taskctx.getSite();
 			CommonPath path = this.path;
 
@@ -78,7 +72,7 @@ public class FeedFileReviewWork extends ChainWork {
 			
 			if (path.isRoot()) {
 				path = webSite.getHomePath();
-				req.with("Path", path.toString());
+				//req.with("Path", path.toString());
 			}
 			
 			if (Logger.isDebug())
@@ -108,8 +102,13 @@ public class FeedFileReviewWork extends ChainWork {
 				Logger.error("Problem finding web page file, or file missing.");
 				return;
 			}
-			
-			req.with("Path", output.getPath().toString());
+			WebController wctrl = (WebController) taskctx.getController();
+
+			wctrl.initSearch(path);
+
+			RecordStruct req = wctrl.getFieldAsRecord("Request");
+
+			req.with("Path", path.toString()); // output.getPath().toString());
 			
 			if (Logger.isDebug())
 				Logger.debug("Executing adapter: " + output.getClass().getName());

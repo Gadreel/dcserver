@@ -385,7 +385,7 @@ public class Products {
 					.with("dcmDescription", "Description")
 					.with("dcmInstructions", "Instructions")
 					.with("dcmImage", "Image")
-					.with("dcmPrice", "Price")
+					.withComposer("dcmProductPrice", "Price")
 					.with("dcmVariablePrice", "VariablePrice")
 					.with("dcmMinimumPrice", "MinimumPrice")
 					.with("dcmTaxFree", "TaxFree")

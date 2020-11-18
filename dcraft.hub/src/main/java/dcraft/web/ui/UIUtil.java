@@ -208,29 +208,34 @@ public class UIUtil {
 			((ICMSAware) element).canonicalize();
 	}
 	
-	static public boolean markIfEditable(InstructionWork state, XElement element, String cmstype) throws OperatingContextException {
+	static public boolean markIfEditable(InstructionWork state, Base element, String cmstype) throws OperatingContextException {
 		UIUtil.setEditBadges(state, element);
 		
 		boolean editable = UIUtil.canEdit(state, element);
 		
-		if (editable)
+		if (editable) {
 			element.withAttribute("data-cms-type", cmstype);
+
+			if (UIUtil.isEditMode(state, element))
+				element.withClass("dcm-cms-edit-mode");
+		}
 
 		return editable;
 	}
 	
-	static public boolean isEditReady(InstructionWork state, XElement element) throws OperatingContextException {
-		if (! UIUtil.canEdit(state, element))
-			return false;
-
-		String cmsmode = Struct.objectToString(StackUtil.queryVariable(null, "_Controller.Request.Cookies.dcmMode"));
+	static public boolean isEditMode(InstructionWork state, Base element) throws OperatingContextException {
+		String cmsmode = Struct.objectToString(StackUtil.queryVariable(state, "_Controller.Request.Cookies.dcmMode"));
 
 		// TODO add support for dates as well - look into future for schedules when selected
 
 		return ((cmsmode != null) && cmsmode.equals("now"));
 	}
 
-	static public boolean canEdit(InstructionWork state, XElement element) throws OperatingContextException {
+	static public boolean isEditReady(InstructionWork state, Base element) throws OperatingContextException {
+		return UIUtil.canEdit(state, element) && UIUtil.isEditMode(state, element);
+	}
+
+	static public boolean canEdit(InstructionWork state, Base element) throws OperatingContextException {
 		Struct editable = StackUtil.resolveReference(state, "$_CMSEditable", true);
 		
 		if (! Struct.objectToBooleanOrFalse(editable))

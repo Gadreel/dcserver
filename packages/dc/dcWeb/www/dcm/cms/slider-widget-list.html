@@ -1,0 +1,310 @@
+<dc.Html Badges="Admin,Editor">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Slider Entries" />
+	</Meta>
+
+	<Require Script="/js/vendor/sortable.min.js" />
+	<Require Icons="fas/times,fas/pencil-alt,far/image" />
+
+	<dc.Body>
+		<dc.Style>
+#dcmscarEntries > div {
+	padding: 12px;
+}
+
+#dcmscarEntriesTable.dc-table-stripe tbody tr:nth-child(odd) td {
+    background-color: lightyellow;
+}
+
+#dcmscarEntries a:visited,
+#dcmscarEntries a {
+	color: black;
+}
+
+#dcmscarEntries a:hover,
+#dcmscarEntries a:focus {
+	color: #444;
+}
+
+#dcmscarEntries img {
+	width: 95%;
+}
+
+		</dc.Style>
+		<dc.PagePanel>
+			<dcf.FormButtons>
+				<dc.Button Click="DoAdd" Label="Add Banner"  />
+				<dc.Button Label="Save and Preview" Click="DoSave" Scope="Primary" />
+			</dcf.FormButtons>
+
+			<table id="dcmscarEntriesTable" class="dc-table-break-medium dc-table dc-table-stripe dc-pui-sortable">
+				<tbody id="dcmscarEntries" />
+			</table>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load" Params="e"><![CDATA[
+			var entry = this;
+
+			/*
+			if (e.Thaw) {
+				entry.callPageFunc('LoadList');
+				return;
+			}
+			*/
+
+			//entry.Store.Aliases = [ ];
+			entry.Store.Changed = false;
+
+			dc.comm.sendMessage({
+				Service: 'dcmServices',
+				Feature: 'Feed',
+				Op: 'LoadPart',
+				Body: {
+					Feed: entry.Params.Feed,
+					Path: entry.Params.Path,
+					PartId: entry.Params.Id
+				}
+			}, function(rmsg) {
+				if (rmsg.Result != 0) {
+					dc.pui.Popup.alert(rmsg.Message);
+					return;
+				}
+
+				entry.Store.Widget = dc.util.Xml.toJQuery(rmsg.Body.Part);
+
+				entry.callPageFunc('LoadList');
+			});
+   ]]></Function>
+	<Function Name="LoadList"><![CDATA[
+			var entry = this;
+
+			var list = $('#dcmscarEntries');
+
+			list.empty();
+
+			var sortable = Sortable.create(list.get(0), {
+				onEnd: function (evt) {
+					entry.Store.Changed = true;
+					entry.callPageFunc('ReorderEntries');
+				}
+			});
+
+			var widget = entry.Store.Widget;
+
+			var gallerypath = $(widget).attr('Path');
+
+			// TODO support locale selection
+			var locale = $('html').attr('lang');
+
+			var $entries = widget.find('Image');
+
+			var editFunc = function(e) {
+				var editor = $(widget).attr('PropertyEditor');
+
+				if (editor)
+					editor = '/dcm/cms/slider-widget-image-props/' + editor;
+				else
+					editor = '/dcm/cms/slider-widget-image-props';
+
+				entry.Store.Callback = function() {
+					dc.pui.Dialog.loadPage(editor, {
+						Feed: entry.Params.Feed,
+						Path: entry.Params.Path,
+						PartId: entry.Params.Id,
+						Image: e.data,
+						//Gallery: gallery,
+						Callback: function() {
+							entry.reload();
+						}
+					});
+				}
+
+				entry.callPageFunc('DoSave');
+
+				e.preventDefault();
+				return false;
+			};
+
+			var imgFunc = function(e) {
+				entry.Store.Callback = function() {
+					dc.pui.Dialog.loadPage('/dcm/galleries/image-detail', {
+						Gallery: entry.Store.Gallery,
+						Path: gallerypath + '/' + e.data,
+						Name: e.data,
+						Callback: function(g) {
+							entry.reload();
+						}
+					});
+				}
+
+				entry.callPageFunc('DoSave');
+
+				e.preventDefault();
+				return false;
+			};
+
+			var remFunc = function(e) {
+				$(e.currentTarget).closest('tr').remove();
+
+				entry.Store.Changed = true;
+
+				entry.callPageFunc('ReorderEntries');
+
+				e.preventDefault();
+				return false;
+			};
+
+			for (var i = 0; i < $entries.length; i++) {
+				var xentry = $entries.get(i);
+
+				if (! $(xentry).attr('Alias'))
+					continue;
+
+				list.dcappend(
+					$('<tr>')
+						.addClass('hentry')
+						.attr('data-alias', $(xentry).attr('Alias'))
+						.attr('data-cms-img-pos', i + '')
+						.dcappend(
+							$('<td>').dcappend(
+								$('<img>').attr('src', '/galleries' + gallerypath + '/' + $(xentry).attr('Alias') + '.v/' + $(widget).attr('Variation')  + '.jpg')
+							),
+							$('<td>').dcappend(
+								$('<a>')
+									.attr('href', '#')
+									.click($(xentry).attr('Alias'), editFunc)
+									.dcappend(
+										dc.util.Icon.use('fas-pencil-alt')
+											.addClass('fa5-lg fa5-fw')
+									),
+								' ',
+								$('<a>')
+									.attr('href', '#')
+									.click($(xentry).attr('Alias'), imgFunc)
+									.dcappend(
+										dc.util.Icon.use('far-image')
+											.addClass('fa5-lg fa5-fw')
+									),
+								' ',
+								$('<a>')
+									.attr('href', '#')
+									.click($(xentry).attr('Alias'), remFunc)
+									.dcappend(
+										dc.util.Icon.use('fas-times')
+											.addClass('fa5-lg fa5-fw')
+									)
+							)
+						)
+				);
+			}
+
+			dc.cms.image.Loader.loadGallery(gallerypath, function(gallery, resp) {
+				entry.Store.Gallery = gallery;
+
+				if (resp.Result > 0) {
+					dc.pui.Popup.alert(resp.Message);
+					return;
+				}
+			});
+	]]></Function>
+	<Function Name="ReorderEntries"><![CDATA[
+			var entry = this;
+
+			/*
+			entry.Store.Aliases = [];
+
+			$('#dcmscarEntries > tr').each(function(i) {
+				var calias = $(this).attr('data-alias');
+				entry.Store.Aliases.push(calias);
+			});
+			*/
+	]]></Function>
+	<Function Name="DoAdd"><![CDATA[
+		var entry = this;
+
+		entry.Store.Callback = function() {
+			dc.pui.Dialog.loadPage('/dcm/galleries/chooser', {
+				Path: $(entry.Store.Widget).attr('Path'),
+				Callback: function(res) {
+					if (res.Images && res.Images.length) {
+						var fh = res.Images[0];
+
+						var newpath = fh.FullPath.substring(0, fh.FullPath.indexOf('.v'));
+						newpath = newpath.substring(newpath.lastIndexOf('/') + 1);
+
+						dc.cms.Loader.saveCommands(entry.Params.Feed, entry.Params.Path, [
+							{
+								Command: 'UpdatePart',
+								Params: {
+									PartId: entry.Params.Id,
+									Area: 'SetImage',
+									Alias: newpath,
+									AddTop: true
+								}
+							}
+						], function() {
+							entry.reload();
+						});
+					}
+				}
+			});
+		}
+
+		entry.callPageFunc('DoSave');
+	]]></Function>
+	<Function Name="DoSave"><![CDATA[
+		var entry = this;
+
+		if (entry.Store.Changed) {
+			//console.log('x: ' + JSON.stringify(entry.Store.Aliases));
+			var order = $('#dcmscarEntries tr.hentry[data-cms-img-pos]').map(function() { return $(this).attr('data-cms-img-pos'); }).get();
+
+			dc.comm.call('dcmServices.Feed.AddCommandHistory', {
+				Feed: entry.Params.Feed,
+				Path: entry.Params.Path,
+				Commands: [
+					{
+						Command: 'Reorder',
+						Params: {
+							PartId: entry.Params.Id,
+							Order: order
+						}
+					}
+				]
+			}, function(rmsg2) {
+				if (rmsg2.Result > 0) {
+					dc.pui.Popup.alert(rmsg2.Message);
+					return;
+				}
+
+				entry.Store.Changed = false;
+
+				// update img-pos
+				var order = $('#dcmscarEntries tr.hentry');
+
+				for (var i = 0; i < order.length; i++) {
+					$(order[i]).attr('data-cms-img-pos', i);
+				}
+
+				entry.callPageFunc('DoAfterSave');
+			});
+		}
+		else {
+			entry.callPageFunc('DoAfterSave');
+		}
+	]]></Function>
+	<Function Name="DoAfterSave"><![CDATA[
+		var entry = this;
+
+		if (entry.Store.Callback) {
+			entry.Store.Callback();
+			entry.Store.Callback = null;
+			return;
+		}
+
+		entry.Layer.back();
+
+		if (entry.Params.Callback)
+			entry.Params.Callback();
+	]]></Function>
+</dc.Html>

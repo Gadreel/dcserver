@@ -22,8 +22,11 @@ public class ProductPrice implements IComposer {
 						   RecordStruct field, boolean compact) throws OperatingContextException
 	{	
 		try {
-			BigDecimal price = Struct.objectToDecimal(db.getStaticScalar(table, id, "dcmPrice"));
-			
+			BigDecimal price = Struct.objectToDecimal(db.getStaticScalar(table, id, "dcmSalePrice"));
+
+			if (price == null)
+				price = Struct.objectToDecimal(db.getStaticScalar(table, id, "dcmPrice"));
+
 			if (price != null)
 				out.value(new DecimalFormat("#,###.00").format(price));
 			else

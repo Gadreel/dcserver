@@ -16,8 +16,10 @@ import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
+import dcraft.script.ScriptHub;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.web.ui.UIUtil;
 import dcraft.xml.XElement;
 import dcraft.xml.XmlReader;
 import dcraft.xml.XmlToJson;
@@ -50,8 +52,7 @@ public class LoadMeta implements IStoredProc {
 			@Override
 			public void callback(String result) throws OperatingContextException {
 				if (this.isNotEmptyResult()) {
-					// TODO parse as UI
-					XElement root = XmlReader.parse(result, true, true);
+					XElement root = ScriptHub.parseInstructions(result);
 					
 					if (root == null) {
 						Logger.error("Feed file not well formed XML");

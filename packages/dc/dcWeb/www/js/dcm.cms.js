@@ -174,6 +174,9 @@ dc.cms.Loader = {
 			entry.callPageFunc('onCmsInit')
 		});
 	},
+	isEditing: function() {
+		return (dc.cms.Loader.Enabled && (dc.util.Cookies.getCookie('dcmMode') != 'off'));
+	},
 	showMode: function() {
 		$('#dcuiMain')
 			.removeClass('dcuiCmsWidgetEnable')
@@ -1019,13 +1022,15 @@ dc.pui.TagFuncs['dcm.GalleryWidget']['doCmsInitWidget'] = function(entry, node) 
 							Path: path,
 							Callback: function(res) {
 								if (res.Images && res.Images.length) {
-									var fh = res.Images[0];
+									var cmds = [ ];
 
-									var newpath = fh.FullPath.substring(0, fh.FullPath.indexOf('.v'));
-									newpath = newpath.substring(newpath.lastIndexOf('/') + 1);
+									for (var ii = res.Images.length - 1; ii >= 0; ii--) {
+										var fh = res.Images[ii];
 
-									dc.cms.Loader.saveCommands(params.Feed, params.Path, [
-										{
+										var newpath = fh.FullPath.substring(0, fh.FullPath.indexOf('.v'));
+										newpath = newpath.substring(newpath.lastIndexOf('/') + 1);
+
+										cmds.push({
 											Command: 'UpdatePart',
 											Params: {
 												PartId: params.Id,
@@ -1033,8 +1038,10 @@ dc.pui.TagFuncs['dcm.GalleryWidget']['doCmsInitWidget'] = function(entry, node) 
 												Alias: newpath,
 												AddTop: true
 											}
-										}
-									], function() {
+										});
+									}
+
+									dc.cms.Loader.saveCommands(params.Feed, params.Path, cmds, function() {
 										dc.pui.Loader.MainLayer.refreshPage();
 									});
 								}
@@ -1492,6 +1499,64 @@ dc.pui.TagFuncs['dcm.CarouselWidget']['doCmsInitWidget'] = function(entry, node)
 };
 
 dc.pui.TagFuncs['dcm.CarouselWidget']['getParams'] = function(entry, node) {
+	var pel = $(node).closest('*[data-cms-type="feed"]').get(0);
+
+	if (! pel)
+		return null;
+
+	return {
+		Feed: $(pel).attr('data-cms-feed'),
+		Path: $(pel).attr('data-cms-path'),
+		Id: $(node).attr('id')
+	};
+};
+
+if (! dc.pui.TagFuncs['dcm.SliderWidget'])
+	dc.pui.TagFuncs['dcm.SliderWidget'] = { };
+
+dc.pui.TagFuncs['dcm.SliderWidget']['doCmsInitWidget'] = function(entry, node) {
+	var widget = this;
+
+	// after so we don't get drag and drop
+	$(node).dcappend(
+		dc.cms.Loader.createEditToolBar([
+			{
+				Icon: 'fa-pencil',
+				Title: 'Add',
+				Auth: [ 'Admin', 'Editor' ],
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+					//dc.pui.Dialog.loadPage('/dcm/cms/carousel-widget-list/' + params.Feed, params);
+
+					var params = entry.callTagFunc(widget, 'getParams');
+					dc.pui.Dialog.loadPage('/dcm/cms/slider-widget-list/' + params.Feed, params);
+				}
+			},
+			/*
+			{
+				Icon: 'fa-file-text-o',
+				Title: 'Template',
+				Auth: [ 'Developer' ],
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+					dc.pui.SimpleApp.loadPage('/dcm/cms/carousel-widget-template/' + params.Feed, params);
+				}
+			},
+			*/
+			{
+				Icon: 'fa-cog',
+				Title: 'Properties',
+				Auth: [ 'Admin', 'Editor' ],
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+					dc.pui.Dialog.loadPage('/dcm/cms/slider-widget-props/' + params.Feed, params);
+				}
+			}
+		])
+	);
+};
+
+dc.pui.TagFuncs['dcm.SliderWidget']['getParams'] = function(entry, node) {
 	var pel = $(node).closest('*[data-cms-type="feed"]').get(0);
 
 	if (! pel)
@@ -2337,6 +2402,11 @@ dc.cms.image.Gallery = function(path, meta, vault) {
 
 dc.cms.image.Gallery.prototype.topVariation = function(reqname) {
 	var vari = this.findVariation(reqname);
+
+	if (vari)
+		return vari;
+
+	vari = this.findVariation('large');
 
 	if (vari)
 		return vari;

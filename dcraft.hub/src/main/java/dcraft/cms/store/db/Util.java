@@ -1,5 +1,10 @@
 package dcraft.cms.store.db;
 
+import dcraft.db.proc.BasicFilter;
+import dcraft.db.proc.ExpressionResult;
+import dcraft.db.proc.filter.ActiveConfirmed;
+import dcraft.db.proc.filter.CurrentRecord;
+import dcraft.db.proc.filter.Unique;
 import dcraft.db.request.query.LoadRecordRequest;
 import dcraft.db.request.query.SelectFields;
 import dcraft.db.request.update.DbRecordRequest;
@@ -19,15 +24,21 @@ import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
+import dcraft.task.IWork;
 import dcraft.task.Task;
+import dcraft.task.TaskContext;
 import dcraft.task.TaskHub;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class Util {
 	static public void updateOrderStatus(TablesAdapter db, String id) throws OperatingContextException {
@@ -126,16 +137,19 @@ public class Util {
 		
 	}
 	
-	static public String productImagePath(TablesAdapter db, String id, String missingoverride) throws OperatingContextException {
-		return storeImagePath(db, "dcmProduct", id, missingoverride);
+	static public String productImagePath(TablesAdapter db, String id, String variant, String missingoverride) throws OperatingContextException {
+		return storeImagePath(db, "dcmProduct", id, variant, missingoverride);
 	}
 	
-	static public String categoryImagePath(TablesAdapter db, String id, String missingoverride) throws OperatingContextException {
-		return storeImagePath(db, "dcmCategory", id, missingoverride);
+	static public String categoryImagePath(TablesAdapter db, String id, String variant, String missingoverride) throws OperatingContextException {
+		return storeImagePath(db, "dcmCategory", id, variant, missingoverride);
 	}
 	
-	static public String storeImagePath(TablesAdapter db, String table, String id, String missingoverride) throws OperatingContextException {
+	static public String storeImagePath(TablesAdapter db, String table, String id, String variant, String missingoverride) throws OperatingContextException {
 		String area = "dcmCategory".equals(table) ? "category" : "product";
+
+		if (StringUtil.isEmpty(variant))
+			variant = "thumb";
 
 		String image = Struct.objectToString(db.getStaticScalar(table, id, "dcmImage"));
 		String alias = Struct.objectToString(db.getStaticScalar(table, id, "dcmAlias"));
@@ -149,7 +163,7 @@ public class Util {
 			// there should always be a "thumb" so check for it
 
 			LocalStoreFile file = (LocalStoreFile) OperationContext.getOrThrow().getSite().getGalleriesVault()
-					.getFileStore().fileReference(CommonPath.from(imagePath + ".v/thumb.jpg"));
+					.getFileStore().fileReference(CommonPath.from(imagePath + ".v/" + variant + ".jpg"));
 
 			if (file.exists())
 				return imagePath;
@@ -165,12 +179,191 @@ public class Util {
 			// there should always be a "thumb" so check for it
 
 			LocalStoreFile file = (LocalStoreFile) OperationContext.getOrThrow().getSite().getGalleriesVault()
-					.getFileStore().fileReference(CommonPath.from(imagePath + ".v/thumb.jpg"));
+					.getFileStore().fileReference(CommonPath.from(imagePath + ".v/" + variant + ".jpg"));
 
 			if (file.exists())
 				return imagePath;
 		}
 
 		return  "/store/" + area + "/not-found";
+	}
+
+						/*
+	static public String findDiscountRuleForProduct(TablesAdapter db, String productid) throws OperatingContextException {
+		Unique collector = Unique.unique();
+		ZonedDateTime now = ZonedDateTime.now();
+
+		collector.withNested(CurrentRecord.current().withNested(
+				new BasicFilter() {
+					@Override
+					public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, Object val) throws OperatingContextException {
+						String did = val.toString();
+
+						if (Struct.objectToBoolean(adapter.getStaticScalar(table, did, "dcmActive"), false)) {
+							ZonedDateTime start = Struct.objectToDateTime(adapter.getStaticScalar(table, did, "dcmStart"));
+							ZonedDateTime end = Struct.objectToDateTime(adapter.getStaticScalar(table, did, "dcmExpire"));
+
+							if ((start == null) || start.isBefore(now)) {
+								if ((end == null) || end.isAfter(now)) {
+									if (db.getStaticList("dcmDiscount", did, "dcmRuleProduct", productid) != null)
+										return ExpressionResult.FOUND;
+								}
+							}
+						}
+
+			<!-- Products group - for rules - FixedOffProduct,PercentOffProduct only -->
+			<Field Name="dcmRuleProduct" Group="Product" Type="Id" List="True" />
+			<Field Name="dcmRuleMode" Group="Product" Type="dcmDiscountModeEnum" List="True" />
+			<Field Name="dcmRuleAmount" Group="Product" Type="Decimal" List="True" />
+
+						return ExpressionResult.REJECTED;
+					}
+				})
+		);
+
+		db.traverseIndexReverseRange(OperationContext.getOrNull(), "dcmDiscount", "dcmType", "Rule", "Rule", collector);
+
+		if (collector.getValues().size() > 0)
+			return collector.getOne().toString();
+
+		return null;
+	}
+						 */
+
+	static public void resolveDiscountRules(TablesAdapter db) throws OperatingContextException {
+		ZonedDateTime now = ZonedDateTime.now();
+
+		CurrentRecord collector = CurrentRecord.current();
+
+		Set<String> prodstouched = new HashSet<>();
+
+		collector.withNested(
+			new BasicFilter() {
+				@Override
+				public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, Object val) throws OperatingContextException {
+					String did = val.toString();
+
+					boolean activediscount = Struct.objectToBoolean(adapter.getStaticScalar(table, did, "dcmActive"), false);
+
+					ZonedDateTime start = Struct.objectToDateTime(adapter.getStaticScalar(table, did, "dcmStart"));
+					ZonedDateTime end = Struct.objectToDateTime(adapter.getStaticScalar(table, did, "dcmExpire"));
+
+					boolean activerule = false;
+
+					if (activediscount) {
+						if ((start == null) || start.isBefore(now)) {
+							if ((end == null) || end.isAfter(now)) {
+								activerule = true;
+							}
+						}
+					}
+
+					if ((end != null) && end.isBefore(now)) {
+						adapter.updateStaticScalar("dcmDiscount", did, "dcmActive", false);
+						activediscount = false;
+					}
+
+					List<String> prods = adapter.getStaticListKeys("dcmDiscount", did, "dcmRuleProduct");
+
+					for (String pid : prods) {
+						BigDecimal oldsaleprice = Struct.objectToDecimal(adapter.getStaticScalar("dcmProduct", pid, "dcmSalePrice"));
+
+						if (activerule) {
+							BigDecimal saleprice = Struct.objectToDecimal(adapter.getStaticScalar("dcmProduct", pid, "dcmPrice"));
+
+							if (saleprice == null)
+								saleprice = BigDecimal.ZERO;
+
+							String mode = Struct.objectToString(adapter.getStaticList("dcmDiscount", did, "dcmRuleMode", pid));
+							BigDecimal amount = Struct.objectToDecimal(adapter.getStaticList("dcmDiscount", did, "dcmRuleAmount", pid));
+
+							if ("FixedOffProduct".equals(mode)) {
+								saleprice = amount;
+							}
+							else {
+								saleprice = saleprice.subtract(saleprice.multiply(amount).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
+							}
+
+							if ((oldsaleprice == null) || saleprice.compareTo(oldsaleprice) != 0) {
+								adapter.updateStaticScalar("dcmProduct", pid, "dcmSalePrice", saleprice);
+
+								Logger.info("Product sale started: " + pid + " at " + saleprice.toPlainString());
+							}
+						}
+						else if (! prodstouched.contains(pid)) {
+							if (oldsaleprice != null) {
+								adapter.retireStaticScalar("dcmProduct", pid, "dcmSalePrice");
+
+								Logger.info("Product sale ended: " + pid);
+							}
+						}
+
+						prodstouched.add(pid);
+					}
+
+					if (! activediscount)
+						adapter.updateStaticScalar("dcmDiscount", did,"dcmState",  "Ignore");
+
+					return ExpressionResult.ACCEPTED;
+				}
+			}
+		);
+
+		// forward direction so that the latest rules override
+		db.traverseIndex(OperationContext.getOrNull(), "dcmDiscount", "dcmState", "Check", collector);
+	}
+
+	static public void scheduleDiscountRules(TablesAdapter db) throws OperatingContextException {
+		ZonedDateTime recent = ZonedDateTime.now().minusMinutes(1);
+		ZonedDateTime soon = ZonedDateTime.now().plusMinutes(15);
+
+		CurrentRecord collector = CurrentRecord.current();
+
+		collector.withNested(
+			new BasicFilter() {
+				@Override
+				public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, Object val) throws OperatingContextException {
+					String did = val.toString();
+
+					boolean activediscount = Struct.objectToBoolean(adapter.getStaticScalar(table, did, "dcmActive"), false);
+
+					if (activediscount) {
+						ZonedDateTime start = Struct.objectToDateTime(adapter.getStaticScalar(table, did, "dcmStart"));
+						ZonedDateTime end = Struct.objectToDateTime(adapter.getStaticScalar(table, did, "dcmExpire"));
+
+						if ((start != null) && start.isBefore(soon) && start.isAfter(recent)) {
+							TaskHub.scheduleAt(Task.ofSubContext()
+											.withTitle("Store Discount Scheduled")
+											.withWork(new IWork() {
+												@Override
+												public void run(TaskContext taskctx) throws OperatingContextException {
+													Util.resolveDiscountRules(db);
+													taskctx.returnEmpty();
+												}
+											}),
+									start);
+						}
+
+						if ((end != null) && end.isBefore(soon) && end.isAfter(recent)) {
+							TaskHub.scheduleAt(Task.ofSubContext()
+											.withTitle("Store Discount Scheduled")
+											.withWork(new IWork() {
+												@Override
+												public void run(TaskContext taskctx) throws OperatingContextException {
+													Util.resolveDiscountRules(db);
+													taskctx.returnEmpty();
+												}
+											}),
+									end);
+						}
+					}
+
+					return ExpressionResult.ACCEPTED;
+				}
+			}
+		);
+
+		// forward direction so that the latest rules override
+		db.traverseIndex(OperationContext.getOrNull(), "dcmDiscount", "dcmState", "Check", collector);
 	}
 }

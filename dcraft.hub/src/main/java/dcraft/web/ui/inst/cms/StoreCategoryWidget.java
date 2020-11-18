@@ -214,16 +214,40 @@ public class StoreCategoryWidget extends Base implements ICMSAware {
 			Path imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
 					OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
 
-			try {
-				FileTime fileTime = Files.getLastModifiedTime(imgpath);
-				category.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
+			boolean found = false;
+
+			if ((imgpath == null) || ! Files.exists(imgpath)) {
+				if (StringUtil.isNotEmpty(missing)) {
+					lpath = "/store/category/" + missing + ".v/" + vari + "." + ext;
+
+					imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
+							OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
+
+					if ((imgpath != null) && Files.exists(imgpath)) {
+						found = true;
+					}
+				}
 			}
-			catch (IOException x) {
+			else {
+				found = true;
+			}
+
+			if (found) {
+				try {
+					FileTime fileTime = Files.getLastModifiedTime(imgpath);
+					category.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
+				}
+				catch (IOException x) {
+					Logger.warn("Problem finding image file: " + lpath);
+					category.with("Path", "/galleries" + lpath);
+				}
+			}
+			else {
 				Logger.warn("Problem finding image file: " + lpath);
 				category.with("Path", "/galleries" + lpath);
 			}
 
-			if (showprod)
+			if (! showprod)
 				category.with("CMSOnly", "true");
 
 			if (showprod || editable)

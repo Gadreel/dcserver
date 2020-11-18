@@ -77,8 +77,8 @@ public class IncludeFeed extends Base {
 		RecordStruct page = (RecordStruct) StackUtil.queryVariable(state, "Page");
 		
 		boolean usemeta = StackUtil.boolFromSource(state, "Meta", false);
-		String feed = StackUtil.stringFromSource(state, "Name", "pages");
-		String path = StackUtil.stringFromSource(state, "Path", page.getFieldAsString("Path"));
+		String feed = StackUtil.stringFromSourceClean(state, "Name", "pages");
+		String path = StackUtil.stringFromSourceClean(state, "Path", page.getFieldAsString("Path"));
 
 		String fpath = "/" + feed + path;
 

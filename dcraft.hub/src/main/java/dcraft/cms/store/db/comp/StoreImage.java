@@ -22,7 +22,17 @@ public class StoreImage implements IComposer {
 						   RecordStruct field, boolean compact) throws OperatingContextException
 	{	
 		try {
-			String imagePath = Util.storeImagePath(db, table, id, null);
+			String variant = "thumb";
+			String missing = null;
+
+			if ((field != null) && field.isNotFieldEmpty("Params")) {
+				RecordStruct params = field.getFieldAsRecord("Params");
+
+				variant = params.getFieldAsString("Variant", variant);
+				missing = params.getFieldAsString("Missing");
+			}
+
+			String imagePath = Util.storeImagePath(db, table, id, variant, missing);
 			
 			out.value(imagePath);
 		}

@@ -1,5 +1,6 @@
 package dcraft.cms.store.db.discounts;
 
+import dcraft.cms.store.db.Util;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
 import dcraft.db.request.update.UpdateRecordRequest;
@@ -16,15 +17,24 @@ public class Update implements IStoredProc {
 
 		TablesAdapter db = TablesAdapter.ofNow(request);
 
+		String id = data.getFieldAsString("Id");
+
 		TableUtil.updateRecord(db, UpdateRecordRequest.update()
 				.withTable("dcmDiscount")
-				.withId(data.getFieldAsString("Id"))
+				.withId(id)
 				.withConditionallyUpdateFields(data, "Title", "dcmTitle", "Type", "dcmType",
 						"Mode", "dcmMode", "Code", "dcmCode", "Amount", "dcmAmount", "MinimumOrder", "dcmMinimumOrder",
 						"Start", "dcmStart", "Expire", "dcmExpire", "Automatic", "dcmAutomatic",
 						"OneTimeUse", "dcmOneTimeUse", "WasUsed", "dcmWasUsed", "Active", "dcmActive"
 				)
 		);
+
+		db.updateStaticScalar("dcmDiscount", id, "dcmState", "Check");
+
+		Util.resolveDiscountRules(db);
+
+		if (data.hasField("Active") || data.hasField("Start") || data.hasField("Expire"))
+			Util.scheduleDiscountRules(db);
 
 		callback.returnEmpty();
 	}

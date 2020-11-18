@@ -168,7 +168,14 @@ For each image there needs to be a file for each variant. Images should be compr
 					Id: $(e.currentTarget).closest('tr').attr('data-id'),
 					Approved: true
 				}, function(resp) {
-						page.Layer.refreshPage();
+					$tr = $(e.currentTarget).closest('tr');
+
+					$tr.addClass('checked');
+
+					$tr.find('td:first-child svg use').attr('href', '#far-check-circle');
+					$tr.find('td:first-child svg').addClass('green').removeClass('black');
+
+					//page.Layer.refreshPage();
 				});
 		]]></Function>
 	</dc.Out>

@@ -214,6 +214,9 @@ public class GalleryWidget extends Base implements ICMSAware {
 						.with("Element", XmlToJson.convertXml(img,true))
 				);
 			}
+
+			if (images.size() < 2)
+				this.withClass("single");
 		}
 		
 		UIUtil.markIfEditable(state, this, "widget");

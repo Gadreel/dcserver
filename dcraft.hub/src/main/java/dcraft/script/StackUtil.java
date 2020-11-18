@@ -107,7 +107,31 @@ public class StackUtil {
 		
 		return def;
 	}
-	
+
+	static public String stringFromSourceClean(InstructionWork stackWork, String attr) throws OperatingContextException {
+		return StackUtil.stringFromElementClean(stackWork, stackWork.getInstruction(), attr, null);
+	}
+
+	static public String stringFromSourceClean(InstructionWork stackWork, String attr, String def) throws OperatingContextException {
+		return StackUtil.stringFromElementClean(stackWork, stackWork.getInstruction(), attr, def);
+	}
+
+	static public String stringFromElementClean(IParentAwareWork stackWork, XElement el, String attr) throws OperatingContextException {
+		return StackUtil.stringFromElementClean(stackWork, el, attr, null);
+	}
+
+	static public String stringFromElementClean(IParentAwareWork stackWork, XElement el, String attr, String def) throws OperatingContextException {
+		if ((el == null) || StringUtil.isEmpty(attr))
+			return def;
+
+		String ret = StackUtil.resolveValueToString(stackWork, el.getAttribute(attr), true);
+
+		if (StringUtil.isNotEmpty(ret))
+			return ret;
+
+		return def;
+	}
+
 	static public long intFromSource(InstructionWork stackWork, String attr) throws OperatingContextException {
 		return StackUtil.intFromElement(stackWork, stackWork.getInstruction(), attr, 0);
 	}
