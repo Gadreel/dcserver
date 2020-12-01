@@ -636,7 +636,21 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 			String field = StackUtil.stringFromElement(stack, code, "ByField");
 			boolean descending = StackUtil.boolFromElement(stack, code, "Desc", false);
 
-			this.sortRecords(field, descending);
+			if (StringUtil.isNotEmpty(field)) {
+				this.sortRecords(field, descending);
+			}
+			else {
+				ListStruct fields = ListStruct.list();
+
+				for (XElement sfield : code.selectAll("Field")) {
+					fields.with(RecordStruct.record()
+							.with("Field", StackUtil.stringFromElement(stack, sfield, "Name"))
+							.with("Descending", StackUtil.boolFromElement(stack, sfield, "Desc", false))
+					);
+				}
+
+				this.sortRecords(fields);
+			}
 			
 			return ReturnOption.CONTINUE;
 		}
@@ -717,7 +731,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		if (StringUtil.isEmpty(field))
 			return;
 		
-		this.items.sort(new Comparator<Struct>() {
+		this.sort(new Comparator<Struct>() {
 			@Override
 			public int compare(Struct o1, Struct o2) {
 				Struct fld1 = ((RecordStruct)o1).getField(field);
@@ -744,6 +758,13 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 				return 0;
 			}
 		});
+	}
+
+	public void sortRecords(ListStruct fields) {
+		if ((fields == null) || (fields.size() == 0))
+			return;
+
+		this.sort(NestedCompareSorter.of(fields));
 	}
 
 	@Override

@@ -21,6 +21,10 @@
 		<SetField Name="Record" Value="Options" />
 	</dcs.Var>
 
+	<dcdb.LoadTenant Result="StoreSettings">
+		<Select Field="dcmStoreInstructionsProduct" As="InstructionsProduct" />
+	</dcdb.LoadTenant>
+
 	<dc.Body>
 		<dc.PagePanel>
 			<dcf.Form RecordOrder="Options,Default">
@@ -33,7 +37,25 @@
 						<dc.Column Size="3-4" Pad="Medium">
 							<dcf.Label Label="Product" Name="Title" />
 							<dcf.Label Label="Description" Name="Description" />
-							<dcf.Label Label="Instructions" Name="Instructions" />
+
+							<dcs.If Target="$Product.Instructions" IsEmpty="false">
+								<dc.Out>
+									<dcf.Label Label="Special Instructions" Name="Instructions" />
+								</dc.Out>
+							</dcs.If>
+
+							<dcs.If Target="$StoreSettings.InstructionsProduct" IsEmpty="false">
+								<dc.Out>
+									<dcf.Custom Label="General Instructions">
+										<div>
+											<dc.TextWidget>
+												<Tr Locale="eng">{$StoreSettings.InstructionsProduct}</Tr>
+											</dc.TextWidget>
+										</div>
+									</dcf.Custom>
+								</dc.Out>
+							</dcs.If>
+
 							<dcf.Label Label="Price" Name="Price" />
 							<dcf.Text Label="Quantity" Name="Quantity" Type="Decimal" Required="true" />
 							<div id="sectCustomFields">

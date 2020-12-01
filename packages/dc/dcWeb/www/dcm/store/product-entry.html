@@ -163,6 +163,8 @@
 			//if (! dc.util.String.isEmpty(e.Data.Price))
 			//	e.Data.Price = dc.util.Number.toNumberStrict(e.Data.Price);	// convert to number
 
+			delete e.Data.SalePrice;
+
 			e.Message = {
 				Service: 'dcmStoreServices',
 				Feature: 'Product',

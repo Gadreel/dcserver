@@ -28,7 +28,7 @@ public class Add implements IStoredProc {
 				.withTable("dcmDiscount")
 				.withConditionallyUpdateFields(data, "Title", "dcmTitle", "Type", "dcmType",
 						"Mode", "dcmMode", "Code", "dcmCode", "Amount", "dcmAmount", "MinimumOrder", "dcmMinimumOrder",
-						"Start", "dcmStart", "Expire", "dcmExpire", "Automatic", "dcmAutomatic",
+						"Start", "dcmStart", "Expire", "dcmExpire", "Automatic", "dcmAutomatic", "ProductId", "dcmProduct",
 						"OneTimeUse", "dcmOneTimeUse", "WasUsed", "dcmWasUsed", "Active", "dcmActive"
 				)
 				.withSetField("dcmEntryDate", TimeUtil.now());

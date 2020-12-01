@@ -1049,33 +1049,63 @@ public class OrderUtil {
 							
 							// ignore FixedOffTotal for now, FixedOffProduct seems appropriate
 							
+							String ctype = Struct.objectToString(db.getStaticScalar("dcmDiscount", discid, "dcmType"));
+
 							String mode = Struct.objectToString(db.getStaticScalar("dcmDiscount", discid, "dcmMode"));
 							BigDecimal amt = Struct.objectToDecimal(db.getStaticScalar("dcmDiscount", discid, "dcmAmount"));
-							
-							if ("FixedOffProduct".equals(mode))
-								itmdiscount.set(amt);
-							
-							// amount = % off as in 20 for 20% off
-							if ("PercentOffProduct".equals(mode))
-								itmdiscount.set(itmcalc.get().multiply(amt).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
-							
-							if ("FixedOffShipping".equals(mode))
-								shipdiscount.set(amt);
-							
-							// amount = % off as in 20 for 20% off
-							if ("PercentOffShipping".equals(mode))
-								shipdiscount.set(shipamt.get().multiply(amt).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
-							
-							if ("FlatShipping".equals(mode)) {
-								// even it out so that we add/subtract to a level
-								shipdiscount.set(shipamt.get().subtract(amt));
-								
-								if (shipdiscount.get().stripTrailingZeros().compareTo(BigDecimal.ZERO) < 0)
-									shipdiscount.set(shipdiscount.get().negate());
+
+							if ("ProductCoupon".equals(ctype)) {
+								String cproductid = Struct.objectToString(db.getStaticScalar("dcmDiscount", discid, "dcmProduct"));
+
+								for (Struct itm : fnditems.items()) {
+									RecordStruct orgitem = Struct.objectToRecord(itm);
+
+									String prodid = orgitem.getFieldAsString("Product");
+
+									if (prodid.equals(cproductid)) {
+										long qty = orgitem.getFieldAsInteger("Quantity", 0);
+
+										// if there is one in the order, apply that discount
+										if (qty > 0) {
+											if ("FixedOffProduct".equals(mode)) {
+												itmdiscount.set(amt);
+											}
+											// amount = % off as in 20 for 20% off
+											else if ("PercentOffProduct".equals(mode)) {
+												BigDecimal price = orgitem.getFieldAsDecimal("Price", BigDecimal.ZERO);
+
+												itmdiscount.set(price.multiply(amt).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
+											}
+										}
+									}
+								}
 							}
-							
-							if ("FreeShipping".equals(mode))
-								shipdiscount.set(shipamt.get());
+							else if ("Coupon".equals(ctype)) {
+								if ("FixedOffProduct".equals(mode))
+									itmdiscount.set(amt);
+
+								// amount = % off as in 20 for 20% off
+								if ("PercentOffProduct".equals(mode))
+									itmdiscount.set(itmcalc.get().multiply(amt).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
+
+								if ("FixedOffShipping".equals(mode))
+									shipdiscount.set(amt);
+
+								// amount = % off as in 20 for 20% off
+								if ("PercentOffShipping".equals(mode))
+									shipdiscount.set(shipamt.get().multiply(amt).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
+
+								if ("FlatShipping".equals(mode)) {
+									// even it out so that we add/subtract to a level
+									shipdiscount.set(shipamt.get().subtract(amt));
+
+									if (shipdiscount.get().stripTrailingZeros().compareTo(BigDecimal.ZERO) < 0)
+										shipdiscount.set(shipdiscount.get().negate());
+								}
+
+								if ("FreeShipping".equals(mode))
+									shipdiscount.set(shipamt.get());
+							}
 						}
 					}
 				}

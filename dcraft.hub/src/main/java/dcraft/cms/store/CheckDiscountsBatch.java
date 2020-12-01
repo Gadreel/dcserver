@@ -21,7 +21,7 @@ public class CheckDiscountsBatch extends ChainWork {
 				.then(new IWork() {
 					@Override
 					public void run(TaskContext taskctx) throws OperatingContextException {
-						ServiceHub.call(ServiceRequest.of("dcmStoreServices.Discounts.ResolveAll").withOutcome(new OperationOutcomeStruct() {
+						ServiceHub.call(ServiceRequest.of("dcmStoreServices.Discounts.ScheduleAll").withOutcome(new OperationOutcomeStruct() {
 							@Override
 							public void callback(Struct result) throws OperatingContextException {
 								taskctx.returnEmpty();

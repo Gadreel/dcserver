@@ -6,7 +6,8 @@
 	<dc.Body>
 		<dc.PagePanel>
 			<dcf.FormButtons>
-				<dc.Button Label="Add Coupon" Click="DoAddCoupon" />
+				<dc.Button Label="Add General Coupon" Click="DoAddCoupon" />
+				<dc.Button Label="Add Product Coupon" Click="DoAddProductCoupon" />
 				<dc.Button Label="Add Rule" Click="DoAddRule" />
 			</dcf.FormButtons>
 
@@ -89,6 +90,14 @@
 												}
 											});
 										}
+										else if (e.data.Type == 'ProductCoupon') {
+											dc.pui.Dialog.loadPage('/dcm/store/discount-product-coupon-entry', {
+												Id: e.data.Id,
+												Callback: function() {
+													page.Layer.refreshPage();
+												}
+											});
+										}
 										else if (e.data.Type == 'Rule') {
 											dc.pui.Dialog.loadPage('/dcm/store/discount-rule-entry', {
 												Id: e.data.Id,
@@ -113,6 +122,33 @@
 			dc.pui.Dialog.loadPage('/dcm/store/discount-entry', {
 				Callback: function() {
 					page.Layer.refreshPage();
+				}
+			});
+	]]></Function>
+	<Function Name="DoAddProductCoupon" Params="e"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcm/store/category-chooser-callback', {
+				Callback: function(data) {
+
+					// give thaw a chance to finish then open new dialog
+					setTimeout(function() {
+						dc.pui.Dialog.loadPage('/dcm/store/product-chooser-callback', {
+							CategoryId: data.CategoryId,
+							Callback: function(data2) {
+								// give thaw a chance to finish then open new dialog
+								setTimeout(function() {
+									dc.pui.Dialog.loadPage('/dcm/store/discount-product-coupon-entry', {
+										ProductId: data2.ProductId,
+										ProductAlias: data2.ProductAlias,
+										Callback: function(res) {
+											page.Layer.refreshPage();
+										}
+									});
+								}, 250);
+							}
+						});
+					}, 250);
 				}
 			});
 	]]></Function>

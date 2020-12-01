@@ -24,7 +24,7 @@ public class Update implements IStoredProc {
 				.withId(id)
 				.withConditionallyUpdateFields(data, "Title", "dcmTitle", "Type", "dcmType",
 						"Mode", "dcmMode", "Code", "dcmCode", "Amount", "dcmAmount", "MinimumOrder", "dcmMinimumOrder",
-						"Start", "dcmStart", "Expire", "dcmExpire", "Automatic", "dcmAutomatic",
+						"Start", "dcmStart", "Expire", "dcmExpire", "Automatic", "dcmAutomatic", "ProductId", "dcmProduct",
 						"OneTimeUse", "dcmOneTimeUse", "WasUsed", "dcmWasUsed", "Active", "dcmActive"
 				)
 		);

@@ -11,6 +11,10 @@
 				[ { Min: NNN, Amount: $$$ }, { Min: NNN, Amount: $$$ } ]
 			-->
 			<Field Name="dcmShippingTable" Type="AnyRecord" />
+
+			<Field Name="dcmStoreInstructionsProduct" Type="dcLargeString" />
+			<Field Name="dcmStoreInstructionsPickup" Type="dcLargeString" />
+			<Field Name="dcmStoreHoursEmail" Type="dcLargeString" />
 		</Table>
 
 		<!-- extend state -->
@@ -236,6 +240,9 @@
 			<Field Name="dcmStart" Type="DateTime" />
 			<Field Name="dcmExpire" Type="DateTime" />
 
+			<!-- product specific coupon -->
+			<Field Name="dcmProduct" Type="Id" />
+
 			<!-- this is a general discount (sale), no code required -->
 			<Field Name="dcmAutomatic" Type="Boolean" />
 			<Field Name="dcmOneTimeUse" Type="Boolean" />
@@ -263,6 +270,9 @@
 			<Field Name="dcmProducts" List="True" ForeignKey="dcmProduct" />
 		</Table>
 
+		<Procedure Name="dcmStoreServices.Settings.Load" Execute="dcraft.cms.store.db.settings.Load" />
+		<Procedure Name="dcmStoreServices.Settings.Update" Execute="dcraft.cms.store.db.settings.Update" />
+
 		<Procedure Name="dcmRecordShipment" Execute="dcraft.cms.store.db.orders.RecordShipment" />
 		<Procedure Name="dcmUpdateItems" Execute="dcraft.cms.store.db.orders.UpdateItems" />
 
@@ -289,6 +299,7 @@
 		<Procedure Name="dcmStoreServices.Discounts.UpdateRuleProduct" Execute="dcraft.cms.store.db.discounts.UpdateRuleProduct" />
 		<Procedure Name="dcmStoreServices.Discounts.RetireRuleProduct" Execute="dcraft.cms.store.db.discounts.RetireRuleProduct" />
 		<Procedure Name="dcmStoreServices.Discounts.ResolveAll" Execute="dcraft.cms.store.db.discounts.ResolveAll" />
+		<Procedure Name="dcmStoreServices.Discounts.ScheduleAll" Execute="dcraft.cms.store.db.discounts.ScheduleAll" />
 
 		<Procedure Name="dcmStoreServices.Product.Load" Execute="dcraft.cms.store.db.products.Load" />
 		<Procedure Name="dcmStoreServices.Product.LoadCustomFields" Execute="dcraft.cms.store.db.products.LoadCustomFields" />
@@ -314,7 +325,7 @@
 		</StringType>
 
 		<StringType Id="dcmDiscountTypeEnum">
-			<StringRestriction Enum="Coupon,Rule,Sale,GiftCertificate,Credit" />
+			<StringRestriction Enum="Coupon,Rule,ProductCoupon,Sale,GiftCertificate,Credit" />
 		</StringType>
 
 		<StringType Id="dcmDiscountModeEnum">
@@ -632,6 +643,30 @@
 
 	<Services>
 		<Service Name="dcmStoreServices">
+			<Feature Name="Settings">
+				<Secure Badges="Admin">
+					<Op Name="Load">
+						<Description>
+							Store wide settings.
+						</Description>
+						<RecordResponse>
+							<Field Name="StoreInstructionsProduct" Type="dcTenant:dcmStoreInstructionsProduct" />
+							<Field Name="StoreInstructionsPickup" Type="dcTenant:dcmStoreInstructionsPickup" />
+							<Field Name="StoreHoursEmail" Type="dcTenant:dcmStoreHoursEmail" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Update">
+						<Description>
+							Store wide settings.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="StoreInstructionsProduct" Type="dcTenant:dcmStoreInstructionsProduct" />
+							<Field Name="StoreInstructionsPickup" Type="dcTenant:dcmStoreInstructionsPickup" />
+							<Field Name="StoreHoursEmail" Type="dcTenant:dcmStoreHoursEmail" />
+						</RecordRequest>
+					</Op>
+				</Secure>
+			</Feature>
 			<Feature Name="Orders">
 				<Secure Badges="User,Guest">
 					<Op Name="Calculate">
@@ -1399,6 +1434,10 @@
 							<Field Name="Automatic" Type="dcmDiscount:dcmAutomatic" />
 							<Field Name="OneTimeUse" Type="dcmDiscount:dcmOneTimeUse" />
 							<Field Name="WasUsed" Type="dcmDiscount:dcmWasUsed" />
+
+							<Field Name="ProductId" Type="dcmDiscount:dcmProduct" />
+							<Field Name="Product" Type="dcmProduct:dcmTitle" />
+
 							<Field Name="Products">
 								<List>
 									<Record>
@@ -1429,6 +1468,8 @@
 							<Field Name="Automatic" Type="dcmDiscount:dcmAutomatic" />
 							<Field Name="OneTimeUse" Type="dcmDiscount:dcmOneTimeUse" />
 							<Field Name="WasUsed" Type="dcmDiscount:dcmWasUsed" />
+
+							<Field Name="ProductId" Type="dcmDiscount:dcmProduct" />
 						</RecordRequest>
 					</Op>
 					<Op Name="Add">
@@ -1448,6 +1489,8 @@
 							<Field Name="Automatic" Type="dcmDiscount:dcmAutomatic" />
 							<Field Name="OneTimeUse" Type="dcmDiscount:dcmOneTimeUse" />
 							<Field Name="WasUsed" Type="dcmDiscount:dcmWasUsed" />
+
+							<Field Name="ProductId" Type="dcmDiscount:dcmProduct" />
 						</RecordRequest>
 						<RecordResponse>
 							<Field Name="Id" Type="dcmDiscount:Id" />
@@ -1535,6 +1578,11 @@
 						</RecordRequest>
 					</Op>
 					<Op Name="ResolveAll">
+						<Description>
+							Put all the rules into effect.
+						</Description>
+					</Op>
+					<Op Name="ScheduleAll">
 						<Description>
 							Put all the rules into effect.
 						</Description>

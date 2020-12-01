@@ -10,6 +10,7 @@ import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
+import dcraft.util.StringUtil;
 
 public class Load implements IStoredProc {
 	@Override
@@ -36,6 +37,7 @@ public class Load implements IStoredProc {
 				.with("dcmAutomatic", "Automatic")
 				.with("dcmOneTimeUse", "OneTimeUse")
 				.with("dcmWasUsed", "WasUsed")
+				.withAs("ProductId", "dcmProduct")
 				.withGroup("dcmRuleProduct", "Products", "ProductId",
 					SelectFields.select()
 							.with("dcmRuleAmount", "Amount")
@@ -44,12 +46,17 @@ public class Load implements IStoredProc {
 
 		RecordStruct result = TableUtil.getRecord(db, OperationContext.getOrThrow(), "dcmDiscount", id, fields);
 
+		String pid = result.getFieldAsString("ProductId");
+
+		if (StringUtil.isNotEmpty(pid))
+			result.with("Product", db.getStaticScalar("dcmProduct", pid, "dcmTitle"));
+
 		ListStruct products = result.getFieldAsList("Products");
 
 		for (int i = 0; i < products.size(); i++) {
 			RecordStruct prod = products.getItemAsRecord(i);
 
-			String pid = prod.getFieldAsString("ProductId");
+			pid = prod.getFieldAsString("ProductId");
 
 			prod.with("Product", db.getStaticScalar("dcmProduct", pid, "dcmTitle"));
 		}

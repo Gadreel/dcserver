@@ -1,0 +1,46 @@
+<dc.Html Badges="Admin">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Store Settings" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.TextArea Label="General Product Instructions" Name="StoreInstructionsProduct" />
+				<dcf.TextArea Label="Pickup Instructions" Name="StoreInstructionsPickup" />
+				<dcf.TextArea Label="Hours in Email" Name="StoreHoursEmail" />
+
+				<dcf.FormButtons>
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var page = this;
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+				e.Message = {
+					Service: 'dcmStoreServices',
+					Feature: 'Settings',
+					Op: 'Load'
+				};
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Message = {
+				Service: 'dcmStoreServices',
+				Feature: 'Settings',
+				Op: 'Update',
+				Body: e.Data
+			};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			dc.pui.Popup.alert("Saved.");
+	]]></Function>
+</dc.Html>

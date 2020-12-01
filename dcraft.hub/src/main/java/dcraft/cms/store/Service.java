@@ -84,6 +84,13 @@ public class Service extends BaseDataService {
 		if ("GiftRegistry".equals(feature))
 			return GiftRegistry.handle(request, callback);
 
+		// =========================================================
+		//  settings
+		// =========================================================
+
+		if ("Settings".equals(feature))
+			return super.handle(request, callback);
+
 		return false;
 	}
 }

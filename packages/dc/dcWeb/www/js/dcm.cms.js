@@ -691,6 +691,12 @@ dc.pui.Apps.Menus.dcmStore = {
 			Title: 'Gift Registry',
 			Auth: [ 'Admin', 'Clerk' ],
 			Path: '/dcm/store/registry'
+		},
+		{
+			Alias: 'Settings',
+			Title: 'Settings',
+			Auth: [ 'Admin' ],
+			Path: '/dcm/store/settings'
 		}
 	],
 	Options: [

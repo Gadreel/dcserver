@@ -1,5 +1,6 @@
 package dcraft.cms.store.db;
 
+import dcraft.db.DatabaseException;
 import dcraft.db.proc.BasicFilter;
 import dcraft.db.proc.ExpressionResult;
 import dcraft.db.proc.filter.ActiveConfirmed;
@@ -10,6 +11,7 @@ import dcraft.db.request.query.SelectFields;
 import dcraft.db.request.update.DbRecordRequest;
 import dcraft.db.request.update.UpdateRecordRequest;
 import dcraft.db.tables.TablesAdapter;
+import dcraft.db.util.ByteUtil;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.local.LocalStoreFile;
 import dcraft.hub.app.ApplicationHub;
@@ -36,9 +38,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static dcraft.db.Constants.DB_GLOBAL_RECORD;
 
 public class Util {
 	static public void updateOrderStatus(TablesAdapter db, String id) throws OperatingContextException {
@@ -233,6 +238,8 @@ public class Util {
 	static public void resolveDiscountRules(TablesAdapter db) throws OperatingContextException {
 		ZonedDateTime now = ZonedDateTime.now();
 
+		// TODO lock / claim so that it cannot run twice at same time - though this runs in Batch typically so not often an issue
+
 		CurrentRecord collector = CurrentRecord.current();
 
 		Set<String> prodstouched = new HashSet<>();
@@ -263,12 +270,14 @@ public class Util {
 						activediscount = false;
 					}
 
-					List<String> prods = adapter.getStaticListKeys("dcmDiscount", did, "dcmRuleProduct");
+					// special case, get all the keys even if retired
+					List<String> prods = Util.getStaticListKeys(adapter, "dcmDiscount", did, "dcmRuleProduct");
 
 					for (String pid : prods) {
 						BigDecimal oldsaleprice = Struct.objectToDecimal(adapter.getStaticScalar("dcmProduct", pid, "dcmSalePrice"));
+						String confirmpid = Struct.objectToString(adapter.getStaticList("dcmDiscount", did, "dcmRuleProduct", pid));
 
-						if (activerule) {
+						if (activerule && StringUtil.isNotEmpty(confirmpid)) {
 							BigDecimal saleprice = Struct.objectToDecimal(adapter.getStaticScalar("dcmProduct", pid, "dcmPrice"));
 
 							if (saleprice == null)
@@ -313,6 +322,28 @@ public class Util {
 		db.traverseIndex(OperationContext.getOrNull(), "dcmDiscount", "dcmState", "Check", collector);
 	}
 
+	// special - even if retired
+	static private List<String> getStaticListKeys(TablesAdapter db, String table, String id, String field) throws OperatingContextException {
+		List<String> ret = new ArrayList<>();
+
+		try {
+			byte[] subid = db.getRequest().getInterface().nextPeerKey(db.getRequest().getTenant(), DB_GLOBAL_RECORD, table, id, field, null);
+
+			while (subid != null) {
+				Object sid = ByteUtil.extractValue(subid);
+
+				ret.add(Struct.objectToString(sid));
+
+				subid = db.getRequest().getInterface().nextPeerKey(db.getRequest().getTenant(), DB_GLOBAL_RECORD, table, id, field, sid);
+			}
+		}
+		catch (DatabaseException x) {
+			Logger.error("getStaticList error: " + x);
+		}
+
+		return ret;
+	}
+
 	static public void scheduleDiscountRules(TablesAdapter db) throws OperatingContextException {
 		ZonedDateTime recent = ZonedDateTime.now().minusMinutes(1);
 		ZonedDateTime soon = ZonedDateTime.now().plusMinutes(15);
@@ -326,14 +357,18 @@ public class Util {
 					String did = val.toString();
 
 					boolean activediscount = Struct.objectToBoolean(adapter.getStaticScalar(table, did, "dcmActive"), false);
+					String dtitle = Struct.objectToString(adapter.getStaticScalar(table, did, "dcmTitle"));
 
 					if (activediscount) {
 						ZonedDateTime start = Struct.objectToDateTime(adapter.getStaticScalar(table, did, "dcmStart"));
 						ZonedDateTime end = Struct.objectToDateTime(adapter.getStaticScalar(table, did, "dcmExpire"));
 
 						if ((start != null) && start.isBefore(soon) && start.isAfter(recent)) {
+							Logger.info("Scheduled for start on " + dtitle + " (" + did + ")");
+
 							TaskHub.scheduleAt(Task.ofSubContext()
 											.withTitle("Store Discount Scheduled")
+											.withTopic("Batch")
 											.withWork(new IWork() {
 												@Override
 												public void run(TaskContext taskctx) throws OperatingContextException {
@@ -345,8 +380,11 @@ public class Util {
 						}
 
 						if ((end != null) && end.isBefore(soon) && end.isAfter(recent)) {
+							Logger.info("Scheduled for end on " + dtitle + " (" + did + ")");
+
 							TaskHub.scheduleAt(Task.ofSubContext()
 											.withTitle("Store Discount Scheduled")
+											.withTopic("Batch")
 											.withWork(new IWork() {
 												@Override
 												public void run(TaskContext taskctx) throws OperatingContextException {
