@@ -70,6 +70,9 @@ public class Foreground {
 			ILocalCommandLine cli = (ILocalCommandLine) ResourceHub.getResources().getClassLoader().getInstance(cliel.getAttribute("ClientClass", "dcraft.cli.HubUtil"));
 			
 			ApiSession capi = null;
+			boolean auth = false;
+
+				/*
 			boolean auth = true;
 
 			while (true) {
@@ -126,19 +129,61 @@ public class Foreground {
 				
 				System.out.println("Failed");
 			}
-			
-			if (auth) {
-				try {
-					if (capi != null)
-						cli.run(scan, capi);
-				}
-				catch(Exception x) {
-					System.out.println("Unable to start commandline interface");
-				}
+			*/
+
+			String domain = "root";
+
+			capi = LocalSession.local(domain);
+
+			if (capi == null) {
+				System.out.println("Root domain not found.");
 			}
-			
-			if (capi != null)
+			else {
+				String user = "root";
+
+				Console cons = System.console();
+
+				while (! auth) {
+					String pass = null;
+
+					if (cons != null) {
+						char[] passwd = cons.readPassword("Password:");
+
+						if (passwd != null)
+							pass = new String(passwd);
+					}
+					else {
+						System.out.print("Password: ");
+						pass = scan.nextLine();
+					}
+
+					if ("-".equals(pass)) {
+						System.out.println("--------------------------------------------");
+						continue;
+					}
+
+					if ("0".equals(pass))
+						break;
+
+					if ("*".equals(pass))
+						pass= "A1s2d3f4";
+
+					if (pass != null)
+						auth = capi.signin(user, pass);
+				}
+
+				if (auth) {
+					try {
+						if (capi != null)
+							cli.run(scan, capi);
+					}
+					catch(Exception x) {
+						System.out.println("Unable to start commandline interface");
+					}
+				}
+
 				capi.stop();
+			}
 		}
 		else {
 			System.out.println("dcServer failed to start");

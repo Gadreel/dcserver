@@ -241,6 +241,33 @@
 			if (cart.Delivery == 'Pickup') {
 				$('#sectDelivery').text('PICKUP: All of the items will be picked up at the store or are items that customer will download.');
 			}
+			else if (cart.Delivery == 'Deliver') {
+				$('#sectDelivery').text('DELIVER: Customer has requested delivery for at least some of these items. Customer was notified if some items can not be shipped.');
+
+				if (! cart.ShippingInfo) {
+					$('#sectDelivery').dcappend(
+						$('<br>'),
+						$('<br>'),
+						'Delivery information is incomplete.'
+					);
+				}
+				else {
+					$('#sectDelivery').dcappend(
+						$('<br>'),
+						$('<br>'),
+						'Deliver To:',
+						$('<br>'),
+						cart.ShippingInfo.FirstName + ' ' + cart.ShippingInfo.LastName,
+						$('<br>'),
+						cart.ShippingInfo.Address,
+						$('<br>'),
+						cart.ShippingInfo.Address2,
+						$('<br>'),
+						cart.ShippingInfo.City + ', ' + cart.ShippingInfo.State
+							+ ' ' + cart.ShippingInfo.Zip
+					);
+				}
+			}
 			else {
 				$('#sectDelivery').text('SHIP: Customer has requested shipping service for at least some of these items. Customer was notified if some items can not be shipped.');
 

@@ -29,6 +29,11 @@ public class CalcOrderLimit implements IComposer {
 	}
 
 	static public Long lookup(TablesAdapter db, String table, String id) throws OperatingContextException {
+		boolean show = Struct.objectToBoolean(db.getStaticScalar(table, id, "dcmShowInStore"), false);
+
+		if (! show)
+			return 0L;
+
 		Long limit = Struct.objectToInteger(db.getStaticScalar(table, id, "dcmOrderLimit"));
 		Long inventory = Struct.objectToInteger(db.getStaticScalar(table, id, "dcmInventory"));
 

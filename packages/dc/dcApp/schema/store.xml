@@ -349,7 +349,7 @@
 		</StringType>
 
 		<StringType Id="dcmDeliveryEnum">
-			<StringRestriction Enum="Ship,Pickup,Download" />
+			<StringRestriction Enum="Ship,Pickup,Download,Deliver" />
 		</StringType>
 
 		<StringType Id="dcmPaymentMethodEnum">

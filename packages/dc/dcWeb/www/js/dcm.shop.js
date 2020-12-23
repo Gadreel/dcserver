@@ -54,6 +54,7 @@ dc.cms.cart = {
 	Cart: {
 		_isLoaded: false,
 		_hookDisplay: null,
+		_defaultDelivery: 'Ship',
 		_cart: {
 			Captcha: null,
 			Items: [],
@@ -87,6 +88,11 @@ dc.cms.cart = {
 			Extra: null
 		},
 
+		setDefaultDelivery: function(method) {
+			this._defaultDelivery = method;
+			this._cart.Delivery = method;
+		},
+
 		empty: function() {
 			this._cart = {
 				Items: [],
@@ -94,7 +100,7 @@ dc.cms.cart = {
 				ShippingInfo: null,
 				BillingInfo: null,
 				Comment: null,
-				Delivery: 'Ship',
+				Delivery: this._defaultDelivery,
 				CouponCodes: [ ],
 				Discounts: [ ],
 				DiscountsSignature: null,

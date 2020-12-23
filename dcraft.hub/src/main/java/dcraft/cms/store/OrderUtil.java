@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -52,9 +53,9 @@ public class OrderUtil {
 	static public void processAuthOrder(ICallContext request, TablesAdapter db, RecordStruct order, OperationOutcomeStruct callback) throws OperatingContextException {
 		Logger.info("Begin order processing");
 
-		Site site = OperationContext.getOrThrow().getSite();
-		String event = site.getTenant().getAlias() + "-" + site.getAlias() + " - order submission started: " + order.getFieldAsRecord("CustomerInfo").toString();
-		SlackUtil.serverEvent(null, event, null);
+		//Site site = OperationContext.getOrThrow().getSite();
+		//String event = site.getTenant().getAlias() + "-" + site.getAlias() + " - order submission started: " + order.getFieldAsRecord("CustomerInfo").toString();
+		//SlackUtil.serverEvent(null, event, null);
 		
 		try (OperationMarker om = OperationMarker.create()) {
 			order = OrderUtil.santitizeAndCalculateOrder(request, db, order);
@@ -93,9 +94,9 @@ public class OrderUtil {
 			cleanpay.removeField("Code");
 		}
 		
-		Site site = OperationContext.getOrThrow().getSite();
-		String event = site.getTenant().getAlias() + "-" + site.getAlias() + " - order processing: " + orderclean.getFieldAsRecord("CustomerInfo").toString();
-		SlackUtil.serverEvent(null, event, null);
+		//Site site = OperationContext.getOrThrow().getSite();
+		//String event = site.getTenant().getAlias() + "-" + site.getAlias() + " - order processing: " + orderclean.getFieldAsRecord("CustomerInfo").toString();
+		//SlackUtil.serverEvent(null, event, null);
 		
 		RecordStruct cinfo = orderclean.getFieldAsRecord("CustomerInfo");
 		RecordStruct pinfo = orderclean.getFieldAsRecord("PaymentInfo");
@@ -941,6 +942,7 @@ public class OrderUtil {
 
 			if ("Ship".equals(orderdelivery)) {
 				for (int d = 0; d < delivery.getSize(); d++) {
+					// TODO this assumes a split order - some pickup and some ship --- this may not be productive to assume
 					if (!"Ship".equals(delivery.getItemAsString(d)))
 						continue;
 
@@ -960,6 +962,13 @@ public class OrderUtil {
 					//	catshipcalc.set(catshipcalc.get().add(rec.getFieldAsDecimal("CatShipAmount").multiply(qty)));
 
 					break;
+				}
+			}
+			else if ("Deliver".equals(orderdelivery)) {
+				// TODO unlike above this does not assume split delivery option, which seems sensible
+				// note the weight may not be used
+				if ("Regular".equals(shipcost) || "Extra".equals(shipcost)) {
+					itemshipweight.set(itemshipweight.get().add(shipweight.multiply(BigDecimal.valueOf(qty))));
 				}
 			}
 		}
@@ -992,28 +1001,102 @@ public class OrderUtil {
 
 		shipamt.set(itemshipcalc.get());
 
-		XElement shipsettings = sset.selectFirst("Shipping");
 		boolean shiptax = false;
 
-		// if settings, and any weight at all (note non-shippable and fixed shipping items do not add weight)
-		if ((shipsettings != null) && (itemshipweight.get().compareTo(BigDecimal.ZERO) > 0)) {
-			for (XElement stel : shipsettings.selectAll("WeightTable/Limit")) {
-				BigDecimal max = Struct.objectToDecimal(stel.getAttribute("Max"));
+		if ("Ship".equals(orderdelivery)) {
+			XElement shipsettings = sset.selectFirst("Shipping");
 
-				// if fall in the range, then add
-				if ((max != null) && (itemshipweight.get().compareTo(max) < 0)) {
-					BigDecimal shipat = Struct.objectToDecimal(stel.getAttribute("Price"));
+			// if settings, and any weight at all (note non-shippable and fixed shipping items do not add weight)
+			if ((shipsettings != null) && (itemshipweight.get().compareTo(BigDecimal.ZERO) > 0)) {
+				for (XElement stel : shipsettings.selectAll("WeightTable/Limit")) {
+					BigDecimal max = Struct.objectToDecimal(stel.getAttribute("Max"));
+
+					// if fall in the range, then add
+					if ((max != null) && (itemshipweight.get().compareTo(max) < 0)) {
+						BigDecimal shipat = Struct.objectToDecimal(stel.getAttribute("Price"));
+
+						if (shipat != null)
+							shipamt.set(shipamt.get().add(shipat));
+
+						break;
+					}
+				}
+			}
+
+			if (shipsettings != null) {
+				shiptax = shipsettings.getAttributeAsBooleanOrFalse("Taxable");
+			}
+		}
+		else if ("Deliver".equals(orderdelivery)) {
+			XElement deliversettings = sset.selectFirst("Deliver");
+
+			if (deliversettings != null) {
+				String mode = deliversettings.getAttribute("Mode", "Fixed");
+
+				if ("Weight".equals(mode)) {
+					// if settings, and any weight at all (note non-shippable and fixed shipping items do not add weight)
+					if (itemshipweight.get().compareTo(BigDecimal.ZERO) > 0) {
+						for (XElement stel : deliversettings.selectAll("WeightTable/Limit")) {
+							BigDecimal max = Struct.objectToDecimal(stel.getAttribute("Max"));
+
+							// if fall in the range, then add
+							if ((max != null) && (itemshipweight.get().compareTo(max) < 0)) {
+								BigDecimal shipat = Struct.objectToDecimal(stel.getAttribute("Price"));
+
+								if (shipat != null)
+									shipamt.set(shipamt.get().add(shipat));
+
+								break;
+							}
+						}
+					}
+				}
+				else if ("Zip".equals(mode)) {
+					String zip = null;
+
+					RecordStruct shipinfo = order.getFieldAsRecord("ShippingInfo");	// not required
+
+					if ((shipinfo != null) && !shipinfo.isFieldEmpty("Zip"))
+						zip = shipinfo.getFieldAsString("Zip");
+
+					if (StringUtil.isNotEmpty(zip) && (zip.length() > 4)) {
+						boolean zipfound = false;
+
+						List<XElement> ziptable = deliversettings.selectAll("ZipTable/Entry");
+
+						for (int zi = 5; zi > 2; zi--) {
+							String mzip = zip.substring(0, zi);
+
+							for (XElement stel : ziptable) {
+								BigDecimal code = Struct.objectToDecimal(stel.getAttribute("Code"));
+
+								// if fall in the range, then add
+								if ((code != null) && code.equals(mzip)) {
+									BigDecimal shipat = Struct.objectToDecimal(stel.getAttribute("Price"));
+
+									if (shipat != null)
+										shipamt.set(shipamt.get().add(shipat));
+
+									zipfound = true;
+
+									break;
+								}
+							}
+
+							if (zipfound)
+								break;
+						}
+					}
+				}
+				else if ("Fixed".equals(mode)) {
+					BigDecimal shipat = Struct.objectToDecimal(deliversettings.getAttribute("Price"));
 
 					if (shipat != null)
 						shipamt.set(shipamt.get().add(shipat));
-
-					break;
 				}
-			}
-		}
 
-		if (shipsettings != null) {
-			shiptax = shipsettings.getAttributeAsBooleanOrFalse("Taxable");
+				shiptax = deliversettings.getAttributeAsBooleanOrFalse("Taxable");
+			}
 		}
 		
 		// discount calcs

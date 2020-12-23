@@ -35,7 +35,7 @@
 	<Function Name="Load" Params="e"><![CDATA[
 			dc.cms.cart.Cart.load();	// make sure it is loaded
 
-			if (dc.user.isVerified())
+			if (dc.user.isVerified() || (dc.handler && dc.handler.settings && dc.handler.settings.storeDisableAccounts))
 				$('#sectPassword').hide();
 	]]></Function>
 	<Function Name="LoadRecord" Params="e"><![CDATA[

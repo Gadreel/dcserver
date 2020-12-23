@@ -158,6 +158,9 @@
 			var entry = this;
 
 			if (! dc.handler.settings.storeOnline) {
+					dc.pui.Popup.alert('The store is offline, please check back later.');
+
+						/*
 					dc.pui.Popup.confirm('The store is offline, would you like to continue and place a test order?', function(confirm) {
 						if (confirm) {
 							entry.Layer.back();
@@ -170,6 +173,7 @@
 							//dc.pui.Dialog.loadPage('/dcm/shop/checkout');
 						}
 					});
+					*/
 			}
 			else {
 				entry.Layer.back();
