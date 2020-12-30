@@ -160,11 +160,18 @@ public class FeedUtilDb {
 
 				String value = meta.getValue();
 
-				newkeys
-						.with(name , RecordStruct.record()
-								.with("UpdateOnly", true)
-								.with("Data", value)
-						);
+				if (StringUtil.isEmpty(value))
+					newkeys
+							.with(name, RecordStruct.record()
+									.with("UpdateOnly", true)
+									.with("Retired", true)
+							);
+				else
+					newkeys
+							.with(name , RecordStruct.record()
+									.with("UpdateOnly", true)
+									.with("Data", value)
+							);
 
 				oldkeys.remove(name);
 
@@ -191,10 +198,16 @@ public class FeedUtilDb {
 						if (name.equals(map.getFieldAsString("Name"))) {
 							// TODO support List too - now assumes Scalar
 
-							fields.with(map.getFieldAsString("Field"), RecordStruct.record()
-									.with("UpdateOnly", true)
-									.with("Data", value)
-							);
+							if (StringUtil.isEmpty(value))
+								fields.with(map.getFieldAsString("Field"), RecordStruct.record()
+										.with("UpdateOnly", true)
+										.with("Retired", true)
+								);
+							else
+								fields.with(map.getFieldAsString("Field"), RecordStruct.record()
+										.with("UpdateOnly", true)
+										.with("Data", value)
+								);
 
 							break;
 						}

@@ -249,11 +249,23 @@ public class OrderUtil {
 						String status = "VerificationRequired";
 
 						if (! this.hasErrors() && ! this.isEmptyResult()) {
-							status = "AwaitingFulfillment";
-							upreq.withUpdateField("dcmPaymentId", this.getResult().getFieldAsString("TxId"));
+							String txid = this.getResult().getFieldAsString("TxId");
+
+							if (StringUtil.isNotEmpty(txid)) {
+								status = "AwaitingFulfillment";
+								upreq.withUpdateField("dcmPaymentId", txid);
+							}
+							else {
+								Logger.error("Payment Id not present, unable to process payment.");
+							}
 						}
 
 						upreq.withUpdateField("dcmStatus", status);
+
+						if (om.hasErrors()) {
+							callback.returnEmpty();
+							return;
+						}
 
 						OrderUtil.postAuthStep(request, db, upreq, order, status, now, orderclean, this.getResult(), refid, callback);
 					}
@@ -274,8 +286,20 @@ public class OrderUtil {
 						String status = "VerificationRequired";
 
 						if (! this.hasErrors() && ! this.isEmptyResult()) {
-							status = "AwaitingFulfillment";
-							upreq.withUpdateField("dcmPaymentId", this.getResult().getFieldAsString("id"));
+							String txid = this.getResult().getFieldAsString("id");
+
+							if (StringUtil.isNotEmpty(txid)) {
+								status = "AwaitingFulfillment";
+								upreq.withUpdateField("dcmPaymentId", txid);
+							}
+							else {
+								Logger.error("Payment Id not present, unable to process payment.");
+							}
+						}
+
+						if (om.hasErrors()) {
+							callback.returnEmpty();
+							return;
 						}
 
 						upreq.withUpdateField("dcmStatus", status);
@@ -295,12 +319,21 @@ public class OrderUtil {
 						status = "AwaitingFulfillment";
 						upreq.withUpdateField("dcmPaymentId", txid);
 					}
+					else {
+						Logger.error("Payment Id not present, unable to process payment.");
+					}
 
 					upreq.withUpdateField("dcmStatus", status);
 
+					if (om.hasErrors()) {
+						callback.returnEmpty();
+						return;
+					}
+
 					OrderUtil.postAuthStep(request, db, upreq, order, status, now, orderclean, StringStruct.of(txid), refid, callback);
 				}
-				catch (Exception x) { }
+				catch (Exception x) {
+				}
 			}
 		}
 		catch (Exception x) {
