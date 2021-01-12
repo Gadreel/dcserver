@@ -693,6 +693,12 @@ dc.pui.Apps.Menus.dcmStore = {
 			Path: '/dcm/store/registry'
 		},
 		{
+			Alias: 'Reports',
+			Title: 'Reports',
+			Auth: [ 'Admin', 'Clerk' ],
+			Path: '/dcm/store/reports'
+		},
+		{
 			Alias: 'Settings',
 			Title: 'Settings',
 			Auth: [ 'Admin' ],
@@ -1034,7 +1040,11 @@ dc.pui.TagFuncs['dcm.GalleryWidget']['doCmsInitWidget'] = function(entry, node) 
 										var fh = res.Images[ii];
 
 										var newpath = fh.FullPath.substring(0, fh.FullPath.indexOf('.v'));
-										newpath = newpath.substring(newpath.lastIndexOf('/') + 1);
+
+										if (newpath.startsWith(path)) {
+											//newpath = newpath.substring(newpath.lastIndexOf('/') + 1);
+											newpath = newpath.substring(path.length + 1);
+										}
 
 										cmds.push({
 											Command: 'UpdatePart',

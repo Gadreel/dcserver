@@ -345,7 +345,7 @@ public class GalleryWidget extends Base implements ICMSAware {
 				if (fnd == null) {
 					fnd = XElement.tag("Image");
 					
-					if (params.getFieldAsBooleanOrFalse("AddTop"))
+					if (! params.getFieldAsBooleanOrFalse("AddTop"))
 						this.with(fnd);
 					else
 						this.add(0, fnd);

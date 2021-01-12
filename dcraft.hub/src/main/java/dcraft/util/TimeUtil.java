@@ -24,9 +24,12 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 
+import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
 import dcraft.hub.time.BigDateTime;
 import dcraft.hub.time.CoreLocalTime;
 import dcraft.log.Logger;
+import dcraft.struct.Struct;
 
 /**
  * DivConq uses the Joda date time library for nearly all date/time processing.
@@ -243,6 +246,14 @@ public class TimeUtil {
 		ZonedDateTime root = ZonedDateTime.of(1970, 1, 5, 0, 0, 0, 0, ZoneId.of("UTC"));   
 		
 		return root.plusMonths(monthNum);
+	}
+
+	static public ZoneId zoneInContext() throws OperatingContextException {
+		return ZoneId.of(OperationContext.getOrThrow().getChronology());
+	}
+
+	static public ZonedDateTime getStartOfDayInContext(LocalDate date) throws OperatingContextException {
+		return date.atStartOfDay(TimeUtil.zoneInContext());
 	}
 
 	/**

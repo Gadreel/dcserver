@@ -88,7 +88,7 @@ public class Service extends BaseDataService {
 		//  settings
 		// =========================================================
 
-		if ("Settings".equals(feature))
+		if ("Settings".equals(feature) || "Reports".equals(feature))
 			return super.handle(request, callback);
 
 		return false;

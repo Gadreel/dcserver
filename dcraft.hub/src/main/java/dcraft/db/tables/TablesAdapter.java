@@ -3,6 +3,7 @@ package dcraft.db.tables;
 import static dcraft.db.Constants.*;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -1638,7 +1639,8 @@ public class TablesAdapter {
 		
 		return null;
 	}
-		
+
+	// return only if there is value that is valid now
 	public BigDecimal getListStamp(String table, String id, String field, String subid) throws OperatingContextException {
 		try {
 			byte[] olderStamp = this.request.getInterface().getOrNextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, this.request.getStamp());
@@ -1679,6 +1681,7 @@ public class TablesAdapter {
 		return null;
 	}
 
+	// no checks, just full list
 	public List<BigDecimal> getListStamps(String table, String id, String field, String subid) throws OperatingContextException {
 		List<BigDecimal> ret = new ArrayList<>();
 
@@ -1699,6 +1702,29 @@ public class TablesAdapter {
 
 
 		return ret;
+	}
+
+	// no checks, just next
+	public BigDecimal getListNextStamp(String table, String id, String field, String subid, ZonedDateTime from) throws OperatingContextException {
+		return this.getListNextStamp(table, id, field, subid, BigDecimal.valueOf(this.request.getInterface().inverseTime(from)));
+	}
+
+	// no checks, just next
+	public BigDecimal getListNextStamp(String table, String id, String field, String subid, BigDecimal fromstamp) throws OperatingContextException {
+		try {
+			byte[] stamp = this.request.getInterface().nextPeerKey(this.request.getTenant(), DB_GLOBAL_RECORD, table, id, field, subid, fromstamp);
+
+			if (stamp != null) {
+				Object sid = ByteUtil.extractValue(stamp);
+
+				return Struct.objectToDecimal(sid);
+			}
+		}
+		catch (DatabaseException x) {
+			Logger.error("getDynamicList error: " + x);
+		}
+
+		return null;
 	}
 
 	public List<String> getDynamicListKeys(String table, String id, String field) throws OperatingContextException {

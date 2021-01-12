@@ -1,0 +1,71 @@
+<dcs.Script Title="Products Download" Badges="Admin,Clerk">
+	<dcs.Info>Products Activity Report Download</dcs.Info>
+
+	<dcs.Var Name="Param1" Type="Record">
+		<SetField Name="From" Value="{$_Controller.Request.Parameters.from.0}" />
+		<SetField Name="To" Value="{$_Controller.Request.Parameters.to.0}" />
+	</dcs.Var>
+
+	<dcs.CallService Op="dcmStoreServices.Reports.ProductActivityReport" Params="$Param1" Result="Products" />
+
+	<dcs.Var Name="csv" Type="dcmQuickCSV">
+		<Init Result="regMemory" />
+
+		<Field Value="Product Activity Report - {$Param1.From} to {$Param1.To}" />
+
+		<NewLine />
+
+		<Field Value="Product" />
+		<Field Value="Sku" />
+		<Field Value="Alias" />
+		<Field Value="In Orders" />
+		<Field Value="Total Quantity" />
+		<Field Value="Total Sales" />
+
+		<NewLine />
+	</dcs.Var>
+
+	<dcs.Var Name="TotalQuantity" Type="Integer" SetTo="0" />
+	<dcs.Var Name="TotalSales" Type="Decimal" SetTo="0" />
+
+	<dcs.ForEach Name="Product" In="$Products">
+		<dcs.With Target="$TotalQuantity">
+			<Add Value="$Product.Quantity" />
+		</dcs.With>
+
+		<dcs.With Target="$TotalSales">
+			<Add Value="$Product.Sales" />
+		</dcs.With>
+
+		<dcs.With Target="$csv">
+			<Field Value="{$Product.Title}" />
+			<Field Value="{$Product.Sku}" />
+			<Field Value="{$Product.Alias}" />
+			<Field Value="{$Product.Orders}" />
+			<Field Value="{$Product.Quantity}" />
+			<Field Value="${$Product.Sales|dec:Money}" />
+			<NewLine />
+		</dcs.With>
+	</dcs.ForEach>
+
+	<dcs.With Target="$csv">
+		<NewLine />
+
+		<Field Value="TOTAL" />
+		<Field Value="" />
+		<Field Value="" />
+		<Field Value="" />
+		<Field Value="{$TotalQuantity}" />
+		<Field Value="${$TotalSales|dec:Money}" />
+		<NewLine />
+
+		<Save />
+	</dcs.With>
+
+	<dcs.With Target="$_Controller.Response.Headers">
+		<SetField Name="Content-Type" Value="text/csv" />
+		<SetField Name="Content-Disposition" Value="attachment; filename=&quot;Product-Activity-Report.csv&quot;" />
+	</dcs.With>
+
+	<dcs.Stream Source="$regMemory" Destination="$Dest" />
+</dcs.Script>

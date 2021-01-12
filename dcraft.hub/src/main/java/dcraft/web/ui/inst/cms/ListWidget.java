@@ -207,7 +207,7 @@ public class ListWidget extends Base implements ICMSAware {
 				if (fnd == null) {
 					fnd = XElement.tag("Entry");
 					
-					if (params.getFieldAsBooleanOrFalse("AddTop"))
+					if (! params.getFieldAsBooleanOrFalse("AddTop"))
 						this.with(fnd);
 					else
 						this.add(0, fnd);

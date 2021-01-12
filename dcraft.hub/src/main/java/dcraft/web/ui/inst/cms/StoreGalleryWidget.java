@@ -304,7 +304,7 @@ public class StoreGalleryWidget extends Base implements ICMSAware {
 				if (fnd == null) {
 					fnd = XElement.tag("Product");
 					
-					if (params.getFieldAsBooleanOrFalse("AddTop"))
+					if (! params.getFieldAsBooleanOrFalse("AddTop"))
 						this.with(fnd);
 					else
 						this.add(0, fnd);

@@ -309,6 +309,8 @@
 		<Procedure Name="dcmStoreServices.Product.RemoveCustomField" Execute="dcraft.cms.store.db.products.RemoveCustomField" />
 		<Procedure Name="dcmStoreServices.Product.UpdateCustomFieldPositions" Execute="dcraft.cms.store.db.products.UpdateCustomFieldPositions" />
 
+		<Procedure Name="dcmStoreServices.Reports.ProductActivityReport" Execute="dcraft.cms.store.db.reports.ProductActivityReport" />
+
 		<Composer Name="dcmStoreImage" Execute="dcraft.cms.store.db.comp.StoreImage" />
 		<Composer Name="dcmProductPrice" Execute="dcraft.cms.store.db.comp.ProductPrice" />
 		<Composer Name="dcmCalcOrderLimit" Execute="dcraft.cms.store.db.comp.CalcOrderLimit" />
@@ -1586,6 +1588,31 @@
 						<Description>
 							Put all the rules into effect.
 						</Description>
+					</Op>
+				</Secure>
+			</Feature>
+
+			<Feature Name="Reports">
+				<Secure Badges="Clerk,Admin">
+					<Op Name="ProductActivityReport">
+						<Description>
+							A report on sales of all products during a time frame.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="From" Type="LocalDate" />
+							<Field Name="To" Type="LocalDate" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<Field Name="Title" Type="dcmProduct:dcmTitle" />
+								<Field Name="Alias" Type="dcmProduct:dcmAlias" />
+								<Field Name="Sku" Type="dcmProduct:dcmSku" />
+								<Field Name="Orders" Type="Integer" />
+								<Field Name="Quantity" Type="Integer" />
+								<Field Name="Sales" Type="Decimal" />
+							</Record>
+						</ListResponse>
 					</Op>
 				</Secure>
 			</Feature>

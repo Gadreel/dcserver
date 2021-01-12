@@ -183,7 +183,7 @@ public class FeedUtilDb {
 					}
 					else {
 						// TODO enhance to support feed timezone (feed wide, record level)
-						data = Struct.objectToDate(value).atStartOfDay(ZoneId.of(OperationContext.getOrThrow().getChronology()));
+						data = TimeUtil.getStartOfDayInContext(Struct.objectToDate(value));
 					}
 
 					fields.with("dcmPublishAt", RecordStruct.record()
@@ -354,7 +354,7 @@ public class FeedUtilDb {
 				// only kill if needed
 				if ((opubtime != null) && ! opubtime.equals(npubtime))
 					db.getRequest().getInterface().kill(OperationContext.getOrThrow().getUserContext().getTenantAlias(),
-							"dcmFeedIndex", ochan.toString(), db.getRequest().getInterface().inverseTime(opubtime), oid);
+							"dcmFeedIndex", ochan.toString(), db.getRequest().getInterface().inverseTime(opubtime), oid);			// TODO stamp is more than time, this should be reviewed, see below too
 
 				if (npubtime != null)
 					db.getRequest().getInterface().set(OperationContext.getOrThrow().getUserContext().getTenantAlias(),
@@ -385,6 +385,7 @@ public class FeedUtilDb {
 			ZonedDateTime opubtime = Struct.objectToDateTime(db.getStaticScalar("dcmFeed", oid, "dcmPublishAt"));
 			
 			try {
+				// TODO stamp is more than time, this should be reviewed, maybe this isn't a full stamp
 				db.getRequest().getInterface().kill(OperationContext.getOrThrow().getUserContext().getTenantAlias(),
 						"dcmFeedIndex", ochan, db.getRequest().getInterface().inverseTime(opubtime), oid);
 			}

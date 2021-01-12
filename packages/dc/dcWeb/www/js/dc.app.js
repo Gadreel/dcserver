@@ -3651,15 +3651,17 @@ dc.pui.Tags = {
 		var switchFromGallery = function() {
 			var src = targetsrc;
 
-			var variant = $(node).attr('data-dc-variant');
-			var ext = $(node).attr('data-dc-ext');
+			if (src) {
+				var variant = $(node).attr('data-dc-variant');
+				var ext = $(node).attr('data-dc-ext');
 
-			var pos1 = src.lastIndexOf('/');
-			var pos2 = src.lastIndexOf('?');
+				var pos1 = src.lastIndexOf('/');
+				var pos2 = src.lastIndexOf('?');
 
-			var newsrc = src.substr(0, pos1 + 1) + variant + '.' + ext + src.substr(pos2);
+				var newsrc = src.substr(0, pos1 + 1) + variant + '.' + ext + src.substr(pos2);
 
-			$(imgel).attr('src', newsrc);
+				$(imgel).attr('src', newsrc);
+			}
 
 			selectInGallery();
 		};

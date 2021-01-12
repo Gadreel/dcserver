@@ -1,0 +1,27 @@
+<dc.Html Badges="Admin">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Store Reports" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<!--
+			<dc.Button Label="Sales Activity" Click="DoSalesActivityReport" />
+		-->
+			<dc.Button Label="Product Activity" Click="DoProductActivityReport" />
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var page = this;
+	]]></Function>
+	<Function Name="DoSalesActivityReport" Params="e"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcm/store/reports/sales-activity-prompt');
+	]]></Function>
+	<Function Name="DoProductActivityReport" Params="e"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcm/store/reports/product-activity-prompt');
+	]]></Function>
+</dc.Html>
