@@ -310,6 +310,7 @@
 		<Procedure Name="dcmStoreServices.Product.UpdateCustomFieldPositions" Execute="dcraft.cms.store.db.products.UpdateCustomFieldPositions" />
 
 		<Procedure Name="dcmStoreServices.Reports.ProductActivityReport" Execute="dcraft.cms.store.db.reports.ProductActivityReport" />
+		<Procedure Name="dcmStoreServices.Reports.SalesActivityReport" Execute="dcraft.cms.store.db.reports.SalesActivityReport" />
 
 		<Composer Name="dcmStoreImage" Execute="dcraft.cms.store.db.comp.StoreImage" />
 		<Composer Name="dcmProductPrice" Execute="dcraft.cms.store.db.comp.ProductPrice" />
@@ -1611,6 +1612,24 @@
 								<Field Name="Orders" Type="Integer" />
 								<Field Name="Quantity" Type="Integer" />
 								<Field Name="Sales" Type="Decimal" />
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="SalesActivityReport">
+						<Description>
+							A report on sales by month during a year.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Year" Type="Integer" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Month" Type="Integer" />
+								<Field Name="Count" Type="Integer" />
+								<Field Name="ItemTotal" Type="Decimal" />
+								<Field Name="ShipTotal" Type="Decimal" />
+								<Field Name="TaxTotal" Type="Decimal" />
+								<Field Name="Total" Type="Decimal" />
 							</Record>
 						</ListResponse>
 					</Op>

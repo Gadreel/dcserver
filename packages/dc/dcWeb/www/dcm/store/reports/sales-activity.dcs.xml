@@ -1,0 +1,92 @@
+<dcs.Script Title="Products Download" Badges="Admin,Clerk">
+	<dcs.Info>Sales Activity Report Download</dcs.Info>
+
+	<dcs.Var Name="Param1" Type="Record">
+		<SetField Name="Year" Value="{$_Controller.Request.Parameters.year.0}" />
+	</dcs.Var>
+
+	<dcs.CallService Op="dcmStoreServices.Reports.SalesActivityReport" Params="$Param1" Result="Months" />
+
+	<dcs.Var Name="csv" Type="dcmQuickCSV">
+		<Init Result="regMemory" />
+
+		<Field Value="Sales Activity Report - {$Param1.Year}" />
+
+		<NewLine />
+
+		<Field Value="Month" />
+		<Field Value="Orders" />
+		<Field Value="Item Total" />
+		<Field Value="Ship Total" />
+		<Field Value="Tax Total" />
+		<Field Value="Grand Total" />
+
+		<NewLine />
+	</dcs.Var>
+
+	<dcs.Var Name="TotalOrders" Type="Integer" SetTo="0" />
+	<dcs.Var Name="TotalItem" Type="Decimal" SetTo="0" />
+	<dcs.Var Name="TotalShip" Type="Decimal" SetTo="0" />
+	<dcs.Var Name="TotalTax" Type="Decimal" SetTo="0" />
+	<dcs.Var Name="TotalTotal" Type="Decimal" SetTo="0" />
+
+	<dcs.ForEach Name="Month" In="$Months">
+		<dcs.Var Name="MonthFmt" Type="String" SetTo="{$Month.Month}">
+			<LeftPad With="0" Size="2" />
+		</dcs.Var>
+		<dcs.Var Name="MonthDate" Type="LocalDate" SetTo="{$Param1.Year}-{$MonthFmt}-01" />
+
+		<dcs.If Target="$Month.Count" GreaterThan="0">
+			<dcs.With Target="$TotalOrders">
+				<Add Value="$Month.Count" />
+			</dcs.With>
+
+			<dcs.With Target="$TotalItem">
+				<Add Value="$Month.ItemTotal" />
+			</dcs.With>
+
+			<dcs.With Target="$TotalShip">
+				<Add Value="$Month.ShipTotal" />
+			</dcs.With>
+
+			<dcs.With Target="$TotalTax">
+				<Add Value="$Month.TaxTotal" />
+			</dcs.With>
+
+			<dcs.With Target="$TotalTotal">
+				<Add Value="$Month.Total" />
+			</dcs.With>
+		</dcs.If>
+
+		<dcs.With Target="$csv">
+			<Field Value="{$MonthDate|ld:MMM}" />
+			<Field Value="{$Month.Count|ifempty:0}" />
+			<Field Value="${$Month.ItemTotal|ifempty:0|dec:Money}" />
+			<Field Value="${$Month.ShipTotal|ifempty:0|dec:Money}" />
+			<Field Value="${$Month.TaxTotal|ifempty:0|dec:Money}" />
+			<Field Value="${$Month.Total|dec:Money}" />
+			<NewLine />
+		</dcs.With>
+	</dcs.ForEach>
+
+	<dcs.With Target="$csv">
+		<NewLine />
+
+		<Field Value="TOTAL" />
+		<Field Value="{$TotalOrders}" />
+		<Field Value="${$TotalItem|dec:Money}" />
+		<Field Value="${$TotalShip|dec:Money}" />
+		<Field Value="${$TotalTax|dec:Money}" />
+		<Field Value="${$TotalTotal|dec:Money}" />
+		<NewLine />
+
+		<Save />
+	</dcs.With>
+
+	<dcs.With Target="$_Controller.Response.Headers">
+		<SetField Name="Content-Type" Value="text/csv" />
+		<SetField Name="Content-Disposition" Value="attachment; filename=&quot;Sales-Activity-Report.csv&quot;" />
+	</dcs.With>
+
+	<dcs.Stream Source="$regMemory" Destination="$Dest" />
+</dcs.Script>

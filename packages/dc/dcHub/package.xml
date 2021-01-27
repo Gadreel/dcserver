@@ -262,6 +262,9 @@
 			<Tag Name="dcs.SchemaGetTypeDef" Class="dcraft.script.inst.ext.SchemaGetTypeDef" />
 			<Tag Name="dcs.ScriptFindScript" Class="dcraft.script.inst.ext.ScriptFindScript" />
 
+			<Tag Name="dcs.ParseXml" Class="dcraft.script.inst.ext.ParseXml" />
+			<Tag Name="dcs.ParseJson" Class="dcraft.script.inst.ext.ParseJson" />
+
 			<Tag Name="dcs.File" Class="dcraft.script.inst.file.File" />
 			<Tag Name="dcs.Stream" Class="dcraft.script.inst.file.Stream" />
 

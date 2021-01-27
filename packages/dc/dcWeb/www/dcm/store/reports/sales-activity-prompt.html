@@ -1,0 +1,36 @@
+<dc.Html Badges="Clerk,Admin" NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Download Sales Activity" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.Text Label="Year" Name="Year" Pattern="\d\d\d\d" Required="true" placeholder="yyyy" />
+
+				<dcf.FormButtons>
+					<dcf.SubmitButton Label="Download" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+	]]></Function>
+	<Function Name="AfterSaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			var year = page.form().getValue('Year');
+
+			window.open('/dcm/store/reports/sales-activity?year=' + year)
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback();
+	]]></Function>
+</dc.Html>

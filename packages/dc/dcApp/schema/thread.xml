@@ -82,6 +82,9 @@
 		<Procedure Name="dcmServices.Thread.ArchiveMessages" Execute="dcraft.cms.thread.db.ArchiveMessages" />
 		<Procedure Name="dcmServices.Thread.LoadMessages" Execute="dcraft.cms.thread.db.LoadMessages" />
 		<Procedure Name="dcmServices.Thread.CheckExpired" Execute="dcraft.cms.thread.db.CheckExpired" />
+
+		<Procedure Name="dcmServices.Thread.Email-LoadMessageSection" Execute="dcraft.cms.thread.db.email.LoadMessageSection" />
+		<Procedure Name="dcmServices.Thread.Email-UpdateMessageSection" Execute="dcraft.cms.thread.db.email.UpdateMessageSection" />
 	</Database>
 
 	<Shared>
@@ -401,6 +404,28 @@
 								<Field Name="OriginatorName" Type="dcString" />
 							</Record>
 						</ListResponse>
+					</Op>
+					<Op Name="Email-LoadMessageSection">
+						<Description>
+							For editing email message parts.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Type" Type="dcMetaString" Required="True" />
+							<Field Name="Section" Type="dcMetaString" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Content" Type="String" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Email-UpdateMessageSection">
+						<Description>
+							For editing email message parts.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Type" Type="dcMetaString" Required="True" />
+							<Field Name="Section" Type="dcMetaString" Required="True" />
+							<Field Name="Content" Type="String" Required="True" />
+						</RecordRequest>
 					</Op>
 				</Secure>
 				<Secure Badges="User">

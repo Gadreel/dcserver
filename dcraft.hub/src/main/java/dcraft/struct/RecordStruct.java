@@ -796,9 +796,16 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 			if (code.hasAttribute("Value")) {
 		        Struct var3 = StackUtil.refFromElement(stack, code, "Value", true);
-		        
-				if ((var == null) && (var3 != null))
-	            	var = var3.getType().create();
+
+				if ((var == null) && (var3 != null)) {
+					DataType v3type = var3.getType();
+
+					// create a copy if possible
+					if (v3type != null)
+						var = v3type.create();
+					else
+						var = var3;
+				}
 				
 				if (var instanceof ScalarStruct) 
 					((ScalarStruct) var).adaptValue(var3);
