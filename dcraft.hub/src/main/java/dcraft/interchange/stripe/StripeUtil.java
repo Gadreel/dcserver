@@ -142,17 +142,29 @@ public class StripeUtil {
 
 							if (resp == null) {
 								Logger.error("Error processing payment: Stripe sent an incomplete response.");
-								callback.returnEmpty();
+
+								callback.returnValue(
+										new RecordStruct()
+												.with("Code", responseCode)
+												.with("Message", "Incomplete response ")
+								);
 							}
 							else {
 								// TODO remove sout
-								//System.out.println("Stripe Resp:\n" + resp.toPrettyString());
+								///System.out.println("Stripe Resp: \n" + resp.toPrettyString());
 
 								if (resp.hasField("error")) {
 									Logger.error("Unable to confirm payment token: " + resp.selectAsString("error.message"));
-									callback.returnEmpty();
+
+									callback.returnValue(
+											new RecordStruct()
+													.with("Code", responseCode)
+													.with("Message", "Failed to process payment: " + resp.selectAsString("error.message"))
+									);
 								}
 								else {
+									resp.with("Code", 200);
+
 									callback.returnValue(resp);
 								}
 							}
@@ -160,13 +172,23 @@ public class StripeUtil {
 						else {
 							Logger.error("Error processing payment: Problem with Stripe gateway.");
 							Logger.error("Stripe Response: " + responseCode);
-							callback.returnEmpty();
+
+							callback.returnValue(
+									new RecordStruct()
+											.with("Code", responseCode)
+											.with("Message", "Failed to process payment ")
+							);
 						}
 					});
 		}
 		catch (Exception x) {
 			Logger.error("Error calling service, Stripe error: " + x);
-			callback.returnEmpty();
+
+			callback.returnValue(
+					new RecordStruct()
+							.with("Code", 1)
+							.with("Message", "Failed to call service")
+			);
 		}
 	}
 

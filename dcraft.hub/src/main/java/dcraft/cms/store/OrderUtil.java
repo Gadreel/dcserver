@@ -248,8 +248,8 @@ public class OrderUtil {
 
 						String status = "VerificationRequired";
 
-						if (! this.hasErrors() && ! this.isEmptyResult()) {
-							String txid = this.getResult().getFieldAsString("TxId");
+						if (! this.isEmptyResult()) {
+							String txid = ! this.hasErrors()  ? this.getResult().getFieldAsString("TxId") : null;
 
 							if (StringUtil.isNotEmpty(txid)) {
 								status = "AwaitingFulfillment";
@@ -257,17 +257,20 @@ public class OrderUtil {
 							}
 							else {
 								Logger.error("Payment Id not present, unable to process payment.");
+
+								cleanpay
+										.with("PaymentFailed", true)
+										.with("PaymentCode", this.getResult().getFieldAsString("Code"))
+										.with("PaymentMessage", this.getResult().getFieldAsString("Message"));
 							}
 						}
 
 						upreq.withUpdateField("dcmStatus", status);
 
-						if (om.hasErrors()) {
-							callback.returnEmpty();
-							return;
-						}
-
-						OrderUtil.postAuthStep(request, db, upreq, order, status, now, orderclean, this.getResult(), refid, callback);
+						if (om.hasErrors())
+							OrderUtil.onLogStep(request, db, upreq, status, now, orderclean, this.getResult(), refid, callback);
+						else
+							OrderUtil.postAuthStep(request, db, upreq, order, status, now, orderclean, this.getResult(), refid, callback);
 					}
 				});
 			}
@@ -285,8 +288,8 @@ public class OrderUtil {
 
 						String status = "VerificationRequired";
 
-						if (! this.hasErrors() && ! this.isEmptyResult()) {
-							String txid = this.getResult().getFieldAsString("id");
+						if (! this.isEmptyResult()) {
+							String txid = ! this.hasErrors() ? this.getResult().getFieldAsString("id") : null;
 
 							if (StringUtil.isNotEmpty(txid)) {
 								status = "AwaitingFulfillment";
@@ -294,17 +297,20 @@ public class OrderUtil {
 							}
 							else {
 								Logger.error("Payment Id not present, unable to process payment.");
-							}
-						}
 
-						if (om.hasErrors()) {
-							callback.returnEmpty();
-							return;
+								cleanpay
+										.with("PaymentFailed", true)
+										.with("PaymentCode", this.getResult().getFieldAsString("Code"))
+										.with("PaymentMessage", this.getResult().getFieldAsString("Message"));
+							}
 						}
 
 						upreq.withUpdateField("dcmStatus", status);
 
-						OrderUtil.postAuthStep(request, db, upreq, order, status, now, orderclean, this.getResult(), refid, callback);
+						if (om.hasErrors())
+							OrderUtil.onLogStep(request, db, upreq, status, now, orderclean, this.getResult(), refid, callback);
+						else
+							OrderUtil.postAuthStep(request, db, upreq, order, status, now, orderclean, this.getResult(), refid, callback);
 					}
 				});
 			}
@@ -317,20 +323,25 @@ public class OrderUtil {
 
 					if (! om2.hasErrors() && StringUtil.isNotEmpty(txid)) {
 						status = "AwaitingFulfillment";
-						upreq.withUpdateField("dcmPaymentId", txid);
+
+						upreq
+								.withUpdateField("dcmPaymentId", txid)
+								.withUpdateField("dcmStatus", status);
+
+						OrderUtil.postAuthStep(request, db, upreq, order, status, now, orderclean, StringStruct.of(txid), refid, callback);
 					}
 					else {
 						Logger.error("Payment Id not present, unable to process payment.");
+
+						cleanpay
+								.with("PaymentFailed", true)
+								.with("PaymentCode", "dc20")
+								.with("PaymentMessage", "no payment id present");
+
+						upreq.withUpdateField("dcmStatus", status);
+
+						OrderUtil.onLogStep(request, db, upreq, status, now, orderclean, StringStruct.of(txid), refid, callback);
 					}
-
-					upreq.withUpdateField("dcmStatus", status);
-
-					if (om.hasErrors()) {
-						callback.returnEmpty();
-						return;
-					}
-
-					OrderUtil.postAuthStep(request, db, upreq, order, status, now, orderclean, StringStruct.of(txid), refid, callback);
 				}
 				catch (Exception x) {
 				}
@@ -460,6 +471,13 @@ public class OrderUtil {
 				db.updateStaticScalar("dcmProduct", prodid, "dcmShowInStore", false);
 		}
 
+		if ("VerificationRequired".equals(status)) {
+			XElement sset = ApplicationHub.getCatalogSettings("CMS-Store");
+
+			if (sset.getAttributeAsBooleanOrFalse("ShowFailedOrders"))
+				db.updateStaticScalar("dcmOrder", refid, "dcmStatus", "AwaitingPayment");
+		}
+
 		// auditing
 
 		RecordStruct orderlog = RecordStruct.record()
@@ -468,6 +486,8 @@ public class OrderUtil {
 				.with("Log", OperationContext.getOrThrow().getController().getMessages());
 
 		Logger.info("Saving order file");
+
+		//System.out.println("order log: " + orderlog.toPrettyString());
 
 		// TODO make StoreOrders encrypted file only
 		// store in deposit file - TODO make sure this is not expanded locally, should be in encrypted deposit file only
@@ -480,7 +500,9 @@ public class OrderUtil {
 			@Override
 			public void callback(Struct result) throws OperatingContextException {
 				//System.out.println(OperationContext.getOrThrow().toPrettyString());
-				triggerEvent(refid);
+				if (! "VerificationRequired".equals(status)) {
+					triggerEvent(refid);
+				}
 
 				// not needed for now, too much info
 				//Site site = OperationContext.getOrThrow().getSite();

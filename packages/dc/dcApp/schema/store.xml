@@ -520,6 +520,10 @@
 			<!-- for tracking message -->
 			<Field Name="Uuid" Type="dcMetaString" />
 			<Field Name="PaymentTx" Type="dcMetaString" />
+
+			<Field Name="PaymentFailed" Type="Boolean" />
+			<Field Name="PaymentCode" Type="dcMetaString" />
+			<Field Name="PaymentMessage" Type="dcString" />
 		</Record>
 
 		<Record Id="dcmShipEstimateInfo">

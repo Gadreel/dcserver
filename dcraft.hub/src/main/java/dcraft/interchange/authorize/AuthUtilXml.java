@@ -26,13 +26,21 @@ public class AuthUtilXml {
 	
 	static public void authXCard(String authalt, String refid, RecordStruct order, OperationOutcomeRecord callback) throws OperatingContextException {
 		if (! order.validate("dcmOrderInfo")) {
-			callback.returnEmpty();
+			callback.returnValue(
+					new RecordStruct()
+							.with("Code", "dc1")
+							.with("Message", "Invalid order info")
+			);
 			return;
 		}
 
 		if (order.isFieldEmpty("PaymentInfo")) {
 			Logger.error("Missing payment details.");
-			callback.returnEmpty();
+			callback.returnValue(
+					new RecordStruct()
+							.with("Code", "dc2")
+							.with("Message", "Missing payment details")
+			);
 			return;
 		}
 
@@ -40,7 +48,11 @@ public class AuthUtilXml {
 
 		if (auth == null) {
 			Logger.error("Missing store Authorize settings.");
-			callback.returnEmpty();
+			callback.returnValue(
+					new RecordStruct()
+							.with("Code", "dc3")
+							.with("Message", "Missing Authorize settings")
+			);
 			return;
 		}
 
@@ -67,13 +79,21 @@ public class AuthUtilXml {
 		
 		if (billinginfo == null) {
 			Logger.error("Missing billing details.");
-			callback.returnEmpty();
+			callback.returnValue(
+					new RecordStruct()
+							.with("Code", "dc4")
+							.with("Message", "Missing billing details")
+			);
 			return;
 		}
 		
 		if (calcinfo == null) {
 			Logger.error("Missing billing computations.");
-			callback.returnEmpty();
+			callback.returnValue(
+					new RecordStruct()
+							.with("Code", "dc5")
+							.with("Message", "Missing payment calculations")
+			);
 			return;
 		}
 		
@@ -286,14 +306,15 @@ public class AuthUtilXml {
 				// parse and close response stream
 				XElement resp = XmlReader.parse(con.getInputStream(), false, true);
 				
-				//System.out.println("X: " + resp.toPrettyString());
+				System.out.println("X: " + resp.toPrettyString());
 
 				if (resp == null) {
 					Logger.error("Error processing payment: Gateway sent an incomplete response.");
 
 					callback.returnValue(
 							new RecordStruct()
-									.with("Message", resp)
+									.with("Code", "dc6")
+									.with("Message", "incomplete response")
 					);
 
 					return;
@@ -303,10 +324,11 @@ public class AuthUtilXml {
 				
 				if (tr == null) {
 					Logger.error("Error processing payment: Gateway sent an incomplete response.");
-					
+
 					callback.returnValue(
 							new RecordStruct()
-								.with("Message", resp)
+									.with("Code", "dc7")
+									.with("Message", "incomplete response")
 					);
 
 					return;
@@ -320,7 +342,8 @@ public class AuthUtilXml {
 
 					callback.returnValue(
 							new RecordStruct()
-								.with("Message", resp)
+									.with("Code", "dc8")
+									.with("Message", "incomplete response: " + (trc == null ? "no code" : trc.getText()))
 					);
 
 					return;
@@ -329,15 +352,24 @@ public class AuthUtilXml {
 				String rcodeout = trc.getText();
 				String txidout = trid.getText();
 
-				if (! "1".equals(rcodeout))
+				if (! "1".equals(rcodeout)) {
 					Logger.error("Payment was rejected by gateway");
 
-				callback.returnValue(
-						new RecordStruct()
-							.with("Code", rcodeout)
-							.with("TxId", txidout)
-							.with("Message", resp)
-				);
+					callback.returnValue(
+							new RecordStruct()
+									.with("Code", rcodeout)
+									.with("TxId", txidout)
+									.with("Message", "rejected")
+					);
+				}
+				else {
+					callback.returnValue(
+							new RecordStruct()
+									.with("Code", rcodeout)
+									.with("TxId", txidout)
+									.with("Message", "accepted")
+					);
+				}
 
 				return;
 			}
@@ -348,7 +380,11 @@ public class AuthUtilXml {
 	    catch (Exception x) {
 			Logger.error("Error processing payment: Unable to connect to payment gateway.");
 	    }
-	    
-		callback.returnEmpty();
+
+		callback.returnValue(
+				new RecordStruct()
+						.with("Code", "dc9")
+						.with("Message", "Failed to process payment")
+		);
 	}
 }
