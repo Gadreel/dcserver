@@ -79,7 +79,7 @@ public class HighlightWidget extends Base implements ICMSAware {
 					.with(Link.tag()
 							.attr("aria-label", "previous item")
 							.with(Icon.tag()
-									.attr("Path", "fas/chevron-left")
+									.attr("Path", StackUtil.stringFromSource(state,"LeftIcon", "fas/chevron-left"))
 							)
 					)
 			);
@@ -101,7 +101,7 @@ public class HighlightWidget extends Base implements ICMSAware {
 					.with(Link.tag()
 							.attr("aria-label", "next item")
 							.with(Icon.tag()
-									.attr("Path", "fas/chevron-right")
+									.attr("Path", StackUtil.stringFromSource(state,"RightIcon", "fas/chevron-right"))
 							)
 					)
 			);

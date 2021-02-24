@@ -25,6 +25,10 @@ import java.net.URLEncoder;
 
 public class SmsUtil {
 	static public void sendText(String alt, String number, String msg, OperationOutcomeRecord callback) {
+		SmsUtil.sendText(alt, number, msg, null, callback);
+	}
+
+	static public void sendText(String alt, String number, String msg, String callbackurl, OperationOutcomeRecord callback) {
 		XElement twilio = ApplicationHub.getCatalogSettings("CMS-SMS-Twilio", alt);
 		
 		if (twilio == null) {
@@ -77,6 +81,9 @@ public class SmsUtil {
 			String body = "To=" + URLEncoder.encode(number, "UTF-8")
 					+ "&From=" + URLEncoder.encode(fromPhone, "UTF-8")
 					+ "&Body=" + URLEncoder.encode(msg, "UTF-8");
+
+			if (StringUtil.isNotEmpty(callbackurl))
+				body += "&StatusCallback=" + URLEncoder.encode(callbackurl, "UTF-8");
 
 			// Send post request
 			con.setDoOutput(true);
