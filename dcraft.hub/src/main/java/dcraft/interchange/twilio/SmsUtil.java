@@ -2,10 +2,12 @@ package dcraft.interchange.twilio;
 
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperationOutcomeRecord;
+import dcraft.interchange.stripe.StripeUtil;
 import dcraft.log.Logger;
 import dcraft.struct.CompositeParser;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
 import dcraft.util.Base64;
 import dcraft.util.Base64Alt;
 import dcraft.util.Memory;
@@ -18,10 +20,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
+import java.math.BigDecimal;
+import java.net.*;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 public class SmsUtil {
 	static public void sendText(String alt, String number, String msg, OperationOutcomeRecord callback) {
@@ -141,5 +144,141 @@ public class SmsUtil {
 		}
 		
 		callback.returnEmpty();
+	}
+
+	static public void sendSms(String alt, String number, String msg, OperationOutcomeRecord callback) {
+		SmsUtil.sendSms(alt, number, msg, null, callback);
+	}
+
+	static public void sendSms(String alt, String number, String msg, String callbackurl, OperationOutcomeRecord callback) {
+		XElement twilio = ApplicationHub.getCatalogSettings("CMS-SMS-Twilio", alt);
+
+		if (twilio == null) {
+			Logger.error("Missing Twilio settings.");
+			callback.returnEmpty();
+			return;
+		}
+
+		String fromPhone = twilio.getAttribute("FromPhone");
+
+		if (StringUtil.isEmpty(fromPhone)) {
+			Logger.error("Missing Twilio phone.");
+			callback.returnEmpty();
+			return;
+		}
+
+		try {
+			String body = "To=" + URLEncoder.encode(number, "UTF-8")
+					+ "&From=" + URLEncoder.encode(fromPhone, "UTF-8")
+					+ "&Body=" + URLEncoder.encode(msg, "UTF-8");
+
+			if (StringUtil.isNotEmpty(callbackurl))
+				body += "&StatusCallback=" + URLEncoder.encode(callbackurl, "UTF-8");
+
+			HttpRequest req = SmsUtil.buildBasicRequest(alt, "/Messages.json", body).build();
+
+			// Send post request
+			HttpClient.newHttpClient().sendAsync(req, HttpResponse.BodyHandlers.ofString())
+					.thenAcceptAsync(response -> {
+						callback.useContext();		// restore our operation context
+
+						int responseCode = response.statusCode();
+						String respBody = response.body();
+
+						if (StringUtil.isNotEmpty(respBody)) {
+							RecordStruct resp = Struct.objectToRecord(respBody);
+
+							if (resp == null) {
+								Logger.error("Error processing payment: Twilio sent an incomplete response.");
+
+								callback.returnValue(
+										new RecordStruct()
+												.with("Code", responseCode)
+												.with("Message", "Incomplete response ")
+								);
+							}
+							else {
+								// TODO remove sout
+								System.out.println("Twilio Resp: \n" + resp.toPrettyString());
+
+								if (resp.hasField("error")) {
+									Logger.error("Unable to confirm payment token: " + resp.selectAsString("error.message"));
+
+									callback.returnValue(
+											new RecordStruct()
+													.with("Code", responseCode)
+													.with("Message", "Failed to process payment: " + resp.selectAsString("error.message"))
+									);
+								}
+								else {
+									resp.with("Code", 200);
+
+									callback.returnValue(resp);
+								}
+							}
+						}
+						else {
+							Logger.error("Error processing message: Problem with Twilio gateway.");
+							Logger.error("Stripe Response: " + responseCode);
+
+							callback.returnValue(
+									new RecordStruct()
+											.with("Code", responseCode)
+											.with("Message", "Failed to send text ")
+							);
+						}
+					});
+		}
+		catch (Exception x) {
+			Logger.error("Error calling service, Twilio error: " + x);
+
+			callback.returnValue(
+					new RecordStruct()
+							.with("Code", 1)
+							.with("Message", "Failed to call service")
+			);
+		}
+	}
+
+	static public HttpRequest.Builder buildBasicRequest(String alt, String path, String post) {
+		XElement twilio = ApplicationHub.getCatalogSettings("CMS-SMS-Twilio", alt);
+
+		if (twilio == null) {
+			Logger.error("Missing Twilio settings.");
+			return null;
+		}
+
+		String account = twilio.getAttribute("Account");
+
+		if (StringUtil.isEmpty(account)) {
+			Logger.error("Missing Twilio account.");
+			return null;
+		}
+
+		String auth = twilio.getAttribute("AuthPlain");
+
+		if (StringUtil.isEmpty(auth)) {
+			Logger.error("Missing Twilio auth.");
+			return null;
+		}
+
+		String endpoint = "https://api.twilio.com/2010-04-01/Accounts/" + account + path;
+
+		String authString = account + ":" + auth;
+		//System.out.println("auth string: " + authString);
+		String authStringEnc = Base64.encodeToString(Utf8Encoder.encode(authString), false);
+		//System.out.println("Base64 encoded auth string: " + authStringEnc);
+
+		HttpRequest.Builder builder = HttpRequest.newBuilder()
+				.uri(URI.create(endpoint))
+				.header("Authorization", "Basic " + authStringEnc)
+				.header("User-Agent", "dcServer/2019.1 (Language=Java/11)");
+
+		if (StringUtil.isEmpty(post))
+			return builder.GET();
+
+		return builder
+				.header("Content-Type", "application/x-www-form-urlencoded")
+				.POST(HttpRequest.BodyPublishers.ofString(post));
 	}
 }

@@ -17,6 +17,7 @@
 package dcraft.db.rocks;
 
 import dcraft.db.DatabaseAdapter;
+import dcraft.db.DatabaseException;
 import dcraft.db.IConnectionManager;
 import dcraft.db.util.DbUtil;
 import dcraft.hub.op.OperationOutcomeStruct;
@@ -106,6 +107,13 @@ public class Service extends BaseService {
 			return false;
 		}
 
-		return DbUtil.execute(request, conn);
+		try {
+			return DbUtil.execute(request, conn);
+		}
+		catch (DatabaseException x) {
+			Logger.error("Error with database routine: " + x);
+			request.getOutcome().returnResult();
+			return false;
+		}
 	}
 }

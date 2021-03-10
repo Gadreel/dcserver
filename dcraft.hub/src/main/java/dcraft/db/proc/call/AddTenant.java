@@ -118,55 +118,65 @@ public class AddTenant implements IUpdatingStoredProc {
 		if ("root".equals(tenant) && StringUtil.isNotEmpty(password))
 			updateTenantRequest.withSetField("dcGlobalPassword", obfuscator.hashPassword(password));
 
-		DbUtil.execute((DbServiceRequest) updateTenantRequest.toServiceRequest()
-				.withOutcome(new OperationOutcomeStruct() {
-					@Override
-					public void callback(Struct result) throws OperatingContextException {
-						// have to use the global password until local is set
-						DbRecordRequest updateUserRequest = (DbRecordRequest) UpdateRecordRequest.update()
-								.withTable("dcUser")
-								.withId(DB_GLOBAL_ROOT_RECORD)
-								.withSetField("dcUsername", "root")
-								.withSetField("dcFirstName", ffirst)
-								.withSetField("dcLastName", flast)
-								.withSetField("dcEmail", femail)
-								.withSetField("dcConfirmed", true)
-								.withSetList("dcBadges",
-										ListStruct.list("SysAdmin", "Admin", "Developer")
-								)
-								.withForTenant(tenant);
+		try {
 
-						DbUtil.execute((DbServiceRequest) updateUserRequest.toServiceRequest()
-								.withOutcome(new OperationOutcomeStruct() {
-									@Override
-									public void callback(Struct result) throws OperatingContextException {
-										// only set this once - root may be copied but doesn't count as new record
-										if ("root".equals(tenant)) {
-											DatabaseAdapter dbconn = request.getInterface();
+			DbUtil.execute((DbServiceRequest) updateTenantRequest.toServiceRequest()
+					.withOutcome(new OperationOutcomeStruct() {
+						@Override
+						public void callback(Struct result) throws OperatingContextException {
+							// have to use the global password until local is set
+							DbRecordRequest updateUserRequest = (DbRecordRequest) UpdateRecordRequest.update()
+									.withTable("dcUser")
+									.withId(DB_GLOBAL_ROOT_RECORD)
+									.withSetField("dcUsername", "root")
+									.withSetField("dcFirstName", ffirst)
+									.withSetField("dcLastName", flast)
+									.withSetField("dcEmail", femail)
+									.withSetField("dcConfirmed", true)
+									.withSetList("dcBadges",
+											ListStruct.list("SysAdmin", "Admin", "Developer")
+									)
+									.withForTenant(tenant);
 
-											try {
-												// insert hub domain record id sequence
-												dbconn.set("root", DB_GLOBAL_RECORD_META, "dcTenant", "Id", "00000", 1);
+							try {
+								DbUtil.execute((DbServiceRequest) updateUserRequest.toServiceRequest()
+										.withOutcome(new OperationOutcomeStruct() {
+											@Override
+											public void callback(Struct result) throws OperatingContextException {
+												// only set this once - root may be copied but doesn't count as new record
+												if ("root".equals(tenant)) {
+													DatabaseAdapter dbconn = request.getInterface();
 
-												// insert root domain record count
-												dbconn.set("root", DB_GLOBAL_RECORD_META, "dcTenant", "Count", 1);
+													try {
+														// insert hub domain record id sequence
+														dbconn.set("root", DB_GLOBAL_RECORD_META, "dcTenant", "Id", "00000", 1);
 
-												// insert hub domain record id sequence - set to 2 because root and guest are both users - guest just isn't entered
-												dbconn.set("root", DB_GLOBAL_RECORD_META, "dcUser", "Id", "00000", 2);
+														// insert root domain record count
+														dbconn.set("root", DB_GLOBAL_RECORD_META, "dcTenant", "Count", 1);
 
-												// insert root domain record count
-												dbconn.set("root", DB_GLOBAL_RECORD_META, "dcUser", "Count", 1);
-											} catch (DatabaseException x) {
-												Logger.error("Error set root meta: " + x);
+														// insert hub domain record id sequence - set to 2 because root and guest are both users - guest just isn't entered
+														dbconn.set("root", DB_GLOBAL_RECORD_META, "dcUser", "Id", "00000", 2);
+
+														// insert root domain record count
+														dbconn.set("root", DB_GLOBAL_RECORD_META, "dcUser", "Count", 1);
+													} catch (DatabaseException x) {
+														Logger.error("Error set root meta: " + x);
+													}
+												}
+
+												callback.returnEmpty();
 											}
-										}
-
-										callback.returnEmpty();
-									}
-								}), request.getInterface().getManger());
-					}
-				}), request.getInterface().getManger());
-
+										}), request.getInterface().getManger());
+							}
+							catch (DatabaseException x) {
+								Logger.error("Unable to call database routine 2: " + x);
+							}
+						}
+					}), request.getInterface().getManger());
+		}
+		catch (DatabaseException x) {
+			Logger.error("Unable to call database routine: " + x);
+		}
 
 		callback.returnEmpty();
 	}

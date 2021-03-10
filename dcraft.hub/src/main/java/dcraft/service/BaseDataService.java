@@ -1,6 +1,7 @@
 package dcraft.service;
 
 
+import dcraft.db.DatabaseException;
 import dcraft.db.DbServiceRequest;
 import dcraft.db.IConnectionManager;
 import dcraft.db.util.DbUtil;
@@ -39,7 +40,14 @@ public class BaseDataService extends BaseService {
 				return false;
 			}
 
-			return DbUtil.execute((DbServiceRequest) DbServiceRequest.of(request).withOp(proccall), conn);
+			try {
+				return DbUtil.execute((DbServiceRequest) DbServiceRequest.of(request).withOp(proccall), conn);
+			}
+			catch (DatabaseException x) {
+				Logger.error("Error with database routine: " + x);
+				request.getOutcome().returnResult();
+				return false;
+			}
 		}
 		
 		return false;

@@ -1,6 +1,7 @@
 package dcraft.web;
 
 import dcraft.filestore.CommonPath;
+import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.app.HubState;
 import dcraft.hub.op.OperationContext;
@@ -191,7 +192,17 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 		wctx.getUserContext()
 				.withTenantAlias(site.getTenant().getAlias())
 				.withSiteAlias(site.getAlias());
-		
+
+		XElement dindexing = ApplicationHub.getCatalogSettings("Domain-Indexing");
+
+		if ((dindexing != null) && dindexing.hasNotEmptyAttribute("TestingDomain")) {
+			String tdomain = dindexing.attr("TestingDomain");
+
+			if (dname.endsWith(tdomain) && ! dname.equals(tdomain) && ! dname.equals("www." + tdomain)) {
+				wctrl.getResponse().setHeader("X-Robots-Tag", "noindex");
+			}
+		}
+
 		// --------------------------------------------
 		// status request
 		// --------------------------------------------

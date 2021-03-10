@@ -2215,6 +2215,7 @@ input:focus + label.dc-input-button,
 	margin-left: -3.2rem;
 	user-select: none;
 	display: inline-block;
+	outline: none;
 }
 
 .dc-widget-highlight-lr .dc-widget-highlight-ctrl svg {
@@ -2230,6 +2231,10 @@ input:focus + label.dc-input-button,
 
 .dc-widget-highlight-lr .dc-widget-highlight-ctrl-right {
 	right: 0;
+}
+
+.dc-widget-highlight-lr .dc-widget-highlight-ctrl-lr-disable {
+	display: none;
 }
 
 .dc-widget-highlight-lr .dc-widget-highlight-entry {

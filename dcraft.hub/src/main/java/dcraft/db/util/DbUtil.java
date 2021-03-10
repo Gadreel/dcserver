@@ -1,5 +1,6 @@
 package dcraft.db.util;
 
+import dcraft.db.DatabaseException;
 import dcraft.db.DbServiceRequest;
 import dcraft.db.IConnectionManager;
 import dcraft.db.proc.IExpression;
@@ -17,7 +18,7 @@ public class DbUtil {
 	// TODO add a executeWithValidate that validates the request
 	
 	// generally call service, not this
-	static public boolean execute(DbServiceRequest request, IConnectionManager conn) throws OperatingContextException {
+	static public boolean execute(DbServiceRequest request, IConnectionManager conn) throws OperatingContextException, DatabaseException {
 		Struct params = request.getData();
 
 		if (conn == null) {

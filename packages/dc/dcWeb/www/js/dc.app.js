@@ -3524,10 +3524,37 @@ dc.pui.Tags = {
 		});
 	},
 	'dcm.HighlightWidget': function(entry, node) {
+		var list = $(node).find('.dc-widget-highlight-list');
+
+		if (list.length == 0)
+			return;
+
+		var funcUpdateArrows = function() {
+			if ($(list).scrollLeft() == 0) {
+				$(node).find('.dc-widget-highlight-ctrl-left').addClass('dc-widget-highlight-ctrl-lr-disable');
+			}
+			else {
+				$(node).find('.dc-widget-highlight-ctrl-left').removeClass('dc-widget-highlight-ctrl-lr-disable');
+			}
+
+			var pos = list.get(0).scrollWidth; // + $(list).innerWidth();
+
+			var width = $(node).find('.dc-widget-highlight-entry').outerWidth();
+
+			if (pos == $(list).scrollLeft() + width) {
+				$(node).find('.dc-widget-highlight-ctrl-right').addClass('dc-widget-highlight-ctrl-lr-disable');
+			}
+			else {
+				$(node).find('.dc-widget-highlight-ctrl-right').removeClass('dc-widget-highlight-ctrl-lr-disable');
+			}
+		};
+
 		$(node).find('.dc-widget-highlight-ctrl-left a').click(function(e) {
 			var width = $(node).find('.dc-widget-highlight-entry').outerWidth();
 
-			$(node).find('.dc-widget-highlight-list').scrollLeft($(node).find('.dc-widget-highlight-list').scrollLeft() - width);
+			$(list).scrollLeft($(list).scrollLeft() - width);
+
+			funcUpdateArrows();
 
 			e.preventDefault();
 			return false;
@@ -3536,16 +3563,13 @@ dc.pui.Tags = {
 		$(node).find('.dc-widget-highlight-ctrl-right a').click(function(e) {
 			var width = $(node).find('.dc-widget-highlight-entry').outerWidth();
 
-			$(node).find('.dc-widget-highlight-list').scrollLeft($(node).find('.dc-widget-highlight-list').scrollLeft() + width);
+			$(list).scrollLeft($(list).scrollLeft() + width);
+
+			funcUpdateArrows();
 
 			e.preventDefault();
 			return false;
 		});
-
-		var list = $(node).find('.dc-widget-highlight-list');
-
-		if (list.length == 0)
-			return;
 
 		var cx = 0, x0 = 0, locked = false;
 
@@ -3582,6 +3606,8 @@ dc.pui.Tags = {
 
 				locked = false;
 				//cx = list.scrollLeft();
+
+				funcUpdateArrows();
 			}
 		};
 
@@ -3593,6 +3619,8 @@ dc.pui.Tags = {
 
 		list.get(0).addEventListener('mouseup', move, false);
 		list.get(0).addEventListener('touchend', move, false);
+
+		funcUpdateArrows();
 	},
 	'dcm.ImageWidget': function(entry, node) {
 		$(node).on("click", function(e) {
