@@ -33,6 +33,7 @@ import dcraft.schema.TableView;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.util.HexUtil;
 import dcraft.util.StringUtil;
 
 public class TablesAdapter {
@@ -2378,13 +2379,19 @@ public class TablesAdapter {
 		try {
 			byte[] valb = request.getInterface().getOrPrevPeerKey(did, ffdef.getIndexName(), table, fname, fromval);
 			byte[] valfin = (toval != null) ? ByteUtil.buildKey(toval) : null;
-			
+
+			// TODO
+			//System.out.println("found binary: " + HexUtil.bufferToHex(valb));
+
 			while (valb != null) {
 				// check if past "To"
 				if ((valfin != null) && (ByteUtil.compareKeys(valb, valfin) < 0))		// inclusive
 					break;
 				
 				Object val = ByteUtil.extractValue(valb);
+
+				// TODO
+				//System.out.println("found value: " + val);
 				
 				byte[] recid = request.getInterface().prevPeerKey(did, ffdef.getIndexName(), table, fname, val, null);
 				

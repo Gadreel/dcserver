@@ -1,6 +1,7 @@
 package dcraft.db.rocks;
 
 import dcraft.db.IConnectionManager;
+import dcraft.util.HexUtil;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
@@ -151,32 +152,21 @@ public class Adapter extends DatabaseAdapter {
 		if (it.isValid()) {
 			byte[] fnd = it.key();
 
-			/*
 			// ------------- TODO --------------
-			System.out.println("looking for match: " + HexUtil.bufferToHex(key));
+			/*
+			System.out.println("found       match: " + HexUtil.bufferToHex(key));
 			System.out.println("           before: " + HexUtil.bufferToHex(mem.getBufferEntry(0)));
 			System.out.println("              got: " + HexUtil.bufferToHex(fnd));
+			 */
 			// ---------------------------------
-			*/
-			
-			// match found, peer key exists 
-			if (ByteUtil.keyStartsWith(fnd, key)) {
+
+			// if the same then return that
+			if (ByteUtil.keyStartsWith(fnd, mem.getBufferEntry(0))) {
 				mem = new Memory(fnd);
 				mem.setPosition(key.length + 1);
 				
 				it.close();
-				
-				// ------------- TODO --------------
-				/*
-				List<Object> keyParts = ByteUtil.extractKeyParts(fnd);
-				
-				for (Object p : keyParts)
-					System.out.print((p == null) ? " / " : p.toString() + " / ");
-				
-				System.out.println();
-				*/
-				// ---------------------------------
-				
+
 				// return just 1 part - it might the same as peer or it might be the next peer
 				return ByteUtil.extractNextDirect(mem);
 			}
@@ -199,7 +189,8 @@ public class Adapter extends DatabaseAdapter {
 		System.out.println("looking for match: " + HexUtil.bufferToHex(key));
 		System.out.println("           before: " + HexUtil.bufferToHex(mem.getBufferEntry(0)));
 		System.out.println("              got: " + HexUtil.bufferToHex(fnd));
-		*/
+
+		 */
 		// ---------------------------------
 
 		// match found, prev peer key exists 
