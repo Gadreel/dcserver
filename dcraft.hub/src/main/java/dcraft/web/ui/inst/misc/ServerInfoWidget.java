@@ -18,7 +18,7 @@ public class ServerInfoWidget extends Base {
 	}
 	
 	public ServerInfoWidget() {
-		super("dc.ServerInfo");
+		super("dcm.ServerInfo");
 	}
 	
 	@Override

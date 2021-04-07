@@ -218,7 +218,10 @@ public class ImageWidget extends Base implements ICMSAware {
 				
 				if (props != null) {
 					for (FieldStruct fld : props.getFields()) {
-						this.attr(fld.getName(), Struct.objectToString(fld.getValue()));
+						if (fld.getValue() != null)
+							this.attr(fld.getName(), Struct.objectToString(fld.getValue()));
+						else
+							this.removeAttribute(fld.getName());
 					}
 				}
 				

@@ -88,6 +88,8 @@
 			<Tag Name="dcm.QotDWidget" Class="dcraft.web.ui.inst.feed.QotD" />
 			-->
 
+			<Tag Name="dcm.SiteSchema" Class="dcraft.web.ui.inst.misc.SiteSchema" />
+
 			<!-- cms feed tags -->
 			<Tag Name="dcm.FacebookWidget" Class="dcraft.web.ui.inst.feed.Facebook" />
 			<Tag Name="dcm.FacebookEventsWidget" Class="dcraft.web.ui.inst.feed.FacebookEvents" />

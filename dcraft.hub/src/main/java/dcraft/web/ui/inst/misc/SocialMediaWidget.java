@@ -20,7 +20,7 @@ public class SocialMediaWidget extends Base {
 	}
 	
 	public SocialMediaWidget() {
-		super("dc.SocialMediaWidget");
+		super("dcm.SocialMediaWidget");
 	}
 	
 	@Override

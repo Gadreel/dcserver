@@ -615,6 +615,12 @@ var dc = {
 			isOpera: function() {
 				return navigator.userAgent.indexOf("Presto") > -1;
 			},
+      isIOS: function() {
+        var is_ios = /^iP/.test(navigator.platform) ||
+                   /^Mac/.test(navigator.platform) && navigator.maxTouchPoints > 4;
+                           
+        return is_ios;
+      },
 			isWindows: function() {
 				return navigator.userAgent.toLowerCase().indexOf("windows") > -1;
 			},

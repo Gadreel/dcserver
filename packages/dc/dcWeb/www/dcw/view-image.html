@@ -329,6 +329,13 @@
 			if (entry.Params.NoCache)
 				path += '?nocache=' + dc.util.Crypto.makeSimpleKey();
 
+			// iOS apppears to have a bug with progressive loading, at least with images over 192kb
+			// until this is fixed, the best we can do is simply show the image in a page
+			if (dc.util.Web.isIOS()) {
+				window.location = path;
+				return;
+			}
+
 			dc.util.Image.load(path,
 				function(img) {
 					entry.Store.SelImg = img;
