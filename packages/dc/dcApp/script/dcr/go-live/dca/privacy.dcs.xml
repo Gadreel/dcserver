@@ -1,0 +1,99 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:privacy">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Privacy Policy',
+				Description: 'Check that a privacy policy page is present, in the menu, and all the variables are filled.',
+				Params: { Alias: 'privacy' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:privacy" Param="StepId">
+		<dcs.Var Name="Privacy" Type="List" />
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="Privacy" Value="$Privacy" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:privacy" Param="StepInfo">
+		<dc.Out>
+			<p>
+				Typically the privacy policy page is filled with variables also used by the SEO widget. When used this way there is only one edit needed to the privacy policy feed file.
+				Find the placeholder "_[date]._" and set it to the current date. This placeholder should be right after the "Privacy policy Revisions" heading.
+			</p>
+			<p>
+				These are the variables used by the privacy page and by the SEO widget, and possibly elsewhere. If no value shows, or if it is the wrong value, please correct. If the variables show and are correct then the page most likely is good.
+			</p>
+
+			<table>
+				<tr>
+					<th>Variable</th>
+					<th>Value</th>
+				</tr>
+				<tr>
+					<td>SiteOwner</td>
+					<td>{$SiteOwner}</td>
+				</tr>
+				<tr>
+					<td>OfficialDomain</td>
+					<td>{$OfficialDomain}</td>
+				</tr>
+				<tr>
+					<td>OfficialPhone</td>
+					<td>{$OfficialPhone}</td>
+				</tr>
+				<tr>
+					<td>OfficialPhoneFormatted</td>
+					<td>{$OfficialPhoneFormatted}</td>
+				</tr>
+				<tr>
+					<td>OfficialEmail</td>
+					<td>{$OfficialEmail}</td>
+				</tr>
+				<tr>
+					<td>PostalStreet</td>
+					<td>{$PostalStreet}</td>
+				</tr>
+				<tr>
+					<td>PostalLocality</td>
+					<td>{$PostalLocality}</td>
+				</tr>
+				<tr>
+					<td>PostalRegion</td>
+					<td>{$PostalRegion}</td>
+				</tr>
+				<tr>
+					<td>PostalCode</td>
+					<td>{$PostalCode}</td>
+				</tr>
+			</table>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:privacy" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+In the config.xml file for the site, check for these variables to be present:
+
+``` xml
+<Variables>
+	<Var Name="SiteOwner" Value="designCraft Advertising" />
+	<Var Name="OfficialPhone" Value="+16082511809" />
+	<Var Name="PostalStreet" Value="707 South Park Street" />
+	<Var Name="PostalLocality" Value="Madison" />
+	<Var Name="PostalRegion" Value="WI" />
+	<Var Name="PostalCode" Value="53715" />
+</Variables>
+```
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

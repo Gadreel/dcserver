@@ -18,6 +18,7 @@ import dcraft.schema.SchemaResource;
 import dcraft.service.IService;
 import dcraft.service.ServiceHub;
 import dcraft.service.ServiceResource;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.StringStruct;
@@ -629,7 +630,21 @@ public class PrepWork extends StateWork {
 					if (StringUtil.isEmpty(lname))
 						continue;
 
-					site.addVariable(lname, StringStruct.of(lel.getAttribute("Value")));
+					if (lel.hasNotEmptyAttribute("Value")) {
+						site.addVariable(lname, StringStruct.of(lel.getAttribute("Value")));
+					}
+					else {
+						ListStruct varlist = ListStruct.list();
+
+						for (XElement item : lel.selectAll("Item")) {
+							if (item.hasNotEmptyAttribute("Value")) {
+								varlist.with(StringStruct.of(item.getAttribute("Value")));
+							}
+						}
+
+						if (! varlist.isEmpty())
+							site.addVariable(lname, varlist);
+					}
 				}
 
 				if (site.queryVariable("SiteCopyright") == null)

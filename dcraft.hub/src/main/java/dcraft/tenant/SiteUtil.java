@@ -141,6 +141,17 @@ public class SiteUtil {
             }
         }
 
+        // sameAs from vars
+        {
+            ListStruct officialSameAs = Struct.objectToList(TaskContext.getOrThrow().queryVariable("OfficialSameAs"));
+
+            if (officialSameAs != null) {
+                for (int i = 0; i < officialSameAs.size(); i++) {
+                    sameas.with(officialSameAs.getItemAsString(i));
+                }
+            }
+        }
+
         if (! sameas.isEmpty())
             schema.with("sameAs", sameas);
 

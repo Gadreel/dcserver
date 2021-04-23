@@ -1,0 +1,76 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:seo-schema">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'SEO Schema',
+				Description: 'Settings for including Schema for SEO.',
+				Params: { Alias: 'seo-schema' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:seo-schema" Param="StepId">
+		<dcm.SiteSchema Result="SchemaSettings" />
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="SchemaSettings" Value="$SchemaSettings" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:seo-schema" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+The main value of schema is to help Google verify that your business is the same business described by your [Google Business Profile](https://www.google.com/business/business-profile/). As such it is helpful to include the business name, phone, email, address and domain. Further, it can be a place to link your web identity with other profiles on the web. Other fields such as hours of operation or menus are best edited directly through your Google profile.
+
+To include the schema on your website, simply fill in the variables and use the `<dcm.SiteSchema />` tag on your home page.
+
+These are the variables Currently used by your schema, shown in the final schema format. You can copy and paste this into a schema validation tool for verification if you have concerns.
+
+``` json
+{$StepInfo.Store.SchemaSettings|prettyjson:}
+```
+				]]></Tr>
+			</dc.TextWidget>
+
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:seo-schema" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+A typical schema has these variables and is configured in the config.xml for the site.
+
+``` xml
+<Variables>
+	<Var Name="SiteOwner" Value="designCraft Advertising" />
+	<Var Name="OfficialSameAs">
+		<Item Value="bbb.cpm" />
+		<Item Value="abc.cpm" />
+		<Item Value="xyz.cpm" />
+	</Var>
+	<Var Name="OfficialPhone" Value="+16082511809" />
+	<Var Name="OfficialPhoneFormatted" Value="608-251-1809" />
+	<Var Name="OfficialEmail" Value="conscience@designcraftadvertising.com" />
+	<Var Name="OfficialDomain" Value="designcraftadvertising.com" />
+	<Var Name="OfficialDescription" Value="designCraft Advertising is a ..." />
+	<Var Name="PostalStreet" Value="707 South Park Street" />
+	<Var Name="PostalLocality" Value="Madison" />
+	<Var Name="PostalRegion" Value="WI" />
+	<Var Name="PostalCode" Value="53715" />
+</Variables>
+```
+
+Note that _OfficialSameAs_ is optional, and that the schema's same as will automatically include the social media links (TODO link to SM config). You do not need to list those again in the _OfficialSameAs_.
+
+TODO DCC link to config article
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

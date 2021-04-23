@@ -1,6 +1,7 @@
 <dcs.Library>
 	<dcs.Global Name="CheckList" Type="List">
 		<Set>
+			'privacy',
 			'editor',
 			'inline-css'
 		</Set>
