@@ -23,7 +23,7 @@ public class XmlToJsonPrinter extends XmlPrinter {
 	}
 	
 	@Override
-	public void print(XNode node, int level, XElement parent) throws OperatingContextException {
+	public void print(XNode node, int level, XElement parent, boolean clearvars) throws OperatingContextException {
 		try {
 			if (node instanceof XText) {
 				XText text = (XText) node;
@@ -68,7 +68,7 @@ public class XmlToJsonPrinter extends XmlPrinter {
 					this.jsb.startList();
 					
 					for (XNode child : el.getChildren())
-						this.print(child, level + 1, el);
+						this.print(child, level + 1, el, clearvars);
 					
 					this.jsb.endList();
 				}

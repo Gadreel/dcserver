@@ -13,6 +13,7 @@ import dcraft.struct.CompositeParser;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.tool.backup.BackupUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
@@ -38,10 +39,17 @@ public class InstagramUtil {
 
         String sub = StringUtil.isNotEmpty(alt) ? alt : "default";
 
-        ZonedDateTime expire = Struct.objectToDateTime(db.getDynamicList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessExpire", sub));
+        boolean disabled = Struct.objectToBooleanOrFalse(db.getStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessDisabled", sub));
+
+        if (disabled) {
+            callback.returnEmpty();
+            return;
+        }
+
+        ZonedDateTime expire = Struct.objectToDateTime(db.getStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessExpire", sub));
 
         if (expire != null) {
-            basictoken = Struct.objectToString(db.getDynamicList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessToken", sub));
+            basictoken = Struct.objectToString(db.getStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessToken", sub));
 
             ZonedDateTime checkdate = TimeUtil.now().plusDays(7);
 
@@ -58,12 +66,21 @@ public class InstagramUtil {
                 public void callback(RecordStruct result) throws OperatingContextException {
                     if (this.isNotEmptyResult()) {
                         String token = result.getFieldAsString("access_token");
-                        long secs = result.getFieldAsInteger("expires_in");
+                        long secs = result.getFieldAsInteger("expires_in", 0L);
 
-                        ZonedDateTime expire = TimeUtil.now().plusSeconds(secs);
+                        if (StringUtil.isNotEmpty(token)) {
+                            ZonedDateTime expire = TimeUtil.now().plusSeconds(secs);
 
-                        db.updateStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessToken", sub, token);
-                        db.updateStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessExpire", sub, expire);
+                            db.updateStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessToken", sub, token);
+                            db.updateStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessExpire", sub, expire);
+
+                            BackupUtil.notifyProgress(ApplicationHub.getDeployment() + " : " + ApplicationHub.getNodeId() + " : " + OperationContext.getOrThrow().getSite().getTenant().getAlias() + " : successfully renewed IG token: " + token);
+                        }
+                        else {
+                            db.updateStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessDisabled", sub, true);
+
+                            BackupUtil.notifyProgress(ApplicationHub.getDeployment() + " : " + ApplicationHub.getNodeId() + " : " + OperationContext.getOrThrow().getSite().getTenant().getAlias() + " : unable to renew IG token");
+                        }
 
                         callback.returnValue(token);
                     }
@@ -104,7 +121,7 @@ public class InstagramUtil {
         {expires-in}           Integer                    The number of seconds until the long-lived token expires.
      */
 
-    static public void refresh(String token, OperationOutcomeRecord callback) {
+    static public void refresh(String token, OperationOutcomeRecord callback) throws OperatingContextException {
         try {
             OperationContext.getOrThrow().touch();
 
@@ -124,6 +141,14 @@ public class InstagramUtil {
 
                         if (resp == null) {
                             Logger.error("Error processing request: Instagram sent an incomplete response: " + responseCode);
+
+                            try {
+                                BackupUtil.notifyProgress(ApplicationHub.getDeployment() + " : " + ApplicationHub.getNodeId() + " : " + OperationContext.getOrThrow().getSite().getTenant().getAlias() + " : Error processing request: Instagram sent an incomplete response: " + responseCode);
+                            }
+                            catch (OperatingContextException e) {
+                                Logger.error("Unable to notify admin: Instagram sent an incomplete response");
+                            }
+
                             callback.returnEmpty();
                             return;
                         }
@@ -135,6 +160,7 @@ public class InstagramUtil {
         }
         catch (Exception x) {
             Logger.error("Error processing token refresh: Unable to connect to Instagram. Error: " + x);
+            BackupUtil.notifyProgress(ApplicationHub.getDeployment() + " : " + ApplicationHub.getNodeId() + " : " + OperationContext.getOrThrow().getSite().getTenant().getAlias() + " : Error processing token refresh: Unable to connect to Instagram. Error: " + x);
             callback.returnEmpty();
         }
     }

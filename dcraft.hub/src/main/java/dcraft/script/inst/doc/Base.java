@@ -38,6 +38,10 @@ public class Base extends BlockInstruction {
 	public boolean isExclude() {
 		return this.exclude;
 	}
+
+	public void setExclude(boolean v) {
+		this.exclude = v;
+	}
 	
 	public Base() {
 	}

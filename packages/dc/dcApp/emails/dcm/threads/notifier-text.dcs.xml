@@ -9,6 +9,8 @@
 		<Translate Result="TrTextMessage" />
 	</dcs.With>
 
+	<dcs.Info>Notify thread: {$_Param.Id} - phone:  {$Notify.Phone}</dcs.Info>
+
 	<dcs.If Target="$Notify.Phone" IsEmpty="false">
 		<dcs.SendText To="{$Notify.Phone}" Body="{$TrTextMessage}" />
 	</dcs.If>

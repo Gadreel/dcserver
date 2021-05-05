@@ -165,26 +165,6 @@ public class Instagram extends Base implements ICMSAware, IReviewAware {
 						}
 					}
 				}
-				// use old IG API if not basic token
-				else {
-					String token = isettings.attr("Token");
-
-					if (StringUtil.isEmpty(token)) {
-						Logger.warn("Missing Instagram token.");
-						return;
-					}
-
-					URL url = new URL("https://api.instagram.com/v1/users/self/media/recent/?access_token=" + token);
-
-					CompositeStruct res = CompositeParser.parseJson(url);
-
-					//if (res != null)
-					//	System.out.println("I: " + res.toPrettyString());
-
-					data = ((RecordStruct) res).getFieldAsList("data");
-
-					newdata = true;
-				}
 
 				if (newdata)
 					requestContext.getInterface().set(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Data", data);

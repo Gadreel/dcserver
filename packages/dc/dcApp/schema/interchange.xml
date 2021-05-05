@@ -14,6 +14,7 @@
 			<!-- keyed by alt -->
 			<Field Name="dcmInstagramAccessToken" Group="dcmInstagramToken" Type="dcString" List="True" Audit="False" />
       <Field Name="dcmInstagramAccessExpire" Group="dcmInstagramToken" Type="DateTime" List="True" Audit="False" />
+      <Field Name="dcmInstagramAccessDisabled" Group="dcmInstagramToken" Type="Boolean" List="True" Audit="False" />
 
       <!-- keyed by store ident
       -->

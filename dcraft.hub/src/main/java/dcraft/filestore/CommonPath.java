@@ -648,8 +648,12 @@ public class CommonPath implements IDataExposer {
 
     @Override
     public boolean equals(Object ob) {
-        if ((ob != null) && (ob instanceof CommonPath)) {
-            return (this.compareTo((CommonPath)ob) == 0);
+        if (ob != null) {
+            if (ob instanceof CommonPath)
+                return (this.compareTo((CommonPath)ob) == 0);
+
+            if (ob instanceof String)
+                return (this.path.compareTo((String) ob) == 0);
         }
         return false;
     }

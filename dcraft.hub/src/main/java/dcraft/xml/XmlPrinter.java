@@ -19,10 +19,10 @@ public class XmlPrinter {
 	}
 	
 	public void print(XNode root) throws OperatingContextException {
-		this.print(root, 0, null);
+		this.print(root, 0, null, true);
 	}
 	
-	public void print(XNode node, int level, XElement parent) throws OperatingContextException {
+	public void print(XNode node, int level, XElement parent, boolean clearvars) throws OperatingContextException {
 		// Add leading newline and spaces, if necessary
 		if (formatted && level > 0) {
 			this.out.append("\n");
@@ -76,7 +76,7 @@ public class XmlPrinter {
 					else
 						fndelement = true;		
 	
-					this.print(cnode, level + 1, el);
+					this.print(cnode, level + 1, el, true);
 				}
 				
 				// Add leading newline and spaces, if necessary

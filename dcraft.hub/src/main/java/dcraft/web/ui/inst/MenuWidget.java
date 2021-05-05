@@ -158,7 +158,11 @@ public class MenuWidget extends Base {
 			}
 
 			if (StringUtil.isNotEmpty(pagelink)) {
-				if ((ppath.length() > 1) && ppath.startsWith(pagelink)) {
+				if (pagelink.equals("/")) {
+					if (ppath.equals("/") || OperationContext.getOrThrow().getSite().getHomePath().equals(ppath))
+						((Base) mnu).withClass("selected");
+				}
+				else if ((ppath.length() > 1) && ppath.startsWith(pagelink)) {
 					((Base) mnu).withClass("selected");
 				}
 				else if ((opath.length() > 1) && opath.startsWith(pagelink)) {

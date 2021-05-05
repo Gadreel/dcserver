@@ -235,10 +235,10 @@ public class JsonPrinter extends XmlToJsonPrinterOld {
 				XElement svg = doc.selectFirst("body/svg");
 				
 				if (svg != null)
-					prt.print(svg, 0, body);
+					prt.print(svg, 0, body, true);
 				
 				for (XNode cnode : body.getChildren())
-					prt.print(cnode, 0, body);
+					prt.print(cnode, 0, body, true);
 				
 				this.jsb.endStreamValue();
 			}

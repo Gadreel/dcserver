@@ -208,6 +208,11 @@
 		<Procedure Name="dcCoreServices.BasicCustomForm.Update" Execute="dcraft.cms.db.forms.BasicUpdate" />
 		<Procedure Name="dcCoreServices.BasicCustomForm.Delete" Execute="dcraft.cms.db.forms.BasicDelete" />
 
+		<Procedure Name="dcCoreServices.Instagram.ResetToken" Execute="dcraft.core.db.instagram.ResetToken" />
+		<Procedure Name="dcCoreServices.Instagram.ClearCache" Execute="dcraft.core.db.instagram.ClearCache" />
+		<Procedure Name="dcCoreServices.Instagram.ResetCache" Execute="dcraft.core.db.instagram.ResetCache" />
+		<Procedure Name="dcCoreServices.Instagram.Status" Execute="dcraft.core.db.instagram.Status" />
+
 		<Collector Name="dcmScanFeed" Execute="dcraft.cms.feed.db.Scan" />
 
 		<Composer Name="dcmFeedFields" Execute="dcraft.cms.feed.db.FeedFieldsComp" />
@@ -349,6 +354,51 @@
 
 						TODO resubmit form
 					 -->
+				</Secure>
+			</Feature>
+			<Feature Name="Instagram">
+				<Secure Tags="SysAdmin">
+					<Op Name="ResetToken">
+						<Description>
+							Replace the access token and enable the cache / refresh.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Alt" Type="dcTinyString" />
+							<Field Name="Token" Type="dcString" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="ClearCache">
+						<Description>
+							Remove all the cache.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Alt" Type="dcTinyString" />
+						</RecordRequest>
+					</Op>
+					<Op Name="ResetCache">
+						<Description>
+							Clear stamp so cache is rechecked.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Alt" Type="dcTinyString" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Status">
+						<Description>
+							Get status info about the service.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Alt" Type="dcTinyString" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="UserId" Type="dcSmallString" />
+							<Field Name="CacheSize" Type="Integer" />
+							<Field Name="Token" Type="dcString" />
+							<Field Name="TokenExpire" Type="DateTime" />
+							<Field Name="TokenDisabled" Type="Boolean" />
+							<Field Name="CachedAt" Type="DateTime" />
+						</RecordResponse>
+					</Op>
 				</Secure>
 			</Feature>
 		</Service>

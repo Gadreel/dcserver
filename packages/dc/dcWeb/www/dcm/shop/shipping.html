@@ -11,11 +11,11 @@
 						<div id="sectShipInst" />
 					</dcf.Custom>
 
-					<dcf.HorizRadioGroup Label="Delivery" Name="Delivery" Required="true">
+					<dcf.HorizRadioGroup id="radDelivery" Label="Delivery" Name="Delivery" Required="true">
 						<RadioButton Value="Ship" Label="Ship to me" />
 						<RadioButton Value="Pickup" Label="Pickup at store" />
 					</dcf.HorizRadioGroup>
-
+\
 					<div id="sectShipDetails">
 						<dcf.Text Label="First Name" Name="FirstName" Required="true" />
 						<dcf.Text Label="Last Name" Name="LastName" Required="true" />
@@ -97,28 +97,49 @@
 
 			var cart = dc.cms.cart.Cart._cart;
 			var ship = 0;
+			var come = 0;
 
 			for (var i = 0; i < cart.Items.length; i++) {
 				var item = cart.Items[i];
 
 				for (var n = 0; n < item.Delivery.length; n++) {
-					if (item.Delivery[n] == 'Ship')
+					if ((item.Delivery[n] == 'Ship') || (item.Delivery[n] == 'Deliver'))
 						ship++;
+					else if ((item.Delivery[n] == 'Pickup') || (item.Delivery[n] == 'Curbside'))
+						come++;
 				}
 			}
 
-			if (ship == 0) {
+			if ((ship > 0) && (come > 0)) {
+				$('#sectShipInst').text('Some of the items in your cart can be shipped or picked up. Please check the Order Confirmation for any additional instructions.');
+			}
+			else if (come > 0) {
 				dc.cms.cart.Cart._cart.Delivery = 'Pickup';
 
-				$('#sectShipInst').text('None of the items in your cart can be shipped. This cart contains items you pickup at the store or items that you will download.');
+				$('#sectShipInst').text('This cart contains items you pickup at the store or items that you will download.');
 
 				$('#sectShipDetails').hide();
+				$('#sectPickupDetails').show();
+
+				$('#radDelivery input[value="Ship"]').parent().hide();
 			}
 			else if (ship == cart.Items.length) {
+				dc.cms.cart.Cart._cart.Delivery = 'Ship';
+
 				$('#sectShipInst').text('All of the items in your cart can be shipped.');
+				$('#sectShipDetails').show();
+				$('#sectPickupDetails').hide();
+
+				$('#radDelivery input[value="Pickup"]').parent().hide();
 			}
 			else {
+				dc.cms.cart.Cart._cart.Delivery = 'Ship';
+
 				$('#sectShipInst').text('Some of the items in your cart can be shipped.');
+				$('#sectShipDetails').show();
+				$('#sectPickupDetails').hide();
+
+				$('#radDelivery input[value="Pickup"]').parent().hide();
 			}
 	]]></Function>
 	<Function Name="LoadRecord" Params="e"><![CDATA[

@@ -55,9 +55,12 @@ public class HtmlPrinter extends XmlPrinter {
 	}
 	
 	@Override
-	public void print(XNode node, int level, XElement parent) throws OperatingContextException {
+	public void print(XNode node, int level, XElement parent, boolean clearvars) throws OperatingContextException {
 		if (node instanceof XText) {
-			String val = this.valueMacro(((XText) node).getRawValue(), parent);
+			String val = ((XText) node).getRawValue();
+
+			if (clearvars)
+				val = this.valueMacro(val, parent);
 			
 			if (val != null) {
 				this.printFormatLead(level);
@@ -67,11 +70,14 @@ public class HtmlPrinter extends XmlPrinter {
 		else if (node instanceof XElement) {
 			if ((node instanceof Base) && ((Base)node).isExclude())
 				return;
-			
+
 			this.printFormatLead(level);
 			
 			XElement el = (XElement) node;
-			
+
+			if (el.hasAttribute("dc:unresolvedvars"))
+				clearvars = ! el.getAttributeAsBooleanOrFalse("dc:unresolvedvars");
+
 			String name = el.getName();
 			
 			// skip upper case "parameter" style tags
@@ -104,7 +110,7 @@ public class HtmlPrinter extends XmlPrinter {
 						// while entities - including &nbsp; - may work in text nodes we aren't supporting
 						// them in attributes and suggest the dec/hex codes - &spades; should be &#9824; or &#x2660;
 						String normvalue = XNode.unquote(entry.getValue());
-						String expandvalue = this.valueMacro(normvalue, el);
+						String expandvalue = clearvars ? this.valueMacro(normvalue, el) : normvalue;
 						
 						this.out.append("\"" + XNode.quote(expandvalue) + "\"");		
 					}
@@ -134,7 +140,7 @@ public class HtmlPrinter extends XmlPrinter {
 				// Add leading newline and spaces, if necessary
 				if ((formatThis || fndelement) && formatted) {
 					for (XNode cnode : el.getChildren()) 
-						this.print(cnode, level + 1, el);
+						this.print(cnode, level + 1, el, clearvars);
 					
 					this.out.append("\n");
 					
@@ -143,7 +149,7 @@ public class HtmlPrinter extends XmlPrinter {
 				}
 				else {
 					for (XNode cnode : el.getChildren()) 
-						this.print(cnode, 0, el);
+						this.print(cnode, 0, el, clearvars);
 				}
 				
 				// Now put the closing tag out

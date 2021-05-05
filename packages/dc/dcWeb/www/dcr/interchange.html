@@ -1,0 +1,96 @@
+<dc.Html Badges="SysAdmin">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Interchange" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<h3>Instagram</h3>
+
+			<p id="lbldiStatus">Status: [loading]</p>
+
+			<br />
+
+			<dcf.Text id="txtdiAlt" Label="Feed Alternate" Name="Alt" placeholder="leave blank for default feed" />
+			<dcf.Text id="txtdiTolken" Label="New Token" Name="Token" placeholder="only for Reset Token" />
+
+			<dcf.FormButtons>
+				<dc.Button Label="(Re)load Status" Click="DoReload" />
+				<dc.Button Label="Reset Cache" Click="DoResetCache" />
+				<dc.Button Label="Clear Cache" Click="DoClearCache" />
+				<dc.Button Label="Reset Token" Click="DoResetToken" />
+			</dcf.FormButtons>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.callPageFunc("DoReload");
+	]]></Function>
+	<Function Name="DoReload"><![CDATA[
+			var page = this;
+
+			$('#lbldiStatus').text('Status: [loading]');
+
+			dc.comm.call('dcCoreServices.Instagram.Status', { Alt: $('#txtdiAlt').val() }, function(rmsg) {
+				if (rmsg.Code > 0) {
+					$('#lbldiStatus').text('Status: [error] ' + rmsg.Message);
+				}
+				else {
+					$('#lbldiStatus').empty().dcappend(
+						$('<b>').text('Status: '),
+						$('<br />'),
+						'User Id: ' + (rmsg.Result.UserId ? rmsg.Result.UserId : '[not configured]'),
+						$('<br />'),
+						'Token: ' + (rmsg.Result.Token ? rmsg.Result.Token : '[na]'),
+						$('<br />'),
+						'Token Expiration: ' + (rmsg.Result.TokenExpire ? dc.util.Date.formatZLocalMedium(rmsg.Result.TokenExpire) : '[na]'),
+						$('<br />'),
+						'Token Disabled: ' + (rmsg.Result.TokenDisabled ? 'yes' : 'no'),
+						$('<br />'),
+						'Cache Last Checked: ' + (rmsg.Result.CachedAt ? dc.util.Date.formatZLocalMedium(rmsg.Result.CachedAt) : '[na]'),
+						$('<br />'),
+						'Cache Size: ' + rmsg.Result.CacheSize,
+						$('<br />'),
+					);
+				}
+			});
+	]]></Function>
+	<Function Name="DoResetCache"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcCoreServices.Instagram.ResetCache', { Alt: $('#txtdiAlt').val() }, function(rmsg) {
+				if (rmsg.Code > 0) {
+					dc.pui.Popup.alert('Unable to reset cache: ' + rmsg.Message);
+				}
+				else {
+					dc.pui.Popup.alert('Cache reset, please try loading the feed again.');
+				}
+			});
+	]]></Function>
+	<Function Name="DoClearCache"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcCoreServices.Instagram.ClearCache', { Alt: $('#txtdiAlt').val() }, function(rmsg) {
+				if (rmsg.Code > 0) {
+					dc.pui.Popup.alert('Unable to clear cache: ' + rmsg.Message);
+				}
+				else {
+					dc.pui.Popup.alert('Cache cleared, please try loading the feed again.');
+				}
+			});
+	]]></Function>
+	<Function Name="DoResetToken"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcCoreServices.Instagram.ResetToken', { Alt: $('#txtdiAlt').val(), Token: $('#txtdiTolken').val() }, function(rmsg) {
+				if (rmsg.Code > 0) {
+					dc.pui.Popup.alert('Unable to reset token: ' + rmsg.Message);
+				}
+				else {
+					dc.pui.Popup.alert('Token reset, please try loading the feed again.');
+				}
+			});
+	]]></Function>
+</dc.Html>

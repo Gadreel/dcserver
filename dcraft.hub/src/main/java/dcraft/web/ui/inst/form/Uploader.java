@@ -78,4 +78,14 @@ public class Uploader extends CoreField {
 				</div>
 		*/		
 	}
+
+	@Override
+	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
+		super.renderBeforeChildren(state);
+
+		// automatically require the form's data types
+		this.getRoot(state).with(XElement.tag("Require")
+				.withAttribute("Script", "/js/dc.transfer.js")
+		);
+	}
 }

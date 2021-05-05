@@ -34,6 +34,8 @@
 		<SetField Name="Id" Value="{$Data.Id}" />
 	</dcs.Var>
 
+	<dcs.Info>Notify thread: {$_Param.Id} - type:  {$Data.MessageType}</dcs.Info>
+
 	<dcs.Include Path="/dcm/threads/{$Data.MessageType}" />
 
 	<!-- BuildMessage function overrides entire process -->
@@ -55,6 +57,8 @@
 			this will give us list of Notify with: Name, Method, Email, Phone, EmailList
 		-->
 
+		<dcs.Info>Notify thread: {$_Param.Id} - channel:  {$_Param.Channel.@Alias}</dcs.Info>
+
 		<dcs.Include Path="/dcm/threads/channel-{$_Param.Channel.@Alias}" />
 
 		<!--
@@ -70,6 +74,8 @@
 		<!--
 			this will send using the above info
 		-->
+
+		<dcs.Info>Notify thread: {$_Param.Id} - method:  {$Data.Notify}</dcs.Info>
 
 		<dcs.If Target="$Data.Notify" IsEmpty="false">
 			<dcs.ForEach Name="Notify" In="$Data.Notify">

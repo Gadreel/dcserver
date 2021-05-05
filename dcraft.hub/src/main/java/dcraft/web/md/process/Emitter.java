@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.script.ScriptHub;
+import dcraft.script.inst.doc.Base;
 import dcraft.util.StringUtil;
 import dcraft.web.md.Plugin;
 import dcraft.web.md.ProcessContext;
@@ -994,8 +995,16 @@ public class Emitter {
     protected void emitCodeLines(XElement parent, Line lines, String meta, boolean removeIndent) {
         Line line = lines;
 
-		if (StringUtil.isNotEmpty(meta))
-			parent.attr("class", "language-" + meta + " fenced");
+		if (StringUtil.isNotEmpty(meta)) {
+            parent.attr("class", "language-" + meta + " fenced");
+
+            String[] tokens = meta.split("\\s+");
+
+            for (int i = 0; i < tokens.length; i++) {
+                if ("example".equals(tokens[i].trim()) && (parent instanceof Base))
+                    parent.attr("dc:unresolvedvars", "true");
+            }
+        }
 		
 		StringBuilder sb = new StringBuilder();
 

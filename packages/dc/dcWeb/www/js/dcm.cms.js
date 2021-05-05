@@ -637,6 +637,12 @@ dc.pui.Apps.Menus.dcmSystem = {
 			Title: 'Go Live Report',
 			Auth: [ 'SysAdmin', 'Admin' ],
 			Path: '/dcr/go-live'
+		},
+  		{
+			Alias: 'Interchange',
+			Title: 'Interchange',
+			Auth: [ 'SysAdmin', 'Admin' ],
+			Path: '/dcr/interchange'
 		}
 	],
 	Options: [
