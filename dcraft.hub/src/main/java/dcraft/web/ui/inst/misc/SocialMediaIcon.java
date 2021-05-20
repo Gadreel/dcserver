@@ -51,8 +51,10 @@ public class SocialMediaIcon extends Link {
 
 	@Override
 	public void renderAfterChildren(InstructionWork state) throws OperatingContextException {
-		this.withClass("dcm-social-media-icon");
-		
+		this
+				.withClass("dcm-social-media-icon")
+				.attr("rel","noopener");
+
 		this.setName("dc.Link");
 		
 		super.renderAfterChildren(state);

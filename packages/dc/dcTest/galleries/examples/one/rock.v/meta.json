@@ -1,0 +1,8 @@
+{
+	default: {
+		CenterHint: 200
+	},
+	eng: {
+		Title: 'photo known as rock'
+	}
+}

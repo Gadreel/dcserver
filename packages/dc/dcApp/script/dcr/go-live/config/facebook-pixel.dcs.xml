@@ -1,0 +1,65 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:facebook-pixel">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Facebook Analytics',
+				Description: 'Pixel Id.',
+				Params: { Alias: 'facebook-pixel' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:facebook-pixel" Param="StepId">
+		<dcs.CatalogSettings Id="Facebook" Result="FacebookSettings" />
+
+		<dcs.Var Name="PixelId" Type="String" SetTo="" />
+
+		<dcs.If Target="$FacebookSettings.@PixelId" IsEmpty="false">
+			<dcs.With Target="$PixelId" SetTo="{$FacebookSettings.@PixelId}" />
+		</dcs.If>
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="PixelId" Value="{$PixelId}" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:facebook-pixel" Param="StepInfo">
+		<dc.Out>
+			<p><b>Pixel Id:</b> {$StepInfo.Store.PixelId|ifempty:[not present]}</p>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:facebook-pixel" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+Some sites may use the Facebook Pixel Id. Check if this site should have Pixel installed. If so then proceed.
+
+In the config.xml file there will be multipe _Catalog_ tags. Find the Facebook catalog, or add it if missing. There may be additional settings, do not remove those. The focus of this task is to be sure that the _PixelId_ attribute is set correctly. Example:
+
+``` xml
+<Catalog Id="Facebook-Both">
+	<Settings PixelId="NNNNNNNNNNNNNNNNN" />
+</Catalog>
+```
+
+In some cases the the setting may use "Facebook-Production" instead of "Facebook-Both" like so:
+
+``` xml
+<Catalog Id="Facebook-Production">
+	<Settings PixelId="NNNNNNNNNNNNNNNNN" />
+</Catalog>
+```
+
+If you see a "Facebook-Test" but not the other options then add a "Facebook-Production" catalog section or discuss with the developer - there may be reason why production was left out.
+
+TODO DCC link to config and catalog article
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

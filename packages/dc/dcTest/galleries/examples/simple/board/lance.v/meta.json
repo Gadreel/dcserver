@@ -1,9 +1,14 @@
 {
-	en: { 
-		Name: "Lance Ellis", 
-		Title: "CTO", 
-		Email: "lance@abc.com", 
-		Phone: "ext. 207", 
-		Description: "Tech visionary" 
+	default: {
+		Name: "Lance Ellis",
+		Title: "CTO",
+		Email: "lance@abc.com",
+		Phone: "ext. 207"
+	},
+	eng: {
+		Description: "Tech visionary"
+	},
+	spa: {
+		Description: "Visionario tecnológico"
 	}
 }

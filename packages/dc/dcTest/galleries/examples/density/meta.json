@@ -1,0 +1,34 @@
+ {
+	"Variations":  [
+		 {
+			"ExactWidth": 768,
+			"ExactHeight": 1024,
+			"Alias": "extra",
+			"Name": "Extra"
+		 },
+		 {
+			"ExactWidth": 480,
+			"ExactHeight": 640,
+			"Alias": "full",
+			"Name": "Full"
+		 },
+		 {
+			"ExactWidth": 375,
+			"ExactHeight": 500,
+			"Alias": "medium",
+			"Name": "Medium"
+		 },
+		 {
+			"ExactWidth": 180,
+			"ExactHeight": 240,
+			"Alias": "small",
+			"Name": "Small"
+		 },
+		 {
+			"ExactWidth": 152,
+			"ExactHeight": 152,
+			"Alias": "thumb",
+			"Name": "Thumb"
+		 }
+	 ]
+ }

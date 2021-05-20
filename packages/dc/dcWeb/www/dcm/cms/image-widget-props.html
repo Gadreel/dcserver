@@ -12,6 +12,7 @@
 						<Input Name="Path" Required="true" />
 						<Button Icon="fas/ellipsis-h" Click="DoSelectImage" />
 					</dcf.Text>
+					<dcf.Text Name="Description" Label="Caption" placeholder="alt or caption for image (for screen reader)" />
 					<dcf.Text Name="Variant" Label="Variant" placeholder="image variant" />
 					<dcf.Text Name="class" Label="CSS Classes" placeholder="custom styling for this section" />
 				</dc.Region>
@@ -48,6 +49,7 @@
 
 			e.Data = {
 				Path: widget.attr('Path'),
+				Description: widget.attr('Description'),
 				Variant: widget.attr('Variant'),
 				class: widget.attr('class')
 			};

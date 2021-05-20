@@ -79,9 +79,8 @@ public class StoreGalleryWidget extends Base implements ICMSAware {
 		
 		String vari = StackUtil.stringFromSource(state,"Variant", "full");
 		String path = StackUtil.stringFromSource(state,"Path", "/store/product");
-		
-		RecordStruct meta = (RecordStruct) GalleryUtil.getMeta(path,
-				OperationContext.getOrThrow().selectAsString("Controller.Request.View"));
+
+		RecordStruct meta = GalleryUtil.getMeta(path);
 
 		AtomicLong currimg = new AtomicLong();
 		
@@ -146,17 +145,10 @@ public class StoreGalleryWidget extends Base implements ICMSAware {
 			
 			img.with("Alias", image);
 			img.with("Path", "/galleries" + ppath + ".v/" + vari + "." + ext);
-			
-			RecordStruct imgmeta = (RecordStruct) GalleryUtil.getMeta(ppath + ".v",
-					OperationContext.getOrThrow().selectAsString("Controller.Request.View"));
-			
-			// lookup the default locale for this site
-			if (imgmeta != null)
-				imgmeta = imgmeta.getFieldAsRecord(OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale());
-			
-			// TODO find overrides to the default and merge them into imgmeta
-			
-			img.with("Data", (imgmeta != null) ? imgmeta : RecordStruct.record());
+
+			RecordStruct imgmeta = GalleryUtil.getImageMeta(ppath);
+
+			img.with("Data", imgmeta);
 			
 			try {
 				// setup image for expand

@@ -22,6 +22,7 @@ import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.UserContext;
+import dcraft.locale.LocaleDefinition;
 import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
@@ -463,10 +464,12 @@ $(document).ready(function() {
 	dc.pui.Loader.init();
 });
 		 */
-		
+		LocaleDefinition ldef = OperationContext.getOrThrow().getLocaleDefinition();
+
 		this
-				.withAttribute("lang", OperationContext.getOrThrow().getLocaleDefinition().getLanguage())
-				.withAttribute("dir", OperationContext.getOrThrow().getLocaleDefinition().isRightToLeft() ? "rtl" : "ltr");
+				.withAttribute("x-data-lang", ldef.getLanguage())
+				.withAttribute("lang", LocaleUtil.htmlizeCode(ldef.getLanguage()))
+				.withAttribute("dir", ldef.isRightToLeft() ? "rtl" : "ltr");
 
 		// put head at top
 		this.add(0, head);
@@ -491,9 +494,12 @@ $(document).ready(function() {
 					ps.append("if (! dc.handler.settings)\n\tdc.handler.settings = { };\n\n");
 					
 					// TODO escape these
+					if ((facebooksetting != null) && facebooksetting.hasNotEmptyAttribute("PixelId"))
+						ps.append("dc.handler.settings.fbpixel = '" + facebooksetting.getAttribute("PixelId") + "';\n");
+					
 					if ((facebooksetting != null) && facebooksetting.hasNotEmptyAttribute("SignInAppId"))
 						ps.append("dc.handler.settings.fbAppId = '" + facebooksetting.getAttribute("SignInAppId") + "';\n");
-					
+
 					if (googlesetting != null) {
 						if (googlesetting.hasNotEmptyAttribute("TrackingCode"))
 							ps.append("dc.handler.settings.ga = '" + googlesetting.getAttribute("TrackingCode") + "';\n");

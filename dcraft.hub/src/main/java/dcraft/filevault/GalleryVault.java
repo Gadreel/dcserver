@@ -238,9 +238,9 @@ public class GalleryVault extends FileStoreVault {
 				
 				if (! fi.exists()) {
 					if (request.selectAsBooleanOrFalse("Params.Search")) {
-						RecordStruct meta = (RecordStruct) GalleryUtil.getMeta(CommonPath.from(request.selectAsString("Path")).getParent().toString(),
-								request.getFieldAsString("Params.View"));
-						
+
+						RecordStruct meta = GalleryUtil.getMeta(CommonPath.from(request.selectAsString("Path")).getParent().toString());
+
 						if (meta != null)
 							fcb.returnValue(new RecordStruct()
 									.with("Extra", meta)

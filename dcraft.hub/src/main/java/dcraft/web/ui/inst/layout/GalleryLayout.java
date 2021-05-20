@@ -34,6 +34,8 @@ public class GalleryLayout extends Base {
 				.attr("role", "list");
 		
 		String size = StackUtil.stringFromSource(state,"Size", "1-3");
+
+		// TODO support Collapse
 		
 		if (this.children != null) {
 			for (XNode node : this.children) {

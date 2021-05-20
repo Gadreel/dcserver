@@ -285,6 +285,7 @@
 			<Definition Code="substr" Class="dcraft.struct.format.SubstringFormatter" />
 			<Definition Code="tostr" Class="dcraft.struct.format.ToStringFormatter" />
 			<Definition Code="tre" Class="dcraft.struct.format.EnumFormatter" />
+			<Definition Code="lower" Class="dcraft.struct.format.Lower" />
 			<Definition Code="notempty" Class="dcraft.struct.format.NotEmptyFormatter" />
 			<Definition Code="empty" Class="dcraft.struct.format.EmptyFormatter" />
 			<Definition Code="ifempty" Class="dcraft.struct.format.IfEmptyFormatter" />
@@ -299,9 +300,10 @@
 			<Definition Code="encrypt" Class="dcraft.struct.format.Encrypt" />
 			<Definition Code="img-g2p" Class="dcraft.struct.format.ImageGalleryToPath" />
 			<Definition Code="img-p2g" Class="dcraft.struct.format.ImagePathToGallery" />
-			<Definition Code="phE164" Class="dcraft.struct.format.PhoneE164" />
-			<Definition Code="url" Class="dcraft.struct.format.Url" />
 			<Definition Code="padnum" Class="dcraft.struct.format.NumberPad" />
+			<Definition Code="phE164" Class="dcraft.struct.format.PhoneE164" />
+			<Definition Code="upper" Class="dcraft.struct.format.Upper" />
+			<Definition Code="url" Class="dcraft.struct.format.Url" />
 
 			<!--
 			// TODO format date/time to chrono

@@ -93,9 +93,8 @@ public class StoreCategoryWidget extends Base implements ICMSAware {
 		
 		String vari = StackUtil.stringFromSource(state,"Variant", "full");
 		String path = StackUtil.stringFromSource(state,"Path", "/store/category");
-		
-		RecordStruct meta = (RecordStruct) GalleryUtil.getMeta(path,
-				OperationContext.getOrThrow().selectAsString("Controller.Request.View"));
+
+		RecordStruct meta = GalleryUtil.getMeta(path);
 
 		AtomicLong currimg = new AtomicLong();
 		

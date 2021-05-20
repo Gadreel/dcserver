@@ -49,10 +49,9 @@ public class BannerWidget extends Base implements ICMSAware {
 		String xvari = StackUtil.stringFromSource(state,"ExpandVariant");
 		String description = StackUtil.stringFromSource(state,"Description");
 		String ext = "jpg";
-		
-		RecordStruct meta = (RecordStruct) GalleryUtil.getMeta(CommonPath.from(path).getParent().toString(),
-				OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
-		
+
+		RecordStruct meta = GalleryUtil.getMeta(CommonPath.from(path).getParent().toString());
+
 		boolean usesrcset = false;
 		
 		if (meta != null) {
@@ -117,16 +116,9 @@ public class BannerWidget extends Base implements ICMSAware {
 
 		img.with("Alias", path.substring(apos));
 		img.with("Description", description);
-		
-		RecordStruct imgmeta = (RecordStruct) GalleryUtil.getMeta(path + ".v",
-				OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
-		
-		// lookup the default locale for this site
-		if (imgmeta != null)
-			imgmeta = imgmeta.getFieldAsRecord(OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale());
-		
-		// TODO find overrides to the default and merge them into imgmeta
-		
+
+		RecordStruct imgmeta = GalleryUtil.getImageMeta(path);
+
 		img.with("Data", imgmeta);
 		
 		if (imgmeta != null) {

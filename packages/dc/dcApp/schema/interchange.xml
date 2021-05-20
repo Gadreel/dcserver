@@ -11,7 +11,7 @@
       <Field Name="dcmQBAccessExpire" Group="dcmQBToken" Type="DateTime" List="True" />
       <Field Name="dcmQBAccessFlag" Group="dcmQBToken" Type="Boolean" List="True" />
 
-			<!-- keyed by alt -->
+			<!-- keyed by alt value -->
 			<Field Name="dcmInstagramAccessToken" Group="dcmInstagramToken" Type="dcString" List="True" Audit="False" />
       <Field Name="dcmInstagramAccessExpire" Group="dcmInstagramToken" Type="DateTime" List="True" Audit="False" />
       <Field Name="dcmInstagramAccessDisabled" Group="dcmInstagramToken" Type="Boolean" List="True" Audit="False" />

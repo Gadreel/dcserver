@@ -883,6 +883,9 @@ dc.pui.Loader = {
 		if (dc.handler && dc.handler.settings && dc.handler.settings.captcha)
 			loadCaptcha();
 
+		if (dc.handler && dc.handler.settings && dc.handler.settings.fbpixel)
+			loadFBPixel();
+
 		dc.comm.init(function() {
 			if (dc.handler && dc.handler.init)
 				dc.handler.init();
@@ -2930,14 +2933,26 @@ dc.pui.TagFuncs = {
 		}
 	},
 	'dcm.SliderWidget': {
-		'getCurrentSlideData': function(entry, node) {
+		'getCurrentSlide': function(entry, node) {
 			var currimg = dc.util.Number.toNumberStrict($(node).attr('data-dc-current-slide'));
 
 			var imagelist = $(node).find('.dcm-widget-slider-list img');
 
-			var data = $(imagelist.get(currimg)).attr('data-dc-image-data');
+			return $(imagelist.get(currimg));
+		},
+		'getCurrentSlideData': function(entry, node) {
+			var currimg = dc.pui.TagFuncs['dcm.SliderWidget']['getCurrentSlide'].apply(this, [ entry, node ]);
 
-			return JSON.parse(data);
+			var data = $(currimg).attr('data-dc-image-data');
+
+			return data ? JSON.parse(data) : null;
+		},
+		'getCurrentSlideElement': function(entry, node) {
+			var currimg = dc.pui.TagFuncs['dcm.SliderWidget']['getCurrentSlide'].apply(this, [ entry, node ]);
+
+			var data = $(currimg).attr('data-dc-image-element');
+
+			return data ? JSON.parse(data) : null;
 		},
 		'pauseSlides': function(entry, node) {
 			var imgel = $(node).find('img.dcm-widget-slider-img');
@@ -3649,7 +3664,90 @@ dc.pui.Tags = {
 
 			return true;
 		});
+
+		var imgPlacement = function(selector) {
+			var fimg = $(node).find(selector);
+
+			if (fimg.length == 0)
+				return;
+
+			$(fimg).css({
+			     marginLeft: '0'
+			 });
+
+	 		var centerEnable = $(node).attr('data-dcm-centering');
+
+	 		if (! centerEnable || (centerEnable.toLowerCase() != 'true'))
+	 			return;
+
+			fimg = fimg.get(0);
+
+			var centerHint = $(node).attr('data-dcm-center-hint');
+
+			var ch = centerHint ? centerHint : (fimg.naturalWidth / 2);
+			var srcWidth = fimg.naturalWidth;
+			var srcHeight = fimg.naturalHeight;
+			var currWidth = $(node).width();
+			var currHeight = $(node).height();
+
+			// stretch whole image, no offset
+			//if (currWidth > srcWidth)
+			//	return;
+
+			var zoom = currHeight / srcHeight;
+			var availWidth = srcWidth * zoom;
+
+			var xoff = (availWidth - currWidth) / 2;
+
+			if (dc.util.Number.isNumber(ch))
+				xoff -= ((srcWidth / 2) - ch) * zoom;
+
+			if (currWidth > srcWidth) {
+				var minOff = dc.util.Number.toNumberStrict($(node).attr('data-dcm-min-offset'));
+
+				if (xoff < minOff)
+					xoff = minOff;
+			}
+			else {
+				if (xoff < 0)
+					xoff = 0;
+
+				if (xoff + currWidth > availWidth)
+					xoff = availWidth - currWidth;
+
+				if (currWidth > availWidth)
+					xoff /= 2;
+			}
+
+			$(fimg).css({
+			     marginLeft: (0 - xoff) + 'px'
+			 });
+		};
+
+		entry.registerResize(function(e) {
+			imgPlacement('.dcm-widget-banner-img');
+		});
+
+		// make sure the "placement" code gets run
+		/*
+		entry.allocateTimeout({
+			Title: 'Banner Controller',
+			Period: 1000,
+			Op: function() {
+				imgPlacement('.dcm-widget-banner-img');
+			}
+		});
+		*/
+
+		var img = new Image();
+
+		img.onload = function () {
+			imgPlacement('.dcm-widget-banner-img');
+		};
+
+		img.src = $(node).find('img').attr('src');
 	},
+
 	'dcm.SliderWidget': function(entry, node) {
 		var currimg = 0;
 		var targetsrc = null;
@@ -4836,11 +4934,14 @@ function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 
 function loadGA() {
-	gtag('config', dc.handler.settings.ga);
+	var ids = dc.handler.settings.ga.split(';');
+
+	for (var g = 0; g < ids.length; g++)
+		gtag('config', ids[g]);
 
 	var script = document.createElement('script');
 	script.src = 'https://www.googletagmanager.com/gtag/js?id=' +
-		dc.handler.settings.ga
+		ids[0];
 	script.async = true;
 	script.defer = true;
 	document.head.appendChild(script);
@@ -4873,6 +4974,29 @@ function loadCaptcha(service, sitekey, callback) {
 	script.async = true;
 	script.defer = true;
 	document.head.appendChild(script);
+}
+
+function loadFBPixel() {
+	var pixelid = dc.handler.settings.fbpixel;
+
+	console.log('loading fbq general: ' + pixelid);
+
+	var script = document.createElement('script');
+	script.src = 'https://connect.facebook.net/en_US/fbevents.js';
+	script.async = true;
+	script.defer = true;
+	document.head.appendChild(script);
+
+	// someday this can go into global, after converting existing websites to use this setting
+	window.fbq = window._fbq = function(){ fbq.callMethod ? fbq.callMethod.apply(fbq, arguments) : fbq.queue.push(arguments); }
+
+	fbq.push = fbq;
+	fbq.loaded = !0;
+	fbq.version = '2.0';
+	fbq.queue = [];
+
+	fbq('init', pixelid);
+	fbq('track', 'PageView');
 }
 
 /*

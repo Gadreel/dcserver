@@ -99,8 +99,7 @@
 
 			var widget = entry.Store.Widget;
 
-			// TODO support locale selection
-			var locale = $('html').attr('lang');
+			var locale = dc.util.Web.getLang();
 
 			var $entries = widget.find('Entry');
 

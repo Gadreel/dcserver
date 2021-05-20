@@ -1,0 +1,44 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:announce">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Announce Website',
+				Description: 'Check that a announce policy page is present, in the menu, and all the variables are filled.',
+				Params: { Alias: 'announce' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:announce" Param="StepId">
+		<dcs.Var Name="Announce" Type="List" />
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="Announce" Value="$Announce" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:announce" Param="StepInfo">
+		<dc.Out>
+			<p>
+				Send a note to Mike in Mavenlink to let him know the site is live and to plan for the performance reviews.
+			</p>
+			<p>
+				Announce at team meeting.
+			</p>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:announce" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+[na]
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

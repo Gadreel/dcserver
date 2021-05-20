@@ -109,7 +109,7 @@ public class CarouselWidget extends Base implements ICMSAware {
 			.withAttribute("data-dcm-gallery", gallery)
 			.withAttribute("data-dcm-show", alias);
 
-		RecordStruct meta = (RecordStruct) GalleryUtil.getMeta(gallery, OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
+		RecordStruct meta = GalleryUtil.getMeta(gallery);
 
 		Base viewer = W3Closed.tag("img");
 
@@ -136,12 +136,14 @@ public class CarouselWidget extends Base implements ICMSAware {
 
 		GalleryImageConsumer galleryImageConsumer = new GalleryImageConsumer() {
 			@Override
-			public void accept(RecordStruct meta, RecordStruct show, RecordStruct img) throws OperatingContextException {
+			public void accept(RecordStruct meta, RecordStruct showrec, RecordStruct img) throws OperatingContextException {
 				long cidx = currimg.incrementAndGet();
+
+				StackUtil.addVariable(state, "_Show", showrec);		// unnecessarily repeats, but easier than rewriting the consumer class
 
 				String cpath = img.getFieldAsString("Path");
 
-				String ext = meta.getFieldAsString("Extension", "jpg");
+				String ext = (meta != null) ? meta.getFieldAsString("Extension", "jpg") : "jpg";
 
 				// TODO support alt ext (from the gallery meta.json)
 
@@ -160,32 +162,22 @@ public class CarouselWidget extends Base implements ICMSAware {
 						img.with("Path", "/galleries" + lpath);
 					}
 				}
+				catch (NullPointerException x) {
+					Logger.warn("Problem finding image file: " + lpath);
+					img.with("Path", "/galleries" + lpath);
+				}
 				catch (IOException x) {
 					Logger.warn("Problem finding image file: " + lpath);
 					img.with("Path", "/galleries" + lpath);
 				}
 
-				img.with("Gallery", meta);
-				//img.with("Variant", vdata);
-				img.with("Show", show);
 				img.with("Position", cidx);
+				img.with("BasePath", cpath);
 
-				// TODO use a utility function for this, take default local fields, then override
-				// TODO with current locale
-				// lookup the default locale for this site
-				RecordStruct imgmeta = (RecordStruct) GalleryUtil.getMeta(cpath + ".v",
-						OperationContext.getOrThrow().selectAsString("Controller.Request.View"));
-
-				// lookup the default locale for this site
-				if (imgmeta != null)
-					imgmeta = imgmeta.getFieldAsRecord(OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale());
-
-				// TODO find overrides to the default and merge them into imgmeta
-
-				RecordStruct data = (imgmeta != null) ? imgmeta : RecordStruct.record();
+				RecordStruct data = GalleryUtil.getImageMeta(cpath);
 
 				if (img.isNotFieldEmpty("Element")) {
-					data.with("Element", img.getField("Element"));
+					data.with("Element", img.getField("Element"));		// for backwards support only - this is not desirable
 
 					String centerhint = img.selectAsString("Element.attributes.CenterHint");
 
@@ -234,6 +226,16 @@ public class CarouselWidget extends Base implements ICMSAware {
 
 					arialist.with(setvar);
 
+					// setup image for expand
+					StackUtil.addVariable(state, "imagex-" + cidx, img);
+
+					// switch images during expand
+					XElement setvar2 = Var.tag()
+							.withAttribute("Name", "_Image")
+							.withAttribute("SetTo", "$imagex-" + cidx);
+
+					arialist.with(setvar2);
+
 					if (ariatemplate != null) {
 						// add nodes using the new variable
 						XElement entry = ariatemplate.deepCopy();
@@ -265,7 +267,7 @@ public class CarouselWidget extends Base implements ICMSAware {
 				galleryImageConsumer.accept(meta, showrec, RecordStruct.record()
 						.with("Alias", img.getAttribute("Alias"))
 						.with("Path", gallery + "/" + img.getAttribute("Alias"))
-						.with("Element", XmlToJson.convertXml(img,true))
+						.with("Element", XmlToJson.convertXml(img,true, true))
 				);
 			}
 		}
@@ -306,7 +308,7 @@ public class CarouselWidget extends Base implements ICMSAware {
 			this.with(Base.tag("AriaTemplate").with(
 					W3.tag("div")
 							.withAttribute("role", "listitem")
-							.withText("{$Image.Title}")
+							.withText("{$Image.Title}")			// this is correct because `Image` is actually `Data` here
 			));
 		}
 	}

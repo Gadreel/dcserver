@@ -604,41 +604,41 @@ dc.pui.Apps.Menus.dcmGeneral = {
 
 dc.pui.Apps.Menus.dcmSystem = {
 	Tabs: [
-  		{
+  	{
 			Alias: 'Dashboard',
 			Title: 'Dashboard',
 			Path: '/dcr/dashboard'
 		},
-  		{
+  	{
 			Alias: 'Database',
 			Title: 'Database',
 			Auth: [ 'SysAdmin' ],
 			Path: '/dcr/database'
 		},
-  		{
+  	{
 			Alias: 'Feeds',
 			Title: 'Feeds',
 			Path: '/dcr/feeds'
 		},
-  		{
+  	{
 			Alias: 'Certificates',
 			Title: 'Certificates',
 			Auth: [ 'SysAdmin' ],
 			Path: '/dcr/list-certs'
 		},
-  		{
+  	{
 			Alias: 'IPBlock',
 			Title: 'Blocked IPs',
 			Auth: [ 'SysAdmin', 'Admin' ],
 			Path: '/dcr/list-ips'
 		},
-  		{
+  	{
 			Alias: 'GoLive',
 			Title: 'Go Live Report',
 			Auth: [ 'SysAdmin', 'Admin' ],
 			Path: '/dcr/go-live'
 		},
-  		{
+  	{
 			Alias: 'Interchange',
 			Title: 'Interchange',
 			Auth: [ 'SysAdmin', 'Admin' ],

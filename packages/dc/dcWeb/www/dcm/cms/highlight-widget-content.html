@@ -39,7 +39,6 @@
 		</dc.Style>
 		<dc.PagePanel id="dcmshighEntryContent">
 			<dcf.FormButtons>
-				<!-- TODO create language selector -->
 				<!-- needs some work...
 				<dc.Button Click="DoSelectImage" Label="Insert Image" />
 				<dc.Button Click="DoSelectFile" Label="Link File" />
@@ -114,8 +113,7 @@
 
 					var widget = entry.Store.Widget = dc.util.Xml.toJQuery(rmsg.Body.Part);
 
-					// TODO support locale selection
-					var locale = $('html').attr('lang');
+					var locale = dc.util.Web.getLang();
 
 					var $entries = widget.find('Entry');
 
@@ -157,8 +155,7 @@
 			// remember the content
 			var content = entry.Params.Content = entry.Store.Editor.getValue().trim();
 
-			// TODO support locale selection
-			var locale = $('html').attr('lang');
+			var locale = dc.util.Web.getLang();
 
 			dc.cms.Loader.saveCommands(entry.Params.Feed, entry.Params.Path, [
 				{

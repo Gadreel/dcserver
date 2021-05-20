@@ -62,7 +62,7 @@ public class ListWidget extends Base implements ICMSAware {
 		for (XElement ent : entries) {
 			RecordStruct entry = RecordStruct.record()
 					.with("Alias", ent.getAttribute("Alias"))
-					.with("Element", XmlToJson.convertXml(ent,true));
+					.with("Element", XmlToJson.convertXml(ent,true, true));
 
 			long cidx = currimg.incrementAndGet();
 

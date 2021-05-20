@@ -586,6 +586,14 @@ var dc = {
 
 				return path.split('/');
 			},
+      getLang: function() {
+        var lang = $('html').attr('x-data-lang');
+
+        if (! lang)
+          lang = $('html').attr('lang');
+
+        return lang;
+      },
 			isTouchDevice: function() {
 				 return (('ontouchstart' in window)
 				      || (navigator.MaxTouchPoints > 0)
@@ -618,7 +626,7 @@ var dc = {
       isIOS: function() {
         var is_ios = /^iP/.test(navigator.platform) ||
                    /^Mac/.test(navigator.platform) && navigator.maxTouchPoints > 4;
-                           
+
         return is_ios;
       },
 			isWindows: function() {

@@ -1,9 +1,14 @@
 {
-	en: { 
-		Name: "Tom Wells", 
-		Title: "CFO", 
-		Email: "tom@abc.com", 
-		Phone: "ext. 211", 
-		Description: "Cashflow genius" 
+	default: {
+		Name: "Tom Wells",
+		Title: "CFO",
+		Email: "tom@abc.com",
+		Phone: "ext. 211"
+	},
+	eng: {
+		Description: "Cashflow genius"
+	},
+	spa: {
+		Description: "Genio del flujo de caja"
 	}
 }

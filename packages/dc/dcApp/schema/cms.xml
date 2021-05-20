@@ -360,7 +360,7 @@
 				<Secure Tags="SysAdmin">
 					<Op Name="ResetToken">
 						<Description>
-							Replace the access token and enable the cache / refresh.
+							Replace the access token and enable the cache / refresh. Useful if token dies.
 						</Description>
 						<RecordRequest Required="True">
 							<Field Name="Alt" Type="dcTinyString" />

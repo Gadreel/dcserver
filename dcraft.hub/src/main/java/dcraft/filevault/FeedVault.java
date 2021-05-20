@@ -161,7 +161,7 @@ public class FeedVault extends FileStoreVault {
 								String loadmode = request.selectAsString("Params.Mode", "json");
 
 								if ("json".equals(loadmode)) {
-									RecordStruct prt = XmlToJson.convertXml(part, true);
+									RecordStruct prt = XmlToJson.convertXml(part, true, false);
 
 									fcb.returnValue(RecordStruct.record()
 											.with("Extra", "_".equals(partpath) ? prt.getFieldAsList("children") :  prt)

@@ -11,11 +11,12 @@ import java.io.PrintStream;
 import java.util.Map.Entry;
 
 public class XmlToJson {
-	static public RecordStruct convertXml(XElement root, boolean stripempty) throws OperatingContextException {
+	static public RecordStruct convertXml(XElement root, boolean stripempty, boolean usealias) throws OperatingContextException {
 		ObjectBuilder builder = new ObjectBuilder();
 		
 		XmlToJson tool = new XmlToJson();
 		tool.stripempty = stripempty;
+		tool.usealias = usealias;
 		tool.jsb = builder;
 		tool.convert(root);
 		
@@ -24,11 +25,17 @@ public class XmlToJson {
 	
 	protected ICompositeBuilder jsb = null;
 	protected boolean stripempty = true;
-	
+	protected boolean usealias = false;
+
 	protected String valueMacro(String v, XElement scope) throws OperatingContextException {
 		return v;		// no macro by default, override to use
 	}
-	
+
+	public XmlToJson withUseAlias(boolean v) {
+		this.usealias = v;
+		return this;
+	}
+
 	public void convert(XElement root) throws OperatingContextException {
 		this.convert(root, 0, null);
 	}
@@ -75,6 +82,11 @@ public class XmlToJson {
 						this.jsb.field(aentry.getKey(), this.valueMacro(el.attr(aentry.getKey()), el));
 					
 					this.jsb.endRecord();
+
+					if (this.usealias) {
+						for (Entry<String, String> aentry : el.getAttributes().entrySet())
+							this.jsb.field("@" + aentry.getKey(), this.valueMacro(el.attr(aentry.getKey()), el));
+					}
 				}
 				
 				if (el.hasChildren()) {

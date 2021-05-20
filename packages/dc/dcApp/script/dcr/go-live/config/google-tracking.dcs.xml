@@ -47,6 +47,14 @@ In the config.xml file there will be multipe _Catalog_ tags. Find the Google cat
 </Catalog>
 ```
 
+If you have more than one tracking code, separate them with a semi-colon, like so:
+
+``` xml
+<Catalog Id="Google-Both">
+	<Settings TrackingCode="UA-2478599-5;G-LKXXS4C2RL" />
+</Catalog>
+```
+
 In some cases the the setting may use "Google-Production" instead of "Google-Both" like so:
 
 ``` xml
@@ -55,7 +63,7 @@ In some cases the the setting may use "Google-Production" instead of "Google-Bot
 </Catalog>
 ```
 
-If you see a "Google-Test" both not the other options then add a "Google-Production" catalog section or discuss with the developer - there may be reason why production was left out.
+If you see a "Google-Test" but not the other options then add a "Google-Production" catalog section or discuss with the developer - there may be reason why production was left out.
 
 TODO DCC link to config and catalog article
 				]]></Tr>

@@ -164,4 +164,27 @@ public class LocaleUtil {
 
 		return code;
 	}
+
+	/*
+		dcServer standardizes around the alpha-3/ISO 639-2 Code
+		https://www.loc.gov/standards/iso639-2/php/code_list.php
+
+		However, it is an issue with how the internet sees language codes, the BCP 47.
+		This seems too complex to me, why not just support 639-2 with 639-1 fallback...
+		https://www.w3.org/International/questions/qa-choosing-language-tags#question
+	 */
+	// TODO make lookup tables for these two functions - find the list in the 639-2 above
+	static public String htmlizeCode(String code) {
+		if (code == null)
+			return null;
+
+		switch (code) {
+			case "eng":
+				return "en";
+			case "spa":
+				return "es";
+		}
+
+		return code;
+	}
 }

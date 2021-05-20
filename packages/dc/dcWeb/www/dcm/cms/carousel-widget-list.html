@@ -93,8 +93,7 @@
 
 			var gallerypath = $(widget).attr('Gallery');
 
-			// TODO support locale selection
-			var locale = $('html').attr('lang');
+			var locale = dc.util.Web.getLang();
 
 			var $entries = widget.find('Image');
 

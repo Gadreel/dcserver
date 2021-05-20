@@ -70,27 +70,31 @@ public class GalleryWidget extends Base implements ICMSAware {
 		String show = StackUtil.stringFromSource(state,"Show");
 		String missing = StackUtil.stringFromSource(state,"Missing");
 
-		RecordStruct meta = (RecordStruct) GalleryUtil.getMeta(path,
-				OperationContext.getOrThrow().selectAsString("Controller.Request.View"));
+		RecordStruct meta = GalleryUtil.getMeta(path);
 		
 		RecordStruct vdata = GalleryUtil.findVariation(meta, vari);
 
 		boolean usesrcset = ((vdata != null) && vdata.isNotFieldEmpty("Density"));
 		
 		AtomicLong currimg = new AtomicLong();
-		
+
+		StackUtil.addVariable(state, "_Gallery", meta);
+		StackUtil.addVariable(state, "_Variant", vdata);
+
 		GalleryImageConsumer galleryImageConsumer = new GalleryImageConsumer() {
 			@Override
-			public void accept(RecordStruct meta, RecordStruct show, RecordStruct img) throws OperatingContextException {
+			public void accept(RecordStruct meta, RecordStruct showrec, RecordStruct img) throws OperatingContextException {
 				long cidx = currimg.incrementAndGet();
 				
 				if (cidx > maximgs)
 					return;
-				
+
+				StackUtil.addVariable(state, "_Show", showrec);		// unnecessarily repeats, but easier than rewriting the consumer class
+
 				String cpath = img.getFieldAsString("Path");
 
 				// TODO support alt ext (from the gallery meta.json)
-				String ext = meta.getFieldAsString("Extension", "jpg");
+				String ext = (meta != null) ? meta.getFieldAsString("Extension", "jpg") : "jpg";
 
 				String lpath = cpath + ".v/" + vari + "." + ext;
 
@@ -133,23 +137,10 @@ public class GalleryWidget extends Base implements ICMSAware {
 					img.with("Path", "/galleries" + lpath);
 				}
 
-				//img.with("Path", "/galleries" + cpath + ".v/" + vari + "." + ext);
-				img.with("Gallery", meta);
-				img.with("Variant", vdata);
-				img.with("Show", show);
 				img.with("Position", cidx);
 				img.with("BasePath", cpath);
 
-				RecordStruct imgmeta = (RecordStruct) GalleryUtil.getMeta(cpath + ".v",
-						OperationContext.getOrThrow().selectAsString("Controller.Request.View"));
-				
-				// lookup the default locale for this site
-				if (imgmeta != null)
-					imgmeta = imgmeta.getFieldAsRecord(OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale());
-				
-				// TODO find overrides to the default and merge them into imgmeta
-				
-				img.with("Data", (imgmeta != null) ? imgmeta : RecordStruct.record());
+				img.with("Data", GalleryUtil.getImageMeta(cpath + ".v"));
 				
 				if (usesrcset) {
 					StringBuilder srcset = new StringBuilder();
@@ -186,6 +177,12 @@ public class GalleryWidget extends Base implements ICMSAware {
 					
 					GalleryWidget.this.with(setvar);
 					
+					XElement setvarnew = Var.tag()
+							.withAttribute("Name", "_Image")
+							.withAttribute("SetTo", "$image-" + cidx);
+
+					GalleryWidget.this.with(setvarnew);
+
 					// add nodes using the new variable
 					XElement entry = template.deepCopy();
 					
@@ -211,7 +208,7 @@ public class GalleryWidget extends Base implements ICMSAware {
 				galleryImageConsumer.accept(meta, showrec, RecordStruct.record()
 						.with("Alias", img.getAttribute("Alias"))
 						.with("Path", path + "/" + img.getAttribute("Alias"))
-						.with("Element", XmlToJson.convertXml(img,true))
+						.with("Element", XmlToJson.convertXml(img,true, true))
 				);
 			}
 

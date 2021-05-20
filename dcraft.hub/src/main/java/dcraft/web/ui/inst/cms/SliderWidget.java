@@ -45,8 +45,6 @@ public class SliderWidget extends Base implements ICMSAware {
         return SliderWidget.tag();
     }
 
-
-
     @Override
     public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
         String target = StackUtil.stringFromSource(state, "SyncTo");
@@ -104,7 +102,9 @@ public class SliderWidget extends Base implements ICMSAware {
                 .withAttribute("data-dcm-period", StackUtil.stringFromSource(state,"Period"))
                 .withAttribute("data-dcm-gallery", gallery);
 
-        RecordStruct meta = (RecordStruct) GalleryUtil.getMeta(gallery, OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
+        RecordStruct meta = GalleryUtil.getMeta(gallery);
+
+        RecordStruct vdata = GalleryUtil.findVariation(meta, vari);
 
         String display = this.getAttribute("Display", "None").toLowerCase();
 
@@ -162,14 +162,19 @@ public class SliderWidget extends Base implements ICMSAware {
 
         AtomicLong currimg = new AtomicLong();
 
+        StackUtil.addVariable(state, "_Gallery", meta);
+        StackUtil.addVariable(state, "_Variant", vdata);
+
         GalleryImageConsumer galleryImageConsumer = new GalleryImageConsumer() {
             @Override
-            public void accept(RecordStruct meta, RecordStruct show, RecordStruct img) throws OperatingContextException {
+            public void accept(RecordStruct meta, RecordStruct showrec, RecordStruct img) throws OperatingContextException {
                 long cidx = currimg.incrementAndGet();
+
+                StackUtil.addVariable(state, "_Show", showrec);		// unnecessarily repeats, but easier than rewriting the consumer class
 
                 String cpath = img.getFieldAsString("Path");
 
-                String ext = meta.getFieldAsString("Extension", "jpg");
+                String ext = (meta != null) ? meta.getFieldAsString("Extension", "jpg") : "jpg";
 
                 // TODO support alt ext (from the gallery meta.json)
 
@@ -195,28 +200,13 @@ public class SliderWidget extends Base implements ICMSAware {
                     img.with("Path", "/galleries" + lpath);
                 }
 
-                img.with("Gallery", meta);
-                //img.with("Variant", vdata);
-                img.with("Show", show);
                 img.with("Position", cidx);
+                img.with("BasePath", cpath);
 
-                // TODO use a utility function for this, take default local fields, then override
-                // TODO with current locale
-                // lookup the default locale for this site
-                RecordStruct imgmeta = (RecordStruct) GalleryUtil.getMeta(cpath + ".v",
-                        OperationContext.getOrThrow().selectAsString("Controller.Request.View"));
-
-                // lookup the default locale for this site
-                if (imgmeta != null)
-                    imgmeta = imgmeta.getFieldAsRecord(OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale());
-
-                // TODO find overrides to the default and merge them into imgmeta
-
-                RecordStruct data = (imgmeta != null) ? imgmeta : RecordStruct.record();
+                RecordStruct data = GalleryUtil.getImageMeta(cpath);
 
                 if (img.isNotFieldEmpty("Element")) {
-                    data.with("Element", img.getField("Element"));
-
+                    // override center hint
                     String centerhint = img.selectAsString("Element.attributes.CenterHint");
 
                     if (StringUtil.isNotEmpty(centerhint))
@@ -256,13 +246,17 @@ public class SliderWidget extends Base implements ICMSAware {
                         .withAttribute("role", "listitem")
                         .withAttribute("src", img.getFieldAsString("Path"))
                         .withAttribute("alt", data.selectAsString("Description"))
+                        .withAttribute("data-dc-image-alias", img.getFieldAsString("Alias"))
+                        .withAttribute("data-dc-image-pos", img.getFieldAsString("Position"))
+                        .withAttribute("data-dc-image-base-path", img.getFieldAsString("BasePath"))
+                        .withAttribute("data-dc-image-element", img.isNotFieldEmpty("Element") ? img.getFieldAsString("Element").toString() : "")
                         .withAttribute("data-dc-image-data", data.toString());
 
                 list.with(iel);
 
                 try {
                     // setup image for expand
-                    StackUtil.addVariable(state, "image-" + cidx, data);
+                    StackUtil.addVariable(state, "image-" + cidx, img);
 
                     // switch images during expand
                     XElement setvar = Var.tag()
@@ -270,6 +264,12 @@ public class SliderWidget extends Base implements ICMSAware {
                             .withAttribute("SetTo", "$image-" + cidx);
 
                     arialist.with(setvar);
+
+                    XElement setvarnew = Var.tag()
+                            .withAttribute("Name", "_Image")
+                            .withAttribute("SetTo", "$image-" + cidx);
+
+                    arialist.with(setvarnew);
 
                     if (ariatemplate != null) {
                         // add nodes using the new variable
@@ -298,7 +298,7 @@ public class SliderWidget extends Base implements ICMSAware {
             galleryImageConsumer.accept(meta, showrec, RecordStruct.record()
                     .with("Alias", img.getAttribute("Alias"))
                     .with("Path", gallery + "/" + img.getAttribute("Alias"))
-                    .with("Element", XmlToJson.convertXml(img,true))
+                    .with("Element", XmlToJson.convertXml(img,true, true))
             );
         }
 
@@ -350,7 +350,7 @@ public class SliderWidget extends Base implements ICMSAware {
             this.with(Base.tag("AriaTemplate").with(
                     W3.tag("div")
                             .withAttribute("role", "listitem")
-                            .withText("{$Image.Title}")
+                            .withText("{$Image.Element.@Title}")
             ));
         }
     }

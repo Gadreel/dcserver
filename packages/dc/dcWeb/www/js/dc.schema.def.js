@@ -275,7 +275,7 @@ dc.lang.Dict.load( [
   { Token: "_code_905", Value: "Name" }
 	] );
 
-var lang = $('html').attr('lang');
+var lang = dc.util.Web.getLang();
 
 if (lang == 'spa')
 	dc.lang.Dict.load( [

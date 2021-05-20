@@ -3,7 +3,8 @@
 		<Set>
 			'privacy',
 			'editor',
-			'inline-css'
+			'inline-css',
+			'announce'
 		</Set>
 	</dcs.Global>
 </dcs.Library>
