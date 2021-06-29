@@ -127,7 +127,6 @@ public class SliderWidget extends Base implements ICMSAware {
         list.attr("role", "list")
                 .attr("aria-hidden", "true");
 
-
         if (display.contains("lrcontrol")) {
             this.with(W3.tag("div")
                     .withClass("dcm-widget-slider-ctrl dcm-widget-slider-ctrl-left")
@@ -250,6 +249,7 @@ public class SliderWidget extends Base implements ICMSAware {
                         .withAttribute("data-dc-image-pos", img.getFieldAsString("Position"))
                         .withAttribute("data-dc-image-base-path", img.getFieldAsString("BasePath"))
                         .withAttribute("data-dc-image-element", img.isNotFieldEmpty("Element") ? img.getFieldAsString("Element").toString() : "")
+                        .withAttribute("data-dc-center-hint", data.getFieldAsString("CenterHint"))
                         .withAttribute("data-dc-image-data", data.toString());
 
                 list.with(iel);
@@ -309,6 +309,9 @@ public class SliderWidget extends Base implements ICMSAware {
                 .withAttribute("data-variant", vari)
                 .withAttribute("data-ext", ext)
                 .withAttribute("data-path", gallery);
+
+        if (images.size() > 0)
+            this.withClass("single");
 
         UIUtil.markIfEditable(state, this, "widget");
     }

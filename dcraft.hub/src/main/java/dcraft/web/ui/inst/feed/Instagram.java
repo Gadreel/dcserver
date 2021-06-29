@@ -145,7 +145,7 @@ public class Instagram extends Base implements ICMSAware, IReviewAware {
 						RecordStruct media = Struct.objectToRecord(requestContext.getInterface().get(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Media-" + mid));
 						ZonedDateTime ts = Struct.objectToDateTime(requestContext.getInterface().get(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Media-" + mid, "Stamp"));
 
-						ZonedDateTime ex = TimeUtil.now().minusDays(15);
+						ZonedDateTime ex = TimeUtil.now().minusDays(1);
 
 						if ((media == null) || (ts == null) || (ts.isBefore(ex))) {
 							url = new URL("https://graph.instagram.com/" + mid

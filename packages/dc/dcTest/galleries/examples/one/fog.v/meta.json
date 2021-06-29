@@ -1,6 +1,6 @@
 {
 	default: {
-		CenterHint: 200
+		CenterHint: 1000
 	},
 	eng: {
 		Title: 'photo known as fog'

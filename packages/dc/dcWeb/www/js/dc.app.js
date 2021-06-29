@@ -2932,6 +2932,65 @@ dc.pui.TagFuncs = {
 			grecaptcha.reset();
 		}
 	},
+	'dcm.ImageWidget': {
+		'centerBanner': function(entry, node, fimg, simg) {
+			if (! fimg || fimg.length == 0)
+				return;
+
+			$(fimg).css({
+			     marginLeft: '0'
+			 });
+
+	 		var centerEnable = $(node).attr('data-dcm-centering');
+
+	 		if (! centerEnable || (centerEnable.toLowerCase() != 'true'))
+	 			return;
+
+			fimg = fimg.get(0);
+
+			var centerHint = $(simg).attr('data-dc-center-hint')
+				? $(simg).attr('data-dc-center-hint') : $(node).attr('data-dcm-center-hint');
+
+			var ch = centerHint ? centerHint : (fimg.naturalWidth / 2);
+			var srcWidth = fimg.naturalWidth;
+			var srcHeight = fimg.naturalHeight;
+			var currWidth = $(node).width();
+			var currHeight = $(node).height();
+
+			// stretch whole image, no offset
+			//if (currWidth > srcWidth)
+			//	return;
+
+			var zoom = currHeight / srcHeight;
+			var availWidth = srcWidth * zoom;
+
+			var xoff = (availWidth - currWidth) / 2;
+
+			if (dc.util.Number.isNumber(ch))
+				xoff -= ((srcWidth / 2) - ch) * zoom;
+
+			if (currWidth > srcWidth) {
+				var minOff = dc.util.Number.toNumberStrict($(node).attr('data-dcm-min-offset'));
+
+				if (xoff < minOff)
+					xoff = minOff;
+			}
+			else {
+				if (xoff < 0)
+					xoff = 0;
+
+				if (xoff + currWidth > availWidth)
+					xoff = availWidth - currWidth;
+
+				if (currWidth > availWidth)
+					xoff /= 2;
+			}
+
+			$(fimg).css({
+			     marginLeft: (0 - xoff) + 'px'
+			 });
+		}
+	},
 	'dcm.SliderWidget': {
 		'getCurrentSlide': function(entry, node) {
 			var currimg = dc.util.Number.toNumberStrict($(node).attr('data-dc-current-slide'));
@@ -3665,91 +3724,22 @@ dc.pui.Tags = {
 			return true;
 		});
 
-		var imgPlacement = function(selector) {
-			var fimg = $(node).find(selector);
+		var centerfunc = function(e) {
+			var fimg = $(node).find('.dcm-widget-banner-img');
 
-			if (fimg.length == 0)
-				return;
-
-			$(fimg).css({
-			     marginLeft: '0'
-			 });
-
-	 		var centerEnable = $(node).attr('data-dcm-centering');
-
-	 		if (! centerEnable || (centerEnable.toLowerCase() != 'true'))
-	 			return;
-
-			fimg = fimg.get(0);
-
-			var centerHint = $(node).attr('data-dcm-center-hint');
-
-			var ch = centerHint ? centerHint : (fimg.naturalWidth / 2);
-			var srcWidth = fimg.naturalWidth;
-			var srcHeight = fimg.naturalHeight;
-			var currWidth = $(node).width();
-			var currHeight = $(node).height();
-
-			// stretch whole image, no offset
-			//if (currWidth > srcWidth)
-			//	return;
-
-			var zoom = currHeight / srcHeight;
-			var availWidth = srcWidth * zoom;
-
-			var xoff = (availWidth - currWidth) / 2;
-
-			if (dc.util.Number.isNumber(ch))
-				xoff -= ((srcWidth / 2) - ch) * zoom;
-
-			if (currWidth > srcWidth) {
-				var minOff = dc.util.Number.toNumberStrict($(node).attr('data-dcm-min-offset'));
-
-				if (xoff < minOff)
-					xoff = minOff;
-			}
-			else {
-				if (xoff < 0)
-					xoff = 0;
-
-				if (xoff + currWidth > availWidth)
-					xoff = availWidth - currWidth;
-
-				if (currWidth > availWidth)
-					xoff /= 2;
-			}
-
-			$(fimg).css({
-			     marginLeft: (0 - xoff) + 'px'
-			 });
+			dc.pui.TagFuncs['dcm.ImageWidget']['centerBanner'].apply(this, [ entry, node, fimg, fimg ]);
 		};
 
-		entry.registerResize(function(e) {
-			imgPlacement('.dcm-widget-banner-img');
-		});
-
-		// make sure the "placement" code gets run
-		/*
-		entry.allocateTimeout({
-			Title: 'Banner Controller',
-			Period: 1000,
-			Op: function() {
-				imgPlacement('.dcm-widget-banner-img');
-			}
-		});
-		*/
+		entry.registerResize(centerfunc);
 
 		var img = new Image();
-
-		img.onload = function () {
-			imgPlacement('.dcm-widget-banner-img');
-		};
-
+		img.onload = centerfunc;
 		img.src = $(node).find('img').attr('src');
 	},
 
 	'dcm.SliderWidget': function(entry, node) {
 		var currimg = 0;
+		var fcurrimg = 0;
 		var targetsrc = null;
 
 		var imagelist = $(node).find('.dcm-widget-slider-list img');
@@ -3759,6 +3749,13 @@ dc.pui.Tags = {
 
 		var selectInGallery = function() {
 			$(node).attr('data-dc-current-slide', currimg);
+
+			//var fimg = $(imagelist.get(currimg));
+			//var data = $(fimg).attr('data-dc-image-data');
+
+			//data = JSON.parse(data) || { };
+
+			//$(node).attr('data-dcm-center-hint', data.CenterHint);
 
 			var gallery = $('#' + $(node).attr('data-target'));
 
@@ -3774,6 +3771,20 @@ dc.pui.Tags = {
 			$(node).trigger('dcm:slideswitched');
 		}
 
+		var debugCenter = function(title) {
+			//console.log(title + ' - ' + currimg + ' : ' + $(imgel).css('margin-left') + ' : ' + $(fadel).css('margin-left'));
+		}
+
+		var centerfunc = function(e) {
+			debugCenter('a');
+			dc.pui.TagFuncs['dcm.ImageWidget']['centerBanner'].apply(this, [ entry, node, imgel, $(imagelist.get(currimg)) ]);
+		};
+
+		var centerfunc2 = function(e) {
+			debugCenter('b');
+			dc.pui.TagFuncs['dcm.ImageWidget']['centerBanner'].apply(this, [ entry, node, fadel, $(imagelist.get(fcurrimg)) ]);
+		};
+
 		var switchFromGallery = function() {
 			var src = targetsrc;
 
@@ -3785,6 +3796,9 @@ dc.pui.Tags = {
 				var pos2 = src.lastIndexOf('?');
 
 				var newsrc = src.substr(0, pos1 + 1) + variant + '.' + ext + src.substr(pos2);
+
+				//console.log('switch src a');
+				centerfunc();
 
 				$(imgel).attr('src', newsrc);
 			}
@@ -3845,7 +3859,11 @@ dc.pui.Tags = {
 
 		var gallery = $('#' + $(node).attr('data-target'));
 
-		if (imagelist.length < 2) {
+		if (imagelist.length > 1) {
+			$(node).removeClass('single');
+			$(gallery).removeClass('single');
+		}
+		else {
 			$(node).addClass('single');
 			$(gallery).addClass('single');
 		}
@@ -3900,6 +3918,25 @@ dc.pui.Tags = {
 
 		var opset = false;
 		var opcurr = 1;
+		var viewperiod = dc.util.Number.toNumberStrict($(node).attr('data-dcm-period'));
+
+		if (! viewperiod)
+			viewperiod = 2000;
+
+		entry.registerResize(function() {
+			//console.log('resize');
+			centerfunc();
+			centerfunc2();
+		});
+
+		$(imgel).on('load', function() {
+			//console.log('load a');
+			centerfunc();
+		} );
+		$(fadel).on('load', function() {
+			//console.log('load b');
+			centerfunc2();
+		});
 
 		$(imgel).on('transitionend', function() {
 			if (opset) {
@@ -3907,12 +3944,16 @@ dc.pui.Tags = {
 					setTimeout(function() {
 						if ($(imgel).hasClass('autoplay')) 	// check if still has autoplay
 							$(imgel).css("opacity", 0);
-					}, 2000);
+					}, viewperiod);
 				}
 				else {
 					//debugger;
 				}
 
+				fcurrimg = currimg;
+
+				$(fadel).css('margin-left', $(imgel).css('margin-left'));
+				//console.log('switch src b');
 				$(fadel).attr('src', $(imgel).attr('src'));
 			}
 			else {
@@ -3930,11 +3971,13 @@ dc.pui.Tags = {
 
 		selectInGallery();
 
-		setTimeout(function() {
-			if ($(imgel).hasClass('autoplay')) {
-				$(imgel).css("opacity", 0);
-			}
-		}, 2000);
+		if (imagelist.length > 1) {
+			setTimeout(function() {
+				if ($(imgel).hasClass('autoplay')) {
+					$(imgel).css("opacity", 0);
+				}
+			}, viewperiod);
+		}
 	},
 	'dc.MediaSection': function(entry, node) {
 		$(node).find('.dc-section-gallery-list > *').each(function() {
@@ -4669,7 +4712,7 @@ dc.pui.controls.Uploader.prototype.onAfterSave = function(e) {
 		return;
 	}
 
-	console.log('onAfterSave: ' + this.Field)
+	//console.log('onAfterSave: ' + this.Field)
 
 	// TODO progress bars
 
@@ -4979,7 +5022,7 @@ function loadCaptcha(service, sitekey, callback) {
 function loadFBPixel() {
 	var pixelid = dc.handler.settings.fbpixel;
 
-	console.log('loading fbq general: ' + pixelid);
+	//console.log('loading fbq general: ' + pixelid);
 
 	var script = document.createElement('script');
 	script.src = 'https://connect.facebook.net/en_US/fbevents.js';

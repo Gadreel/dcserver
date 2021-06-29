@@ -110,6 +110,9 @@ public class PdfUtil {
 		if (ch == (int)0x201D)
 			return '"';
 
+		if (ch == (int)0xA0)
+			return 0;
+
 		if ((ch <= (int)0x9) || ((ch < (int)0x20) && (ch > (int)0xD)) || (ch == (int)0x7F) || (ch > (int)0xFF))
 			return 0;
 

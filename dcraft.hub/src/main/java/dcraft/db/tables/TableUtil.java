@@ -5,6 +5,7 @@ import dcraft.db.ICallContext;
 import dcraft.db.IRequestContext;
 import dcraft.db.proc.*;
 import dcraft.db.proc.filter.CurrentRecord;
+import dcraft.db.proc.filter.Unique;
 import dcraft.db.request.query.SelectFields;
 import dcraft.db.request.update.DbRecordRequest;
 import dcraft.db.util.ByteUtil;
@@ -590,5 +591,13 @@ public class TableUtil {
 			Logger.error("Unable to read record.");
 
 		return can;
+	}
+
+	static public Unique traverseIndex(TablesAdapter db, String table, String field, String value) throws OperatingContextException {
+		Unique collector = Unique.unique();
+
+		db.traverseIndex(OperationContext.getOrThrow(), table, field, value, collector.withNested(CurrentRecord.current()));
+
+		return collector;
 	}
 }

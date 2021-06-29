@@ -24,14 +24,20 @@ import java.util.Scanner;
 
 import dcraft.api.ApiSession;
 import dcraft.api.LocalSession;
+import dcraft.db.BasicRequestContext;
+import dcraft.db.DatabaseAdapter;
+import dcraft.db.DatabaseException;
+import dcraft.db.tables.TablesAdapter;
 import dcraft.filevault.work.IndexAllFilesWork;
 import dcraft.filevault.work.IndexSiteFilesWork;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.clock.SysReporter;
 import dcraft.hub.config.LocalHubConfigLoader;
+import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.UserContext;
 import dcraft.hub.resource.ConfigResource;
+import dcraft.service.ServiceRequest;
 import dcraft.task.Task;
 import dcraft.task.TaskContext;
 import dcraft.task.TaskHub;
@@ -39,6 +45,7 @@ import dcraft.task.TaskObserver;
 import dcraft.task.run.WorkHub;
 import dcraft.task.run.WorkTopic;
 import dcraft.util.StringUtil;
+import dcraft.util.cb.TimeoutPlan;
 import dcraft.xml.XElement;
 
 /*
@@ -167,6 +174,24 @@ public class Foreground {
 
 					if ("*".equals(pass))
 						pass= "A1s2d3f4";
+
+					if ("KillAllBlockedIP".equals(pass)) {
+						try {
+							BasicRequestContext requestContext = BasicRequestContext.ofDefaultDatabase();
+							DatabaseAdapter conn = requestContext.getInterface();
+
+							conn.kill("root", "dcIPTrust");
+
+							// don't yet have permission to this function
+							//capi.callWait(ServiceRequest.of("dcmServices.Dashboard.KillAllBlockedIP"), TimeoutPlan.Regular);
+						}
+						catch (OperatingContextException x) {
+							System.out.println("issue operating: " + x);
+						}
+						catch (DatabaseException x) {
+							System.out.println("issue clearing: " + x);
+						}
+					}
 
 					if (pass != null)
 						auth = capi.signin(user, pass);

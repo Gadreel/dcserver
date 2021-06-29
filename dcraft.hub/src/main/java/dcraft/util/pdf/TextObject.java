@@ -50,6 +50,22 @@ public class TextObject {
 	}
 	
 	public void setMatrix(){
+		/*
+		for (int i = 0; i < attributes.size(); i++){
+			if (attributes.get(i) instanceof COSInteger){
+				COSInteger aCOSInteger = (COSInteger) attributes.get(i);
+				System.out.print(" - " + aCOSInteger.floatValue());
+			}
+			if (attributes.get(i) instanceof COSFloat){
+				COSFloat aCOSFloat = (COSFloat) attributes.get(i);
+				System.out.print(" - " + aCOSFloat.floatValue());
+			}
+		}
+
+		System.out.println();
+
+		 */
+
 		//Move the contents of the attributes to the x and y attributes.
 		//A Matrix has 6 attributes, the last two of which are x and y
 		for (int i = 4; i < attributes.size(); i++){

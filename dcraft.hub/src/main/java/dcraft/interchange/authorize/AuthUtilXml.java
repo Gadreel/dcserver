@@ -378,7 +378,7 @@ public class AuthUtilXml {
 			}
 	    }
 	    catch (Exception x) {
-			Logger.error("Error processing payment: Unable to connect to payment gateway.");
+			Logger.error("Error processing payment: Unable to connect to payment gateway. Error: " + x);
 	    }
 
 		callback.returnValue(

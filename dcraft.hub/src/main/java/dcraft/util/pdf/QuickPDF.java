@@ -659,6 +659,8 @@ public class QuickPDF extends RecordStruct {
     		String val = cells[c];
     		
     		if (val != null) {
+				val = PdfUtil.stripAllRestrictedPDFChars(val).toString();
+
 	    		if (val.length() > col.chars)
 	    			val = val.substring(0, col.chars - 3) + "...";
 	    		
