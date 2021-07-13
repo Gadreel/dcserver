@@ -27,13 +27,22 @@ import java.net.Inet6Address;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.net.http.HttpResponse;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 
 import com.googlecode.ipv6.IPv6Address;
 
 import dcraft.log.Logger;
+import dcraft.struct.CompositeParser;
 
 public class NetUtil {
     static public String urlEncodeUTF8(String s) {
@@ -127,6 +136,54 @@ public class NetUtil {
 			catch (IOException x) {
 				Logger.error("Unable to close downloaded file. " + x);
 			}
+		}
+	}
+
+	public static long remaining(ByteBuffer[] bufs) {
+		long remain = 0L;
+		ByteBuffer[] var3 = bufs;
+		int var4 = bufs.length;
+
+		for(int var5 = 0; var5 < var4; ++var5) {
+			ByteBuffer buf = var3[var5];
+			remain += (long)buf.remaining();
+		}
+
+		return remain;
+	}
+
+	public static int remaining(List<ByteBuffer> bufs, int max) {
+		long remain = 0L;
+		synchronized(bufs) {
+			Iterator var5 = bufs.iterator();
+
+			do {
+				if (!var5.hasNext()) {
+					return (int)remain;
+				}
+
+				ByteBuffer buf = (ByteBuffer)var5.next();
+				remain += (long)buf.remaining();
+			} while(remain <= (long)max);
+
+			throw new IllegalArgumentException("too many bytes");
+		}
+	}
+
+	public static boolean hasRemaining(List<ByteBuffer> bufs) {
+		synchronized(bufs) {
+			Iterator var2 = bufs.iterator();
+
+			ByteBuffer buf;
+			do {
+				if (!var2.hasNext()) {
+					return false;
+				}
+
+				buf = (ByteBuffer)var2.next();
+			} while(!buf.hasRemaining());
+
+			return true;
 		}
 	}
 }

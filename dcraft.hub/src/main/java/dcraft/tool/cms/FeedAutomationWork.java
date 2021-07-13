@@ -28,6 +28,9 @@ import dcraft.tool.certs.RenewSiteManualWork;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.Status;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.RawTextComparator;
@@ -221,6 +224,115 @@ public class FeedAutomationWork extends StateWork {
 			rw.dispose();
 
 			repository.close();
+
+			// now also get the uncommitted files
+
+			{
+
+				Git git = Git.open(new File("."));
+
+				try {
+					Status status = git.status().call();
+
+					List<Path> mods = new ArrayList<>();
+
+					for (String modified : status.getModified()) {
+						System.out.println("Modified file: " + modified);
+						mods.add(Paths.get("./" + modified));
+					}
+
+					for (String modified : status.getAdded()) {
+						System.out.println("Added file: " + modified);
+						mods.add(Paths.get("./" + modified));
+					}
+
+					for (String modified : status.getUntracked()) {
+						System.out.println("Untracked file: " + modified);
+						mods.add(Paths.get("./" + modified));
+					}
+
+					for (Path npath : mods) {
+						// looking for feeds only
+						if (npath.getNameCount() < 7) {
+							continue;
+						}
+
+						String nfilename = npath.getName(1).toString();
+
+						if (nfilename.equals("dcraft.hub") || nfilename.equals("dcraft.third") || nfilename.equals("dcraft.test") || nfilename.equals(".gitignore")
+								|| nfilename.equals("matrix.xml")
+						)
+							continue;
+
+						if (! nfilename.equals("deploy-" + depoly))
+							continue;
+
+						if (! npath.getName(2).toString().equals("tenants"))
+							continue;
+
+						String tenant = npath.getName(3).toString();
+						String site = "root";
+						String feed = npath.getName(5).toString();
+						String path = "/" + npath.getName(6).toString();
+
+						if (npath.getNameCount() > 7)
+							path = "/" + npath.subpath(6, npath.getNameCount()).toString().replace('\\', '/');
+
+						if (npath.getName(4).toString().equals("sites")) {
+							if (!npath.getName(6).toString().equals("feeds") || (npath.getNameCount() < 9))
+								continue;
+
+							site = npath.getName(5).toString();
+							feed = npath.getName(7).toString();
+							path = "/" + npath.getName(8).toString();
+
+							if (npath.getNameCount() > 9)
+								path = "/" + npath.subpath(8, npath.getNameCount()).toString().replace('\\', '/');
+						}
+						else if (! npath.getName(4).toString().equals("feeds")) {
+							continue;
+						}
+
+						if (! pathindx.containsKey(tenant))
+							pathindx.put(tenant, new HashMap<>());
+
+						Map<String, Map<String, List<String>>> tenantindx = pathindx.get(tenant);
+
+						if (! tenantindx.containsKey(site))
+							tenantindx.put(site, new HashMap<>());
+
+						Map<String, List<String>> feedindx = tenantindx.get(site);
+
+						if (! feedindx.containsKey(feed))
+							feedindx.put(feed, new ArrayList<>());
+
+						List<String> lindx = feedindx.get(feed);
+
+						if (lindx.contains(path))
+							continue;
+
+						lindx.add("+" + path);
+
+						System.out.println("added: " + path);
+					}
+
+					/* TODO
+					for (String modified: status.getRemoved()) {
+						System.out.println("Removed file: " + modified);
+					}
+					 */
+				}
+				catch (NullPointerException x) {
+					System.out.println("Git repo not found");
+				}
+				catch (GitAPIException x) {
+					System.out.println("Git repo read error: " + x);
+				}
+				finally {
+					if (git != null)
+						git.close();
+				}
+			}
 
 			for (Map.Entry<String, Map<String, Map<String, List<String>>>> tenant : pathindx.entrySet()) {
 				for (Map.Entry<String, Map<String, List<String>>> site : tenant.getValue().entrySet()) {

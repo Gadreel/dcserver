@@ -48,7 +48,7 @@ import dcraft.xml.XmlParser;
 public class CompositeParser {
 	static public CompositeStruct parseJson(CharSequence data) {
 		if (data == null) {
-			Logger.error( "Error parsing JSON");
+			Logger.error( "Error parsing JSON, no characters");
 			return null;
 		}
 		

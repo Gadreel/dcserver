@@ -56,7 +56,7 @@ abstract public class OperationOutcome<T> extends OperationMarker {
 	}
 	
 	public boolean isNotEmptyResult() {
-		return !Struct.objectIsEmpty(this.value);
+		return ! Struct.objectIsEmpty(this.value);
 	}
 	
 	public boolean isEmptyResult() {
