@@ -504,6 +504,8 @@ public class OrderUtil {
 					triggerEvent(refid);
 				}
 
+				db.executeTrigger("dcmOrder", refid, "OrderPlaced", orderclean);
+
 				// not needed for now, too much info
 				//Site site = OperationContext.getOrThrow().getSite();
 				//String event = site.getAlias() + " - order submission completed: " + refid + " - " + callback.getMessages().toPrettyString();

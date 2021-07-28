@@ -47,9 +47,39 @@ public class LightspeedRetailUtil {
 		if (StringUtil.isNotEmpty(query))
 			path += "&" + query;
 
-		System.out.println(path);
+		//System.out.println(path);
 
 		LightspeedRetailUtil.buildSendRequest(accessToken, path, "GET", null, callback);
+	}
+
+	static public void itemShopUpdate(String alt, String accessToken, String itemid, RecordStruct data, OperationOutcomeRecord callback) throws OperatingContextException {
+		XElement mc = ApplicationHub.getCatalogSettings("CMS-LightspeedRetail", alt);
+
+		if (mc == null) {
+			Logger.error("Missing Lightspeed Retail settings.");
+
+			if (callback != null)
+				callback.returnEmpty();
+
+			return;
+		}
+
+		String accountId = mc.attr("AccountId");
+
+		LightspeedRetailUtil.itemShopUpdate(null, accessToken, accountId, itemid, data, callback);
+	}
+
+	static public void itemShopUpdate(String alt, String accessToken, String accountid, String itemid, RecordStruct data, OperationOutcomeRecord callback) throws OperatingContextException {
+		String path = "Account/" + accountid + "/Item/" + itemid + ".json";
+
+		RecordStruct req = RecordStruct.record()
+				.with("ItemShops", RecordStruct.record()
+						.with("ItemShop", data)
+				);
+
+		System.out.println("path: " + path);
+
+		LightspeedRetailUtil.buildSendRequest(accessToken, path, "PUT", req, callback);
 	}
 
 	static public void buildSendRequest(String accesstoken, String path, String method, CompositeStruct post, OperationOutcomeRecord callback) throws OperatingContextException {

@@ -57,49 +57,54 @@ public class ImageWidget extends Base implements ICMSAware {
 		String description = StackUtil.stringFromSource(state,"Description");
 		String ext = StackUtil.stringFromSource(state,"Extension", "jpg");
 
-		RecordStruct meta = GalleryUtil.getMeta(CommonPath.from(path).getParent().toString());
+		try {
+			RecordStruct meta = GalleryUtil.getMeta(CommonPath.from(path).getParent().toString());
 
-		if (meta != null) {
-			ext = meta.getFieldAsString("Extension", ext);
+			if (meta != null) {
+				ext = meta.getFieldAsString("Extension", ext);
 
-			RecordStruct vdata = GalleryUtil.findVariation(meta, vari);
+				RecordStruct vdata = GalleryUtil.findVariation(meta, vari);
 
-			// TODO support alt ext (from the gallery meta.json)
-			//img.with("Gallery", meta);
-			//img.with("Variant", vdata);
+				// TODO support alt ext (from the gallery meta.json)
+				//img.with("Gallery", meta);
+				//img.with("Variant", vdata);
 
-			StackUtil.addVariable(state, "_Gallery", meta);
-			StackUtil.addVariable(state, "_Variant", vdata);
+				StackUtil.addVariable(state, "_Gallery", meta);
+				StackUtil.addVariable(state, "_Variant", vdata);
 
-			if (vdata != null)
-				ext = vdata.getFieldAsString("Extension", ext);
-			
-			if ((rvari.length > 0) && StringUtil.isNotEmpty(rvari[0])) {
-				if (! this.hasAttribute("Sizes"))
-					this.attr("Sizes", "100vw");
-				
-				StringBuilder srcset = new StringBuilder();
-				boolean first = true;
-				
-				for (int rv = 0; rv < rvari.length; rv++) {
-					RecordStruct rvdata = GalleryUtil.findVariation(meta, rvari[rv]);
-					
-					String width = rvdata.getFieldAsString("ExactWidth");
-					
-					if (StringUtil.isEmpty(width))
-						continue;
-					
-					if (! first)
-						srcset.append(", ");
-					else
-						first = false;
-					
-					srcset.append("/galleries" + path + ".v/" + rvari[rv]
-							+ "." + ext + " " + width + "w");
+				if (vdata != null)
+					ext = vdata.getFieldAsString("Extension", ext);
+
+				if ((rvari.length > 0) && StringUtil.isNotEmpty(rvari[0])) {
+					if (!this.hasAttribute("Sizes"))
+						this.attr("Sizes", "100vw");
+
+					StringBuilder srcset = new StringBuilder();
+					boolean first = true;
+
+					for (int rv = 0; rv < rvari.length; rv++) {
+						RecordStruct rvdata = GalleryUtil.findVariation(meta, rvari[rv]);
+
+						String width = rvdata.getFieldAsString("ExactWidth");
+
+						if (StringUtil.isEmpty(width))
+							continue;
+
+						if (!first)
+							srcset.append(", ");
+						else
+							first = false;
+
+						srcset.append("/galleries" + path + ".v/" + rvari[rv]
+								+ "." + ext + " " + width + "w");
+					}
+
+					img.with("SourceSet", srcset);
 				}
-				
-				img.with("SourceSet", srcset);
 			}
+		}
+		catch (IllegalArgumentException x) {
+			System.out.println("bad path - try Missing");
 		}
 
 		if (this.hasNotEmptyAttribute("Centering") || this.hasNotEmptyAttribute("CenterHint"))

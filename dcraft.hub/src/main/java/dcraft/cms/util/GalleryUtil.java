@@ -3,6 +3,7 @@ package dcraft.cms.util;
 import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.log.Logger;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -21,20 +22,27 @@ public class GalleryUtil {
 		if (StringUtil.isEmpty(path))
 			return null;
 
-		CommonPath path1 = CommonPath.from(path);
+		try {
+			CommonPath path1 = CommonPath.from(path);
 
-		if (path1 == null)
-			return null;
-		
-		CompositeStruct res = OperationContext.getOrThrow().getSite().getJsonResource("galleries", path1.isRoot() ? "/meta.json" : path + "/meta.json", view);
+			if (path1 == null)
+				return null;
 
-		if (res != null)
-			return Struct.objectToRecord(res);
-		
-		if (path1.isRoot())
+			CompositeStruct res = OperationContext.getOrThrow().getSite().getJsonResource("galleries", path1.isRoot() ? "/meta.json" : path + "/meta.json", view);
+
+			if (res != null)
+				return Struct.objectToRecord(res);
+
+			if (path1.isRoot())
+				return null;
+
+			return GalleryUtil.getMeta(path1.getParent().toString(), view);
+		}
+		catch (IllegalArgumentException x) {
+			Logger.warn("Path is not valid: " + x);
+
 			return null;
-		
-		return GalleryUtil.getMeta(path1.getParent().toString(), view);
+		}
 	}
 
 	static public RecordStruct getImageMeta(String path) throws OperatingContextException {

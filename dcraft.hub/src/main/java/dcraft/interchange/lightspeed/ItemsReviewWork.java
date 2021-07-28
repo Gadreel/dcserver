@@ -46,7 +46,11 @@ public class ItemsReviewWork extends StateWork {
 	protected StateWorkStep collectNextPage = null;
 	protected StateWorkStep consumeItem = null;
 	protected StateWorkStep finish = null;
-	
+
+	public String getAccessToken() {
+		return this.access;
+	}
+
 	@Override
 	public void prepSteps(TaskContext trun) throws OperatingContextException {
 		this
@@ -121,7 +125,7 @@ public class ItemsReviewWork extends StateWork {
 					for (int i = 0; i < list.size(); i++) {
 						RecordStruct item = list.getItemAsRecord(i);
 
-						System.out.println("adding " + item.getFieldAsString("description"));
+						System.out.println("found " + item.getFieldAsString("description"));
 
 						items.addLast(item);
 					}

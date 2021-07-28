@@ -745,7 +745,7 @@ public class StringUtil {
 	    	return str.replace("\'", "\\\'");
 	    }
 	    
-	    // letters, digits, dash and underscore (does't bunch dashes)
+	    // letters, digits, dash and underscore (doesn't bunch dashes)
 	    public static String slug(String str) {
 	    	if (StringUtil.isEmpty(str))
 	    		return null;
