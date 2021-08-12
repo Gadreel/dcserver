@@ -12,7 +12,7 @@ public class Create implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 		
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		String id = ThreadUtil.createThread(db, data.getFieldAsString("Title"), data.getFieldAsString("Type"),
 				data.getFieldAsString("From"));
@@ -20,12 +20,12 @@ public class Create implements IStoredProc {
 		RecordStruct shared = data.getFieldAsRecord("SharedAttributes");
 
 		if (shared != null) {
-			db.setStaticScalar("dcmThread", id, "dcmSharedAttributes", shared);
+			db.setScalar("dcmThread", id, "dcmSharedAttributes", shared);
 		}
 
 		callback.returnValue(RecordStruct.record()
 				.with("Id", id)
-				.with("Uuid", db.getStaticScalar("dcmThread", id, "dcmUuid"))
+				.with("Uuid", db.getScalar("dcmThread", id, "dcmUuid"))
 		);
 	}
 }

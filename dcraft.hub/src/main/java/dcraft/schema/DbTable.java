@@ -58,10 +58,7 @@ public class DbTable {
 		
 		if (fel.hasAttribute("Indexed")) 
 			fld.indexed = fel.getAttributeAsBooleanOrFalse("Indexed");
-		
-		if (fel.hasAttribute("Dynamic")) 
-			fld.dynamic = fel.getAttributeAsBooleanOrFalse("Dynamic");
-		
+
 		if (fel.hasAttribute("List")) 
 			fld.list = fel.getAttributeAsBooleanOrFalse("List");
 		

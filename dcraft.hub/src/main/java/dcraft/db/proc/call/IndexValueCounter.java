@@ -1,29 +1,18 @@
 package dcraft.db.proc.call;
 
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
-
-import dcraft.db.DbServiceRequest;
 import dcraft.db.ICallContext;
-import dcraft.db.proc.IComposer;
 import dcraft.db.proc.IStoredProc;
-import dcraft.db.proc.filter.Max;
-import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.util.ByteUtil;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.schema.DataType;
 import dcraft.schema.DbField;
 import dcraft.schema.SchemaResource;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
-import dcraft.struct.builder.BuilderStateException;
-import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.util.StringUtil;
 
 public class IndexValueCounter implements IStoredProc {
@@ -34,7 +23,7 @@ public class IndexValueCounter implements IStoredProc {
 		try {
 			RecordStruct data = request.getDataAsRecord();
 			
-			TablesAdapter db = TablesAdapter.ofNow(request);
+			TablesAdapter db = TablesAdapter.of(request);
 			
 			String table = data.getFieldAsString("Table");
 			String fname = data.getFieldAsString("Field");

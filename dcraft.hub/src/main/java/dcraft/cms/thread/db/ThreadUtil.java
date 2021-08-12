@@ -1,7 +1,6 @@
 package dcraft.cms.thread.db;
 
 import dcraft.cms.thread.IChannelAccess;
-import dcraft.cms.util.FeedUtil;
 import dcraft.db.DatabaseException;
 import dcraft.db.IRequestContext;
 import dcraft.db.proc.ExpressionResult;
@@ -17,27 +16,12 @@ import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
-import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
-import dcraft.mail.SmtpWork;
-import dcraft.schema.DataType;
-import dcraft.schema.DbField;
-import dcraft.schema.SchemaResource;
-import dcraft.script.StackUtil;
-import dcraft.script.inst.*;
-import dcraft.script.inst.doc.Base;
-import dcraft.script.inst.ext.SendEmail;
-import dcraft.script.inst.ext.SendText;
-import dcraft.script.work.ExecuteState;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.struct.scalar.AnyStruct;
-import dcraft.struct.scalar.BinaryStruct;
 import dcraft.task.Task;
-import dcraft.task.TaskContext;
 import dcraft.task.TaskHub;
-import dcraft.task.TaskObserver;
 import dcraft.util.HashUtil;
 import dcraft.util.RndUtil;
 import dcraft.util.StringUtil;
@@ -48,8 +32,6 @@ import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
-import static dcraft.db.Constants.DB_GLOBAL_INDEX_SUB;
 
 /*
  * Messages are typically in /InBox, /Archive or /Trash
@@ -123,24 +105,24 @@ public class ThreadUtil {
 		
 		String id = db.createRecord("dcmThread");
 		
-		db.setStaticScalar("dcmThread", id, "dcmTitle", title);
-		db.setStaticScalar("dcmThread", id, "dcmHash", hash);
-		db.setStaticScalar("dcmThread", id, "dcmUuid", uuid);
-		db.setStaticScalar("dcmThread", id, "dcmMessageType", type);
-		db.setStaticScalar("dcmThread", id, "dcmCreated", now);
-		db.setStaticScalar("dcmThread", id, "dcmModified", deliver);				// we show threads ordered by modified, when new content is added modified changes
-		db.setStaticScalar("dcmThread", id, "dcmOriginator", originator);
-		db.setStaticScalar("dcmThread", id, "dcmTargetDate", deliver);
+		db.setScalar("dcmThread", id, "dcmTitle", title);
+		db.setScalar("dcmThread", id, "dcmHash", hash);
+		db.setScalar("dcmThread", id, "dcmUuid", uuid);
+		db.setScalar("dcmThread", id, "dcmMessageType", type);
+		db.setScalar("dcmThread", id, "dcmCreated", now);
+		db.setScalar("dcmThread", id, "dcmModified", deliver);				// we show threads ordered by modified, when new content is added modified changes
+		db.setScalar("dcmThread", id, "dcmOriginator", originator);
+		db.setScalar("dcmThread", id, "dcmTargetDate", deliver);
 		
 		if (end != null)
-			db.setStaticScalar("dcmThread", id, "dcmEndDate", end);
+			db.setScalar("dcmThread", id, "dcmEndDate", end);
 		
 		return id;
 	}
 	
 	public static void assignLabels(TablesAdapter db, String id, ListStruct labels) throws OperatingContextException {
 		if ((labels != null) && ! labels.isEmpty())
-			db.setStaticScalar("dcmThread", id, "dcmLabels", "|" + StringUtil.join(labels.toStringList(), "|") + "|");
+			db.setScalar("dcmThread", id, "dcmLabels", "|" + StringUtil.join(labels.toStringList(), "|") + "|");
 	}
 
 	public static void setParties(TablesAdapter db, String id, ListStruct parties) throws OperatingContextException {
@@ -157,13 +139,13 @@ public class ThreadUtil {
 		if (StringUtil.isEmpty(ident))
 			return;
 
-		db.updateStaticList("dcmThread", id, "dcmParty", ident, ident);
+		db.updateList("dcmThread", id, "dcmParty", ident, ident);
 
 		if (StringUtil.isNotEmpty(folder))
-			db.updateStaticList("dcmThread", id, "dcmFolder", ident, folder);
+			db.updateList("dcmThread", id, "dcmFolder", ident, folder);
 
 		if ((labels != null) && ! labels.isEmpty())
-			db.updateStaticList("dcmThread", id, "dcmPartyLabels", ident,"|" + StringUtil.join(labels.toStringList(), "|") + "|");
+			db.updateList("dcmThread", id, "dcmPartyLabels", ident,"|" + StringUtil.join(labels.toStringList(), "|") + "|");
 	}
 
 	// does not change dcmModified, do so manually
@@ -181,18 +163,18 @@ public class ThreadUtil {
 
 		String stamp = TimeUtil.stampFmt.format(TimeUtil.now());
 
-		originator = StringUtil.isNotEmpty(originator) ? originator : Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmOriginator"));
+		originator = StringUtil.isNotEmpty(originator) ? originator : Struct.objectToString(db.getScalar("dcmThread", id, "dcmOriginator"));
 
-		db.updateStaticList("dcmThread", id, "dcmContent", stamp, content);
-		db.updateStaticList("dcmThread", id, "dcmContentHash", stamp, HashUtil.getSha256(content));
-		db.updateStaticList("dcmThread", id, "dcmContentType", stamp, StringUtil.isNotEmpty(contentType) ? contentType : "UnsafeMD");
-		db.updateStaticList("dcmThread", id, "dcmContentOriginator", stamp, originator);
+		db.updateList("dcmThread", id, "dcmContent", stamp, content);
+		db.updateList("dcmThread", id, "dcmContentHash", stamp, HashUtil.getSha256(content));
+		db.updateList("dcmThread", id, "dcmContentType", stamp, StringUtil.isNotEmpty(contentType) ? contentType : "UnsafeMD");
+		db.updateList("dcmThread", id, "dcmContentOriginator", stamp, originator);
 
 		if (StringUtil.isNotEmpty(source))
-			db.updateStaticList("dcmThread", id, "dcmContentSource", stamp, source);
+			db.updateList("dcmThread", id, "dcmContentSource", stamp, source);
 
 		if ((attributes != null) && ! attributes.isEmpty())
-			db.updateStaticList("dcmThread", id, "dcmContentAttributes", stamp,attributes);
+			db.updateList("dcmThread", id, "dcmContentAttributes", stamp,attributes);
 
 		return stamp;
 	}
@@ -225,15 +207,15 @@ public class ThreadUtil {
 
 			String tenant = OperationContext.getOrThrow().getTenant().getAlias();
 
-			db.updateStaticScalar("dcmThread", id, "dcmModified", deliver);				// we show threads ordered by modified, when new content is added modified changes
+			db.updateScalar("dcmThread", id, "dcmModified", deliver);				// we show threads ordered by modified, when new content is added modified changes
 
 			BigDecimal revmod = ByteUtil.dateTimeToReverse(deliver);
 
-			List<String> parties = db.getStaticListKeys("dcmThread", id, "dcmParty");
+			List<String> parties = db.getListKeys("dcmThread", id, "dcmParty");
 
 			for (String party : parties) {
-				String folder = Struct.objectToString(db.getStaticList("dcmThread", id, "dcmFolder", party));
-				Boolean isread = Struct.objectToBooleanOrFalse(db.getStaticList("dcmThread", id, "dcmRead", party));
+				String folder = Struct.objectToString(db.getList("dcmThread", id, "dcmFolder", party));
+				Boolean isread = Struct.objectToBooleanOrFalse(db.getList("dcmThread", id, "dcmRead", party));
 
 				if (StringUtil.isNotEmpty(party) && StringUtil.isNotEmpty(folder))
 					db.getRequest().getInterface().set(tenant, "dcmThreadA", party, folder, revmod, id, isread);
@@ -355,14 +337,14 @@ public class ThreadUtil {
 	public static void deliveryNotice(TablesAdapter db, String id) throws OperatingContextException {
 		List<XElement> channels = ResourceHub.getResources().getConfig().getTagListDeep("Threads/Channel");
 
-		ZonedDateTime deliver = Struct.objectToDateTime(db.getStaticScalar("dcmThread", id, "dcmModified"));
+		ZonedDateTime deliver = Struct.objectToDateTime(db.getScalar("dcmThread", id, "dcmModified"));
 
 		// no notices for future messages, there is no support given at this level for future message notices
 		// must handle separately - most likely do an updateDeliver in future with a (now) current date
 		if (deliver.isAfter(TimeUtil.now()))
 			return;
 
-		String type = Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmMessageType"));
+		String type = Struct.objectToString(db.getScalar("dcmThread", id, "dcmMessageType"));
 
 		XElement typedef = ThreadUtil.getMessageTypeDef(type);
 
@@ -372,10 +354,10 @@ public class ThreadUtil {
 			if ("no".equals(notices))
 				return;
 
-			List<String> parties = db.getStaticListKeys("dcmThread", id, "dcmParty");
+			List<String> parties = db.getListKeys("dcmThread", id, "dcmParty");
 
 			for (String party : parties) {
-				String folder = Struct.objectToString(db.getStaticList("dcmThread", id, "dcmFolder", party));
+				String folder = Struct.objectToString(db.getList("dcmThread", id, "dcmFolder", party));
 
 				// currently only notices on InBox are supported
 				if (! "/InBox".equals(folder))
@@ -403,7 +385,7 @@ public class ThreadUtil {
 	public static void sendDeliveryNotice(TablesAdapter db, String id, String party) throws OperatingContextException {
 		List<XElement> channels = ResourceHub.getResources().getConfig().getTagListDeep("Threads/Channel");
 
-		String type = Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmMessageType"));
+		String type = Struct.objectToString(db.getScalar("dcmThread", id, "dcmMessageType"));
 
 		XElement typedef = ThreadUtil.getMessageTypeDef(type);
 
@@ -434,7 +416,7 @@ public class ThreadUtil {
 	public static void sendDeliveryNotice(TablesAdapter db, String id, String party, XElement chandef, XElement typedef) throws OperatingContextException {
 		//Main main = Main.tag();
 
-		List<String> stamps = db.getStaticListKeys("dcmThread", id, "dcmContent");
+		List<String> stamps = db.getListKeys("dcmThread", id, "dcmContent");
 		String beststamp = "";
 
 		for (String stamp : stamps) {
@@ -445,7 +427,7 @@ public class ThreadUtil {
 		if (StringUtil.isEmpty(beststamp))
 			return;
 
-		String originator = Struct.objectToString(db.getStaticList("dcmThread", id, "dcmContentOriginator", beststamp));
+		String originator = Struct.objectToString(db.getList("dcmThread", id, "dcmContentOriginator", beststamp));
 
 		// don't notify sender
 		if ("users".equals(chandef.attr("Alias")) && party.endsWith(originator))
@@ -597,7 +579,7 @@ public class ThreadUtil {
 		try {
 			String tenant = OperationContext.getOrThrow().getTenant().getAlias();
 
-			ZonedDateTime olddeliver = Struct.objectToDateTime(db.getStaticScalar("dcmThread", id, "dcmModified"));
+			ZonedDateTime olddeliver = Struct.objectToDateTime(db.getScalar("dcmThread", id, "dcmModified"));
 
 			if (olddeliver == null) {
 				Logger.error("Thread missing old delivery date: " + id);
@@ -606,16 +588,16 @@ public class ThreadUtil {
 
 			BigDecimal oldrevmod = ByteUtil.dateTimeToReverse(olddeliver);
 			
-			db.updateStaticScalar("dcmThread", id, "dcmModified", deliver);				// we show threads ordered by modified, when new content is added modified changes
+			db.updateScalar("dcmThread", id, "dcmModified", deliver);				// we show threads ordered by modified, when new content is added modified changes
 			
 			BigDecimal revmod = ByteUtil.dateTimeToReverse(deliver);
 			
 			if (! revmod.equals(oldrevmod)) {
-				List<String> parties = db.getStaticListKeys("dcmThread", id, "dcmParty");
+				List<String> parties = db.getListKeys("dcmThread", id, "dcmParty");
 				
 				for (String party : parties) {
-					String folder = Struct.objectToString(db.getStaticList("dcmThread", id, "dcmFolder", party));
-					Boolean isread = Struct.objectToBooleanOrFalse(db.getStaticList("dcmThread", id, "dcmRead", party));
+					String folder = Struct.objectToString(db.getList("dcmThread", id, "dcmFolder", party));
+					Boolean isread = Struct.objectToBooleanOrFalse(db.getList("dcmThread", id, "dcmRead", party));
 
 					if (StringUtil.isNotEmpty(party) && StringUtil.isNotEmpty(folder)) {
 						db.getRequest().getInterface().kill(tenant, "dcmThreadA", party, folder, oldrevmod, id);
@@ -642,19 +624,19 @@ public class ThreadUtil {
 		try {
 			String tenant = OperationContext.getOrThrow().getTenant().getAlias();
 
-			ZonedDateTime olddeliver = Struct.objectToDateTime(db.getStaticScalar("dcmThread", id, "dcmModified"));
+			ZonedDateTime olddeliver = Struct.objectToDateTime(db.getScalar("dcmThread", id, "dcmModified"));
 
 			BigDecimal oldrevmod = ByteUtil.dateTimeToReverse(olddeliver);
 
-			String oldfolder = Struct.objectToString(db.getStaticList("dcmThread", id, "dcmFolder", party));
+			String oldfolder = Struct.objectToString(db.getList("dcmThread", id, "dcmFolder", party));
 			
-			db.updateStaticList("dcmThread", id, "dcmFolder", party, folder);
+			db.updateList("dcmThread", id, "dcmFolder", party, folder);
 
 			if (isRead == null) {
-				isRead = Struct.objectToBooleanOrFalse(db.getStaticList("dcmThread", id, "dcmRead", party));
+				isRead = Struct.objectToBooleanOrFalse(db.getList("dcmThread", id, "dcmRead", party));
 			}
 			else {
-				db.updateStaticList("dcmThread", id, "dcmRead", party,isRead);
+				db.updateList("dcmThread", id, "dcmRead", party,isRead);
 			}
 			
 			db.getRequest().getInterface().kill(tenant, "dcmThreadA", party, oldfolder, oldrevmod, id);
@@ -670,14 +652,14 @@ public class ThreadUtil {
 		try {
 			String tenant = OperationContext.getOrThrow().getTenant().getAlias();
 
-			ZonedDateTime olddeliver = Struct.objectToDateTime(db.getStaticScalar("dcmThread", id, "dcmModified"));
+			ZonedDateTime olddeliver = Struct.objectToDateTime(db.getScalar("dcmThread", id, "dcmModified"));
 
 			BigDecimal oldrevmod = ByteUtil.dateTimeToReverse(olddeliver);
 
-			List<String> parties = db.getStaticListKeys("dcmThread", id, "dcmParty");
+			List<String> parties = db.getListKeys("dcmThread", id, "dcmParty");
 
 			for (String party : parties) {
-				String folder = Struct.objectToString(db.getStaticList("dcmThread", id, "dcmFolder", party));
+				String folder = Struct.objectToString(db.getList("dcmThread", id, "dcmFolder", party));
 
 				db.getRequest().getInterface().kill(tenant, "dcmThreadA", party, folder, oldrevmod, id);
 			}
@@ -760,20 +742,20 @@ public class ThreadUtil {
 				if (collector.contains(id))
 					continue;
 
-				String oid = Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmOriginator"));
+				String oid = Struct.objectToString(db.getScalar("dcmThread", id, "dcmOriginator"));
 
 				resp.with(
 						RecordStruct.record()
 								.with("Id", id)
 								.with("Party", party)
-								.with("MessageType", db.getStaticScalar("dcmThread", id, "dcmMessageType"))
-								.with("Title", db.getStaticScalar("dcmThread", id, "dcmTitle"))
+								.with("MessageType", db.getScalar("dcmThread", id, "dcmMessageType"))
+								.with("Title", db.getScalar("dcmThread", id, "dcmTitle"))
 								.with("Originator", oid)
-								.with("OriginatorName", db.getStaticScalar("dcUser", oid, "dcLastName"))
-								.with("Modified", db.getStaticScalar("dcmThread", id, "dcmModified"))
-								.with("Created", db.getStaticScalar("dcmThread", id, "dcmCreated"))
-								.with("Read", Struct.objectToBooleanOrFalse(db.getStaticList("dcmThread", id, "dcmRead", party)))
-								.with("Attributes", db.getStaticScalar("dcmThread", id, "dcmSharedAttributes"))
+								.with("OriginatorName", db.getScalar("dcUser", oid, "dcLastName"))
+								.with("Modified", db.getScalar("dcmThread", id, "dcmModified"))
+								.with("Created", db.getScalar("dcmThread", id, "dcmCreated"))
+								.with("Read", Struct.objectToBooleanOrFalse(db.getList("dcmThread", id, "dcmRead", party)))
+								.with("Attributes", db.getScalar("dcmThread", id, "dcmSharedAttributes"))
 				);
 			}
 
@@ -786,7 +768,7 @@ public class ThreadUtil {
 	public static List<String> collectMessageAccess(TablesAdapter db, IVariableAware scope, String mid) throws OperatingContextException {
 		List<String> list = new ArrayList<>();
 		
-		List<String> parties = db.getStaticListKeys("dcmThread", mid, "dcmParty");
+		List<String> parties = db.getListKeys("dcmThread", mid, "dcmParty");
 		
 		for (String party : parties) {
 			XElement chandef = ThreadUtil.getChannelDefFromParty(party);
@@ -814,9 +796,9 @@ public class ThreadUtil {
 		List<String> list = new ArrayList<>();
 		
 		String uid = OperationContext.getOrThrow().getUserContext().getUserId();
-		String oid = Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmOriginator"));
+		String oid = Struct.objectToString(db.getScalar("dcmThread", id, "dcmOriginator"));
 
-		List<String> parties = db.getStaticListKeys("dcmThread", id, "dcmParty");
+		List<String> parties = db.getListKeys("dcmThread", id, "dcmParty");
 		
 		for (String party : parties) {
 			if (party.startsWith("/Usr/")) {

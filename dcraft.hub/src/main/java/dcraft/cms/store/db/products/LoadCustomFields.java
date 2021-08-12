@@ -21,7 +21,7 @@ public class LoadCustomFields implements IStoredProc {
 		
 		String prodid = data.getFieldAsString("Product");
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		SelectFields flds = SelectFields.select()
 				.with("Id")

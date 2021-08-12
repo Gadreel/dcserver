@@ -14,17 +14,13 @@ import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.op.UserContext;
-import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.session.Session;
 import dcraft.session.SessionHub;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.struct.builder.ICompositeBuilder;
-import dcraft.struct.builder.ObjectBuilder;
 import dcraft.tenant.TenantHub;
-import dcraft.util.ISettingsObfuscator;
 import dcraft.util.StringUtil;
 
 public class SignIn extends LoadRecord implements IUpdatingStoredProc {
@@ -41,7 +37,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 		
 		RecordStruct params = request.getDataAsRecord();
 		DatabaseAdapter conn = request.getInterface();
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		String password = params.getFieldAsString("Password");
 		
@@ -143,7 +139,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 		}
 		*/
 
-		Object confirmedobj = db.getStaticScalar("dcUser", uid, "dcConfirmed");
+		Object confirmedobj = db.getScalar("dcUser", uid, "dcConfirmed");
 
 		boolean confirmed = Struct.objectToBooleanOrFalse(confirmedobj);
 
@@ -151,7 +147,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 			if (StringUtil.isNotEmpty(password)) {
 				// only confirmed users can login with their password - user's can always login with a validate confirm code
 				if (confirmed) {
-					Object fndpass = db.getStaticScalar("dcUser", uid, "dcPassword");
+					Object fndpass = db.getScalar("dcUser", uid, "dcPassword");
 
 					//System.out.println("local password: " + fndpass);
 
@@ -174,7 +170,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 				if (uname.equals("root")) {
 					request.pushTenant("root");
 
-					Object gp = db.getStaticScalar("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcGlobalPassword");
+					Object gp = db.getScalar("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcGlobalPassword");
 
 					request.popTenant();
 
@@ -194,15 +190,15 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 			}
 		}
 
-		Object fndpass = db.getStaticScalar("dcUser", uid, "dcConfirmCode");
+		Object fndpass = db.getScalar("dcUser", uid, "dcConfirmCode");
 
 		if (password.equals(fndpass)) {
-			Object ra = db.getStaticScalar("dcUser", uid, "dcRecoverAt");
+			Object ra = db.getScalar("dcUser", uid, "dcRecoverAt");
 
 			if (ra == null) {
 				// if code matches then good login
 				if (! request.isReplicating() && ! confirmed)
-					db.setStaticScalar("dcUser", uid, "dcConfirmed", true);
+					db.setScalar("dcUser", uid, "dcConfirmed", true);
 
 				// if code matches then good login
 				this.signIn(request, db, uid);
@@ -226,7 +222,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 				if (issafe) {
 					// if code matches then good login
 					if (! request.isReplicating() && ! confirmed)
-						db.setStaticScalar("dcUser", uid, "dcConfirmed", true);
+						db.setScalar("dcUser", uid, "dcConfirmed", true);
 
 					// if code matches and has not expired then good login
 					this.signIn(request, db, uid);
@@ -303,7 +299,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 			conn.set("root", "dcSession", token, "User", uid);
 			conn.set("root", "dcSession", token, "Tenant", did);
 			
-			db.setStaticScalar("dcUser", uid, "dcLastLogin", ZonedDateTime.now());
+			db.setScalar("dcUser", uid, "dcLastLogin", ZonedDateTime.now());
 			
 			// if signed in then we trust it
 			conn.kill("root", "dcIPTrust", OperationContext.getOrThrow().getOrigin());
@@ -337,26 +333,26 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 				return;
 			}
 			
-			Object username = db.getStaticScalar("dcUser", uid, "dcUsername");
-			Object firstname = db.getStaticScalar("dcUser", uid, "dcFirstName");
-			Object lastname = db.getStaticScalar("dcUser", uid, "dcLastName");
-			Object email = db.getStaticScalar("dcUser", uid, "dcEmail");
+			Object username = db.getScalar("dcUser", uid, "dcUsername");
+			Object firstname = db.getScalar("dcUser", uid, "dcFirstName");
+			Object lastname = db.getScalar("dcUser", uid, "dcLastName");
+			Object email = db.getScalar("dcUser", uid, "dcEmail");
 			
 			// always have User if signed in
 			ListStruct badges = ListStruct.list("User");
 			
-			for (String sid : db.getStaticListKeys("dcUser", uid, "dcBadges"))
-				badges.with(db.getStaticList("dcUser", uid, "dcBadges", sid));
+			for (String sid : db.getListKeys("dcUser", uid, "dcBadges"))
+				badges.with(db.getList("dcUser", uid, "dcBadges", sid));
 			
 			ListStruct locales = ListStruct.list();
 			
-			for (String sid : db.getStaticListKeys("dcUser", uid, "dcLocale"))
-				locales.with(db.getStaticList("dcUser", uid, "dcLocale", sid));
+			for (String sid : db.getListKeys("dcUser", uid, "dcLocale"))
+				locales.with(db.getList("dcUser", uid, "dcLocale", sid));
 			
 			ListStruct chronos = ListStruct.list();
 			
-			for (String sid : db.getStaticListKeys("dcUser", uid, "dcChronology"))
-				chronos.with(db.getStaticList("dcUser", uid, "dcChronology", sid));
+			for (String sid : db.getListKeys("dcUser", uid, "dcChronology"))
+				chronos.with(db.getList("dcUser", uid, "dcChronology", sid));
 			
 			uc
 					.withUserId(uid)

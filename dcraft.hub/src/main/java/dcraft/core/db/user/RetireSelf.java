@@ -7,8 +7,6 @@ import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.service.ServiceHub;
-import dcraft.service.ServiceRequest;
 import dcraft.struct.RecordStruct;
 
 public class RetireSelf implements IStoredProc {
@@ -16,7 +14,7 @@ public class RetireSelf implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		TableUtil.retireRecord(db, "dcUser", data.getFieldAsString("Id"));
 		

@@ -9,7 +9,6 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.session.SessionHub;
 import dcraft.struct.ListStruct;
@@ -24,8 +23,7 @@ public class StartSession implements IStoredProc {
 		RecordStruct params = request.getDataAsRecord();
 		ICompositeBuilder out = new ObjectBuilder();
 		String did = request.getTenant();
-		BigDateTime when = BigDateTime.nowDateTime();
-		TablesAdapter db = TablesAdapter.of(request, when, false);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		String token = null;
 		String uid = params.getFieldAsString("UserId");

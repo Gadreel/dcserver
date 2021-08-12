@@ -2,15 +2,11 @@ package dcraft.db.work;
 
 import dcraft.db.BasicRequestContext;
 import dcraft.db.DatabaseAdapter;
-import dcraft.db.BasicCallContext;
-import dcraft.db.ICallContext;
 import dcraft.db.IRequestContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.log.Logger;
-import dcraft.schema.DbField;
-import dcraft.schema.DbTable;
 import dcraft.schema.TableView;
 import dcraft.task.IWork;
 import dcraft.task.TaskContext;
@@ -30,7 +26,7 @@ public class IndexTenant implements IWork {
 	@Override
 	public void run(TaskContext taskctx) throws OperatingContextException {
 		IRequestContext tablesContext = BasicRequestContext.of(this.conn);
-		TablesAdapter adapter = TablesAdapter.ofNow(tablesContext);
+		TablesAdapter adapter = TablesAdapter.of(tablesContext);
 		
 		Logger.info("Killing indexes for: " + taskctx.getTenant().getAlias());
 		

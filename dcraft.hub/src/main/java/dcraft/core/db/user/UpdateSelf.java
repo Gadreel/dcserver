@@ -17,7 +17,7 @@ public class UpdateSelf implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		data.with("Id", OperationContext.getOrThrow().getUserContext().getUserId());
 		

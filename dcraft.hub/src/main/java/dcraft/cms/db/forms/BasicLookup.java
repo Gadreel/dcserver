@@ -1,47 +1,24 @@
 package dcraft.cms.db.forms;
 
-import dcraft.cms.thread.db.ThreadUtil;
-import dcraft.db.Constants;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
-import dcraft.db.request.query.CollectorField;
-import dcraft.db.request.query.LoadRecordRequest;
-import dcraft.db.request.query.SelectDirectRequest;
 import dcraft.db.request.query.SelectFields;
 import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
-import dcraft.db.util.DbUtil;
-import dcraft.filestore.CommonPath;
-import dcraft.filestore.mem.MemoryStoreFile;
-import dcraft.filevault.VaultUtil;
-import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
-import dcraft.hub.op.OperationOutcomeRecord;
 import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.interchange.google.RecaptchaUtil;
-import dcraft.interchange.slack.SlackUtil;
-import dcraft.log.Logger;
-import dcraft.schema.SchemaHub;
-import dcraft.service.ServiceHub;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.tenant.Site;
 import dcraft.util.StringUtil;
-import dcraft.util.TimeUtil;
-import dcraft.xml.XElement;
-
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 
 public class BasicLookup implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		SelectFields select = new SelectFields()
 				.with("Id")

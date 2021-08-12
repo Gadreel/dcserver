@@ -29,7 +29,7 @@ public class IndexTenantTableField implements IWork {
 	@Override
 	public void run(TaskContext taskctx) throws OperatingContextException {
 		IRequestContext tablesContext = BasicRequestContext.of(this.conn);
-		TablesAdapter adapter = TablesAdapter.ofNow(tablesContext);
+		TablesAdapter adapter = TablesAdapter.of(tablesContext);
 
 		RecordStruct params = taskctx.getTask().getParamsAsRecord();
 
@@ -55,7 +55,7 @@ public class IndexTenantTableField implements IWork {
 				Logger.info("Killing indexes for: " + taskctx.getTenant().getAlias() + " table: " + tablename + " field: " + fieldname);
 
 				try {
-					if (!schema.isList() && !schema.isDynamic()) {
+					if (schema.isScalar()) {
 						this.conn.kill(tablesContext.getTenant(), DB_GLOBAL_INDEX, tablename, fieldname);
 					}
 					else {

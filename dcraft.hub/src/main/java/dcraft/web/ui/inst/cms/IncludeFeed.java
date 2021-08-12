@@ -3,9 +3,6 @@ package dcraft.web.ui.inst.cms;
 import dcraft.cms.feed.db.HistoryFilter;
 import dcraft.cms.util.FeedUtil;
 import dcraft.db.DbServiceRequest;
-import dcraft.db.proc.BasicFilter;
-import dcraft.db.proc.ExpressionResult;
-import dcraft.db.proc.IFilter;
 import dcraft.db.proc.filter.CurrentRecord;
 import dcraft.db.proc.filter.Unique;
 import dcraft.db.tables.TablesAdapter;
@@ -18,21 +15,14 @@ import dcraft.log.Logger;
 import dcraft.script.ScriptHub;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
-import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.AnyStruct;
 import dcraft.struct.scalar.BooleanStruct;
-import dcraft.struct.scalar.StringStruct;
-import dcraft.task.IParentAwareWork;
 import dcraft.util.IOUtil;
 import dcraft.script.inst.doc.Base;
-import dcraft.script.inst.doc.Out;
 import dcraft.util.StringUtil;
 import dcraft.web.ui.UIUtil;
-import dcraft.web.ui.inst.Band;
-import dcraft.web.ui.inst.Region;
-import dcraft.web.ui.inst.W3;
 import dcraft.xml.XElement;
 
 import java.nio.file.Files;
@@ -109,7 +99,7 @@ public class IncludeFeed extends Base {
 						// may reconsider later
 						DbServiceRequest request = DbUtil.fakeRequest();
 						
-						TablesAdapter db = TablesAdapter.ofNow(request);
+						TablesAdapter db = TablesAdapter.of(request);
 						
 						
 						Unique collector = (Unique) db.traverseIndex(OperationContext.getOrThrow(), "dcmFeedHistory", "dcmDraftPath", epath.toString(), Unique.unique().withNested(
@@ -120,8 +110,8 @@ public class IncludeFeed extends Base {
 						if (StringUtil.isNotEmpty(hid)) {
 							// there should only be one "accepted" entry, that would be an "edit mode" entry (no schedule)
 							
-							for (String key : db.getStaticListKeys("dcmFeedHistory", hid, "dcmModifications")) {
-								RecordStruct command = Struct.objectToRecord(db.getStaticList("dcmFeedHistory", hid, "dcmModifications", key));
+							for (String key : db.getListKeys("dcmFeedHistory", hid, "dcmModifications")) {
+								RecordStruct command = Struct.objectToRecord(db.getList("dcmFeedHistory", hid, "dcmModifications", key));
 								
 								// check null, modification could be retired
 								if (command != null) {

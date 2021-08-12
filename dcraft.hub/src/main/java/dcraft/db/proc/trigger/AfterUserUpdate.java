@@ -10,7 +10,6 @@ import dcraft.struct.FieldStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
-import dcraft.util.TimeUtil;
 
 public class AfterUserUpdate implements ITrigger {
 	@Override
@@ -34,20 +33,20 @@ public class AfterUserUpdate implements ITrigger {
 
 					if ("dcZip".equals(fname)) {
 						// set zip prefix if possible
-						String zip = Struct.objectToString(db.getStaticScalar(table, id, "dcZip"));
+						String zip = Struct.objectToString(db.getScalar(table, id, "dcZip"));
 
 						if (StringUtil.isNotEmpty(zip))
-							db.updateStaticScalar(table, id, "dcZipPrefix", zip.substring(0, 3));
+							db.updateScalar(table, id, "dcZipPrefix", zip.substring(0, 3));
 					}
 					else if ("dcFirstName".equals(fname)) {
 						// set display name if possible
-						String displayName = Struct.objectToString(db.getStaticScalar(table, id, "dcDisplayName"));
+						String displayName = Struct.objectToString(db.getScalar(table, id, "dcDisplayName"));
 						
 						if (StringUtil.isEmpty(displayName)) {
-							String firstName = Struct.objectToString(db.getStaticScalar(table, id, "dcFirstName"));
+							String firstName = Struct.objectToString(db.getScalar(table, id, "dcFirstName"));
 							
 							if (StringUtil.isNotEmpty(firstName)) {
-								db.updateStaticScalar(table, id, "dcDisplayName", firstName);
+								db.updateScalar(table, id, "dcDisplayName", firstName);
 							}
 						}
 					}

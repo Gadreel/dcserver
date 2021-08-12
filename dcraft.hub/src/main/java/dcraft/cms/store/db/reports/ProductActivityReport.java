@@ -1,25 +1,19 @@
 package dcraft.cms.store.db.reports;
 
 import dcraft.db.ICallContext;
-import dcraft.db.proc.BasicFilter;
-import dcraft.db.proc.ExpressionResult;
 import dcraft.db.proc.IStoredProc;
-import dcraft.db.proc.call.Hash;
 import dcraft.db.proc.filter.CurrentRecord;
 import dcraft.db.proc.filter.Unique;
 import dcraft.db.tables.TablesAdapter;
-import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.util.TimeUtil;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +28,7 @@ public class ProductActivityReport implements IStoredProc {
 		LocalDate from = data.getFieldAsDate("From");
 		LocalDate to = data.getFieldAsDate("To");
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		Unique orders = Unique.unique();
 
@@ -47,12 +41,12 @@ public class ProductActivityReport implements IStoredProc {
 		for (Object ooo : orders.getValues()) {
 			String id = ooo.toString();
 
-			List<String> items = db.getStaticListKeys("dcmOrder", id, "dcmItemProduct");
+			List<String> items = db.getListKeys("dcmOrder", id, "dcmItemProduct");
 
 			for (String item : items) {
-				String pid = Struct.objectToString(db.getStaticList("dcmOrder", id, "dcmItemProduct", item));
-				Long qty = Struct.objectToInteger(db.getStaticList("dcmOrder", id, "dcmItemQuantity", item));
-				BigDecimal sales = Struct.objectToDecimal(db.getStaticList("dcmOrder", id, "dcmItemTotal", item));
+				String pid = Struct.objectToString(db.getList("dcmOrder", id, "dcmItemProduct", item));
+				Long qty = Struct.objectToInteger(db.getList("dcmOrder", id, "dcmItemQuantity", item));
+				BigDecimal sales = Struct.objectToDecimal(db.getList("dcmOrder", id, "dcmItemTotal", item));
 
 				if (qty != null) {
 					if (prodordcount.containsKey(pid)) {
@@ -76,9 +70,9 @@ public class ProductActivityReport implements IStoredProc {
 		for (String pid : prodcount.keySet()) {
 			result.with(RecordStruct.record()
 					.with("Id", pid)
-					.with("Title", db.getStaticScalar("dcmProduct", pid, "dcmTitle"))
-					.with("Alias", db.getStaticScalar("dcmProduct", pid, "dcmAlias"))
-					.with("Sku", db.getStaticScalar("dcmProduct", pid, "dcmSku"))
+					.with("Title", db.getScalar("dcmProduct", pid, "dcmTitle"))
+					.with("Alias", db.getScalar("dcmProduct", pid, "dcmAlias"))
+					.with("Sku", db.getScalar("dcmProduct", pid, "dcmSku"))
 					.with("Orders", prodordcount.get(pid).longValue())
 					.with("Quantity", prodcount.get(pid).longValue())
 					.with("Sales", prodsales.get(pid).get())

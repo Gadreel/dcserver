@@ -5,12 +5,10 @@ import java.util.List;
 import java.util.function.Function;
 
 import dcraft.db.ICallContext;
-import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.proc.IUpdatingStoredProc;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.hub.time.BigDateTime;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -33,9 +31,8 @@ public class UpdateRecord implements IUpdatingStoredProc {
 		// ===========================================
 		
 		RecordStruct fields = params.getFieldAsRecord("Fields");
-		BigDateTime when = params.getFieldAsBigDateTime("When");
-		
-		TablesAdapter db = TablesAdapter.of(request, when, false);
+
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		if (! request.isReplicating()) {
 			// only check first time, otherwise allow replication

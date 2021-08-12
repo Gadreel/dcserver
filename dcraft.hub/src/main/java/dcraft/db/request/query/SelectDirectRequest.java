@@ -66,36 +66,7 @@ public class SelectDirectRequest extends DataRequest {
 		this.withParam("Collector", v.getParams());
 		return this;
 	}
-	
-	/*
-	public SelectDirectRequest withFilter(String v) {
-		((RecordStruct) this.parameters).setField("Filter", v);
-		return this;
-	}
-	*/
-	
-	public SelectDirectRequest withWhen(BigDateTime v) {
-		this.withParam("When", v);
-		return this;
-	}
-	
-	public SelectDirectRequest withWhen(ZonedDateTime v) {
-		this.withParam("When", BigDateTime.of(v));
-		return this;
-	}
-	
-	public SelectDirectRequest withNow() {
-		this.withParam("When", BigDateTime.nowDateTime());
-		return this;
-	}
-	
-	/*
-	public SelectDirectRequest withExtra(Object v) {
-		((RecordStruct) this.parameters).setField("Extra", v);
-		return this;
-	}
-	*/
-	
+
 	public SelectDirectRequest withSelect(SelectFields v) {
 		this.withParam("Select", v.getFields());
 		return this;
@@ -104,19 +75,5 @@ public class SelectDirectRequest extends DataRequest {
 	public SelectDirectRequest withCompact(boolean v) {
 		this.withParam("Compact", v);
 		return this;
-	}
-	
-	public SelectDirectRequest withHistorical(boolean v) {
-		this.withParam("Historical", v);
-		return this;
-	}
-	
-	@Override
-	public RecordStruct buildParams() {
-		// default in When
-		if (! this.parameters.hasField("When"))
-			this.withParam("When", BigDateTime.nowDateTime());
-		
-		return super.buildParams();
 	}
 }

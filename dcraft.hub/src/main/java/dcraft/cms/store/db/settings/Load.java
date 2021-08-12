@@ -9,14 +9,12 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.util.StringUtil;
 
 public class Load implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		SelectFields fields = SelectFields.select()
 				.withAs("StoreInstructionsProduct", "dcmStoreInstructionsProduct")

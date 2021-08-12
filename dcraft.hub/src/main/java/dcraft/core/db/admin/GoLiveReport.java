@@ -10,15 +10,12 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.task.Task;
-import dcraft.task.TaskHub;
-import dcraft.tool.backup.BackupWork;
 import dcraft.util.TimeUtil;
 
 public class GoLiveReport implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		RecordStruct s0 = RecordStruct.record()
 				.with("Alias", "Step0")

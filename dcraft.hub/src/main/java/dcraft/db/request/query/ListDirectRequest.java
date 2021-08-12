@@ -22,35 +22,15 @@ import dcraft.db.request.DataRequest;
 import dcraft.hub.time.BigDateTime;
 
 public class ListDirectRequest extends DataRequest {
-	public void setHistorical(boolean v) {
-		this.parameters.with("Historical", v);
-	}
-	
 	public ListDirectRequest(String table, ISelectField select) {
-		this(table, select, null, null, (BigDateTime)null);
+		this(table, select, null, null);
 	}
 	
 	public ListDirectRequest(String table, ISelectField select, WhereExpression where) {
-		this(table, select, where, null, (BigDateTime)null);
+		this(table, select, where, null);
 	}
 	
 	public ListDirectRequest(String table, ISelectField select, WhereExpression where, ICollector collector) {
-		this(table, select, where, collector, (BigDateTime)null);
-	}
-	
-	public ListDirectRequest(String table, ISelectField select, WhereExpression where, BigDateTime when) {
-		this(table, select, where, null, when);
-	}
-	
-	public ListDirectRequest(String table, ISelectField select, WhereExpression where, ZonedDateTime when) {
-		this(table, select, where, null, (when != null) ? BigDateTime.of(when) : null);
-	}
-	
-	public ListDirectRequest(String table, ISelectField select, WhereExpression where, ICollector collector, ZonedDateTime when) {
-		this(table, select, where, collector, (when != null) ? BigDateTime.of(when) : null);
-	}
-	
-	public ListDirectRequest(String table, ISelectField select, WhereExpression where, ICollector collector, BigDateTime when) {
 		super("dcListDirect");
 
 		this.parameters
@@ -64,10 +44,5 @@ public class ListDirectRequest extends DataRequest {
 		
 		if (collector != null)
 			this.parameters.with("Collector", collector.getParams());
-		
-		if (when != null)
-			this.parameters.with("When", when);
-		else
-			this.parameters.with("When", BigDateTime.nowDateTime());
 	}
 }

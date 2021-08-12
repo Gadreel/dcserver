@@ -1,10 +1,8 @@
 package dcraft.core.db.auth;
 
-import dcraft.db.Constants;
 import dcraft.db.DatabaseAdapter;
 import dcraft.db.DatabaseException;
 import dcraft.db.ICallContext;
-import dcraft.db.proc.IStoredProc;
 import dcraft.db.proc.call.SignIn;
 import dcraft.db.request.update.DbRecordRequest;
 import dcraft.db.request.update.UpdateRecordRequest;
@@ -14,12 +12,10 @@ import dcraft.db.util.ByteUtil;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.hub.op.UserContext;
 import dcraft.interchange.facebook.FacebookUtil;
 import dcraft.log.Logger;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.tenant.TenantHub;
 import dcraft.util.StringUtil;
 
 import java.time.ZonedDateTime;
@@ -37,7 +33,7 @@ public class FacebookSignIn extends SignIn {
 		}
 
 		DatabaseAdapter conn = request.getInterface();
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		// TODO part of Trust monitoring -- boolean suspect =
 		//if (AddUserRequest.meetsPasswordPolicy(password, true).hasLogLevel(DebugLevel.Warn))
@@ -108,7 +104,7 @@ public class FacebookSignIn extends SignIn {
 			return;
 		}
 
-		boolean confirmed = Struct.objectToBooleanOrFalse(db.getStaticScalar("dcUser", uid, "dcConfirmed"));
+		boolean confirmed = Struct.objectToBooleanOrFalse(db.getScalar("dcUser", uid, "dcConfirmed"));
 
 		// only confirmed users can login with their password - user's can always login with a validate confirm code
 		if (confirmed) {

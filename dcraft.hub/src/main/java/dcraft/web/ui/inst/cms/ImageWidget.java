@@ -54,7 +54,6 @@ public class ImageWidget extends Base implements ICMSAware {
 		String[] rvari = StackUtil.stringFromSource(state,"ResponsiveVariants", "").split(",");
 		String xvari = StackUtil.stringFromSource(state,"ExpandVariant");
 		String xresp = StackUtil.stringFromSource(state,"ExpandResponsive");
-		String description = StackUtil.stringFromSource(state,"Description");
 		String ext = StackUtil.stringFromSource(state,"Extension", "jpg");
 
 		try {
@@ -141,7 +140,6 @@ public class ImageWidget extends Base implements ICMSAware {
 		img.with("BasePath", path);  //.substring(0, apos));
 		img.with("Position", 1);
 		//img.with("Description", description);		// deprecate - prefer $Image.Element.@Description instead
-    	img.with("Element", XmlToJson.convertXml(ImageWidget.this,true, true));
 
 		String sizes = StackUtil.stringFromSource(state,"Sizes");
 		
@@ -151,12 +149,19 @@ public class ImageWidget extends Base implements ICMSAware {
 		RecordStruct imgmeta = GalleryUtil.getImageMeta(path);
 
 		img.with("Data", imgmeta);
-		
-		if (imgmeta != null) {
-			if (StringUtil.isEmpty(description))
-				img.with("Description", imgmeta.getFieldAsString("Description"));
+
+		// expand description, if any
+		String description = StackUtil.stringFromSource(state,"Description");
+
+		// else replace it with meta
+		if ((imgmeta != null) && StringUtil.isEmpty(description)) {
+			description = imgmeta.getFieldAsString("Description");
 		}
-		
+
+		// put expanded/replaced back in
+		this.attr("Description", description);
+		img.with("Description", description);
+
 		this.withAttribute("data-dc-image-data", img.toString());
 		this.attr("data-dc-path", path);
 		this.attr("data-dc-ext", ext);
@@ -168,7 +173,10 @@ public class ImageWidget extends Base implements ICMSAware {
 		// TODO support expand-opts in client side JS
 		if (StringUtil.isNotEmpty(xresp))
 			this.attr("data-dc-expand-opts", xresp);
-		
+
+		// do this late as possible so we capture most of the important attributes
+		img.with("Element", XmlToJson.convertXml(ImageWidget.this,true, true));
+
 		StackUtil.addVariable(state, "Image", img);
 		StackUtil.addVariable(state, "_Image", img);
 

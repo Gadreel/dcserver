@@ -80,16 +80,16 @@ public class AddTenant implements IUpdatingStoredProc {
 
 		if (! "root".equals(tenant)) {
 			// this is in root Tenant
-			TablesAdapter db = TablesAdapter.ofNow(request);
+			TablesAdapter db = TablesAdapter.of(request);
 
 			if (StringUtil.isEmpty(first))
-				first = (String) db.getStaticScalar("dcUser", DB_GLOBAL_ROOT_RECORD, "dcFirstName");
+				first = (String) db.getScalar("dcUser", DB_GLOBAL_ROOT_RECORD, "dcFirstName");
 
 			if (StringUtil.isEmpty(last))
-				last = (String) db.getStaticScalar("dcUser", DB_GLOBAL_ROOT_RECORD, "dcLastName");
+				last = (String) db.getScalar("dcUser", DB_GLOBAL_ROOT_RECORD, "dcLastName");
 
 			if (StringUtil.isEmpty(email))
-				email = (String) db.getStaticScalar("dcUser", DB_GLOBAL_ROOT_RECORD, "dcEmail");
+				email = (String) db.getScalar("dcUser", DB_GLOBAL_ROOT_RECORD, "dcEmail");
 		}
 		else {
 			if (StringUtil.isEmpty(first))

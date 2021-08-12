@@ -9,17 +9,15 @@ import dcraft.log.Logger;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.util.TimeUtil;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
 
 public class CalcShipWeight implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 		
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		String id = data.getFieldAsString("Id");
 		ListStruct items = data.getFieldAsList("Items");
@@ -41,12 +39,12 @@ public class CalcShipWeight implements IStoredProc {
 		for (int i = 0; i < items.size(); i++) {
 			String iid = items.getItemAsString(i);
 			
-			String pid = Struct.objectToString(db.getStaticList("dcmOrder", id, "dcmItemProduct", iid));
+			String pid = Struct.objectToString(db.getList("dcmOrder", id, "dcmItemProduct", iid));
 
-			BigDecimal weight = Struct.objectToDecimal(db.getStaticScalar("dcmProduct", pid,"dcmShipWeight"));
+			BigDecimal weight = Struct.objectToDecimal(db.getScalar("dcmProduct", pid,"dcmShipWeight"));
 
 			if (weight != null) {
-				long qty = Struct.objectToInteger(db.getStaticList("dcmOrder", id, "dcmItemQuantity", iid));
+				long qty = Struct.objectToInteger(db.getList("dcmOrder", id, "dcmItemQuantity", iid));
 
 				weight = weight.multiply(BigDecimal.valueOf(qty));
 

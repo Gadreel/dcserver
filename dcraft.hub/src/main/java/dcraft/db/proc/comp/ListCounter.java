@@ -3,13 +3,11 @@ package dcraft.db.proc.comp;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
-import dcraft.db.DbServiceRequest;
 import dcraft.db.proc.IComposer;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.time.BigDateTime;
 import dcraft.schema.DbField;
 import dcraft.schema.SchemaResource;
 import dcraft.struct.RecordStruct;
@@ -37,7 +35,7 @@ public class ListCounter implements IComposer {
 			if ("Id".equals(fname)) {
 				cnt.set(1);
 			}
-			// DynamicList, StaticList (or DynamicScalar is when == null)
+			// List
 			// TODO was --- else if (fdef.isList() || (fdef.isDynamic() && when == null)) { --- restore?
 			else if (fdef.isList()) {
 				// keep in mind that `id` is the "value" in the index
@@ -49,14 +47,9 @@ public class ListCounter implements IComposer {
 					}
 				});
 			}		
-			// DynamicScalar
-			else if (fdef.isDynamic()) {
-				if (db.getDynamicScalarRaw(table, id, fname) != null)
-					cnt.set(1);
-			}
-			// StaticScalar
+			// Scalar
 			else {
-				if (db.getStaticScalarRaw(table, id, fname) != null)
+				if (db.getRaw(table, id, fname) != null)
 					cnt.set(1);
 			}
 			

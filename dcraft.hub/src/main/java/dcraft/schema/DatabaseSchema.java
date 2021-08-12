@@ -96,6 +96,7 @@ public class DatabaseSchema {
 								new XAttribute("Name", "Retired"),
 								new XAttribute("Type", "Boolean")
 						),
+						/*
 						new XElement("Field",
 								new XAttribute("Name", "From"),
 								new XAttribute("Type", "BigDateTime"),
@@ -106,6 +107,7 @@ public class DatabaseSchema {
 								new XAttribute("Type", "BigDateTime"),
 								new XAttribute("Indexed", "True")
 						),
+						 */
 						new XElement("Field",
 								new XAttribute("Name", "Tags"),
 								new XAttribute("Type", "dcTinyString"),

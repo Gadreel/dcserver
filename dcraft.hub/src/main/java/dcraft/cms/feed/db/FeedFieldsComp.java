@@ -5,14 +5,10 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
-import dcraft.locale.LocaleResource;
 import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
 import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
 
-import java.math.BigDecimal;
-import java.text.DecimalFormat;
 import java.util.List;
 
 public class FeedFieldsComp implements IComposer {
@@ -23,22 +19,22 @@ public class FeedFieldsComp implements IComposer {
 		try {
 			RecordStruct fields = RecordStruct.record();
 			
-			List<String> names = db.getStaticListKeys(table, id, "dcmSharedFields");
+			List<String> names = db.getListKeys(table, id, "dcmSharedFields");
 			
 			for (String name : names)
-				fields.with(name, db.getStaticList(table, id, "dcmSharedFields", name));
+				fields.with(name, db.getList(table, id, "dcmSharedFields", name));
 			
 			String mylocale = "." + OperationContext.getOrThrow().getResources().getLocale().getDefaultLocale();
 			String deflocale = "." + OperationContext.getOrThrow().getTenant().getResources().getLocale().getDefaultLocale();
 			
-			List<String> lnames = db.getStaticListKeys(table, id, "dcmLocaleFields");
+			List<String> lnames = db.getListKeys(table, id, "dcmLocaleFields");
 			
 			// find values for my locale
 			for (String name : lnames) {
 				if (name.endsWith(mylocale)) {
 					String pubname = name.substring(0, name.length() - mylocale.length());
 					
-					fields.with(pubname, db.getStaticList(table, id, "dcmLocaleFields", name));
+					fields.with(pubname, db.getList(table, id, "dcmLocaleFields", name));
 				}
 			}
 			
@@ -48,7 +44,7 @@ public class FeedFieldsComp implements IComposer {
 					String pubname = name.substring(0, name.length() - mylocale.length());
 					
 					if (! fields.hasField(pubname))
-						fields.with(pubname, db.getStaticList(table, id, "dcmLocaleFields", name));
+						fields.with(pubname, db.getList(table, id, "dcmLocaleFields", name));
 				}
 			}
 			

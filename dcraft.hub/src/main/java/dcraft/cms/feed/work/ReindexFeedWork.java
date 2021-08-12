@@ -1,12 +1,8 @@
 package dcraft.cms.feed.work;
 
-import dcraft.cms.feed.db.FeedUtilDb;
-import dcraft.db.BasicRequestContext;
 import dcraft.db.ICallContext;
-import dcraft.db.IConnectionManager;
 import dcraft.db.fileindex.BasicFilter;
 import dcraft.db.fileindex.FileIndexAdapter;
-import dcraft.db.fileindex.IFilter;
 import dcraft.db.proc.ExpressionResult;
 import dcraft.db.proc.filter.CurrentRecord;
 import dcraft.db.tables.TablesAdapter;
@@ -17,26 +13,19 @@ import dcraft.filestore.local.LocalStore;
 import dcraft.filevault.FileStoreVault;
 import dcraft.filevault.IndexTransaction;
 import dcraft.filevault.Vault;
-import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcome;
-import dcraft.log.Logger;
-import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.task.IParentAwareWork;
 import dcraft.task.StateWork;
 import dcraft.task.StateWorkStep;
 import dcraft.task.TaskContext;
 import dcraft.tenant.Site;
-import dcraft.tenant.Tenant;
-import dcraft.tenant.TenantHub;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
-import dcraft.xml.XElement;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -61,7 +50,7 @@ public class ReindexFeedWork extends StateWork {
 		work.feed = feed;
 
 		work.adapter = FileIndexAdapter.of(request);
-		work.db = TablesAdapter.ofNow(request);
+		work.db = TablesAdapter.of(request);
 
 		return work;
 	}
@@ -185,7 +174,7 @@ public class ReindexFeedWork extends StateWork {
 					.withNested(new dcraft.db.proc.BasicFilter() {
 						@Override
 						public ExpressionResult check(TablesAdapter db, IVariableAware scope, String table, Object val) throws OperatingContextException {
-							String path = Struct.objectToString(db.getStaticScalar(table, val.toString(),"dcmPath")) + ".html";
+							String path = Struct.objectToString(db.getScalar(table, val.toString(),"dcmPath")) + ".html";
 							boolean found = true;
 
 							if (StringUtil.isNotEmpty(path)) {

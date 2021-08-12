@@ -1,8 +1,6 @@
 package dcraft.core.db.auth;
 
-import dcraft.core.db.UserDataUtil;
 import dcraft.db.ICallContext;
-import dcraft.db.proc.IStoredProc;
 import dcraft.db.proc.IUpdatingStoredProc;
 import dcraft.db.request.update.DbRecordRequest;
 import dcraft.db.request.update.UpdateRecordRequest;
@@ -19,7 +17,7 @@ public class LinkFacebookAccount implements IUpdatingStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		RecordStruct userInfo = FacebookUtil.fbSignIn(data.getFieldAsString("Token"));
 

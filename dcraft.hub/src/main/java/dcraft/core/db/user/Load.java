@@ -18,7 +18,7 @@ public class Load implements IStoredProc {
 
 		String id = data.getFieldAsString("Id");
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		if (! TableUtil.canReadRecord(db, "dcUser", id, "dcCoreServices.Users.Load", null, request.isFromRpc())) {
 			Logger.error("Not permitted to load this record.");

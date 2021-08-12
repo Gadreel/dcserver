@@ -8,7 +8,6 @@ import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.*;
-import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.schema.DbCollector;
 import dcraft.schema.SchemaResource;
@@ -73,16 +72,14 @@ public class SelectDirect implements IStoredProc {
 		//System.out.println("Query: " + params.toPrettyString());
 		
 		String table = params.getFieldAsString("Table");
-		BigDateTime when = params.getFieldAsBigDateTime("When");
 		boolean compact = params.hasField("Compact") ? params.getFieldAsBooleanOrFalse("Compact") : true;
-		boolean historical = params.getFieldAsBooleanOrFalse("Historical");	
 		ListStruct select = params.getFieldAsList("Select");
 		RecordStruct where = params.getFieldAsRecord("Where");
 		
 		// TODO add db filter option
 		//d runFilter("Query") quit:Errors  ; if any violations in filter then do not proceed
 		
-		TablesAdapter db = TablesAdapter.of(request, when, historical);
+		TablesAdapter db = TablesAdapter.of(request);
 		ICompositeBuilder out = new ObjectBuilder();
 
 		IVariableAware scope = OperationContext.getOrThrow();

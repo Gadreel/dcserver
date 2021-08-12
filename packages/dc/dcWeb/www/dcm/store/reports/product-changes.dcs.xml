@@ -1,0 +1,67 @@
+<dcs.Script Title="Product Changes Download" Badges="Admin,Clerk">
+	<dcs.Info>Products Changes Report Download</dcs.Info>
+
+	<dcs.Var Name="Param1" Type="Record">
+		<SetField Name="From" Value="{$_Controller.Request.Parameters.from.0}" />
+		<SetField Name="To" Value="{$_Controller.Request.Parameters.to.0}" />
+	</dcs.Var>
+
+	<dcs.CallService Op="dcmStoreServices.Reports.ProductChangesReport" Params="$Param1" Result="Products" />
+
+	<dcs.Var Name="csv" Type="dcmQuickCSV">
+		<Init Result="regMemory" />
+
+		<Field Value="Product Changes Report - {$Param1.From} to {$Param1.To}" />
+
+		<NewLine />
+
+		<Field Value="Product" />
+		<Field Value="Sku" />
+		<Field Value="Field" />
+		<Field Value="At" />
+		<Field Value="Locale" />
+		<Field Value="New Value" />
+
+		<NewLine />
+	</dcs.Var>
+
+	<dcs.ForEach Name="Product" In="$Products">
+		<dcs.With Target="$csv">
+			<Field Value="{$Product.Title}" />
+			<Field Value="{$Product.Sku}" />
+		</dcs.With>
+
+		<dcs.Var Name="FirstForProd" Type="Boolean" SetTo="true" />
+
+		<dcs.ForEach Name="Change" In="$Product.Changes">
+			<dcs.If Target="$FirstForProd" Not="true">
+				<dcs.With Target="$csv">
+					<Field Value="" />
+					<Field Value="" />
+				</dcs.With>
+			</dcs.If>
+			<dcs.Else>
+				<dcs.With Target="$FirstForProd" SetTo="false" />
+			</dcs.Else>
+
+			<dcs.With Target="$csv">
+				<Field Value="{$Change.Field}" />
+				<Field Value="{$Change.At|dt:MMM dd, hh:mm a}" />
+				<Field Value="{$Change.Locale}" />
+				<Field Value="{$Change.Value}" />
+				<NewLine />
+			</dcs.With>
+		</dcs.ForEach>
+	</dcs.ForEach>
+
+	<dcs.With Target="$csv">
+		<Save />
+	</dcs.With>
+
+	<dcs.With Target="$_Controller.Response.Headers">
+		<SetField Name="Content-Type" Value="text/csv" />
+		<SetField Name="Content-Disposition" Value="attachment; filename=&quot;Product-Changes-Report.csv&quot;" />
+	</dcs.With>
+
+	<dcs.Stream Source="$regMemory" Destination="$Dest" />
+</dcs.Script>

@@ -3,7 +3,6 @@ package dcraft.cms.store.db.products;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
 import dcraft.db.request.update.DbRecordRequest;
-import dcraft.db.request.update.InsertRecordRequest;
 import dcraft.db.request.update.UpdateRecordRequest;
 import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
@@ -11,10 +10,6 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.util.RndUtil;
-import dcraft.util.StringUtil;
-
-import java.util.List;
 
 public class UpdateCustomField implements IStoredProc {
 	@Override
@@ -22,7 +17,7 @@ public class UpdateCustomField implements IStoredProc {
 		RecordStruct data = request.getDataAsRecord();
 		String id = data.getFieldAsString("Id");
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		DbRecordRequest req = UpdateRecordRequest.update()
 				.withId(id)

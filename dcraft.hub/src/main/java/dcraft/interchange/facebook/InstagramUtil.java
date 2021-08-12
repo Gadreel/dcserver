@@ -7,7 +7,6 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeRecord;
 import dcraft.hub.op.OperationOutcomeString;
-import dcraft.interchange.mailchimp.MailChimpUtil;
 import dcraft.log.Logger;
 import dcraft.struct.CompositeParser;
 import dcraft.struct.CompositeStruct;
@@ -39,17 +38,17 @@ public class InstagramUtil {
 
         String sub = StringUtil.isNotEmpty(alt) ? alt : "default";
 
-        boolean disabled = Struct.objectToBooleanOrFalse(db.getStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessDisabled", sub));
+        boolean disabled = Struct.objectToBooleanOrFalse(db.getList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessDisabled", sub));
 
         if (disabled) {
             callback.returnEmpty();
             return;
         }
 
-        ZonedDateTime expire = Struct.objectToDateTime(db.getStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessExpire", sub));
+        ZonedDateTime expire = Struct.objectToDateTime(db.getList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessExpire", sub));
 
         if (expire != null) {
-            basictoken = Struct.objectToString(db.getStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessToken", sub));
+            basictoken = Struct.objectToString(db.getList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessToken", sub));
 
             ZonedDateTime checkdate = TimeUtil.now().plusDays(7);
 
@@ -71,13 +70,13 @@ public class InstagramUtil {
                         if (StringUtil.isNotEmpty(token)) {
                             ZonedDateTime expire = TimeUtil.now().plusSeconds(secs);
 
-                            db.updateStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessToken", sub, token);
-                            db.updateStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessExpire", sub, expire);
+                            db.updateList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessToken", sub, token);
+                            db.updateList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessExpire", sub, expire);
 
                             BackupUtil.notifyProgress(ApplicationHub.getDeployment() + " : " + ApplicationHub.getNodeId() + " : " + OperationContext.getOrThrow().getSite().getTenant().getAlias() + " : successfully renewed IG token: " + token);
                         }
                         else {
-                            db.updateStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessDisabled", sub, true);
+                            db.updateList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessDisabled", sub, true);
 
                             BackupUtil.notifyProgress(ApplicationHub.getDeployment() + " : " + ApplicationHub.getNodeId() + " : " + OperationContext.getOrThrow().getSite().getTenant().getAlias() + " : unable to renew IG token");
                         }

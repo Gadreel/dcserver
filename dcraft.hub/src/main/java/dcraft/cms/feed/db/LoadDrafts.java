@@ -21,7 +21,7 @@ import java.util.List;
 public class LoadDrafts implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		Unique collector = (Unique) Unique.unique().withNested(
 				CurrentRecord.current().withNested(HistoryFilter.forDraft())
@@ -36,7 +36,7 @@ public class LoadDrafts implements IStoredProc {
 		for (Object oid: collector.getValues()) {
 			String id = oid.toString();
 			
-			CommonPath path = CommonPath.from(Struct.objectToString(db.getStaticScalar("dcmFeedHistory", id, "dcmPath")));
+			CommonPath path = CommonPath.from(Struct.objectToString(db.getScalar("dcmFeedHistory", id, "dcmPath")));
 			String feed = path.getName(1);
 			XElement def = null;
 			
@@ -52,25 +52,25 @@ public class LoadDrafts implements IStoredProc {
 				continue;
 			}
 			
-			String suid = Struct.objectToString(db.getStaticScalar("dcmFeedHistory", id, "dcmStartedBy"));
-			String luid = Struct.objectToString(db.getStaticScalar("dcmFeedHistory", id, "dcmModifiedBy"));
+			String suid = Struct.objectToString(db.getScalar("dcmFeedHistory", id, "dcmStartedBy"));
+			String luid = Struct.objectToString(db.getScalar("dcmFeedHistory", id, "dcmModifiedBy"));
 
 			results.with(RecordStruct.record()
 					.with("LocalPath", "pages".equals(path.getName(1)) ? path.subpath(2) : path.subpath(1))
 					.with("Feed", feed)
 					.with("FeedName", def.attr("Title"))
 					.with("Highlight", Struct.objectToBooleanOrFalse(def.attr("Highlight")))
-					.with("StartEdit", db.getStaticScalar("dcmFeedHistory", id, "dcmStartedAt"))
+					.with("StartEdit", db.getScalar("dcmFeedHistory", id, "dcmStartedAt"))
 					.with("StartBy", RecordStruct.record()
 							.with("Id", suid)
-							.with("FirstName", Struct.objectToString(db.getStaticScalar("dcUser", suid, "dcFirstName")))
-							.with("LastName", Struct.objectToString(db.getStaticScalar("dcUser", suid, "dcLastName")))
+							.with("FirstName", Struct.objectToString(db.getScalar("dcUser", suid, "dcFirstName")))
+							.with("LastName", Struct.objectToString(db.getScalar("dcUser", suid, "dcLastName")))
 					)
-					.with("LastEdit", db.getStaticScalar("dcmFeedHistory", id, "dcmModifiedAt"))
+					.with("LastEdit", db.getScalar("dcmFeedHistory", id, "dcmModifiedAt"))
 					.with("LastBy", RecordStruct.record()
 							.with("Id", luid)
-							.with("FirstName", Struct.objectToString(db.getStaticScalar("dcUser", luid, "dcFirstName")))
-							.with("LastName", Struct.objectToString(db.getStaticScalar("dcUser", luid, "dcLastName")))
+							.with("FirstName", Struct.objectToString(db.getScalar("dcUser", luid, "dcFirstName")))
+							.with("LastName", Struct.objectToString(db.getScalar("dcUser", luid, "dcLastName")))
 					)
 			);
 		}

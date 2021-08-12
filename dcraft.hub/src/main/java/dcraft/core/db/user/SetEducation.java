@@ -7,9 +7,7 @@ import dcraft.db.request.update.UpdateRecordRequest;
 import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.hub.op.UserContext;
 import dcraft.log.Logger;
 import dcraft.struct.RecordStruct;
 
@@ -20,7 +18,7 @@ public class SetEducation implements IStoredProc {
 		
 		String id = data.getFieldAsString("Id");
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		if (! TableUtil.canWriteRecord(db, "dcUser", id, "dcCoreServices.Users.SetEducation", null, request.isFromRpc())) {
 			Logger.error("Not permitted to update this record.");

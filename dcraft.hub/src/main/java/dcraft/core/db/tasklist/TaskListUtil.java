@@ -33,7 +33,7 @@ public class TaskListUtil {
                 tab.with("Path", path.replace("$Id", id));
             }
 
-            db.updateStaticScalar("dcTaskList", id, "dcLeadTabOption", tab);
+            db.updateScalar("dcTaskList", id, "dcLeadTabOption", tab);
         }
 
         if (data.isNotFieldEmpty("ChildTab")) {
@@ -45,7 +45,7 @@ public class TaskListUtil {
                 tab.with("Path", path.replace("$Id", id));
             }
 
-            db.updateStaticScalar("dcTaskList", id, "dcChildTabOption", tab);
+            db.updateScalar("dcTaskList", id, "dcChildTabOption", tab);
         }
 
         ListStruct steps = data.getFieldAsList("Steps");
@@ -56,7 +56,7 @@ public class TaskListUtil {
 
                 String sid = TaskListUtil.addTaskListRecord(db, step);
 
-                db.updateStaticList("dcTaskList", id, "dcStepTask", StringUtil.leftPad("" + i, 4, '0'), sid);
+                db.updateList("dcTaskList", id, "dcStepTask", StringUtil.leftPad("" + i, 4, '0'), sid);
             }
         }
 

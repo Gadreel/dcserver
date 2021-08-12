@@ -9,10 +9,6 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
-import dcraft.util.StringUtil;
-
-import java.util.List;
 
 public class BasicUpdate implements IStoredProc {
 	@Override
@@ -20,7 +16,7 @@ public class BasicUpdate implements IStoredProc {
 		RecordStruct data = request.getDataAsRecord();
 		String id = data.getFieldAsString("Id");
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		DbRecordRequest req = UpdateRecordRequest.update()
 				.withTable("dcmBasicCustomForm")

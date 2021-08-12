@@ -55,43 +55,8 @@ public class ListRequest extends DataRequest {
 		this.parameters.with("CacheId", v);
 	}
 	
-	public void setHistorical(boolean v) {
-		this.parameters.with("Historical", v);
-	}
-	
-	public ListRequest(String table, ISelectField select) {
-		this(table, select, null, null, null, (BigDateTime)null);
-	}
-	
-	public ListRequest(String table, ISelectField select, OrderFields order) {
-		this(table, select, order, null, null, (BigDateTime)null);
-	}
-	
-	public ListRequest(String table, ISelectField select, WhereExpression where) {
-		this(table, select, null, where, null, (BigDateTime)null);
-	}
-	
-	public ListRequest(String table, ISelectField select, OrderFields order, WhereExpression where) {
-		this(table, select, order, where, null, (BigDateTime)null);
-	}
-	
+
 	public ListRequest(String table, ISelectField select, OrderFields order, WhereExpression where, ICollector collector) {
-		this(table, select, order, where, collector, (BigDateTime)null);
-	}
-	
-	public ListRequest(String table, ISelectField select, OrderFields order, WhereExpression where, BigDateTime when) {
-		this(table, select, order, where, null, when);
-	}
-	
-	public ListRequest(String table, ISelectField select, OrderFields order, WhereExpression where, ZonedDateTime when) {
-		this(table, select, order, where, null, (when != null) ? BigDateTime.of(when) : null);
-	}
-	
-	public ListRequest(String table, ISelectField select, OrderFields order, WhereExpression where, ICollector collector, ZonedDateTime when) {
-		this(table, select, order, where, collector, (when != null) ? BigDateTime.of(when) : null);
-	}
-	
-	public ListRequest(String table, ISelectField select, OrderFields order, WhereExpression where, ICollector collector, BigDateTime when) {
 		super("dcList");
 		
 		this.parameters.with("Table", table);
@@ -107,11 +72,6 @@ public class ListRequest extends DataRequest {
 		
 		if (collector != null)
 			this.parameters.with("Collector", collector.getParams());
-		
-		if (when != null)
-			this.parameters.with("When", when);
-		else
-			this.parameters.with("When", BigDateTime.nowDateTime());
 	}
 	
 	public void nextPage() {

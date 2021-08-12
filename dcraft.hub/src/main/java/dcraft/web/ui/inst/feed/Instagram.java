@@ -1,13 +1,11 @@
 package dcraft.web.ui.inst.feed;
 
-import dcraft.cms.util.GalleryUtil;
 import dcraft.db.BasicRequestContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeString;
-import dcraft.interchange.bigcommerce.BigCommerceProductListWork;
 import dcraft.interchange.facebook.InstagramUtil;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
@@ -17,21 +15,16 @@ import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.struct.*;
 import dcraft.task.IWork;
-import dcraft.task.StateWorkStep;
 import dcraft.task.TaskContext;
 import dcraft.util.StringUtil;
 import dcraft.script.inst.doc.Base;
 import dcraft.util.TimeUtil;
 import dcraft.web.ui.inst.*;
-import dcraft.web.ui.inst.cms.GalleryWidget;
-import dcraft.web.ui.inst.form.ManagedForm;
 import dcraft.xml.XElement;
 import dcraft.xml.XNode;
-import z.gei.db.estimator.product.List;
 
 import java.net.URL;
 import java.time.ZonedDateTime;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class Instagram extends Base implements ICMSAware, IReviewAware {
 	static public Instagram tag() {
@@ -50,7 +43,7 @@ public class Instagram extends Base implements ICMSAware, IReviewAware {
 	public ReturnOption run(InstructionWork state) throws OperatingContextException {
 		if (state.getState() == ExecuteState.READY) {
 			BasicRequestContext requestContext = BasicRequestContext.ofDefaultDatabase();
-			TablesAdapter db = TablesAdapter.ofNow(requestContext);
+			TablesAdapter db = TablesAdapter.of(requestContext);
 
 			String alt = StackUtil.stringFromSource(state,"AltSettings");
 
@@ -248,7 +241,7 @@ public class Instagram extends Base implements ICMSAware, IReviewAware {
 			@Override
 			public void run(TaskContext taskctx) throws OperatingContextException {
 				BasicRequestContext requestContext = BasicRequestContext.ofDefaultDatabase();
-				TablesAdapter db = TablesAdapter.ofNow(requestContext);
+				TablesAdapter db = TablesAdapter.of(requestContext);
 
 				String alt = Instagram.this.attr("AltSettings");
 

@@ -1,0 +1,47 @@
+<dc.Html Badges="Clerk,Admin" NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Download Product Changes Activity" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form AlwaysNew="True">
+				<dcf.Text Label="From" Name="From" DataType="LocalDate" Required="true" placeholder="yyyy-mm-dd" />
+				<dcf.Text Label="To" Name="To" DataType="LocalDate" Required="true" placeholder="yyyy-mm-dd" />
+
+				<dcf.FormButtons>
+					<dcf.SubmitButton Label="Download" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Data = {
+				From: moment().date(1).subtract(1, 'month').format('YYYY-MM-DD'),
+				To: moment().format('YYYY-MM-DD')
+			};
+	]]></Function>
+	<Function Name="AfterSaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			var from = page.form().getValue('From');
+			var to = page.form().getValue('To');
+
+			window.open('/dcm/store/reports/product-changes?from=' + from + '&to=' + to)
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback();
+	]]></Function>
+</dc.Html>

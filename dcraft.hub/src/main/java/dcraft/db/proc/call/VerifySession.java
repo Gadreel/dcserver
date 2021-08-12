@@ -8,7 +8,6 @@ import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.op.UserContext;
-import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.session.Session;
 import dcraft.struct.ListStruct;
@@ -17,7 +16,7 @@ import dcraft.util.StringUtil;
 public class VerifySession extends LoadRecord {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		String tenant = request.getTenant();
 		
 		OperationContext ctx = OperationContext.getOrThrow();
@@ -40,26 +39,26 @@ public class VerifySession extends LoadRecord {
 					conn.set("root", "dcSession", token, "LastAccess", request.getStamp());
 					
 					// load the local user context
-					Object username = db.getStaticScalar("dcUser", uid, "dcUsername");
-					Object firstname = db.getStaticScalar("dcUser", uid, "dcFirstName");
-					Object lastname = db.getStaticScalar("dcUser", uid, "dcLastName");
-					Object email = db.getStaticScalar("dcUser", uid, "dcEmail");
+					Object username = db.getScalar("dcUser", uid, "dcUsername");
+					Object firstname = db.getScalar("dcUser", uid, "dcFirstName");
+					Object lastname = db.getScalar("dcUser", uid, "dcLastName");
+					Object email = db.getScalar("dcUser", uid, "dcEmail");
 					
 					// always have User if signed in
 					ListStruct badges = ListStruct.list("User");
 					
-					for (String sid : db.getStaticListKeys("dcUser", uid, "dcBadges"))
-						badges.with(db.getStaticList("dcUser", uid, "dcBadges", sid));
+					for (String sid : db.getListKeys("dcUser", uid, "dcBadges"))
+						badges.with(db.getList("dcUser", uid, "dcBadges", sid));
 					
 					ListStruct locales = ListStruct.list();
 					
-					for (String sid : db.getStaticListKeys("dcUser", uid, "dcLocale"))
-						locales.with(db.getStaticList("dcUser", uid, "dcLocale", sid));
+					for (String sid : db.getListKeys("dcUser", uid, "dcLocale"))
+						locales.with(db.getList("dcUser", uid, "dcLocale", sid));
 					
 					ListStruct chronos = ListStruct.list();
 					
-					for (String sid : db.getStaticListKeys("dcUser", uid, "dcChronology"))
-						chronos.with(db.getStaticList("dcUser", uid, "dcChronology", sid));
+					for (String sid : db.getListKeys("dcUser", uid, "dcChronology"))
+						chronos.with(db.getList("dcUser", uid, "dcChronology", sid));
 					
 					uc
 							.withUserId(uid)

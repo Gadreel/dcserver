@@ -17,7 +17,7 @@ import dcraft.struct.Struct;
 public class LoadAlerts implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		ListStruct resp = ListStruct.list();
 		Unique collector = Unique.unique();
@@ -36,11 +36,11 @@ public class LoadAlerts implements IStoredProc {
 			resp.with(
 					RecordStruct.record()
 							.with("Id", id)
-							.with("MessageType", db.getStaticScalar("dcmThread", id, "dcmMessageType"))
-							.with("Title", db.getStaticScalar("dcmThread", id, "dcmTitle"))
-							.with("Modified", db.getStaticScalar("dcmThread", id, "dcmModified"))
-							.with("Read", Struct.objectToBooleanOrFalse(db.getStaticList("dcmThread", id, "dcmRead", "/NoticesPool")))
-							.with("Attributes", db.getStaticScalar("dcmThread", id, "dcmSharedAttributes"))
+							.with("MessageType", db.getScalar("dcmThread", id, "dcmMessageType"))
+							.with("Title", db.getScalar("dcmThread", id, "dcmTitle"))
+							.with("Modified", db.getScalar("dcmThread", id, "dcmModified"))
+							.with("Read", Struct.objectToBooleanOrFalse(db.getList("dcmThread", id, "dcmRead", "/NoticesPool")))
+							.with("Attributes", db.getScalar("dcmThread", id, "dcmSharedAttributes"))
 			);
 		}
 		

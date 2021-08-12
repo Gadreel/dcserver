@@ -1,24 +1,16 @@
 package dcraft.db.proc.comp;
 
-import dcraft.db.DatabaseException;
 import dcraft.db.proc.IComposer;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
-import dcraft.log.Logger;
 import dcraft.schema.DbField;
 import dcraft.schema.SchemaResource;
-import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
 import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
-import dcraft.util.StringUtil;
-
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 
 public class Translate implements IComposer {
 	@Override
@@ -32,7 +24,7 @@ public class Translate implements IComposer {
 			DbField schemafld = schema.getDbField(table, fname + "Tr");
 			
 			if (schemafld != null) {
-				Object val = db.getStaticList(table, id, fname + "Tr", OperationContext.getOrThrow().getLocale(), field.getFieldAsString("Format"));
+				Object val = db.getList(table, id, fname + "Tr", OperationContext.getOrThrow().getLocale(), field.getFieldAsString("Format"));
 				
 				if (val != null) {
 					out.value(val);
@@ -40,7 +32,7 @@ public class Translate implements IComposer {
 				}
 			}
 		
-			out.value(db.getStaticScalar(table, id, fname, field.getFieldAsString("Format")));
+			out.value(db.getScalar(table, id, fname, field.getFieldAsString("Format")));
 		} 
 		catch (BuilderStateException x) {
 			// TODO Auto-generated catch block

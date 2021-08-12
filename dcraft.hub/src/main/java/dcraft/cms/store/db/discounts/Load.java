@@ -21,7 +21,7 @@ public class Load implements IStoredProc {
 
 		String id = data.getFieldAsString("Id");
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		SelectFields fields = SelectFields.select()
 				.with("Id")
@@ -49,7 +49,7 @@ public class Load implements IStoredProc {
 		String pid = result.getFieldAsString("ProductId");
 
 		if (StringUtil.isNotEmpty(pid))
-			result.with("Product", db.getStaticScalar("dcmProduct", pid, "dcmTitle"));
+			result.with("Product", db.getScalar("dcmProduct", pid, "dcmTitle"));
 
 		ListStruct products = result.getFieldAsList("Products");
 
@@ -58,7 +58,7 @@ public class Load implements IStoredProc {
 
 			pid = prod.getFieldAsString("ProductId");
 
-			prod.with("Product", db.getStaticScalar("dcmProduct", pid, "dcmTitle"));
+			prod.with("Product", db.getScalar("dcmProduct", pid, "dcmTitle"));
 		}
 
 		callback.returnValue(result);

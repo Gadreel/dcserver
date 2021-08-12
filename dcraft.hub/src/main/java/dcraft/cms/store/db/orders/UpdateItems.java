@@ -17,7 +17,7 @@ public class UpdateItems implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 		
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		String id = data.getFieldAsString("Id");
 		String status = data.getFieldAsString("Status");
@@ -34,8 +34,8 @@ public class UpdateItems implements IStoredProc {
 		for (int i = 0; i < items.size(); i++) {
 			String iid = items.getItemAsString(i);
 			
-			db.setStaticList("dcmOrder", id, "dcmItemStatus", iid, status);
-			db.setStaticList("dcmOrder", id, "dcmItemUpdated", iid, now);
+			db.setList("dcmOrder", id, "dcmItemStatus", iid, status);
+			db.setList("dcmOrder", id, "dcmItemUpdated", iid, now);
 		}
 		
 		dcraft.cms.store.db.Util.updateOrderStatus(db, id);

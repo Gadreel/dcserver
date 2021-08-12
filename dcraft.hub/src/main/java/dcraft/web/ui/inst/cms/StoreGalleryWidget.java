@@ -1,6 +1,5 @@
 package dcraft.web.ui.inst.cms;
 
-import dcraft.cms.util.GalleryImageConsumer;
 import dcraft.cms.util.GalleryUtil;
 import dcraft.db.BasicRequestContext;
 import dcraft.db.request.query.SelectFields;
@@ -11,14 +10,12 @@ import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationMarker;
-import dcraft.interchange.stripe.StripeUtil;
 import dcraft.log.Logger;
 import dcraft.script.ScriptHub;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Var;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.InstructionWork;
-import dcraft.script.work.ReturnOption;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
@@ -85,7 +82,7 @@ public class StoreGalleryWidget extends Base implements ICMSAware {
 		AtomicLong currimg = new AtomicLong();
 		
 		BasicRequestContext requestContext = BasicRequestContext.ofDefaultDatabase();
-		TablesAdapter db = TablesAdapter.ofNow(requestContext);
+		TablesAdapter db = TablesAdapter.of(requestContext);
 
 		// don't hide any entry if editable is on
 		boolean editable = UIUtil.isEditReady(state, this);
@@ -103,7 +100,7 @@ public class StoreGalleryWidget extends Base implements ICMSAware {
 				showprod = false;
 			}
 			
-			if (Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmProduct", id, "dcmDisabled"))) {
+			if (Struct.objectToBooleanOrFalse(db.getScalar("dcmProduct", id, "dcmDisabled"))) {
 				if (! editable)
 					continue;
 
@@ -111,7 +108,7 @@ public class StoreGalleryWidget extends Base implements ICMSAware {
 			}
 
 
-			if (! Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmProduct", id, "dcmShowInStore"))) {
+			if (! Struct.objectToBooleanOrFalse(db.getScalar("dcmProduct", id, "dcmShowInStore"))) {
 				if (! editable)
 					continue;
 
@@ -136,7 +133,7 @@ public class StoreGalleryWidget extends Base implements ICMSAware {
 			
 			String ext = meta.getFieldAsString("Extension", "jpg");
 			
-			String image = Struct.objectToString(db.getStaticScalar("dcmProduct", id, "dcmImage"));
+			String image = Struct.objectToString(db.getScalar("dcmProduct", id, "dcmImage"));
 
 			if (StringUtil.isEmpty(image))
 				image = "main";

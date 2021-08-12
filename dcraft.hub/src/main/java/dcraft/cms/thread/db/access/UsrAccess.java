@@ -24,7 +24,7 @@ public class UsrAccess implements IChannelAccess {
 	public String formatParty(TablesAdapter adapter, IVariableAware scope, String party) throws OperatingContextException {
 		String uid = party.substring(5);
 		
-		return Struct.objectToString(adapter.getStaticScalar("dcUser", uid, "dcFirstName")) + " "
-				+ Struct.objectToString(adapter.getStaticScalar("dcUser", uid, "dcLastName"));
+		return Struct.objectToString(adapter.getScalar("dcUser", uid, "dcFirstName")) + " "
+				+ Struct.objectToString(adapter.getScalar("dcUser", uid, "dcLastName"));
 	}
 }

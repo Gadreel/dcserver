@@ -31,7 +31,7 @@ public class BackupWork extends ChainWork {
 						StackUtil.of(sleeper)
 				)
 				.then(new DailyAllTenants())
-				.then(new BackupShellWork())
+				//.then(new BackupShellWork())
 		;
 	}
 }

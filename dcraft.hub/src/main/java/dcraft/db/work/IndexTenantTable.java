@@ -27,7 +27,7 @@ public class IndexTenantTable implements IWork {
 	@Override
 	public void run(TaskContext taskctx) throws OperatingContextException {
 		IRequestContext tablesContext = BasicRequestContext.of(this.conn);
-		TablesAdapter adapter = TablesAdapter.ofNow(tablesContext);
+		TablesAdapter adapter = TablesAdapter.of(tablesContext);
 
 		RecordStruct params = taskctx.getTask().getParamsAsRecord();
 

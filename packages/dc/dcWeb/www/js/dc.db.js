@@ -169,7 +169,6 @@ dc.db.database = {
 
 		<Request>
 			<Field Name="Table" Type="dcTinyString" Required="True" />
-			<Field Name="When" Type="dcTinyString" />
 			<Field Name="Select">
 				<List Type="dcdbSelectField" />
 			</Field>
@@ -188,7 +187,6 @@ dc.db.database = {
 					<Field Name="Extras" Type="AnyRecord" />
 				</Record>
 			</Field>
-			<Field Name="Historical" Type="Boolean" />
 		</Request>
 		*/
 

@@ -5,13 +5,8 @@ import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
-import dcraft.filevault.Transaction;
-import dcraft.filevault.Vault;
-import dcraft.filevault.VaultUtil;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationContext;
-import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
 import dcraft.struct.RecordStruct;
@@ -19,21 +14,18 @@ import dcraft.struct.Struct;
 import dcraft.task.Task;
 import dcraft.task.TaskHub;
 import dcraft.util.StringUtil;
-import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
-
-import java.time.ZonedDateTime;
 
 public class Resend implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		String id = ThreadUtil.getThreadId(db, data);
 
-		String form = Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmManagedFormName"));
+		String form = Struct.objectToString(db.getScalar("dcmThread", id, "dcmManagedFormName"));
 
 		String scriptpath = null;
 

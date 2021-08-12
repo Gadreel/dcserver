@@ -1,7 +1,5 @@
 package dcraft.db.tables;
 
-import dcraft.db.DatabaseAdapter;
-import dcraft.db.ICallContext;
 import dcraft.db.IRequestContext;
 import dcraft.db.proc.*;
 import dcraft.db.proc.filter.CurrentRecord;
@@ -13,7 +11,6 @@ import dcraft.hub.ResourceHub;
 import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
-import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.schema.*;
@@ -25,17 +22,10 @@ import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.builder.ObjectBuilder;
 import dcraft.util.StringUtil;
-import dcraft.util.TimeUtil;
 
-import java.math.BigDecimal;
-import java.text.DecimalFormat;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-
-import static dcraft.db.Constants.DB_GLOBAL_INDEX_SUB;
 
 public class TableUtil {
 
@@ -383,14 +373,13 @@ public class TableUtil {
 
 		if (StringUtil.isNotEmpty(subid) && fdef.isList()) {
 			if (subselect != null)
-				foreignSink.apply(db.getDynamicList(table, id, fname, subid, format));
+				foreignSink.apply(db.getList(table, id, fname, subid, format));
 			else if (compact)
-				out.value(db.getDynamicList(table, id, fname, subid, format));
+				out.value(db.getList(table, id, fname, subid, format));
 			else
-				out.value(db.getDynamicListExtended(table, id, fname, subid, format));
+				out.value(db.getListExtended(table, id, fname, subid, format));
 		}
-		// StaticList
-		// TODO was -- else if (fdef.isList() || (fdef.isDynamic() && when == null)) { --- restore?
+		// List
 		else if (fdef.isList()) {
 			out.startList();
 
@@ -423,7 +412,7 @@ public class TableUtil {
 						}
 						// SUBQUERY
 						else if (subselect != null) {
-							Object value = db.getDynamicList(table, id, fname, subid.toString(), format);
+							Object value = db.getList(table, id, fname, subid.toString(), format);
 							
 							if ((value != null) && foreignSinkCurrent.apply(value)) {
 								foreignSink.apply(value);
@@ -431,7 +420,7 @@ public class TableUtil {
 							}
 						}
 						else if (myCompact) {
-							Object value = db.getDynamicList(table, id, fname, subid.toString(), format);
+							Object value = db.getList(table, id, fname, subid.toString(), format);
 
 							if (value != null) {
 								out.value(value);
@@ -439,7 +428,7 @@ public class TableUtil {
 							}
 						}
 						else {
-							Object value = db.getDynamicListExtended(table, id, fname, subid.toString(), format);
+							Object value = db.getListExtended(table, id, fname, subid.toString(), format);
 
 							if (value != null) {
 								out.value(value);
@@ -459,23 +448,14 @@ public class TableUtil {
 
 			return;
 		}
-		// DynamicScalar
-		else if (fdef.isDynamic()) {
-			if (subselect != null)
-				foreignSink.apply(db.getDynamicScalar(table, id, fname, format));
-			else if (compact)
-				out.value(db.getDynamicScalar(table, id, fname, format));
-			else
-				out.value(db.getDynamicScalarExtended(table, id, fname, format));
-		}
-		// StaticScalar
+		// Scalar
 		else {
 			if (subselect != null)
-				foreignSink.apply(db.getStaticScalar(table, id, fname, format));
+				foreignSink.apply(db.getScalar(table, id, fname, format));
 			else if (compact)
-				out.value(db.getStaticScalar(table, id, fname, format));
+				out.value(db.getScalar(table, id, fname, format));
 			else
-				out.value(db.getStaticScalarExtended(table, id, fname, format));
+				out.value(db.getScalarExtended(table, id, fname, format));
 		}
 
 		return;

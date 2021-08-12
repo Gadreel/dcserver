@@ -62,36 +62,7 @@ public class LoadRecordRequest extends DataRequest {
 		this.parameters.with("Id", v);
 		return this;
 	}
-	
-	/*
-	public LoadRecordRequest withFilter(String v) {
-		((RecordStruct) this.parameters).setField("Filter", v);
-		return this;
-	}
-	*/
-	
-	public LoadRecordRequest withWhen(BigDateTime v) {
-		this.parameters.with("When", v);
-		return this;
-	}
-	
-	public LoadRecordRequest withWhen(ZonedDateTime v) {
-		this.parameters.with("When", BigDateTime.of(v));
-		return this;
-	}
-	
-	public LoadRecordRequest withNow() {
-		this.parameters.with("When", BigDateTime.nowDateTime());
-		return this;
-	}
-	
-	/*
-	public LoadRecordRequest withExtra(Object v) {
-		((RecordStruct) this.parameters).setField("Extra", v);
-		return this;
-	}
-	*/
-	
+
 	public LoadRecordRequest withSelect(SelectFields v) {
 		this.parameters.with("Select", v.getFields());
 		return this;
@@ -100,19 +71,5 @@ public class LoadRecordRequest extends DataRequest {
 	public LoadRecordRequest withCompact(boolean v) {
 		this.parameters.with("Compact", v);
 		return this;
-	}
-	
-	public LoadRecordRequest withHistorical(boolean v) {
-		this.parameters.with("Historical", v);
-		return this;
-	}
-	
-	@Override
-	public RecordStruct buildParams() {
-		// default in When
-		if (! this.parameters.hasField("When"))
-			this.parameters.with("When", BigDateTime.nowDateTime());
-		
-		return super.buildParams();
 	}
 }

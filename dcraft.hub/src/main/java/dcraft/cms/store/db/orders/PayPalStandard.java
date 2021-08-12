@@ -2,7 +2,6 @@ package dcraft.cms.store.db.orders;
 
 import dcraft.cms.store.OrderUtil;
 import dcraft.cms.thread.db.ThreadUtil;
-import dcraft.db.Constants;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
 import dcraft.db.tables.TablesAdapter;
@@ -26,7 +25,7 @@ public class PayPalStandard implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		String postdata = data.getFieldAsString("Data");
 
@@ -50,13 +49,13 @@ public class PayPalStandard implements IStoredProc {
 			return;
 		}
 
-		if (! "dcmOrderPayment".equals(db.getStaticScalar("dcmThread", id, "dcmMessageType"))) {
+		if (! "dcmOrderPayment".equals(db.getScalar("dcmThread", id, "dcmMessageType"))) {
 			Logger.error("Invalid thread type");
 			callback.returnEmpty();
 			return;
 		}
 
-		RecordStruct order = Struct.objectToRecord(db.getStaticScalar("dcmThread", id, "dcmOrderData"));
+		RecordStruct order = Struct.objectToRecord(db.getScalar("dcmThread", id, "dcmOrderData"));
 
 		if (order == null) {
 			Logger.error("Missing order record.");
@@ -132,9 +131,9 @@ public class PayPalStandard implements IStoredProc {
 		}
 
 		// TODO to really be careful - don't allow same tx to be used twice
-		db.setStaticScalar("dcmThread", id, "dcmPaymentTx", txid);
+		db.setScalar("dcmThread", id, "dcmPaymentTx", txid);
 
-		BigDecimal amount = Struct.objectToDecimal(db.getStaticScalar("dcmThread", id, "dcmPaymentAmount"));
+		BigDecimal amount = Struct.objectToDecimal(db.getScalar("dcmThread", id, "dcmPaymentAmount"));
 		BigDecimal payment = form.selectAsDecimal("payment_gross.0");
 
 		if ((payment == null) || (payment.stripTrailingZeros().compareTo(amount.stripTrailingZeros()) != 0)) {
@@ -147,17 +146,17 @@ public class PayPalStandard implements IStoredProc {
 			@Override
 			public void callback(RecordStruct result) throws OperatingContextException {
 				if (! this.hasErrors()) {
-					boolean paid = Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmThread", id, "dcmPaymentVerified"));
+					boolean paid = Struct.objectToBooleanOrFalse(db.getScalar("dcmThread", id, "dcmPaymentVerified"));
 
 					if (paid) {
-						String oid = Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmOrderId"));
+						String oid = Struct.objectToString(db.getScalar("dcmThread", id, "dcmOrderId"));
 
 						if (StringUtil.isNotEmpty(oid)) {
 							Logger.info("Order " + oid + " was already verified, probably by PayPal IPN.");
 
 							callback.returnValue(RecordStruct.record()
 									.with("Id", oid)
-									.with("ViewCode", db.getStaticScalar("dcmOrder", oid, "dcmViewCode"))
+									.with("ViewCode", db.getScalar("dcmOrder", oid, "dcmViewCode"))
 							);
 							return;
 						}
@@ -168,7 +167,7 @@ public class PayPalStandard implements IStoredProc {
 						}
 					}
 					else {
-						db.setStaticScalar("dcmThread", id, "dcmPaymentVerified", true);
+						db.setScalar("dcmThread", id, "dcmPaymentVerified", true);
 
 						pinfo
 								.with("Uuid", uuid)

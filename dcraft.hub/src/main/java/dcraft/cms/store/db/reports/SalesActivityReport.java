@@ -16,7 +16,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -31,7 +30,7 @@ public class SalesActivityReport implements IStoredProc {
 		LocalDate from = LocalDate.of(Integer.parseInt(year), 1, 1);
 		LocalDate to = from.plusYears(1);
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		Unique orders = Unique.unique();
 
@@ -46,11 +45,11 @@ public class SalesActivityReport implements IStoredProc {
 		for (Object ooo : orders.getValues()) {
 			String id = ooo.toString();
 
-			ZonedDateTime orddate = Struct.objectToDateTime(db.getStaticScalar("dcmOrder", id, "dcmOrderDate"));
+			ZonedDateTime orddate = Struct.objectToDateTime(db.getScalar("dcmOrder", id, "dcmOrderDate"));
 
 			int month = orddate.getMonth().getValue();
 
-			RecordStruct calcinfo = Struct.objectToRecord(db.getStaticScalar("dcmOrder", id, "dcmCalcInfo"));
+			RecordStruct calcinfo = Struct.objectToRecord(db.getScalar("dcmOrder", id, "dcmCalcInfo"));
 
 			if (monthordcount.containsKey(month)) {
 				monthordcount.get(month).incrementAndGet();

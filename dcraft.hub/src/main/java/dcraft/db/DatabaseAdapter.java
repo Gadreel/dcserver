@@ -2,9 +2,7 @@ package dcraft.db;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZonedDateTime;
+import java.time.*;
 
 import dcraft.db.util.ByteUtil;
 import dcraft.hub.time.BigDateTime;
@@ -209,5 +207,12 @@ abstract public class DatabaseAdapter {
 			return null;
 		
 		return -time.toInstant().toEpochMilli();
+	}
+
+	public ZonedDateTime restoreTime(Long time) {
+		if (time == null)
+			return null;
+
+		return ZonedDateTime.ofInstant(Instant.ofEpochMilli(-time), ZoneOffset.UTC);
 	}
 }

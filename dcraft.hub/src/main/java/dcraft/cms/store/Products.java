@@ -79,7 +79,6 @@ public class Products {
 			
 			LoadRecordRequest req = LoadRecordRequest.of("dcmCategory")
 				.withId(rec.getFieldAsString("Id"))
-				.withNow()
 				.withSelect(flds);
 			
 			ServiceHub.call(req.toServiceRequest()
@@ -258,89 +257,7 @@ public class Products {
 		String op = request.getOp();
 
 		RecordStruct rec = request.getDataAsRecord();
-		
-		if ("Update".equals(op)) {
-			String locale = rec.getFieldAsString("TrLocale");
-			
-			ServiceHub.call(UpdateRecordRequest.update()
-					.withTable("dcmProduct")
-					.withId(rec.getFieldAsString("Id"))
-					.withConditionallyUpdateFields(rec, "Alias", "dcmAlias", "Sku", "dcmSku", "Image", "dcmImage",
-							"Price", "dcmPrice", "ShipAmount", "dcmShipAmount", "ShipWeight", "dcmShipWeight",
-							"VariablePrice", "dcmVariablePrice", "MinimumPrice", "dcmMinimumPrice",
-							"ShipCost", "dcmShipCost", "TaxFree", "dcmTaxFree", "ShowInStore", "dcmShowInStore",
-							"Inventory", "dcmInventory", "OrderLimit", "dcmOrderLimit")
-					.withConditionallyUpdateTrFields(rec, locale, "Title", "dcmTitle",
-							"Description", "dcmDescription", "Instructions", "dcmInstructions")
-					.withConditionallySetList(rec, "Delivery", "dcmDelivery")
-					.withConditionallySetList(rec, "Categories", "dcmCategories")
-					.withConditionallySetList(rec, "Tags", "dcmTag")
-				.toServiceRequest()
-				.withOutcome(callback)
-			);
-			
-			return true;
-		}
-		
-		if ("Add".equals(op)) {
-			String locale = rec.getFieldAsString("TrLocale");
-			
-			ServiceHub.call(InsertRecordRequest.insert()
-					.withTable("dcmProduct")
-					.withConditionallyUpdateFields(rec, "Alias", "dcmAlias", "Sku", "dcmSku", "Image", "dcmImage",
-							"Price", "dcmPrice", "ShipAmount", "dcmShipAmount", "ShipWeight", "dcmShipWeight",
-							"VariablePrice", "dcmVariablePrice", "MinimumPrice", "dcmMinimumPrice",
-							"ShipCost", "dcmShipCost", "TaxFree", "dcmTaxFree", "ShowInStore", "dcmShowInStore",
-							"Inventory", "dcmInventory", "OrderLimit", "dcmOrderLimit")
-					.withConditionallyUpdateTrFields(rec, locale, "Title", "dcmTitle",
-							"Description", "dcmDescription", "Instructions", "dcmInstructions")
-					.withConditionallySetList(rec, "Delivery", "dcmDelivery")
-					.withConditionallySetList(rec, "Categories", "dcmCategories")
-					.withConditionallySetList(rec, "Tags", "dcmTag")
-				.toServiceRequest()
-				.withOutcome(new OperationOutcomeStruct() {
-					@Override
-					public void callback(Struct result) throws OperatingContextException {
-						if (! this.hasErrors()) {
-							Site site = OperationContext.getOrThrow().getSite();
 
-							FileStore gfs = site.getGalleriesVault().getFileStore();
-
-							gfs.addFolder(CommonPath.from("/store/product/" + rec.getFieldAsString("Alias")), new OperationOutcome<FileStoreFile>() {
-								@Override
-								public void callback(FileStoreFile file) throws OperatingContextException {
-									callback.returnValue(result);
-								}
-							});
-						}
-						else {
-							callback.returnEmpty();
-						}
-					}
-				})
-			);
-			
-			return true;
-		}
-		
-		if ("Retire".equals(op)) {
-			ServiceHub.call(RetireRecordRequest.of("dcmProduct", rec.getFieldAsString("Id"))
-					.toServiceRequest()
-					.withOutcome(callback)
-			);
-
-			return true;
-		}
-		
-		if ("Revive".equals(op)) {
-			ServiceHub.call(ReviveRecordRequest.of("dcmProduct", rec.getFieldAsString("Id"))
-					.toServiceRequest()
-					.withOutcome(callback)
-			);
-
-			return true;
-		}
-		
 		if ("Lookup".equals(op)) {
 			OperationOutcomeStruct finaloutcome = new OperationOutcomeStruct() {
 				@Override
@@ -460,7 +377,6 @@ public class Products {
 
 			ServiceHub.call(LoadRecordRequest.of("dcmCategory")
 				.withId(rec.getFieldAsString("Id"))
-				.withNow()
 				.withSelect(new SelectFields()
 						.with("Id", "CategoryId")
 						.with("dcmTitle", "Category")

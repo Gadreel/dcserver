@@ -10,7 +10,7 @@ import dcraft.hub.op.OperationOutcomeStruct;
 public class ResolveAll implements IStoredProc {
     @Override
     public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-        TablesAdapter db = TablesAdapter.ofNow(request);
+        TablesAdapter db = TablesAdapter.of(request);
 
         Util.resolveDiscountRules(db);
 

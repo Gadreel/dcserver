@@ -29,7 +29,7 @@ public class CheckExpiredTenant implements IWork {
 	@Override
 	public void run(TaskContext taskctx) throws OperatingContextException {
 		IRequestContext tablesContext = BasicRequestContext.of(this.conn);
-		TablesAdapter db = TablesAdapter.ofNow(tablesContext);
+		TablesAdapter db = TablesAdapter.of(tablesContext);
 		ZonedDateTime now = TimeUtil.now();
 
 		Logger.info("Checking expired threads for: " + OperationContext.getOrThrow().getTenant().getAlias());
@@ -43,21 +43,21 @@ public class CheckExpiredTenant implements IWork {
 		for (Object val : collector.getValues()) {
 			String tid = val.toString();
 
-			Logger.info("Checking expired: " + tid + " - " + Struct.objectToString(db.getStaticScalar("dcmThread", tid, "dcmExpireDate")));
+			Logger.info("Checking expired: " + tid + " - " + Struct.objectToString(db.getScalar("dcmThread", tid, "dcmExpireDate")));
 
-			String type = Struct.objectToString(db.getStaticScalar("dcmThread", tid, "dcmMessageType"));
+			String type = Struct.objectToString(db.getScalar("dcmThread", tid, "dcmMessageType"));
 
 			if (db.executeCanTrigger("dcmThread", tid,"CanExpireDeleteCheck", null)) {
-				Logger.info("Deleting expired: " + tid + " - " + type + " - " + Struct.objectToString(db.getStaticScalar("dcmThread", tid, "dcmExpireDate")));
+				Logger.info("Deleting expired: " + tid + " - " + type + " - " + Struct.objectToString(db.getScalar("dcmThread", tid, "dcmExpireDate")));
 				db.deleteRecord("dcmThread", tid);
 			}
 			else if (db.executeCanTrigger("dcmThread", tid,"CanExpireRetireCheck", null)) {
-				Logger.info("Retiring expired: " + tid + " - " + type + " - " + Struct.objectToString(db.getStaticScalar("dcmThread", tid, "dcmExpireDate")));
+				Logger.info("Retiring expired: " + tid + " - " + type + " - " + Struct.objectToString(db.getScalar("dcmThread", tid, "dcmExpireDate")));
 
 				ThreadUtil.retireThread(db, tid);
 
-				db.retireStaticScalar("dcmThread", tid, "dcmExpireDate");
-				db.updateStaticScalar("dcmThread", tid, "dcmExpiredDate", now);
+				db.retireScalar("dcmThread", tid, "dcmExpireDate");
+				db.updateScalar("dcmThread", tid, "dcmExpiredDate", now);
 			}
 
 			if (count % 100 == 0) {

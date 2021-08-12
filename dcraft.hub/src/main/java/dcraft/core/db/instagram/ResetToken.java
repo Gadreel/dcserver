@@ -17,7 +17,7 @@ import java.time.ZonedDateTime;
 public class ResetToken implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		RecordStruct data = request.getDataAsRecord();
 
@@ -29,9 +29,9 @@ public class ResetToken implements IStoredProc {
 		try {
 			ZonedDateTime expire = TimeUtil.now().plusDays(2);
 
-			db.updateStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessToken", altcache, token);
-			db.updateStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessExpire", altcache, expire);
-			db.updateStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessDisabled", altcache, false);
+			db.updateList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessToken", altcache, token);
+			db.updateList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessExpire", altcache, expire);
+			db.updateList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessDisabled", altcache, false);
 
 			request.getInterface().kill(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Stamp");
 		}

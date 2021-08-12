@@ -21,14 +21,13 @@ import dcraft.task.TaskHub;
 import dcraft.util.StringUtil;
 
 import java.time.ZonedDateTime;
-import java.util.List;
 
 public class Confirm extends SignIn {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		DatabaseAdapter conn = request.getInterface();
 
 		// TODO part of Trust monitoring -- boolean suspect =
@@ -57,7 +56,7 @@ public class Confirm extends SignIn {
 		
 		// TODO check age of the recovery message, limit access to two hours (or configure)
 
-		RecordStruct attrs = Struct.objectToRecord(db.getStaticScalar("dcmThread", id, "dcmSharedAttributes"));
+		RecordStruct attrs = Struct.objectToRecord(db.getScalar("dcmThread", id, "dcmSharedAttributes"));
 
 		if (attrs != null) {
 			// code must match, or confirm must be by staff/admin user
@@ -77,7 +76,7 @@ public class Confirm extends SignIn {
 					
 					attrs.with("UserId", uid);
 					
-					db.setStaticScalar("dcmThread", id, "dcmSharedAttributes", attrs);
+					db.setScalar("dcmThread", id, "dcmSharedAttributes", attrs);
 				}
 				
 				// archive the notice

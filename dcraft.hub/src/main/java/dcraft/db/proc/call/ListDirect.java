@@ -10,7 +10,6 @@ import dcraft.db.ICallContext;
 import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.*;
-import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
@@ -67,16 +66,14 @@ public class ListDirect extends LoadRecord {
 		RecordStruct params = request.getDataAsRecord();
 		
 		String table = params.getFieldAsString("Table");
-		BigDateTime when = params.getFieldAsBigDateTime("When");
 		boolean compact = params.hasField("Compact") ? params.getFieldAsBooleanOrFalse("Compact") : true;
-		boolean historical = params.getFieldAsBooleanOrFalse("Historical");	
 		ListStruct select = ListStruct.list(params.getFieldAsRecord("Select"));
 		RecordStruct where = params.getFieldAsRecord("Where");
 		
 		// TODO add db filter option
 		//d runFilter("Query") quit:Errors  ; if any violations in filter then do not proceed
 		
-		TablesAdapter db = TablesAdapter.of(request, when, historical);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		/*
 		// TODO support collector

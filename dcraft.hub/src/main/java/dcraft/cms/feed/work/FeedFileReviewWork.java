@@ -214,7 +214,7 @@ public class FeedFileReviewWork extends ChainWork {
 
 
 							DbServiceRequest request = DbUtil.fakeRequest();
-							TablesAdapter db = TablesAdapter.ofNow(request);
+							TablesAdapter db = TablesAdapter.of(request);
 
 							CommonPath xpath = FeedUtilDb.toIndexPath(FeedFileReviewWork.this.path.toString());
 

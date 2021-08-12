@@ -16,7 +16,7 @@ public class ArchiveMessages implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		ListStruct ids = request.getDataAsList();
 
-		TablesAdapter adapter = TablesAdapter.ofNow(request);
+		TablesAdapter adapter = TablesAdapter.of(request);
 
 		for (Struct sid : ids.items()) {
 			String tid = sid.toString();

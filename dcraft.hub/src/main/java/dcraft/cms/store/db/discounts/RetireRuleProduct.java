@@ -16,11 +16,11 @@ public class RetireRuleProduct implements IStoredProc {
 		String id = data.getFieldAsString("Id");
 		String productid = data.getFieldAsString("ProductId");
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
-		db.retireStaticList("dcmDiscount", id, "dcmRuleProduct", productid);
+		db.retireList("dcmDiscount", id, "dcmRuleProduct", productid);
 
-		db.updateStaticScalar("dcmDiscount", id, "dcmState", "Check");
+		db.updateScalar("dcmDiscount", id, "dcmState", "Check");
 
 		Util.resolveDiscountRules(db);
 

@@ -22,7 +22,7 @@ public class Recover extends SignIn {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		DatabaseAdapter conn = request.getInterface();
 
 		// TODO part of Trust monitoring -- boolean suspect =
@@ -49,12 +49,12 @@ public class Recover extends SignIn {
 
 		// TODO check age of the recovery message, limit access to two hours (or configure)
 		
-		List<String> parties = db.getStaticListKeys("dcmThread", id, "dcmFolder");
+		List<String> parties = db.getListKeys("dcmThread", id, "dcmFolder");
 		
 		for (String party : parties)
 			ThreadUtil.updateFolder(db, id, party, "/Archive", true);
 
-		RecordStruct attrs = Struct.objectToRecord(db.getStaticScalar("dcmThread", id, "dcmSharedAttributes"));
+		RecordStruct attrs = Struct.objectToRecord(db.getScalar("dcmThread", id, "dcmSharedAttributes"));
 
 		if (attrs != null) {
 			if (data.getFieldAsString("Code").equals(attrs.getFieldAsString("Code"))) {

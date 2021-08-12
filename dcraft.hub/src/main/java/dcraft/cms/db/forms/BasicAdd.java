@@ -9,17 +9,13 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
-import dcraft.util.StringUtil;
-
-import java.util.List;
 
 public class BasicAdd implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		DbRecordRequest req = InsertRecordRequest.insert()
 				.withTable("dcmBasicCustomForm")

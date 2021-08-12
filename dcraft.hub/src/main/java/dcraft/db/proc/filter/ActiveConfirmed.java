@@ -10,7 +10,7 @@ import dcraft.struct.Struct;
 public class ActiveConfirmed extends BasicExpression {
 	@Override
 	public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, String id) throws OperatingContextException {
-		boolean confirmed = Struct.objectToBooleanOrFalse(adapter.getStaticScalar("dcUser", id, "dcConfirmed"));
+		boolean confirmed = Struct.objectToBooleanOrFalse(adapter.getScalar("dcUser", id, "dcConfirmed"));
 		
 		if (! confirmed)
 			return ExpressionResult.REJECTED;

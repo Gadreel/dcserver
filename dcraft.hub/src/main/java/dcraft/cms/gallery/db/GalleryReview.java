@@ -1,14 +1,10 @@
 package dcraft.cms.gallery.db;
 
-import dcraft.cms.feed.work.FeedReviewWork;
-import dcraft.cms.feed.work.ReindexFeedWork;
 import dcraft.cms.gallery.work.GalleryReviewWork;
-import dcraft.cms.util.FeedUtil;
 import dcraft.core.db.tasklist.TaskListUtil;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
 import dcraft.db.tables.TablesAdapter;
-import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
@@ -16,7 +12,6 @@ import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.*;
-import dcraft.util.RndUtil;
 import dcraft.util.StringUtil;
 
 import java.util.*;
@@ -24,7 +19,7 @@ import java.util.*;
 public class GalleryReview implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		RecordStruct data = request.getDataAsRecord();
 
@@ -61,10 +56,10 @@ public class GalleryReview implements IStoredProc {
 
 			// retire all previously reviewed galleries / folders
 
-			List<String> stepkeys = db.getStaticListKeys("dcTaskList", reportid, "dcStepTask");
+			List<String> stepkeys = db.getListKeys("dcTaskList", reportid, "dcStepTask");
 
 			for (String stepkey : stepkeys)
-				db.retireStaticList("dcTaskList", reportid, "dcStepTask", stepkey);
+				db.retireList("dcTaskList", reportid, "dcStepTask", stepkey);
 
 			// collect review
 
@@ -153,9 +148,9 @@ public class GalleryReview implements IStoredProc {
 											.with("Description", "Gallery folder analysis for go live.")
 									);
 
-									db.updateStaticList("dcTaskList", reviewid, "dcStore", "Review", gallery);
+									db.updateList("dcTaskList", reviewid, "dcStore", "Review", gallery);
 
-									db.updateStaticList("dcTaskList", reportid, "dcStepTask", ident, reviewid);
+									db.updateList("dcTaskList", reportid, "dcStepTask", ident, reviewid);
 								}
 
 							}

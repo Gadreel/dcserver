@@ -8,14 +8,13 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.util.StringUtil;
 
 public class RemoveBadges implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 		
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		ListStruct users = request.getDataAsRecord().getFieldAsList("Users");
 		ListStruct tags = request.getDataAsRecord().getFieldAsList("Badges");
@@ -29,7 +28,7 @@ public class RemoveBadges implements IStoredProc {
 				if (uid.equals(Constants.DB_GLOBAL_ROOT_RECORD) && ("SysAdmin".equals(tag) || "Admin".equals(tag) || "Developer".equals(tag)))
 					continue;
 				
-				db.retireStaticList("dcUser", uid, "dcBadges", tag);
+				db.retireList("dcUser", uid, "dcBadges", tag);
 			}
 		}
 

@@ -5,16 +5,11 @@ import dcraft.db.proc.IStoredProc;
 import dcraft.db.proc.filter.CurrentRecord;
 import dcraft.db.proc.filter.Unique;
 import dcraft.db.request.query.CollectorField;
-import dcraft.db.request.query.SelectDirectRequest;
-import dcraft.db.request.query.SelectFields;
 import dcraft.db.tables.TablesAdapter;
-import dcraft.filestore.CommonPath;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.log.Logger;
-import dcraft.script.StackUtil;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -26,7 +21,7 @@ import java.util.List;
 public class LoadFeedDashboard implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		List<XElement> feeddefs = ResourceHub.getResources().getConfig().getTagListDeep("Feeds/Definition");
 		
@@ -60,17 +55,17 @@ public class LoadFeedDashboard implements IStoredProc {
 				String mylocale = "." + OperationContext.getOrThrow().getResources().getLocale().getDefaultLocale();
 				String deflocale = "." + OperationContext.getOrThrow().getTenant().getResources().getLocale().getDefaultLocale();
 
-				String title = Struct.objectToString(db.getStaticList("dcmFeed", id, "dcmLocaleFields", "Title" + mylocale));
+				String title = Struct.objectToString(db.getList("dcmFeed", id, "dcmLocaleFields", "Title" + mylocale));
 
 				if (StringUtil.isEmpty(title))
-					title = Struct.objectToString(db.getStaticList("dcmFeed", id, "dcmLocaleFields", "Title" + deflocale));
+					title = Struct.objectToString(db.getList("dcmFeed", id, "dcmLocaleFields", "Title" + deflocale));
 
 				results.with(RecordStruct.record()
-						.with("LocalPath", db.getStaticScalar("dcmFeed", id, "dcmLocalPath"))
+						.with("LocalPath", db.getScalar("dcmFeed", id, "dcmLocalPath"))
 						.with("Feed", feed)
 						.with("FeedName", def.attr("Title"))
 						.with("Title", title)
-						.with("Published", db.getStaticScalar("dcmFeed", id, "dcmPublishAt"))
+						.with("Published", db.getScalar("dcmFeed", id, "dcmPublishAt"))
 				);
 			}
 			else {

@@ -1,26 +1,14 @@
 package dcraft.cms.feed.work;
 
 import dcraft.db.ICallContext;
-import dcraft.db.fileindex.BasicFilter;
-import dcraft.db.fileindex.FileIndexAdapter;
-import dcraft.db.proc.ExpressionResult;
-import dcraft.db.proc.filter.CurrentRecord;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
-import dcraft.filestore.FileStore;
 import dcraft.filestore.FileStoreFile;
-import dcraft.filestore.local.LocalStore;
 import dcraft.filestore.local.LocalStoreFile;
 import dcraft.filevault.FileStoreVault;
-import dcraft.filevault.IndexTransaction;
-import dcraft.filevault.Vault;
-import dcraft.hub.app.ApplicationHub;
-import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcome;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
 import dcraft.task.StateWork;
 import dcraft.task.StateWorkStep;
 import dcraft.task.TaskContext;
@@ -31,8 +19,6 @@ import dcraft.xml.XElement;
 import dcraft.xml.XNode;
 import dcraft.xml.XmlReader;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.ZonedDateTime;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -45,7 +31,7 @@ public class CheckCmsReadyWork extends StateWork {
 		CheckCmsReadyWork work = new CheckCmsReadyWork();
 		work.feed = feed;
 		
-		work.db = TablesAdapter.ofNow(request);
+		work.db = TablesAdapter.of(request);
 		
 		return work;
 	}

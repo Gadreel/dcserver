@@ -6,12 +6,7 @@ import dcraft.db.proc.IStoredProc;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.log.Logger;
-import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
-
-import java.math.BigDecimal;
 
 public class Calculate implements IStoredProc {
 	@Override
@@ -21,7 +16,7 @@ public class Calculate implements IStoredProc {
 		data.removeField("_ForTenant");
 		data.removeField("_Database");
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		RecordStruct order = OrderUtil.santitizeAndCalculateOrder(request, db, data);
 

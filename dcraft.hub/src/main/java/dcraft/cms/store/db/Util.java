@@ -3,13 +3,7 @@ package dcraft.cms.store.db;
 import dcraft.db.DatabaseException;
 import dcraft.db.proc.BasicFilter;
 import dcraft.db.proc.ExpressionResult;
-import dcraft.db.proc.filter.ActiveConfirmed;
 import dcraft.db.proc.filter.CurrentRecord;
-import dcraft.db.proc.filter.Unique;
-import dcraft.db.request.query.LoadRecordRequest;
-import dcraft.db.request.query.SelectFields;
-import dcraft.db.request.update.DbRecordRequest;
-import dcraft.db.request.update.UpdateRecordRequest;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.db.util.ByteUtil;
 import dcraft.filestore.CommonPath;
@@ -18,14 +12,10 @@ import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
-import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
-import dcraft.service.ServiceHub;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.struct.builder.BuilderStateException;
-import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.task.IWork;
 import dcraft.task.Task;
 import dcraft.task.TaskContext;
@@ -36,7 +26,6 @@ import dcraft.xml.XElement;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.file.Path;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -47,20 +36,20 @@ import static dcraft.db.Constants.DB_GLOBAL_RECORD;
 
 public class Util {
 	static public void updateOrderStatus(TablesAdapter db, String id) throws OperatingContextException {
-		List<String> itemIds = db.getStaticListKeys("dcmOrder", id, "dcmItemEntryId");
+		List<String> itemIds = db.getListKeys("dcmOrder", id, "dcmItemEntryId");
 		
-		ZonedDateTime lastNotify = Struct.objectToDateTime(db.getStaticScalar("dcmOrder", id, "dcmLastCustomerNotice"));
+		ZonedDateTime lastNotify = Struct.objectToDateTime(db.getScalar("dcmOrder", id, "dcmLastCustomerNotice"));
 		
 		StringBuilder comment = new StringBuilder();
 		
 		ListStruct changedItems = ListStruct.list();
 		
 		for (String iid : itemIds) {
-			ZonedDateTime updated = Struct.objectToDateTime(db.getStaticList("dcmOrder", id, "dcmItemUpdated", iid));
+			ZonedDateTime updated = Struct.objectToDateTime(db.getList("dcmOrder", id, "dcmItemUpdated", iid));
 			
 			if ((updated != null) && ((lastNotify == null) || (updated.compareTo(lastNotify) > 0))) {
-				String prodid = Struct.objectToString(db.getStaticList("dcmOrder", id, "dcmItemProduct", iid));
-				String prodttitle = Struct.objectToString(db.getStaticScalar("dcmProduct", prodid, "dcmTitle"));
+				String prodid = Struct.objectToString(db.getList("dcmOrder", id, "dcmItemProduct", iid));
+				String prodttitle = Struct.objectToString(db.getScalar("dcmProduct", prodid, "dcmTitle"));
 				
 				if (changedItems.size() > 0)
 					comment.append(", ");
@@ -83,7 +72,7 @@ public class Util {
 		int totcan = 0;
 		
 		for (String iid : itemIds) {
-			String istatus = Struct.objectToString(db.getStaticList("dcmOrder", id, "dcmItemStatus", iid));
+			String istatus = Struct.objectToString(db.getList("dcmOrder", id, "dcmItemStatus", iid));
 			
 			if ("AwaitingShipment".equals(istatus))
 				totship++;
@@ -113,7 +102,7 @@ public class Util {
 			status = "PartiallyCompleted";
 		}
 		
-		db.updateStaticScalar("dcmOrder", id, "dcmStatus", status);
+		db.updateScalar("dcmOrder", id, "dcmStatus", status);
 		
 		boolean sendEmail = (totpu > 0) || (totcomp > 0);
 		
@@ -124,10 +113,10 @@ public class Util {
 				.with("Comment", "Items updated: " + comment + (sendEmail ? " - customer notified" : ""))
 				.with("Status", status);
 		
-		db.updateStaticList("dcmOrder", id, "dcmAudit", TimeUtil.stampFmt.format(stamp), audit);
+		db.updateList("dcmOrder", id, "dcmAudit", TimeUtil.stampFmt.format(stamp), audit);
 
 		if (sendEmail) {
-			db.updateStaticScalar("dcmOrder", id, "dcmLastCustomerNotice", stamp);
+			db.updateScalar("dcmOrder", id, "dcmLastCustomerNotice", stamp);
 
 			TaskHub.submit(Task.ofSubtask("Order placed trigger", "STORE")
 					.withTopic("Batch")
@@ -156,8 +145,8 @@ public class Util {
 		if (StringUtil.isEmpty(variant))
 			variant = "thumb";
 
-		String image = Struct.objectToString(db.getStaticScalar(table, id, "dcmImage"));
-		String alias = Struct.objectToString(db.getStaticScalar(table, id, "dcmAlias"));
+		String image = Struct.objectToString(db.getScalar(table, id, "dcmImage"));
+		String alias = Struct.objectToString(db.getScalar(table, id, "dcmAlias"));
 
 		if (StringUtil.isNotEmpty(alias)) {
 			if (StringUtil.isEmpty(image))
@@ -250,10 +239,10 @@ public class Util {
 				public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, Object val) throws OperatingContextException {
 					String did = val.toString();
 
-					boolean activediscount = Struct.objectToBoolean(adapter.getStaticScalar(table, did, "dcmActive"), false);
+					boolean activediscount = Struct.objectToBoolean(adapter.getScalar(table, did, "dcmActive"), false);
 
-					ZonedDateTime start = Struct.objectToDateTime(adapter.getStaticScalar(table, did, "dcmStart"));
-					ZonedDateTime end = Struct.objectToDateTime(adapter.getStaticScalar(table, did, "dcmExpire"));
+					ZonedDateTime start = Struct.objectToDateTime(adapter.getScalar(table, did, "dcmStart"));
+					ZonedDateTime end = Struct.objectToDateTime(adapter.getScalar(table, did, "dcmExpire"));
 
 					boolean activerule = false;
 
@@ -266,25 +255,25 @@ public class Util {
 					}
 
 					if ((end != null) && end.isBefore(now)) {
-						adapter.updateStaticScalar("dcmDiscount", did, "dcmActive", false);
+						adapter.updateScalar("dcmDiscount", did, "dcmActive", false);
 						activediscount = false;
 					}
 
 					// special case, get all the keys even if retired
-					List<String> prods = Util.getStaticListKeys(adapter, "dcmDiscount", did, "dcmRuleProduct");
+					List<String> prods = Util.getListKeys(adapter, "dcmDiscount", did, "dcmRuleProduct");
 
 					for (String pid : prods) {
-						BigDecimal oldsaleprice = Struct.objectToDecimal(adapter.getStaticScalar("dcmProduct", pid, "dcmSalePrice"));
-						String confirmpid = Struct.objectToString(adapter.getStaticList("dcmDiscount", did, "dcmRuleProduct", pid));
+						BigDecimal oldsaleprice = Struct.objectToDecimal(adapter.getScalar("dcmProduct", pid, "dcmSalePrice"));
+						String confirmpid = Struct.objectToString(adapter.getList("dcmDiscount", did, "dcmRuleProduct", pid));
 
 						if (activerule && StringUtil.isNotEmpty(confirmpid)) {
-							BigDecimal saleprice = Struct.objectToDecimal(adapter.getStaticScalar("dcmProduct", pid, "dcmPrice"));
+							BigDecimal saleprice = Struct.objectToDecimal(adapter.getScalar("dcmProduct", pid, "dcmPrice"));
 
 							if (saleprice == null)
 								saleprice = BigDecimal.ZERO;
 
-							String mode = Struct.objectToString(adapter.getStaticList("dcmDiscount", did, "dcmRuleMode", pid));
-							BigDecimal amount = Struct.objectToDecimal(adapter.getStaticList("dcmDiscount", did, "dcmRuleAmount", pid));
+							String mode = Struct.objectToString(adapter.getList("dcmDiscount", did, "dcmRuleMode", pid));
+							BigDecimal amount = Struct.objectToDecimal(adapter.getList("dcmDiscount", did, "dcmRuleAmount", pid));
 
 							if ("FixedOffProduct".equals(mode)) {
 								saleprice = amount;
@@ -294,14 +283,14 @@ public class Util {
 							}
 
 							if ((oldsaleprice == null) || saleprice.compareTo(oldsaleprice) != 0) {
-								adapter.updateStaticScalar("dcmProduct", pid, "dcmSalePrice", saleprice);
+								adapter.updateScalar("dcmProduct", pid, "dcmSalePrice", saleprice);
 
 								Logger.info("Product sale started: " + pid + " at " + saleprice.toPlainString());
 							}
 						}
 						else if (! prodstouched.contains(pid)) {
 							if (oldsaleprice != null) {
-								adapter.retireStaticScalar("dcmProduct", pid, "dcmSalePrice");
+								adapter.retireScalar("dcmProduct", pid, "dcmSalePrice");
 
 								Logger.info("Product sale ended: " + pid);
 							}
@@ -311,7 +300,7 @@ public class Util {
 					}
 
 					if (! activediscount)
-						adapter.updateStaticScalar("dcmDiscount", did,"dcmState",  "Ignore");
+						adapter.updateScalar("dcmDiscount", did,"dcmState",  "Ignore");
 
 					return ExpressionResult.ACCEPTED;
 				}
@@ -323,7 +312,7 @@ public class Util {
 	}
 
 	// special - even if retired
-	static private List<String> getStaticListKeys(TablesAdapter db, String table, String id, String field) throws OperatingContextException {
+	static private List<String> getListKeys(TablesAdapter db, String table, String id, String field) throws OperatingContextException {
 		List<String> ret = new ArrayList<>();
 
 		try {
@@ -338,7 +327,7 @@ public class Util {
 			}
 		}
 		catch (DatabaseException x) {
-			Logger.error("getStaticList error: " + x);
+			Logger.error("getListKeys error: " + x);
 		}
 
 		return ret;
@@ -356,12 +345,12 @@ public class Util {
 				public ExpressionResult check(TablesAdapter adapter, IVariableAware scope, String table, Object val) throws OperatingContextException {
 					String did = val.toString();
 
-					boolean activediscount = Struct.objectToBoolean(adapter.getStaticScalar(table, did, "dcmActive"), false);
-					String dtitle = Struct.objectToString(adapter.getStaticScalar(table, did, "dcmTitle"));
+					boolean activediscount = Struct.objectToBoolean(adapter.getScalar(table, did, "dcmActive"), false);
+					String dtitle = Struct.objectToString(adapter.getScalar(table, did, "dcmTitle"));
 
 					if (activediscount) {
-						ZonedDateTime start = Struct.objectToDateTime(adapter.getStaticScalar(table, did, "dcmStart"));
-						ZonedDateTime end = Struct.objectToDateTime(adapter.getStaticScalar(table, did, "dcmExpire"));
+						ZonedDateTime start = Struct.objectToDateTime(adapter.getScalar(table, did, "dcmStart"));
+						ZonedDateTime end = Struct.objectToDateTime(adapter.getScalar(table, did, "dcmExpire"));
 
 						if ((start != null) && start.isBefore(soon) && start.isAfter(recent)) {
 							Logger.info("Scheduled for start on " + dtitle + " (" + did + ")");

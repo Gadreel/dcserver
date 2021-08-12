@@ -7,7 +7,6 @@ import dcraft.db.proc.filter.Max;
 import dcraft.db.ICallContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.*;
-import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
@@ -20,11 +19,9 @@ public class CountIndexes implements IStoredProc {
 		
 		String table = params.getFieldAsString("Table");
 		String fname = params.getFieldAsString("Field");
-		BigDateTime when = params.getFieldAsBigDateTime("When");
-		boolean historical = params.getFieldAsBooleanOrFalse("Historical");	
 		ListStruct values = params.getFieldAsList("Values");
 		
-		TablesAdapter db = TablesAdapter.of(request, when, historical);
+		TablesAdapter db = TablesAdapter.of(request);
 		ListStruct out = ListStruct.list();
 		
 		try (OperationMarker om = OperationMarker.create()) {

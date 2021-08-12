@@ -15,7 +15,7 @@ public class Update implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		String id = data.getFieldAsString("Id");
 
@@ -29,7 +29,7 @@ public class Update implements IStoredProc {
 				)
 		);
 
-		db.updateStaticScalar("dcmDiscount", id, "dcmState", "Check");
+		db.updateScalar("dcmDiscount", id, "dcmState", "Check");
 
 		Util.resolveDiscountRules(db);
 

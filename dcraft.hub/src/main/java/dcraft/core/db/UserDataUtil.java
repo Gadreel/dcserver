@@ -6,7 +6,6 @@ import dcraft.db.request.common.AddUserRequest;
 import dcraft.db.request.update.DbRecordRequest;
 import dcraft.db.request.update.InsertRecordRequest;
 import dcraft.db.request.update.UpdateRecordRequest;
-import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
 import dcraft.hub.ResourceHub;
@@ -22,8 +21,6 @@ import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 import dcraft.util.map.MapUtil;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -33,33 +30,33 @@ public class UserDataUtil {
 	 */
 	
 	static public void retireUserTrigger(TablesAdapter db, String id) throws OperatingContextException {
-		List<String> badges = db.getStaticListKeys("dcUser", id, "dcBadges");
+		List<String> badges = db.getListKeys("dcUser", id, "dcBadges");
 		
-		db.setStaticScalar("dcUser", id, "dcBadgesRetired", ListStruct.list().withCollection(badges));
+		db.setScalar("dcUser", id, "dcBadgesRetired", ListStruct.list().withCollection(badges));
 		
 		for (String badge : badges) {
-			db.retireStaticList("dcUser", id, "dcBadges", badge);
+			db.retireList("dcUser", id, "dcBadges", badge);
 		}
 
-		String uname = Struct.objectToString(db.getStaticScalar("dcUser", id, "dcUsername"));
+		String uname = Struct.objectToString(db.getScalar("dcUser", id, "dcUsername"));
 
-		db.setStaticScalar("dcUser", id, "dcUsernameRetired", uname);
-		db.setStaticScalar("dcUser", id, "dcUsername", id + "@user.retired");
+		db.setScalar("dcUser", id, "dcUsernameRetired", uname);
+		db.setScalar("dcUser", id, "dcUsername", id + "@user.retired");
 	}
 	
 	static public void reviveUserTrigger(TablesAdapter db, String id) throws OperatingContextException {
-		ListStruct oldbadges = Struct.objectToList(db.getStaticScalar("dcUser", id, "dcBadgesRetired"));
+		ListStruct oldbadges = Struct.objectToList(db.getScalar("dcUser", id, "dcBadgesRetired"));
 		
 		if (oldbadges != null) {
 			for (Struct badge : oldbadges.items()) {
-				db.updateStaticList("dcUser", id, "dcBadges", badge.toString(), badge.toString());
+				db.updateList("dcUser", id, "dcBadges", badge.toString(), badge.toString());
 			}
 		}
 
-		String uname = Struct.objectToString(db.getStaticScalar("dcUser", id, "dcUsernameRetired"));
+		String uname = Struct.objectToString(db.getScalar("dcUser", id, "dcUsernameRetired"));
 
 		// tries but may fail
-		db.setStaticScalar("dcUser", id, "dcUsername", uname);
+		db.setScalar("dcUser", id, "dcUsername", uname);
 	}
 	
 	/*
@@ -269,9 +266,9 @@ public class UserDataUtil {
 		ThreadUtil.addContent(db, id, msg, "UnsafeMD");
 
 		// message is good for 14 days
-		db.setStaticScalar("dcmThread", id, "dcmExpireDate", TimeUtil.now().plusDays(14));
+		db.setScalar("dcmThread", id, "dcmExpireDate", TimeUtil.now().plusDays(14));
 
-		db.setStaticScalar("dcmThread", id, "dcmSharedAttributes", data);
+		db.setScalar("dcmThread", id, "dcmSharedAttributes", data);
 
 		// TODO configure pool and delivery date
 		ThreadUtil.addParty(db, id, data.getFieldAsString("Party","/NoticesPool"), "/InBox", null);
@@ -305,10 +302,10 @@ public class UserDataUtil {
 		}
 
 		data.with("UserId", userid);
-		data.with("FirstName", db.getStaticScalar("dcUser", userid, "dcFirstName"));
-		data.with("LastName", db.getStaticScalar("dcUser", userid, "dcLastName"));
-		data.with("Email", db.getStaticScalar("dcUser", userid, "dcEmail"));
-		data.with("Phone", db.getStaticScalar("dcUser", userid, "dcPhone"));
+		data.with("FirstName", db.getScalar("dcUser", userid, "dcFirstName"));
+		data.with("LastName", db.getScalar("dcUser", userid, "dcLastName"));
+		data.with("Email", db.getScalar("dcUser", userid, "dcEmail"));
+		data.with("Phone", db.getScalar("dcUser", userid, "dcPhone"));
 
 		String title = "Recover: " + data.getFieldAsString("FirstName") + " " + data.getFieldAsString("LastName");
 
@@ -334,9 +331,9 @@ public class UserDataUtil {
 		ThreadUtil.addContent(db, id, msg, "UnsafeMD");
 
 		// message is good for 14 days
-		db.setStaticScalar("dcmThread", id, "dcmExpireDate", TimeUtil.now().plusDays(14));
+		db.setScalar("dcmThread", id, "dcmExpireDate", TimeUtil.now().plusDays(14));
 
-		db.setStaticScalar("dcmThread", id, "dcmSharedAttributes", data);
+		db.setScalar("dcmThread", id, "dcmSharedAttributes", data);
 
 		// TODO configure pool and delivery date
 		ThreadUtil.addParty(db, id, data.getFieldAsString("Party","/NoticesPool"), "/InBox", null);
@@ -360,21 +357,21 @@ public class UserDataUtil {
 		if (! db.isCurrent("dcUser", id) || ! MapUtil.geocodeEnabled())
 			return;
 		
-		String address = Struct.objectToString(db.getStaticScalar("dcUser", id, "dcAddress"));
-		String city = Struct.objectToString(db.getStaticScalar("dcUser", id, "dcCity"));
-		String state = Struct.objectToString(db.getStaticScalar("dcUser", id, "dcState"));
-		String zip = Struct.objectToString(db.getStaticScalar("dcUser", id, "dcZip"));
+		String address = Struct.objectToString(db.getScalar("dcUser", id, "dcAddress"));
+		String city = Struct.objectToString(db.getScalar("dcUser", id, "dcCity"));
+		String state = Struct.objectToString(db.getScalar("dcUser", id, "dcState"));
+		String zip = Struct.objectToString(db.getScalar("dcUser", id, "dcZip"));
 
 		if (StringUtil.isEmpty(address) || StringUtil.isEmpty(city) || StringUtil.isEmpty(state) || StringUtil.isEmpty(zip)) {
-			db.retireStaticScalar("dcUser", id, "dcLocation");
+			db.retireScalar("dcUser", id, "dcLocation");
 		}
 		else {
 			String loc = MapUtil.getLatLong(address, city, state, zip);
 			
 			if (loc != null)
-				db.setStaticScalar("dcUser", id, "dcLocation", loc);
+				db.setScalar("dcUser", id, "dcLocation", loc);
 			else
-				db.retireStaticScalar("dcUser", id, "dcLocation");
+				db.retireScalar("dcUser", id, "dcLocation");
 		}
 	}
 }

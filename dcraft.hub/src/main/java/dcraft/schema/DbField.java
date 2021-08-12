@@ -39,7 +39,6 @@ public class DbField {
 	 */
 
 	protected String name = null;
-	protected boolean dynamic = false;
 	protected boolean list = false;
 	protected String type = null;
 	protected String typeid = null;
@@ -53,8 +52,8 @@ public class DbField {
 		return this.list;
 	}
 
-	public boolean isDynamic() {
-		return this.dynamic;
+	public boolean isScalar() {
+		return ! this.list;
 	}
 
 	public boolean isIndexed() {
@@ -89,24 +88,8 @@ public class DbField {
 		return this.fkey;
 	}
 
-	public boolean isStaticScalar() {
-		return (!this.list && !this.dynamic);
-	}
-
-	public boolean isStaticList() {
-		return (this.list && !this.dynamic);
-	}
-
-	public boolean isDynamicScalar() {
-		return (!this.list && this.dynamic);
-	}
-
-	public boolean isDynamicList() {
-		return (this.list && this.dynamic);
-	}
-	
 	public String getIndexName() {
-		return (! this.list && ! this.dynamic) ? Constants.DB_GLOBAL_INDEX : Constants.DB_GLOBAL_INDEX_SUB;
+		return (! this.list) ? Constants.DB_GLOBAL_INDEX : Constants.DB_GLOBAL_INDEX_SUB;
 	}
 	
 }

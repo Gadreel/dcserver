@@ -14,7 +14,7 @@ import dcraft.struct.ListStruct;
 public class Update implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		ListStruct updated = request.getDataAsRecord().getFieldAsList("Updated");
 		ListStruct deleted = request.getDataAsRecord().getFieldAsList("Deleted");

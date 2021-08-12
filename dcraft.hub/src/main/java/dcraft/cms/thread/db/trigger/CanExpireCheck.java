@@ -8,7 +8,7 @@ import dcraft.struct.Struct;
 public class CanExpireCheck implements ITrigger {
     @Override
     public boolean execute(TablesAdapter db, String table, String id, Struct context) throws OperatingContextException {
-        String type = Struct.objectToString(db.getStaticScalar(table, id, "dcmMessageType"));
+        String type = Struct.objectToString(db.getScalar(table, id, "dcmMessageType"));
 
         return "ApproveUser".equals(type) || "RecoverUser".equals(type) || "dcmOrderPayment".equals(type);
     }

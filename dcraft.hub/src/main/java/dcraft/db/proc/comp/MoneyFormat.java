@@ -21,7 +21,7 @@ public class MoneyFormat implements IComposer {
 
 		try {
 			// TODO not sufficient for lists/dynamic - use Format instead
-			BigDecimal price = Struct.objectToDecimal(db.getStaticScalar(table, id, fname));
+			BigDecimal price = Struct.objectToDecimal(db.getScalar(table, id, fname));
 			
 			if (price != null)
 				out.value(new DecimalFormat("0.00").format(price));

@@ -2,20 +2,13 @@ package dcraft.cms.store.db.products;
 
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
-import dcraft.db.request.query.LoadRecordRequest;
 import dcraft.db.request.query.SelectFields;
-import dcraft.db.request.update.DbRecordRequest;
-import dcraft.db.request.update.InsertRecordRequest;
 import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
-import dcraft.db.util.DbUtil;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
-import dcraft.schema.DbTable;
-import dcraft.service.ServiceHub;
-import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
@@ -25,7 +18,7 @@ public class Load implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		SelectFields flds = SelectFields.select()
 				.with("Id")

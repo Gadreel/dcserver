@@ -15,7 +15,7 @@ public class ReviveRecord implements IUpdatingStoredProc {
 		String table = params.getFieldAsString("Table");
 		String id = params.getFieldAsString("Id");
 		
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		db.reviveRecord(table, id);
 		

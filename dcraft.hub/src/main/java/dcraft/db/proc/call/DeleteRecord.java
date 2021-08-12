@@ -2,7 +2,6 @@ package dcraft.db.proc.call;
 
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IUpdatingStoredProc;
-import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
@@ -17,7 +16,7 @@ public class DeleteRecord implements IUpdatingStoredProc {
 		String table = params.getFieldAsString("Table");
 		ListStruct ids = params.getFieldAsList("Ids");
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		for (int i = 0; i < ids.size(); i++)
 			db.deleteRecord(table, ids.getItemAsString(i));

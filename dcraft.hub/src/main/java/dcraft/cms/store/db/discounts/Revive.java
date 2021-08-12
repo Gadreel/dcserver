@@ -14,13 +14,13 @@ public class Revive implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		String id = data.getFieldAsString("Id");
 
 		TableUtil.reviveRecord(db, "dcmDiscount", id);
 
-		db.updateStaticScalar("dcmDiscount", id, "dcmState", "Check");
+		db.updateScalar("dcmDiscount", id, "dcmState", "Check");
 
 		Util.resolveDiscountRules(db);
 

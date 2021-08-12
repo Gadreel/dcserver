@@ -13,7 +13,7 @@ import dcraft.struct.RecordStruct;
 public class ClearCache implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		RecordStruct data = request.getDataAsRecord();
 

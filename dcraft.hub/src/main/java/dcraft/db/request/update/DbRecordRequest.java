@@ -42,8 +42,7 @@ abstract public class DbRecordRequest extends DataRequest {
 	
 	protected String table = null;
 	protected String id = null;
-	protected BigDateTime when = BigDateTime.nowDateTime();
-	
+
 	public DbRecordRequest(String proc) {
 		super(proc);
 	}
@@ -88,9 +87,7 @@ abstract public class DbRecordRequest extends DataRequest {
 		
 		this.withFields(dfld);
 		
-		if (fld.isDynamic())
-			dfld.withRandomSubKey().withFrom(this.when);
-		else if (fld.isList())		
+		if (fld.isList())
 			dfld.withRandomSubKey();
 		
 		return this;
@@ -117,9 +114,7 @@ abstract public class DbRecordRequest extends DataRequest {
 		
 		this.withFields(dfld);
 		
-		if (fld.isDynamic())
-			dfld.withRandomSubKey().withFrom(this.when);
-		else if (fld.isList())		
+		if (fld.isList())
 			dfld.withRandomSubKey();
 		
 		return this;
@@ -153,15 +148,7 @@ abstract public class DbRecordRequest extends DataRequest {
 					.withSubKey(locale)
 					.withLocale(locale);
 		}
-		else {
-			if (fld.isDynamic())
-				dfld.withRandomSubKey().withFrom(this.when);
-			
-			// Tr fields can only be scalars
-			//else if (fld.isList())
-			//	dfld.withRandomSubKey();
-		}
-		
+
 		return this;
 	}
 
@@ -185,10 +172,7 @@ abstract public class DbRecordRequest extends DataRequest {
 			.withSubKey(subkey);
 		
 		this.withFields(dfld);
-		
-		if (fld.isDynamic())
-			dfld.withFrom(this.when);
-		
+
 		return this;
 	}
 
@@ -203,7 +187,7 @@ abstract public class DbRecordRequest extends DataRequest {
 		SchemaResource schema = ResourceHub.getResources().getSchema();
 		dcraft.schema.DbField fld = schema.getDbField(this.table, name);
 		
-		if ((fld == null) || (!fld.isDynamic() && !fld.isList())) 
+		if ((fld == null) || fld.isScalar())
 			return this;
 		
 		FieldRequest dfld = new FieldRequest()
@@ -213,117 +197,10 @@ abstract public class DbRecordRequest extends DataRequest {
 			.withUpdateOnly();
 		
 		this.withFields(dfld);
-		
-		if (fld.isDynamic())
-			dfld.withFrom(this.when);
 
 		return this;
 	}
 
-	public DbRecordRequest withSetField(String name, String subkey, Object value, BigDateTime from) {
-		if (value instanceof ConditionalValue) {
-			if (!((ConditionalValue)value).set)
-				return this;
-			
-			value = ((ConditionalValue)value).value;
-		}
-		
-		SchemaResource schema = ResourceHub.getResources().getSchema();
-		dcraft.schema.DbField fld = schema.getDbField(this.table, name);
-		
-		if ((fld == null) || !fld.isDynamic()) 
-			return this;
-		
-		FieldRequest dfld = new FieldRequest()
-			.withName(name)
-			.withValue(value)
-			.withSubKey(subkey)
-			.withFrom(from);
-		
-		this.withFields(dfld);
-		
-		return this;
-	}
-	
-	public DbRecordRequest withUpdateField(String name, String subkey, Object value, BigDateTime from) {
-		if (value instanceof ConditionalValue) {
-			if (!((ConditionalValue)value).set)
-				return this;
-			
-			value = ((ConditionalValue)value).value;
-		}
-		
-		SchemaResource schema = ResourceHub.getResources().getSchema();
-		dcraft.schema.DbField fld = schema.getDbField(this.table, name);
-		
-		if ((fld == null) || !fld.isDynamic())
-			return this;
-		
-		FieldRequest dfld = new FieldRequest()
-				.withName(name)
-				.withValue(value)
-				.withSubKey(subkey)
-				.withFrom(from)
-				.withUpdateOnly();
-		
-		this.withFields(dfld);
-		
-		return this;
-	}
-
-	public DbRecordRequest withSetField(String name, String subkey, Object value, BigDateTime from, BigDateTime to) {
-		if (value instanceof ConditionalValue) {
-			if (!((ConditionalValue)value).set)
-				return this;
-			
-			value = ((ConditionalValue)value).value;
-		}
-		
-		SchemaResource schema = ResourceHub.getResources().getSchema();
-		dcraft.schema.DbField fld = schema.getDbField(this.table, name);
-		
-		if ((fld == null) || !fld.isDynamic() || !fld.isList()) 
-			return this;
-		
-		FieldRequest dfld = new FieldRequest()
-			.withName(name)
-			.withValue(value)
-			.withSubKey(subkey)
-			.withFrom(from)
-			.withTo(to);
-		
-		this.withFields(dfld);
-		
-		return this;
-	}
-	
-	public DbRecordRequest withUpdateField(String name, String subkey, Object value, BigDateTime from, BigDateTime to) {
-		if (value instanceof ConditionalValue) {
-			if (!((ConditionalValue)value).set)
-				return this;
-			
-			value = ((ConditionalValue)value).value;
-		}
-		
-		SchemaResource schema = ResourceHub.getResources().getSchema();
-		dcraft.schema.DbField fld = schema.getDbField(this.table, name);
-		
-		if ((fld == null) || !fld.isDynamic() || !fld.isList())
-			return this;
-		
-		FieldRequest dfld = new FieldRequest()
-				.withName(name)
-				.withValue(value)
-				.withSubKey(subkey)
-				.withFrom(from)
-				.withTo(to)
-				.withUpdateOnly();
-		
-		this.withFields(dfld);
-		
-		return this;
-	}
-	
 	// where pairs = even are source and odd are dest
 	public DbRecordRequest withConditionallySetFields(RecordStruct source, String... pairs) {
 		for (int i = 0; i < (pairs.length - 1); i += 2) {
@@ -415,8 +292,7 @@ abstract public class DbRecordRequest extends DataRequest {
 
 		this.parameters
 			.with("Table", this.table)
-			.with("Fields", flds)
-			.with("When", this.when);
+			.with("Fields", flds);
 		
 		if (StringUtil.isNotEmpty(this.id))
 			this.parameters.with("Id", this.id);

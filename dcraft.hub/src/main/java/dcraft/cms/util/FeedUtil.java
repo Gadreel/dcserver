@@ -1,7 +1,6 @@
 package dcraft.cms.util;
 
 import dcraft.cms.feed.db.FeedUtilDb;
-import dcraft.cms.feed.work.ReindexFeedWork;
 import dcraft.db.BasicRequestContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
@@ -18,11 +17,9 @@ import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
 import dcraft.script.ScriptHub;
-import dcraft.script.StackUtil;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.cb.CountDownCallback;
 import dcraft.web.ui.inst.ICMSAware;
@@ -31,11 +28,9 @@ import dcraft.xml.XElement;
 import dcraft.xml.XNode;
 import dcraft.xml.XmlReader;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 public class FeedUtil {
 	public enum FieldType {
@@ -161,7 +156,7 @@ public class FeedUtil {
 														new OperationOutcomeStruct() {
 															@Override
 															public void callback(Struct result) throws OperatingContextException {
-																TablesAdapter adapter = TablesAdapter.ofNow(BasicRequestContext.ofDefaultDatabase());
+																TablesAdapter adapter = TablesAdapter.of(BasicRequestContext.ofDefaultDatabase());
 																
 																FeedUtilDb.addHistory(adapter.getRequest().getInterface(), adapter, fi.getPathAsCommon().getName(0), fi.getPathAsCommon().subpath(1).toString(), ListStruct.list()
 																		.with(RecordStruct.record()

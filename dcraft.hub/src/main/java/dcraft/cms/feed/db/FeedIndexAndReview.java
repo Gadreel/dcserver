@@ -1,6 +1,5 @@
 package dcraft.cms.feed.db;
 
-import dcraft.cms.feed.work.FeedFileReviewWork;
 import dcraft.cms.feed.work.FeedReviewWork;
 import dcraft.cms.feed.work.ReindexFeedWork;
 import dcraft.cms.util.FeedUtil;
@@ -8,7 +7,6 @@ import dcraft.core.db.tasklist.TaskListUtil;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
 import dcraft.db.tables.TablesAdapter;
-import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
@@ -16,17 +14,15 @@ import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.*;
-import dcraft.tenant.TenantHub;
 import dcraft.util.RndUtil;
 import dcraft.util.StringUtil;
-import dcraft.web.ui.UIUtil;
 
 import java.util.List;
 
 public class FeedIndexAndReview implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		RecordStruct data = request.getDataAsRecord();
 		String feed = data.getFieldAsString("Feed");
@@ -74,7 +70,7 @@ public class FeedIndexAndReview implements IStoredProc {
 		public void run(TaskContext taskctx) throws OperatingContextException {
 			String feed = this.params.getFieldAsString("Feed");
 
-			String trackerid = Struct.objectToString(db.getStaticList("dcTaskList", params.getFieldAsString("StepId"), "dcStepTask", "Tracker-" + feed));
+			String trackerid = Struct.objectToString(db.getList("dcTaskList", params.getFieldAsString("StepId"), "dcStepTask", "Tracker-" + feed));
 
 			if (StringUtil.isNotEmpty(trackerid)) {
 				taskctx.returnValue(RecordStruct.record()
@@ -91,7 +87,7 @@ public class FeedIndexAndReview implements IStoredProc {
 			);
 
 			if (StringUtil.isNotEmpty(reportid)) {
-				db.updateStaticList("dcTaskList", params.getFieldAsString("StepId"), "dcStepTask", "Tracker-" + feed, reportid);
+				db.updateList("dcTaskList", params.getFieldAsString("StepId"), "dcStepTask", "Tracker-" + feed, reportid);
 
 				taskctx.returnValue(RecordStruct.record()
 						.with("Id", reportid)
@@ -132,10 +128,10 @@ public class FeedIndexAndReview implements IStoredProc {
 
 			// retire all previously reviewed files
 
-			List<String> stepkeys = db.getStaticListKeys("dcTaskList", reportid, "dcStepTask");
+			List<String> stepkeys = db.getListKeys("dcTaskList", reportid, "dcStepTask");
 
 			for (String stepkey : stepkeys)
-				db.retireStaticList("dcTaskList", reportid, "dcStepTask", stepkey);
+				db.retireList("dcTaskList", reportid, "dcStepTask", stepkey);
 
 			// collect review
 
@@ -165,9 +161,9 @@ public class FeedIndexAndReview implements IStoredProc {
 												.with("Description", "Feed file analysis for go live.")
 										);
 
-										db.updateStaticList("dcTaskList", reviewid, "dcStore", "Review", page);
+										db.updateList("dcTaskList", reviewid, "dcStore", "Review", page);
 
-										db.updateStaticList("dcTaskList", reportid, "dcStepTask", ident, reviewid);
+										db.updateList("dcTaskList", reportid, "dcStepTask", ident, reviewid);
 									}
 								}
 							}

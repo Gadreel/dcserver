@@ -19,7 +19,7 @@ public class Update implements IStoredProc {
 
 		String id = data.getFieldAsString("Id");
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		if (! TableUtil.canWriteRecord(db, "dcUser", id, "dcCoreServices.Users.Update", null, request.isFromRpc())) {
 			Logger.error("Not permitted to update this record.");

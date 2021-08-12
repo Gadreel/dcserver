@@ -35,19 +35,20 @@
 
 		<Record Id="dcdbCall" Inherits="dcdbCallBasic">
 			<Field Name="Table" Type="dcTinyString" Required="True" />
-			<Field Name="When" Type="BigDateTime" />
 		</Record>
 
 		<!-- not used? not found in a ssearch -->
 		<Record Id="dcdbDataField">
+				<!--
+			<Field Name="From" Type="BigDateTime" />
+			<Field Name="To" Type="BigDateTime" />
 			<Field Name="Tags">
 				<List Type="dcMetaString" />
 			</Field>
+		-->
 			<Field Name="Retired" Type="Boolean" />
 			<Field Name="UpdateOnly" Type="Boolean" />
 			<Field Name="Lang" Type="dcMetaString" />
-			<Field Name="From" Type="BigDateTime" />
-			<Field Name="To" Type="BigDateTime" />
 			<Field Name="Data" Type="AnyType" />
 		</Record>
 
@@ -105,10 +106,12 @@
 		<Record Id="dcQueryResultFull">
 			<Field Name="Data" Type="Any" />
 			<Field Name="SubId" Type="dcString" />
+			<!--
 			<Field Name="From" Type="BigDateTime" />
 			<Field Name="To" Type="BigDateTime" />
-			<Field Name="Retired" Type="Boolean" />
 			<Field Name="Tags" Type="dcString" />
+		-->
+			<Field Name="Retired" Type="Boolean" />
 		</Record>
 
 		<List Id="dcQueryListResultFull" Type="dcQueryResultFull" />
@@ -137,7 +140,6 @@
 			</Field>
 			<Field Name="Where" Type="dcdbWhereClause" />
 			<Field Name="Collector" Type="dcQueryCollector" />
-			<Field Name="Historical" Type="Boolean" />
 			<Field Name="Compact" Type="Boolean" />
 		</RecordRequest>
 
@@ -147,7 +149,6 @@
 			</Field>
 			<Field Name="Where" Type="dcdbWhereClause" />
 			<Field Name="Collector" Type="dcQueryCollector" />
-			<Field Name="Historical" Type="Boolean" />
 			<Field Name="Compact" Type="Boolean" />
 		</RecordRequest>
 
@@ -156,7 +157,6 @@
 			<Field Name="Select">
 				<List Type="dcdbSelectField" />
 			</Field>
-			<Field Name="Historical" Type="Boolean" />
 			<Field Name="Compact" Type="Boolean" />
 		</RecordRequest>
 
@@ -164,7 +164,6 @@
 			<Field Name="Select">
 				<List Type="dcdbSelectField" />
 			</Field>
-			<Field Name="Historical" Type="Boolean" />
 			<Field Name="Compact" Type="Boolean" />
 		</RecordRequest>
 
@@ -179,7 +178,6 @@
 					 	[subid]: dcdbDataField
 		 	-->
 			<Field Name="Fields" Type="Record" />
-			<Field Name="When" Type="BigDateTime" />
 		</RecordRequest>
 
 		<Record Id="dcdbUpdateTenant" Inherits="dcdbCall" Class="dcraft.db.request.schema.UpdateTenant">
@@ -192,7 +190,6 @@
 					 	[subid]: dcdbDataField
 		 	-->
 			<Field Name="Fields" Type="Record" />
-			<Field Name="When" Type="BigDateTime" />
 		</RecordRequest>
 
 		<Record Id="dcdbInsertRecord" Inherits="dcdbCall" Class="dcraft.db.request.schema.Insert">
@@ -205,7 +202,6 @@
 					 	[subid]: dcdbDataField
 		 	-->
 			<Field Name="Fields" Type="Record" />
-			<Field Name="When" Type="BigDateTime" />
 		</RecordRequest>
 
 		<Record Id="dcDollarORequest">
@@ -347,8 +343,6 @@
 						</Description>
 						<RecordRequest Inherits="dcdbCall">
 							<Field Name="Field" Type="dcMetaString" />
-							<Field Name="Historical" Type="Boolean" />
-							<Field Name="When" Type="BigDateTime" />
 							<Field Name="Values">
 								<List Type="dcMetaString" />
 							</Fields>
@@ -465,8 +459,6 @@
 						<RecordRequest Inherits="dcdbCall">
 							<Field Name="Id" Type="Id" Required="True" />
 							<Field Name="Compact" Type="Boolean" />
-							<Field Name="Historical" Type="Boolean" />
-							<Field Name="When" Type="BigDateTime" />
 							<Field Name="Select">
 								<List Type="dcdbSelectField" />
 							</Field>
@@ -504,7 +496,6 @@
 									<Field Name="Extras" Type="AnyRecord" />
 								</Record>
 							</Field>
-							<Field Name="Historical" Type="Boolean" />
 						</RecordRequest>
 						<ListResponse Type="Any" />
 					</Op>

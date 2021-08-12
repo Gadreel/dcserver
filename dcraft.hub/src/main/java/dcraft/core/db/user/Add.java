@@ -15,7 +15,7 @@ public class Add implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		DbRecordRequest req = UserDataUtil.addUserWithConditions(data, data.hasField("Confirmed") ? data.getFieldAsBooleanOrFalse("Confirmed") : true);
 		

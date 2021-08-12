@@ -1,6 +1,5 @@
 package dcraft.cms.store.db.settings;
 
-import dcraft.cms.store.db.Util;
 import dcraft.db.Constants;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
@@ -16,7 +15,7 @@ public class Update implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		TableUtil.updateRecord(db, UpdateRecordRequest.update()
 				.withTable("dcTenant")

@@ -16,7 +16,7 @@ public class Submit implements IStoredProc {
 		data.removeField("_ForTenant");
 		data.removeField("_Database");
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		// TODO add/support Captcha - require if configured
 

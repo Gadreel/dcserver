@@ -8,7 +8,6 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.hub.op.UserContext;
 import dcraft.log.Logger;
 import dcraft.struct.RecordStruct;
 
@@ -19,7 +18,7 @@ public class LoadExperience implements IStoredProc {
 
 		String id = data.getFieldAsString("Id");
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		if (! TableUtil.canReadRecord(db, "dcUser", id, "dcCoreServices.Users.LoadExperience", null, request.isFromRpc())) {
 			Logger.error("Not permitted to load this record.");

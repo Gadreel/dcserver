@@ -1,6 +1,5 @@
 package dcraft.cms.store.db.discounts;
 
-import dcraft.db.Constants;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
 import dcraft.db.proc.filter.CurrentRecord;
@@ -12,13 +11,11 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
 
 public class List implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		Unique collector = Unique.unique();
 

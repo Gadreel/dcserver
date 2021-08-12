@@ -9,9 +9,6 @@ import dcraft.struct.Struct;
 import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
 
-import java.math.BigDecimal;
-import java.text.DecimalFormat;
-
 public class CalcOrderLimit implements IComposer {
 	@Override
 	public void writeField(ICompositeBuilder out, TablesAdapter db, IVariableAware scope, String table, String id,
@@ -29,13 +26,13 @@ public class CalcOrderLimit implements IComposer {
 	}
 
 	static public Long lookup(TablesAdapter db, String table, String id) throws OperatingContextException {
-		boolean show = Struct.objectToBoolean(db.getStaticScalar(table, id, "dcmShowInStore"), false);
+		boolean show = Struct.objectToBoolean(db.getScalar(table, id, "dcmShowInStore"), false);
 
 		if (! show)
 			return 0L;
 
-		Long limit = Struct.objectToInteger(db.getStaticScalar(table, id, "dcmOrderLimit"));
-		Long inventory = Struct.objectToInteger(db.getStaticScalar(table, id, "dcmInventory"));
+		Long limit = Struct.objectToInteger(db.getScalar(table, id, "dcmOrderLimit"));
+		Long inventory = Struct.objectToInteger(db.getScalar(table, id, "dcmInventory"));
 
 		if (inventory != null)  {
 			if (limit == null)

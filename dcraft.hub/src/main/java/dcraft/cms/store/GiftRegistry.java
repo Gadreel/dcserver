@@ -39,7 +39,6 @@ public class GiftRegistry {
 		if ("Load".equals(op)) {
 			LoadRecordRequest req = LoadRecordRequest.of("dcmGiftRegistry")
 					.withId(rec.getFieldAsString("Id"))
-					.withNow()
 					.withSelect(SelectFields.select()
 							.with("Id")
 							.with("dcmFor", "For")

@@ -13,15 +13,12 @@ import dcraft.log.Logger;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
-import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
-
-import java.time.ZonedDateTime;
 
 public class Status implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		RecordStruct data = request.getDataAsRecord();
 
@@ -45,9 +42,9 @@ public class Status implements IStoredProc {
 			callback.returnValue(RecordStruct.record()
 					.with("UserId", isettings.attr("UserId"))
 					.with("CacheSize", isettings.getAttributeAsInteger("Cache", 25))
-					.with("Token", Struct.objectToString(db.getStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessToken", altcache)))
-					.with("TokenExpire", Struct.objectToDateTime(db.getStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessExpire", altcache)))
-					.with("TokenDisabled", Struct.objectToBooleanOrFalse(db.getStaticList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessDisabled", altcache)))
+					.with("Token", Struct.objectToString(db.getList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessToken", altcache)))
+					.with("TokenExpire", Struct.objectToDateTime(db.getList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessExpire", altcache)))
+					.with("TokenDisabled", Struct.objectToBooleanOrFalse(db.getList("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmInstagramAccessDisabled", altcache)))
 					.with("CachedAt", Struct.objectToDateTime(request.getInterface().get(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Stamp")))
 			);
 		}

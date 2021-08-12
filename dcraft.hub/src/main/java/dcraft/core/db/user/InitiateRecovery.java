@@ -60,12 +60,12 @@ public class InitiateRecovery implements IStoredProc {
 
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		String tid = UserDataUtil.startRecoverAccount(db, data);
 
 		callback.returnValue(RecordStruct.record()
-				.with("Uuid", db.getStaticScalar("dcmThread", tid, "dcmUuid"))
+				.with("Uuid", db.getScalar("dcmThread", tid, "dcmUuid"))
 		);
 	}
 }

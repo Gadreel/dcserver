@@ -302,6 +302,10 @@
 		<Procedure Name="dcmStoreServices.Discounts.ScheduleAll" Execute="dcraft.cms.store.db.discounts.ScheduleAll" />
 
 		<Procedure Name="dcmStoreServices.Product.Load" Execute="dcraft.cms.store.db.products.Load" />
+		<Procedure Name="dcmStoreServices.Product.Add" Execute="dcraft.cms.store.db.products.Add" />
+		<Procedure Name="dcmStoreServices.Product.Update" Execute="dcraft.cms.store.db.products.Update" />
+		<Procedure Name="dcmStoreServices.Product.Retire" Execute="dcraft.cms.store.db.products.Retire" />
+		<Procedure Name="dcmStoreServices.Product.Revive" Execute="dcraft.cms.store.db.products.Revive" />
 		<Procedure Name="dcmStoreServices.Product.LoadCustomFields" Execute="dcraft.cms.store.db.products.LoadCustomFields" />
 		<Procedure Name="dcmStoreServices.Product.LoadCustomField" Execute="dcraft.cms.store.db.products.LoadCustomField" />
 		<Procedure Name="dcmStoreServices.Product.AddCustomField" Execute="dcraft.cms.store.db.products.AddCustomField" />
@@ -309,6 +313,7 @@
 		<Procedure Name="dcmStoreServices.Product.RemoveCustomField" Execute="dcraft.cms.store.db.products.RemoveCustomField" />
 		<Procedure Name="dcmStoreServices.Product.UpdateCustomFieldPositions" Execute="dcraft.cms.store.db.products.UpdateCustomFieldPositions" />
 
+		<Procedure Name="dcmStoreServices.Reports.ProductChangesReport" Execute="dcraft.cms.store.db.reports.ProductChangesReport" />
 		<Procedure Name="dcmStoreServices.Reports.ProductActivityReport" Execute="dcraft.cms.store.db.reports.ProductActivityReport" />
 		<Procedure Name="dcmStoreServices.Reports.SalesActivityReport" Execute="dcraft.cms.store.db.reports.SalesActivityReport" />
 
@@ -1599,6 +1604,32 @@
 
 			<Feature Name="Reports">
 				<Secure Badges="Clerk,Admin">
+					<Op Name="ProductChangesReport">
+						<Description>
+							A report on changes to all products during a time frame - price change, name change, description change. This includes new products.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="From" Type="LocalDate" />
+							<Field Name="To" Type="LocalDate" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<Field Name="Title" Type="dcmProduct:dcmTitle" />
+								<Field Name="Sku" Type="dcmProduct:dcmSku" />
+								<Field Name="Changes">
+									<List>
+										<Record>
+											<Field Name="Field" Type="String" />
+											<Field Name="At" Type="DateTime" />
+											<Field Name="Locale" Type="dcTinyString" />
+											<Field Name="Value" Type="Any" />
+										</Record>
+									</List>
+								</Field>
+							</Record>
+						</ListResponse>
+					</Op>
 					<Op Name="ProductActivityReport">
 						<Description>
 							A report on sales of all products during a time frame.

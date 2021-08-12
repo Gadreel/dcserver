@@ -1,6 +1,5 @@
 package dcraft.core.db.user;
 
-import dcraft.db.Constants;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
 import dcraft.db.tables.TablesAdapter;
@@ -14,7 +13,7 @@ public class AddBadges implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 		
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		ListStruct users = request.getDataAsRecord().getFieldAsList("Users");
 		ListStruct tags = request.getDataAsRecord().getFieldAsList("Badges");
@@ -25,7 +24,7 @@ public class AddBadges implements IStoredProc {
 			for (int n = 0; n < tags.size(); n++) {
 				String tag = tags.getItemAsString(n);
 				
-				db.updateStaticList("dcUser", uid, "dcBadges", tag, tag);
+				db.updateList("dcUser", uid, "dcBadges", tag, tag);
 			}
 		}
 

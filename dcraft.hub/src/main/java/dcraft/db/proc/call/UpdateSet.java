@@ -10,7 +10,6 @@ import dcraft.db.proc.IUpdatingStoredProc;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
@@ -28,7 +27,7 @@ public class UpdateSet implements IUpdatingStoredProc {
 		ListStruct records = params.getFieldAsList("Records");
 		ListStruct subids = params.getFieldAsList("Values");
 		
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		//BigDateTime when = BigDateTime.nowDateTime();		// TODO store WHEN from 'db' in params for replication - use same when
 		

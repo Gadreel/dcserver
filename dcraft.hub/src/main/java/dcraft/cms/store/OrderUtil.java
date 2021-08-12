@@ -13,7 +13,6 @@ import dcraft.cms.store.db.comp.CalcOrderLimit;
 import dcraft.cms.thread.db.ThreadUtil;
 import dcraft.db.Constants;
 import dcraft.db.ICallContext;
-import dcraft.db.proc.RecordScope;
 import dcraft.db.proc.call.SignIn;
 import dcraft.db.request.DataRequest;
 import dcraft.db.request.common.AddUserRequest;
@@ -456,7 +455,7 @@ public class OrderUtil {
 
 			String prodid = orgitem.getFieldAsString("Product");
 
-			Long inventory = Struct.objectToInteger(db.getStaticScalar("dcmProduct", prodid, "dcmInventory"));
+			Long inventory = Struct.objectToInteger(db.getScalar("dcmProduct", prodid, "dcmInventory"));
 
 			if (inventory == null) {
 				continue;
@@ -465,17 +464,17 @@ public class OrderUtil {
 			long thisqty = orgitem.getFieldAsInteger("Quantity", 0);
 			long newqty = inventory - thisqty;
 
-			db.updateStaticScalar("dcmProduct", prodid, "dcmInventory", newqty);
+			db.updateScalar("dcmProduct", prodid, "dcmInventory", newqty);
 
 			if (newqty <= 0)
-				db.updateStaticScalar("dcmProduct", prodid, "dcmShowInStore", false);
+				db.updateScalar("dcmProduct", prodid, "dcmShowInStore", false);
 		}
 
 		if ("VerificationRequired".equals(status)) {
 			XElement sset = ApplicationHub.getCatalogSettings("CMS-Store");
 
 			if (sset.getAttributeAsBooleanOrFalse("ShowFailedOrders"))
-				db.updateStaticScalar("dcmOrder", refid, "dcmStatus", "AwaitingPayment");
+				db.updateScalar("dcmOrder", refid, "dcmStatus", "AwaitingPayment");
 		}
 
 		// auditing
@@ -559,10 +558,10 @@ public class OrderUtil {
 		ThreadUtil.addContent(db, id, msg, "SafeMD");
 
 		// message is good for 180 days
-		db.setStaticScalar("dcmThread", id, "dcmExpireDate", TimeUtil.now().plusDays(180));
+		db.setScalar("dcmThread", id, "dcmExpireDate", TimeUtil.now().plusDays(180));
 
-		db.setStaticScalar("dcmThread", id, "dcmPaymentAmount", grand);
-		db.setStaticScalar("dcmThread", id, "dcmOrderData", order);
+		db.setScalar("dcmThread", id, "dcmPaymentAmount", grand);
+		db.setScalar("dcmThread", id, "dcmOrderData", order);
 
 		// TODO review
 		//ThreadUtil.addParty(db, id, "/CSPool", "/InBox", null);
@@ -570,7 +569,7 @@ public class OrderUtil {
 		//ThreadUtil.deliver(db, id, future);
 
 		callback.returnValue(RecordStruct.record()
-				.with("Uuid", db.getStaticScalar("dcmThread", id, "dcmUuid"))
+				.with("Uuid", db.getScalar("dcmThread", id, "dcmUuid"))
 				.with("Cart", order)
 		);
 	}
@@ -1175,27 +1174,27 @@ public class OrderUtil {
 			if (dsv != null) {
 				String discid = dsv.toString();
 				
-				if (Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmDiscount", discid, "dcmActive"))) {
-					ZonedDateTime start = Struct.objectToDateTime(db.getStaticScalar("dcmDiscount", discid, "dcmStart"));
-					ZonedDateTime expire = Struct.objectToDateTime(db.getStaticScalar("dcmDiscount", discid, "dcmExpire"));
+				if (Struct.objectToBooleanOrFalse(db.getScalar("dcmDiscount", discid, "dcmActive"))) {
+					ZonedDateTime start = Struct.objectToDateTime(db.getScalar("dcmDiscount", discid, "dcmStart"));
+					ZonedDateTime expire = Struct.objectToDateTime(db.getScalar("dcmDiscount", discid, "dcmExpire"));
 					
 					ZonedDateTime now = TimeUtil.now();
 					
 					if (((start == null) || start.isBefore(now)) && ((expire == null) || expire.isAfter(now))) {
-						BigDecimal min = Struct.objectToDecimal(db.getStaticScalar("dcmDiscount", discid, "dcmMinimumOrder"));
+						BigDecimal min = Struct.objectToDecimal(db.getScalar("dcmDiscount", discid, "dcmMinimumOrder"));
 						
 						if ((min == null) || (itmcalc.get().compareTo(min) >= 0)) {
 							// TODO ignore "dcmType" for now, if it has a code then it logically is a coupon
 							
 							// ignore FixedOffTotal for now, FixedOffProduct seems appropriate
 							
-							String ctype = Struct.objectToString(db.getStaticScalar("dcmDiscount", discid, "dcmType"));
+							String ctype = Struct.objectToString(db.getScalar("dcmDiscount", discid, "dcmType"));
 
-							String mode = Struct.objectToString(db.getStaticScalar("dcmDiscount", discid, "dcmMode"));
-							BigDecimal amt = Struct.objectToDecimal(db.getStaticScalar("dcmDiscount", discid, "dcmAmount"));
+							String mode = Struct.objectToString(db.getScalar("dcmDiscount", discid, "dcmMode"));
+							BigDecimal amt = Struct.objectToDecimal(db.getScalar("dcmDiscount", discid, "dcmAmount"));
 
 							if ("ProductCoupon".equals(ctype)) {
-								String cproductid = Struct.objectToString(db.getStaticScalar("dcmDiscount", discid, "dcmProduct"));
+								String cproductid = Struct.objectToString(db.getScalar("dcmDiscount", discid, "dcmProduct"));
 
 								for (Struct itm : fnditems.items()) {
 									RecordStruct orgitem = Struct.objectToRecord(itm);
@@ -1347,8 +1346,8 @@ public class OrderUtil {
 			return;
 		}
 
-		String payid = Struct.objectToString(db.getStaticScalar("dcmOrder", orderid, "dcmPaymentId"));
-		RecordStruct pinfo = Struct.objectToRecord(db.getStaticScalar("dcmOrder", orderid, "dcmPaymentInfo"));
+		String payid = Struct.objectToString(db.getScalar("dcmOrder", orderid, "dcmPaymentId"));
+		RecordStruct pinfo = Struct.objectToRecord(db.getScalar("dcmOrder", orderid, "dcmPaymentInfo"));
 
 		// TODO lookup user and see if they are in "test" mode - this way some people can run test orders through system
 
@@ -1439,18 +1438,18 @@ public class OrderUtil {
 		ZonedDateTime stamp = TimeUtil.now();
 		String key = TimeUtil.stampFmt.format(stamp);
 
-		db.updateStaticList("dcmOrder", orderid, "dcmRefundOn", key, stamp);
-		db.updateStaticList("dcmOrder", orderid, "dcmRefundAmount", key, amount);
-		db.updateStaticList("dcmOrder", orderid, "dcmRefundId", key, txid);
+		db.updateList("dcmOrder", orderid, "dcmRefundOn", key, stamp);
+		db.updateList("dcmOrder", orderid, "dcmRefundAmount", key, amount);
+		db.updateList("dcmOrder", orderid, "dcmRefundId", key, txid);
 
 		RecordStruct audit = RecordStruct.record()
 				.with("Origin", "Store")
 				.with("Stamp", stamp)
 				.with("Internal", true)
 				.with("Comment", "Refunded $" + amount.toPlainString() + " - " + txid)
-				.with("Status", db.getStaticScalar("dcmOrder", orderid, "dcmStatus"));
+				.with("Status", db.getScalar("dcmOrder", orderid, "dcmStatus"));
 
-		db.updateStaticList("dcmOrder", orderid, "dcmAudit", key, audit);
+		db.updateList("dcmOrder", orderid, "dcmAudit", key, audit);
 
 		callback.returnValue(key);
 	}

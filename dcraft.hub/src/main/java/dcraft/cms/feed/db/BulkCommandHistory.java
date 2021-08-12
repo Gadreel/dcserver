@@ -1,23 +1,11 @@
 package dcraft.cms.feed.db;
 
-import dcraft.cms.util.FeedUtil;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
-import dcraft.db.proc.filter.CurrentRecord;
-import dcraft.db.proc.filter.Unique;
 import dcraft.db.tables.TablesAdapter;
-import dcraft.filestore.CommonPath;
-import dcraft.filestore.FileStoreFile;
-import dcraft.filestore.mem.MemoryStoreFile;
-import dcraft.filevault.Vault;
-import dcraft.filevault.VaultUtil;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationContext;
-import dcraft.hub.op.OperationMarker;
-import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
-import dcraft.script.ScriptHub;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -26,15 +14,11 @@ import dcraft.task.IWork;
 import dcraft.task.Task;
 import dcraft.task.TaskContext;
 import dcraft.task.TaskHub;
-import dcraft.task.run.WorkHub;
-import dcraft.task.run.WorkTopic;
-import dcraft.util.TimeUtil;
-import dcraft.xml.XElement;
 
 public class BulkCommandHistory implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		ListStruct data = request.getDataAsList();
 		

@@ -1,6 +1,5 @@
 package dcraft.cms.reports.db;
 
-import dcraft.cms.thread.db.ThreadUtil;
 import dcraft.db.Constants;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
@@ -16,7 +15,7 @@ import dcraft.struct.Struct;
 public class CreateGoLive implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		// TODO assemble this list of steps from settings that may include package level settings
 
@@ -89,7 +88,7 @@ public class CreateGoLive implements IStoredProc {
 						if (this.isNotEmptyResult()) {
 							String reportid = ((RecordStruct) result).getFieldAsString("Id");
 
-							db.updateStaticScalar("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmCurrentGoliveReport", reportid);
+							db.updateScalar("dcTenant", Constants.DB_GLOBAL_ROOT_RECORD, "dcmCurrentGoliveReport", reportid);
 
 							callback.returnValue(RecordStruct.record()
 									.with("Id", reportid)

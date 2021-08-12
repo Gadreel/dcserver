@@ -3,13 +3,11 @@ package dcraft.db.proc.comp;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-import dcraft.db.DbServiceRequest;
 import dcraft.db.proc.IComposer;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.schema.DbField;
 import dcraft.schema.SchemaResource;
@@ -74,10 +72,9 @@ public class Concat implements IComposer {
 		String subid = field.getFieldAsString("SubId");
 
 		if (StringUtil.isNotEmpty(subid) && fdef.isList()) 
-			return Struct.objectToString(db.getDynamicList(table, id, fname, subid, format));
+			return Struct.objectToString(db.getList(table, id, fname, subid, format));
 
-		// DynamicList, StaticList (or DynamicScalar is when == null)
-		// TODO was if (fdef.isList() || (fdef.isDynamic() && when == null)) { -- restore?
+		// List
 		if (fdef.isList()) {
 			AtomicReference<String> res = new AtomicReference<>("");
 			
@@ -87,7 +84,7 @@ public class Concat implements IComposer {
 				public Boolean apply(Object subid) {
 					try {
 						// don't output null values in this list - Extended might return null data but otherwise no nulls
-							Object value = db.getDynamicList(table, id, fname, subid.toString());
+							Object value = db.getList(table, id, fname, subid.toString());
 							
 							if (value != null) {
 								String v = res.get();
@@ -112,12 +109,8 @@ public class Concat implements IComposer {
 		
 			return res.get();
 		}		
-		
-		// DynamicScalar
-		if (fdef.isDynamic()) 
-			return Struct.objectToString(db.getDynamicScalar(table, id, fname, format));
-		
-		// StaticScalar
-		return Struct.objectToString(db.getStaticScalar(table, id, fname, format));
+
+		// Scalar
+		return Struct.objectToString(db.getScalar(table, id, fname, format));
 	}
 }

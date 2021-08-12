@@ -6,8 +6,6 @@ import dcraft.db.proc.filter.CurrentRecord;
 import dcraft.db.proc.filter.Unique;
 import dcraft.db.request.query.SelectFields;
 import dcraft.db.request.query.WhereAnd;
-import dcraft.db.request.query.WhereAny;
-import dcraft.db.request.query.WhereNot;
 import dcraft.db.request.query.WhereTerm;
 import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
@@ -26,7 +24,7 @@ public class Search implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 		
-		TablesAdapter adapter = TablesAdapter.ofNow(request);
+		TablesAdapter adapter = TablesAdapter.of(request);
 		
 		Unique collectIds = Unique.unique();
 		

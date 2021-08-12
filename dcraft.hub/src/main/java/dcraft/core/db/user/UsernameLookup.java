@@ -1,18 +1,11 @@
 package dcraft.core.db.user;
 
-import dcraft.core.db.UserDataUtil;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
 import dcraft.db.tables.TablesAdapter;
-import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationOutcomeRecord;
 import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.interchange.google.RecaptchaUtil;
-import dcraft.log.Logger;
 import dcraft.struct.RecordStruct;
-import dcraft.util.StringUtil;
-import dcraft.xml.XElement;
 
 public class UsernameLookup implements IStoredProc {
 	@Override
@@ -21,7 +14,7 @@ public class UsernameLookup implements IStoredProc {
 		
 		String uname = data.getFieldAsString("Username").trim().toLowerCase();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		Object userid = db.firstInIndex("dcUser", "dcUsername", uname, false);
 		

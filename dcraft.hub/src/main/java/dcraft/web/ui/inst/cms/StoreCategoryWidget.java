@@ -2,7 +2,6 @@ package dcraft.web.ui.inst.cms;
 
 import dcraft.cms.util.GalleryUtil;
 import dcraft.db.BasicRequestContext;
-import dcraft.db.DatabaseAdapter;
 import dcraft.db.request.query.SelectFields;
 import dcraft.db.request.schema.Load;
 import dcraft.db.tables.TableUtil;
@@ -17,7 +16,6 @@ import dcraft.script.StackUtil;
 import dcraft.script.inst.Var;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.InstructionWork;
-import dcraft.stream.record.ListSourceStream;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
@@ -37,7 +35,6 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class StoreCategoryWidget extends Base implements ICMSAware {
@@ -99,7 +96,7 @@ public class StoreCategoryWidget extends Base implements ICMSAware {
 		AtomicLong currimg = new AtomicLong();
 		
 		BasicRequestContext requestContext = BasicRequestContext.ofDefaultDatabase();
-		TablesAdapter db = TablesAdapter.ofNow(requestContext);
+		TablesAdapter db = TablesAdapter.of(requestContext);
 
 		categories = fillLevel(state, db, categories, fields, meta, vari, path, missing);
 
@@ -191,7 +188,7 @@ public class StoreCategoryWidget extends Base implements ICMSAware {
 				showprod = false;
 			}
 
-			if (! Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmCategory", id, "dcmShowInStore"))){
+			if (! Struct.objectToBooleanOrFalse(db.getScalar("dcmCategory", id, "dcmShowInStore"))){
 				if (! editable)
 					continue;
 

@@ -6,7 +6,8 @@
 	<dc.Body>
 		<dc.PagePanel>
 			<dc.Button Label="Sales Activity" Click="DoSalesActivityReport" />
-			<dc.Button Label="Product Activity" Click="DoProductActivityReport" />
+			<dc.Button Label="Product Sales" Click="DoProductActivityReport" />
+			<dc.Button Label="Product Changes" Click="DoProductChangesReport" />
 		</dc.PagePanel>
 	</dc.Body>
 	<Function Name="Load"><![CDATA[
@@ -21,5 +22,10 @@
 			var page = this;
 
 			dc.pui.Dialog.loadPage('/dcm/store/reports/product-activity-prompt');
+	]]></Function>
+	<Function Name="DoProductChangesReport" Params="e"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcm/store/reports/product-changes-prompt');
 	]]></Function>
 </dc.Html>

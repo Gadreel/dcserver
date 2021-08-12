@@ -5,7 +5,6 @@ import dcraft.db.DatabaseAdapter;
 import dcraft.db.DatabaseException;
 import dcraft.db.proc.filter.CurrentRecord;
 import dcraft.db.proc.filter.Unique;
-import dcraft.db.request.update.DbRecordRequest;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileStore;
@@ -13,13 +12,11 @@ import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.local.LocalStore;
 import dcraft.filestore.mem.MemoryStoreFile;
 import dcraft.filevault.FileStoreVault;
-import dcraft.filevault.Vault;
 import dcraft.filevault.VaultUtil;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcome;
-import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
@@ -33,7 +30,6 @@ import dcraft.xml.XElement;
 import dcraft.xml.XmlReader;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -48,12 +44,12 @@ public class FeedUtilDb {
 		
 		oid = db.createRecord("dcmFeed");
 
-		db.updateStaticScalar("dcmFeed", oid, "dcmAlias", opath.getName(1));
-		db.updateStaticScalar("dcmFeed", oid, "dcmPath", opath);
+		db.updateScalar("dcmFeed", oid, "dcmAlias", opath.getName(1));
+		db.updateScalar("dcmFeed", oid, "dcmPath", opath);
 		// TODO use settings to determine start path, should be null if not an entry (such as a block)
-		db.updateStaticScalar("dcmFeed", oid, "dcmLocalPath", "pages".equals(opath.getName(1)) ? opath.subpath(2) : opath.subpath(1));
-		db.updateStaticScalar("dcmFeed", oid, "dcmModified", TimeUtil.now());
-		db.updateStaticScalar("dcmFeed", oid, "dcmAuthor", OperationContext.getOrThrow().getUserContext().getUserId());
+		db.updateScalar("dcmFeed", oid, "dcmLocalPath", "pages".equals(opath.getName(1)) ? opath.subpath(2) : opath.subpath(1));
+		db.updateScalar("dcmFeed", oid, "dcmModified", TimeUtil.now());
+		db.updateScalar("dcmFeed", oid, "dcmAuthor", OperationContext.getOrThrow().getUserContext().getUserId());
 		
 		return oid;
 	}
@@ -97,7 +93,7 @@ public class FeedUtilDb {
 			if (db.isRetired("dcmFeed", oid))
 				db.reviveRecord("dcmFeed", oid);
 			
-			opubtime = Struct.objectToDateTime(db.getStaticScalar("dcmFeed", oid, "dcmPublishAt"));
+			opubtime = Struct.objectToDateTime(db.getScalar("dcmFeed", oid, "dcmPublishAt"));
 		}
 
 		fields
@@ -136,7 +132,7 @@ public class FeedUtilDb {
 
 		// shared fields
 		{
-			List<String> oldkeys = db.getStaticListKeys("dcmFeed", oid, "dcmSharedFields");
+			List<String> oldkeys = db.getListKeys("dcmFeed", oid, "dcmSharedFields");
 
 			RecordStruct newkeys = RecordStruct.record();
 
@@ -253,7 +249,7 @@ public class FeedUtilDb {
 		
 		// locale fields
 		{
-			List<String> oldkeys = db.getStaticListKeys("dcmFeed", oid, "dcmLocaleFields");
+			List<String> oldkeys = db.getListKeys("dcmFeed", oid, "dcmLocaleFields");
 
 			RecordStruct newkeys = RecordStruct.record();
 
@@ -311,7 +307,7 @@ public class FeedUtilDb {
 		// tags
 		
 		{
-			List<String> oldkeys = db.getStaticListKeys("dcmFeed", oid, "dcmTags");
+			List<String> oldkeys = db.getListKeys("dcmFeed", oid, "dcmTags");
 			
 			RecordStruct newkeys = RecordStruct.record();
 			
@@ -346,7 +342,7 @@ public class FeedUtilDb {
 		if (db.checkFieldsInternal("dcmFeed", fields, oid)) {
 			db.setFieldsInternal("dcmFeed", oid, fields);
 
-			ZonedDateTime npubtime = Struct.objectToDateTime(db.getStaticScalar("dcmFeed", oid, "dcmPublishAt"));
+			ZonedDateTime npubtime = Struct.objectToDateTime(db.getScalar("dcmFeed", oid, "dcmPublishAt"));
 
 			// set index
 
@@ -382,7 +378,7 @@ public class FeedUtilDb {
 
 		if (StringUtil.isNotEmpty(oid)) {
 			// delete from dcmFeedIndex
-			ZonedDateTime opubtime = Struct.objectToDateTime(db.getStaticScalar("dcmFeed", oid, "dcmPublishAt"));
+			ZonedDateTime opubtime = Struct.objectToDateTime(db.getScalar("dcmFeed", oid, "dcmPublishAt"));
 			
 			try {
 				// TODO stamp is more than time, this should be reviewed, maybe this isn't a full stamp
@@ -452,17 +448,17 @@ public class FeedUtilDb {
 			if (create) {
 				hid = db.createRecord("dcmFeedHistory");
 				
-				db.setStaticScalar("dcmFeedHistory", hid, "dcmPath", epath);
-				db.setStaticScalar("dcmFeedHistory", hid, "dcmDraftPath", epath);
-				db.setStaticScalar("dcmFeedHistory", hid, "dcmStartedAt", TimeUtil.now());
-				db.setStaticScalar("dcmFeedHistory", hid, "dcmStartedBy", OperationContext.getOrThrow().getUserContext().getUserId());
-				db.setStaticScalar("dcmFeedHistory", hid, "dcmPublished", false);
+				db.setScalar("dcmFeedHistory", hid, "dcmPath", epath);
+				db.setScalar("dcmFeedHistory", hid, "dcmDraftPath", epath);
+				db.setScalar("dcmFeedHistory", hid, "dcmStartedAt", TimeUtil.now());
+				db.setScalar("dcmFeedHistory", hid, "dcmStartedBy", OperationContext.getOrThrow().getUserContext().getUserId());
+				db.setScalar("dcmFeedHistory", hid, "dcmPublished", false);
 			}
 		}
 		else {
 			if (audit) {
-				db.setStaticScalar("dcmFeedHistory", hid, "dcmModifiedAt", TimeUtil.now());
-				db.setStaticScalar("dcmFeedHistory", hid, "dcmModifiedBy", OperationContext.getOrThrow().getUserContext().getUserId());
+				db.setScalar("dcmFeedHistory", hid, "dcmModifiedAt", TimeUtil.now());
+				db.setScalar("dcmFeedHistory", hid, "dcmModifiedBy", OperationContext.getOrThrow().getUserContext().getUserId());
 			}
 		}
 		
@@ -476,7 +472,7 @@ public class FeedUtilDb {
 			ZonedDateTime stamp = TimeUtil.now().minusSeconds(1);
 			
 			for (Struct cstruct : commands.items()) {
-				db.setStaticList("dcmFeedHistory", hid, "dcmModifications", TimeUtil.stampFmt.format(stamp), cstruct);
+				db.setList("dcmFeedHistory", hid, "dcmModifications", TimeUtil.stampFmt.format(stamp), cstruct);
 				
 				// forward 1 ms
 				stamp = stamp.plusNanos(1000000);
@@ -490,13 +486,13 @@ public class FeedUtilDb {
 		String hid = FeedUtilDb.findHistory(conn, db, feed, path, false, false);
 		
 		if (hid != null) {
-			db.setStaticScalar("dcmFeedHistory", hid, "dcmCancelled", true);
-			db.setStaticScalar("dcmFeedHistory", hid, "dcmCancelledAt", TimeUtil.now());
-			db.setStaticScalar("dcmFeedHistory", hid, "dcmCancelledBy", OperationContext.getOrThrow().getUserContext().getUserId());
-			db.retireStaticScalar("dcmFeedHistory", hid, "dcmDraftPath");
+			db.setScalar("dcmFeedHistory", hid, "dcmCancelled", true);
+			db.setScalar("dcmFeedHistory", hid, "dcmCancelledAt", TimeUtil.now());
+			db.setScalar("dcmFeedHistory", hid, "dcmCancelledBy", OperationContext.getOrThrow().getUserContext().getUserId());
+			db.retireScalar("dcmFeedHistory", hid, "dcmDraftPath");
 			
 			if ((data != null) && data.hasField("Note"))
-				db.setStaticScalar("dcmFeedHistory", hid, "dcmNote", data.getFieldAsString("Note"));
+				db.setScalar("dcmFeedHistory", hid, "dcmNote", data.getFieldAsString("Note"));
 		}
 		else {
 			Logger.warn("Could not find any feed history to discard");
@@ -509,7 +505,7 @@ public class FeedUtilDb {
 		String hid = FeedUtilDb.findHistory(conn, db, feed, path, true, true);
 		
 		if ((data != null) && data.hasField("Note"))
-			db.setStaticScalar("dcmFeedHistory", hid, "dcmNote", data.getFieldAsString("Note"));
+			db.setScalar("dcmFeedHistory", hid, "dcmNote", data.getFieldAsString("Note"));
 		
 		if (publish) {
 			FeedUtilDb.publishHistory(conn, db, feed, path, hid, callback);
@@ -521,7 +517,7 @@ public class FeedUtilDb {
 	}
 	
 	static public void publishHistory(DatabaseAdapter conn, TablesAdapter db, String feed, String path, String hid, OperationOutcomeStruct callback) throws OperatingContextException {
-		db.setStaticScalar("dcmFeedHistory", hid, "dcmPublished", true);
+		db.setScalar("dcmFeedHistory", hid, "dcmPublished", true);
 		
 		FileStoreVault feedsvault = OperationContext.getOrThrow().getSite().getFeedsVault();
 		
@@ -544,8 +540,8 @@ public class FeedUtilDb {
 					
 					CommonPath epath = FeedUtilDb.toIndexPath(feed, path);
 					
-					for (String key : db.getStaticListKeys("dcmFeedHistory", hid, "dcmModifications")) {
-						RecordStruct command = Struct.objectToRecord(db.getStaticList("dcmFeedHistory", hid, "dcmModifications", key));
+					for (String key : db.getListKeys("dcmFeedHistory", hid, "dcmModifications")) {
+						RecordStruct command = Struct.objectToRecord(db.getList("dcmFeedHistory", hid, "dcmModifications", key));
 						
 						// check null, modification could be retired
 						if (command != null) {
@@ -575,9 +571,9 @@ public class FeedUtilDb {
 						@Override
 						public void callback(Struct result) throws OperatingContextException {
 							if (! this.hasErrors()) {
-								db.setStaticScalar("dcmFeedHistory", hid, "dcmCompleted", true);
-								db.setStaticScalar("dcmFeedHistory", hid, "dcmCompletedAt", TimeUtil.now());
-								db.retireStaticScalar("dcmFeedHistory", hid, "dcmDraftPath");
+								db.setScalar("dcmFeedHistory", hid, "dcmCompleted", true);
+								db.setScalar("dcmFeedHistory", hid, "dcmCompletedAt", TimeUtil.now());
+								db.retireScalar("dcmFeedHistory", hid, "dcmDraftPath");
 								
 								// TODO publish - if dcmScheduleAt then just set the dcmScheduled field to dcmScheduleAt, else do it now
 							}

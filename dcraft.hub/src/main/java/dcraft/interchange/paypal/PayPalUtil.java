@@ -3,27 +3,20 @@ package dcraft.interchange.paypal;
 import dcraft.cms.thread.db.ThreadUtil;
 import dcraft.db.ICallContext;
 import dcraft.db.tables.TablesAdapter;
-import dcraft.db.util.DbUtil;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeRecord;
 import dcraft.log.Logger;
-import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.IOUtil;
-import dcraft.util.Memory;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
-import dcraft.xml.XmlReader;
-import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.DataOutputStream;
-import java.math.BigDecimal;
 import java.net.URL;
-import java.text.DecimalFormat;
 
 public class PayPalUtil {
 	static public final String AUTH_TEST_ENDPOINT = "https://www.sandbox.paypal.com/cgi-bin/webscr";
@@ -110,21 +103,21 @@ public class PayPalUtil {
 			return null;
 		}
 
-		boolean paid = Struct.objectToBooleanOrFalse(db.getStaticScalar("dcmThread", id, "dcmPaymentVerified"));
+		boolean paid = Struct.objectToBooleanOrFalse(db.getScalar("dcmThread", id, "dcmPaymentVerified"));
 
 		if (! paid) {
 			Logger.error("Payment not verified");
 			return null;
 		}
 
-		String paytx = Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmPaymentTx"));
+		String paytx = Struct.objectToString(db.getScalar("dcmThread", id, "dcmPaymentTx"));
 
 		if (! paymentinfo.getFieldAsString("PaymentTx").equals(paytx)) {
 			Logger.error("Invalid payment tx");
 			return null;
 		}
 
-		db.setStaticScalar("dcmThread", id, "dcmOrderId", refid);
+		db.setScalar("dcmThread", id, "dcmOrderId", refid);
 
 		return paytx;
 	}

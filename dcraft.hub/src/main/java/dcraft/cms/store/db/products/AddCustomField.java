@@ -10,16 +10,14 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.util.RndUtil;
 import dcraft.util.StringUtil;
-import dcraft.util.TimeUtil;
 
 public class AddCustomField implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		DbRecordRequest req = InsertRecordRequest.insert()
 				.withTable("dcmProductCustomFields")

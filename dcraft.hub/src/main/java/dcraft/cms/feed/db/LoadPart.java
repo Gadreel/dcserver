@@ -8,10 +8,7 @@ import dcraft.db.proc.filter.Unique;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileStoreFile;
-import dcraft.filestore.mem.MemoryStoreFile;
 import dcraft.filevault.FileStoreVault;
-import dcraft.filevault.Vault;
-import dcraft.filevault.VaultUtil;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationMarker;
@@ -21,16 +18,13 @@ import dcraft.log.Logger;
 import dcraft.script.ScriptHub;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.util.TimeUtil;
 import dcraft.web.ui.inst.ICMSAware;
 import dcraft.xml.XElement;
-import dcraft.xml.XmlReader;
-import dcraft.xml.XmlToJson;
 
 public class LoadPart implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		
 		RecordStruct data = request.getDataAsRecord();
 		
@@ -64,8 +58,8 @@ public class LoadPart implements IStoredProc {
 					}
 					
 					if (hid != null) {
-						for (String key : db.getStaticListKeys("dcmFeedHistory", hid, "dcmModifications")) {
-							RecordStruct command = Struct.objectToRecord(db.getStaticList("dcmFeedHistory", hid, "dcmModifications", key));
+						for (String key : db.getListKeys("dcmFeedHistory", hid, "dcmModifications")) {
+							RecordStruct command = Struct.objectToRecord(db.getList("dcmFeedHistory", hid, "dcmModifications", key));
 							
 							// check null, modification could be retired
 							if (command != null) {

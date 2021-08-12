@@ -1,16 +1,11 @@
 package dcraft.cms.thread.db.email;
 
-import dcraft.cms.thread.db.ThreadUtil;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
 import dcraft.db.tables.TablesAdapter;
-import dcraft.filestore.local.LocalStore;
-import dcraft.filestore.local.LocalStoreFile;
-import dcraft.filevault.VaultUtil;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.xml.XElement;
 import dcraft.xml.XmlReader;
@@ -21,7 +16,7 @@ import java.nio.file.Path;
 public class LoadMessageSection implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 		RecordStruct data = request.getDataAsRecord();
 
 		String mtype = data.getFieldAsString("Type");

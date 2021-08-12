@@ -1,7 +1,6 @@
 package dcraft.filevault;
 
 import dcraft.cms.feed.db.FeedUtilDb;
-import dcraft.cms.feed.work.ReindexFeedWork;
 import dcraft.cms.util.FeedUtil;
 import dcraft.db.BasicRequestContext;
 import dcraft.db.IConnectionManager;
@@ -16,11 +15,8 @@ import dcraft.hub.ResourceHub;
 import dcraft.hub.op.*;
 import dcraft.log.Logger;
 import dcraft.script.ScriptHub;
-import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
 import dcraft.task.TaskHub;
-import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.web.ui.UIUtil;
 import dcraft.xml.*;
@@ -40,7 +36,7 @@ public class FeedVault extends FileStoreVault {
 		
 		IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
 		
-		TablesAdapter adapter = TablesAdapter.ofNow(BasicRequestContext.of(connectionManager.allocateAdapter()));
+		TablesAdapter adapter = TablesAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
 		
 		FileIndexAdapter fileIndexAdapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
 		

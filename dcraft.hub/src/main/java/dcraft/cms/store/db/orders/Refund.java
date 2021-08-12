@@ -23,7 +23,7 @@ public class Refund implements IStoredProc {
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct data = request.getDataAsRecord();
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		String id = data.getFieldAsString("Id");
 		boolean cancel = data.getFieldAsBooleanOrFalse("Cancel");
@@ -47,8 +47,8 @@ public class Refund implements IStoredProc {
 							.withUpdateField("dcmStatus", "Canceled");
 
 					// complete or cancel all items as well
-					for (String iid : db.getStaticListKeys("dcmOrder", id, "dcmItemEntryId")) {
-						String istatus = Struct.objectToString(db.getStaticList("dcmOrder", id, "dcmItemStatus", iid));
+					for (String iid : db.getListKeys("dcmOrder", id, "dcmItemEntryId")) {
+						String istatus = Struct.objectToString(db.getList("dcmOrder", id, "dcmItemStatus", iid));
 
 						if (!"Completed".equals(istatus) && !"Canceled".equals(istatus)) {
 							upreq

@@ -71,21 +71,7 @@ public class ImportRecordRequest extends DbRecordRequest {
 			String name = sfld.getName();
 			
 			if (record.isNotFieldEmpty(name)) {
-				if (sfld.isList() && sfld.isDynamic()) {
-					ListStruct items = record.getFieldAsList(name);
-					
-					for (Struct itm : items.items()) {
-						if (itm != null) {
-							RecordStruct itmdata = (RecordStruct) itm;
-							
-							if (itmdata.getFieldAsBooleanOrFalse("Retired"))
-								this.withRetireField(name);
-							else
-								this.withUpdateField(name, itmdata.selectAsString("SubId"), itmdata.getField("Data"), itmdata.getFieldAsBigDateTime("From"), itmdata.getFieldAsBigDateTime("To"));
-						}
-					}
-				}
-				else if (sfld.isList()) {
+				if (sfld.isList()) {
 					ListStruct items = record.getFieldAsList(name);
 					
 					for (Struct itm : items.items()) {
@@ -102,17 +88,10 @@ public class ImportRecordRequest extends DbRecordRequest {
 				else {
 					RecordStruct flddata = record.getFieldAsRecord(name);
 					
-					if (sfld.isDynamic()) {
-						if (flddata.getFieldAsBooleanOrFalse("Retired"))
-							this.withRetireField(name);
-						else
-							this.withUpdateField(name, flddata.selectAsString("SubId"), flddata.getField("Data"), flddata.getFieldAsBigDateTime("From"));
-					} else {
-						if (flddata.getFieldAsBooleanOrFalse("Retired"))
-							this.withRetireField(name);
-						else
-							this.withUpdateField(name, flddata.getField("Data"));
-					}
+					if (flddata.getFieldAsBooleanOrFalse("Retired"))
+						this.withRetireField(name);
+					else
+						this.withUpdateField(name, flddata.getField("Data"));
 				}
 			}
 		}

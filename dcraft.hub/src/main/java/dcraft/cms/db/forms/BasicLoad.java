@@ -17,7 +17,7 @@ public class BasicLoad implements IStoredProc {
 
 		String id = data.getFieldAsString("Id");
 
-		TablesAdapter db = TablesAdapter.ofNow(request);
+		TablesAdapter db = TablesAdapter.of(request);
 
 		RecordStruct rec = TableUtil.getRecord(db, OperationContext.getOrThrow(), "dcmBasicCustomForm", id, SelectFields.select()
 				.withAs("Title", "dcmTitle")
