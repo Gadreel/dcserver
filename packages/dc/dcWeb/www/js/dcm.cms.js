@@ -1118,7 +1118,7 @@ dc.pui.TagFuncs['dcm.GalleryWidget']['doCmsInitWidget'] = function(entry, node) 
 										.addClass('dc-button-toolbar dccms')
 										.dcappend(
 											$('<i>')
-											 	.addClass('fa fa-pencil'),  // + opt.Icon),
+											 	.addClass('fa fa-chevron-down'),  // + opt.Icon),
 										)
 										.click(function(e) {
 											var imgalias = $(imgnode).attr('data-dcm-alias');
@@ -1127,82 +1127,131 @@ dc.pui.TagFuncs['dcm.GalleryWidget']['doCmsInitWidget'] = function(entry, node) 
 												dc.pui.Popup.alert('Missing alias, cannot edit.');
 											}
 											else {
-												var params = entry.callTagFunc(widget, 'getParams');
+												dc.pui.Popup.menu({
+													Options: [
+														{
+															Title: 'Properties',
+															Auth: [ 'Admin', 'Editor' ],
+															Op: function(e) {
+																var imgalias = $(imgnode).attr('data-dcm-alias');
 
-												var path = $(node).attr('data-path');
-												var propeditor = $(node).attr('data-property-editor');
+																if (! imgalias) {
+																	dc.pui.Popup.alert('Missing alias, cannot edit.');
+																}
+																else {
+																	var params = entry.callTagFunc(widget, 'getParams');
 
-												if (propeditor)
-													propeditor = '/dcm/cms/gallery-widget-image-props/' + propeditor;
-												else
-													propeditor = '/dcm/cms/gallery-widget-image-props';
+																	var path = $(node).attr('data-path');
+																	var propeditor = $(node).attr('data-property-editor');
 
-												dc.cms.image.Loader.loadGallery(path, function(gallery, resp) {
-													if (resp.Result > 0) {
-														dc.pui.Popup.alert(resp.Message);
-														return;
-													}
+																	if (propeditor)
+																		propeditor = '/dcm/cms/gallery-widget-image-props/' + propeditor;
+																	else
+																		propeditor = '/dcm/cms/gallery-widget-image-props';
 
-													var editor = gallery.Meta.PropertyEditor
-														? gallery.Meta.PropertyEditor : propeditor;
+																	dc.cms.image.Loader.loadGallery(path, function(gallery, resp) {
+																		if (resp.Result > 0) {
+																			dc.pui.Popup.alert(resp.Message);
+																			return;
+																		}
 
-													dc.pui.Dialog.loadPage(editor, {
-														Feed: params.Feed,
-														Path: params.Path,
-														PartId: params.Id,
-														Image: imgalias,
-														Gallery: gallery,
-														Callback: function() {
-															dc.pui.Loader.MainLayer.refreshPage();
+																		var editor = gallery.Meta.PropertyEditor
+																			? gallery.Meta.PropertyEditor : propeditor;
+
+																		dc.pui.Dialog.loadPage(editor, {
+																			Feed: params.Feed,
+																			Path: params.Path,
+																			PartId: params.Id,
+																			Image: imgalias,
+																			Gallery: gallery,
+																			Callback: function() {
+																				dc.pui.Loader.MainLayer.refreshPage();
+																			}
+																		});
+																	});
+																}
+															}
+														},
+														{
+															Title: 'Replace',
+															Auth: [ 'Admin', 'Editor' ],
+															Op: function(e) {
+																var imgalias = $(imgnode).attr('data-dcm-alias');
+
+																if (! imgalias) {
+																	dc.pui.Popup.alert('Missing alias, cannot edit.');
+																}
+																else {
+																	var params = entry.callTagFunc(widget, 'getParams');
+																	var path = $(node).attr('data-path');
+
+																	dc.pui.Dialog.loadPage('/dcm/galleries/chooser', {
+																		Path: path,
+																		Callback: function(res) {
+																			if (res.Images && res.Images.length) {
+																				var fh = res.Images[0];
+
+																				var newpath = fh.FullPath.substring(0, fh.FullPath.indexOf('.v'));
+
+																				if (newpath.startsWith(path)) {
+																					//newpath = newpath.substring(newpath.lastIndexOf('/') + 1);
+																					newpath = newpath.substring(path.length + 1);
+																				}
+
+																				dc.cms.Loader.saveCommands(params.Feed, params.Path, [
+																					{
+																						Command: 'UpdatePart',
+																						Params: {
+																							PartId: params.Id,
+																							Area: 'ReplaceImage',
+																							Alias: imgalias,
+																							NewAlias: newpath
+																						}
+																					}
+																				], function() {
+																					dc.pui.Loader.MainLayer.refreshPage();
+																				});
+																			}
+																		}
+																	});
+																}
+															}
+														},
+														{
+															Title: 'Remove',
+															Auth: [ 'Admin', 'Editor' ],
+															Op: function(e) {
+																var imgalias = $(imgnode).attr('data-dcm-alias');
+
+																if (! imgalias) {
+																	dc.pui.Popup.alert('Missing alias, cannot edit.');
+																}
+																else {
+																	var params = entry.callTagFunc(widget, 'getParams');
+
+																	dc.cms.Loader.saveCommands(params.Feed, params.Path, [
+																		{
+																			Command: 'UpdatePart',
+																			Params: {
+																				PartId: params.Id,
+																				Area: 'RemoveImage',
+																				Alias: imgalias
+																			}
+																		}
+																	], function() {
+																		dc.pui.Loader.MainLayer.refreshPage();
+																	});
+																}
+															}
 														}
-													});
+													]
 												});
 											}
 
 											e.preventDefault();
 											return false;
 										})
-								),
-							$('<div>')
-								.attr('role', 'listitem')
-								.dcappend(
-									$('<a>')
-										.attr('href', '#')
-										.attr('role', 'button')
-										//.attr('aria-label', opt.Title)
-										//.addClass('opt.Kind')
-										.addClass('dc-button-toolbar dccms')
-										.dcappend(
-											$('<i>')
-											 	.addClass('fa fa-times'),  // + opt.Icon),
-										)
-										.click(function(e) {
-											var imgalias = $(imgnode).attr('data-dcm-alias');
-
-											if (! imgalias) {
-												dc.pui.Popup.alert('Missing alias, cannot edit.');
-											}
-											else {
-												var params = entry.callTagFunc(widget, 'getParams');
-
-												dc.cms.Loader.saveCommands(params.Feed, params.Path, [
-													{
-														Command: 'UpdatePart',
-														Params: {
-															PartId: params.Id,
-															Area: 'RemoveImage',
-															Alias: imgalias
-														}
-													}
-												], function() {
-													dc.pui.Loader.MainLayer.refreshPage();
-												});
-											}
-
-											e.preventDefault();
-											return false;
-										})
-									)
+								)
 						)
 					);
 				pos++;

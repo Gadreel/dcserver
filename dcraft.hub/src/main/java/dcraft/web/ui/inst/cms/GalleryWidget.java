@@ -387,7 +387,20 @@ public class GalleryWidget extends Base implements ICMSAware {
 				
 				return true;
 			}
-			
+
+			if ("ReplaceImage".equals(area)) {
+				String alias = params.getFieldAsString("Alias");
+
+				for (XElement xel : this.selectAll("Image")) {
+					if (alias.equals(xel.getAttribute("Alias"))) {
+						xel.attr("Alias", params.getFieldAsString("NewAlias"));
+						break;
+					}
+				}
+
+				return true;
+			}
+
 			if ("Template".equals(area)) {
 				this.canonicalize();    // so all Tr's have a Locale
 				

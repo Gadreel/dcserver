@@ -102,6 +102,11 @@ public class GalleryUtil {
 	static public RecordStruct findVariation(RecordStruct meta, String alias) {
 		if (StringUtil.isEmpty(alias))
 			return null;
+
+		int dpos= alias.indexOf('.');
+
+		if (dpos > 0)
+			alias = alias.substring(0, dpos);
 		
 		if ((meta != null) && meta.isNotFieldEmpty("Variations")) {
 			for (Struct vs : meta.getFieldAsList("Variations").items()) {

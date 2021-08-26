@@ -1,5 +1,6 @@
 package dcraft.web.ui.inst;
 
+import dcraft.cms.util.GalleryUtil;
 import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
@@ -113,7 +114,24 @@ public class ImgCache extends Base {
 			Logger.warn("Problem finding image file: " + imgpath);
 		}
 
-		// TODO if this is a gallery, pull the height + width from meta automatically
+		if ("galleries".equals(section)) {
+			try {
+				RecordStruct meta = GalleryUtil.getMeta(secpath);
+
+				if (meta != null) {
+					RecordStruct variant = GalleryUtil.findVariation(meta, imgpath.getFileName().toString());
+
+					if (variant.isNotFieldEmpty("ExactWidth"))
+						this.attr("width", variant.getFieldAsString("ExactWidth"));
+
+					if (variant.isNotFieldEmpty("ExactHeight"))
+						this.attr("height", variant.getFieldAsString("ExactHeight"));
+				}
+			}
+			catch (IllegalArgumentException x) {
+				System.out.println("bad path - try Missing");
+			}
+		}
 	}
 	
 	@Override
