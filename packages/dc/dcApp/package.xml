@@ -49,6 +49,7 @@
 			<Tag Name="dc.Fragment" Class="dcraft.web.ui.inst.Fragment" />
 			<Tag Name="dc.IncludeFragment" Class="dcraft.web.ui.inst.IncludeFragment" />
 			<Tag Name="dc.IncludeFragmentInline" Class="dcraft.web.ui.inst.IncludeFragmentInline" />
+			<Tag Name="dc.IncludeDynamic" Class="dcraft.web.ui.inst.IncludeDynamic" />
 			<Tag Name="dc.Param" Class="dcraft.web.ui.inst.Param" />
 			<Tag Name="dc.IncludeParam" Class="dcraft.web.ui.inst.IncludeParam" />
 

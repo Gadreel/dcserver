@@ -167,6 +167,25 @@
 							}
 						},
 						{
+							Title: 'Copy Link',
+							Op: function(e) {
+								var files = entry.callPageFunc('GetSelectedFiles');
+
+						    var input = document.createElement("textarea");
+
+								$(input).addClass('dc-element-hidden');
+
+								document.body.appendChild(input);
+
+						    input.value = '/files' + files[0].Path;
+						    input.select();
+
+						    document.execCommand("Copy");
+
+						    input.remove();
+							}
+						},
+						{
 							Title: 'Edit',
 							Auth: [ 'Developer' ],
 							Op: function(e) {

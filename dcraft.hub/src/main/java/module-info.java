@@ -2,6 +2,7 @@ module dcraft.hub {
   requires java.net.http;
   requires java.xml;
   requires java.sql;
+  requires java.sql.rowset;
   requires java.desktop;
   requires java.compiler;
   requires java.management;
@@ -26,4 +27,5 @@ module dcraft.hub {
   requires jgit;
   requires jxl;
   requires org.jsoup;
+  requires quercus;
 }

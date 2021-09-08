@@ -385,3 +385,43 @@ dc.comm = {
 		*/
 	}
 }
+
+
+dc.dynamic = {
+	Event: {
+		raise: function(target) {
+			var layer = dc.pui.Loader.currentLayer();
+
+			$(layer.Content).find('*[data-dc-dynamic-target*="' + target + '"]').each(function() {
+				var targetsection = this;
+				var path = $(this).closest('*[data-dc-tag="dc.IncludeDynamic"]').attr('data-dc-path');
+				var params = $(this).attr('data-dc-dynamic-params');
+
+				if (params)
+					params = JSON.parse(params);
+
+				dc.comm.callScript(path, $(this).attr('data-dc-dynamic-action'), params, function(e) {
+						if (e.Code != 0) {
+							// TODO ?
+							return;
+						}
+
+						var newcontent = $(e.Result.Content);
+
+						$(targetsection).replaceWith(newcontent);
+
+						$(newcontent).find('*[data-dc-enhance="true"]').each(function() {
+							var tag = $(this).attr('data-dc-tag');
+
+							if (! tag || ! dc.pui.Tags[tag])
+								return;
+
+							dc.pui.Tags[tag](layer.Current, this);
+						});
+				});
+			});
+		}
+	}
+};
+
+// ------------------- end Dynamic -------------------------------------------------------
