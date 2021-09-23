@@ -264,6 +264,7 @@
 
 			<Tag Name="dcs.ParseXml" Class="dcraft.script.inst.ext.ParseXml" />
 			<Tag Name="dcs.ParseJson" Class="dcraft.script.inst.ext.ParseJson" />
+			<Tag Name="dcs.PHPScript" Class="dcraft.script.inst.php.PHPScript" />
 
 			<Tag Name="dcs.File" Class="dcraft.script.inst.file.File" />
 			<Tag Name="dcs.Stream" Class="dcraft.script.inst.file.Stream" />
