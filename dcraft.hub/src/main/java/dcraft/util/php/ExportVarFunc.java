@@ -16,8 +16,7 @@ public class ExportVarFunc extends AbstractFunction {
     }
 
     @Override
-    public Value call(Env env, Value []args)
-    {
+    public Value call(Env env, Value[] args) {
         if (args.length > 1) {
             Struct var = PhpUtil.valueToStruct(env, args[0]);
 

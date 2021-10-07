@@ -43,6 +43,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -886,6 +888,44 @@ public class PrepWork extends StateWork {
 			}
 			catch (Exception x) {
 				Logger.error("Bad Dynamic Adapater: " + x);
+			}
+		}
+
+		for (XElement adaptor : sconfig.getTagListDeepFirst("Web.DynamicExtAdapter")) {
+			String classname = adaptor.getAttribute("Class");
+			String ext = adaptor.getAttribute("Ext");
+
+			if (StringUtil.isEmpty(classname) || StringUtil.isEmpty(ext))
+				continue;
+
+			IWebWorkBuilder workBuilder = null;
+
+			try {
+				workBuilder = (IWebWorkBuilder) site.getResources().getClassLoader().getInstance(classname);
+
+				site.addDynamicExtAdapater(ext, workBuilder);
+			}
+			catch (Exception x) {
+				Logger.error("Bad Dynamic Adapater: " + x);
+			}
+		}
+
+		List<XElement> specialextensions = sconfig.getTagListDeepFirst("Web.SpecialExtension");
+
+		if (specialextensions.size() > 0) {
+			List<String> exts = new ArrayList<>();
+
+			for (XElement adaptor : specialextensions) {
+				String ext = adaptor.getAttribute("Ext");
+
+				if (StringUtil.isNotEmpty(ext))
+					exts.add(ext);
+			}
+
+			if (exts.size() > 0) {
+				exts.addAll(Arrays.asList(Site.EXTENSIONS_STD));
+
+				site.setSpecialExtensions(exts);
 			}
 		}
 

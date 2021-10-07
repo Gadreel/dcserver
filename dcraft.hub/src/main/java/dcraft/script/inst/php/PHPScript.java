@@ -112,7 +112,7 @@ public class PHPScript extends Instruction {
 						env.setGlobalValue("dc_params", PhpUtil.structToValue(env, params));
 
 					try {
-						env.setGlobalValue("dc_workingpath", StringValue.create(OperationContext.getOrThrow().getTenant().resolvePath("/php").toString()));
+						env.setGlobalValue("dc_workingpath", env.createString(OperationContext.getOrThrow().getTenant().resolvePath("/php").toString()));
 					} catch (OperatingContextException x) {
 						System.out.println("cannot set working path: " + x);
 					}

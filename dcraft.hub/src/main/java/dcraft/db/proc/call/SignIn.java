@@ -52,35 +52,14 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 		// TODO part of Trust monitoring -- boolean suspect = 
 		//if (AddUserRequest.meetsPasswordPolicy(password, true).hasLogLevel(DebugLevel.Warn))
 		//	params.withField("Suspect", true);
-		
-		String origin = OperationContext.getOrThrow().getOrigin();
 
-		int trustcnt = 0;
+		int trustcnt = this.checkTrust(conn);
 
-		try {
-			byte[] recid = conn.nextPeerKey("root", "dcIPTrust", origin, null);
-			
-			while (recid != null) {
-				trustcnt++;
-				
-				if (trustcnt > 19)
-					break;
-				
-				recid = conn.nextPeerKey("root", "dcIPTrust", origin, ByteUtil.extractValue(recid));
-			}
-			
-			if (trustcnt > 19) {
-				Logger.error("Failed IPTrust check.");		// want user to see this so they can report it
-				callback.returnEmpty();
-				return;
-			}
-		}
-		catch (DatabaseException x) {
-			Logger.error("Unable to check IPTrust: " + x);
+		if (trustcnt > 19) {
 			callback.returnEmpty();
 			return;
 		}
-		
+
 		String uid = null;
 		
 		Object userid = db.firstInIndex("dcUser", "dcUsername", uname, false);
@@ -90,15 +69,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 
 		// fail right away if not a valid user
 		if (StringUtil.isEmpty(uid)) {
-			Logger.errorTr(123);
-			
-			try {
-				conn.set("root", "dcIPTrust", origin, ZonedDateTime.now(), 1);
-			} 
-			catch (DatabaseException x) {
-				Logger.error("Unable to set IPTrust: " + x);
-			}
-			
+			this.recordTrustIssue(conn, 1);
 			callback.returnEmpty();
 			return;
 		}
@@ -231,16 +202,53 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 			}
 		}
 
-		Logger.errorTr(123);
-		
+		this.recordTrustIssue(conn, 1);
+
+		callback.returnEmpty();
+	}
+
+	public int checkTrust(DatabaseAdapter conn) throws OperatingContextException {
+		String origin = OperationContext.getOrThrow().getOrigin();
+
+		int trustcnt = 0;
+
 		try {
-			conn.set("root", "dcIPTrust", origin, ZonedDateTime.now(), 1);
-		} 
+			byte[] recid = conn.nextPeerKey("root", "dcIPTrust", origin, null);
+
+			while (recid != null) {
+				trustcnt++;
+
+				if (trustcnt > 19)
+					break;
+
+				recid = conn.nextPeerKey("root", "dcIPTrust", origin, ByteUtil.extractValue(recid));
+			}
+
+			if (trustcnt > 19) {
+				Logger.error("Failed IPTrust check.");		// want user to see this so they can report it
+				return trustcnt;
+			}
+		}
+		catch (DatabaseException x) {
+			Logger.error("Unable to check IPTrust: " + x);
+			return 100; // fail for sure
+		}
+
+		return trustcnt;
+	}
+
+	public void recordTrustIssue(DatabaseAdapter conn, int level) throws OperatingContextException {
+		String origin = OperationContext.getOrThrow().getOrigin();
+
+		Logger.errorTr(123);
+
+		try {
+			conn.set("root", "dcIPTrust", origin, ZonedDateTime.now(), level);
+		}
 		catch (DatabaseException x) {
 			Logger.error("Unable to set IPTrust: " + x);
 		}
-		
-		callback.returnEmpty();
+
 	}
 	
 	public void signIn(ICallContext task, TablesAdapter db, String uid) throws OperatingContextException {
@@ -249,7 +257,7 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 		OperationContext ctx = OperationContext.getOrThrow();
 		UserContext uc = ctx.getUserContext();
 		
-		String token = SignIn.signIn(task,db, uid, ! task.isReplicating());
+		String token = SignIn.signIn(task, db, uid, ! task.isReplicating());
 		
 		if (token == null) {
 			task.getOutcome().returnEmpty();

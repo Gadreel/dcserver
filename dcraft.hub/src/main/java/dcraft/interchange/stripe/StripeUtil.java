@@ -23,14 +23,33 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 public class StripeUtil {
-	/* example
+	/*
+
+	test cards
+	https://stripe.com/docs/testing
+
+	example
 
 	{
 	"error": {
-	"message": "It looks like you're making a cross-origin request from a web page or browser extension. You'll need to use Bearer authentication instead of basic authentication (which we're deprecating). Basically, you need to set the header 'Authorization' to 'Bearer <API_KEY>'. If you're having trouble with this, email support@stripe.com",
-	"type": "invalid_request_error"
+		"message": "It looks like you're making a cross-origin request from a web page or browser extension. You'll need to use Bearer authentication instead of basic authentication (which we're deprecating). Basically, you need to set the header 'Authorization' to 'Bearer <API_KEY>'. If you're having trouble with this, email support@stripe.com",
+		"type": "invalid_request_error"
+	  }
 	}
+
+	or
+
+	{
+	  "error": {
+		"charge": "ch_nnnnnnnnnnnnn",
+		"code": "card_declined",
+		"decline_code": "insufficient_funds",
+		"doc_url": "https://stripe.com/docs/error-codes/card-declined",
+		"message": "Your card has insufficient funds.",
+		"type": "card_error"
+	  }
 	}
+
 
 	or
 
@@ -154,7 +173,10 @@ public class StripeUtil {
 								///System.out.println("Stripe Resp: \n" + resp.toPrettyString());
 
 								if (resp.hasField("error")) {
-									Logger.error("Unable to confirm payment token: " + resp.selectAsString("error.message"));
+									Logger.error("Unable to confirm payment token: "
+											+ resp.selectAsString("error.code")
+											+ " - "
+											+ resp.selectAsString("error.message"));
 
 									callback.returnValue(
 											new RecordStruct()

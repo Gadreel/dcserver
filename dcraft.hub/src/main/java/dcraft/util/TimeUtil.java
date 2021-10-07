@@ -332,7 +332,18 @@ public class TimeUtil {
 		
 		return TimeUtil.fmtDateLong(at.toLocalDateTime().atZone(zone) , locale);
 	}
-	
+
+	static public String fmtDateLongCtx(ZonedDateTime at) throws OperatingContextException {
+		if (at == null)
+			return null;
+
+		OperationContext ctx = OperationContext.getOrThrow();
+
+		ZoneId zone = ZoneId.of(ctx.getChronology());
+
+		return TimeUtil.fmtDateLong(at.toLocalDateTime().atZone(zone) , ctx.getLocale());
+	}
+
 	/**
 	 * Format date in Long format
 	 * 

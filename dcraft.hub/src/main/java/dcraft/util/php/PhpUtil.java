@@ -42,7 +42,7 @@ public class PhpUtil {
         if (source instanceof StringStruct) {
             StringStruct in = (StringStruct) source;
 
-            return StringValue.create(in.getValue());
+            return env.createString(in.getValueAsString());
         }
 
         if (source instanceof DecimalStruct) {
@@ -82,6 +82,7 @@ public class PhpUtil {
             ArrayValue s = (ArrayValue) source;
 
             // TODO detect if this is a list or a keyed array (hash)
+            // (not finding an easy solution)
 
             for (Value v : s.values()) {
                 result.with(PhpUtil.valueToStruct(env, v));

@@ -37,47 +37,10 @@ public class VerifySession extends LoadRecord {
 				}
 				else {					
 					conn.set("root", "dcSession", token, "LastAccess", request.getStamp());
-					
-					// load the local user context
-					Object username = db.getScalar("dcUser", uid, "dcUsername");
-					Object firstname = db.getScalar("dcUser", uid, "dcFirstName");
-					Object lastname = db.getScalar("dcUser", uid, "dcLastName");
-					Object email = db.getScalar("dcUser", uid, "dcEmail");
-					
-					// always have User if signed in
-					ListStruct badges = ListStruct.list("User");
-					
-					for (String sid : db.getListKeys("dcUser", uid, "dcBadges"))
-						badges.with(db.getList("dcUser", uid, "dcBadges", sid));
-					
-					ListStruct locales = ListStruct.list();
-					
-					for (String sid : db.getListKeys("dcUser", uid, "dcLocale"))
-						locales.with(db.getList("dcUser", uid, "dcLocale", sid));
-					
-					ListStruct chronos = ListStruct.list();
-					
-					for (String sid : db.getListKeys("dcUser", uid, "dcChronology"))
-						chronos.with(db.getList("dcUser", uid, "dcChronology", sid));
-					
-					uc
-							.withUserId(uid)
-							.withUsername(username.toString())
-							.withFirstName(firstname != null ? firstname.toString() : null)
-							.withLastName(lastname != null ? lastname.toString() : null)
-							.withEmail(email != null ? email.toString() : null)
-							.withLocale(locales)
-							.withChronology(chronos)
-							.withBadges(badges)
-							.withAuthToken(token);
-					
-					Session sess = ctx.getSession();
-					
-					if (sess != null)
-						sess.userChanged();
-					
+
+					SignIn.updateContext(db, uid);
+
 					callback.returnEmpty();
-					
 					return;
 				}
 			}

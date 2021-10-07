@@ -77,6 +77,7 @@ public class Site extends Base {
 	protected String webversion = "7001010000";		// YYMMDDhhmm
 	
 	protected Map<String, IWebWorkBuilder> dynadapaters = new HashMap<>();
+	protected Map<String, IWebWorkBuilder> dynextadapaters = new HashMap<>();
 
 	public HtmlMode getHtmlMode() {
 		return this.htmlmode;
@@ -114,6 +115,14 @@ public class Site extends Base {
 	
 	public void addDynamicAdapater(String name, IWebWorkBuilder builder) {
 		this.dynadapaters.put(name, builder);
+	}
+
+	public void addDynamicExtAdapater(String ext, IWebWorkBuilder builder) {
+		this.dynextadapaters.put(ext, builder);
+	}
+
+	public void setSpecialExtensions(List<String> v) {
+		this.specialExtensions = v.toArray(new String[v.size()]);
 	}
 
 	public void setNotFoundPath(CommonPath v) {
@@ -747,6 +756,7 @@ public class Site extends Base {
 
 		String filename = wpath.file.getFileName().toString();
 		CommonPath path = wpath.path;
+		String ext = filename.substring(filename.lastIndexOf('.'));
 
 		HtmlMode hmode = this.getHtmlMode();
 
@@ -754,6 +764,9 @@ public class Site extends Base {
 		// only developers and sysadmins should make changes that can run server scripts
 		if ((path.getNameCount() > 1) && ("galleries".equals(path.getName(0)) || "files".equals(path.getName(0)))) {
 			ioa = new StaticOutputAdapter();
+		}
+		else if (this.dynextadapaters.containsKey(ext)) {
+			ioa = this.dynextadapaters.get(ext).buildOutputAdapter(this, null, path, view);
 		}
 		else if (filename.endsWith(".html")) {
 			if (hmode == HtmlMode.Ssi)
