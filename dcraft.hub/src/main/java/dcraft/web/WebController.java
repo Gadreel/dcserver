@@ -142,9 +142,24 @@ public class WebController extends OperationController {
 		RecordStruct headers = RecordStruct.record();
 		
 		for (Map.Entry<String,String> entry : req.headers().entries()) {
+			String name = entry.getKey();
+			String pname = "";
+			boolean cflag = false;
+
+			for (int i = 0; i < name.length(); i++) {
+				char c = name.charAt(i);
+
+				if ((i == 0) || cflag)
+					pname += Character.toUpperCase(c);
+				else
+					pname += c;
+
+				cflag = (c == '-');
+			}
+
 			// TODO decode?
-			
-			headers.with(entry.getKey(), entry.getValue());
+
+			headers.with(pname, entry.getValue());
 		}
 		
 		ret.with("Headers", headers);
@@ -207,8 +222,8 @@ public class WebController extends OperationController {
 		ret
 				.with("Path", path)
 				.with("OriginalPath", path)
-				.with("ContentType", new ContentTypeParser(headers.getFieldAsString("Content-Type")))
-				.with("ContentLength", headers.getFieldAsString("Content-Length"));
+				.with("ContentType", new ContentTypeParser(headers.getFieldAsString("content-type", headers.getFieldAsString("Content-Type"))))
+				.with("ContentLength", headers.getFieldAsString("content-length", headers.getFieldAsString("Content-Length")));
 		
 		if (Logger.isDebug()) {
 			Logger.debug("Request Path " + ret.getFieldAsString("Path"));

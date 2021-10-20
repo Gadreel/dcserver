@@ -140,4 +140,8 @@ public class OperationMarker implements AutoCloseable {
 	public boolean hasLogLevel(DebugLevel lvl) throws OperatingContextException {
 		return this.getOperationContext().getController().hasLevel(this.msgStart, this.msgEnd, lvl);
 	}
+
+	public boolean hasBoundary(String tag) throws OperatingContextException {
+		return this.getOperationContext().getController().hasBoundary(tag, this.msgStart, this.msgEnd);
+	}
 }

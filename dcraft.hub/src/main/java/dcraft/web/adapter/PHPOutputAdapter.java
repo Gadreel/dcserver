@@ -1,7 +1,9 @@
 package dcraft.web.adapter;
 
 import com.caucho.quercus.env.Env;
+import com.caucho.quercus.env.NullValue;
 import com.caucho.quercus.env.StringValue;
+import com.caucho.quercus.env.Value;
 import com.caucho.vfs.ReadStream;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.mem.MemoryStoreFile;
@@ -22,6 +24,8 @@ import dcraft.web.HttpDestStream;
 import dcraft.web.IOutputWork;
 import dcraft.web.Response;
 import dcraft.web.WebController;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import org.apache.commons.codec.Charsets;
 import org.apache.commons.codec.binary.StringUtils;
 import z.tws.php.QuercusUtil;
@@ -60,11 +64,7 @@ public class PHPOutputAdapter extends ChainWork implements IOutputWork {
 
 		resp.setDateHeader("Date", System.currentTimeMillis());
 		resp.setHeader("X-UA-Compatible", "IE=Edge,chrome=1");
-		resp.setHeader("Content-Encoding", "gzip");
 		resp.setHeader("Cache-Control", "no-cache");
-		resp.setHeader("Content-Type", "text/html; charset=utf-8");
-
-		wctrl.sendStart(0);
 
 		String output = "error";
 
@@ -76,6 +76,16 @@ public class PHPOutputAdapter extends ChainWork implements IOutputWork {
 					env.setGlobalValue("dc_post_raw", env.createString(postdata));
 					env.setGlobalValue("dc_test_unicode", env.createString("a 🦝 z"));
 					env.setGlobalValue("dc_workingpath", env.createString(taskctx.getTenant().resolvePath("/www").toString()));
+				}
+			}, new Consumer<Env>() {
+				@Override
+				public void accept(Env env) {
+					Value location = env.getGlobalValue("dc_location");
+
+					if ((location != null) && ! (location instanceof NullValue))
+						resp.setHeader("Location", location.toString());
+
+					//System.out.println("location: " + env.getGlobalValue("dc_location"));
 				}
 			});
 
@@ -91,6 +101,19 @@ public class PHPOutputAdapter extends ChainWork implements IOutputWork {
 					.with("Message", x.toString())
 					.toString();
 		}
+
+		if (resp.getFieldAsRecord("Headers").isNotFieldEmpty("Location")) {
+			resp.setStatus(HttpResponseStatus.FOUND);
+			wctrl.send();
+			return;
+		}
+
+		// not a redirect
+
+		resp.setHeader("Content-Encoding", "gzip");
+		resp.setHeader("Content-Type", "text/html; charset=utf-8");
+
+		wctrl.sendStart(0);
 
 		// it seems that memory store file call to "with" string results in an UTF-8 encoding that leaves out some unicode characters - this is not desirable...
 		// temp solution is to make the memory ourselves

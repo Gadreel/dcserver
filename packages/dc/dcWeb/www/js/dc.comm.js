@@ -44,12 +44,7 @@ dc.comm = {
 		if (params)
 			msg.Body = params;
 
-		// make sure current session is not stale
-		dc.comm.sendMessage({
-			Service: 'dcCoreServices',
-			Feature: 'Authentication',
-			Op: 'Verify'
-		}, function() {
+		var scriptfunc = function() {
 			var xhr = new XMLHttpRequest();
 			xhr.open('POST', path + '?nocache=' + dc.util.Crypto.makeSimpleKey(), true);
 
@@ -93,7 +88,20 @@ dc.comm = {
 			}, false);
 
 			xhr.send(JSON.stringify(msg));
-		});
+		};
+
+		// don't verify guests
+		if (! dc.user.isVerified()) {
+			scriptfunc();
+			return;
+		}
+
+		// make sure current session is not stale
+		dc.comm.sendMessage({
+			Service: 'dcCoreServices',
+			Feature: 'Authentication',
+			Op: 'Verify'
+		}, scriptfunc);
 	},
 
 	call: function(service, params, callbackfunc, timeout) {

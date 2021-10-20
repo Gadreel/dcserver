@@ -100,12 +100,12 @@ public class BasicFileCrypto
             // find the secret key
             //
 			@SuppressWarnings("unchecked")
-			Iterator<PGPPublicKeyEncryptedData> it = enc.getEncryptedDataObjects();
+			Iterator<PGPEncryptedData> it = enc.getEncryptedDataObjects();
             PGPPrivateKey               sKey = null;
             PGPPublicKeyEncryptedData   pbe = null;
             
             while (sKey == null && it.hasNext()) {
-                pbe = it.next();
+                pbe = (PGPPublicKeyEncryptedData) it.next();
                 sKey = rings.findSecretKey(pbe.getKeyID(), passwd.toCharArray());
             }
             

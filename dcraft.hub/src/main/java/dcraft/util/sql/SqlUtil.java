@@ -5,8 +5,11 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.log.Logger;
+import dcraft.struct.CompositeStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
+import dcraft.struct.ScalarStruct;
+import dcraft.struct.scalar.StringStruct;
 import dcraft.util.TimeUtil;
 
 import java.math.BigDecimal;
@@ -16,7 +19,6 @@ import java.time.temporal.TemporalAccessor;
 public class SqlUtil {
 
     // return a list of records where each row is a record in this collection
-    // -- NOTE: column names are all lower case
     static public FuncResult<ListStruct> executeQueryFreestyle(Connection conn, String sql, Object... params) throws OperatingContextException {
         FuncResult<ListStruct> res = new FuncResult<>();
         ListStruct list = ListStruct.list();
@@ -50,8 +52,11 @@ public class SqlUtil {
                     while (rs.next()) {
                         RecordStruct rec = RecordStruct.record();
 
-                        for(int i=1; i<=columns; i++)
-                            rec.with(md.getColumnLabel(i).toLowerCase(), rs.getObject(i));
+                        for(int i=1; i<=columns; i++) {
+                            //System.out.println("columnlabel: " + md.getColumnLabel(i));
+
+                            rec.with(md.getColumnLabel(i), rs.getObject(i));
+                        }
 
                         list.with(rec);
                     }
@@ -84,6 +89,12 @@ public class SqlUtil {
             for (int i = 0; i < params.length; i++) {
                 Object param = params[i];
 
+                if (param instanceof ScalarStruct)
+                    param = ((ScalarStruct) param).getGenericValue();
+
+                if (param instanceof CompositeStruct)
+                    param = ((CompositeStruct) param).toString();
+
                 // null params are intentionally not supported - allows us to optionally add params to a complex query
                 // for NULL support see SqlNull enum
                 if (param == null)
@@ -92,8 +103,8 @@ public class SqlUtil {
                 if (param instanceof TemporalAccessor)
                     param = TimeUtil.sqlStampFmt.format((TemporalAccessor) param);
 
-                if (param instanceof String) {
-                    pstmt.setString(i + 1, (String)param);
+                if (param instanceof CharSequence) {
+                    pstmt.setString(i + 1, ((CharSequence)param).toString());
                     continue;
                 }
 

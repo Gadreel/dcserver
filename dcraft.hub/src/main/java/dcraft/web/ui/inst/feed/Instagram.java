@@ -78,6 +78,8 @@ public class Instagram extends Base implements ICMSAware, IReviewAware {
 		String altcache = StackUtil.stringFromSource(state,"AltSettings", "default");
 		ListStruct data = null;
 
+		System.out.println("ig render 1");
+
 		this.canonicalize();
 
 		long maximgs = StackUtil.intFromSource(state,"Max", 24);
@@ -86,11 +88,15 @@ public class Instagram extends Base implements ICMSAware, IReviewAware {
 
 		this.clearChildren();
 
+		System.out.println("ig render 2");
+
 		try {
 			OperationContext ctx = OperationContext.getOrThrow();
 			BasicRequestContext requestContext = BasicRequestContext.ofDefaultDatabase();
 
 			ZonedDateTime lastrefresh = Struct.objectToDateTime(requestContext.getInterface().get(ctx.getTenant().getAlias(), "dcmInstagramWidget", altcache, "Stamp"));
+
+			System.out.println("ig last: " + lastrefresh);
 
 			// if less than 15 minutes since last product sku cache, skip reload
 			if ((lastrefresh != null) && lastrefresh.isAfter(TimeUtil.now().minusMinutes(60))) {
@@ -170,6 +176,9 @@ public class Instagram extends Base implements ICMSAware, IReviewAware {
 			for (int i = 0; (i < data.size()) && (i < maximgs); i++) {
 				RecordStruct entry = data.getItemAsRecord(i);
 
+				if (entry == null)
+					continue;
+
 				// setup image for expand
 				StackUtil.addVariable(state, "entry-" + i, entry);
 
@@ -181,11 +190,16 @@ public class Instagram extends Base implements ICMSAware, IReviewAware {
 				this.with(setvar);
 
 				// add nodes using the new variable
-				XElement tentry = template.deepCopy();
+				if (template != null) {
+					XElement tentry = template.deepCopy();
 
-				for (XNode node : tentry.getChildren())
-					this.with(node);
+					for (XNode node : tentry.getChildren())
+						this.with(node);
+				}
 			}
+		}
+		catch (NullPointerException x) {
+			Logger.error("Unable to read Instagram feed data, special: " + x);
 		}
 		catch (Exception x) {
 			Logger.error("Unable to read Instagram feed data: " + x);

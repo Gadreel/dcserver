@@ -79,7 +79,7 @@ public class ImgCache extends Base {
 			return;
 		}
 
-		String path = StackUtil.stringFromSource(state, "Path");
+		String path = StackUtil.stringFromSourceClean(state, "Path");
 
 		if (StringUtil.isEmpty(path))
 			return;

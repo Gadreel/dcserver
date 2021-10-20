@@ -116,6 +116,8 @@ public class PHPScript extends Instruction {
 					} catch (OperatingContextException x) {
 						System.out.println("cannot set working path: " + x);
 					}
+
+					PHPScript.this.addContext(state, env);
 				}
 			});
 
@@ -147,5 +149,9 @@ public class PHPScript extends Instruction {
 		}
 
 		return ReturnOption.CONTINUE;
+	}
+
+	protected void addContext(InstructionWork state, Env env) {
+		// for overrides
 	}
 }

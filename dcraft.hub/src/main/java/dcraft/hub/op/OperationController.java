@@ -1,5 +1,7 @@
 package dcraft.hub.op;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -10,6 +12,7 @@ import dcraft.script.StackUtil;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.StringStruct;
 import dcraft.util.StringUtil;
 
 /*
@@ -227,6 +230,40 @@ public class OperationController extends RecordStruct implements IVariableProvid
 				return true;
 		}
 		
+		return false;
+	}
+
+	public boolean hasBoundary(String tag, int msgStart, int msgEnd) {
+		ListStruct messages = this.getFieldAsList("Messages");
+
+		if (msgEnd == -1)
+			msgEnd = messages.size();
+
+		if (msgStart < 0)
+			msgStart = 0;
+
+		if (msgEnd < 0)
+			msgEnd = 0;
+
+		if (msgEnd > messages.size())
+			msgEnd = messages.size();
+
+		if (msgStart > msgEnd)
+			msgStart = msgEnd;
+
+		StringStruct stag = StringStruct.of(tag);
+
+		for (int i = msgStart; i < msgEnd; i++) {
+			RecordStruct msg =  messages.getItemAsRecord(i);
+
+			if (msg.isNotFieldEmpty("Tags")) {
+				ListStruct mtags = msg.getFieldAsList("Tags");
+
+				if (mtags.contains(stag))
+					return true;
+			}
+		}
+
 		return false;
 	}
 

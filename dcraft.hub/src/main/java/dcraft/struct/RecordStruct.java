@@ -240,7 +240,38 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 		this.with(new FieldStruct(name, value));
 		return this;
 	}
-	
+
+	/**
+	 * Add or replace a specific field with a value, only if value is not NULL.
+	 *
+	 * @param name of field
+	 * @param value to store with field
+	 * @return self
+	 */
+	public RecordStruct withConditional(String name, Object value) {
+		if ((value != null) && ! (value instanceof NullStruct))
+			this.with(new FieldStruct(name, value));
+
+		return this;
+	}
+
+	/**
+	 * Add or replace a specific field with a value, only if value is not NULL.
+	 *
+	 * @param name of field
+	 * @param value to store with field
+	 * @param defaultvalue to store with field is value is null
+	 * @return self
+	 */
+	public RecordStruct withDefault(String name, Object value, Object defaultvalue) {
+		if ((value != null) && ! (value instanceof NullStruct))
+			this.with(new FieldStruct(name, value));
+		else
+			this.with(new FieldStruct(name, defaultvalue));
+
+		return this;
+	}
+
 	/**
 	 * 
 	 * @return collection of all the fields this record holds

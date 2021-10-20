@@ -19,8 +19,21 @@ public class HasBadge extends AbstractFunction {
             for (int i = 0; i < args.length; i++) {
                 String badge = args[i].toString();
 
-                if (StringUtil.isNotEmpty(badge) && user.isTagged(badge)) {
-                    return BooleanValue.TRUE;
+                if (StringUtil.isNotEmpty(badge)) {
+                    if (user.isTagged(badge))
+                        return BooleanValue.TRUE;
+
+                    if (badge.contains(",")) {
+                        String[] blist = badge.split(",");
+
+                        for (int i2 = 0; i2 < blist.length; i2++) {
+                            String b = blist[i2];
+
+                            if (StringUtil.isNotEmpty(b) && user.isTagged(b)) {
+                                return BooleanValue.TRUE;
+                            }
+                        }
+                    }
                 }
             }
         }
