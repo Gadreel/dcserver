@@ -18,6 +18,7 @@ import dcraft.schema.SchemaResource;
 import dcraft.service.IService;
 import dcraft.service.ServiceHub;
 import dcraft.service.ServiceResource;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -120,7 +121,7 @@ public class PrepWork extends StateWork {
 				.toServiceRequest()
 				.withOutcome(new OperationOutcomeStruct() {
 					@Override
-					public void callback(Struct result) throws OperatingContextException {
+					public void callback(BaseStruct result) throws OperatingContextException {
 						if (! this.hasErrors()) {
 							RecordStruct rec = Struct.objectToRecord(result);
 							
@@ -410,7 +411,9 @@ public class PrepWork extends StateWork {
 		for (XElement lel : config.getTagListLocal("Formatters/Definition")) {
 			resources.getOrCreateTierScripts().loadFormatter(lel);
 		}
-		
+
+		loadVariables(this.tenant, config);
+
 		return StateWorkStep.NEXT;
 	}
 
@@ -626,28 +629,7 @@ public class PrepWork extends StateWork {
 				// sites are not allowed their own schema, not even from a package
 				//this.getSchema(site.getResourcesOrCreate(resources));
 
-				for (XElement lel : sconfig.getTagListLocal("Variables/Var")) {
-					String lname = lel.getAttribute("Name");
-
-					if (StringUtil.isEmpty(lname))
-						continue;
-
-					if (lel.hasNotEmptyAttribute("Value")) {
-						site.addVariable(lname, StringStruct.of(lel.getAttribute("Value")));
-					}
-					else {
-						ListStruct varlist = ListStruct.list();
-
-						for (XElement item : lel.selectAll("Item")) {
-							if (item.hasNotEmptyAttribute("Value")) {
-								varlist.with(StringStruct.of(item.getAttribute("Value")));
-							}
-						}
-
-						if (! varlist.isEmpty())
-							site.addVariable(lname, varlist);
-					}
-				}
+				loadVariables(site, sconfig);
 
 				if (site.queryVariable("SiteCopyright") == null)
 					site.addVariable("SiteCopyright", StringStruct.of(ZonedDateTime.now().getYear() + ""));
@@ -692,7 +674,32 @@ public class PrepWork extends StateWork {
 
 		return StateWorkStep.NEXT;
 	}
-	
+
+	protected void loadVariables(Base site, ConfigResource config) throws OperatingContextException {
+		for (XElement lel : config.getTagListLocal("Variables/Var")) {
+			String lname = lel.getAttribute("Name");
+
+			if (StringUtil.isEmpty(lname))
+				continue;
+
+			if (lel.hasNotEmptyAttribute("Value")) {
+				site.addVariable(lname, StringStruct.of(lel.getAttribute("Value")));
+			}
+			else {
+				ListStruct varlist = ListStruct.list();
+
+				for (XElement item : lel.selectAll("Item")) {
+					if (item.hasNotEmptyAttribute("Value")) {
+						varlist.with(StringStruct.of(item.getAttribute("Value")));
+					}
+				}
+
+				if (! varlist.isEmpty())
+					site.addVariable(lname, varlist);
+			}
+		}
+	}
+
 	/* doesn't work because tenants are not loaded yet
 	public StateWorkStep loadSchedule(TaskContext trun) throws OperatingContextException {
 		Task stask = Task.ofContext(OperationContext.context(UserContext.rootUser(this.tenant.getAlias(),"root"), trun.getController()))

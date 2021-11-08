@@ -23,6 +23,7 @@ import dcraft.script.inst.Instruction;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
@@ -53,7 +54,7 @@ public class ConfigGetTagListLocal extends Instruction {
 				String result = StackUtil.stringFromSource(stack, "Result");
 				
 				if (StringUtil.isNotEmpty(result)) {
-					Struct var = ListStruct.list(settings);
+					BaseStruct var = ListStruct.list(settings);
 					
 					StackUtil.addVariable(stack, result, var);
 				}

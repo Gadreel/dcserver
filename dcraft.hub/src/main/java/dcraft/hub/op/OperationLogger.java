@@ -29,6 +29,7 @@ import java.time.format.DateTimeFormatter;
 import dcraft.log.DebugLevel;
 import dcraft.log.HubLog;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -73,7 +74,7 @@ public class OperationLogger extends OperationObserver implements IOperationLogg
 	public String logToString() {
 		StringBuilder32 sb = new StringBuilder32();
 		
-		for (Struct s : this.entries.items()) {
+		for (BaseStruct s : this.entries.items()) {
 			String line = this.formatLogEntry((RecordStruct)s);
 			
 			if (StringUtil.isNotEmpty(line))
@@ -84,7 +85,7 @@ public class OperationLogger extends OperationObserver implements IOperationLogg
 	}
 	
 	public String formatMessage(String msg) {
-		for (Struct s : this.replaces.items()) { 
+		for (BaseStruct s : this.replaces.items()) {
 			RecordStruct re = (RecordStruct) s;
 			
 			msg = msg.replace(re.getFieldAsString("Old"), re.getFieldAsString("New"));

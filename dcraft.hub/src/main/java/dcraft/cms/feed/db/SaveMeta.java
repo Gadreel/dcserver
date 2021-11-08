@@ -12,6 +12,7 @@ import dcraft.filevault.VaultUtil;
 import dcraft.hub.op.*;
 import dcraft.log.Logger;
 import dcraft.script.ScriptHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.xml.XElement;
@@ -67,7 +68,7 @@ public class SaveMeta implements IStoredProc {
 
 					VaultUtil.transfer(feedsvault.getName(), msource, fileStoreFile.getPathAsCommon(), null, new OperationOutcomeStruct() {
 						@Override
-						public void callback(Struct result) throws OperatingContextException {
+						public void callback(BaseStruct result) throws OperatingContextException {
 							callback.returnEmpty();
 						}
 					});

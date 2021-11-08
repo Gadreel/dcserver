@@ -15,6 +15,7 @@ import dcraft.log.Logger;
 import dcraft.script.ScriptHub;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.AnyStruct;
@@ -48,7 +49,7 @@ public class IncludeFeed extends Base {
 			String name = StackUtil.stringFromElement(state, pel, "Name");
 			
 			if (StringUtil.isNotEmpty(name)) {
-				Struct val = StackUtil.refFromElement(state, pel, "Value");
+				BaseStruct val = StackUtil.refFromElement(state, pel, "Value");
 				
 				if (val != null) {
 					StackUtil.addVariable(state, name, val);

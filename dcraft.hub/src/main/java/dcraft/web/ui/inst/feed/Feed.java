@@ -15,6 +15,7 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.service.ServiceHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -77,7 +78,7 @@ public class Feed extends Base {
 
 			ServiceHub.call(request, new OperationOutcomeStruct() {
 				@Override
-				public void callback(Struct result) throws OperatingContextException {
+				public void callback(BaseStruct result) throws OperatingContextException {
 					Feed.this.entries = (ListStruct)result;
 
 					for (int r = 0; r < entries.getSize(); r++) {

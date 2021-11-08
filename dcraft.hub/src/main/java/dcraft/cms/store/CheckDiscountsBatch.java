@@ -6,6 +6,7 @@ import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
 import dcraft.service.ServiceRequest;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.task.ChainWork;
 import dcraft.task.IWork;
@@ -23,7 +24,7 @@ public class CheckDiscountsBatch extends ChainWork {
 					public void run(TaskContext taskctx) throws OperatingContextException {
 						ServiceHub.call(ServiceRequest.of("dcmStoreServices.Discounts.ScheduleAll").withOutcome(new OperationOutcomeStruct() {
 							@Override
-							public void callback(Struct result) throws OperatingContextException {
+							public void callback(BaseStruct result) throws OperatingContextException {
 								taskctx.returnEmpty();
 							}
 						}));

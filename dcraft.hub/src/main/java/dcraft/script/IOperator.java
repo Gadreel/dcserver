@@ -17,10 +17,11 @@
 package dcraft.script;
 
 import dcraft.hub.op.OperatingContextException;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 
 public interface IOperator {
-	void operation(IParentAwareWork stack, XElement code, Struct dest) throws OperatingContextException;
+	void operation(IParentAwareWork stack, XElement code, BaseStruct dest) throws OperatingContextException;
 }

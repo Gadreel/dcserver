@@ -21,6 +21,7 @@ import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
 import dcraft.script.ScriptHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -394,7 +395,7 @@ public class FeedUtilDb {
 		
 		FeedUtilDb.discardHistory(db.getRequest().getInterface(), db, ochan.getName(1), opath.subpath(2).toString(), null, new OperationOutcomeStruct() {
 			@Override
-			public void callback(Struct result) throws OperatingContextException {
+			public void callback(BaseStruct result) throws OperatingContextException {
 				// NA
 			}
 		});
@@ -471,7 +472,7 @@ public class FeedUtilDb {
 		if (commands != null) {
 			ZonedDateTime stamp = TimeUtil.now().minusSeconds(1);
 			
-			for (Struct cstruct : commands.items()) {
+			for (BaseStruct cstruct : commands.items()) {
 				db.setList("dcmFeedHistory", hid, "dcmModifications", TimeUtil.stampFmt.format(stamp), cstruct);
 				
 				// forward 1 ms
@@ -569,7 +570,7 @@ public class FeedUtilDb {
 					
 					VaultUtil.transfer("Feeds", msource, fileStoreFile.getPathAsCommon(), null, new OperationOutcomeStruct() {
 						@Override
-						public void callback(Struct result) throws OperatingContextException {
+						public void callback(BaseStruct result) throws OperatingContextException {
 							if (! this.hasErrors()) {
 								db.setScalar("dcmFeedHistory", hid, "dcmCompleted", true);
 								db.setScalar("dcmFeedHistory", hid, "dcmCompletedAt", TimeUtil.now());

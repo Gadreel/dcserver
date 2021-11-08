@@ -14,6 +14,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -53,7 +54,7 @@ public class Scan implements ICollector {
 		
 		filter = Unique.unique().withNested(CurrentRecord.current().withNested(filter));
 
-		for (Struct frs : forlist.items()) {
+		for (BaseStruct frs : forlist.items()) {
 			RecordStruct frec = Struct.objectToRecord(frs);
 			
 			String alias = frec.getFieldAsString("Channel");

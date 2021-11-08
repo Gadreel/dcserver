@@ -35,10 +35,7 @@ import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
 import dcraft.service.ServiceRequest;
-import dcraft.struct.CompositeStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.tenant.Site;
 import dcraft.util.StringUtil;
 
@@ -84,7 +81,7 @@ public class Products {
 			ServiceHub.call(req.toServiceRequest()
 				.withOutcome(new OperationOutcomeStruct() {
 					@Override
-					public void callback(Struct result) throws OperatingContextException {
+					public void callback(BaseStruct result) throws OperatingContextException {
 						if (result == null) {
 							Logger.error("Unable to load category record");
 							callback.returnEmpty();
@@ -108,7 +105,7 @@ public class Products {
 								.toServiceRequest()
 								.withOutcome(new OperationOutcomeStruct() {
 									@Override
-									public void callback(Struct result2) throws OperatingContextException {
+									public void callback(BaseStruct result2) throws OperatingContextException {
 										if (result2 == null) {
 											Logger.error("Unable to load category record");
 											callback.returnEmpty();
@@ -160,7 +157,7 @@ public class Products {
 					.toServiceRequest()
 					.withOutcome(new OperationOutcomeStruct() {
 						@Override
-						public void callback(Struct result) throws OperatingContextException {
+						public void callback(BaseStruct result) throws OperatingContextException {
 							if (! this.hasErrors()) {
 								Site site = OperationContext.getOrThrow().getSite();
 
@@ -261,7 +258,7 @@ public class Products {
 		if ("Lookup".equals(op)) {
 			OperationOutcomeStruct finaloutcome = new OperationOutcomeStruct() {
 				@Override
-				public void callback(Struct result) throws OperatingContextException {
+				public void callback(BaseStruct result) throws OperatingContextException {
 					if (this.isNotEmptyResult()) {
 						RecordStruct rec = Struct.objectToRecord(result);
 
@@ -352,7 +349,7 @@ public class Products {
 								.toServiceRequest()
 								.withOutcome(new OperationOutcomeStruct() {
 									@Override
-									public void callback(Struct result) throws OperatingContextException {
+									public void callback(BaseStruct result) throws OperatingContextException {
 										if (this.isNotEmptyResult()) {
 											// return the first item
 											finaloutcome.returnValue(Struct.objectToList(result).getItem(0));
@@ -385,7 +382,7 @@ public class Products {
 				.toServiceRequest()
 				.withOutcome(new OperationOutcomeStruct() {
 					@Override
-					public void callback(Struct result) throws OperatingContextException {
+					public void callback(BaseStruct result) throws OperatingContextException {
 						if (result == null) {
 							Logger.error("Unable to load category record");
 							callback.returnEmpty();
@@ -412,7 +409,7 @@ public class Products {
 									.toServiceRequest()
 									.withOutcome(new OperationOutcomeStruct() {
 										@Override
-										public void callback(Struct result2) throws OperatingContextException {
+										public void callback(BaseStruct result2) throws OperatingContextException {
 											if (result2 == null) {
 												Logger.error("Unable to load product list");
 												callback.returnEmpty();

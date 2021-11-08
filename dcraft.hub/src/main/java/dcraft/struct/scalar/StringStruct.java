@@ -113,7 +113,7 @@ public class StringStruct extends ScalarStruct {
 	}
 	
 	@Override
-	public Struct select(PathPart... path) {
+	public BaseStruct select(PathPart... path) {
 		if (path.length == 1) {
 			PathPart part = path[0];
 			
@@ -140,7 +140,7 @@ public class StringStruct extends ScalarStruct {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Set".equals(code.getName())) {
-			Struct sref = code.hasAttribute("Value")
+			BaseStruct sref = code.hasAttribute("Value")
 					? StackUtil.refFromElement(stack, code, "Value")
 					: StackUtil.resolveReference(stack, code.getText());
 			
@@ -149,7 +149,7 @@ public class StringStruct extends ScalarStruct {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Format".equals(code.getName())) {
-			Struct sref = code.hasAttribute("Value")
+			BaseStruct sref = code.hasAttribute("Value")
 					? StackUtil.refFromElement(stack, code, "Value")
 					: StackUtil.resolveReference(stack, code.getText());
 
@@ -351,7 +351,7 @@ public class StringStruct extends ScalarStruct {
 	}
 	
     @Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
     	super.doCopy(n);
     	
     	StringStruct nn = (StringStruct)n;
@@ -359,7 +359,7 @@ public class StringStruct extends ScalarStruct {
     }
     
 	@Override
-	public Struct deepCopy() {
+	public BaseStruct deepCopy() {
 		StringStruct cp = new StringStruct();
 		this.doCopy(cp);
 		return cp;
@@ -464,8 +464,8 @@ public class StringStruct extends ScalarStruct {
 				}
 				else {
 					boolean fnd = false;
-					
-					Struct other = StackUtil.refFromElement(stack, source, "In");
+
+					BaseStruct other = StackUtil.refFromElement(stack, source, "In");
 					
 					if ((other instanceof StringStruct) && !other.isEmpty()) {
 						String[] options = other.toString().split(",");

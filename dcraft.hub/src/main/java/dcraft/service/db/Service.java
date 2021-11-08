@@ -11,6 +11,7 @@ import dcraft.service.ServiceRequest;
 import dcraft.service.simple.Authentication;
 import dcraft.service.simple.CoreDatabase;
 import dcraft.service.simple.Tenants;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.Struct;
 import dcraft.task.TaskContext;
@@ -188,7 +189,7 @@ public class Service extends BaseDataService {
 			if (StringUtil.isEmpty(alias))
 				continue;
 			
-			for (Struct us : updates.items()) {
+			for (BaseStruct us : updates.items()) {
 				if (alias.equals(us.toString())) {
 					Tenant t = Tenant.of(alias);
 					t.getResourcesOrCreate(this.tier).getOrCreateTierConfig().add(mtenant);

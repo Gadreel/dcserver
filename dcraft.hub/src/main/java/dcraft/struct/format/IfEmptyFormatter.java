@@ -1,5 +1,6 @@
 package dcraft.struct.format;
 
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
 
@@ -8,8 +9,8 @@ public class IfEmptyFormatter implements IFormatter {
 	public FormatResult format(Object value, String op, String format) {
 		boolean content = false;
 		
-		if (value instanceof Struct) {
-			content = ! ((Struct) value).isEmpty();
+		if (value instanceof BaseStruct) {
+			content = ! ((BaseStruct) value).isEmpty();
 		}
 		else if (value instanceof CharSequence) {
 			content = StringUtil.isNotEmpty((CharSequence)value);

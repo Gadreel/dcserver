@@ -8,10 +8,7 @@ import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
-import dcraft.struct.FieldStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.scalar.BooleanStruct;
@@ -89,7 +86,7 @@ public class OrderItemCustomFields implements IComposer {
 
 										for (int n = 0; n < options.size(); n++) {
 											RecordStruct opt = options.getItemAsRecord(n);
-											Struct value = custom.getValue();
+											BaseStruct value = custom.getValue();
 
 											if ((value != null) && value.equals(opt.getField("Value"))) {
 												out.startRecord();
@@ -109,7 +106,7 @@ public class OrderItemCustomFields implements IComposer {
 												|| ((custom.getValue() instanceof StringStruct) && StringUtil.isNotEmpty(Struct.objectToString(custom.getValue())));
 
 										if (pass) {
-											Struct value = custom.getValue();
+											BaseStruct value = custom.getValue();
 											String display = Struct.objectToString(value);
 
 											if (value instanceof BooleanStruct) {

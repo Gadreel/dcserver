@@ -24,6 +24,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 
+import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.time.BigDateTime;
@@ -50,7 +51,9 @@ public class TimeUtil {
 	
 			//DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmssSSS'Z'");
 	static public final DateTimeFormatter sqlStampFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+	static public final DateTimeFormatter mysqlStampFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 	static public final SimpleDateFormat sqlStampReformat = new SimpleDateFormat("yyyyMMdd'T'HHmmssSSS");
+	static public final SimpleDateFormat mysqlStampReformat = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
 
 	static public final DateTimeFormatter parseTimeFormat = new DateTimeFormatterBuilder()
 		//.appendPattern("HH:mm")
@@ -246,6 +249,14 @@ public class TimeUtil {
 		ZonedDateTime root = ZonedDateTime.of(1970, 1, 5, 0, 0, 0, 0, ZoneId.of("UTC"));   
 		
 		return root.plusMonths(monthNum);
+	}
+
+	static public ZonedDateTime nowInContext() throws OperatingContextException {
+		return ZonedDateTime.now(zoneInContext());
+	}
+
+	static public DateTimeFormatter patternInContext(String format) throws OperatingContextException {
+		return DateTimeFormatter.ofPattern(format).withZone(zoneInContext());
 	}
 
 	static public ZoneId zoneInContext() throws OperatingContextException {

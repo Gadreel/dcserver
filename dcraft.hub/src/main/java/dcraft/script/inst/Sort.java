@@ -11,6 +11,7 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.service.ServiceHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.NullStruct;
@@ -39,7 +40,7 @@ public class Sort extends Instruction {
 	@Override
 	public ReturnOption run(InstructionWork state) throws OperatingContextException {
 		if (state.getState() == ExecuteState.READY) {
-			Struct target = StackUtil.refFromSource(state, "Target");
+			BaseStruct target = StackUtil.refFromSource(state, "Target");
 
 			if (target != null) {
 				if (target instanceof ListStruct) {

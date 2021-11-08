@@ -27,6 +27,7 @@ import dcraft.schema.SchemaHub;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
 import dcraft.script.work.StackWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
@@ -106,7 +107,7 @@ public class DecimalStruct extends ScalarStruct {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Set".equals(code.getName())) {
-			Struct sref = code.hasAttribute("Value")
+			BaseStruct sref = code.hasAttribute("Value")
 					? StackUtil.refFromElement(stack, code, "Value", true)
 					: StackUtil.resolveReference(stack, code.getText(), true);
 			
@@ -115,7 +116,7 @@ public class DecimalStruct extends ScalarStruct {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Add".equals(code.getName())) {
-			Struct sref = code.hasAttribute("Value")
+			BaseStruct sref = code.hasAttribute("Value")
 					? StackUtil.refFromElement(stack, code, "Value", true)
 					: StackUtil.resolveReference(stack, code.getText(), true);
 
@@ -129,7 +130,7 @@ public class DecimalStruct extends ScalarStruct {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Subtract".equals(code.getName())) {
-			Struct sref = code.hasAttribute("Value")
+			BaseStruct sref = code.hasAttribute("Value")
 					? StackUtil.refFromElement(stack, code, "Value", true)
 					: StackUtil.resolveReference(stack, code.getText(), true);
 
@@ -143,7 +144,7 @@ public class DecimalStruct extends ScalarStruct {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Multiply".equals(code.getName())) {
-			Struct sref = code.hasAttribute("Value")
+			BaseStruct sref = code.hasAttribute("Value")
 					? StackUtil.refFromElement(stack, code, "Value", true)
 					: StackUtil.resolveReference(stack, code.getText(), true);
 
@@ -157,7 +158,7 @@ public class DecimalStruct extends ScalarStruct {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Divide".equals(code.getName())) {
-			Struct sref = code.hasAttribute("Value")
+			BaseStruct sref = code.hasAttribute("Value")
 					? StackUtil.refFromElement(stack, code, "Value", true)
 					: StackUtil.resolveReference(stack, code.getText(), true);
 
@@ -171,7 +172,7 @@ public class DecimalStruct extends ScalarStruct {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Min".equals(code.getName())) {
-			Struct sref = code.hasAttribute("Value")
+			BaseStruct sref = code.hasAttribute("Value")
 					? StackUtil.refFromElement(stack, code, "Value", true)
 					: StackUtil.resolveReference(stack, code.getText(), true);
 
@@ -185,7 +186,7 @@ public class DecimalStruct extends ScalarStruct {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Max".equals(code.getName())) {
-			Struct sref = code.hasAttribute("Value")
+			BaseStruct sref = code.hasAttribute("Value")
 					? StackUtil.refFromElement(stack, code, "Value", true)
 					: StackUtil.resolveReference(stack, code.getText(), true);
 		
@@ -208,7 +209,7 @@ public class DecimalStruct extends ScalarStruct {
 	}
 
     @Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
     	super.doCopy(n);
     	
     	DecimalStruct nn = (DecimalStruct)n;
@@ -216,7 +217,7 @@ public class DecimalStruct extends ScalarStruct {
     }
     
 	@Override
-	public Struct deepCopy() {
+	public BaseStruct deepCopy() {
 		DecimalStruct cp = new DecimalStruct();
 		this.doCopy(cp);
 		return cp;

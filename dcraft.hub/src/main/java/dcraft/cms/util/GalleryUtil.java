@@ -4,6 +4,7 @@ import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -77,13 +78,13 @@ public class GalleryUtil {
 	
 	static public void forEachGalleryShowImage(RecordStruct gallery, String path, String show, GalleryImageConsumer consumer) throws OperatingContextException {
 		if ((gallery != null) && (gallery.hasField("Shows"))) {
-			for (Struct s : gallery.getFieldAsList("Shows").items()) {
+			for (BaseStruct s : gallery.getFieldAsList("Shows").items()) {
 				RecordStruct showrec = (RecordStruct) s;
 				
 				if (!show.equals(showrec.getFieldAsString("Alias")))
 					continue;
-				
-				for (Struct i : showrec.getFieldAsList("Images").items()) {
+
+				for (BaseStruct i : showrec.getFieldAsList("Images").items()) {
 					String img = i.toString();
 					
 					consumer.accept(gallery, showrec, RecordStruct.record()
@@ -109,7 +110,7 @@ public class GalleryUtil {
 			alias = alias.substring(0, dpos);
 		
 		if ((meta != null) && meta.isNotFieldEmpty("Variations")) {
-			for (Struct vs : meta.getFieldAsList("Variations").items()) {
+			for (BaseStruct vs : meta.getFieldAsList("Variations").items()) {
 				RecordStruct vari = (RecordStruct) vs;
 				
 				if (alias.equals(vari.getFieldAsString("Alias")))
@@ -125,7 +126,7 @@ public class GalleryUtil {
 			return null;
 		
 		if ((meta != null) && meta.isNotFieldEmpty("Shows")) {
-			for (Struct vs : meta.getFieldAsList("Shows").items()) {
+			for (BaseStruct vs : meta.getFieldAsList("Shows").items()) {
 				RecordStruct vari = (RecordStruct) vs;
 				
 				if (alias.equals(vari.getFieldAsString("Alias")))
@@ -141,7 +142,7 @@ public class GalleryUtil {
 			return null;
 		
 		if ((meta != null) && meta.isNotFieldEmpty("UploadPlans")) {
-			for (Struct vs : meta.getFieldAsList("UploadPlans").items()) {
+			for (BaseStruct vs : meta.getFieldAsList("UploadPlans").items()) {
 				RecordStruct vari = (RecordStruct) vs;
 				
 				if (alias.equals(vari.getFieldAsString("Alias")))

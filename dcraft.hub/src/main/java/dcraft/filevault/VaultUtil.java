@@ -10,6 +10,7 @@ import dcraft.session.Session;
 import dcraft.session.SessionHub;
 import dcraft.stream.StreamFragment;
 import dcraft.stream.StreamWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.BooleanStruct;
@@ -70,7 +71,7 @@ public class VaultUtil {
 				.withOverwrite(true)
 				.withOutcome(new OperationOutcomeStruct() {
 					@Override
-					public void callback(Struct result) throws OperatingContextException {
+					public void callback(BaseStruct result) throws OperatingContextException {
 						if (this.hasErrors()) {
 							Logger.error("Transfer start failed");
 							return;
@@ -107,10 +108,10 @@ public class VaultUtil {
 		OperationContext currctx = OperationContext.getOrNull();
 
 		try {
-			HashMap<String, Struct> scache = currctx.getSession().getCache();
+			HashMap<String, BaseStruct> scache = currctx.getSession().getCache();
 
 			// put the FileStoreFile in cache
-			Struct centry = scache.get(channel);
+			BaseStruct centry = scache.get(channel);
 
 			if ((centry == null) || ! (centry instanceof RecordStruct)) {
 				Logger.error("Invalid channel number, unable to transfer.");
@@ -185,7 +186,7 @@ public class VaultUtil {
 		Session session = OperationContext.getOrThrow().getSession();
 
 		if (session != null) {
-			HashMap<String, Struct> scache = session.getCache();
+			HashMap<String, BaseStruct> scache = session.getCache();
 
 			scache.put(token, BooleanStruct.of(true));
 		}
@@ -195,7 +196,7 @@ public class VaultUtil {
 		Session session = OperationContext.getOrThrow().getSession();
 
 		if (session != null) {
-			HashMap<String, Struct> scache = session.getCache();
+			HashMap<String, BaseStruct> scache = session.getCache();
 
 			scache.put(token, BooleanStruct.of(true));
 			scache.put(token + "Tx", StringStruct.of(txid));
@@ -206,7 +207,7 @@ public class VaultUtil {
 		Session session = OperationContext.getOrThrow().getSession();
 
 		if (session != null) {
-			HashMap<String, Struct> scache = session.getCache();
+			HashMap<String, BaseStruct> scache = session.getCache();
 
 			scache.remove(token);
 			scache.remove(token + "Tx");
@@ -219,7 +220,7 @@ public class VaultUtil {
 		if (session == null)
 			return null;
 
-		HashMap<String, Struct> scache = session.getCache();
+		HashMap<String, BaseStruct> scache = session.getCache();
 
 		if (! scache.containsKey(token))
 			return null;

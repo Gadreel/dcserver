@@ -37,6 +37,7 @@ import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.util.HexUtil;
 import dcraft.util.RndUtil;
@@ -159,7 +160,7 @@ public class NodeInit implements ILocalCommandLine {
 			DbUtil.execute((DbServiceRequest) request.toDbServiceRequest()
 					.withOutcome(new OperationOutcomeStruct() {
 						@Override
-						public void callback(Struct result) throws OperatingContextException {
+						public void callback(BaseStruct result) throws OperatingContextException {
 							System.out.println("Root added");
 
 							db.stop();

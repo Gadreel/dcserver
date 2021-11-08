@@ -19,6 +19,7 @@ package dcraft.script.mutator;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.script.IOperator;
 import dcraft.script.StackUtil;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.IParentAwareWork;
@@ -28,7 +29,7 @@ import dcraft.xml.XElement;
 public class Substring implements IOperator {
 
 	@Override
-	public void operation(IParentAwareWork stack, XElement code, Struct dest) throws OperatingContextException {
+	public void operation(IParentAwareWork stack, XElement code, BaseStruct dest) throws OperatingContextException {
 		int from = (int) StackUtil.intFromElement(stack, code, "From", 0);
 		int to = (int) StackUtil.intFromElement(stack, code, "To", 0);
 		int length = (int) StackUtil.intFromElement(stack, code, "Length", 0);

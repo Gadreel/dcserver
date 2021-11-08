@@ -11,6 +11,7 @@ import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
 import dcraft.service.ServiceHub;
 import dcraft.service.ServiceRequest;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.NullStruct;
@@ -32,7 +33,7 @@ public class ThreadObject extends RecordStruct {
 					.withOutcome(
 							new OperationOutcomeStruct() {
 								@Override
-								public void callback(Struct result) throws OperatingContextException {
+								public void callback(BaseStruct result) throws OperatingContextException {
 									if (this.isNotEmptyResult())
 										//	StackUtil.addVariable(state, name, result);
 										ThreadObject.this.copyFields((RecordStruct) result);
@@ -58,7 +59,7 @@ public class ThreadObject extends RecordStruct {
 					.withOutcome(
 							new OperationOutcomeStruct() {
 								@Override
-								public void callback(Struct result) throws OperatingContextException {
+								public void callback(BaseStruct result) throws OperatingContextException {
 									state.withContinueFlag();
 
 									OperationContext.getAsTaskOrThrow().resume();
@@ -79,7 +80,7 @@ public class ThreadObject extends RecordStruct {
 					.toServiceRequest()
 					.withOutcome(new OperationOutcomeStruct() {
 						@Override
-						public void callback(Struct result) throws OperatingContextException {
+						public void callback(BaseStruct result) throws OperatingContextException {
 							state.withContinueFlag();
 
 							OperationContext.getAsTaskOrThrow().resume();
@@ -110,7 +111,7 @@ public class ThreadObject extends RecordStruct {
 					.withOutcome(
 						new OperationOutcomeStruct() {
 							@Override
-							public void callback(Struct result) throws OperatingContextException {
+							public void callback(BaseStruct result) throws OperatingContextException {
 								//if (StringUtil.isNotEmpty(name))
 								//	StackUtil.addVariable(state, name, result);
 
@@ -136,7 +137,7 @@ public class ThreadObject extends RecordStruct {
 					.withOutcome(
 						new OperationOutcomeStruct() {
 							@Override
-							public void callback(Struct result) throws OperatingContextException {
+							public void callback(BaseStruct result) throws OperatingContextException {
 								//if (StringUtil.isNotEmpty(name))
 								//	StackUtil.addVariable(state, name, result);
 
@@ -162,7 +163,7 @@ public class ThreadObject extends RecordStruct {
 					.withOutcome(
 						new OperationOutcomeStruct() {
 							@Override
-							public void callback(Struct result) throws OperatingContextException {
+							public void callback(BaseStruct result) throws OperatingContextException {
 								//if (StringUtil.isNotEmpty(name))
 								//	StackUtil.addVariable(state, name, result);
 

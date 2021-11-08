@@ -12,6 +12,7 @@ import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -48,7 +49,7 @@ public class UserDataUtil {
 		ListStruct oldbadges = Struct.objectToList(db.getScalar("dcUser", id, "dcBadgesRetired"));
 		
 		if (oldbadges != null) {
-			for (Struct badge : oldbadges.items()) {
+			for (BaseStruct badge : oldbadges.items()) {
 				db.updateList("dcUser", id, "dcBadges", badge.toString(), badge.toString());
 			}
 		}
@@ -167,7 +168,7 @@ public class UserDataUtil {
 				boolean fndsys = false;
 				boolean fndadmin = false;
 				
-				for (Struct bs : badges.items()) {
+				for (BaseStruct bs : badges.items()) {
 					String badge = Struct.objectToString(bs);
 					
 					if ("Developer".equals(badge))
@@ -191,7 +192,7 @@ public class UserDataUtil {
 			}
 			// no sysadmin for ANYONE else
 			else {
-				for (Struct bs : badges.items()) {
+				for (BaseStruct bs : badges.items()) {
 					String badge = Struct.objectToString(bs);
 					
 					if ("SysAdmin".equals(badge)) {
@@ -204,7 +205,7 @@ public class UserDataUtil {
 			// if not root user and on shared hosting then don't allow developer badge
 			if (! Constants.DB_GLOBAL_ROOT_RECORD.equals(OperationContext.getOrThrow().getUserContext().getUserId())) {
 				if (Struct.objectToBooleanOrFalse(ResourceHub.getResources().getConfig().getAttribute("SharedHosting"))) {
-					for (Struct bs : badges.items()) {
+					for (BaseStruct bs : badges.items()) {
 						String badge = Struct.objectToString(bs);
 						
 						if ("Developer".equals(badge)) {

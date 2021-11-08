@@ -16,6 +16,7 @@
 ************************************************************************ */
 package dcraft.db.request.query;
 
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
@@ -64,13 +65,13 @@ public class WhereField implements IWhereField {
 		return this;
 	}
 
-	public WhereField withValue(Struct value) {
+	public WhereField withValue(BaseStruct value) {
 		this.column.with("Value", value);
 		return this;
 	}
 
 	@Override
-	public Struct getParams() {
+	public BaseStruct getParams() {
 		return this.column;
 	}
 	

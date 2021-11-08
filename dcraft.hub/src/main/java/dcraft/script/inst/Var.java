@@ -24,6 +24,8 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.OperationsWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
+import dcraft.struct.CompositeStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.StringStruct;
@@ -47,16 +49,17 @@ public class Var extends OperationsInstruction {
 		if (state.getState() == ExecuteState.READY) {
 			String def = StackUtil.stringFromSource(state, "Type");
 			String name = StackUtil.stringFromSource(state, "Name");
-			
-			Struct var = null;
+
+			BaseStruct var = null;
 			
 			if (StringUtil.isNotEmpty(def))
 				var = ResourceHub.getResources().getSchema().getType(def).create();
 			
 			if (this.hasAttribute("SetTo")) {
-				Struct var3 = StackUtil.refFromSource(state, "SetTo", true);
-				
-				if (var3 == null) {
+				BaseStruct var3 = StackUtil.refFromSource(state, "SetTo", true);
+
+				// if we cannot infer data type then error
+				if ((var3 == null) && (var == null)) {
 					Logger.errorTr(522);
 					return ReturnOption.DONE;
 				}
@@ -65,11 +68,20 @@ public class Var extends OperationsInstruction {
 					if (var == null)
 						var = var3.getType().create();
 
-					// TODO fix - bug, var may not be scalar
-					((ScalarStruct) var).adaptValue(var3);
+					if (var instanceof ScalarStruct) {
+						((ScalarStruct) var).adaptValue(var3);
+					}
+					else {
+						// TODO report error
+					}
 				}
 				else {
-					var = var3;
+					if (var3 instanceof CompositeStruct) {
+						var = var3;
+					}
+					else if (var instanceof ScalarStruct) {
+						((ScalarStruct) var).adaptValue(null);
+					}
 				}
 			}
 

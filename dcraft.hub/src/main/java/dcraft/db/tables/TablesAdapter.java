@@ -29,6 +29,7 @@ import dcraft.schema.DbTrigger;
 import dcraft.schema.SchemaHub;
 import dcraft.schema.SchemaResource;
 import dcraft.schema.TableView;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -87,7 +88,7 @@ public class TablesAdapter {
 				}
 				
 				// validate data type
-				Struct value = data.getField("Data");
+				BaseStruct value = data.getField("Data");
 				
 				if (value == null) {
 					if (schema.isRequired()) 
@@ -95,8 +96,8 @@ public class TablesAdapter {
 					
 					return;
 				}
-				
-				Struct cor = SchemaHub.normalizeValidateType(true, false, value, schema.getTypeId());
+
+				BaseStruct cor = SchemaHub.normalizeValidateType(true, false, value, schema.getTypeId());
 				
 				if (cor == null) 
 					return;
@@ -1857,7 +1858,7 @@ public class TablesAdapter {
 		return ExpressionResult.ACCEPTED;
 	}
 	
-	public void executeTrigger(String table, String id, String op, Struct context) throws OperatingContextException {
+	public void executeTrigger(String table, String id, String op, BaseStruct context) throws OperatingContextException {
 		SchemaResource schema = ResourceHub.getResources().getSchema();
 		List<DbTrigger> trigs = schema.getDbTriggers(table, op);
 		
@@ -1879,7 +1880,7 @@ public class TablesAdapter {
 	}
 
 	// if even one passes then "can" and true
-	public boolean executeCanTrigger(String table, String id, String op, Struct context) throws OperatingContextException {
+	public boolean executeCanTrigger(String table, String id, String op, BaseStruct context) throws OperatingContextException {
 		SchemaResource schema = ResourceHub.getResources().getSchema();
 		List<DbTrigger> trigs = schema.getDbTriggers(table, op);
 
@@ -1907,7 +1908,7 @@ public class TablesAdapter {
 	}
 
 	// if even one fails then "cannot" and true
-	public boolean executeCannotTrigger(String table, String id, String op, Struct context) throws OperatingContextException {
+	public boolean executeCannotTrigger(String table, String id, String op, BaseStruct context) throws OperatingContextException {
 		SchemaResource schema = ResourceHub.getResources().getSchema();
 		List<DbTrigger> trigs = schema.getDbTriggers(table, op);
 

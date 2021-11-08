@@ -7,6 +7,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.AnyStruct;
 import dcraft.util.RndUtil;
@@ -33,8 +34,8 @@ abstract public class CoreField extends Base {
 		if (this.fieldinfo == null) {
 			this.fieldinfo = W3.tag(this.tagName);
 			this.fieldinfo.replace(this);
-			
-			Struct funcwrap = StackUtil.queryVariable(state, StackUtil.stringFromSource(state, "FieldParams"));
+
+			BaseStruct funcwrap = StackUtil.queryVariable(state, StackUtil.stringFromSource(state, "FieldParams"));
 
 			XElement pel = null;
 

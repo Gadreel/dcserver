@@ -23,6 +23,7 @@ import dcraft.script.StackUtil;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
 import dcraft.xml.XElement;
@@ -46,7 +47,7 @@ public class Case extends LogicBlockInstruction {
 		if (state.getState() == ExecuteState.READY) {
 			// use local name in condition check if present
 			// if not then try parent name
-			Struct var = this.hasAttribute("Target")
+			BaseStruct var = this.hasAttribute("Target")
 					? StackUtil.refFromSource(state,"Target")
 					: StackUtil.refFromElement(state.getParent(), ((InstructionWork)state.getParent()).getInstruction(), "Target");
 			

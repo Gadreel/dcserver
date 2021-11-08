@@ -14,6 +14,7 @@ import dcraft.hub.op.UserContext;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.hub.resource.SslEntry;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -56,7 +57,7 @@ public class FeedAutomationWork extends StateWork {
 
 	protected String lastsync = null;
 	protected String headsync = null;
-	protected Struct tparams = null;
+	protected BaseStruct tparams = null;
 	protected Deque<RecordStruct> tenants = new ArrayDeque<>();
 
 	@Override

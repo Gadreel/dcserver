@@ -16,6 +16,7 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
 import dcraft.service.ServiceHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -100,7 +101,7 @@ public class Query extends RecordStruct {
 					.withOutcome(
 						new OperationOutcomeStruct() {
 							@Override
-							public void callback(Struct result) throws OperatingContextException {
+							public void callback(BaseStruct result) throws OperatingContextException {
 								// not sure if this is useful
 								if (result == null)
 									result = NullStruct.instance;

@@ -10,6 +10,7 @@ import dcraft.script.ScriptHub;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.InstructionWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -67,7 +68,7 @@ public class BannerWidget extends Base implements ICMSAware {
 				StringBuilder srcset = new StringBuilder();
 				boolean first = true;
 
-				for (Struct lvl : vdata.getFieldAsList("Density").items()) {
+				for (BaseStruct lvl : vdata.getFieldAsList("Density").items()) {
 					RecordStruct rlvl = (RecordStruct) lvl;
 					String amt = rlvl.getFieldAsString("Level");
 

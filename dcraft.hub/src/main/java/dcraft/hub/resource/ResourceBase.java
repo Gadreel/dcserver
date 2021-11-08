@@ -4,10 +4,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.log.Logger;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
-import dcraft.struct.CompositeStruct;
-import dcraft.struct.IPartSelector;
-import dcraft.struct.PathPart;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.IParentAwareWork;
@@ -39,7 +36,7 @@ public class ResourceBase extends CompositeStruct {
 	}
 	
 	@Override
-	public Struct select(PathPart... path) {
+	public BaseStruct select(PathPart... path) {
 		if (path.length == 0)
 			return this;
 		
@@ -52,8 +49,8 @@ public class ResourceBase extends CompositeStruct {
 		}
 		
 		String fld = part.getField();
-		
-		Struct o = null;
+
+		BaseStruct o = null;
 		
 		if ("Name".equals(fld)) {
 			o = StringStruct.of(this.name);
@@ -86,7 +83,7 @@ public class ResourceBase extends CompositeStruct {
 	}
 	
 	@Override
-	protected void doCopy(Struct n) {
+	protected void doCopy(BaseStruct n) {
 		super.doCopy(n);
 		
 		((ResourceBase) n).name = this.name;
@@ -94,7 +91,7 @@ public class ResourceBase extends CompositeStruct {
 	}
 	
 	@Override
-	public Struct deepCopy() {
+	public BaseStruct deepCopy() {
 		ResourceBase t = new ResourceBase();
 		this.doCopy(t);
 		return t;

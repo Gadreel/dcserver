@@ -16,12 +16,16 @@
 ************************************************************************ */
 package dcraft.struct.scalar;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 
+import dcraft.hub.ResourceHub;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
 import dcraft.script.work.StackWork;
+import dcraft.struct.BaseStruct;
 import dcraft.task.IParentAwareWork;
 import org.threeten.extra.PeriodDuration;
 
@@ -108,7 +112,7 @@ public class DateTimeStruct extends ScalarStruct {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Set".equals(op)) {
-			Struct sref = code.hasAttribute("Value")
+			BaseStruct sref = code.hasAttribute("Value")
 					? StackUtil.refFromElement(stack, code, "Value")
 					: StackUtil.resolveReference(stack, code.getText());
 			
@@ -183,12 +187,24 @@ public class DateTimeStruct extends ScalarStruct {
 			
 			return ReturnOption.CONTINUE;
 		}
-		
+		else if ("Format".equals(code.getName())) {
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+			String format = StackUtil.stringFromElement(stack, code, "Pattern");
+
+			String out = DateTimeFormatter.ofPattern(format)
+					.withZone(ZoneId.of(ResourceHub.getResources().getLocale().getDefaultChronology()))
+					.format(this.value);
+
+			StackUtil.addVariable(stack, result, StringStruct.of(out));
+
+			return ReturnOption.CONTINUE;
+		}
+
 		return super.operation(stack, code);
 	}
 
     @Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
     	super.doCopy(n);
     	
     	DateTimeStruct nn = (DateTimeStruct)n;
@@ -196,7 +212,7 @@ public class DateTimeStruct extends ScalarStruct {
     }
     
 	@Override
-	public Struct deepCopy() {
+	public BaseStruct deepCopy() {
 		DateTimeStruct cp = new DateTimeStruct();
 		this.doCopy(cp);
 		return cp;

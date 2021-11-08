@@ -37,12 +37,7 @@ import javax.xml.stream.XMLStreamReader;
 import dcraft.hub.resource.ResourceBase;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
-import dcraft.struct.CompositeParser;
-import dcraft.struct.CompositeStruct;
-import dcraft.struct.IPartSelector;
-import dcraft.struct.ListStruct;
-import dcraft.struct.PathPart;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.scalar.AnyStruct;
 import dcraft.struct.scalar.StringStruct;
@@ -1071,7 +1066,7 @@ public class XElement extends XNode {
 	 * @return selected structure if any, otherwise null
 	 */
 	@Override
-	public Struct select(PathPart... path) {
+	public BaseStruct select(PathPart... path) {
 		if (path.length == 0)
 			return this;
 		
@@ -1472,7 +1467,7 @@ public class XElement extends XNode {
 	}
 
 	@Override
-	protected void doCopy(Struct n) {
+	protected void doCopy(BaseStruct n) {
 		super.doCopy(n);
 		
 		XElement copy = (XElement) n;

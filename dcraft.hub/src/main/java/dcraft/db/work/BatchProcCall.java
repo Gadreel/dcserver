@@ -4,6 +4,7 @@ import dcraft.db.request.DataRequest;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.service.ServiceHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IWork;
 import dcraft.task.TaskContext;
@@ -21,7 +22,7 @@ public class BatchProcCall implements IWork {
 	public void run(TaskContext taskctx) throws OperatingContextException {
 		ServiceHub.call(DataRequest.of(this.proc).withForTenant(TaskContext.getOrThrow().getTenant().getAlias()), new OperationOutcomeStruct() {
 			@Override
-			public void callback(Struct result) throws OperatingContextException {
+			public void callback(BaseStruct result) throws OperatingContextException {
 				taskctx.returnEmpty();
 			}
 		});

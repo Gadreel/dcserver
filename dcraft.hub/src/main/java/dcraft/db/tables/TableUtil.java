@@ -14,10 +14,7 @@ import dcraft.hub.op.OperationContext;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
 import dcraft.schema.*;
-import dcraft.struct.DataUtil;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.builder.ObjectBuilder;
@@ -101,7 +98,7 @@ public class TableUtil {
 		if (params.hasField("Sets")) {
 			ListStruct sets = params.getFieldAsList("Sets");
 
-			for (Struct set : sets.items()) {
+			for (BaseStruct set : sets.items()) {
 				RecordStruct rset = (RecordStruct) set;
 
 				String field = rset.getFieldAsString("Field");
@@ -201,7 +198,7 @@ public class TableUtil {
 		if (!skipWriteRec)
 			out.startRecord();
 
-		for (Struct s : select.items()) {
+		for (BaseStruct s : select.items()) {
 			RecordStruct fld = (RecordStruct) s;
 
 			out.field(fld.isFieldEmpty("Name") ? fld.getFieldAsString("Field") : fld.getFieldAsString("Name"));

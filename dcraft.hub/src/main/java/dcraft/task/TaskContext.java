@@ -33,6 +33,7 @@ import dcraft.log.DebugLevel;
 import dcraft.log.HubLog;
 import dcraft.log.Logger;
 import dcraft.session.Session;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -145,7 +146,7 @@ public class TaskContext extends OperationContext implements Runnable {
 			ListStruct buildobservers = this.task.getObservers();
 
 			if ((buildobservers != null) && (buildobservers.size() > 0)) {
-				for (Struct s : buildobservers.items()) {
+				for (BaseStruct s : buildobservers.items()) {
 					RecordStruct orec = (RecordStruct) s;
 
 					if (orec.isFieldEmpty("_Classname")) {
@@ -220,11 +221,11 @@ public class TaskContext extends OperationContext implements Runnable {
 		return false;
 	}
 	
-	public Struct getParams() {
+	public BaseStruct getParams() {
 		return this.getField("Params");
 	}
 	
-	public void setParams(Struct v) {
+	public void setParams(BaseStruct v) {
 		this.with("Params", v);
 	}
 	
@@ -756,14 +757,14 @@ public class TaskContext extends OperationContext implements Runnable {
 		return this.task.getTitle().hashCode();
 	}
 	
-	public Struct getResult() {
+	public BaseStruct getResult() {
 	    return this.getField("Result");
 	}
-		 
-	public void setResult(Struct v) {
+
+	public void setResult(BaseStruct v) {
 	    this.with("Result", v);
 	}
-	
+
 	/*
 	 * For scripting calls - set the return value (convert to struct if not already) then call complete all at once
 	 * @param v

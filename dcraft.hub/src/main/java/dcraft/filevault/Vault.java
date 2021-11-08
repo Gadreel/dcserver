@@ -8,6 +8,7 @@ import dcraft.hub.ResourceHub;
 import dcraft.hub.op.*;
 import dcraft.session.Session;
 import dcraft.stream.StreamFragment;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.task.IWork;
 import dcraft.tenant.Site;
@@ -145,7 +146,7 @@ abstract public class Vault {
 		if (session == null)
 			return false;
 
-		HashMap<String, Struct> scache = session.getCache();
+		HashMap<String, BaseStruct> scache = session.getCache();
 		
 		if (! scache.containsKey(token))
 			return false;

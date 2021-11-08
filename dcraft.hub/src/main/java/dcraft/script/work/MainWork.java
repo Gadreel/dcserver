@@ -10,6 +10,7 @@ import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
 import dcraft.session.Session;
 import dcraft.session.SessionHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.NullStruct;
@@ -26,7 +27,7 @@ public class MainWork extends BlockWork implements IResultAwareWork, IChainAware
 		return sw;
 	}
 	
-	protected Struct value = null;
+	protected BaseStruct value = null;
 	protected long exitcode = 0L;
 	protected String exitmessage = null;
 	
@@ -35,7 +36,7 @@ public class MainWork extends BlockWork implements IResultAwareWork, IChainAware
 	@Override
 	public void run(TaskContext taskctx) throws OperatingContextException {
 		if (this.getState() == ExecuteState.READY) {
-			Struct param = taskctx.getParams();
+			BaseStruct param = taskctx.getParams();
 			
 			if (param == null)
 				param = NullStruct.instance;
@@ -93,12 +94,12 @@ public class MainWork extends BlockWork implements IResultAwareWork, IChainAware
 	}
 	
 	@Override
-	public Struct getResult() {
+	public BaseStruct getResult() {
 		return this.value;
 	}
 	
 	@Override
-	public void setResult(Struct v) {
+	public void setResult(BaseStruct v) {
 		this.value = v;
 	}
 	

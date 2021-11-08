@@ -29,6 +29,7 @@ import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.*;
 import dcraft.interchange.authorize.AuthUtil;
 import dcraft.interchange.paypal.PayPalUtil;
+import dcraft.interchange.paypal.PayPalUtilV2;
 import dcraft.interchange.slack.SlackUtil;
 import dcraft.interchange.stripe.StripeUtil;
 import dcraft.interchange.ups.UpsUtil;
@@ -137,7 +138,7 @@ public class OrderUtil {
 			.withSetField("dcmViewCode", viewcode);
 
 		if (orderclean.isNotFieldEmpty("Items")) {
-			for (Struct iteme : orderclean.selectAsList("Items").items()) {
+			for (BaseStruct iteme : orderclean.selectAsList("Items").items()) {
 				RecordStruct item = Struct.objectToRecord(iteme);
 
 				String eid = item.getFieldAsString("EntryId");
@@ -159,13 +160,13 @@ public class OrderUtil {
 		}
 
 		if (orderclean.isNotFieldEmpty("CouponCodes")) {
-			for (Struct code : orderclean.selectAsList("CouponCodes").items()) {
+			for (BaseStruct code : orderclean.selectAsList("CouponCodes").items()) {
 				req.withSetField("dcmCouponCodes", code.toString(), code);
 			}
 		}
 
 		if (orderclean.isNotFieldEmpty("Discounts")) {
-			for (Struct discount : orderclean.selectAsList("Discounts").items()) {
+			for (BaseStruct discount : orderclean.selectAsList("Discounts").items()) {
 				req.withSetField("dcmDiscounts", ((RecordStruct)discount).selectAsString("EntryId"), discount);
 			}
 		}
@@ -313,6 +314,46 @@ public class OrderUtil {
 					}
 				});
 			}
+			else if ("PayPalV2".equals(pmethod)) {
+				String authtoken = order.getFieldAsRecord("PaymentInfo").getFieldAsString("Token1");
+
+				PayPalUtilV2.captureAuth(pel.getAttribute("PayPalAlternate"), null, authtoken, new OperationOutcomeRecord() {
+					@Override
+					public void callback(RecordStruct res) throws OperatingContextException {
+						OperationContext.getOrThrow().touch();
+
+						String status = "VerificationRequired";
+
+						if (! this.isEmptyResult()) {
+							String txid = ! this.hasErrors() ? this.getResult().getFieldAsString("id") : null;
+							String authstatus = this.getResult().getFieldAsString("status");
+
+							// TODO we should also check that the amount of the capture is the same as order's grand total
+							// but that requires another look up so future idea
+
+							if ("COMPLETED".equals(authstatus) && StringUtil.isNotEmpty(txid)) {
+								status = "AwaitingFulfillment";
+								upreq.withUpdateField("dcmPaymentId", txid);
+							}
+							else {
+								Logger.error("Payment Id not present, unable to process payment.");
+
+								cleanpay
+										.with("PaymentFailed", true)
+										.with("PaymentCode", authstatus)
+										.with("PaymentMessage", "details: " + this.getResult().getField("status_details"));
+							}
+						}
+
+						upreq.withUpdateField("dcmStatus", status);
+
+						if (om.hasErrors())
+							OrderUtil.onLogStep(request, db, upreq, status, now, orderclean, this.getResult(), refid, callback);
+						else
+							OrderUtil.postAuthStep(request, db, upreq, order, status, now, orderclean, this.getResult(), refid, callback);
+					}
+				});
+			}
 			else if ("PayPal".equals(pmethod)) {
 				// check that the PayPal record is present and matching in the payment thread
 				try (OperationMarker om2 = OperationMarker.create()) {
@@ -353,7 +394,7 @@ public class OrderUtil {
 		}
 	}
 
-	static public void postAuthStep(ICallContext request, TablesAdapter db, DbRecordRequest upreq, RecordStruct order, String status, ZonedDateTime stamp, RecordStruct orderclean, Struct payment, String refid, OperationOutcomeStruct callback) throws OperatingContextException {
+	static public void postAuthStep(ICallContext request, TablesAdapter db, DbRecordRequest upreq, RecordStruct order, String status, ZonedDateTime stamp, RecordStruct orderclean, BaseStruct payment, String refid, OperationOutcomeStruct callback) throws OperatingContextException {
 		Site site = OperationContext.getOrThrow().getSite();
 		String event = site.getTenant().getAlias() + "-" + site.getAlias() + " - order placed: " + refid;
 		SlackUtil.serverEvent(null, event, null);
@@ -428,7 +469,7 @@ public class OrderUtil {
 		OrderUtil.onLogStep(request, db, upreq, status, stamp, orderclean, payment, refid, callback);
 	}
 
-	static public void onLogStep(ICallContext request, TablesAdapter db, DbRecordRequest upreq, String status, ZonedDateTime stamp, RecordStruct orderclean, Struct payment, String refid, OperationOutcomeStruct callback) throws OperatingContextException {
+	static public void onLogStep(ICallContext request, TablesAdapter db, DbRecordRequest upreq, String status, ZonedDateTime stamp, RecordStruct orderclean, BaseStruct payment, String refid, OperationOutcomeStruct callback) throws OperatingContextException {
 		RecordStruct audit = RecordStruct.record()
 				.with("Origin", "Customer")
 				.with("Stamp", stamp)
@@ -450,7 +491,7 @@ public class OrderUtil {
 
 		ListStruct items = orderclean.getFieldAsList("Items");
 
-		for (Struct itm : items.items()) {
+		for (BaseStruct itm : items.items()) {
 			RecordStruct orgitem = Struct.objectToRecord(itm);
 
 			String prodid = orgitem.getFieldAsString("Product");
@@ -497,7 +538,7 @@ public class OrderUtil {
 
 		VaultUtil.transfer("StoreOrders", msource, CommonPath.from("/" + refid + ".json"), refid, new OperationOutcomeStruct() {
 			@Override
-			public void callback(Struct result) throws OperatingContextException {
+			public void callback(BaseStruct result) throws OperatingContextException {
 				//System.out.println(OperationContext.getOrThrow().toPrettyString());
 				if (! "VerificationRequired".equals(status)) {
 					triggerEvent(refid);
@@ -584,7 +625,7 @@ public class OrderUtil {
 		
 		ServiceHub.call(recordRequest, new OperationOutcomeStruct() {
 			@Override
-			public void callback(Struct result) throws OperatingContextException {
+			public void callback(BaseStruct result) throws OperatingContextException {
 				if (this.hasErrors()) {
 					callback.returnEmpty();
 					return;
@@ -646,7 +687,7 @@ public class OrderUtil {
 								// TODO combine these into 1 vault transaction
 								VaultUtil.transfer("StoreOrders", msource, logpath, id, new OperationOutcomeStruct() {
 									@Override
-									public void callback(Struct result) throws OperatingContextException {
+									public void callback(BaseStruct result) throws OperatingContextException {
 										//System.out.println(OperationContext.getOrThrow().toPrettyString());
 										
 										CommonPath imgpath = CommonPath.from("/" + id + "/ship-" + shipment.getFieldAsString("EntryId") + "-label.gif");
@@ -656,7 +697,7 @@ public class OrderUtil {
 										
 										VaultUtil.transfer("StoreOrders", msource, imgpath, id, new OperationOutcomeStruct() {
 											@Override
-											public void callback(Struct result) throws OperatingContextException {
+											public void callback(BaseStruct result) throws OperatingContextException {
 												//System.out.println(OperationContext.getOrThrow().toPrettyString());
 												/*
 												CommonPath thmpath = CommonPath.from("/" + id + "/ship-" + shipment.getFieldAsString("EntryId") + "-thumb.gif");
@@ -757,7 +798,7 @@ public class OrderUtil {
 		Map<String, RecordStruct> dupchecker = new HashMap<>();
 		ListStruct reduceitems = new ListStruct();
 
-		for (Struct itm : items.items()) {
+		for (BaseStruct itm : items.items()) {
 			RecordStruct orgitem = Struct.objectToRecord(itm);
 
 			String prodid = orgitem.getFieldAsString("Product");
@@ -831,7 +872,7 @@ public class OrderUtil {
 					)
 				);
 
-		for (Struct itm : items.items()) {
+		for (BaseStruct itm : items.items()) {
 			RecordStruct orgitem = Struct.objectToRecord(itm);
 
 			String prodid = orgitem.getFieldAsString("Product");
@@ -902,8 +943,8 @@ public class OrderUtil {
 							if (fld.isNotFieldEmpty("Options")) {
 								ListStruct options = fld.getFieldAsList("Options");
 								boolean pass = false;
-								Struct value = custom.getValue();
-								Struct valueout = null;
+								BaseStruct value = custom.getValue();
+								BaseStruct valueout = null;
 								String display = null;
 								BigDecimal mprice = BigDecimal.ZERO;
 								BigDecimal mweight = BigDecimal.ZERO;
@@ -918,7 +959,7 @@ public class OrderUtil {
 										ListStruct inlist = Struct.objectToList(value);
 
 										for (int v = 0; v < inlist.size(); v++) {
-											Struct vval = inlist.getItem(v);
+											BaseStruct vval = inlist.getItem(v);
 
 											if (vval.equals(opt.getField("Value"))) {
 												if (StringUtil.isEmpty(display))
@@ -1196,7 +1237,7 @@ public class OrderUtil {
 							if ("ProductCoupon".equals(ctype)) {
 								String cproductid = Struct.objectToString(db.getScalar("dcmDiscount", discid, "dcmProduct"));
 
-								for (Struct itm : fnditems.items()) {
+								for (BaseStruct itm : fnditems.items()) {
 									RecordStruct orgitem = Struct.objectToRecord(itm);
 
 									String prodid = orgitem.getFieldAsString("Product");

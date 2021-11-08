@@ -55,7 +55,7 @@ import dcraft.xml.XElement;
  * @author Andy
  *
  */
-abstract public class CompositeStruct extends Struct implements ICompositeOutput {
+abstract public class CompositeStruct extends BaseStruct implements ICompositeOutput {
 	public CompositeStruct() {
 	}
 	

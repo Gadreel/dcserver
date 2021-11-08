@@ -9,6 +9,7 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.db.proc.IUpdatingStoredProc;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -84,7 +85,7 @@ public class UpdateRecord implements IUpdatingStoredProc {
 		if (params.hasField("Sets")) {
 			ListStruct sets = params.getFieldAsList("Sets");
 			
-			for (Struct set : sets.items()) {
+			for (BaseStruct set : sets.items()) {
 				RecordStruct rset = (RecordStruct) set;
 				
 				String field = rset.getFieldAsString("Field");

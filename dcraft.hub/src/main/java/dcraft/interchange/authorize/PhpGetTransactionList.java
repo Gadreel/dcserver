@@ -5,6 +5,7 @@ import com.caucho.quercus.env.NullValue;
 import com.caucho.quercus.env.Value;
 import com.caucho.quercus.function.AbstractFunction;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
@@ -25,7 +26,7 @@ public class PhpGetTransactionList extends AbstractFunction {
                 ListStruct filters = Struct.objectToList(PhpUtil.valueToStruct(env, args[1]));
 
                 if (filters != null) {
-                    for (Struct fltr : filters.items()) {
+                    for (BaseStruct fltr : filters.items()) {
                         if (fltr != null)
                             filter.add(fltr.toString());
                     }

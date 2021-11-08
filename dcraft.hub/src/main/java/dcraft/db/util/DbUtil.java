@@ -11,6 +11,7 @@ import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
 import dcraft.log.count.CountHub;
 import dcraft.schema.DbProc;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 
@@ -19,7 +20,7 @@ public class DbUtil {
 	
 	// generally call service, not this
 	static public boolean execute(DbServiceRequest request, IConnectionManager conn) throws OperatingContextException, DatabaseException {
-		Struct params = request.getData();
+		BaseStruct params = request.getData();
 
 		if (conn == null) {
 			String reqdbname = (params instanceof RecordStruct)

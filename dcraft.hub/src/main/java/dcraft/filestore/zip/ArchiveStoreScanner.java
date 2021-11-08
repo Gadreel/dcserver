@@ -23,6 +23,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.log.Logger;
 import dcraft.schema.SchemaHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
@@ -114,7 +115,7 @@ public class ArchiveStoreScanner extends FileCollection {
     }
 
     @Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
         super.doCopy(n);
 
         ArchiveStoreScanner nn = (ArchiveStoreScanner)n;

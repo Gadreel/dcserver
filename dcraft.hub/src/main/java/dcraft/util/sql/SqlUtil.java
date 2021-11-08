@@ -3,20 +3,60 @@ package dcraft.util.sql;
 import dcraft.hub.op.FuncResult;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationMarker;
-import dcraft.hub.op.OperationOutcome;
 import dcraft.log.Logger;
-import dcraft.struct.CompositeStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.ScalarStruct;
-import dcraft.struct.scalar.StringStruct;
+import dcraft.struct.*;
+import dcraft.struct.Struct;
+import dcraft.struct.scalar.NullStruct;
 import dcraft.util.TimeUtil;
 
 import java.math.BigDecimal;
 import java.sql.*;
+import java.time.LocalDate;
 import java.time.temporal.TemporalAccessor;
 
 public class SqlUtil {
+    static public BaseStruct getVar(Connection conn, String sql, Object... params) throws OperatingContextException {
+        FuncResult<ListStruct> result = SqlUtil.executeQueryFreestyle(conn, sql, params);
+
+        if (result.isNotEmptyResult()) {
+            RecordStruct rec = result.getResult().getItemAsRecord(0);
+
+            if (! rec.isEmpty()) {
+                for (FieldStruct fld : rec.getFields()) {
+                    return fld.getValue();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    static public String getVarString(Connection conn, String sql, Object... params) throws OperatingContextException {
+        return Struct.objectToString(getVar(conn, sql, params));
+    }
+
+    static public Long getVarInteger(Connection conn, String sql, Object... params) throws OperatingContextException {
+        return Struct.objectToInteger(getVar(conn, sql, params));
+    }
+
+    static public Boolean getVarBoolean(Connection conn, String sql, Object... params) throws OperatingContextException {
+        return Struct.objectToBoolean(getVar(conn, sql, params));
+    }
+
+    static public RecordStruct getRow(Connection conn, String sql, Object... params) throws OperatingContextException {
+        FuncResult<ListStruct> result = SqlUtil.executeQueryFreestyle(conn, sql, params);
+
+        if (result.isNotEmptyResult())
+            return result.getResult().getItemAsRecord(0);
+
+        return null;
+    }
+
+    static public ListStruct getResults(Connection conn, String sql, Object... params) throws OperatingContextException {
+        FuncResult<ListStruct> result = SqlUtil.executeQueryFreestyle(conn, sql, params);
+
+        return result.getResult();
+    }
 
     // return a list of records where each row is a record in this collection
     static public FuncResult<ListStruct> executeQueryFreestyle(Connection conn, String sql, Object... params) throws OperatingContextException {
@@ -35,7 +75,7 @@ public class SqlUtil {
             FuncResult<PreparedStatement> psres = SqlUtil.prepStatement(conn, sql, params);
 
             if (res.hasErrors()) {
-                if (psres.isEmptyResult())
+                if (psres.isNotEmptyResult())
                     psres.getResult().close();
 
                 return res;
@@ -59,6 +99,91 @@ public class SqlUtil {
                         }
 
                         list.with(rec);
+                    }
+                }
+            }
+        }
+        catch (Exception x) {
+            SqlUtil.processException(x, res);
+        }
+
+        return res;
+    }
+
+    // return count of records updated
+    static public FuncResult<Long> executeUpdateFreestyle(Connection conn, String sql, Object... params) throws OperatingContextException {
+        FuncResult<Long> res = new FuncResult<>();
+
+        res.setResult(0L);
+
+        // if connection is bad/missing then just try again later
+        if (conn == null) {
+            Logger.error("Missing sql connection");
+            return res;
+        }
+
+        try {
+            FuncResult<PreparedStatement> psres = SqlUtil.prepStatement(conn, sql, params);
+
+            if (res.hasErrors()) {
+                if (psres.isNotEmptyResult())
+                    psres.getResult().close();
+
+                return res;
+            }
+
+            try (PreparedStatement pstmt = psres.getResult()) {
+                long count = pstmt.executeUpdate();
+
+                res.setResult(count);
+            }
+        }
+        catch (Exception x) {
+            SqlUtil.processException(x, res);
+        }
+
+        return res;
+    }
+
+    // return count of records updated
+    static public FuncResult<Long> executeWrite(Connection conn, SqlWriter writer) throws OperatingContextException {
+        return executeUpdateFreestyle(conn, writer.toSql(), writer.toParams());
+    }
+
+    // return id of record added
+    static public FuncResult<Long> executeInsertReturnId(Connection conn, SqlWriter writer) throws OperatingContextException {
+        FuncResult<Long> res = new FuncResult<>();
+
+        // if connection is bad/missing then just try again later
+        if (conn == null) {
+            Logger.error("Missing sql connection");
+            return res;
+        }
+
+        if (writer.op != SqlWriter.SqlUpdateType.Insert) {
+            Logger.error("Incorrect sql command - expected insert");
+            return res;
+        }
+
+        try {
+            FuncResult<PreparedStatement> psres = SqlUtil.prepStatement(conn, writer.toSql(), writer.toParams());
+
+            if (res.hasErrors()) {
+                if (psres.isNotEmptyResult())
+                    psres.getResult().close();
+
+                return res;
+            }
+
+            try (PreparedStatement pstmt = psres.getResult()) {
+                int count = pstmt.executeUpdate();
+
+                if (count == 1) {
+                    try (PreparedStatement pstmt2 = conn.prepareStatement("SELECT LAST_INSERT_ID() AS lid")){
+                        ResultSet rs = pstmt2.executeQuery();
+
+                        if (rs.next())
+                            res.setResult(rs.getLong("lid"));
                     }
                 }
             }
@@ -100,8 +225,11 @@ public class SqlUtil {
                 if (param == null)
                     continue;
 
+                if (param instanceof LocalDate)
+                    param = ((LocalDate) param).toString();     // just the yyyy-mm-dd format
+
                 if (param instanceof TemporalAccessor)
-                    param = TimeUtil.sqlStampFmt.format((TemporalAccessor) param);
+                    param = TimeUtil.sqlStampFmt.format((TemporalAccessor) param);  // full date and time
 
                 if (param instanceof CharSequence) {
                     pstmt.setString(i + 1, ((CharSequence)param).toString());

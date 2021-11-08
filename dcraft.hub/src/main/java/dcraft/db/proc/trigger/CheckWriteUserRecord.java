@@ -7,6 +7,7 @@ import dcraft.db.tables.TableUtil;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -14,7 +15,7 @@ import dcraft.util.StringUtil;
 
 public class CheckWriteUserRecord implements ITrigger {
 	@Override
-	public boolean execute(TablesAdapter db, String table, String id, Struct context) throws OperatingContextException {
+	public boolean execute(TablesAdapter db, String table, String id, BaseStruct context) throws OperatingContextException {
 		/*
 		// if we are in an RPC and got this far, then we passed the badge test
 		if ((context instanceof RecordStruct) && ((RecordStruct) context).getFieldAsBooleanOrFalse("FromRPC"))

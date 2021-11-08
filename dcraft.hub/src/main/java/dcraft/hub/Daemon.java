@@ -25,6 +25,7 @@ import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.op.UserContext;
 import dcraft.service.ServiceHub;
 import dcraft.service.ServiceRequest;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.*;
@@ -83,7 +84,7 @@ public class Daemon implements dcraft.daemon.IDaemon {
 												.withData(msg.getField("Body"))
 												.withOutcome(new OperationOutcomeStruct() {
 													@Override
-													public void callback(Struct result) throws OperatingContextException {
+													public void callback(BaseStruct result) throws OperatingContextException {
 														taskctx.returnEmpty();
 													}
 												})

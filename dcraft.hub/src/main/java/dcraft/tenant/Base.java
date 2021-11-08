@@ -8,6 +8,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationObserver;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
@@ -15,7 +16,7 @@ import dcraft.util.groovy.GCompClassLoader;
 import dcraft.xml.XElement;
 
 abstract public class Base extends RecordStruct implements IVariableProvider {
-	public Struct getCacheEntry(String name) {
+	public BaseStruct getCacheEntry(String name) {
 		RecordStruct cache = this.getFieldAsRecord("Cache");
 		
 		if (cache != null) {
@@ -34,7 +35,7 @@ abstract public class Base extends RecordStruct implements IVariableProvider {
 		return null;
 	}
 	
-	public synchronized Base withCacheEntry(String name, Struct entry, long seconds) {
+	public synchronized Base withCacheEntry(String name, BaseStruct entry, long seconds) {
 		RecordStruct cache = this.getFieldAsRecord("Cache");
 		
 		if (cache == null) {
@@ -108,7 +109,7 @@ abstract public class Base extends RecordStruct implements IVariableProvider {
 	}
 
 	@Override
-	public void addVariable(String name, Struct var) throws OperatingContextException {
+	public void addVariable(String name, BaseStruct var) throws OperatingContextException {
 		this.getFieldAsRecord("Variables").with(name, var);
 
 		if (var instanceof AutoCloseable) {
@@ -136,7 +137,7 @@ abstract public class Base extends RecordStruct implements IVariableProvider {
 	}
 
 	@Override
-	public Struct queryVariable(String name) {
+	public BaseStruct queryVariable(String name) {
 		if (StringUtil.isEmpty(name))
 			return null;
 

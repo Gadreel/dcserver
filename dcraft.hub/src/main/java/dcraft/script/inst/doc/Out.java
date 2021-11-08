@@ -3,6 +3,7 @@ package dcraft.script.inst.doc;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.AnyStruct;
 import dcraft.task.IParentAwareWork;
@@ -36,7 +37,7 @@ public class Out extends Base {
 			String name = StackUtil.stringFromElement(state, pel, "Name");
 			
 			if (StringUtil.isNotEmpty(name)) {
-				Struct val = StackUtil.refFromElement(state, pel, "Value");
+				BaseStruct val = StackUtil.refFromElement(state, pel, "Value");
 				
 				if (val != null) {
 					StackUtil.addVariable(state, name, val);

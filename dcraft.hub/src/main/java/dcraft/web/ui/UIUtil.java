@@ -236,7 +236,7 @@ public class UIUtil {
 	}
 
 	static public boolean canEdit(InstructionWork state, Base element) throws OperatingContextException {
-		Struct editable = StackUtil.resolveReference(state, "$_CMSEditable", true);
+		BaseStruct editable = StackUtil.resolveReference(state, "$_CMSEditable", true);
 		
 		if (! Struct.objectToBooleanOrFalse(editable))
 			return false;

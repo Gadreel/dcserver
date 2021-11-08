@@ -12,6 +12,7 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.service.ServiceHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.web.ui.inst.TextWidget;
@@ -224,7 +225,7 @@ public class HoursWidget extends Base {
 					.toServiceRequest()
 					.withOutcome(new OperationOutcomeStruct() {
 						@Override
-						public void callback(Struct result) throws OperatingContextException {
+						public void callback(BaseStruct result) throws OperatingContextException {
 							if (! this.hasErrors() && (result instanceof RecordStruct))
 								HoursWidget.this.hoursdata = ((RecordStruct) result).getFieldAsRecord("HOO");
 

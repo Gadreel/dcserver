@@ -33,6 +33,7 @@ import dcraft.hub.op.UserContext;
 import dcraft.log.Logger;
 import dcraft.script.Script;
 import dcraft.service.plugin.Operation;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -479,7 +480,7 @@ public class Task extends RecordStruct {
 		if (this.isFieldEmpty("Tags"))
 			return false;
 		
-		for (Struct shas : this.getFieldAsList("Tags").items()) {
+		for (BaseStruct shas : this.getFieldAsList("Tags").items()) {
 			String has = shas.toString();
 			
 			for (String wants : tags) {
@@ -491,12 +492,12 @@ public class Task extends RecordStruct {
 		return false;
 	}
 	
-	public Task withParams(Struct v) {
+	public Task withParams(BaseStruct v) {
 		this.with("Params", v);
 		return this;
 	}
 	
-	public Struct getParams() {
+	public BaseStruct getParams() {
 		return this.getField("Params");
 	}
 	

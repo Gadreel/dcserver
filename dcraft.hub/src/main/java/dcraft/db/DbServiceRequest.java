@@ -23,6 +23,7 @@ import java.util.List;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.service.ServiceRequest;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 
@@ -109,7 +110,7 @@ public class DbServiceRequest extends ServiceRequest implements ICallContext {
 	
 	public String getTenant() throws OperatingContextException {
 		if ((this.tenants == null) || (this.tenants.size() == 0)) {
-			Struct params = this.getData();
+			BaseStruct params = this.getData();
 			
 			if ((params instanceof RecordStruct) && ((RecordStruct)params).isNotFieldEmpty("_ForTenant"))
 				return ((RecordStruct)params).getFieldAsString("_ForTenant");

@@ -25,6 +25,7 @@ import dcraft.schema.DataType;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.task.*;
 import dcraft.util.Memory;
@@ -66,7 +67,7 @@ public class ScriptHub {
 	}
 	*/
 
-	static public ReturnOption operation(StackWork stack, Struct target, XElement code) throws OperatingContextException {
+	static public ReturnOption operation(StackWork stack, BaseStruct target, XElement code) throws OperatingContextException {
 		if (target == null) {
 			Logger.error("Operation missing target");
 			return ReturnOption.CONTINUE;
@@ -574,7 +575,7 @@ public class ScriptHub {
 	 * 
 	 */
 
-	static public void scriptToDocument(Path scriptpath, String subtitle, Struct params, OperationOutcome<Memory> callback) throws OperatingContextException {
+	static public void scriptToDocument(Path scriptpath, String subtitle, BaseStruct params, OperationOutcome<Memory> callback) throws OperatingContextException {
 		OutputWrapper out = new OutputWrapper();
 
 		PrintStream ps = new PrintStream(out);
@@ -597,7 +598,7 @@ public class ScriptHub {
 		});
 	}
 
-	static public void scriptToDocument(Path scriptpath, String subtitle, Struct params, PrintStream ps, OperationOutcomeEmpty callback) throws OperatingContextException {
+	static public void scriptToDocument(Path scriptpath, String subtitle, BaseStruct params, PrintStream ps, OperationOutcomeEmpty callback) throws OperatingContextException {
 		try {
 			Script scrpt = Script.of(scriptpath);
 			

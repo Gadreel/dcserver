@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import dcraft.hub.app.ApplicationHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -87,7 +88,7 @@ public class SessionUtil {
 				tagcount.put("[none]", cnt);
 			}
 			else {
-				for (Struct stag : tags.items()) {
+				for (BaseStruct stag : tags.items()) {
 					String tag = stag.toString();
 					
 					long cnt = tagcount.containsKey(tag) ? tagcount.get(tag) : 0;

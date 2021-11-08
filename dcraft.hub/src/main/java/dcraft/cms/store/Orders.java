@@ -22,6 +22,7 @@ import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
 import dcraft.service.ServiceRequest;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -147,14 +148,14 @@ public class Orders {
 
 		ServiceHub.call(req.toServiceRequest().withOutcome(new OperationOutcomeStruct() {
 			@Override
-			public void callback(Struct result) throws OperatingContextException {
+			public void callback(BaseStruct result) throws OperatingContextException {
 				if (! this.hasErrors() && this.isNotEmptyResult()) {
 					RecordStruct rec = Struct.objectToRecord(result);
 
 					ListStruct shipments = rec.getFieldAsList("Shipments");
 
 					if (shipments != null) {
-						for (Struct smnt : shipments.items()) {
+						for (BaseStruct smnt : shipments.items()) {
 							RecordStruct smntrec = Struct.objectToRecord(smnt);
 
 							// don't show actual cost to customer
@@ -189,7 +190,7 @@ public class Orders {
 						ListStruct shlist = rec.getFieldAsList("ItemShipment");
 						rec.removeField("ItemShipment");
 
-						for (Struct pentry : plist.items()) {
+						for (BaseStruct pentry : plist.items()) {
 							RecordStruct prec = Struct.objectToRecord(pentry);
 
 							String eid = prec.getFieldAsString("SubId");
@@ -198,7 +199,7 @@ public class Orders {
 							RecordStruct resrec = RecordStruct.record()
 									.with("EntryId", eid);
 
-							for (Struct prodentry : pinfo.items()) {
+							for (BaseStruct prodentry : pinfo.items()) {
 								RecordStruct prodrec = Struct.objectToRecord(prodentry);
 
 								if (pid.equals(prodrec.getFieldAsString("Product"))) {
@@ -207,7 +208,7 @@ public class Orders {
 								}
 							}
 
-							for (Struct xentry : qlist.items()) {
+							for (BaseStruct xentry : qlist.items()) {
 								RecordStruct xrec = Struct.objectToRecord(xentry);
 
 								if (eid.equals(xrec.getFieldAsString("SubId"))) {
@@ -216,7 +217,7 @@ public class Orders {
 								}
 							}
 
-							for (Struct xentry : alist.items()) {
+							for (BaseStruct xentry : alist.items()) {
 								RecordStruct xrec = Struct.objectToRecord(xentry);
 
 								if (eid.equals(xrec.getFieldAsString("SubId"))) {
@@ -225,7 +226,7 @@ public class Orders {
 								}
 							}
 
-							for (Struct xentry : tlist.items()) {
+							for (BaseStruct xentry : tlist.items()) {
 								RecordStruct xrec = Struct.objectToRecord(xentry);
 
 								if (eid.equals(xrec.getFieldAsString("SubId"))) {
@@ -234,7 +235,7 @@ public class Orders {
 								}
 							}
 
-							for (Struct xentry : slist.items()) {
+							for (BaseStruct xentry : slist.items()) {
 								RecordStruct xrec = Struct.objectToRecord(xentry);
 
 								if (eid.equals(xrec.getFieldAsString("SubId"))) {
@@ -243,7 +244,7 @@ public class Orders {
 								}
 							}
 							
-							for (Struct xentry : uplist.items()) {
+							for (BaseStruct xentry : uplist.items()) {
 								RecordStruct xrec = Struct.objectToRecord(xentry);
 								
 								if (eid.equals(xrec.getFieldAsString("SubId"))) {
@@ -252,7 +253,7 @@ public class Orders {
 								}
 							}
 							
-							for (Struct xentry : shlist.items()) {
+							for (BaseStruct xentry : shlist.items()) {
 								RecordStruct xrec = Struct.objectToRecord(xentry);
 								
 								if (eid.equals(xrec.getFieldAsString("SubId"))) {

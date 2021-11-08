@@ -8,6 +8,7 @@ import dcraft.log.DebugLevel;
 import dcraft.log.HubLog;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
 import dcraft.task.IProgressAwareWork;
@@ -26,7 +27,7 @@ public class CallFuncWork extends InstructionWork implements IResultAwareWork, I
 	
 	protected InstructionWork currEntry = null;
 	
-	protected Struct value = null;
+	protected BaseStruct value = null;
 	protected long exitcode = 0L;
 	protected String exitmessage = null;
 	
@@ -73,7 +74,7 @@ public class CallFuncWork extends InstructionWork implements IResultAwareWork, I
 	}
 	
 	@Override
-	public Struct queryVariable(String name) throws OperatingContextException {
+	public BaseStruct queryVariable(String name) throws OperatingContextException {
 		if ("_Arg".equals(name))
 			return StackUtil.refFromSource(this, "Arg");
 		
@@ -86,12 +87,12 @@ public class CallFuncWork extends InstructionWork implements IResultAwareWork, I
 	}
 
 	@Override
-	public Struct getResult() {
+	public BaseStruct getResult() {
 		return this.value;
 	}
 	
 	@Override
-	public void setResult(Struct v) throws OperatingContextException {
+	public void setResult(BaseStruct v) throws OperatingContextException {
 		this.value = v;
 
 		String result = StackUtil.stringFromSource(this, "Result");

@@ -7,6 +7,7 @@ import dcraft.script.ScriptHub;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.InstructionWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -39,7 +40,7 @@ public class MenuWidget extends Base {
 		String icontype = StackUtil.stringFromSource(state,"IconType", "fa-square").toLowerCase();   // TODO set to `standard` as default after migration above
 
 		// include a Param if menu was built separately
-		Struct funcwrap = StackUtil.queryVariable(state, StackUtil.stringFromSource(state, "Include"));
+		BaseStruct funcwrap = StackUtil.queryVariable(state, StackUtil.stringFromSource(state, "Include"));
 
 		XElement pel = null;
 

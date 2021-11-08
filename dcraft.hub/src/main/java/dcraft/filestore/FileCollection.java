@@ -29,6 +29,7 @@ import dcraft.script.StackUtil;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
 import dcraft.stream.StreamUtil;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.xml.XElement;
@@ -117,7 +118,7 @@ public class FileCollection extends RecordStruct implements IFileCollection {
 	@Override
 	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
         if ("WithFile".equals(code.getName())) {
-            Struct var = StackUtil.refFromElement(stack, code, "Value", true);
+			BaseStruct var = StackUtil.refFromElement(stack, code, "Value", true);
 
             if (var instanceof FileStoreFile) {
             	this.withFiles((FileStoreFile) var);
@@ -136,7 +137,7 @@ public class FileCollection extends RecordStruct implements IFileCollection {
 	}
 
     @Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
     	super.doCopy(n);
     	
     	FileCollection nn = (FileCollection)n;

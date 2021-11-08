@@ -14,7 +14,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 public class DataUtil {
-	static public Object format(Struct value, String format) throws OperatingContextException {
+	static public Object format(BaseStruct value, String format) throws OperatingContextException {
 		if (StringUtil.isEmpty(format))
 			return value;
 
@@ -33,7 +33,7 @@ public class DataUtil {
 		return DataUtil.format(value, format.split("\\|"));
 	}
 
-	static public Object format(Struct value, String... formats) throws OperatingContextException {
+	static public Object format(BaseStruct value, String... formats) throws OperatingContextException {
 		// convert scalars to objects
 		if (value instanceof ScalarStruct)
 			return DataUtil.format(((ScalarStruct) value).getGenericValue(), formats);

@@ -13,6 +13,7 @@
 #  Authors:
 #    * Andy White
 #
+#  TODO remove this in favor of dcraft.util.sql?
 ************************************************************************ */
 
  /**

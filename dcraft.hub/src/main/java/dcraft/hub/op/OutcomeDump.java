@@ -1,5 +1,6 @@
 package dcraft.hub.op;
 
+import dcraft.struct.BaseStruct;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.Struct;
@@ -25,7 +26,7 @@ public class OutcomeDump extends OperationOutcomeStruct {
 	protected String label = null;
 	
 	@Override
-	public void callback(Struct result) throws OperatingContextException {
+	public void callback(BaseStruct result) throws OperatingContextException {
 		ListStruct msgs = this.getMessages();
 		
 		if (this.hasErrors()) {

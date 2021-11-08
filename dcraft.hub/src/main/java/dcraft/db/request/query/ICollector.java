@@ -1,5 +1,6 @@
 package dcraft.db.request.query;
 
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 
 /**
@@ -15,5 +16,5 @@ public interface ICollector {
 	/**
 	 * @return query parameters 
 	 */
-	Struct getParams();
+	BaseStruct getParams();
 }

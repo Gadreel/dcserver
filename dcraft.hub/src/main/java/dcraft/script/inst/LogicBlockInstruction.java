@@ -19,6 +19,7 @@ package dcraft.script.inst;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.NullStruct;
@@ -32,15 +33,15 @@ abstract public class LogicBlockInstruction extends BlockInstruction {
     protected boolean checkLogic(InstructionWork stack, XElement source) throws OperatingContextException {
         if (source == null) 
         	source = this;
-      
-        Struct target = source.hasAttribute("Target")
+
+        BaseStruct target = source.hasAttribute("Target")
         		? StackUtil.refFromElement(stack, source, "Target", true)
         	    : StackUtil.queryVariable(stack, "_LastResult");
 
         return LogicBlockInstruction.checkLogic(stack, target, source);
     }
 
-    static public boolean checkLogic(InstructionWork stack, Struct target, XElement source) throws OperatingContextException {
+    static public boolean checkLogic(InstructionWork stack, BaseStruct target, XElement source) throws OperatingContextException {
 		LogicBlockState logicState = new LogicBlockState();
 
         if (target == null)

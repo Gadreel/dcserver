@@ -361,7 +361,7 @@
 		</StringType>
 
 		<StringType Id="dcmPaymentMethodEnum">
-			<StringRestriction Enum="CreditCard,StoreCredit,PayPal,Manual" />
+			<StringRestriction Enum="CreditCard,StoreCredit,PayPal,PayPalV2,Manual" />
 		</StringType>
 
 		<StringType Id="dcmTargetUserEnum">

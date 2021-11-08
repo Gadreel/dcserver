@@ -18,6 +18,7 @@ import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
 import dcraft.stream.StreamWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.task.StateWork;
 import dcraft.task.StateWorkStep;
@@ -123,7 +124,7 @@ public class DatabaseWork extends StateWork {
 				.toServiceRequest()
 				.withOutcome(new OperationOutcomeStruct() {
 					@Override
-					public void callback(Struct result) throws OperatingContextException {
+					public void callback(BaseStruct result) throws OperatingContextException {
 						if (this.hasErrors()) {
 							Logger.error("Unable to backup database, error writing database.");
 						}

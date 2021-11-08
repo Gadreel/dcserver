@@ -11,10 +11,7 @@ import dcraft.schema.DataType;
 import dcraft.schema.SchemaHub;
 import dcraft.stream.StreamFragment;
 import dcraft.stream.StreamWork;
-import dcraft.struct.CompositeParser;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.task.ChainWork;
 import dcraft.task.TaskContext;
 import dcraft.tenant.Site;
@@ -89,7 +86,7 @@ public class WizardOutputAdapter extends ChainWork implements IOutputWork {
 							String starttab = null;
 							
 							if (tabs != null) {
-								for (Struct ts : tabs.items()) {
+								for (BaseStruct ts : tabs.items()) {
 									RecordStruct tab = Struct.objectToRecord(ts);
 									
 									String talias = tab.getFieldAsString("Alias", "default");

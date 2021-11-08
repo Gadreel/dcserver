@@ -8,6 +8,7 @@ import dcraft.db.ICallContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.*;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -43,7 +44,7 @@ public class CountIndexes implements IStoredProc {
 				});
 			}
 			else {
-				for (Struct vs : values.items()) {
+				for (BaseStruct vs : values.items()) {
 					Object val = Struct.objectToCore(vs);
 					
 					Max cnt = Max.max();

@@ -12,6 +12,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeRecord;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -143,7 +144,7 @@ public class AuthUtilXml {
 		if ((items != null) && (items.getSize() > 0)) {
 			XElement ilist = XElement.tag("lineItems");
 			
-			for (Struct i : items.items()) {
+			for (BaseStruct i : items.items()) {
 				RecordStruct itm = (RecordStruct) i;
 				
 				BigDecimal price = itm.isFieldEmpty("SalePrice")

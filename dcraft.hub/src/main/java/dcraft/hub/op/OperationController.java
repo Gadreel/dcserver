@@ -9,6 +9,7 @@ import dcraft.log.DebugLevel;
 import dcraft.log.HubLog;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -130,7 +131,7 @@ public class OperationController extends RecordStruct implements IVariableProvid
 	}
 
 	@Override
-	public void addVariable(String name, Struct var) throws OperatingContextException {
+	public void addVariable(String name, BaseStruct var) throws OperatingContextException {
 		this.getFieldAsRecord("Variables").with(name, var);
 
 		if (var instanceof AutoCloseable) {
@@ -158,7 +159,7 @@ public class OperationController extends RecordStruct implements IVariableProvid
 	}
 
 	@Override
-	public Struct queryVariable(String name) {
+	public BaseStruct queryVariable(String name) {
 		if (StringUtil.isEmpty(name))
 			return null;
 

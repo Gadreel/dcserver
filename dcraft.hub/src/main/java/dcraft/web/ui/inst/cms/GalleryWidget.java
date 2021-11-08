@@ -11,11 +11,8 @@ import dcraft.script.ScriptHub;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Var;
 import dcraft.script.work.InstructionWork;
-import dcraft.struct.FieldStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
+import dcraft.struct.*;
 import dcraft.script.inst.doc.Base;
-import dcraft.struct.Struct;
 import dcraft.struct.builder.JsonStreamBuilder;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
@@ -146,7 +143,7 @@ public class GalleryWidget extends Base implements ICMSAware {
 					StringBuilder srcset = new StringBuilder();
 					boolean first = true;
 					
-					for (Struct lvl : vdata.getFieldAsList("Density").items()) {
+					for (BaseStruct lvl : vdata.getFieldAsList("Density").items()) {
 						RecordStruct rlvl = (RecordStruct) lvl;
 						String amt = rlvl.getFieldAsString("Level");
 						

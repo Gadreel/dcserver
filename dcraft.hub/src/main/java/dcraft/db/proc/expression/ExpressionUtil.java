@@ -10,6 +10,7 @@ import dcraft.schema.DataType;
 import dcraft.schema.DbExpression;
 import dcraft.schema.DbField;
 import dcraft.schema.SchemaResource;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -102,8 +103,8 @@ public class ExpressionUtil {
 	static public List<byte[]> loadSearchValues(RecordStruct pdef, FieldInfo field, String locale, String pre, String post) throws OperatingContextException {
 		if (pdef == null)
 			return null;
-		
-		Struct val = pdef.getField("Value");
+
+		BaseStruct val = pdef.getField("Value");
 		
 		if (val == null)
 			return null;
@@ -124,7 +125,7 @@ public class ExpressionUtil {
 		return vl;
 	}
 	
-	static public void loadSearchValue(List<byte[]> vl, FieldInfo field, Struct val, String locale, String pre, String post) throws OperatingContextException {
+	static public void loadSearchValue(List<byte[]> vl, FieldInfo field, BaseStruct val, String locale, String pre, String post) throws OperatingContextException {
 		if (vl == null)
 			return;
 		

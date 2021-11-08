@@ -4,12 +4,13 @@ import dcraft.db.proc.ITrigger;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 
 public class CheckReadUserRecord implements ITrigger {
 	@Override
-	public boolean execute(TablesAdapter db, String table, String id, Struct context) throws OperatingContextException {
+	public boolean execute(TablesAdapter db, String table, String id, BaseStruct context) throws OperatingContextException {
 		/*
 		// if we are in an RPC and got this far, then we passed the badge test
 		if ((context instanceof RecordStruct) && ((RecordStruct) context).getFieldAsBooleanOrFalse("FromRPC"))

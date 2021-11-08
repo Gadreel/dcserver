@@ -24,6 +24,7 @@ import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.service.ServiceHub;
 import dcraft.stream.StreamUtil;
 import dcraft.stream.StreamWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.task.StateWork;
 import dcraft.task.StateWorkStep;
@@ -71,7 +72,7 @@ public class LogsWork extends StateWork {
 				.toServiceRequest()
 				.withOutcome(new OperationOutcomeStruct() {
 					@Override
-					public void callback(Struct result) throws OperatingContextException {
+					public void callback(BaseStruct result) throws OperatingContextException {
 						if (this.hasErrors()) {
 							Logger.error("Unable to backup logs, error reading database.");
 							LogsWork.this.transition(trun, StateWorkStep.STOP);
@@ -177,7 +178,7 @@ public class LogsWork extends StateWork {
 				.toServiceRequest()
 				.withOutcome(new OperationOutcomeStruct() {
 					@Override
-					public void callback(Struct result) throws OperatingContextException {
+					public void callback(BaseStruct result) throws OperatingContextException {
 						if (this.hasErrors()) {
 							Logger.error("Unable to backup logs, error writing database.");
 						}

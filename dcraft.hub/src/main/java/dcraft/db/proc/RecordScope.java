@@ -7,6 +7,7 @@ import dcraft.script.inst.Instruction;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
@@ -35,7 +36,7 @@ public class RecordScope implements IVariableProvider {
 	}
 	
 	@Override
-	public void addVariable(String name, Struct var) throws OperatingContextException {
+	public void addVariable(String name, BaseStruct var) throws OperatingContextException {
 		this.variables.with(name, var);
 		
 		if (var instanceof AutoCloseable) {
@@ -63,7 +64,7 @@ public class RecordScope implements IVariableProvider {
 	}
 	
 	@Override
-	public Struct queryVariable(String name) throws OperatingContextException {
+	public BaseStruct queryVariable(String name) throws OperatingContextException {
 		if (StringUtil.isEmpty(name))
 			return null;
 		

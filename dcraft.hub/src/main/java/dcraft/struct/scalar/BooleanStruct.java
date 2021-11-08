@@ -23,6 +23,7 @@ import dcraft.schema.SchemaHub;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
 import dcraft.script.work.StackWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
@@ -94,7 +95,7 @@ public class BooleanStruct extends ScalarStruct {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Set".equals(op)) {
-			Struct sref = code.hasAttribute("Value")
+			BaseStruct sref = code.hasAttribute("Value")
 					? StackUtil.refFromElement(stack, code, "Value")
 					: StackUtil.resolveReference(stack, code.getText());
 			
@@ -107,7 +108,7 @@ public class BooleanStruct extends ScalarStruct {
 	}
 
     @Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
     	super.doCopy(n);
     	
     	BooleanStruct nn = (BooleanStruct)n;
@@ -115,7 +116,7 @@ public class BooleanStruct extends ScalarStruct {
     }
     
 	@Override
-	public Struct deepCopy() {
+	public BaseStruct deepCopy() {
 		BooleanStruct cp = new BooleanStruct();
 		this.doCopy(cp);
 		return cp;

@@ -15,6 +15,7 @@ import dcraft.service.ServiceResource;
 import dcraft.stream.StreamFragment;
 import dcraft.stream.record.ListSourceStream;
 import dcraft.stream.record.SyncRecordStreamConsumer;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -264,7 +265,7 @@ public class StreamTwo {
 				.withRequestStream(lss)
 				.withOutcome(new OperationOutcomeStruct() {
 					@Override
-					public void callback(Struct result) throws OperatingContextException {
+					public void callback(BaseStruct result) throws OperatingContextException {
 						System.out.println();
 						System.out.println("Here are the messages logged for " + chef);
 						System.out.println(this.getMessages().toPrettyString());

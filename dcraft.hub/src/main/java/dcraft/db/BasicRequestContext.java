@@ -4,6 +4,7 @@ import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -44,11 +45,11 @@ public class BasicRequestContext implements IRequestContext{
 	protected DatabaseAdapter ntrfc = null;
 	protected BigDecimal stamp = null;
 	protected String tenant = null;
-	protected Struct data = null;
+	protected BaseStruct data = null;
 	protected String op = null;
 	protected List<String> tenants = null;
 	
-	public BasicRequestContext withData(Struct v) {
+	public BasicRequestContext withData(BaseStruct v) {
 		this.data = v;
 		return this;
 	}
@@ -85,7 +86,7 @@ public class BasicRequestContext implements IRequestContext{
 	}
 	
 	@Override
-	public Struct getData() {
+	public BaseStruct getData() {
 		return this.data;
 	}
 	

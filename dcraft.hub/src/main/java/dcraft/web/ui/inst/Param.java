@@ -6,6 +6,7 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.inst.doc.Base;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.AnyStruct;
@@ -37,7 +38,7 @@ public class Param extends Base implements IReviewAware {
 			String name = StackUtil.stringFromSource(state,"Name");
 			
 			if (StringUtil.isNotEmpty(name)) {
-				Struct val = StackUtil.refFromSource(state,"Value", true);
+				BaseStruct val = StackUtil.refFromSource(state,"Value", true);
 				
 				if (val != null) {
 					StackUtil.addVariable(state.getParent(), name, val);

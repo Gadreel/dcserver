@@ -22,7 +22,7 @@ public interface IPartSelector {
 	 * @param path string holding the path to select
 	 * @return selected structure if any, otherwise null
 	 */
-	Struct select(String path);
+	BaseStruct select(String path);
 	
 	/**
 	 * A way to select a child or sub child structure similar to XPath but lightweight.
@@ -36,7 +36,7 @@ public interface IPartSelector {
 	 * @param path parts of the path holding a list index or a field name
 	 * @return selected structure if any, otherwise null
 	 */
-	Struct select(PathPart... path);
+	BaseStruct select(PathPart... path);
 	
 	/*
 	BigDateTime selectAsBigDateTime(String name);

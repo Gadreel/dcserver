@@ -20,6 +20,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IResultAwareWork;
 import dcraft.xml.XElement;
@@ -41,7 +42,7 @@ public class Return extends Instruction {
 		IResultAwareWork resultAwareWork = StackUtil.queryResultAware(state);
 		
         if (this.hasAttribute("Result")) {
-        	Struct target = StackUtil.refFromElement(state, this, "Result", true);
+			BaseStruct target = StackUtil.refFromElement(state, this, "Result", true);
         	resultAwareWork.setResult(target);
         }
         

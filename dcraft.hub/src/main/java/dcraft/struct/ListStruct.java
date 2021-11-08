@@ -84,7 +84,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		return ret;
 	}
 	
-	protected List<Struct> items = new CopyOnWriteArrayList<>();		// TODO can we make a more efficient list (one that allows modifications but won't crash an iterator)
+	protected List<BaseStruct> items = new CopyOnWriteArrayList<>();		// TODO can we make a more efficient list (one that allows modifications but won't crash an iterator)
 
 	@Override
 	public DataType getType() {
@@ -115,7 +115,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 	 * @see dcraft.struct.CompositeStruct#select(dcraft.struct.PathPart[])
 	 */
 	@Override
-	public Struct select(PathPart... path) {
+	public BaseStruct select(PathPart... path) {
 		if (path.length == 0)
 			return this;
 		
@@ -140,8 +140,8 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 			//Logger.warnTr(502, part.getIndex());
 			return null;
 		}
-		
-		Struct o = this.items.get(idx);
+
+		BaseStruct o = this.items.get(idx);
 		
 		if (path.length == 1) 
 			return o;			
@@ -153,7 +153,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		return null;
 	}
 	
-	public Stream<Struct> structStream() {
+	public Stream<BaseStruct> structStream() {
 		return this.items.stream();
 	}
 	
@@ -206,7 +206,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 	public ListStruct with(Object... items) {
 		for (Object o : items) {
 			Object value = o;
-			Struct svalue = null;
+			BaseStruct svalue = null;
 			
 			if (value instanceof ICompositeBuilder)
 				value = ((ICompositeBuilder)value).toLocal();
@@ -215,7 +215,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 				TypeOptionsList itms = this.explicitType.getItems();
 				
 				if (itms != null) {
-					Struct sv = itms.wrap(value);
+					BaseStruct sv = itms.wrap(value);
 					
 					if (sv != null)
 						svalue = sv;
@@ -241,17 +241,13 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 	}
 	
 	public ListStruct withCollection(ListStruct coll) {
-		for (Struct o : coll.items())
+		for (BaseStruct o : coll.items())
 			this.with(o);		// extra slow, enhance TODO
 		
 		return this;
 	}
 
-	public void addItem(int i, Struct o) {
-		this.items.add(i, o);
-	}
-
-	public void replaceItem(int i, Struct o) {
+	public void replaceItem(int i, BaseStruct o) {
 		if (i < this.items.size())
 			this.items.set(i, o);
 	}
@@ -260,7 +256,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 	 * 
 	 * @return collection of all the items the list holds
 	 */
-	public Iterable<Struct> items() {
+	public Iterable<BaseStruct> items() {
 		return this.items;
 	}
 	
@@ -271,7 +267,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 	 * @param idx position in list of the item desired (0 based)
 	 * @return the struct for that field
 	 */
-	public Struct getItem(int idx) {
+	public BaseStruct getItem(int idx) {
 		if ((idx >= this.items.size()) || (idx < 0))
 			return null;
 		
@@ -281,8 +277,8 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 	public Object getAt(int idx) {
 		if ((idx >= this.items.size()) || (idx < 0))
 			return null;
-		
-		Struct v = this.items.get(idx);
+
+		BaseStruct v = this.items.get(idx);
 		
 		if (v == null)
 			return null;
@@ -455,7 +451,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 	 * @param idx position in list of the item desired (0 based)
 	 * @return field's "inner" value as Struct
 	 */
-	public Struct getItemAsStruct(int idx) {
+	public BaseStruct getItemAsStruct(int idx) {
 		return Struct.objectToStruct(this.getItem(idx));
 	}
 	
@@ -514,7 +510,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 	/*
 	 * @param idx position in list of the item to remove from list
 	 */
-	public void removeItem(Struct itm) {
+	public void removeItem(BaseStruct itm) {
 		// TODO dispose
 		//Struct old = this.items.get(itm);
 		
@@ -525,7 +521,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 	}
 
     @Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
     	super.doCopy(n);
     	
     	ListStruct nn = (ListStruct)n;
@@ -534,7 +530,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
     }
     
 	@Override
-	public Struct deepCopy() {
+	public BaseStruct deepCopy() {
 		ListStruct cp = new ListStruct();
 		this.doCopy(cp);
 		return cp;
@@ -561,8 +557,8 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		if (source.hasAttribute("Contains")) {
 			if (logicState.pass) {
 				boolean fnd = false;
-				
-				Struct other = StackUtil.refFromElement(stack, source, "Contains", true);
+
+				BaseStruct other = StackUtil.refFromElement(stack, source, "Contains", true);
 				
 				if (this.items.contains(other)) {
 					fnd = true;
@@ -597,7 +593,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 			if (StringUtil.isNotEmpty(json)) {
 				ListStruct pjson = (ListStruct) CompositeParser.parseJson(" [ " + json + " ] ");
 
-				for (Struct s : pjson.items())
+				for (BaseStruct s : pjson.items())
 					this.items.add(s);
 			}
 			
@@ -606,12 +602,12 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("AddItem".equals(code.getName())) {
-			Struct sref = StackUtil.refFromElement(stack, code, "Value", true);
+			BaseStruct sref = StackUtil.refFromElement(stack, code, "Value", true);
 			this.withItem(sref);
 			return ReturnOption.CONTINUE;
 		}
 		else if ("AddAll".equals(code.getName())) {
-			Struct sref = StackUtil.refFromElement(stack, code, "Value", true);
+			BaseStruct sref = StackUtil.refFromElement(stack, code, "Value", true);
 			if (sref instanceof ListStruct)
 				this.withCollection((ListStruct) sref);
 			else
@@ -663,7 +659,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 				
 				boolean first = true;
 				
-				for (Struct o : this.items) {
+				for (BaseStruct o : this.items) {
 					if (first)
 						first = false;
 					else
@@ -685,14 +681,14 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 	public List<String> toStringList() {
 		List<String> nlist = new ArrayList<>();
 		
-		for (Struct s : this.items) 
+		for (BaseStruct s : this.items)
 			if (s != null)
 				nlist.add(s.toString());
 		
 		return nlist;
 	}
 
-	public boolean contains(Struct v) {
+	public boolean contains(BaseStruct v) {
 		return this.items.contains(v);
 	}
 
@@ -700,7 +696,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		boolean first = true;
 		StringBuilder res = new StringBuilder();
 
-		for (Struct o : this.items) {
+		for (BaseStruct o : this.items) {
 			if (first)
 				first = false;
 			else
@@ -716,14 +712,14 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 	public List<Object> toObjectList() {
 		List<Object> nlist = new ArrayList<>();
 		
-		for (Struct s : this.items) 
+		for (BaseStruct s : this.items)
 			if (s instanceof ScalarStruct)
 				nlist.add(((ScalarStruct)s).getGenericValue());
 		
 		return nlist;
 	}
 	
-	public void sort(Comparator<Struct> comparator) {
+	public void sort(Comparator<BaseStruct> comparator) {
 		this.items.sort(comparator);
 	}
 	
@@ -731,11 +727,11 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		if (StringUtil.isEmpty(field))
 			return;
 		
-		this.sort(new Comparator<Struct>() {
+		this.sort(new Comparator<BaseStruct>() {
 			@Override
-			public int compare(Struct o1, Struct o2) {
-				Struct fld1 = ((RecordStruct)o1).getField(field);
-				Struct fld2 = ((RecordStruct)o2).getField(field);
+			public int compare(BaseStruct o1, BaseStruct o2) {
+				BaseStruct fld1 = ((RecordStruct)o1).getField(field);
+				BaseStruct fld2 = ((RecordStruct)o2).getField(field);
 				
 				if ((fld1 == null) && (fld2 == null))
 					return 0;

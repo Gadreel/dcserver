@@ -153,7 +153,7 @@ public class Html extends Base {
 		
 		// make sure page variables are resolved (clean references)
 		for (FieldStruct fld : page.getFields()) {
-			Struct value = fld.getValue();
+			BaseStruct value = fld.getValue();
 			
 			if (value instanceof StringStruct) {
 				StringStruct svalue = (StringStruct) value;

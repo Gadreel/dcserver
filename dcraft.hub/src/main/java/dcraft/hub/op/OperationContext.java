@@ -30,6 +30,7 @@ import dcraft.log.DebugLevel;
 import dcraft.log.Logger;
 import dcraft.session.Session;
 import dcraft.session.SessionHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -475,7 +476,7 @@ public class OperationContext extends RecordStruct implements IVariableProvider 
 	}
 
 	@Override
-	public void addVariable(String name, Struct var) throws OperatingContextException {
+	public void addVariable(String name, BaseStruct var) throws OperatingContextException {
 		this.getFieldAsRecord("Variables").with(name, var);
 
 		if (var instanceof AutoCloseable) {
@@ -503,7 +504,7 @@ public class OperationContext extends RecordStruct implements IVariableProvider 
 	}
 
 	@Override
-	public Struct queryVariable(String name) {
+	public BaseStruct queryVariable(String name) {
 		if (StringUtil.isEmpty(name))
 			return null;
 
@@ -535,7 +536,7 @@ public class OperationContext extends RecordStruct implements IVariableProvider 
 		if ("_Node".equals(name))
 			return ApplicationHub.getVariables();
 
-		Struct ret = this.getFieldAsRecord("Variables").getField(name);
+		BaseStruct ret = this.getFieldAsRecord("Variables").getField(name);
 
 		if (ret != null)
 			return ret;

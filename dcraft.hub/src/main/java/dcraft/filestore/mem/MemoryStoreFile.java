@@ -30,6 +30,7 @@ import dcraft.stream.IStreamSource;
 import dcraft.stream.StreamFragment;
 import dcraft.stream.file.IFileStreamDest;
 import dcraft.stream.file.MemorySourceStream;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
@@ -137,7 +138,7 @@ public class MemoryStoreFile extends FileStoreFile {
 	}
 
 	@Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
     	super.doCopy(n);
     	
     	MemoryStoreFile nn = (MemoryStoreFile)n;
@@ -152,7 +153,7 @@ public class MemoryStoreFile extends FileStoreFile {
 	}
 
 	@Override
-	public Struct getOrAllocateField(String name) {
+	public BaseStruct getOrAllocateField(String name) {
 		// TODO consider this
 		//if ("TextReader".equals(name))
 		//	return new FileSystemTextReader(this);

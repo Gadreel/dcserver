@@ -20,6 +20,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.IResultAwareWork;
@@ -44,7 +45,7 @@ public class Exit extends Instruction {
 	public ReturnOption run(InstructionWork state) throws OperatingContextException {
 		String output = this.hasText() ? StackUtil.resolveValueToString(state, this.getText()) : null;
 		long code = StackUtil.intFromSource(state, "Code", 0);
-		Struct result = this.hasAttribute( "Result") ? StackUtil.refFromSource(state, "Result") : null;
+		BaseStruct result = this.hasAttribute( "Result") ? StackUtil.refFromSource(state, "Result") : null;
 		
 		IResultAwareWork resultAwareWork = StackUtil.queryResultAware(state);
 		

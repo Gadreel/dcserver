@@ -10,6 +10,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
 import dcraft.schema.DbProc;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 
@@ -26,7 +27,7 @@ public class BaseDataService extends BaseService {
 		// ideally call the DBService, but don't try to validate because validation was done as another service
 		// TODO improve this to use possibly remote data services
 		if (proc != null) {
-			Struct params = request.getData();
+			BaseStruct params = request.getData();
 
 			String reqdbname = (params instanceof RecordStruct)
 					? ((RecordStruct)params).getFieldAsString("_Database", "default")

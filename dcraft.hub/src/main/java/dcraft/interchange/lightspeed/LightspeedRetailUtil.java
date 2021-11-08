@@ -39,7 +39,7 @@ public class LightspeedRetailUtil {
 	}
 
 	static public void itemList(String alt, String accessToken, String accountid, ListStruct relations, int offset, String query, OperationOutcomeRecord callback) throws OperatingContextException {
-		String path = "Account/" + accountid + "/Item.json?offset=" + offset;
+		String path = "Account/" + accountid + "/Item.json?offset=" + (offset * 100);
 
 		if ((relations != null) && (relations.size() > 0))
 			path += "&load_relations=" + URLEncoder.encode(relations.toString().replace(" ", ""), StandardCharsets.UTF_8);
@@ -107,6 +107,8 @@ public class LightspeedRetailUtil {
 
 		if (post != null) {
 			builder.header("Content-Type", "application/json");
+
+			//System.out.println("Request: " + post.toPrettyString());
 
 			if ("POST".equals(method))
 				builder.POST(HttpRequest.BodyPublishers.ofString(post.toString()));

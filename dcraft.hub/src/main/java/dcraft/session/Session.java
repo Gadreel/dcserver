@@ -29,6 +29,7 @@ import dcraft.log.DebugLevel;
 import dcraft.log.HubLog;
 import dcraft.log.Logger;
 import dcraft.service.ServiceRequest;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.TaskContext;
@@ -96,7 +97,7 @@ public class Session extends RecordStruct implements IVariableProvider {
 
 	protected ResourceTier resources = null;
 
-	protected HashMap<String, Struct> cache = new HashMap<>();
+	protected HashMap<String, BaseStruct> cache = new HashMap<>();
 	protected HashMap<String, TaskContext> tasks = new HashMap<>();
 	protected ISessionAdapter adapter = null;
 		
@@ -104,7 +105,7 @@ public class Session extends RecordStruct implements IVariableProvider {
 		return this.id;
 	}
 	
-	public HashMap<String, Struct> getCache() {
+	public HashMap<String, BaseStruct> getCache() {
 		return this.cache;
 	}
 
@@ -384,7 +385,7 @@ public class Session extends RecordStruct implements IVariableProvider {
 	}
 
 	@Override
-	public void addVariable(String name, Struct var) throws OperatingContextException {
+	public void addVariable(String name, BaseStruct var) throws OperatingContextException {
 		this.getFieldAsRecord("Variables").with(name, var);
 
 		if (var instanceof AutoCloseable) {
@@ -412,7 +413,7 @@ public class Session extends RecordStruct implements IVariableProvider {
 	}
 
 	@Override
-	public Struct queryVariable(String name) {
+	public BaseStruct queryVariable(String name) {
 		if (StringUtil.isEmpty(name))
 			return null;
 

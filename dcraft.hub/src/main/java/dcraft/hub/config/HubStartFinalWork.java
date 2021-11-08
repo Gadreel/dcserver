@@ -12,6 +12,7 @@ import dcraft.hub.resource.ResourceTier;
 import dcraft.log.Logger;
 import dcraft.log.count.CountHub;
 import dcraft.service.ServiceHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IWork;
 import dcraft.task.Task;
@@ -51,7 +52,7 @@ public class HubStartFinalWork extends CoreLoaderWork {
 						public void run(TaskContext taskctx) throws OperatingContextException {
 							ServiceHub.call(RequestFactory.cleanDatabaseRequest(TimeUtil.now().minusHours(72)), new OperationOutcomeStruct() {
 								@Override
-								public void callback(Struct result) throws OperatingContextException {
+								public void callback(BaseStruct result) throws OperatingContextException {
 									taskctx.returnEmpty();
 								}
 							});

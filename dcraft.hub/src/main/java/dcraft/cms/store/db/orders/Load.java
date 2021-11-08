@@ -9,10 +9,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
-import dcraft.struct.FieldStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.struct.scalar.BooleanStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.util.StringUtil;
@@ -127,7 +124,7 @@ public class Load implements IStoredProc {
 
 								for (int n = 0; n < options.size(); n++) {
 									RecordStruct opt = options.getItemAsRecord(n);
-									Struct value = custom.getValue();
+									BaseStruct value = custom.getValue();
 
 									if ((value != null) && value.equals(opt.getField("Value"))) {
 										formattedcustoms.with(
@@ -148,7 +145,7 @@ public class Load implements IStoredProc {
 										|| ((custom.getValue() instanceof StringStruct) && StringUtil.isNotEmpty(Struct.objectToString(custom.getValue())));
 
 								if (pass) {
-									Struct value = custom.getValue();
+									BaseStruct value = custom.getValue();
 									String display = Struct.objectToString(value);
 
 									if (value instanceof BooleanStruct) {

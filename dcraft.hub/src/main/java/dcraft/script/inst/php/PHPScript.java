@@ -38,6 +38,7 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.OperationsWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.*;
@@ -96,7 +97,7 @@ public class PHPScript extends Instruction {
 
 			code = "<?php\n" + precode + "?>\n\n" + code;
 
-			Struct params = StackUtil.refFromSource(state, "Params");
+			BaseStruct params = StackUtil.refFromSource(state, "Params");
 			String resultname = StackUtil.stringFromSource(state, "Result");
 
 			DCQuercusEngine engine = QuercusUtil.getEngine();

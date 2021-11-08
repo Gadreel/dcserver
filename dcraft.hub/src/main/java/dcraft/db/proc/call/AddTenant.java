@@ -13,6 +13,7 @@ import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -123,7 +124,7 @@ public class AddTenant implements IUpdatingStoredProc {
 			DbUtil.execute((DbServiceRequest) updateTenantRequest.toServiceRequest()
 					.withOutcome(new OperationOutcomeStruct() {
 						@Override
-						public void callback(Struct result) throws OperatingContextException {
+						public void callback(BaseStruct result) throws OperatingContextException {
 							// have to use the global password until local is set
 							DbRecordRequest updateUserRequest = (DbRecordRequest) UpdateRecordRequest.update()
 									.withTable("dcUser")
@@ -142,7 +143,7 @@ public class AddTenant implements IUpdatingStoredProc {
 								DbUtil.execute((DbServiceRequest) updateUserRequest.toServiceRequest()
 										.withOutcome(new OperationOutcomeStruct() {
 											@Override
-											public void callback(Struct result) throws OperatingContextException {
+											public void callback(BaseStruct result) throws OperatingContextException {
 												// only set this once - root may be copied but doesn't count as new record
 												if ("root".equals(tenant)) {
 													DatabaseAdapter dbconn = request.getInterface();

@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.log.Logger;
 import dcraft.log.count.CountHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -514,7 +515,7 @@ public class SqlHub {
 		}
 		
 		// return a single value (row/column) from table 
-		public Struct executeQueryScalar(SqlSelect select, String from, String where, String orderby, Object... params) {
+		public BaseStruct executeQueryScalar(SqlSelect select, String from, String where, String orderby, Object... params) {
 			// acquire
 			Connection conn = this.acquireConnection();
 			
@@ -554,7 +555,7 @@ public class SqlHub {
 		
 		// return a single String value (row/column) from table 
 		public String executeQueryString(String col, String from, String where, String orderby, Object... params) {
-			Struct rsres = this.executeQueryScalar(new SqlSelectString(col), from, where, orderby, params);
+			BaseStruct rsres = this.executeQueryScalar(new SqlSelectString(col), from, where, orderby, params);
 			
 			if (rsres == null) 
 				return null;
@@ -564,7 +565,7 @@ public class SqlHub {
 		
 		// return a single Integer value (row/column) from table 
 		public Long executeQueryInteger(String col, String from, String where, String orderby, Object... params) {
-			Struct rsres = this.executeQueryScalar(new SqlSelectInteger(col), from, where, orderby, params);
+			BaseStruct rsres = this.executeQueryScalar(new SqlSelectInteger(col), from, where, orderby, params);
 			
 			if (rsres != null) 
 				return null;
@@ -574,7 +575,7 @@ public class SqlHub {
 		
 		// return a single Boolean value (row/column) from table 
 		public Boolean executeQueryBoolean(String col, String from, String where, String orderby, Object... params) {
-			Struct rsres = this.executeQueryScalar(new SqlSelectBoolean(col), from, where, orderby, params);
+			BaseStruct rsres = this.executeQueryScalar(new SqlSelectBoolean(col), from, where, orderby, params);
 			
 			if (rsres != null) 
 				return null;

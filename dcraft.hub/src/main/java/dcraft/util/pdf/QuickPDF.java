@@ -37,6 +37,7 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
 import dcraft.service.ServiceHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.PathPart;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -169,7 +170,7 @@ public class QuickPDF extends RecordStruct {
 	}
 
 	@Override
-	public Struct select(PathPart... path) {
+	public BaseStruct select(PathPart... path) {
 		if (path.length == 1) {
 			PathPart part = path[0];
 

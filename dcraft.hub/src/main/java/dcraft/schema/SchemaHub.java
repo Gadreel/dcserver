@@ -3,6 +3,7 @@ package dcraft.schema;
 import dcraft.hub.ResourceHub;
 import dcraft.log.Logger;
 import dcraft.schema.SchemaResource.OpInfo;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.Struct;
 
@@ -55,7 +56,7 @@ public class SchemaHub {
 	 * @param type schema name of type
 	 * @return log of validation attempt
 	 */
-	static public boolean validateType(boolean isfinal, boolean selectmode, Struct data, String type) {
+	static public boolean validateType(boolean isfinal, boolean selectmode, BaseStruct data, String type) {
 		SchemaResource schema = ResourceHub.getResources().getSchema();
 
 		if (schema == null) {
@@ -73,7 +74,7 @@ public class SchemaHub {
 		return dt.validate(isfinal, selectmode, data);
 	}
 	
-	static public Struct normalizeValidateType(boolean isfinal, boolean selectmode, Struct data, String type){
+	static public BaseStruct normalizeValidateType(boolean isfinal, boolean selectmode, BaseStruct data, String type){
 		SchemaResource schema = ResourceHub.getResources().getSchema();
 
 		if (schema == null) {
@@ -87,8 +88,8 @@ public class SchemaHub {
 			Logger.errorTr(436);		
 			return null;
 		}
-	
-		Struct o = dt.normalizeValidate(isfinal, selectmode, data);
+
+		BaseStruct o = dt.normalizeValidate(isfinal, selectmode, data);
 		
 		if (o == null) {
 			Logger.error("Unable to validate and normalize data.");

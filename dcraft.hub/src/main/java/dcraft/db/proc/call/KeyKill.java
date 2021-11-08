@@ -5,6 +5,7 @@ import dcraft.db.ICallContext;
 import dcraft.db.util.ByteUtil;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -19,7 +20,7 @@ public class KeyKill implements IUpdatingStoredProc {
 		
 		byte[] basekey = null;
 		
-		for (Struct ss : keys.items()) 
+		for (BaseStruct ss : keys.items())
 			basekey =  ByteUtil.combineKeys(basekey, HexUtil.decodeHex(ss.toString())); 
 
 		request.getInterface().kill(basekey);

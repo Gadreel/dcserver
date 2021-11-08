@@ -36,6 +36,7 @@ import dcraft.script.work.StackWork;
 import dcraft.stream.IStreamSource;
 import dcraft.stream.StreamFragment;
 import dcraft.stream.file.IFileStreamDest;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
@@ -237,7 +238,7 @@ public class LocalStoreFile extends FileStoreFile {
 	}
 
 	@Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
     	super.doCopy(n);
     	
     	LocalStoreFile nn = (LocalStoreFile)n;
@@ -252,7 +253,7 @@ public class LocalStoreFile extends FileStoreFile {
 	}
 
 	@Override
-	public Struct getOrAllocateField(String name) {
+	public BaseStruct getOrAllocateField(String name) {
 		// TODO consider this
 		//if ("TextReader".equals(name))
 		//	return new FileSystemTextReader(this);
@@ -264,8 +265,8 @@ public class LocalStoreFile extends FileStoreFile {
 	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		if ("Hash".equals(code.getName())) {
 			String meth = StackUtil.stringFromElement(stack, code, "Method");
-			
-	        Struct var = StackUtil.refFromElement(stack, code, "Target", true);
+
+			BaseStruct var = StackUtil.refFromElement(stack, code, "Target", true);
 
 			if (var instanceof ScalarStruct) { 				
 				try {
@@ -322,8 +323,8 @@ public class LocalStoreFile extends FileStoreFile {
 		// used by NCC provisioning
 		if ("WriteText".equals(code.getName())) {
 			String text = code.getText();
-			
-	        Struct content = StringUtil.isNotEmpty(text) 
+
+			BaseStruct content = StringUtil.isNotEmpty(text)
 	        		? StackUtil.resolveReference(stack, text, true)
 	        		: StackUtil.refFromElement(stack, code, "Target", true);
 	        
@@ -341,7 +342,7 @@ public class LocalStoreFile extends FileStoreFile {
 		// used by NCC provisioning
 		if ("ReadText".equals(code.getName())) {
 			if (this.getFieldAsBooleanOrFalse("Exists")) {
-		        Struct var = StackUtil.refFromElement(stack, code, "Target", true);
+				BaseStruct var = StackUtil.refFromElement(stack, code, "Target", true);
 	
 		        //System.out.println("e: " + var);
 		        
@@ -364,7 +365,7 @@ public class LocalStoreFile extends FileStoreFile {
 
 		if ("ReadBinary".equals(code.getName())) {
 			if (this.getFieldAsBooleanOrFalse("Exists")) {
-		        Struct var = StackUtil.refFromElement(stack, code, "Target", true);
+				BaseStruct var = StackUtil.refFromElement(stack, code, "Target", true);
 
 		        //System.out.println("e: " + var);
 

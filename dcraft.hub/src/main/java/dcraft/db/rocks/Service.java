@@ -34,6 +34,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
 import dcraft.schema.DbProc;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.xml.XElement;
@@ -61,7 +62,7 @@ public class Service extends BaseService {
 			Logger.debug("DB call being handled for : " + request.getName());
 		
 		try {
-			Struct params = request.getData();
+			BaseStruct params = request.getData();
 			
 			// only a sysadmin can ask for tenant changes remotely
 			if ((params instanceof RecordStruct) && ((RecordStruct)params).isNotFieldEmpty("_ForTenant")) {
@@ -93,7 +94,7 @@ public class Service extends BaseService {
 		}
 		*/
 
-		Struct params = request.getData();
+		BaseStruct params = request.getData();
 		
 		String reqdbname = (params instanceof RecordStruct)
 				? ((RecordStruct)params).getFieldAsString("_Database", "default")

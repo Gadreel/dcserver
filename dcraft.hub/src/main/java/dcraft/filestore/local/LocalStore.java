@@ -34,6 +34,7 @@ import dcraft.schema.SchemaHub;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
 import dcraft.script.work.StackWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
@@ -149,7 +150,7 @@ public class LocalStore extends FileStore {
 	}
 
 	@Override
-	protected void doCopy(Struct n) {
+	protected void doCopy(BaseStruct n) {
 		LocalStore cp = (LocalStore) n;
 		cp.localpath = this.localpath;
 

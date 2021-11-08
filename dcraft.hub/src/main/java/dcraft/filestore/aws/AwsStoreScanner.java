@@ -26,6 +26,7 @@ import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.log.Logger;
 import dcraft.schema.SchemaHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 
 import java.io.IOException;
@@ -115,7 +116,7 @@ public class AwsStoreScanner extends FileCollection {
 	}
 		
     @Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
     	super.doCopy(n);
     	
     	AwsStoreScanner nn = (AwsStoreScanner)n;

@@ -17,6 +17,7 @@
 package dcraft.xml;
 
 import dcraft.hub.op.OperatingContextException;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.IPartSelector;
 import dcraft.struct.Struct;
@@ -117,7 +118,7 @@ public abstract class XNode extends CompositeStruct {
 	abstract protected void toMemory(Memory sb, boolean formatted, int level);
 	
 	@Override
-	protected void doCopy(Struct n) {
+	protected void doCopy(BaseStruct n) {
 		super.doCopy(n);
 		
 		XNode copy = (XNode) n;

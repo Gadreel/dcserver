@@ -67,7 +67,7 @@ abstract public class FileStoreFile extends FileDescriptor {
 	 * @see dcraft.struct.CompositeStruct#select(dcraft.struct.PathPart[])
 	 */
 	@Override
-	public Struct select(PathPart... path) {
+	public BaseStruct select(PathPart... path) {
 		if (path.length == 0)
 			return this;
 
@@ -78,7 +78,7 @@ abstract public class FileStoreFile extends FileDescriptor {
 	}
 
 	@Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
     	super.doCopy(n);
     	
     	FileStoreFile nn = (FileStoreFile)n;
@@ -254,7 +254,7 @@ abstract public class FileStoreFile extends FileDescriptor {
 				
 				VaultUtil.transfer(vault, this, CommonPath.from(folder).resolve(this.getName()), token, new OperationOutcomeStruct() {
 					@Override
-					public void callback(Struct result) throws OperatingContextException {
+					public void callback(BaseStruct result) throws OperatingContextException {
 						stack.getStore().with("AwaitFlag", true);
 						stack.setState(ExecuteState.RESUME);
 						

@@ -16,6 +16,7 @@
 ************************************************************************ */
 package dcraft.db.request.query;
 
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
@@ -68,7 +69,7 @@ public class OrderForeignField implements IOrderField {
 	 * @see dcraft.db.query.ISelectItem#getSelection()
 	 */
 	@Override
-	public Struct getParams() {
+	public BaseStruct getParams() {
 		return this.column;
 	}
 	

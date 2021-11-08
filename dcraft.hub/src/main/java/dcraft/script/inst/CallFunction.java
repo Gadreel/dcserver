@@ -24,6 +24,7 @@ import dcraft.script.work.CallFuncWork;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.AnyStruct;
@@ -45,7 +46,7 @@ public class CallFunction extends Instruction {
 	
 	@Override
 	public ReturnOption run(InstructionWork state) throws OperatingContextException {
-		Struct funcwrap = StackUtil.queryVariable(state, StackUtil.stringFromSource(state, "Name"));
+		BaseStruct funcwrap = StackUtil.queryVariable(state, StackUtil.stringFromSource(state, "Name"));
 		
 		if (funcwrap == null) {
 			Logger.error("Did not find function");

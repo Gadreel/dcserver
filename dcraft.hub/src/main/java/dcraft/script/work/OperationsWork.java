@@ -3,6 +3,7 @@ package dcraft.script.work;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.script.inst.Instruction;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
 
@@ -17,15 +18,15 @@ public class OperationsWork extends InstructionWork {
 	}
 	
 	protected OperationWork currEntry = null;
-	protected Struct target = null;
+	protected BaseStruct target = null;
 	
 	protected OperationsWork() { }
 	
-	public Struct getTarget() {
+	public BaseStruct getTarget() {
 		return this.target;
 	}
 	
-	public void setTarget(Struct v) {
+	public void setTarget(BaseStruct v) {
 		this.target = v;
 	}
 	

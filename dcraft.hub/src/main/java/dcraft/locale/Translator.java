@@ -3,6 +3,7 @@ package dcraft.locale;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.IPartSelector;
 import dcraft.struct.PathPart;
 import dcraft.struct.Struct;
@@ -13,7 +14,7 @@ import dcraft.xml.XElement;
 
 import java.util.Arrays;
 
-public class Translator extends Struct implements IPartSelector {
+public class Translator extends BaseStruct implements IPartSelector {
 	static public Translator of(ResourceTier resources) {
 		Translator tr = new Translator();
 		
@@ -32,12 +33,12 @@ public class Translator extends Struct implements IPartSelector {
 	protected LocaleResource resource = null;
 	
 	@Override
-	public Struct select(String path) {
+	public BaseStruct select(String path) {
 		return this.select(PathPart.parse(path));
 	}
 	
 	@Override
-	public Struct select(PathPart... path) {
+	public BaseStruct select(PathPart... path) {
 		if (path.length == 0)
 			return this;
 
@@ -63,7 +64,7 @@ public class Translator extends Struct implements IPartSelector {
 	}
 	
 	@Override
-	protected void doCopy(Struct n) {
+	protected void doCopy(BaseStruct n) {
 		super.doCopy(n);
 		
 		Translator nn = (Translator)n;
@@ -72,7 +73,7 @@ public class Translator extends Struct implements IPartSelector {
 	}
 	
 	@Override
-	public Struct deepCopy() {
+	public BaseStruct deepCopy() {
 		Translator cp = new Translator();
 		this.doCopy(cp);
 		return cp;

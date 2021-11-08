@@ -17,6 +17,7 @@ import dcraft.schema.DataType;
 import dcraft.schema.DbField;
 import dcraft.schema.SchemaResource;
 import dcraft.script.StackUtil;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -42,7 +43,7 @@ public class General implements ICollector {
 		ListStruct values = collector.getFieldAsList("Values");
 
 		if (values != null) {
-			for (Struct s : values.items()) {
+			for (BaseStruct s : values.items()) {
 				if ("Id".equals(fname))
 					filter.check(db, scope, table, s.toString());
 				else

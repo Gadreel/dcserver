@@ -47,6 +47,7 @@ import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.log.DebugLevel;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -316,7 +317,7 @@ public class SmtpWork extends StateWork {
 		};
 
 		Memory smem = attachment.getFieldAsBinary("Content");
-		Struct fobj = attachment.getField("File");
+		BaseStruct fobj = attachment.getField("File");
 
 		if (smem != null) {
 			smem.setPosition(0);

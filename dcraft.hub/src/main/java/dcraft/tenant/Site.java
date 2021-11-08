@@ -22,10 +22,7 @@ import dcraft.hub.resource.ResourceTier;
 import dcraft.locale.LocaleDefinition;
 import dcraft.log.Logger;
 import dcraft.stream.StreamUtil;
-import dcraft.struct.CompositeParser;
-import dcraft.struct.CompositeStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.web.*;
@@ -756,7 +753,8 @@ public class Site extends Base {
 
 		String filename = wpath.file.getFileName().toString();
 		CommonPath path = wpath.path;
-		String ext = filename.substring(filename.lastIndexOf('.'));
+		int ldot = filename.lastIndexOf('.');
+		String ext = (ldot >= 0) ? filename.substring(ldot) : null;
 
 		HtmlMode hmode = this.getHtmlMode();
 
@@ -765,7 +763,7 @@ public class Site extends Base {
 		if ((path.getNameCount() > 1) && ("galleries".equals(path.getName(0)) || "files".equals(path.getName(0)))) {
 			ioa = new StaticOutputAdapter();
 		}
-		else if (this.dynextadapaters.containsKey(ext)) {
+		else if (StringUtil.isNotEmpty(ext) && this.dynextadapaters.containsKey(ext)) {
 			ioa = this.dynextadapaters.get(ext).buildOutputAdapter(this, null, path, view);
 		}
 		else if (filename.endsWith(".html")) {
@@ -927,8 +925,8 @@ public class Site extends Base {
 	}
 
 	@Override
-	public Struct queryVariable(String name) {
-		Struct res = super.queryVariable(name);
+	public BaseStruct queryVariable(String name) {
+		BaseStruct res = super.queryVariable(name);
 
 		if (res == null)
 			res = this.getTenant().queryVariable(name);

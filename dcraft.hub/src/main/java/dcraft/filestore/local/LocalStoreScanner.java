@@ -32,6 +32,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.log.Logger;
 import dcraft.schema.SchemaHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 
 /**
@@ -169,7 +170,7 @@ public class LocalStoreScanner extends FileCollection {
 	}
 		
     @Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
     	super.doCopy(n);
     	
     	LocalStoreScanner nn = (LocalStoreScanner)n;

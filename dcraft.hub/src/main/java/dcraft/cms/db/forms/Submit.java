@@ -14,6 +14,7 @@ import dcraft.interchange.google.RecaptchaUtil;
 import dcraft.interchange.slack.SlackUtil;
 import dcraft.log.Logger;
 import dcraft.schema.SchemaHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.tenant.Site;
@@ -116,7 +117,7 @@ public class Submit implements IStoredProc {
 		
 		VaultUtil.transferAfterToken("ManagedForms", msource, path, id, new OperationOutcomeStruct() {
 			@Override
-			public void callback(Struct result) throws OperatingContextException {
+			public void callback(BaseStruct result) throws OperatingContextException {
 				callback.returnValue(RecordStruct.record()
 						.with("Token", id)
 						.with("Uuid", uuid)

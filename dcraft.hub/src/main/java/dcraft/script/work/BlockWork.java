@@ -4,6 +4,7 @@ import dcraft.hub.op.*;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
@@ -135,7 +136,7 @@ public class BlockWork extends InstructionWork implements IParentAwareWork, IVar
 	}
 	
 	@Override
-	public void addVariable(String name, Struct var) throws OperatingContextException {
+	public void addVariable(String name, BaseStruct var) throws OperatingContextException {
 		this.variables.with(name, var);
 		
 		if (var instanceof AutoCloseable) {
@@ -163,7 +164,7 @@ public class BlockWork extends InstructionWork implements IParentAwareWork, IVar
 	}
 	
 	@Override
-	public Struct queryVariable(String name) throws OperatingContextException {
+	public BaseStruct queryVariable(String name) throws OperatingContextException {
 		if (StringUtil.isEmpty(name))
 			return null;
 		

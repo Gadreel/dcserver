@@ -5,6 +5,7 @@ import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.inst.doc.Out;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.AnyStruct;
 import dcraft.xml.XElement;
@@ -28,8 +29,8 @@ public class IncludeParam extends Out {
 		
 		// remove the children
 		this.clearChildren();
-		
-		Struct funcwrap = StackUtil.queryVariable(state, StackUtil.stringFromSource(state, "Name"));
+
+		BaseStruct funcwrap = StackUtil.queryVariable(state, StackUtil.stringFromSource(state, "Name"));
 
 		if (funcwrap == null) {
 			funcwrap = StackUtil.refFromSource(state, "Ref");

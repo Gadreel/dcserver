@@ -23,6 +23,7 @@ import java.time.temporal.ChronoUnit;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
 import dcraft.script.work.StackWork;
+import dcraft.struct.BaseStruct;
 import dcraft.task.IParentAwareWork;
 import org.threeten.extra.PeriodDuration;
 
@@ -106,7 +107,7 @@ public class TimeStruct extends ScalarStruct {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Set".equals(op)) {
-			Struct sref = code.hasAttribute("Value")
+			BaseStruct sref = code.hasAttribute("Value")
 					? StackUtil.refFromElement(stack, code, "Value")
 					: StackUtil.resolveReference(stack, code.getText());
 			
@@ -160,7 +161,7 @@ public class TimeStruct extends ScalarStruct {
 	}
 
     @Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
     	super.doCopy(n);
     	
     	TimeStruct nn = (TimeStruct)n;
@@ -168,7 +169,7 @@ public class TimeStruct extends ScalarStruct {
     }
     
 	@Override
-	public Struct deepCopy() {
+	public BaseStruct deepCopy() {
 		TimeStruct cp = new TimeStruct();
 		this.doCopy(cp);
 		return cp;

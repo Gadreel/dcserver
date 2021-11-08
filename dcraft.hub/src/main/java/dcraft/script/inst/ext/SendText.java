@@ -29,6 +29,7 @@ import dcraft.script.inst.doc.Base;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -62,7 +63,7 @@ public class SendText extends Instruction {
 			if (cleanto == null)
 				return ReturnOption.CONTINUE;
 
-			Struct textdoc = StackUtil.refFromSource(stack,"TextMessage");
+			BaseStruct textdoc = StackUtil.refFromSource(stack,"TextMessage");
 
 			String text = null;
 

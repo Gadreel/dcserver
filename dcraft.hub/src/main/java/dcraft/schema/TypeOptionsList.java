@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -64,7 +65,7 @@ public class TypeOptionsList {
 	}
 	
 	// don't call this with data == null from a field if field required - required means "not null" so put the error in
-	public boolean validate(boolean isfinal, boolean selectmode, Struct data) {
+	public boolean validate(boolean isfinal, boolean selectmode, BaseStruct data) {
 		if (data == null)
 			return false;
 		
@@ -85,7 +86,7 @@ public class TypeOptionsList {
 		return false;
 	}
 	
-	public Struct normalizeValidate(boolean isfinal, boolean selectmode, Struct data) {
+	public BaseStruct normalizeValidate(boolean isfinal, boolean selectmode, BaseStruct data) {
 		if (data == null)
 			return null;
 		
@@ -106,7 +107,7 @@ public class TypeOptionsList {
 		return null;
 	}
 	
-	public Struct wrap(Object data) {
+	public BaseStruct wrap(Object data) {
 		if (data == null) 
 			return null;
 		

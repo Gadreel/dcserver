@@ -1,5 +1,6 @@
 package dcraft.db.request.query;
 
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 
 /**
@@ -12,5 +13,5 @@ public interface IOrderField {
 	/**
 	 * @return query parameters for this selected field.
 	 */
-	Struct getParams();
+	BaseStruct getParams();
 }

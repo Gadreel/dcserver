@@ -21,6 +21,7 @@ import dcraft.script.StackUtil;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.BooleanStruct;
 import dcraft.xml.XElement;
@@ -42,7 +43,7 @@ public class ElseIf extends LogicBlockInstruction {
         // if we do not pass logical condition then mark as done so we will skip this block
         // note that for the sake of nice debugging we do not set Done state here, would cause skip in debugger
 		if (state.getState() == ExecuteState.READY) {
-			Struct passvar = StackUtil.queryVariable(state.getParent(), "_LastIf");
+			BaseStruct passvar = StackUtil.queryVariable(state.getParent(), "_LastIf");
 			boolean ifpass = false;
 
 			if ((passvar != null) && (passvar instanceof BooleanStruct))

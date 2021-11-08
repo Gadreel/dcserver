@@ -18,6 +18,7 @@ package dcraft.script.work;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.script.ScriptHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
 import dcraft.task.TaskContext;
@@ -58,7 +59,7 @@ public class OperationWork extends StackWork {
 	}
 	
 	// this is called from within the Script context, bypassing the std run ctx above
-	public ReturnOption run(Struct target) throws OperatingContextException {
+	public ReturnOption run(BaseStruct target) throws OperatingContextException {
 		if ((op == null) || (this.state == ExecuteState.DONE))
 			return ReturnOption.CONTINUE;
 		

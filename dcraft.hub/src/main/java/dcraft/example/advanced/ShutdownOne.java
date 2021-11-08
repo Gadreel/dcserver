@@ -11,6 +11,7 @@ import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.UserContext;
 import dcraft.log.DebugLevel;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -40,7 +41,7 @@ public class ShutdownOne {
 		ListStruct names = ListStruct.list( "Harold", "Fran", "$tar", "Janet", "Dawn",
 				"Barry", "Jack", "Cody", "Cindy", "Hilda");
 		
-		for (Struct ns : names.items()) {
+		for (BaseStruct ns : names.items()) {
 			// create a subtask from this task.
 			Task task = Task.ofSubtask("Greetings for: " + ns.toString(), "Greet")
 					.withParams(new RecordStruct().with("Greet", ns.toString()))

@@ -16,6 +16,7 @@
 ************************************************************************ */
 package dcraft.db.request.query;
 
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -62,7 +63,7 @@ public class CollectorFunc implements ICollector {
 	}
 	
 	@Override
-	public Struct getParams() {
+	public BaseStruct getParams() {
 		return this.column;
 	}
 	

@@ -33,9 +33,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.util.StringUtil;
 import z.gei.db.estimator.product.List;
 
 /**
@@ -53,11 +55,11 @@ public class CSVWriter extends BufferedWriter {
 			
 			wrt.newLine();
 			
-			for (Struct s : records.items()) {
+			for (BaseStruct s : records.items()) {
 				RecordStruct rec = (RecordStruct) s;
 
 				for (String fld : fields) {
-					Struct data = rec.getField(fld);
+					BaseStruct data = rec.getField(fld);
 
 					if (data instanceof ListStruct)
 						wrt.writeField(((ListStruct) data).join(", "));
@@ -192,6 +194,7 @@ public class CSVWriter extends BufferedWriter {
 			return;
 		}
 
+
 		// case 2: field has a comma, carriage return or new line in it, if so
 		// quote field and double all quotes
 		matcher = specialCharsPattern.matcher(field);
@@ -216,7 +219,8 @@ public class CSVWriter extends BufferedWriter {
 	private static Pattern escapePattern = Pattern.compile("(\")");
 
 	/** @ignore */
-	private static Pattern specialCharsPattern = Pattern.compile("[,\r\n]");
+	private static Pattern specialCharsPattern = Pattern.compile("[^\\s\\w.]");
+	//private static Pattern specialCharsPattern = Pattern.compile("[,;\r\n]");
 
 	/** @ignore */
 	private boolean newWriter = true;

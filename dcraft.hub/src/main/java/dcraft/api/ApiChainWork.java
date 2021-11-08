@@ -5,6 +5,7 @@ import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
 import dcraft.service.ServiceRequest;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IWork;
 import dcraft.task.TaskContext;
@@ -29,7 +30,7 @@ public class ApiChainWork implements IWork {
 			.withData(taskctx.getParams())
 			.withOutcome(new OperationOutcomeStruct() {
 			@Override
-			public void callback(Struct result) throws OperatingContextException {
+			public void callback(BaseStruct result) throws OperatingContextException {
 				taskctx.returnValue(result);
 			}
 		});

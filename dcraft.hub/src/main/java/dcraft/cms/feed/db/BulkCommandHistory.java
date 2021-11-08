@@ -6,6 +6,7 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -37,7 +38,7 @@ public class BulkCommandHistory implements IStoredProc {
 					if ("Save".equals(option)) {
 						FeedUtilDb.saveHistory(request.getInterface(), db, feed, path, opdata, false, new OperationOutcomeStruct() {
 							@Override
-							public void callback(Struct result) throws OperatingContextException {
+							public void callback(BaseStruct result) throws OperatingContextException {
 								taskctx.returnEmpty();
 							}
 						});
@@ -45,7 +46,7 @@ public class BulkCommandHistory implements IStoredProc {
 					else if ("Publish".equals(option)) {
 						FeedUtilDb.saveHistory(request.getInterface(), db, feed, path, opdata, true, new OperationOutcomeStruct() {
 							@Override
-							public void callback(Struct result) throws OperatingContextException {
+							public void callback(BaseStruct result) throws OperatingContextException {
 								taskctx.returnEmpty();
 							}
 						});
@@ -53,7 +54,7 @@ public class BulkCommandHistory implements IStoredProc {
 					else if ("Discard".equals(option)) {
 						FeedUtilDb.discardHistory(request.getInterface(), db, feed, path, opdata, new OperationOutcomeStruct() {
 							@Override
-							public void callback(Struct result) throws OperatingContextException {
+							public void callback(BaseStruct result) throws OperatingContextException {
 								taskctx.returnEmpty();
 							}
 						});

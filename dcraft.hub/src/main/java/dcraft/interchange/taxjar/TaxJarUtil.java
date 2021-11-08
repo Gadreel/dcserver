@@ -395,7 +395,7 @@ public class TaxJarUtil {
                 } else {
                     System.out.println("TaxJar Resp: " + responseCode + "\n" + resp.toPrettyString());
 
-                    respBody = CompositeStruct.objectToRecord(resp);
+                    respBody = Struct.objectToRecord(resp);
                 }
             }
         }

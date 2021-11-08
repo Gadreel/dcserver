@@ -28,6 +28,7 @@ import dcraft.stream.StreamUtil;
 import dcraft.stream.file.BaseFileStream;
 import dcraft.stream.file.FileSlice;
 import dcraft.stream.file.IFileStreamDest;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.NullStruct;
 import dcraft.task.IParentAwareWork;
@@ -74,7 +75,7 @@ public class ArchiveDestStream extends BaseFileStream implements IFileStreamDest
         	this.userelpath = true;
         }
 
-        Struct src = StackUtil.refFromElement(stack, el, "RelativeTo");
+		BaseStruct src = StackUtil.refFromElement(stack, el, "RelativeTo");
         
         if ((src != null) && !(src instanceof NullStruct)) {
             if (src instanceof FileStore)

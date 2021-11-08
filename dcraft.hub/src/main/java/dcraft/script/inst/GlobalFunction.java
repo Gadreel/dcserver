@@ -23,6 +23,7 @@ import dcraft.script.work.BlockWork;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.AnyStruct;
 import dcraft.struct.scalar.NullStruct;
@@ -51,8 +52,8 @@ public class GlobalFunction extends BlockInstruction {
 				OperationContext.getOrThrow().addVariable(StackUtil.stringFromSource(state, "Name"), AnyStruct.of(this));
 				return ReturnOption.DONE;
 			}
-			
-			Struct param = StackUtil.queryVariable(state, "_Arg");
+
+			BaseStruct param = StackUtil.queryVariable(state, "_Arg");
 			
 			if (param == null)
 				param = NullStruct.instance;

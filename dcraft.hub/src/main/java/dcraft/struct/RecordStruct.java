@@ -129,7 +129,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 	 * @see dcraft.struct.CompositeStruct#select(dcraft.struct.PathPart[])
 	 */
 	@Override
-	public Struct select(PathPart... path) {
+	public BaseStruct select(PathPart... path) {
 		if (path.length == 0)
 			return this;
 		
@@ -151,8 +151,8 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 			
 			return null;
 		}
-		
-		Struct o = this.getField(fld);
+
+		BaseStruct o = this.getField(fld);
 
 		if (path.length == 1) 
 			return (o != null) ? o : null;
@@ -191,7 +191,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 	 */
 	public RecordStruct with(FieldStruct... fields) {
 		for (FieldStruct f : fields) {
-			Struct svalue = f.getValue();
+			BaseStruct svalue = f.getValue();
 			
 			if (! f.prepped) {
 				// take the original value and convert to a struct, fields hold structures
@@ -204,7 +204,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 					Field fld = this.explicitType.getField(f.getName());
 					
 					if (fld != null) {
-						Struct sv = fld.wrap(value);
+						BaseStruct sv = fld.wrap(value);
 						
 						if (sv != null)
 							svalue = sv;
@@ -285,7 +285,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 	 * @param name of the field desired
 	 * @return the struct for that field
 	 */
-	public Struct getField(String name) {
+	public BaseStruct getField(String name) {
 		if (! this.fields.containsKey(name)) 
 			return null;
 		
@@ -331,7 +331,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 	 * @return field's "inner" value as an Object
 	 */
 	public Object getFieldAsAny(String name) {
-		Struct st = this.getField(name);
+		BaseStruct st = this.getField(name);
 		
 		if (st == null)
 			return null;
@@ -353,7 +353,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 	 */
 	public DataType getFieldType(String name) {
 		// look first at the field value, if it has schema return
-		Struct fs = this.getField(name);
+		BaseStruct fs = this.getField(name);
 		
 		if ((fs != null) && (fs.hasExplicitType()))
 				return fs.getType();
@@ -377,9 +377,9 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 	 * @param name of the field desired
 	 * @return log of messages from call plus the requested structure
 	 */
-	public Struct getOrAllocateField(String name) {
+	public BaseStruct getOrAllocateField(String name) {
 		if (! this.fields.containsKey(name)) {
-			Struct value = null;
+			BaseStruct value = null;
 			
 			if (this.explicitType != null) {
 				Field fld = this.explicitType.getField(name);
@@ -402,7 +402,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 			}
 		}
 		else {
-			Struct value = this.getField(name);
+			BaseStruct value = this.getField(name);
 			
 			if (value == null)
 				value = NullStruct.instance;
@@ -428,7 +428,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 	 * @return true if field does not exist or if field is string and its value is empty 
 	 */
 	public boolean isFieldEmpty(String name) {
-		Struct f = this.getField(name);
+		BaseStruct f = this.getField(name);
 		
 		if (f == null) 
 			return true;
@@ -632,12 +632,12 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 	 * @param name of the field desired
 	 * @return field's "inner" value as Struct
 	 */
-	public Struct getFieldAsStruct(String name) {
+	public BaseStruct getFieldAsStruct(String name) {
 		return Struct.objectToStruct(this.getField(name));
 	}
 	
     public <T extends Object> T getFieldAsStruct(String name, Class<T> type) {
-    	Struct s = this.getField(name);
+		BaseStruct s = this.getField(name);
     	
           if (type.isAssignableFrom(s.getClass()))
                 return type.cast(s);
@@ -710,7 +710,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 		return this.fields.remove(name);
 	}
 
-	public Struct sliceField(String name) {
+	public BaseStruct sliceField(String name) {
 		FieldStruct fld = this.fields.get(name);
 		
 		this.fields.remove(name);
@@ -719,7 +719,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 	}
 
     @Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
     	super.doCopy(n);
     	
     	RecordStruct nn = (RecordStruct)n;
@@ -819,14 +819,14 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 				Logger.error("Missing field name in SetField");
 				return ReturnOption.CONTINUE;
 			}
-            
-            Struct var = null;
+
+			BaseStruct var = null;
             
             if (StringUtil.isNotEmpty(def))
             	var = ResourceHub.getResources().getSchema().getType(def).create();
 
 			if (code.hasAttribute("Value")) {
-		        Struct var3 = StackUtil.refFromElement(stack, code, "Value", true);
+				BaseStruct var3 = StackUtil.refFromElement(stack, code, "Value", true);
 
 				if ((var == null) && (var3 != null)) {
 					DataType v3type = var3.getType();
@@ -963,9 +963,9 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 			for (FieldStruct fld : this.fields.values()) {
 				if (!data.hasField(fld.name))
 					return false;
-				
-				Struct ds = data.getField(fld.name);
-				Struct ts = fld.value;
+
+				BaseStruct ds = data.getField(fld.name);
+				BaseStruct ts = fld.value;
 				
 				if ((ds == null) && (ts == null))
 					continue;

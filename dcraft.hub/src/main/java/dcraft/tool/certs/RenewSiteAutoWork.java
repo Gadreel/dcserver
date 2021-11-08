@@ -13,6 +13,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
 import dcraft.stream.file.MemoryDestStream;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IWork;
 import dcraft.task.StateWork;
@@ -228,7 +229,7 @@ public class RenewSiteAutoWork extends StateWork {
 			
 			VaultUtil.transfer("SiteFiles", msource, cpath, null, new OperationOutcomeStruct() {
 				@Override
-				public void callback(Struct result) throws OperatingContextException {
+				public void callback(BaseStruct result) throws OperatingContextException {
 					Logger.info("Success - cert saved!");
 					
 					RenewSiteAutoWork.this.transition(trun, reload);

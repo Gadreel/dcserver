@@ -8,6 +8,7 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.OperationsWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.xml.XElement;
 
@@ -34,8 +35,8 @@ public class CallService extends OperationsInstruction {
 	public ReturnOption run(InstructionWork state) throws OperatingContextException {
 		if (state.getState() == ExecuteState.READY) {
 			String name = StackUtil.stringFromSource(state, "Name");
-			
-			Struct var = ResourceHub.getResources().getSchema().getType("dcsCallService").create();
+
+			BaseStruct var = ResourceHub.getResources().getSchema().getType("dcsCallService").create();
 			
 			if (var == null) {
 				Logger.errorTr(520);

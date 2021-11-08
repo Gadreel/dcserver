@@ -36,6 +36,7 @@ import dcraft.script.work.InstructionWork;
 import dcraft.script.work.OperationsWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.stream.StreamUtil;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
@@ -69,7 +70,7 @@ public class File extends OperationsInstruction {
 			String name = StackUtil.stringFromSource(state, "Name");
 
 			if (this.hasNotEmptyAttribute("In") || this.hasNotEmptyAttribute("Of")) {
-				Struct var3 = StackUtil.refFromSource(state, "In");
+				BaseStruct var3 = StackUtil.refFromSource(state, "In");
 				
 				if (var3 == null)
 					var3 = StackUtil.refFromSource(state, "Of");

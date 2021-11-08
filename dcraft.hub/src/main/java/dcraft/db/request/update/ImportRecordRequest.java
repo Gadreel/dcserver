@@ -21,10 +21,7 @@ import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.schema.TableView;
-import dcraft.struct.FieldStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,7 +71,7 @@ public class ImportRecordRequest extends DbRecordRequest {
 				if (sfld.isList()) {
 					ListStruct items = record.getFieldAsList(name);
 					
-					for (Struct itm : items.items()) {
+					for (BaseStruct itm : items.items()) {
 						if (itm != null) {
 							RecordStruct itmdata = (RecordStruct) itm;
 							

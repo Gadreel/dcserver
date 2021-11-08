@@ -1,5 +1,6 @@
 package dcraft.db.request.query;
 
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 
@@ -34,7 +35,7 @@ public class SelectSubquery extends SelectFields implements ISelectField {
 	}
 	
 	@Override
-	public Struct getParams() {
+	public BaseStruct getParams() {
 		this.subquery.with("Select", this.fields);
 		
 		return this.subquery;

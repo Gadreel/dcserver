@@ -20,17 +20,14 @@ import dcraft.hub.time.BigDateTime;
 import dcraft.schema.DataType;
 import dcraft.schema.RootType;
 import dcraft.schema.SchemaHub;
-import dcraft.struct.IPartSelector;
-import dcraft.struct.PathPart;
-import dcraft.struct.ScalarStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 import dcraft.xml.XNode;
 
 import java.util.Arrays;
 
-public class AnyStruct extends ScalarStruct implements IPartSelector {
+public class AnyStruct extends ScalarStruct {
 	static public AnyStruct of(Object v) {
 		AnyStruct struct = new AnyStruct();
 		struct.value = v;
@@ -68,7 +65,7 @@ public class AnyStruct extends ScalarStruct implements IPartSelector {
 	}
 
     @Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
     	super.doCopy(n);
     	
     	AnyStruct nn = (AnyStruct)n;
@@ -76,7 +73,7 @@ public class AnyStruct extends ScalarStruct implements IPartSelector {
     }
     
 	@Override
-	public Struct deepCopy() {
+	public BaseStruct deepCopy() {
 		AnyStruct cp = new AnyStruct();
 		this.doCopy(cp);
 		return cp;
@@ -147,7 +144,7 @@ public class AnyStruct extends ScalarStruct implements IPartSelector {
 	 * @return selected structure if any, otherwise null
 	 */
 	@Override
-	public Struct select(String path) {
+	public BaseStruct select(String path) {
 		return this.select(PathPart.parse(path));
 	}
 	
@@ -164,7 +161,7 @@ public class AnyStruct extends ScalarStruct implements IPartSelector {
 	 * @return selected structure if any, otherwise null
 	 */
 	@Override
-	public Struct select(PathPart... path) {
+	public BaseStruct select(PathPart... path) {
 		if (this.value instanceof IPartSelector)
 			return ((IPartSelector)this.value).select(path);
 		

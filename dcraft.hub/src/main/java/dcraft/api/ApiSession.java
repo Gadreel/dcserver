@@ -27,6 +27,7 @@ import dcraft.script.work.StackWork;
 import dcraft.service.IServiceRequestBuilder;
 import dcraft.service.ServiceRequest;
 import dcraft.stream.StreamFragment;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
@@ -83,7 +84,7 @@ abstract public class ApiSession extends RecordStruct implements AutoCloseable {
 		
 		this.lastResult = new OperationOutcomeStruct(timeoutPlan) {
 			@Override
-			public void callback(Struct result) throws OperatingContextException {
+			public void callback(BaseStruct result) throws OperatingContextException {
 				latch.countDown();
 			}
 		};

@@ -8,6 +8,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -25,7 +26,7 @@ public class KeyQuery implements IStoredProc {
 		
 		byte[] basekey = null;
 		
-		for (Struct ss : keys.items()) 
+		for (BaseStruct ss : keys.items())
 			basekey =  ByteUtil.combineKeys(basekey, HexUtil.decodeHex(ss.toString())); 
 		
 		//ByteUtil.buildKey(keys.toObjectList().toArray());

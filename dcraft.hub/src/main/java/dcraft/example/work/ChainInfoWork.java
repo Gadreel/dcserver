@@ -2,6 +2,7 @@ package dcraft.example.work;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.stream.StreamWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IWork;
 import dcraft.task.TaskContext;
@@ -17,7 +18,7 @@ public class ChainInfoWork implements IWork {
 		return w;
 	}
 	
-	static public ChainInfoWork of(String label, int runs, Struct result) {
+	static public ChainInfoWork of(String label, int runs, BaseStruct result) {
 		ChainInfoWork w = new ChainInfoWork();
 		w.label = label;
 		w.runcnt = runs;
@@ -28,7 +29,7 @@ public class ChainInfoWork implements IWork {
 	protected int runcnt = 1;
 	protected int currcnt = 0;
 	protected String label = null;
-	protected Struct result = null;
+	protected BaseStruct result = null;
 	
 	@Override
 	public void run(TaskContext taskctx) throws OperatingContextException {

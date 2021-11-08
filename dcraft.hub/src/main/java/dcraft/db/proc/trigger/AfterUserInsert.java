@@ -6,6 +6,7 @@ import dcraft.db.proc.call.SignIn;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -13,7 +14,7 @@ import dcraft.util.StringUtil;
 
 public class AfterUserInsert implements ITrigger {
 	@Override
-	public boolean execute(TablesAdapter db, String table, String id, Struct context) throws OperatingContextException {
+	public boolean execute(TablesAdapter db, String table, String id, BaseStruct context) throws OperatingContextException {
 		if ("dcUser".equals(table)) {
 			// should be a record
 			if (context instanceof RecordStruct) {

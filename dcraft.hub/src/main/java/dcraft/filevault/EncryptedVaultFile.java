@@ -31,6 +31,7 @@ import dcraft.stream.StreamFragment;
 import dcraft.stream.StreamWork;
 import dcraft.stream.file.IFileStreamDest;
 import dcraft.stream.file.MemoryDestStream;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
@@ -174,7 +175,7 @@ public class EncryptedVaultFile extends FileStoreFile {
 	}
 
 	@Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
     	super.doCopy(n);
     	
     	EncryptedVaultFile nn = (EncryptedVaultFile)n;
@@ -190,7 +191,7 @@ public class EncryptedVaultFile extends FileStoreFile {
 	}
 
 	@Override
-	public Struct getOrAllocateField(String name) {
+	public BaseStruct getOrAllocateField(String name) {
 		// TODO consider this
 		//if ("TextReader".equals(name))
 		//	return new FileSystemTextReader(this);
@@ -281,7 +282,7 @@ public class EncryptedVaultFile extends FileStoreFile {
 		// used by NCC provisioning
 		if ("ReadText".equals(code.getName())) {
 			if (this.exists()) {
-		        Struct var = StackUtil.refFromElement(stack, code, "Target", true);
+				BaseStruct var = StackUtil.refFromElement(stack, code, "Target", true);
 	
 		        //System.out.println("e: " + var);
 		        
@@ -324,7 +325,7 @@ public class EncryptedVaultFile extends FileStoreFile {
 
 		if ("ReadBinary".equals(code.getName())) {
 			if (this.exists()) {
-		        Struct var = StackUtil.refFromElement(stack, code, "Target", true);
+				BaseStruct var = StackUtil.refFromElement(stack, code, "Target", true);
 
 		        //System.out.println("e: " + var);
 

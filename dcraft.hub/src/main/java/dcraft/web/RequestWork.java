@@ -11,6 +11,7 @@ import dcraft.service.ServiceRequest;
 import dcraft.session.Session;
 import dcraft.stream.StreamFragment;
 import dcraft.stream.StreamWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.ChainWork;
@@ -71,7 +72,7 @@ public class RequestWork extends ChainWork {
 			ServiceHub.call(ServiceRequest.of("dcCoreServices", "Authentication", "Verify")
 					.withOutcome(new OperationOutcomeStruct() {
 						@Override
-						public void callback(Struct result) throws OperatingContextException {
+						public void callback(BaseStruct result) throws OperatingContextException {
 							if (this.hasErrors())
 								Logger.info("NOT Verified session: " + taskctx.getSessionId() + " on "
 										+ reqpath + " for " + taskctx.getOrigin());
@@ -160,10 +161,10 @@ public class RequestWork extends ChainWork {
 					// collect fragment for upload or download
 					Session session = taskctx.getSession();
 
-					HashMap<String, Struct> scache = session.getCache();
+					HashMap<String, BaseStruct> scache = session.getCache();
 
 					// put the FileStoreFile in cache
-					Struct centry = scache.get(channel);
+					BaseStruct centry = scache.get(channel);
 
 					if ((centry == null) || ! (centry instanceof RecordStruct)) {
 						Logger.error("Invalid channel number, unable to transfer.");
@@ -280,10 +281,10 @@ public class RequestWork extends ChainWork {
 									// collect fragment for upload or download
 									Session session = taskctx.getSession();
 
-									HashMap<String, Struct> scache = session.getCache();
+									HashMap<String, BaseStruct> scache = session.getCache();
 
 									// put the FileStoreFile in cache
-									Struct centry = scache.get(channel.get());
+									BaseStruct centry = scache.get(channel.get());
 
 									if ((centry == null) || ! (centry instanceof RecordStruct)) {
 										Logger.error("Invalid channel number, unable to transfer.");

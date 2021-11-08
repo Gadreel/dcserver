@@ -27,6 +27,7 @@ import dcraft.script.inst.doc.Base;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -75,9 +76,9 @@ public class SendEmail extends Instruction {
 
 			// direct send
 			String subject = StackUtil.stringFromSource(stack, "Subject");
-			
-			Struct textdoc = StackUtil.refFromSource(stack,"TextMessage");
-			Struct htmldoc = StackUtil.refFromSource(stack,"HtmlMessage");
+
+			BaseStruct textdoc = StackUtil.refFromSource(stack,"TextMessage");
+			BaseStruct htmldoc = StackUtil.refFromSource(stack,"HtmlMessage");
 			
 			String text = null;
 			String html = null;
@@ -140,7 +141,7 @@ public class SendEmail extends Instruction {
 				attachments = ListStruct.list();
 
 			for (XElement op : this.selectAll("Attachment")) {
-				Struct attach = StackUtil.refFromElement(stack, op, "Target");
+				BaseStruct attach = StackUtil.refFromElement(stack, op, "Target");
 
 				if (attach instanceof BinaryStruct)
 					attachments.with(RecordStruct.record()

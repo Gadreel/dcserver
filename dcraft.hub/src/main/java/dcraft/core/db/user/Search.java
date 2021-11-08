@@ -12,6 +12,7 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -46,7 +47,7 @@ public class Search implements IStoredProc {
 		ListStruct badges = data.getFieldAsList("Badges");
 		
 		if ((badges != null) && (badges.size() > 0)) {
-			for (Struct bs : badges.items()) {
+			for (BaseStruct bs : badges.items()) {
 				String badge = Struct.objectToString(bs);
 				
 				adapter.traverseIndex(OperationContext.getOrThrow(),"dcUser", "dcBadges", badge, badge, CurrentRecord.current().withNested(collectIds));

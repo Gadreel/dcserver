@@ -51,6 +51,7 @@ import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.util.*;
 import dcraft.util.pgp.KeyRingCollection;
@@ -346,7 +347,7 @@ public class HubUtil implements ILocalCommandLine {
 					DbUtil.execute((DbServiceRequest) request.toDbServiceRequest()
 							.withOutcome(new OperationOutcomeStruct() {
 								@Override
-								public void callback(Struct result) throws OperatingContextException {
+								public void callback(BaseStruct result) throws OperatingContextException {
 									System.out.println("Root added");
 
 									db.stop();

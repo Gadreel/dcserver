@@ -10,6 +10,7 @@ import dcraft.locale.LocaleResource;
 import dcraft.log.Logger;
 import dcraft.schema.SchemaResource;
 import dcraft.service.*;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -237,14 +238,14 @@ public class CallTen {
 				.wrapData("Harold")
 				.withOutcome(new OperationOutcomeStruct() {
 					@Override
-					public void callback(Struct result) throws OperatingContextException {
+					public void callback(BaseStruct result) throws OperatingContextException {
 						printRatingsResult("Harold", this);
 						
 						ServiceHub.call(ServiceRequest.of("ChefData", "Ratings", "Lookup")
 								.wrapData("Wanda")
 								.withOutcome(new OperationOutcomeStruct() {
 									@Override
-									public void callback(Struct result) throws OperatingContextException {
+									public void callback(BaseStruct result) throws OperatingContextException {
 										printRatingsResult("Wanda", this);
 										
 										/*
@@ -266,14 +267,14 @@ public class CallTen {
 												.wrapData("$tar")
 												.withOutcome(new OperationOutcomeStruct() {
 													@Override
-													public void callback(Struct result) throws OperatingContextException {
+													public void callback(BaseStruct result) throws OperatingContextException {
 														printRatingsResult("$tar", this);
 														
 														ServiceHub.call(ServiceRequest.of("ChefData", "Ratings", "Lookup")
 																.wrapData("Barry")
 																.withOutcome(new OperationOutcomeStruct() {
 																	@Override
-																	public void callback(Struct result) throws OperatingContextException {
+																	public void callback(BaseStruct result) throws OperatingContextException {
 																		printRatingsResult("Barry", this);
 																		
 																		// there is nothing else to do - no more lookups - so print "done" msg

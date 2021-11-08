@@ -13,11 +13,7 @@ import dcraft.script.inst.If;
 import dcraft.script.inst.Var;
 import dcraft.script.inst.doc.Out;
 import dcraft.script.work.InstructionWork;
-import dcraft.struct.CompositeParser;
-import dcraft.struct.CompositeStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.tenant.Site;
 import dcraft.util.StringUtil;
 import dcraft.script.inst.doc.Base;
@@ -358,7 +354,7 @@ Show your love and #shopsmall ❤️
 					DateTimeFormatter incomingFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
 					DateTimeFormatter outgoingFormat = DateTimeFormatter.ofPattern("MMM dd, hh:mm a", java.util.Locale.getDefault());
 					
-					for (Struct s : fblist.items()) {
+					for (BaseStruct s : fblist.items()) {
 						RecordStruct entry = (RecordStruct) s;
 						
 						String etype = entry.getFieldAsString("type");
@@ -471,7 +467,7 @@ Show your love and #shopsmall ❤️
 			List<XNode> fchildren = children;
 			int cidx = 0;
 
-			for (Struct ent : list.items()) {
+			for (BaseStruct ent : list.items()) {
 				RecordStruct entry = (RecordStruct) ent;
 				
 				// setup image for expand

@@ -2,6 +2,7 @@ package dcraft.db;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -17,7 +18,7 @@ public interface IRequestContext {
 	BigDecimal getStamp();
 	boolean isReplicating();
 	String getOp();
-	Struct getData();
+	BaseStruct getData();
 	RecordStruct getDataAsRecord();
 	ListStruct getDataAsList();
 }

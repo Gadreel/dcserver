@@ -9,6 +9,7 @@ import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -40,7 +41,7 @@ public class Not implements IExpression {
 		if (this.children == null)
 			return;
 		
-		for (Struct s : this.children.items())
+		for (BaseStruct s : this.children.items())
 			ExpressionUtil.initExpression(table, Struct.objectToRecord(s));
 	}
 	

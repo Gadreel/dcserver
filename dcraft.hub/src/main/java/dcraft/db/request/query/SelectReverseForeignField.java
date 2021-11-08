@@ -16,6 +16,7 @@
 ************************************************************************ */
 package dcraft.db.request.query;
 
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 
@@ -60,7 +61,7 @@ public class SelectReverseForeignField implements ISelectField {
 	}
 	
 	@Override
-	public Struct getParams() {
+	public BaseStruct getParams() {
 		return this.column;
 	}
 	

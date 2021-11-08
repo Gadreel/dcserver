@@ -9,6 +9,7 @@ import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.inst.doc.Out;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.AnyStruct;
@@ -42,7 +43,7 @@ public class IncludeFragment extends Base {
 			String name = StackUtil.stringFromElement(state, pel, "Name");
 			
 			if (StringUtil.isNotEmpty(name)) {
-				Struct val = StackUtil.refFromElement(state, pel, "Value");
+				BaseStruct val = StackUtil.refFromElement(state, pel, "Value");
 				
 				if (val != null) {
 					StackUtil.addVariable(state, name, val);

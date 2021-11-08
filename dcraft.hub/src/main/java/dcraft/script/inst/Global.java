@@ -25,6 +25,7 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.OperationsWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
@@ -47,14 +48,14 @@ public class Global extends OperationsInstruction {
 		if (state.getState() == ExecuteState.READY) {
 			String def = StackUtil.stringFromSource(state, "Type");
 			String name = StackUtil.stringFromSource(state, "Name");
-			
-			Struct var = null;
+
+			BaseStruct var = null;
 			
 			if (StringUtil.isNotEmpty(def))
 				var = ResourceHub.getResources().getSchema().getType(def).create();
 			
 			if (this.hasNotEmptyAttribute("SetTo")) {
-				Struct var3 = StackUtil.refFromSource(state, "SetTo");
+				BaseStruct var3 = StackUtil.refFromSource(state, "SetTo");
 				
 				if (var3 == null) {
 					Logger.errorTr(522);

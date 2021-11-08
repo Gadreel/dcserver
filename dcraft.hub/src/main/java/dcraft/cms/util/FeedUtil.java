@@ -17,6 +17,7 @@ import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
 import dcraft.script.ScriptHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -129,7 +130,7 @@ public class FeedUtil {
 										ListStruct fields = params.selectAsList("SetFields");
 										
 										if (fields != null) {
-											for (Struct fld : fields.items()) {
+											for (BaseStruct fld : fields.items()) {
 												if (fld instanceof RecordStruct) {
 													RecordStruct recfld = (RecordStruct) fld;
 													
@@ -155,7 +156,7 @@ public class FeedUtil {
 												VaultUtil.transfer("Feeds", msource, fi.getPathAsCommon(), null,
 														new OperationOutcomeStruct() {
 															@Override
-															public void callback(Struct result) throws OperatingContextException {
+															public void callback(BaseStruct result) throws OperatingContextException {
 																TablesAdapter adapter = TablesAdapter.of(BasicRequestContext.ofDefaultDatabase());
 																
 																FeedUtilDb.addHistory(adapter.getRequest().getInterface(), adapter, fi.getPathAsCommon().getName(0), fi.getPathAsCommon().subpath(1).toString(), ListStruct.list()
@@ -189,7 +190,7 @@ public class FeedUtil {
 															
 															VaultUtil.transfer("SiteFiles", (FileStoreFile) wwwsource, sitepath, null, new OperationOutcomeStruct() {
 																@Override
-																public void callback(Struct result) throws OperatingContextException {
+																public void callback(BaseStruct result) throws OperatingContextException {
 																	transfercb.countDown();
 																}
 															});

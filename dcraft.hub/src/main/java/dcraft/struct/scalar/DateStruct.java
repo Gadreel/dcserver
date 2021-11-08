@@ -24,9 +24,7 @@ import dcraft.hub.ResourceHub;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
 import dcraft.script.work.StackWork;
-import dcraft.struct.CompositeParser;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
+import dcraft.struct.*;
 import dcraft.task.IParentAwareWork;
 import dcraft.util.StringUtil;
 import org.threeten.extra.PeriodDuration;
@@ -36,8 +34,6 @@ import dcraft.log.Logger;
 import dcraft.schema.DataType;
 import dcraft.schema.RootType;
 import dcraft.schema.SchemaHub;
-import dcraft.struct.ScalarStruct;
-import dcraft.struct.Struct;
 import dcraft.xml.XElement;
 
 public class DateStruct extends ScalarStruct {
@@ -110,7 +106,7 @@ public class DateStruct extends ScalarStruct {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Set".equals(op)) {
-			Struct sref = code.hasAttribute("Value")
+			BaseStruct sref = code.hasAttribute("Value")
 					? StackUtil.refFromElement(stack, code, "Value", true)
 					: StackUtil.resolveReference(stack, code.getText(), true);
 			
@@ -202,7 +198,7 @@ public class DateStruct extends ScalarStruct {
 		}
 		else if ("Difference".equals(op)) {
 			try {
-				Struct sref = StackUtil.refFromElement(stack, code, "Value", true);
+				BaseStruct sref = StackUtil.refFromElement(stack, code, "Value", true);
 				
 				if (sref instanceof DateStruct) {
 					DateStruct ref = (DateStruct) sref;
@@ -251,7 +247,7 @@ public class DateStruct extends ScalarStruct {
 	}
 
     @Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
     	super.doCopy(n);
     	
     	DateStruct nn = (DateStruct)n;
@@ -259,7 +255,7 @@ public class DateStruct extends ScalarStruct {
     }
     
 	@Override
-	public Struct deepCopy() {
+	public BaseStruct deepCopy() {
 		DateStruct cp = new DateStruct();
 		this.doCopy(cp);
 		return cp;

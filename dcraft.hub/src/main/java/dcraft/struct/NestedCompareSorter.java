@@ -2,7 +2,7 @@ package dcraft.struct;
 
 import java.util.Comparator;
 
-public class NestedCompareSorter implements Comparator<Struct> {
+public class NestedCompareSorter implements Comparator<BaseStruct> {
     static public NestedCompareSorter of(ListStruct list) {
         if (list.size() < 1)
             return null;
@@ -47,9 +47,9 @@ public class NestedCompareSorter implements Comparator<Struct> {
     }
 
     @Override
-    public int compare(Struct o1, Struct o2) {
-        Struct fld1 = ((RecordStruct)o1).getField(this.fieldname);
-        Struct fld2 = ((RecordStruct)o2).getField(this.fieldname);
+    public int compare(BaseStruct o1, BaseStruct o2) {
+        BaseStruct fld1 = ((RecordStruct)o1).getField(this.fieldname);
+        BaseStruct fld2 = ((RecordStruct)o2).getField(this.fieldname);
 
         int result = 0;
 

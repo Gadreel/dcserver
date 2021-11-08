@@ -62,135 +62,7 @@ import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
 import dcraft.xml.XmlReader;
 
-abstract public class Struct implements IPartSelector {
-	protected DataType explicitType = null;
-	
-	// override this to return implicit type if no explicit exists
-	public DataType getType() {
-		return this.explicitType;
-	}
-
-	public Struct withType(DataType v) {
-		this.explicitType = v;
-		return this;
-	}	
-
-	public Struct withType(String v) {
-		this.explicitType = SchemaHub.getTypeOrError(v);
-		return this;
-	}
-	
-	public boolean hasExplicitType() {
-		return (this.explicitType != null);
-	}
-	
-	public Struct() {
-	}
-	
-	public Struct(DataType type) {
-		this.explicitType = type;
-	}
-	
-	/**
-	 * A way to select a child or sub child structure similar to XPath but lightweight.
-	 * Can select composites and scalars.  Use a . or / delimiter.
-	 *
-	 * For example: "Toys.3.Name" called on "Person" Record means return the (Struct) name of the
-	 * 4th toy in this person's Toys list.
-	 *
-	 * Cannot go up levels, or back to root.  Do not start with a dot or slash as in ".People".
-	 *
-	 * @param path string holding the path to select
-	 * @return selected structure if any, otherwise null
-	 */
-	@Override
-	public Struct select(String path) {
-		return this.select(PathPart.parse(path));
-	}
-	
-	/** _Tr
-	 * A way to select a child or sub child structure similar to XPath but lightweight.
-	 * Can select composites and scalars.  Use a . or / delimiter.
-	 *
-	 * For example: "Toys.3.Name" called on "Person" Record means return the (Struct) name of the
-	 * 4th toy in this person's Toys list.
-	 *
-	 * Cannot go up levels, or back to root.  Do not start with a dot or slash as in ".People".
-	 *
-	 * @param path parts of the path holding a list index or a field name
-	 * @return selected structure if any, otherwise null
-	 */
-	@Override
-	public Struct select(PathPart... path) {
-		if (path.length == 0)
-			return this;
-		
-		return null;
-	}
-	
-	// just a reminder of the things to override in types
-	
-	@Override
-	public Object clone() {
-		return this.deepCopy();
-	}
-	
-	@Override
-	abstract public String toString();
-	
-    protected void doCopy(Struct n) {
-    	n.explicitType = this.explicitType;
-    }
-    
-	abstract public Struct deepCopy();
-	
-	/**
-	 * @return true if contains no data or insufficient data to constitute a complete value
-	 */
-	abstract public boolean isEmpty();
-	
-	/**
-	 * 
-	 * @return true if it really is null (scalars only, composites are never null)
-	 */
-	abstract public boolean isNull();
-		
-	public boolean validate() {
-		return this.validate(this.explicitType);
-	}
-	
-	public boolean validate(String type) {
-		return this.validate(SchemaHub.getTypeOrError(type));
-	}
-	
-	public boolean validate(DataType type) {
-		if (type == null) {
-			Logger.errorTr(522);
-			return false;
-		}
-		
-		return type.validate(true, false, this);
-	}
-	
-	public boolean validateIncomplete() {
-		return this.validateIncomplete(this.explicitType);
-	}
-	
-	public boolean validateIncomplete(String type) {
-		return this.validateIncomplete(SchemaHub.getTypeOrError(type));
-	}
-	
-	public boolean validateIncomplete(DataType type) {
-		if (type == null) {
-			Logger.errorTr(522);
-			return false;
-		}
-		
-		return type.validate(false, false, this);
-	}
-	
-	// statics
-	
+public class Struct {
 	static public Long objectToInteger(Object o) {
 		if (o == null)
 			return null;
@@ -244,33 +116,6 @@ abstract public class Struct implements IPartSelector {
 		
 		return null;
 	}
-
-	public void checkLogic(IParentAwareWork stack, XElement source, LogicBlockState logicState) throws OperatingContextException {
-		if (source.hasAttribute("IsNull")) {
-			if (logicState.pass)
-				logicState.pass = StackUtil.boolFromElement(stack, source, "IsNull") ? this.isNull() : ! this.isNull();
-			
-			logicState.checked = true;
-		}
-		
-		if (source.hasAttribute("IsEmpty")) {
-			if (logicState.pass)
-				logicState.pass = StackUtil.boolFromElement(stack, source, "IsEmpty") ? this.isEmpty() : ! this.isEmpty();
-			
-			logicState.checked = true;
-		}
-	}
-	
-	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
-		if ("Validate".equals(code.getName()))
-			this.validate();
-		else
-			Logger.error("operation failed, op name not recoginized: " + code.getName());
-		
-		return ReturnOption.CONTINUE;
-	}
-
-	// static utility
 
 	static public BigInteger objectToBigInteger(Object o) {
 		if (o == null)
@@ -1100,17 +945,17 @@ abstract public class Struct implements IPartSelector {
 		return null;
 	}
 	
-	static public Struct objectToStruct(Object o) {
+	static public BaseStruct objectToStruct(Object o) {
 		if (o == null)
 			return null;
 		
-		if (o instanceof Struct)
-			return (Struct)o;
+		if (o instanceof BaseStruct)
+			return (BaseStruct)o;
 		
 		if (o instanceof FieldStruct)
 			return Struct.objectToStruct(((FieldStruct)o).getValue());
 
-		Struct svalue = null;
+		BaseStruct svalue = null;
 		
 		// going to be returned in the local server's timezone, need to make that into UTC			  
 		if (o instanceof java.sql.Timestamp) 
@@ -1282,8 +1127,8 @@ abstract public class Struct implements IPartSelector {
 		if (o == null)
 			return true;
 		
-		if (o instanceof Struct)
-			return ((Struct)o).isEmpty();
+		if (o instanceof BaseStruct)
+			return ((BaseStruct)o).isEmpty();
 		
 		if (o instanceof java.sql.Clob)
 			try {

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -105,7 +106,7 @@ public class Field {
 	}
 		
 	// don't call this with data == null from a field if field required - required means "not null" so put the error in
-	public boolean validate(boolean present, boolean isfinal, boolean selectmode, Struct data) {
+	public boolean validate(boolean present, boolean isfinal, boolean selectmode, BaseStruct data) {
 		if (data == null) 
 			return this.valueUnresolved(present, isfinal, selectmode, data);
 		
@@ -135,7 +136,7 @@ public class Field {
 	}
 		
 	// don't call this with data == null from a field if field required - required means "not null" so put the error in
-	public Struct normalizeValidate(boolean present, boolean isfinal, boolean selectmode, Struct data) {
+	public BaseStruct normalizeValidate(boolean present, boolean isfinal, boolean selectmode, BaseStruct data) {
 		if (data == null) {
 			this.valueUnresolved(present, isfinal, selectmode, data);
 			return null;
@@ -146,8 +147,8 @@ public class Field {
 			return null;
 		}
 		
-		if (this.options.size() == 1) { 
-			Struct nv = this.options.get(0).normalizeValidate(isfinal, selectmode, data);
+		if (this.options.size() == 1) {
+			BaseStruct nv = this.options.get(0).normalizeValidate(isfinal, selectmode, data);
 			
 			if (nv == null) {
 				this.valueUnresolved(present, isfinal, selectmode, data);
@@ -159,7 +160,7 @@ public class Field {
 		
 		for (DataType dt : this.options) {
 			if (dt.match(isfinal, data)) {
-				Struct nv = dt.normalizeValidate(isfinal, selectmode, data);
+				BaseStruct nv = dt.normalizeValidate(isfinal, selectmode, data);
 				
 				if (nv == null) {
 					this.valueUnresolved(present, isfinal, selectmode, data);
@@ -193,7 +194,7 @@ public class Field {
 		return false;
 	}
 	
-	public Struct wrap(Object data) {
+	public BaseStruct wrap(Object data) {
 		if (data == null) 
 			return null;
 		
@@ -211,7 +212,7 @@ public class Field {
 		return null;
 	}
 	
-	public Struct create() {
+	public BaseStruct create() {
 		if (this.options.size() == 0) 
 			return null;
 		

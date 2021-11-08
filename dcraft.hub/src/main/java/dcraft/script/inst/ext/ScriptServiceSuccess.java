@@ -23,6 +23,7 @@ import dcraft.script.inst.file.Stream;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.xml.XElement;
@@ -49,7 +50,7 @@ public class ScriptServiceSuccess extends Instruction {
 		response.with("Code", "0");
 
 		if (this.hasAttribute("Result")) {
-			Struct value = StackUtil.resolveReference(state, this.attr("Result"), true);
+			BaseStruct value = StackUtil.resolveReference(state, this.attr("Result"), true);
 
 			response.with("Result", value);
 		}

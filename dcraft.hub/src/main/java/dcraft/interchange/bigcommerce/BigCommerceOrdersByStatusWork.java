@@ -94,7 +94,7 @@ public class BigCommerceOrdersByStatusWork extends StateWork {
 			if (order.isNotFieldEmpty("date_shipped"))
 				order.with("date_shipped", ZonedDateTime.from(TimeUtil.rfc822DateFormatter.parse(order.getFieldAsString("date_shipped"))));
 			
-			allorders.addItem(0, order);		// oldest is always first
+			allorders.with(order);		// TODO oldest is always first
 		}
 		
 		return collectOrdersPage;

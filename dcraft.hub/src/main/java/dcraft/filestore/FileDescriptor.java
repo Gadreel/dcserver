@@ -2,10 +2,7 @@ package dcraft.filestore;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.log.Logger;
-import dcraft.struct.IPartSelector;
-import dcraft.struct.PathPart;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.struct.scalar.StringStruct;
 
 import java.time.ZonedDateTime;
@@ -103,7 +100,7 @@ public class FileDescriptor extends RecordStruct {
 	}
 
 	@Override
-	public Struct select(PathPart... path) {
+	public BaseStruct select(PathPart... path) {
 		if (path.length == 1) {
 			PathPart part = path[0];
 

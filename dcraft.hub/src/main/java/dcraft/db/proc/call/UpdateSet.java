@@ -11,6 +11,7 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -32,7 +33,7 @@ public class UpdateSet implements IUpdatingStoredProc {
 		//BigDateTime when = BigDateTime.nowDateTime();		// TODO store WHEN from 'db' in params for replication - use same when
 		
 		try (OperationMarker om = OperationMarker.create()) {
-			for (Struct ssid : records.items()) {
+			for (BaseStruct ssid : records.items()) {
 				String id = ssid.toString();
 				
 				// make a copy

@@ -28,12 +28,7 @@ import dcraft.locale.IndexInfo;
 import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
 import dcraft.schema.Field.ReqTypes;
-import dcraft.struct.CompositeStruct;
-import dcraft.struct.FieldStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.ScalarStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
@@ -465,8 +460,8 @@ public class DataType {
 		}
 		
 		if (this.kind == DataKind.Flexible) {
-			if (data instanceof Struct)
-				return this.matchFlex(isfinal, (Struct)data);
+			if (data instanceof BaseStruct)
+				return this.matchFlex(isfinal, (BaseStruct)data);
 
 			Logger.errorTr(420, data);		
 			return false;
@@ -507,7 +502,7 @@ public class DataType {
 		return true;
 	}
 
-	protected boolean matchFlex(boolean isfinal, Struct data) {
+	protected boolean matchFlex(boolean isfinal, BaseStruct data) {
 		// if no data,check if required
 		if ((data == null) || data.isEmpty()) {
 			if (this.flexfield.required == ReqTypes.True)
@@ -536,7 +531,7 @@ public class DataType {
 	// don't call this with data == null from a field if field required - required means "not null" so put the error in
 	// returns true only if there was a non-null value present that conforms to the expected structure (record, list or scalar) 
 	// null values that do not conform should not cause an false
-	public boolean validate(boolean isfinal, boolean selectmode, Struct data) {
+	public boolean validate(boolean isfinal, boolean selectmode, BaseStruct data) {
 		if (data == null)
 			return false;
 		
@@ -563,8 +558,8 @@ public class DataType {
 		}
 		
 		if (this.kind == DataKind.Flexible) {
-			if (data instanceof Struct)
-				return this.validateFlex(isfinal, selectmode, (Struct)data);
+			if (data instanceof BaseStruct)
+				return this.validateFlex(isfinal, selectmode, (BaseStruct)data);
 
 			Logger.errorTr(420, data);		
 			return false;
@@ -585,7 +580,7 @@ public class DataType {
 		return false;
 	}
 	
-	public Struct normalizeValidate(boolean isfinal, boolean selectmode, Struct data) {
+	public BaseStruct normalizeValidate(boolean isfinal, boolean selectmode, BaseStruct data) {
 		if (data == null)
 			return null;
 		
@@ -614,8 +609,8 @@ public class DataType {
 		}
 		
 		if (this.kind == DataKind.Flexible) {
-			if (data instanceof Struct)
-				return this.normalizeValidateFlex(isfinal, selectmode, (Struct)data);
+			if (data instanceof BaseStruct)
+				return this.normalizeValidateFlex(isfinal, selectmode, (BaseStruct)data);
 
 			Logger.errorTr(420, data);		
 			return null;
@@ -663,9 +658,9 @@ public class DataType {
 			for (Field fld : this.fields.values()) {
 		        //if (Logger.isDebug())
 		        //	Logger.debug("Validating field: " + fld.name);
-				
-				Struct s = data.getField(fld.name);
-				Struct o  = fld.normalizeValidate(data.hasField(fld.name), isfinal, selectmode, data.getField(fld.name));
+
+				BaseStruct s = data.getField(fld.name);
+				BaseStruct o  = fld.normalizeValidate(data.hasField(fld.name), isfinal, selectmode, data.getField(fld.name));
 				
 				if (s != o)
 					data.with(fld.name, o);
@@ -687,7 +682,7 @@ public class DataType {
 			return false;
 		}
 		else {
-			for (Struct obj : data.items()) {
+			for (BaseStruct obj : data.items()) {
 				if (! this.items.validate(isfinal, selectmode, obj))
 					return false;
 			}
@@ -711,8 +706,8 @@ public class DataType {
 			Logger.errorTr(416, data);   
 		else
 			for (int i = 0; i < data.size(); i++) {
-				Struct s = data.getItem(i);
-				Struct o = this.items.normalizeValidate(isfinal, selectmode, s);
+				BaseStruct s = data.getItem(i);
+				BaseStruct o = this.items.normalizeValidate(isfinal, selectmode, s);
 				
 				if (s != o)
 					data.replaceItem(i, o);
@@ -727,21 +722,21 @@ public class DataType {
 		return data;
 	}
 
-	protected boolean validateFlex(boolean isfinal, boolean selectmode, Struct data) {
+	protected boolean validateFlex(boolean isfinal, boolean selectmode, BaseStruct data) {
 		return this.flexfield.validate((data != null), isfinal, selectmode, data);
 	}
 
-	protected Struct normalizeValidateFlex(boolean isfinal, boolean selectmode, Struct data) {
+	protected BaseStruct normalizeValidateFlex(boolean isfinal, boolean selectmode, BaseStruct data) {
 		return this.flexfield.normalizeValidate((data != null), isfinal, selectmode, data);
 	}
 	
-	public Struct wrap(Object data) {
+	public BaseStruct wrap(Object data) {
 		if (data == null) 
 			return null;
 		
 		if (this.kind == DataKind.Record) {
 			if (data instanceof RecordStruct) {
-				Struct s = (Struct)data;
+				BaseStruct s = (BaseStruct)data;
 
 				if (!s.hasExplicitType())
 					s.withType(this);
@@ -757,7 +752,7 @@ public class DataType {
 			// TODO support Collection<Object> and Array<Object> as input too
 			
 			if (data instanceof ListStruct) {
-				Struct s = (Struct)data;
+				BaseStruct s = (BaseStruct)data;
 				
 				if (!s.hasExplicitType())
 					s.withType(this);
@@ -769,8 +764,8 @@ public class DataType {
 			return null;
 		}
 		
-		if ((this.core.root == RootType.Any) && (data instanceof Struct))
-			return (Struct) data;
+		if ((this.core.root == RootType.Any) && (data instanceof BaseStruct))
+			return (BaseStruct) data;
 		
 		return this.core.normalize(this, data);
 	}
@@ -788,8 +783,8 @@ public class DataType {
 		return this.core.getClassName();
 	}
 	
-	public Struct create() {
-		Struct st = (Struct) ResourceHub.getResources().getClassLoader().getInstance(this.getClassName());
+	public BaseStruct create() {
+		BaseStruct st = (BaseStruct) ResourceHub.getResources().getClassLoader().getInstance(this.getClassName());
 		
 		if (st == null) {
 			Logger.error("Unable to create data type: " + this.id);

@@ -43,30 +43,30 @@ public class StackUtil {
 		return main.createStack();
 	}
 
-	static public Struct refFromSource(InstructionWork stackWork, String attr) throws OperatingContextException {
+	static public BaseStruct refFromSource(InstructionWork stackWork, String attr) throws OperatingContextException {
 		return StackUtil.refFromElement(stackWork, stackWork.getInstruction(), attr, true);
 	}
 	
-	static public Struct refFromSource(InstructionWork stackWork, String attr, boolean cleanrefs) throws OperatingContextException {
+	static public BaseStruct refFromSource(InstructionWork stackWork, String attr, boolean cleanrefs) throws OperatingContextException {
 		return StackUtil.refFromElement(stackWork, stackWork.getInstruction(), attr, cleanrefs);
 	}
 
-	static public Struct refFromElement(IParentAwareWork stackWork, XElement el, String attr) throws OperatingContextException {
+	static public BaseStruct refFromElement(IParentAwareWork stackWork, XElement el, String attr) throws OperatingContextException {
 		return StackUtil.refFromElement(stackWork, el, attr, true);
 	}
 	
-	static public Struct refFromElement(IParentAwareWork stackWork, XElement el, String attr, boolean cleanrefs) throws OperatingContextException {
+	static public BaseStruct refFromElement(IParentAwareWork stackWork, XElement el, String attr, boolean cleanrefs) throws OperatingContextException {
 		if ((el == null) || StringUtil.isEmpty(attr))
 			return null;
 		
 		return StackUtil.resolveReference(stackWork, el.getAttribute(attr), cleanrefs);
 	}
 
-	static public Struct resolveReference(IParentAwareWork stack, String val) throws OperatingContextException {
+	static public BaseStruct resolveReference(IParentAwareWork stack, String val) throws OperatingContextException {
 		return StackUtil.resolveReference(stack, val, true);
 	}
 
-	static public Struct resolveReference(IParentAwareWork stack, String val, boolean cleanrefs) throws OperatingContextException {
+	static public BaseStruct resolveReference(IParentAwareWork stack, String val, boolean cleanrefs) throws OperatingContextException {
 		if (val == null)
 			return null;
 
@@ -221,8 +221,8 @@ public class StackUtil {
 			//String fmt = null;
 			
 			String[] vparts = varname.split("\\|");
-			
-			Struct qvar2 = StackUtil.queryVariable(stack, vparts[0]);
+
+			BaseStruct qvar2 = StackUtil.queryVariable(stack, vparts[0]);
 			
 			if (qvar2 != null) {
 				// may want to add ` in front of $ at start, review for evidence of this
@@ -273,7 +273,7 @@ public class StackUtil {
 			StackUtil.addVariable(stack, name, mut.create());
 	}
 	
-	static public void addVariable(IParentAwareWork stack, String name, Struct var) throws OperatingContextException {
+	static public void addVariable(IParentAwareWork stack, String name, BaseStruct var) throws OperatingContextException {
 		if (var == null)
 			var = NullStruct.instance;
 		
@@ -286,7 +286,7 @@ public class StackUtil {
 	}
 	
 	// stack can be null
-	static public Struct queryVariable(IParentAwareWork stack, String name) throws OperatingContextException {
+	static public BaseStruct queryVariable(IParentAwareWork stack, String name) throws OperatingContextException {
 		if (StringUtil.isEmpty(name))
 			return null;
 		
@@ -305,7 +305,7 @@ public class StackUtil {
 			}
 			else {
 				if (vpart.startsWith("$")) {
-					Struct qvar = StackUtil.queryVariable(stack, vpart.substring(1));
+					BaseStruct qvar = StackUtil.queryVariable(stack, vpart.substring(1));
 
 					if (qvar != null) {
 						name += "." + qvar.toString();
@@ -321,8 +321,8 @@ public class StackUtil {
 		
 		if (dotpos > -1) {
 			String oname = name.substring(0, dotpos);
-			
-			Struct ov = vp.queryVariable(oname);
+
+			BaseStruct ov = vp.queryVariable(oname);
 			
 			if (ov == null) {
 				//Logger.errorTr(510, oname);
@@ -463,7 +463,7 @@ public class StackUtil {
 		return false;
 	}
 	
-	public Struct getExitResult(IParentAwareWork stack) throws OperatingContextException {
+	public BaseStruct getExitResult(IParentAwareWork stack) throws OperatingContextException {
 		IResultAwareWork vp = StackUtil.queryResultAware(stack);
 		
 		if (vp != null)
@@ -472,7 +472,7 @@ public class StackUtil {
 		return null;
 	}
 	
-	public void setExitResult(IParentAwareWork stack, Struct value) throws OperatingContextException {
+	public void setExitResult(IParentAwareWork stack, BaseStruct value) throws OperatingContextException {
 		IResultAwareWork vp = StackUtil.queryResultAware(stack);
 		
 		if (vp != null)

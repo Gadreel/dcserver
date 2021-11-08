@@ -17,6 +17,7 @@ import dcraft.script.work.InstructionWork;
 import dcraft.script.work.OperationsWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.service.ServiceHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.NullStruct;
 import dcraft.task.TaskContext;
@@ -48,8 +49,8 @@ public class LoadRecord extends OperationsInstruction {
 	public ReturnOption run(InstructionWork state) throws OperatingContextException {
 		if (state.getState() == ExecuteState.READY) {
 			String name = StackUtil.stringFromSource(state, "Name");
-			
-			Struct var = ResourceHub.getResources().getSchema().getType("dcdbLoadRecord").create();
+
+			BaseStruct var = ResourceHub.getResources().getSchema().getType("dcdbLoadRecord").create();
 			
 			if (var == null) {
 				Logger.errorTr(520);

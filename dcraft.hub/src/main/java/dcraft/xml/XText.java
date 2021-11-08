@@ -16,6 +16,7 @@
 ************************************************************************ */
 package dcraft.xml;
 
+import dcraft.struct.BaseStruct;
 import dcraft.struct.PathPart;
 import dcraft.struct.Struct;
 import dcraft.struct.builder.BuilderStateException;
@@ -107,7 +108,7 @@ public class XText extends XNode {
 	}
 	
 	@Override
-	protected void doCopy(Struct n) {
+	protected void doCopy(BaseStruct n) {
 		super.doCopy(n);
 		
 		XText copy = (XText) n;
@@ -336,7 +337,7 @@ public class XText extends XNode {
 	}
 	
 	@Override
-	public Struct select(PathPart... path) {
+	public BaseStruct select(PathPart... path) {
 		// TODO
 		
 		return null;

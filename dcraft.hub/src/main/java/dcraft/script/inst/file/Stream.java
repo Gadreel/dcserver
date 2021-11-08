@@ -32,6 +32,7 @@ import dcraft.stream.IStream;
 import dcraft.stream.StreamFragment;
 import dcraft.stream.StreamWork;
 import dcraft.stream.file.MemorySourceStream;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -56,8 +57,8 @@ public class Stream extends Instruction {
 	@Override
 	public ReturnOption run(InstructionWork stack) throws OperatingContextException {
 		if (stack.getState() == ExecuteState.READY) {
-			Struct source = StackUtil.refFromSource(stack,  "Source");		// must be stream frag or binary or text
-			Struct dest = StackUtil.refFromSource(stack,  "Destination");		// must be stream frag
+			BaseStruct source = StackUtil.refFromSource(stack,  "Source");		// must be stream frag or binary or text
+			BaseStruct dest = StackUtil.refFromSource(stack,  "Destination");		// must be stream frag
 
 			if (! (source instanceof IStream)) {
 				if (source instanceof BinaryStruct) {
@@ -69,7 +70,7 @@ public class Stream extends Instruction {
 				else if (source instanceof IFileCollection) {
 					source = CollectionSourceStream.of((IFileCollection) source);
 				}
-				else if (source instanceof Struct) {
+				else if (source instanceof BaseStruct) {
 					source = MemorySourceStream.fromBinary(Utf8Encoder.encode(Struct.objectToString(source)));
 				}
 			}

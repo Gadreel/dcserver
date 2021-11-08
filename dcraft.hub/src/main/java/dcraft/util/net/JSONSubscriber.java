@@ -22,6 +22,10 @@ public class JSONSubscriber extends ByteArraySubscriber<CompositeStruct> {
     public CompositeStruct transform(byte[] bytes) throws OperatingContextException {
         String body = new String(bytes, StandardCharsets.UTF_8);
 
-        return CompositeParser.parseJson(body);
+        CompositeStruct resp = CompositeParser.parseJson(body);
+
+        //System.out.println("Resp: " + resp.toPrettyString());
+
+        return resp;
     }
 }

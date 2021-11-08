@@ -6,6 +6,7 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.Struct;
 
@@ -18,7 +19,7 @@ public class ArchiveMessages implements IStoredProc {
 
 		TablesAdapter adapter = TablesAdapter.of(request);
 
-		for (Struct sid : ids.items()) {
+		for (BaseStruct sid : ids.items()) {
 			String tid = sid.toString();
 
 			List<String> access = ThreadUtil.collectMessageAccess(adapter, OperationContext.getOrThrow(), tid);

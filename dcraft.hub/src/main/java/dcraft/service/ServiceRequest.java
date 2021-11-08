@@ -13,6 +13,7 @@ import dcraft.stream.IServiceStreamDest;
 import dcraft.stream.IStream;
 import dcraft.stream.StreamFragment;
 import dcraft.stream.record.VerifyRecordStream;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -55,7 +56,7 @@ public class ServiceRequest implements IWorkBuilder {
 	protected String name = null;
 	protected String feature = null;
 	protected String op = null;
-	protected Struct data = null;
+	protected BaseStruct data = null;
 	protected OpInfo def = null;
 	protected OperationOutcomeStruct outcome = null;
 	protected boolean checkfinal = true;
@@ -89,7 +90,7 @@ public class ServiceRequest implements IWorkBuilder {
 			
 			this.outcome = new OperationOutcomeStruct() {
 				@Override
-				public void callback(Struct result) throws OperatingContextException {
+				public void callback(BaseStruct result) throws OperatingContextException {
 					((IServiceStreamDest<?>) v).end(this);
 				}
 			};
@@ -165,7 +166,7 @@ public class ServiceRequest implements IWorkBuilder {
 		return this.fromRpc;
 	}
 	
-	public ServiceRequest withData(Struct v) {
+	public ServiceRequest withData(BaseStruct v) {
 		this.data = v;
 		return this;
 	}
@@ -175,7 +176,7 @@ public class ServiceRequest implements IWorkBuilder {
 		return this;
 	}
 	
-	public Struct getData() {
+	public BaseStruct getData() {
 		return this.data;
 	}
 	
@@ -205,7 +206,7 @@ public class ServiceRequest implements IWorkBuilder {
 		if (this.outcome == null) {
 			this.outcome = new OperationOutcomeStruct() {
 				@Override
-				public void callback(Struct result) throws OperatingContextException {
+				public void callback(BaseStruct result) throws OperatingContextException {
 					// nothing to do, this is for a send and forget message - or it should be anyway
 				}
 			};
@@ -254,7 +255,7 @@ public class ServiceRequest implements IWorkBuilder {
 		
 		if (rdt != null) {
 			try (OperationMarker om = OperationMarker.create()) {
-				Struct ndata = rdt.normalizeValidate(this.checkfinal, false, this.data);
+				BaseStruct ndata = rdt.normalizeValidate(this.checkfinal, false, this.data);
 
 				// TODO this check should probably be in normalizeValidate, but that requires other checking
 				if ((this.data == null) && (rdt.isRequired()))

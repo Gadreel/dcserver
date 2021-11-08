@@ -23,6 +23,8 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.OperationsWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
+import dcraft.struct.CompositeStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.StringStruct;
@@ -44,16 +46,33 @@ public class With extends OperationsInstruction {
 	@Override
 	public ReturnOption run(InstructionWork state) throws OperatingContextException {
 		if (state.getState() == ExecuteState.READY) {
-			Struct var = StackUtil.refFromSource(state,"Target");
-			
+			BaseStruct var = StackUtil.refFromSource(state,"Target");
+
+			if (var == null) {
+				Logger.errorTr(520);
+				return ReturnOption.DONE;
+			}
+
 			// don't check empty, needs to be able to handle empty
 			if (this.hasAttribute("SetTo")) {
-				Struct var3 = StackUtil.refFromSource(state, "SetTo");
+				BaseStruct var3 = StackUtil.refFromSource(state, "SetTo");
 				
-				if (var instanceof ScalarStruct)
-					((ScalarStruct) var).adaptValue(var3);
-				else
-					var = var3;
+				if (var instanceof ScalarStruct) {
+					if (var instanceof ScalarStruct) {
+						((ScalarStruct) var).adaptValue(var3);
+					}
+					else {
+						// TODO report error
+					}
+				}
+				else {
+					if (var3 instanceof CompositeStruct) {
+						var = var3;
+					}
+					else if (var instanceof ScalarStruct) {
+						((ScalarStruct) var).adaptValue(null);
+					}
+				}
 			}
 
 			if (var == null) {

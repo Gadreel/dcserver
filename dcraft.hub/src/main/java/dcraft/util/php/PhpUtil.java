@@ -1,17 +1,14 @@
 package dcraft.util.php;
 
 import com.caucho.quercus.env.*;
-import dcraft.struct.FieldStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.struct.scalar.*;
 
 import java.util.Iterator;
 import java.util.Map;
 
 public class PhpUtil {
-    static public Value structToValue(Env env, Struct source) {
+    static public Value structToValue(Env env, BaseStruct source) {
         if ((source == null) || (source instanceof NullStruct))
             return NullValue.NULL;
 
@@ -66,7 +63,7 @@ public class PhpUtil {
         return NullValue.NULL;
     }
 
-    static public Struct valueToStruct(Env env, Value source) {
+    static public BaseStruct valueToStruct(Env env, Value source) {
         if ((source == null) || (source instanceof NullValue))
             return NullStruct.instance;
 

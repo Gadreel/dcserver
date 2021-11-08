@@ -18,6 +18,7 @@ import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
 import dcraft.stream.StreamWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -31,7 +32,7 @@ public class BackupShellWork extends StateWork {
 	protected StateWorkStep shellStep = null;
 	protected StateWorkStep notify = null;
 	
-	protected Struct tparams = null;
+	protected BaseStruct tparams = null;
 	protected int logpos = 0;
 	
 	@Override

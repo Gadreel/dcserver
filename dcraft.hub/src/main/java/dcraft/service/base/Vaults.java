@@ -34,10 +34,7 @@ import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
 import dcraft.service.ServiceRequest;
 import dcraft.stream.StreamFragment;
-import dcraft.struct.FieldStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.tenant.Site;
 import dcraft.util.RndUtil;
 import dcraft.util.StringUtil;
@@ -673,7 +670,7 @@ public class Vaults  {
 								return;
 							}
 							
-							HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
+							HashMap<String, BaseStruct> scache = OperationContext.getOrThrow().getSession().getCache();
 							
 							String channel = RndUtil.nextUUId();  // token is protected by session - session id is secure random
 							
@@ -728,18 +725,18 @@ public class Vaults  {
 		try {
 			String channel = request.getFieldAsString("Channel");
 			
-			HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
+			HashMap<String, BaseStruct> scache = OperationContext.getOrThrow().getSession().getCache();
 			
 			// put the FileDescriptor in cache
-			Struct centry = scache.get(channel);
+			BaseStruct centry = scache.get(channel);
 			
 			if ((centry == null) || ! (centry instanceof RecordStruct)) {
 				Logger.error("Invalid channel number, unable to finish upload.");
 				fcb.returnEmpty();
 				return;
 			}
-			
-			Struct so = ((RecordStruct)centry).getFieldAsStruct("TransactionFile");
+
+			BaseStruct so = ((RecordStruct)centry).getFieldAsStruct("TransactionFile");
 			
 			if ((so == null) || ! (so instanceof FileDescriptor)) {
 				Logger.error("Invalid channel number, not a stream, unable to finish upload.");
@@ -748,8 +745,8 @@ public class Vaults  {
 			}
 			
 			FileDescriptor fi = (FileDescriptor) so;
-			
-			Struct tso = ((RecordStruct)centry).getFieldAsStruct("Target");
+
+			BaseStruct tso = ((RecordStruct)centry).getFieldAsStruct("Target");
 			
 			if ((tso == null) || ! (tso instanceof FileDescriptor)) {
 				Logger.error("Invalid channel number, no target in stream, unable to finish upload.");
@@ -943,7 +940,7 @@ public class Vaults  {
 								return;
 							}
 							
-							HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
+							HashMap<String, BaseStruct> scache = OperationContext.getOrThrow().getSession().getCache();
 							
 							String channel = RndUtil.nextUUId();  // token is protected by session - session id is secure random
 							
@@ -985,18 +982,18 @@ public class Vaults  {
 		try {
 			String channel = request.getFieldAsString("Channel");
 			
-			HashMap<String, Struct> scache = OperationContext.getOrThrow().getSession().getCache();
+			HashMap<String, BaseStruct> scache = OperationContext.getOrThrow().getSession().getCache();
 			
 			// put the FileDescriptor in cache
-			Struct centry = scache.get(channel);
+			BaseStruct centry = scache.get(channel);
 			
 			if ((centry == null) || ! (centry instanceof RecordStruct)) {
 				Logger.error("Invalid channel number, unable to finish upload.");
 				fcb.returnEmpty();
 				return;
 			}
-			
-			Struct so = ((RecordStruct)centry).getFieldAsStruct("Target");
+
+			BaseStruct so = ((RecordStruct)centry).getFieldAsStruct("Target");
 			
 			if ((so == null) || ! (so instanceof FileDescriptor)) {
 				Logger.error("Invalid channel number, not a stream, unable to finish upload.");

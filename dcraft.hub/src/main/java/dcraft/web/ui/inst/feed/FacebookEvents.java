@@ -10,10 +10,7 @@ import dcraft.script.inst.Var;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.inst.doc.Out;
 import dcraft.script.work.InstructionWork;
-import dcraft.struct.CompositeParser;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.tenant.Site;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
@@ -650,7 +647,7 @@ The rules: Eggs may be decorated in any style, but must be real chicken eggs -- 
 			List<XNode> fchildren = children;
 			int cidx = 0;
 
-			for (Struct ent : list.items()) {
+			for (BaseStruct ent : list.items()) {
 				RecordStruct entry = (RecordStruct) ent;
 				
 				// setup image for expand

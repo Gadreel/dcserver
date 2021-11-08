@@ -25,7 +25,7 @@ import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 
 
-abstract public class ScalarStruct extends Struct implements Comparable {
+abstract public class ScalarStruct extends BaseStruct implements Comparable {
 	abstract public Object getGenericValue();
 	abstract public void adaptValue(Object v);
 	
@@ -62,7 +62,7 @@ abstract public class ScalarStruct extends Struct implements Comparable {
 	public void checkLogic(IParentAwareWork stack, XElement source, LogicBlockState logicState) throws OperatingContextException {
 		if (source.hasAttribute("Equal")) {
 			if (logicState.pass) {
-				Struct other = StackUtil.refFromElement(stack, source, "Equal", true);
+				BaseStruct other = StackUtil.refFromElement(stack, source, "Equal", true);
 				logicState.pass = (this.compareTo(other) == 0);  //  (var == iv);
 			}
 			
@@ -71,7 +71,7 @@ abstract public class ScalarStruct extends Struct implements Comparable {
 		
 		if (source.hasAttribute("Equals")) {
 			if (logicState.pass) {
-				Struct other = StackUtil.refFromElement(stack, source, "Equals", true);
+				BaseStruct other = StackUtil.refFromElement(stack, source, "Equals", true);
 				logicState.pass = (this.compareTo(other) == 0);  //  (var == iv);
 			}
 			
@@ -80,7 +80,7 @@ abstract public class ScalarStruct extends Struct implements Comparable {
 		
 		if (source.hasAttribute("LessThan")) {
 			if (logicState.pass) {
-				Struct other = StackUtil.refFromElement(stack, source, "LessThan", true);
+				BaseStruct other = StackUtil.refFromElement(stack, source, "LessThan", true);
 				logicState.pass = (this.compareTo(other) < 0);  //  (var < iv);
 			}
 			
@@ -89,7 +89,7 @@ abstract public class ScalarStruct extends Struct implements Comparable {
 		
 		if (source.hasAttribute("GreaterThan")) {
 			if (logicState.pass) {
-				Struct other = StackUtil.refFromElement(stack, source, "GreaterThan", true);
+				BaseStruct other = StackUtil.refFromElement(stack, source, "GreaterThan", true);
 				logicState.pass = (this.compareTo(other) > 0);  //  (var > iv);
 			}
 			
@@ -98,7 +98,7 @@ abstract public class ScalarStruct extends Struct implements Comparable {
 		
 		if (source.hasAttribute("LessThanOrEqual")) {
 			if (logicState.pass) {
-				Struct other = StackUtil.refFromElement(stack, source, "LessThanOrEqual", true);
+				BaseStruct other = StackUtil.refFromElement(stack, source, "LessThanOrEqual", true);
 				logicState.pass = (this.compareTo(other) <= 0);  //  (var <= iv);
 			}
 			
@@ -107,7 +107,7 @@ abstract public class ScalarStruct extends Struct implements Comparable {
 		
 		if (source.hasAttribute("GreaterThanOrEqual")) {
 			if (logicState.pass) {
-				Struct other = StackUtil.refFromElement(stack, source, "GreaterThanOrEqual", true);
+				BaseStruct other = StackUtil.refFromElement(stack, source, "GreaterThanOrEqual", true);
 				logicState.pass = (this.compareTo(other) >= 0);  //  (var >= iv);
 			}
 			

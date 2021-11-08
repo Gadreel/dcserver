@@ -24,7 +24,7 @@ public class FieldStruct implements ICompositeOutput {
 	protected String name = null;
 	protected Object orgvalue = null;
 	protected boolean prepped = false;
-	protected Struct value = null;
+	protected BaseStruct value = null;
 	
 	public String getName() {
 		return this.name;
@@ -34,17 +34,17 @@ public class FieldStruct implements ICompositeOutput {
 		this.name = v;
 	}
 	
-	public Struct getValue() {
+	public BaseStruct getValue() {
 		return this.value;
 	}
 	
-	public Struct sliceValue() {
-		Struct s = this.value;
+	public BaseStruct sliceValue() {
+		BaseStruct s = this.value;
 		this.value = null;
 		return s;
 	}
 
-	public void setValue(Struct v) {
+	public void setValue(BaseStruct v) {
 		this.value = v;
 		this.orgvalue = null;	// replaced with real value
 	}

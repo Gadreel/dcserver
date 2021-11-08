@@ -24,6 +24,7 @@ import dcraft.script.work.BlockWork;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -51,7 +52,7 @@ public class ForEach extends BlockInstruction {
 		// "_forindex"
 		String name = StackUtil.stringFromSource(state,"Name","_forvalue");
 
-		Struct source = StackUtil.refFromSource(state,"In", true);
+		BaseStruct source = StackUtil.refFromSource(state,"In", true);
 		
 		if (source instanceof XElement) {
 			source = ListStruct.list(((XElement)source).selectAll("*"));
@@ -84,7 +85,7 @@ public class ForEach extends BlockInstruction {
 		if (pos.getValue() >= listSource.size())
 			return ReturnOption.DONE;
 
-		Struct val = listSource.getItem(pos.getValue().intValue());
+		BaseStruct val = listSource.getItem(pos.getValue().intValue());
 
 		StackUtil.addVariable(state, name, val);
 

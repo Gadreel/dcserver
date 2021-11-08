@@ -24,6 +24,7 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.OperationsWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
@@ -47,7 +48,7 @@ public class Indirect extends OperationsInstruction {
 			String value = StackUtil.stringFromSource(state, "Value");
 			String name = StackUtil.stringFromSource(state, "Name");
 
-			Struct var = null;
+			BaseStruct var = null;
 
 			if (StringUtil.isNotEmpty(value) && StringUtil.isNotEmpty(name)) {
 				var = StackUtil.queryVariable(state, value);

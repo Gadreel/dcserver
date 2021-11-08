@@ -13,10 +13,7 @@ import dcraft.script.ScriptResource;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
 import dcraft.service.ServiceResource;
-import dcraft.struct.CompositeStruct;
-import dcraft.struct.IPartSelector;
-import dcraft.struct.PathPart;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.task.IParentAwareWork;
@@ -294,7 +291,7 @@ public class ResourceTier extends CompositeStruct {
 	}
 	
 	@Override
-	public Struct select(PathPart... path) {
+	public BaseStruct select(PathPart... path) {
 		if (path.length == 0)
 			return this;
 		
@@ -307,8 +304,8 @@ public class ResourceTier extends CompositeStruct {
 		}
 		
 		String fld = part.getField();
-		
-		Struct o = null;
+
+		BaseStruct o = null;
 		
 		if ("Locale".equals(fld)) {
 			o = this.get("Locale");
@@ -374,7 +371,7 @@ public class ResourceTier extends CompositeStruct {
 	}
 	
 	@Override
-	protected void doCopy(Struct n) {
+	protected void doCopy(BaseStruct n) {
 		super.doCopy(n);
 		
 		((ResourceTier) n).parent = this.parent;
@@ -382,7 +379,7 @@ public class ResourceTier extends CompositeStruct {
 	}
 	
 	@Override
-	public Struct deepCopy() {
+	public BaseStruct deepCopy() {
 		ResourceTier t = new ResourceTier();
 		this.doCopy(t);
 		return t;

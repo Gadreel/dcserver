@@ -19,6 +19,7 @@ package dcraft.struct.scalar;
 import dcraft.schema.DataType;
 import dcraft.schema.RootType;
 import dcraft.schema.SchemaHub;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
@@ -39,7 +40,7 @@ public class NullStruct extends ScalarStruct {
 	}
 	
 	@Override
-	public Struct withType(DataType v) {
+	public BaseStruct withType(DataType v) {
 		if (this == NullStruct.instance)		// do not change on global null
 			return this;
 		
@@ -72,7 +73,7 @@ public class NullStruct extends ScalarStruct {
 	}
     
 	@Override
-	public Struct deepCopy() {
+	public BaseStruct deepCopy() {
 		NullStruct cp = new NullStruct();
 		this.doCopy(cp);
 		return cp;

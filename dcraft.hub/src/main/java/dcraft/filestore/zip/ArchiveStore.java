@@ -29,6 +29,7 @@ import dcraft.script.StackUtil;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
@@ -116,7 +117,7 @@ public class ArchiveStore extends FileStore {
     }
 
     @Override
-    protected void doCopy(Struct n) {
+    protected void doCopy(BaseStruct n) {
         ArchiveStore cp = (ArchiveStore) n;
         cp.localpath = this.localpath;
 

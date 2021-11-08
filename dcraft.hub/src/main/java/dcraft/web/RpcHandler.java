@@ -8,10 +8,7 @@ import dcraft.service.ServiceHub;
 import dcraft.service.ServiceRequest;
 import dcraft.session.Session;
 import dcraft.session.SessionHub;
-import dcraft.struct.CompositeParser;
-import dcraft.struct.CompositeStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
 import io.netty.handler.codec.http.HttpContent;
@@ -194,7 +191,7 @@ public class RpcHandler implements IContentDecoder {
 		// don't use local vars in this callback
 		request.withOutcome(new OperationOutcomeStruct() {
 			@Override
-			public void callback(Struct result) throws OperatingContextException {
+			public void callback(BaseStruct result) throws OperatingContextException {
 				OperationContext ctx = OperationContext.getOrThrow();
 				
 				WebController wctrl = (WebController) ctx.getController();

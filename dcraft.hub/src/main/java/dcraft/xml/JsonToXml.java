@@ -3,10 +3,7 @@ package dcraft.xml;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.log.Logger;
 import dcraft.script.ScriptHub;
-import dcraft.struct.FieldStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.builder.ObjectBuilder;
 
@@ -77,7 +74,7 @@ public class JsonToXml {
 			else {
 				this.reader.startElement(node.getFieldAsString("name"), amap, 0, 0);
 				
-				for (Struct child : children.items()) {
+				for (BaseStruct child : children.items()) {
 					if (child instanceof RecordStruct) {
 						this.convert((RecordStruct) child, level + 1);
 					}
