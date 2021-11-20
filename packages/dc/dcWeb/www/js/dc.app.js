@@ -290,7 +290,7 @@ dc.pui.layer.Base.prototype = {
 				if (dc.pui.Loader.Layers[i] == this) {
 					need = false;
 				}
-				else {
+				else if (! this.ManualVisibility) {
 					$(dc.pui.Loader.Layers[i].ContentShell).css('visibility', 'hidden');
 				}
 			}
@@ -298,13 +298,17 @@ dc.pui.layer.Base.prototype = {
 			if (need)
 				dc.pui.Loader.addLayer(this);
 
-			$(this.ContentShell).show().css('visibility', 'visible');
-			$(dc.pui.Loader.MainLayer.Content).css('visibility', 'hidden');
-			$('body').addClass('dc-hide-scroll');
+			if (! this.ManualVisibility) {
+				$(this.ContentShell).show().css('visibility', 'visible');
+				$(dc.pui.Loader.MainLayer.Content).css('visibility', 'hidden');
+				$('body').addClass('dc-hide-scroll');
+			}
 		}
 		else {
-			$(this.Content).css('visibility', 'visible');
-			$('body').removeClass('dc-hide-scroll');
+			if (! this.ManualVisibility) {
+				$(this.Content).css('visibility', 'visible');
+				$('body').removeClass('dc-hide-scroll');
+			}
 		}
 
 		//if (this.LastFocus)
@@ -320,7 +324,9 @@ dc.pui.layer.Base.prototype = {
 		*/
 
 		if (this != dc.pui.Loader.MainLayer) {
-			$(this.ContentShell).hide().css('visibility', 'hidden');
+			if (! this.ManualVisibility) {
+				$(this.ContentShell).hide().css('visibility', 'hidden');
+			}
 
 			dc.pui.Loader.exposeTopLayer();
 		}
@@ -518,6 +524,27 @@ dc.pui.layer.Alert.prototype.open = function() {
 // Alert feature (singleton)
 dc.pui.Alert = new dc.pui.layer.Alert();
 
+dc.pui.layer.Widget = function(uiid, uiidin) {
+	this.ManualVisibility = true;
+	this.init(uiid, uiidin);
+};
+
+dc.pui.layer.Widget.prototype = new dc.pui.layer.Base();
+
+dc.pui.layer.Widget.prototype.open = function() {
+	var del = $(this.ContentShell).show().css('visibility','visible');
+
+	dc.pui.layer.Base.prototype.open.call(this);
+
+	$(dc.pui.Loader.MainLayer.Content).css('visibility', 'visible');
+	$('body').removeClass('dc-hide-scroll');
+};
+
+dc.pui.layer.Widget.prototype.close = function() {
+	var del = $(this.ContentShell).hide();
+
+	dc.pui.layer.Base.prototype.close.call(this);
+};
 
 dc.pui.layer.App = function() {
 	this.init('#dcuiApp', '#dcuiAppPane');

@@ -367,7 +367,7 @@ public class Struct {
 		
 		if (o instanceof CharSequence) {
 			try {
-				new Boolean(o.toString());
+				new Boolean(o.toString());		// TODO fix, should work for true or false
 				return true;
 			}
 			catch (Exception x) {

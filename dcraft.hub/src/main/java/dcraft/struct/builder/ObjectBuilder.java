@@ -290,10 +290,8 @@ public class ObjectBuilder implements ICompositeBuilder {
 		
 		// if in a list, check if we need a comma 
 		if (this.cstate.State == BuilderState.InList) {			
-			if (!this.cstate.ValueComplete)
+			if (! this.cstate.ValueComplete)
 				this.endItem(null);
-			
-			this.cstate.ValueComplete = false;
 		}
 		
 		// TODO handle other object types - reader, etc
@@ -321,7 +319,13 @@ public class ObjectBuilder implements ICompositeBuilder {
 		else {
 			this.cstate.CurrentValue = value.toString();		
 		}
-		
+
+		// if in a list, let them know we need to write the value
+		// this ValueComplete=false has to be down here so that ICompositeOutput works correctly above
+		if (this.cstate.State == BuilderState.InList) {
+			this.cstate.ValueComplete = false;
+		}
+
 		// mark the value complete, let parent container know we need commas
 		this.completeValue(null);
 		

@@ -730,6 +730,15 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		this.sort(new Comparator<BaseStruct>() {
 			@Override
 			public int compare(BaseStruct o1, BaseStruct o2) {
+				if ((o1 == null) && (o2 == null))
+					return 0;
+
+				if (o1 == null)
+					return descending ? -1 : 1;
+
+				if (o2 == null)
+					return descending ? 1 : -1;
+
 				BaseStruct fld1 = ((RecordStruct)o1).getField(field);
 				BaseStruct fld2 = ((RecordStruct)o2).getField(field);
 				

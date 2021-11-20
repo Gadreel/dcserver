@@ -18,6 +18,7 @@ import dcraft.xml.XElement;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class MenuWidget extends Base {
 	static public MenuWidget tag() {
@@ -88,13 +89,20 @@ public class MenuWidget extends Base {
 
 					if (opass) {
 						if (x.getName().equals("Menu")) {
-							links.add(Link.tag()
-									.attr("Label", x.getAttribute("Title"))
-									.attr("Page", x.hasNotEmptyAttribute("Page")
-											? x.getAttribute("Page")
-											: menulevel.slug + "/" + x.getAttribute("Slug")
-									)
-							);
+							XElement link = Link.tag();
+
+							if (x.hasAttributes()) {
+								for (Map.Entry<String, String> attr : x.getAttributes().entrySet())
+									link.attr(attr.getKey(), attr.getValue());
+							}
+
+							if (link.hasNotEmptyAttribute("Title"))
+								link.attr("Label", x.getAttribute("Title"));
+
+							if (link.hasNotEmptyAttribute("Slug"))
+								link.attr("Page", menulevel.slug + "/" + x.getAttribute("Slug"));
+
+							links.add(link);
 						}
 						else if (x.getName().equals("li")) {
 							links.add(ScriptHub.parseInstructions(x.toString()));
