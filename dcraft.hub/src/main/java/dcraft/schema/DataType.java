@@ -34,7 +34,7 @@ import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
 public class DataType {
-	enum DataKind {
+	public enum DataKind {
 		Scalar(1),
 		List(2),
 		Record(3),

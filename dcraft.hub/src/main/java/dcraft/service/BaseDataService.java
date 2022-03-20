@@ -5,14 +5,26 @@ import dcraft.db.DatabaseException;
 import dcraft.db.DbServiceRequest;
 import dcraft.db.IConnectionManager;
 import dcraft.db.util.DbUtil;
+import dcraft.filestore.CommonPath;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
 import dcraft.schema.DbProc;
+import dcraft.script.Script;
+import dcraft.script.StackUtil;
 import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.StringStruct;
+import dcraft.task.ChainWork;
+import dcraft.task.TaskHub;
+import dcraft.util.StringUtil;
+import dcraft.util.web.DateParser;
+import dcraft.web.HttpDestStream;
+
+import java.nio.file.Path;
 
 /**
  */
@@ -48,6 +60,37 @@ public class BaseDataService extends BaseService {
 				Logger.error("Error with database routine: " + x);
 				request.getOutcome().returnResult();
 				return false;
+			}
+		}
+		else {
+			String path = "/services/" + request.getName() + "/" + request.getFeature() + "/" + request.getOp() + ".dcs.xml";
+
+			Path fnd = ResourceHub.getResources().getScripts().findScript(CommonPath.from(path));
+
+			OperationContext ctx = OperationContext.getOrThrow();
+
+			if (fnd != null) {
+				Script script = Script.of(fnd);
+
+				ctx.addVariable("Data", request.getData());
+
+				TaskHub.submit(
+						ChainWork.of(taskctx -> {
+								//System.out.println("before");
+
+								taskctx.returnEmpty();
+							})
+							.then(script.toWork())
+							.then(taskctx -> {
+								//System.out.println("after 1: " + taskctx.getParams());
+								//System.out.println("after 2: " + taskctx.getResult());
+
+								callback.returnValue(taskctx.getParams());
+								taskctx.returnEmpty();
+							})
+				);
+
+				return true;
 			}
 		}
 		

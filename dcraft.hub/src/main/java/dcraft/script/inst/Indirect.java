@@ -30,7 +30,7 @@ import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
-public class Indirect extends OperationsInstruction {
+public class Indirect extends Instruction {
 	static public Indirect tag() {
 		Indirect el = new Indirect();
 		el.setName("dcs.Indirect");
@@ -44,31 +44,22 @@ public class Indirect extends OperationsInstruction {
 	
 	@Override
 	public ReturnOption run(InstructionWork state) throws OperatingContextException {
-		if (state.getState() == ExecuteState.READY) {
-			String value = StackUtil.stringFromSource(state, "Value");
-			String name = StackUtil.stringFromSource(state, "Name");
+		String value = StackUtil.stringFromSource(state, "Value");
+		String name = StackUtil.stringFromSource(state, "Name");
 
-			BaseStruct var = null;
+		BaseStruct var = null;
 
-			if (StringUtil.isNotEmpty(value) && StringUtil.isNotEmpty(name)) {
-				var = StackUtil.queryVariable(state, value);
-			}
-
-			if (var == null)
-				return ReturnOption.DONE;
-
-			StackUtil.addVariable(state, name, var);
-			
-			((OperationsWork) state).setTarget(var);
-			
-			if (this.gotoTop(state))
-				return ReturnOption.CONTINUE;
+		if (StringUtil.isNotEmpty(value) && StringUtil.isNotEmpty(name)) {
+			var = StackUtil.queryVariable(state, value);
 		}
-		else {
-			if (this.gotoNext(state, false))
-				return ReturnOption.CONTINUE;
-		}
-		
-		return ReturnOption.DONE;
+
+		if (var == null)
+			return ReturnOption.DONE;
+
+		StackUtil.addVariable(state, name, var);
+
+		// ((OperationsWork) state).setTarget(var);
+
+		return ReturnOption.CONTINUE;
 	}
 }

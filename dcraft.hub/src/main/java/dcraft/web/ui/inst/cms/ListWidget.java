@@ -175,7 +175,48 @@ public class ListWidget extends Base implements ICMSAware {
 			
 			return true;		// command was handled
 		}
-		
+
+		if ("ReorderAlias".equals(cmd)) {
+			ListStruct neworder = command.selectAsList("Params.Order");
+
+			if (neworder == null) {
+				Logger.error("New order is missing");
+				return true;		// command was handled
+			}
+
+			List<XElement> children = this.selectAll("Entry");
+
+			// remove all images
+			for (XElement el : children)
+				this.remove(el);
+
+			// add images back in new order
+			for (int i = 0; i < neworder.size(); i++) {
+				String alias = neworder.getItemAsString(i);
+				boolean fnd = false;
+
+				for (int n = 0; n < children.size(); n++) {
+					XElement child = children.get(n);
+					String ealias = child.attr("Alias");
+
+					if (StringUtil.isEmpty(ealias))
+						continue;
+
+					if (! ealias.equals(alias))
+						continue;
+
+					part.with(child);
+
+					break;
+				}
+
+				if (! fnd)
+					Logger.warn("bad gallery positions");
+			}
+
+			return true;		// command was handled
+		}
+
 		if ("UpdatePart".equals(cmd)) {
 			// TODO check that the changes made are allowed - e.g. on TextWidget
 			RecordStruct params = command.getFieldAsRecord("Params");

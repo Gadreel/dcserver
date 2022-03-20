@@ -255,6 +255,10 @@
 		<Procedure Name="dcSetGlobalPassword" Execute="dcraft.db.proc.call.SetGlobalPassword" />
 		<Procedure Name="dcIndexValueCounter" Execute="dcraft.db.proc.call.IndexValueCounter" />
 
+		<Procedure Name="dcCoreServices.Status.Ping" Execute="dcraft.db.proc.call.Ping" />
+		<Procedure Name="dcCoreServices.Status.Echo" Execute="dcraft.db.proc.call.Echo" />
+		<Procedure Name="dcCoreServices.Status.Print" Execute="dcraft.db.proc.call.Print" />
+
 		<Procedure Name="dcCoreServices.Authentication.Confirm" Execute="dcraft.core.db.auth.Confirm" />
 		<Procedure Name="dcCoreServices.Authentication.Recover" Execute="dcraft.core.db.auth.Recover" />
 		<Procedure Name="dcCoreServices.Authentication.FacebookSignIn" Execute="dcraft.core.db.auth.FacebookSignIn" />

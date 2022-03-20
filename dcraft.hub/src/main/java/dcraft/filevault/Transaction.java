@@ -53,15 +53,24 @@ public class Transaction extends TransactionBase {
 	}
 	
 	public RecordStruct getManifest() throws OperatingContextException {
+		ListStruct writes = ListStruct.list();
+		ListStruct deletes = ListStruct.list();
+
+		for (TransactionFile f : this.updatelist)
+			writes.with(f.getPath());
+
+		for (TransactionFile f : this.deletelist)
+			deletes.with(f.getPath());
+
 		return RecordStruct.record()
 				.with("TimeStamp", this.timestamp)
 				.with("Type", "Deposit")
 				.with("Tenant", OperationContext.getOrThrow().getTenant().getAlias())
 				.with("Site", OperationContext.getOrThrow().getSite().getAlias())
 				.with("Vault", this.getVaultName())
-				.with("Write", ListStruct.list().withCollection(this.updatelist))
+				.with("Write", writes)
 				.with("Clean", this.cleanfolder)
-				.with("Delete", ListStruct.list().withCollection(this.deletelist));
+				.with("Delete", deletes);
 	}
 	
 	/*
@@ -144,9 +153,9 @@ public class Transaction extends TransactionBase {
 									return FileVisitResult.CONTINUE;
 								
 								Path dest = source.relativize(file);
-								
-								Transaction.this.updatelist.add(CommonPath.from("/" + dest.toString()));
-								
+
+								Transaction.this.withUpdate(TransactionFile.of(CommonPath.from("/" + dest), Transaction.this.timestamp));
+
 								return FileVisitResult.CONTINUE;
 							}
 						});

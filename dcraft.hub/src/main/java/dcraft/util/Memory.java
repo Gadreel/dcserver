@@ -38,7 +38,7 @@ import dcraft.util.io.IReader;
  */
 public class Memory implements IReader {
     protected int chunkSize = 4096;    
-    protected List<MemoryChunk> buffers = new ArrayList<MemoryChunk>();
+    protected List<MemoryChunk> buffers = new ArrayList<>();
     protected int length = 0;    // effective length of content, the capacity is total of all buffers
     protected int position = 0;
     protected Utf8Decoder decoder = null;

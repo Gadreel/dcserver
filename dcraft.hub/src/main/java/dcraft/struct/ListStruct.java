@@ -474,13 +474,13 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		if (idx >= this.items.size())
 			return true;
 		
-		Object o = this.items.get(idx);
+		BaseStruct o = this.items.get(idx);
 		
 		if (o == null)
 			return true;
 		
-		if (o instanceof CharSequence)
-			return o.toString().isEmpty();
+		if (o instanceof ScalarStruct)
+			return ((ScalarStruct) o).isEmpty();
 		
 		return false;
 	}
@@ -674,7 +674,17 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 			
 			return ReturnOption.CONTINUE;
 		}
-		
+		else if ("FieldToList".equals(code.getName())) {
+			String field = StackUtil.stringFromElement(stack, code, "Field");
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+
+			if (StringUtil.isNotEmpty(result) && StringUtil.isNotEmpty(field)) {
+				StackUtil.addVariable(stack, result, this.fieldToList(field));
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+
 		return super.operation(stack, code);
 	}
 
@@ -685,6 +695,18 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 			if (s != null)
 				nlist.add(s.toString());
 		
+		return nlist;
+	}
+
+	public ListStruct fieldToList(String fname) {
+		ListStruct nlist = ListStruct.list();
+
+		for (BaseStruct s : this.items) {
+			if (s instanceof RecordStruct) {
+				nlist.with(((RecordStruct) s).getField(fname));
+			}
+		}
+
 		return nlist;
 	}
 

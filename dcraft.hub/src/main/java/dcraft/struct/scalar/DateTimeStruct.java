@@ -16,10 +16,12 @@
 ************************************************************************ */
 package dcraft.struct.scalar;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
+import java.util.Locale;
 
 import dcraft.hub.ResourceHub;
 import dcraft.script.work.ReturnOption;
@@ -122,25 +124,25 @@ public class DateTimeStruct extends ScalarStruct {
 		else if ("Add".equals(op)) {
 			try { 
 				if (code.hasAttribute("Years")) 
-					this.value = this.value.plusYears((int)StackUtil.intFromElement(stack, code, "Years"));
+					this.value = this.value.plusYears((int)StackUtil.intFromElement(stack, code, "Years", 0));
 				
 				if (code.hasAttribute("Months"))
-					this.value = this.value.plusMonths((int)StackUtil.intFromElement(stack, code, "Months"));
+					this.value = this.value.plusMonths((int)StackUtil.intFromElement(stack, code, "Months", 0));
 				
 				if (code.hasAttribute("Days"))
-					this.value = this.value.plusDays((int)StackUtil.intFromElement(stack, code, "Days"));
+					this.value = this.value.plusDays((int)StackUtil.intFromElement(stack, code, "Days", 0));
 				
 				if (code.hasAttribute("Hours"))
-					this.value = this.value.plusHours((int)StackUtil.intFromElement(stack, code, "Hours"));
+					this.value = this.value.plusHours((int)StackUtil.intFromElement(stack, code, "Hours", 0));
 				
 				if (code.hasAttribute("Minutes"))
-					this.value = this.value.plusMinutes((int)StackUtil.intFromElement(stack, code, "Minutes"));
+					this.value = this.value.plusMinutes((int)StackUtil.intFromElement(stack, code, "Minutes", 0));
 				
 				if (code.hasAttribute("Seconds"))
-					this.value = this.value.plusSeconds((int)StackUtil.intFromElement(stack, code, "Seconds"));
+					this.value = this.value.plusSeconds((int)StackUtil.intFromElement(stack, code, "Seconds", 0));
 				
 				if (code.hasAttribute("Weeks"))
-					this.value = this.value.plusWeeks((int)StackUtil.intFromElement(stack, code, "Weeks"));
+					this.value = this.value.plusWeeks((int)StackUtil.intFromElement(stack, code, "Weeks", 0));
 				
 				if (code.hasAttribute("Period")) {
 					PeriodDuration p = PeriodDuration.parse(StackUtil.stringFromElement(stack, code, "Period"));
@@ -156,25 +158,25 @@ public class DateTimeStruct extends ScalarStruct {
 		else if ("Subtract".equals(op)) {
 			try { 
 				if (code.hasAttribute("Years")) 
-					this.value = this.value.minusYears((int)StackUtil.intFromElement(stack, code, "Years"));
+					this.value = this.value.minusYears((int)StackUtil.intFromElement(stack, code, "Years", 0));
 				
 				if (code.hasAttribute("Months"))
-					this.value = this.value.minusMonths((int)StackUtil.intFromElement(stack, code, "Months"));
+					this.value = this.value.minusMonths((int)StackUtil.intFromElement(stack, code, "Months", 0));
 				
 				if (code.hasAttribute("Days"))
-					this.value = this.value.minusDays((int)StackUtil.intFromElement(stack, code, "Days"));
+					this.value = this.value.minusDays((int)StackUtil.intFromElement(stack, code, "Days", 0));
 				
 				if (code.hasAttribute("Hours"))
-					this.value = this.value.minusHours((int)StackUtil.intFromElement(stack, code, "Hours"));
+					this.value = this.value.minusHours((int)StackUtil.intFromElement(stack, code, "Hours", 0));
 				
 				if (code.hasAttribute("Minutes"))
-					this.value = this.value.minusMinutes((int)StackUtil.intFromElement(stack, code, "Minutes"));
+					this.value = this.value.minusMinutes((int)StackUtil.intFromElement(stack, code, "Minutes", 0));
 				
 				if (code.hasAttribute("Seconds"))
-					this.value = this.value.minusSeconds((int)StackUtil.intFromElement(stack, code, "Seconds"));
+					this.value = this.value.minusSeconds((int)StackUtil.intFromElement(stack, code, "Seconds", 0));
 				
 				if (code.hasAttribute("Weeks"))
-					this.value = this.value.minusWeeks((int)StackUtil.intFromElement(stack, code, "Weeks"));
+					this.value = this.value.minusWeeks((int)StackUtil.intFromElement(stack, code, "Weeks", 0));
 				
 				if (code.hasAttribute("Period")) {
 					PeriodDuration p = PeriodDuration.parse(StackUtil.stringFromElement(stack, code, "Period"));
@@ -196,6 +198,44 @@ public class DateTimeStruct extends ScalarStruct {
 					.format(this.value);
 
 			StackUtil.addVariable(stack, result, StringStruct.of(out));
+
+			return ReturnOption.CONTINUE;
+		}
+		else if ("ParseLocal".equals(code.getName())) {
+			String datetime = code.hasAttribute("Value")
+					? StackUtil.stringFromElementClean(stack, code, "Value")
+					: StackUtil.resolveValueToString(stack, code.getText(), true);
+
+			datetime = datetime.trim();
+
+			try {
+				String fmt = "yyyy-M-d h:m[:s] a";
+
+				if (datetime.indexOf(' ') == -1)
+					fmt = "yyyy-M-d";
+
+				DateTimeFormatter dtf = new DateTimeFormatterBuilder()
+						.parseCaseInsensitive()
+						.appendPattern(fmt)
+						.toFormatter(Locale.ENGLISH);		     // TODO don't assume this
+
+				if (datetime.indexOf(' ') == -1) {
+					LocalDate dt = LocalDate.parse(datetime, dtf);
+
+					this.value = dt.atStartOfDay(TimeUtil.zoneInContext()).withZoneSameInstant(ZoneId.of("UTC"));
+				}
+				else {
+					LocalDateTime dt = LocalDateTime.parse(datetime, dtf);
+
+					this.value = dt.atZone(TimeUtil.zoneInContext()).withZoneSameInstant(ZoneId.of("UTC"));
+				}
+
+				System.out.println("- " + this.value);
+			}
+			catch (DateTimeParseException x) {
+				Logger.error("Unable to parse local date time string: " + datetime + " - " + x);
+				this.value = null;
+			}
 
 			return ReturnOption.CONTINUE;
 		}

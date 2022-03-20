@@ -1,9 +1,12 @@
 package dcraft.service;
 
+import dcraft.hub.ResourceHub;
+import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationMarker;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.hub.resource.KeyRingResource;
 import dcraft.log.Logger;
 import dcraft.schema.DataType;
 import dcraft.schema.SchemaHub;
@@ -19,15 +22,21 @@ import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IWork;
 import dcraft.task.IWorkBuilder;
+import dcraft.util.IOUtil;
+import dcraft.util.RndUtil;
 import dcraft.util.StringUtil;
+import dcraft.util.TimeUtil;
+import dcraft.util.pgp.ClearsignUtil;
+import org.bouncycastle.openpgp.PGPSecretKeyRing;
 
+import java.nio.file.Path;
 import java.security.InvalidParameterException;
 
 /*
  * This class may be used to create requests for either Local Hub calls or Remote (API) Hub calls. Except for "validate"
  * the code should be neutral to which destination will be used. "validate" is for local calls
  */
-public class ServiceRequest implements IWorkBuilder {
+public class ServiceRequest implements IServiceRequestBuilder, IWorkBuilder {
 	// be in the calling context when you use this method, otherwise may miss the proper OpInfo def
 	static public ServiceRequest of(String name, String feature, String op) {
 		ServiceRequest req = new ServiceRequest();
@@ -37,6 +46,15 @@ public class ServiceRequest implements IWorkBuilder {
 		return req;
 	}
 	
+	static public ServiceRequest of(RecordStruct message) {
+		ServiceRequest req = new ServiceRequest();
+		req.name = message.getFieldAsString("Service");
+		req.feature = message.getFieldAsString("Feature");
+		req.op = message.getFieldAsString("Op");
+		req.data = message.getField("Body");
+		return req;
+	}
+
 	static public ServiceRequest of(String op) {
 		if (StringUtil.isEmpty(op))
 			return null;
@@ -298,5 +316,18 @@ public class ServiceRequest implements IWorkBuilder {
 		}
 		
 		return true;
+	}
+
+	public RecordStruct toRecord() {
+		return RecordStruct.record()
+				.with("Service", this.name)
+				.with("Feature", this.feature)
+				.with("Op", this.op)
+				.with("Body", this.data);
+	}
+
+	@Override
+	public ServiceRequest toServiceRequest() {
+		return this;
 	}
 }

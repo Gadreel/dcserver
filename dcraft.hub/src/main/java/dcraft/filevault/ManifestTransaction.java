@@ -33,7 +33,7 @@ public class ManifestTransaction extends TransactionBase {
 		
 		if (deletes != null) {
 			for (int i = 0; i < deletes.size(); i++) {
-				this.deletelist.add(CommonPath.from(deletes.getItemAsString(i)));
+				this.withDelete(TransactionFile.of(CommonPath.from(deletes.getItemAsString(i)), this.timestamp));
 			}
 		}
 		
@@ -46,7 +46,7 @@ public class ManifestTransaction extends TransactionBase {
 		
 		if (writes != null) {
 			for (int i = 0; i < writes.size(); i++) {
-				this.updatelist.add(CommonPath.from(writes.getItemAsString(i)));
+				this.withUpdate(TransactionFile.of(CommonPath.from(writes.getItemAsString(i)), this.timestamp));
 			}
 		}
 		

@@ -5,6 +5,9 @@ import dcraft.db.IRequestContext;
 import dcraft.db.util.ByteUtil;
 import dcraft.db.util.DocumentIndexBuilder;
 import dcraft.filestore.CommonPath;
+import dcraft.filestore.FileStore;
+import dcraft.filestore.local.LocalStore;
+import dcraft.filevault.FileStoreVault;
 import dcraft.filevault.Vault;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.IVariableAware;
@@ -19,7 +22,10 @@ import dcraft.tenant.Site;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -386,10 +392,26 @@ public class FileIndexAdapter {
 			}
 			
 			if (needbase) {
+				// TODO prefer file mod with other Scan as well
+				if (vault instanceof FileStoreVault) {
+					FileStoreVault fsv = (FileStoreVault) vault;
+
+					FileStore fs = fsv.getFileStore();
+
+					if (fs instanceof LocalStore) {
+						LocalStore ls = (LocalStore) fs;
+
+						Path file = ls.resolvePath(path);
+
+						if (Files.exists(file))
+							now = ZonedDateTime.ofInstant(Files.getLastModifiedTime(file).toInstant(), ZoneId.of("UTC"));
+					}
+				}
+
 				this.indexFile(vault, path, now, RecordStruct.record()
 								.with("Source", "Scan")
 								.with("Op", "Write")
-								.with("TimeStamp", now)        // TODO prefer file mod
+								.with("TimeStamp", now)
 								.with("Node", ApplicationHub.getNodeId())
 				);
 			}
@@ -397,7 +419,7 @@ public class FileIndexAdapter {
 				this.indexFolderEnsure(vault, path.getParent());
 			}
 		}
-		catch (DatabaseException x) {
+		catch (DatabaseException | IOException x) {
 			Logger.error("Unable to ensure index file " + path + " in db: " + x);
 		}
 	}

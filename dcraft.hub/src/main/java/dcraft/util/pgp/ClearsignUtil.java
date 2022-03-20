@@ -23,7 +23,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProv
 import org.bouncycastle.util.Strings;
 
 public class ClearsignUtil {
-	static public ClearSignResult clearSignMessage(String msg, KeyRingResource keyring, PGPSecretKeyRing signer, char[] passphrase) {
+	static public ClearSignResult clearSignMessage(CharSequence msg, KeyRingResource keyring, PGPSecretKeyRing signer, char[] passphrase) {
 		ClearSignResult res = new ClearSignResult();
 		
 		// remove trailing whitespace
@@ -164,7 +164,7 @@ public class ClearsignUtil {
 	 * meant to be used on smallish file, all in memory
 	 *
 	 */
-	public static boolean verifyFile(InputStream in, KeyRingResource keyIn, StringBuilder content, StringStruct sigvar) {
+	public static boolean verifyFile(InputStream in, KeyRingResource keyIn, StringBuilder content, StringStruct sigvar, StringStruct keyuserid) {
 		try {
 			ArmoredInputStream aIn = new ArmoredInputStream(in);
 			
@@ -208,6 +208,12 @@ public class ClearsignUtil {
 			
 			JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(aIn);
 			PGPSignatureList p3 = (PGPSignatureList) pgpFact.nextObject();
+
+			if ((p3 == null) || (p3.size() == 0)) {
+				Logger.error("Unable to verify, missing signature: ");
+				return false;
+			}
+
 			PGPSignature sig = p3.get(0);
 			
 			PGPPublicKey publicKey = keyIn.findPublicKey(sig.getKeyID());
@@ -216,7 +222,10 @@ public class ClearsignUtil {
 				Logger.error("Unable to verify, missing key: " + Long.toHexString(sig.getKeyID()));
 				return false;
 			}
-			
+
+			if (keyuserid != null)
+				keyuserid.setValue(KeyRingCollection.getUserIds(publicKey));
+
 			sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), publicKey);
 			
 			//
@@ -224,8 +233,9 @@ public class ClearsignUtil {
 			//
 			
 			mem.setPosition(0);
-			
-			content.append(mem.toString());
+
+			if (content != null)
+				content.append(mem.toString());
 			
 			mem.setPosition(0);
 			

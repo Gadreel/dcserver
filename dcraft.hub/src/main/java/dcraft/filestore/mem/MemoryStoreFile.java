@@ -84,7 +84,7 @@ public class MemoryStoreFile extends FileStoreFile {
 		return this;
 	}
 
-	public MemoryStoreFile with(String v) {
+	public MemoryStoreFile with(CharSequence v) {
 		this.setBinary(new Memory(v));
 		return this;
 	}

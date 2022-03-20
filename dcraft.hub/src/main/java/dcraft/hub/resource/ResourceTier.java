@@ -13,6 +13,7 @@ import dcraft.script.ScriptResource;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
 import dcraft.service.ServiceResource;
+import dcraft.sql.SqlDatabaseResource;
 import dcraft.struct.*;
 import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
@@ -255,7 +256,24 @@ public class ResourceTier extends CompositeStruct {
 		
 		return r;
 	}
-	
+
+	public SqlDatabaseResource getSqlDatabases() {
+		return (SqlDatabaseResource) this.get("SqlDatabase");
+	}
+
+	synchronized public SqlDatabaseResource getOrCreateTierSqlDatabases() {
+		SqlDatabaseResource r = (SqlDatabaseResource) this.getTier("SqlDatabase");
+
+		if (r != null)
+			return r;
+
+		r = new SqlDatabaseResource();
+
+		this.with(r);
+
+		return r;
+	}
+
 	public ClassResource getClassLoader() {
 		return (ClassResource) this.get("Class");
 	}

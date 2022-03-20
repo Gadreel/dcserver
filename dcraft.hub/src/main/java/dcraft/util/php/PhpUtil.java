@@ -3,6 +3,7 @@ package dcraft.util.php;
 import com.caucho.quercus.env.*;
 import dcraft.struct.*;
 import dcraft.struct.scalar.*;
+import dcraft.util.TimeUtil;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -58,6 +59,18 @@ public class PhpUtil {
             BooleanStruct in = (BooleanStruct) source;
 
             return BooleanValue.create(in.getValue());
+        }
+
+        if (source instanceof DateTimeStruct) {
+            DateTimeStruct in = (DateTimeStruct) source;
+
+            return StringValue.create(TimeUtil.stampFmt.format(in.getValue()));
+        }
+
+        if (source instanceof DateStruct) {
+            DateStruct in = (DateStruct) source;
+
+            return StringValue.create(in.getValue().toString());
         }
 
         return NullValue.NULL;

@@ -40,18 +40,18 @@ public class FeedVault extends FileStoreVault {
 		
 		FileIndexAdapter fileIndexAdapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
 		
-		for (CommonPath file : tx.getDeletelist()) {
-			FeedUtilDb.deleteFeedIndex(adapter, file);
+		for (TransactionFile file : tx.getDeletelist()) {
+			FeedUtilDb.deleteFeedIndex(adapter, file.getPath());
 		}
 		
 		// clean list does not matter here
 		
-		for (CommonPath file : tx.getUpdateList()) {
-			FeedUtilDb.updateFeedIndex(adapter, file);
+		for (TransactionFile file : tx.getUpdateList()) {
+			FeedUtilDb.updateFeedIndex(adapter, file.getPath());		// TODO ideally we'd pass the file date in too for the dcmModified field
 			
 			TaskHub.submit(
 					UIUtil.mockWebRequestTask(this.tenant, this.site, "Feed file search indexing")
-							.withWork(FeedSearchWork.of(this, file, fileIndexAdapter))
+							.withWork(FeedSearchWork.of(this, file.getPath(), fileIndexAdapter))
 			);
 		}
 	}

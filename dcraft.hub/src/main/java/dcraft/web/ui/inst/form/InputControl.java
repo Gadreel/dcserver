@@ -15,6 +15,9 @@ public class InputControl extends Base {
 	static public Base fromGylph(InstructionWork state, CoreField fld, XElement input) throws OperatingContextException {
 		W3 ret = W3.tag("span");
 
+		if (input.hasNotEmptyAttribute("class"))
+			ret.withClass(input.attr("class"));
+
 		String gtype = input.getName();
 		
 		ret.withClass("dc-input-group-addon");

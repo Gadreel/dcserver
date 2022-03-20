@@ -19,6 +19,10 @@
 dc.pui = {
 };
 
+// just a place to store uniquely keyed data
+dc.pui.Store = {
+};
+
 dc.pui.layer = {
 };
 
@@ -1779,6 +1783,22 @@ dc.pui.Form.prototype = {
 			else
 				form.Inputs[field].setValue(value);
 		}
+	},
+
+	callInputFunc: function(field, method) {
+		var form = this;
+
+		if (form.Inputs[field]) {
+			var ret = null;
+			var args = Array.prototype.slice.call(arguments, 2);
+
+			args.unshift(form.Inputs[field].getNode());
+			args.unshift(form.PageEntry);
+
+			form.Inputs[field][method].apply(form.Inputs[field], args);
+		}
+
+		return ret;
 	},
 
 	getValues: function(recname) {
@@ -3625,9 +3645,13 @@ dc.pui.Tags = {
 		});
 	},
 	'dcm.HighlightWidget': function(entry, node) {
+		var listlr = $(node).find('.dc-widget-highlight-lr');
 		var list = $(node).find('.dc-widget-highlight-list');
 
-		if (list.length == 0)
+		if ((list.length == 0) && (listlr.length == 0))
+			return;
+
+		if (list.find('.dc-widget-highlight-entry').length < 2)
 			return;
 
 		var funcUpdateArrows = function() {
@@ -4209,6 +4233,9 @@ dc.pui.controls.Input.prototype = {
 
 		return val;
 	},
+	getNode: function() {
+		return $('#' + this.Id).get(0);
+	},
 	validateInput: function() {
 		var mr = new dc.lang.OperationResult();
 
@@ -4567,7 +4594,7 @@ dc.pui.controls.CheckGroup.prototype.setValue = function(values) {
 		values = [];
 
 	for (var i = 0; i < values.length; i++)
-		$('#' + this.Id + '-' + dc.util.Hex.toHex(values[i])).prop('checked',true);
+		$('#' + this.Id + '-' + dc.util.Hex.toHex(values[i] + '')).prop('checked',true);
 };
 
 dc.pui.controls.CheckGroup.prototype.getValue = function() {

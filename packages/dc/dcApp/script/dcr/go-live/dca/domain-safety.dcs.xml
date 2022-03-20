@@ -1,0 +1,46 @@
+<dcs.Library>
+	<dcs.GlobalFunction Name="PrepFuncs:domain-safety">
+		<dcs.Var Name="Step" Type="Record">
+			<Set>
+				Title: 'Domain Safety',
+				Description: 'Review if any domains for this tenant are marked unsafe.',
+				Params: { Alias: 'domain-safety' }
+			</Set>
+		</dcs.Var>
+
+		<dcs.CallFunc Name="clAddStep" Arg="$Step" Result="StepId" />
+
+		<dcs.Return Result="$StepId" />
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="LoadFuncs:domain-safety" Param="StepId">
+		<dcs.Var Name="Safety" Type="List" />
+
+		<dcdb.UpdateRecord Table="dcTaskList" Id="$StepId">
+			<Update Field="dcStore" SubId="Safety" Value="$Safety" />
+		</dcdb.UpdateRecord>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="PrintFuncs:domain-safety" Param="StepInfo">
+		<dc.Out>
+			<p>
+				 Check some online resources to see if the domain has been marked as unsafe. One resource would be
+				 <a href="https://sitecheck.sucuri.net/" target="_blank">Sitecheck by Sucuri.</a> Others resources are <a href="https://safeweb.norton.com/" target="_blank">Norton Safeweb</a> and <a href="https://sitereview.symantec.com/" target="_blank">WebPulse Site Review.</a>
+			</p>
+			<p>
+				 For especially sensitive websites, such as a bank or eCommerce platform, you may also consider running the 
+				 <a href="https://www.ssllabs.com/ssltest/" target="_blank">Qualys SSL Server Test.</a>
+			</p>
+		</dc.Out>
+	</dcs.GlobalFunction>
+
+	<dcs.GlobalFunction Name="DocFuncs:domain-safety" Param="StepInfo">
+		<dc.Out>
+			<dc.TextWidget>
+				<Tr><![CDATA[
+More information about [Norton's dangerous website](https://www.leadshook.com/help/how-to-address-nortons-this-is-a-known-dangerous-website-error-message/) message.
+				]]></Tr>
+			</dc.TextWidget>
+		</dc.Out>
+	</dcs.GlobalFunction>
+</dcs.Library>

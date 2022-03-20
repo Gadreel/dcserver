@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
@@ -56,7 +57,9 @@ import dcraft.struct.Struct;
 import dcraft.util.*;
 import dcraft.util.pgp.KeyRingCollection;
 import dcraft.xml.XElement;
+import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
+import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.rocksdb.BackupInfo;
 import org.rocksdb.RocksIterator;
 
@@ -1049,10 +1052,15 @@ public class HubUtil implements ILocalCommandLine {
 				System.out.println("0)  Exit");
 				System.out.println("1)  Cipher Dump");
 				System.out.println("2)  Prep Clock");
+				System.out.println("40)  List deploy keys");
+				System.out.println("41)  List node keys");
+				System.out.println("42)  List tenant keys");
+				System.out.println("45)  Copy deploy public key");
 				System.out.println("50)  Init deploy keys");
 				System.out.println("51)  Set node keys");
 				System.out.println("52)  Set tenant keys");
-	
+				System.out.println("60)  Remove pgp key");
+
 				String opt = scan.nextLine();
 				
 				Long mopt = StringUtil.parseInt(opt);
@@ -1102,7 +1110,124 @@ public class HubUtil implements ILocalCommandLine {
 						
 						break;
 					}
-					
+
+					case 40: {
+						System.out.print("Deployment: ");
+						String deployment = scan.nextLine();
+
+						System.out.println();
+
+						Path cpath = Paths.get("./deploy-" + deployment);
+
+						HubUtil.listDeployKeys(cpath, deployment);
+
+						break;
+					}
+
+					case 41: {
+						System.out.print("Deployment: ");
+						String deployment = scan.nextLine();
+
+						System.out.println();
+
+						System.out.print("Node: ");
+						String node = scan.nextLine();
+
+						System.out.println();
+
+						Path cpath = Paths.get("./deploy-" + deployment);
+
+						HubUtil.listDeployNodeKeys(cpath, deployment, node);
+
+						break;
+					}
+
+					case 42: {
+						System.out.print("Deployment: ");
+						String deployment = scan.nextLine();
+
+						System.out.println();
+
+						System.out.print("Tenant: ");
+						String tenant = scan.nextLine();
+
+						System.out.println();
+
+						Path cpath = Paths.get("./deploy-" + deployment);
+
+						this.listDeployTenantKeys(cpath, deployment, tenant);
+
+						break;
+					}
+
+					case 45: {
+						System.out.print("Copy from Deployment: ");
+						String deployment = scan.nextLine();
+
+						if (StringUtil.isEmpty(deployment))
+							break;
+
+						System.out.println();
+
+						Path cpath = Paths.get("./deploy-" + deployment + "/config");
+
+						KeyRingCollection keyring = KeyRingCollection.load(cpath, false);
+
+						if (keyring == null) {
+							System.out.println("missing key ring");
+							break;
+						}
+
+						System.out.println("Source Encryptor keys (public): ");
+
+						int i = 0;
+
+						for (PGPPublicKeyRing publicKey : keyring.getPublicKeys()) {
+							PGPPublicKey key = publicKey.getPublicKey();
+							System.out.println(i + ") " + HexUtil.bufferToHex(key.getFingerprint()) + " : " + KeyRingCollection.getUserIds(publicKey));
+							i++;
+						}
+
+						System.out.println();
+
+						System.out.print("Copy which key (#): ");
+						String keypos = scan.nextLine();
+
+						if (! StringUtil.isDataInteger(keypos))
+							break;
+
+						int keyidx = (int) StringUtil.parseInt(keypos, 0);
+
+						if ((keyidx < 0) || (keyidx >= keyring.getPublicKeys().size()))
+							break;
+
+						PGPPublicKeyRing publicKey = keyring.getPublicKeys().get(keyidx);
+
+						System.out.println();
+
+						System.out.print("Copy to Deployment: ");
+						String deployment2 = scan.nextLine();
+
+						if (StringUtil.isEmpty(deployment2))
+							break;
+
+						System.out.println();
+
+						Path cpath2 = Paths.get("./deploy-" + deployment2 + "/config");
+
+						KeyRingCollection keyring2 = KeyRingCollection.load(cpath2, false);
+
+						if (keyring2 == null) {
+							System.out.println("missing dest key ring");
+							break;
+						}
+
+						keyring2.addPublicKey(publicKey);
+						keyring2.save();
+
+						break;
+					}
+
 					case 50: {
 						System.out.print("Deployment: ");
 						String deployment = scan.nextLine();
@@ -1131,7 +1256,8 @@ public class HubUtil implements ILocalCommandLine {
 						String node = scan.nextLine();
 						
 						System.out.println();
-						
+
+						System.out.println("Password does not default, must enter, must match deployment Keyrings password.");
 						System.out.print("Password (use same): ");
 						String pw = scan.nextLine();
 						
@@ -1154,7 +1280,8 @@ public class HubUtil implements ILocalCommandLine {
 						String tenant = scan.nextLine();
 						
 						System.out.println();
-						
+
+						System.out.println("Password does not default, must enter, must match deployment Keyrings password.");
 						System.out.print("Password (use same): ");
 						String pw = scan.nextLine();
 						
@@ -1166,7 +1293,26 @@ public class HubUtil implements ILocalCommandLine {
 						
 						break;
 					}
-				
+
+					case 60: {
+						System.out.print("Path to keyring folder: ");
+						String deployment = scan.nextLine();
+
+						System.out.println();
+
+						System.out.print("Key user or fingerprint: ");
+						String pw = scan.nextLine();
+
+						System.out.println();
+
+						Path cpath = Paths.get(deployment);
+
+						HubUtil.removeKey(cpath, pw);
+
+						break;
+					}
+
+
 				}
 			}
 			catch(Exception x) {
@@ -1175,7 +1321,7 @@ public class HubUtil implements ILocalCommandLine {
 		}
 	}
 	
-	static public void initDeployKeys(Path path, String deployment, String passphrase) {
+	static public void listDeployKeys(Path path, String deployment) {
 		Path cpath = path.resolve("config");
 		Path ipath = path.resolve("roles/ignite/config");
 		
@@ -1189,25 +1335,109 @@ public class HubUtil implements ILocalCommandLine {
 		}
 		
 		KeyRingCollection keyring = KeyRingCollection.load(cpath, true);
-		
-		PGPPublicKeyRing pgpPublicKeyRing2 = keyring.createKeyPairAddToRing("encryptor@" + deployment + ".dc", passphrase);
-		
-		System.out.println("new encryptor key: " + HexUtil.bufferToHex(pgpPublicKeyRing2.getPublicKey().getFingerprint()));
-		
+
+		System.out.println("Encryptor keys (public): ");
+
+		for (PGPPublicKeyRing publicKey : keyring.getPublicKeys()) {
+			PGPPublicKey key = publicKey.getPublicKey();
+			System.out.println(" - " + HexUtil.bufferToHex(key.getFingerprint()) + " : " + KeyRingCollection.getUserIds(publicKey));
+		}
+
+		System.out.println();
+
+		System.out.println("Encryptor keys (secret): ");
+
+		for (PGPSecretKeyRing secretKey : keyring.getSecretKeys()) {
+			PGPPublicKey key = secretKey.getPublicKey();
+			System.out.println(" - " + HexUtil.bufferToHex(key.getFingerprint()) + " : " + KeyRingCollection.getUserIds(secretKey));
+		}
+
+		System.out.println();
+
+		System.out.println("Ignite keys: ");
+
 		KeyRingCollection ikeyring = KeyRingCollection.load(ipath, true);
-		
+
+		for (PGPPublicKeyRing publicKey : ikeyring.getPublicKeys()) {
+			PGPPublicKey key = publicKey.getPublicKey();
+			System.out.println(" - " + HexUtil.bufferToHex(key.getFingerprint()) + " : " + KeyRingCollection.getUserIds(publicKey));
+		}
+
+		System.out.println();
+
+		System.out.println("Ignite keys (secret): ");
+
+		for (PGPSecretKeyRing secretKey : ikeyring.getSecretKeys()) {
+			PGPPublicKey key = secretKey.getPublicKey();
+			System.out.println(" - " + HexUtil.bufferToHex(key.getFingerprint()) + " : " + KeyRingCollection.getUserIds(secretKey));
+		}
+	}
+
+	static public void initDeployKeys(Path path, String deployment, String passphrase) {
+		Path cpath = path.resolve("config");
+		Path ipath = path.resolve("roles/ignite/config");
+
+		try {
+			Files.createDirectories(cpath);
+			Files.createDirectories(ipath);
+		}
+		catch (IOException x) {
+			System.out.println("error: " + x);
+			return;
+		}
+
+		KeyRingCollection keyring = KeyRingCollection.load(cpath, true);
+
+		PGPPublicKeyRing pgpPublicKeyRing2 = keyring.createKeyPairAddToRing("encryptor@" + deployment + ".dc", passphrase);
+
+		System.out.println("new encryptor key: " + HexUtil.bufferToHex(pgpPublicKeyRing2.getPublicKey().getFingerprint()));
+
+		KeyRingCollection ikeyring = KeyRingCollection.load(ipath, true);
+
 		// only on the orchestration node, not on public
 		PGPPublicKeyRing pgpPublicKeyRing3 = ikeyring.createKeyPairAddToRing("ignite@" + deployment + ".dc", passphrase);
-		
+
 		System.out.println("new ignite key: " + HexUtil.bufferToHex(pgpPublicKeyRing3.getPublicKey().getFingerprint()));
-		
+
 		ikeyring.save();
-		
+
 		keyring.addPublicKey(pgpPublicKeyRing3, false);
-		
+
 		keyring.save();
 	}
-	
+
+	static public void listDeployNodeKeys(Path path, String deployment, String node) {
+		Path cpath = path.resolve("config");
+		Path npath = path.resolve("nodes/" + node + "/config");
+
+		try {
+			Files.createDirectories(cpath);
+			Files.createDirectories(npath);
+		}
+		catch (IOException x) {
+			System.out.println("error: " + x);
+			return;
+		}
+
+		KeyRingCollection nkeyring = KeyRingCollection.load(npath, true);
+
+		System.out.println("Node sign keys");
+
+		for (PGPPublicKeyRing publicKey : nkeyring.getPublicKeys()) {
+			PGPPublicKey key = publicKey.getPublicKey();
+			System.out.println(" - " + HexUtil.bufferToHex(key.getFingerprint()) + " : " + KeyRingCollection.getUserIds(publicKey));
+		}
+
+		System.out.println();
+
+		System.out.println("Node keys (secret): ");
+
+		for (PGPSecretKeyRing secretKey : nkeyring.getSecretKeys()) {
+			PGPPublicKey key = secretKey.getPublicKey();
+			System.out.println(" - " + HexUtil.bufferToHex(key.getFingerprint()) + " : " + KeyRingCollection.getUserIds(secretKey));
+		}
+	}
+
 	static public void initDeployNodeKeys(Path path, String deployment, String node, String passphrase) {
 		Path cpath = path.resolve("config");
 		Path npath = path.resolve("nodes/" + node + "/config");
@@ -1236,8 +1466,29 @@ public class HubUtil implements ILocalCommandLine {
 		
 		keyring.save();
 	}
-	
-	static public void initDeployTenantKeys(Path path, String deployment, String tenant, String passphrase) {
+
+	static public void removeKey(Path path, String keyid) {
+		try {
+			Files.createDirectories(path);
+		}
+		catch (IOException x) {
+			System.out.println("error: " + x);
+			return;
+		}
+
+		KeyRingCollection nkeyring = KeyRingCollection.load(path, false);
+
+		if (nkeyring != null) {
+			nkeyring.removeKey(keyid);
+
+			System.out.println("removed");
+		}
+		else {
+			System.out.println("keyring not found.");
+		}
+	}
+
+	static public void listDeployTenantKeys(Path path, String deployment, String tenant) {
 		Path cpath = path.resolve("config");
 		Path npath = path.resolve("tenants/" + tenant + "/config");
 		
@@ -1250,18 +1501,49 @@ public class HubUtil implements ILocalCommandLine {
 		}
 		
 		KeyRingCollection nkeyring = KeyRingCollection.load(npath, true);
-		
+
+		System.out.println("Tenant security keys");
+
+		for (PGPPublicKeyRing publicKey : nkeyring.getPublicKeys()) {
+			PGPPublicKey key = publicKey.getPublicKey();
+			System.out.println(" - " + HexUtil.bufferToHex(key.getFingerprint()) + " : " + KeyRingCollection.getUserIds(publicKey));
+		}
+
+		System.out.println();
+
+		System.out.println("Tenant keys (secret): ");
+
+		for (PGPSecretKeyRing secretKey : nkeyring.getSecretKeys()) {
+			PGPPublicKey key = secretKey.getPublicKey();
+			System.out.println(" - " + HexUtil.bufferToHex(key.getFingerprint()) + " : " + KeyRingCollection.getUserIds(secretKey));
+		}
+	}
+
+	static public void initDeployTenantKeys(Path path, String deployment, String tenant, String passphrase) {
+		Path cpath = path.resolve("config");
+		Path npath = path.resolve("tenants/" + tenant + "/config");
+
+		try {
+			Files.createDirectories(npath);
+		}
+		catch (IOException x) {
+			System.out.println("error: " + x);
+			return;
+		}
+
+		KeyRingCollection nkeyring = KeyRingCollection.load(npath, true);
+
 		PGPPublicKeyRing pgpPublicKeyRing = nkeyring.createKeyPairAddToRing(tenant + "-secure@" + deployment + ".dc", passphrase);
-		
+
 		System.out.println("new tenant security key: " + HexUtil.bufferToHex(pgpPublicKeyRing.getPublicKey().getFingerprint()));
-		
+
 		nkeyring.save();
-		
+
 		// share public with all
 		KeyRingCollection keyring = KeyRingCollection.load(cpath, true);
-		
+
 		keyring.addPublicKey(pgpPublicKeyRing,false);
-		
+
 		keyring.save();
 	}
 }

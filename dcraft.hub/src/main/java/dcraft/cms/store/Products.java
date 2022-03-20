@@ -298,6 +298,7 @@ public class Products {
 					.with("dcmSku", "Sku")
 					.with("dcmDescription", "Description")
 					.with("dcmInstructions", "Instructions")
+					.with("dcmHideGeneral", "HideGeneral")
 					.with("dcmImage", "Image")
 					.withComposer("dcmProductPrice", "Price")
 					.with("dcmVariablePrice", "VariablePrice")

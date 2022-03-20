@@ -13,6 +13,7 @@ import dcraft.filestore.local.LocalStore;
 import dcraft.filestore.mem.MemoryStoreFile;
 import dcraft.filevault.FileStoreVault;
 import dcraft.filevault.VaultUtil;
+import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationMarker;
@@ -20,11 +21,10 @@ import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
+import dcraft.schema.DbField;
+import dcraft.schema.SchemaResource;
 import dcraft.script.ScriptHub;
-import dcraft.struct.BaseStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
@@ -128,6 +128,8 @@ public class FeedUtilDb {
 			return;
 		}
 
+		SchemaResource schemares = ResourceHub.getResources().getSchema();
+
 		RecordStruct feedDef = FeedUtil.getFeedDefinition(opath.getName(1));
 		ListStruct fieldMap = feedDef.getFieldAsList("FieldMap");
 
@@ -147,13 +149,6 @@ public class FeedUtilDb {
 
 				if (ftype != FeedUtil.FieldType.Shared)
 					continue;
-
-				// TODO
-				/*
-			<FieldMap Field="fhpShow" Name="Show" />
-			<FieldMap Field="fhpBrand" Name="Brand" />
-
-				 */
 
 				String value = meta.getValue();
 
@@ -193,18 +188,73 @@ public class FeedUtilDb {
 						RecordStruct map = fieldMap.getItemAsRecord(i);
 
 						if (name.equals(map.getFieldAsString("Name"))) {
-							// TODO support List too - now assumes Scalar
+							String fname = map.getFieldAsString("Field");
 
-							if (StringUtil.isEmpty(value))
-								fields.with(map.getFieldAsString("Field"), RecordStruct.record()
-										.with("UpdateOnly", true)
-										.with("Retired", true)
-								);
-							else
-								fields.with(map.getFieldAsString("Field"), RecordStruct.record()
-										.with("UpdateOnly", true)
-										.with("Data", value)
-								);
+							DbField schema = schemares.getDbField("dcmFeed", fname);
+
+							if (schema == null) {
+								Logger.warn("Unable to map feed field: " + fname + " - missing schema");
+								continue;
+							}
+
+							String valuefmt = map.getFieldAsString("ValueFormat", "trim:");
+
+							if (schema.isList()) {
+								// split on comma, remove empty entries, trim all values
+								String listfmt = map.getFieldAsString("ListFormat", "split:,|trimlist:");
+
+								ListStruct newvalues = ListStruct.list();
+
+								ListStruct values = Struct.objectToList(DataUtil.format(value, listfmt));	// value can be null
+
+								if (values != null)
+									newvalues.withCollection(values);
+
+								String keyfmt = map.getFieldAsString("KeyFormat", "cast:String|trim:");
+
+								List<String> oldkeys2 = db.getListKeys("dcmFeed", oid, fname);
+
+								RecordStruct newkeys2 = RecordStruct.record();
+
+								for (int i2 = 0; i2 < newvalues.size(); i2++) {
+									if (newvalues.isItemEmpty(i2))
+										continue;
+
+									Object newval = DataUtil.format(newvalues.getItem(i2), valuefmt);	// item can be null
+									String keyval = Struct.objectToString(DataUtil.format(newvalues.getItem(i2), keyfmt));	// item can be null
+
+									newkeys2
+											.with(keyval, RecordStruct.record()
+													.with("UpdateOnly", true)
+													.with("Data", newval)
+											);
+
+									oldkeys2.remove(keyval);
+								}
+
+								// the remaining should be retired
+								for (String key : oldkeys2) {
+									newkeys2
+											.with(key, RecordStruct.record()
+													.with("UpdateOnly", true)
+													.with("Retired", true)
+											);
+								}
+
+								fields.with(fname, newkeys2);
+							}
+							else {
+								if (StringUtil.isEmpty(value))
+									fields.with(fname, RecordStruct.record()
+											.with("UpdateOnly", true)
+											.with("Retired", true)
+									);
+								else
+									fields.with(fname, RecordStruct.record()
+											.with("UpdateOnly", true)
+											.with("Data", value)
+									);
+							}
 
 							break;
 						}
@@ -212,7 +262,7 @@ public class FeedUtilDb {
 				}
 			}
 
-			// the remaining should be retired
+			// the remaining fields should be retired
 			for (String key : oldkeys) {
 				newkeys
 						.with(key, RecordStruct.record()
@@ -232,12 +282,37 @@ public class FeedUtilDb {
 						RecordStruct map = fieldMap.getItemAsRecord(i);
 
 						if (key.equals(map.getFieldAsString("Name"))) {
-							// TODO support List too - now assumes Scalar
+							String fname = map.getFieldAsString("Field");
 
-							fields.with(map.getFieldAsString("Field"), RecordStruct.record()
-									.with("UpdateOnly", true)
-									.with("Retired", true)
-							);
+							DbField schema = schemares.getDbField("dcmFeed", fname);
+
+							if (schema == null) {
+								Logger.warn("Unable to map feed field: " + fname + " - missing schema");
+								break;
+							}
+
+							if (schema.isList()) {
+								List<String> oldkeys2 = db.getListKeys("dcmFeed", oid, fname);
+
+								RecordStruct newkeys2 = RecordStruct.record();
+
+								// the remaining should be retired
+								for (String key2 : oldkeys2) {
+									newkeys2
+											.with(key2, RecordStruct.record()
+													.with("UpdateOnly", true)
+													.with("Retired", true)
+											);
+								}
+
+								fields.with(fname, newkeys2);
+							}
+							else {
+								fields.with(fname, RecordStruct.record()
+										.with("UpdateOnly", true)
+										.with("Retired", true)
+								);
+							}
 
 							break;
 						}
@@ -525,7 +600,7 @@ public class FeedUtilDb {
 		// TODO feedsvault.mapRequest ...
 		
 		FileStoreFile fileStoreFile = feedsvault.getFileStore().fileReference(
-				CommonPath.from("/" + feed + path));
+				CommonPath.from("/" + feed + path + (path.endsWith(".html") ? "" : ".html")));
 		
 		fileStoreFile.readAllText(new OperationOutcome<String>() {
 			@Override

@@ -7,6 +7,8 @@ import dcraft.util.StringUtil;
 public class Lower implements IFormatter {
 	@Override
 	public FormatResult format(Object value, String op, String format) {
+		// TODO act on a list as well as on a scalar
+
 		String val = Struct.objectToString(value);
 
 		if (StringUtil.isNotEmpty(val)) {

@@ -57,6 +57,9 @@
 	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
 		var entry = this;
 
+		if (! e.Data || ! e.Data.Part)
+			return;
+
 		var widget = entry.Store.Widget = dc.util.Xml.toJQuery(e.Data.Part);
 
 		e.Data = { };

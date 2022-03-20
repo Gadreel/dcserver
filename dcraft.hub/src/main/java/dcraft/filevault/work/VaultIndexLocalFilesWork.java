@@ -14,6 +14,7 @@ import dcraft.filestore.FileStore;
 import dcraft.filestore.local.LocalStore;
 import dcraft.filevault.FileStoreVault;
 import dcraft.filevault.IndexTransaction;
+import dcraft.filevault.TransactionFile;
 import dcraft.filevault.Vault;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.IVariableAware;
@@ -90,7 +91,7 @@ public class VaultIndexLocalFilesWork extends StateWork {
 						if (file.getFieldAsBoolean("IsFolder"))
 							VaultIndexLocalFilesWork.this.folders.addLast(file);
 						else
-							VaultIndexLocalFilesWork.this.tx.withUpdate(file.getPathAsCommon());
+							VaultIndexLocalFilesWork.this.tx.withUpdate(TransactionFile.of(file));
 					}
 				}
 				
@@ -112,10 +113,10 @@ public class VaultIndexLocalFilesWork extends StateWork {
 					FileStore fs = currentVault.getFileStore();
 					
 					if (fs instanceof LocalStore) {
-						Path npath = ((LocalStore) fs).resolvePath(path);
+						FileDescriptor npath = ((LocalStore) fs).fileReference(path);
 						
-						if (Files.notExists(npath))
-							tx.withDelete(path);
+						if (npath.exists())
+							tx.withDelete(TransactionFile.of(npath));
 					}
 				}
 				

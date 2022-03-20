@@ -74,8 +74,8 @@ public class FileStoreVault extends Vault {
 			long dstemp = tx.getTimestamp().toEpochSecond();
 
 			// delete files from transaction
-			for (CommonPath delete : tx.getDeletelist()) {
-				RecordStruct frec = adapter.fileInfo(this, delete, OperationContext.getOrThrow());
+			for (TransactionFile delete : tx.getDeletelist()) {
+				RecordStruct frec = adapter.fileInfo(this, delete.getPath(), OperationContext.getOrThrow());
 
 				if ((frec != null) && ! frec.getFieldAsBooleanOrFalse("IsFolder")) {
 					long stamp = frec.getFieldAsInteger("Modified", 0) / 1000;
@@ -85,7 +85,7 @@ public class FileStoreVault extends Vault {
 						continue;
 				}
 
-				vfs.fileReference(delete).remove(null);        // TODO should wait, doesn't matter with locals though
+				vfs.fileReference(delete.getPath()).remove(null);        // TODO should wait, doesn't matter with locals though
 			}
 			
 			// cleanup a folder structure if this was a delete folder
@@ -123,18 +123,18 @@ public class FileStoreVault extends Vault {
 			}
 
 			// add the tx Update files to the local folder
-			for (CommonPath update : tx.getUpdateList()) {
-				RecordStruct frec = adapter.fileInfo(this, update, OperationContext.getOrThrow());
+			for (TransactionFile update : tx.getUpdateList()) {
+				RecordStruct frec = adapter.fileInfo(this, update.getPath(), OperationContext.getOrThrow());
 				
 				if ((frec != null) && ! frec.getFieldAsBooleanOrFalse("IsFolder")) {
 					long stamp = frec.getFieldAsInteger("Modified", 0) / 1000;
 
 					// do not replace if there is a newer file in the folder currently
-					if (stamp > dstemp)
+					if (stamp > update.getTimestamp().toEpochSecond())
 						continue;
 				}
 
-				FileUtil.moveFile(tx.getFolder().resolvePath(update), ((LocalStore) vfs).resolvePath(update));
+				FileUtil.moveFile(tx.getFolder().resolvePath(update.getPath()), ((LocalStore) vfs).resolvePath(update.getPath()));
 			}
 		}
 		else {
@@ -216,7 +216,7 @@ public class FileStoreVault extends Vault {
 												
 												Path dest = base.relativize(file);
 												
-												ftx.withDelete(CommonPath.from("/" + dest.toString()));
+												ftx.withDelete(TransactionFile.of(CommonPath.from("/" + dest.toString()), ftx.getTimestamp()));
 												
 												return FileVisitResult.CONTINUE;
 											}
@@ -245,7 +245,7 @@ public class FileStoreVault extends Vault {
 						}
 					}
 					else {
-						ftx.withDelete(file.getPathAsCommon());
+						ftx.withDelete(TransactionFile.of(file.getPathAsCommon(), ftx.getTimestamp()));
 						
 						/*
 						((FileStoreFile) file).remove(new OperationOutcomeEmpty() {
@@ -338,7 +338,7 @@ public class FileStoreVault extends Vault {
 
 											Path dest = lbase.relativize(file);
 
-											ftx.withDelete(CommonPath.from("/" + dest.toString()));
+											ftx.withDelete(TransactionFile.of(CommonPath.from("/" + dest.toString()), ftx.getTimestamp()));
 
 											return FileVisitResult.CONTINUE;
 										}
@@ -375,7 +375,7 @@ public class FileStoreVault extends Vault {
 					if (vfs instanceof LocalStore) {
 						Path lsource = ((LocalStoreFile) source).getLocalPath();
 
-						ftx.withDelete(source.getPathAsCommon());
+						ftx.withDelete(TransactionFile.of(source.getPathAsCommon(), ftx.getTimestamp()));
 
 						Path ldest = ftx.getFolder().resolvePath(dest.getPathAsCommon());
 

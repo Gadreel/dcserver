@@ -1,0 +1,122 @@
+<dcs.Script>
+	<dcs.Var Name="SetFields" Type="List" />
+
+	<dcs.If Target="$Data" HasField="Title">
+		<dcs.Var Name="FieldInfo" Type="Record">
+			<SetField Name="Name" Value="Title" />
+			<SetField Name="Value" Value="$Data.Title" />
+		</dcs.Var>
+
+		<dcs.With Target="$SetFields">
+			<AddItem Value="$FieldInfo" />
+		</dcs.With>
+	</dcs.If>
+
+	<dcs.If Target="$Data" HasField="Topic">
+		<dcs.Var Name="FieldInfo" Type="Record">
+			<SetField Name="Name" Value="Topic" />
+			<SetField Name="Value" Value="$Data.Topic" />
+		</dcs.Var>
+
+		<dcs.With Target="$SetFields">
+			<AddItem Value="$FieldInfo" />
+		</dcs.With>
+	</dcs.If>
+
+	<dcs.If Target="$Data" HasField="Description">
+		<dcs.Var Name="FieldInfo" Type="Record">
+			<SetField Name="Name" Value="Description" />
+			<SetField Name="Value" Value="$Data.Description" />
+		</dcs.Var>
+
+		<dcs.With Target="$SetFields">
+			<AddItem Value="$FieldInfo" />
+		</dcs.With>
+	</dcs.If>
+
+	<dcs.If Target="$Data" HasField="Note">
+		<dcs.Var Name="FieldInfo" Type="Record">
+			<SetField Name="Name" Value="Note" />
+			<SetField Name="Value" Value="$Data.Note" />
+		</dcs.Var>
+
+		<dcs.With Target="$SetFields">
+			<AddItem Value="$FieldInfo" />
+		</dcs.With>
+	</dcs.If>
+
+	<dcs.If Target="$Data" HasField="StartAt">
+		<dcs.Var Name="FieldInfo" Type="Record">
+			<SetField Name="Name" Value="StartAt" />
+			<SetField Name="Value" Value="$Data.StartAt" />
+		</dcs.Var>
+
+		<dcs.With Target="$SetFields">
+			<AddItem Value="$FieldInfo" />
+		</dcs.With>
+
+		<dcs.Var Name="DTParsed" Type="DateTime">
+			<ParseLocal Value="{$Data.StartAt}" />
+		</dcs.Var>
+
+		<dcs.Var Name="FieldInfo2" Type="Record">
+			<SetField Name="Name" Value="StartAtInternal" />
+			<SetField Name="Value" Value="$DTParsed" />
+		</dcs.Var>
+
+		<dcs.With Target="$SetFields">
+			<AddItem Value="$FieldInfo2" />
+		</dcs.With>
+	</dcs.If>
+
+	<dcs.If Target="$Data" HasField="EndAt">
+		<dcs.Var Name="FieldInfo" Type="Record">
+			<SetField Name="Name" Value="EndAt" />
+			<SetField Name="Value" Value="$Data.EndAt" />
+		</dcs.Var>
+
+		<dcs.With Target="$SetFields">
+			<AddItem Value="$FieldInfo" />
+		</dcs.With>
+
+		<dcs.Var Name="DTParsed" Type="DateTime">
+			<ParseLocal Value="{$Data.EndAt}" />
+		</dcs.Var>
+
+		<dcs.Var Name="FieldInfo2" Type="Record">
+			<SetField Name="Name" Value="PublishAt" />
+			<SetField Name="Value" Value="$DTParsed" />
+		</dcs.Var>
+
+		<dcs.With Target="$SetFields">
+			<AddItem Value="$FieldInfo2" />
+		</dcs.With>
+	</dcs.If>
+
+	<dcs.Var Name="SaveParams" Type="Record">
+		<!-- TrLocale default to local -->
+		<SetField Name="SetFields" Value="$SetFields" />
+	</dcs.Var>
+
+	<dcs.Var Name="TopCommand" Type="Record">
+		<SetField Name="Command" Value="SaveMeta" />
+		<SetField Name="Params" Value="$SaveParams" />
+	</dcs.Var>
+
+	<dcs.Var Name="Commands" Type="List" />
+
+	<dcs.With Target="$Commands">
+		<AddItem Value="$TopCommand" />
+	</dcs.With>
+
+	<dcs.Var Name="InnerPath" Type="String" SetTo="/{$Data.Title|toslug:}" />
+
+	<dcs.Var Name="Body" Type="Record">
+		<SetField Name="Publish" Value="true" />
+		<SetField Name="Feed" Value="announcements" />
+		<SetField Name="Path" Value="$InnerPath" />
+		<SetField Name="Commands" Value="$Commands" />
+	</dcs.Var>
+
+	<dcs.CallService Op="dcmServices.Feed.AddFeed" Params="$Body" Result="NullOut" />
+</dcs.Script>

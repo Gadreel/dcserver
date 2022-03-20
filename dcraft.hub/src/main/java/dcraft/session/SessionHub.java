@@ -45,7 +45,11 @@ public class SessionHub {
 	static public Collection<Session> list() {
 		return SessionHub.sessions.values();
 	}
-	
+
+	static public int listCount() {
+		return SessionHub.sessions.size();
+	}
+
 	static public void loadCleanup() {
 		// remember that sys workers should not use OperationContext
 		ISystemWork sessioncleanup = new ISystemWork() {

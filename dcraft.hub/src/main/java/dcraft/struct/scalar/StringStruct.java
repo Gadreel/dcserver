@@ -20,6 +20,7 @@ import java.text.DecimalFormat;
 import java.time.format.DateTimeFormatter;
 
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
 import dcraft.schema.DataType;
 import dcraft.schema.RootType;
@@ -31,7 +32,9 @@ import dcraft.script.work.StackWork;
 import dcraft.struct.*;
 import dcraft.task.IParentAwareWork;
 import dcraft.util.HexUtil;
+import dcraft.util.RndUtil;
 import dcraft.util.StringUtil;
+import dcraft.web.md.MarkdownUtil;
 import dcraft.xml.XElement;
 
 public class StringStruct extends ScalarStruct {
@@ -234,6 +237,11 @@ public class StringStruct extends ScalarStruct {
 			
 			return ReturnOption.CONTINUE;
 		}
+		else if ("GenerateUuid".equals(code.getName())) {
+			this.value = RndUtil.nextUUId();
+
+			return ReturnOption.CONTINUE;
+		}
 		else if ("Trim".equals(code.getName())) {
 			if (StringUtil.isNotEmpty(this.value)) 
 				this.value = StringUtil.stripWhitespace(this.value.toString().trim());
@@ -336,6 +344,81 @@ public class StringStruct extends ScalarStruct {
 
 			if (StringUtil.isNotEmpty(this.value)) {
 				StackUtil.addVariable(stack, result, CompositeParser.parseJson(this.value));
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+		else if ("Markdown".equals(code.getName())) {
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+			String mode = StackUtil.stringFromElement(stack, code, "Mode", "Unsafe");
+
+			if (StringUtil.isNotEmpty(this.value)) {
+				XElement root = MarkdownUtil.process(this.value.toString(), "safe".equals(mode.toLowerCase()));
+
+				if (root == null) {
+					Logger.warn("inline md error: ");
+				}
+				else {
+					StackUtil.addVariable(stack, result, root);
+				}
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+		else if ("Summarize".equals(code.getName())) {
+			if (StringUtil.isNotEmpty(this.value)) {
+				String mode = StackUtil.stringFromElement(stack, code, "Mode", "First");  // First (Paragraph), Max, FirstMax
+				Long maxChars = StackUtil.intFromElement(stack, code, "MaxChars");
+				String maxTrail = StackUtil.stringFromElement(stack, code, "MaxTrail");
+
+				// trim to first paragraph if applicable
+				if (! "Max".equals(mode)) {
+					boolean firstNL = false;
+
+					for (int i = 0; i < this.value.length(); i++) {
+						if (this.value.charAt(i) == '\n') {
+							if (firstNL) {
+								this.value = this.value.subSequence(0, i - 2);
+								break;
+							}
+							else {
+								firstNL = true;
+							}
+						}
+						else {
+							firstNL = false;
+						}
+					}
+				}
+
+				if (! "First".equals(mode) && (maxChars != null) && (this.value.length() > maxChars)) {
+					int max = maxChars.intValue();
+					int downto = max > 12 ? max - 12 : 1;
+					boolean fnd = false;
+
+					for (int i = max; i >= downto; i--) {
+						if (! Character.isLetterOrDigit(this.value.charAt(i))) {
+							this.value = this.value.subSequence(0, i);
+							fnd = true;
+							break;
+						}
+					}
+
+					// if more than 12 digits/chars in a row then just trim in middle
+					if (! fnd)
+						this.value = this.value.subSequence(0, downto);
+
+					// clear spaces, punc, etc
+					for (int i = this.value.length() - 1; i >= 1; i--) {
+						if (Character.isLetterOrDigit(this.value.charAt(i))) {
+							this.value = this.value.subSequence(0, i + 1);
+							break;
+						}
+					}
+
+					if (StringUtil.isNotEmpty(maxTrail))
+						this.value += maxTrail;
+				}
 			}
 
 			return ReturnOption.CONTINUE;

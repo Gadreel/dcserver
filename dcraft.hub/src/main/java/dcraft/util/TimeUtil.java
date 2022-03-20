@@ -195,7 +195,7 @@ public class TimeUtil {
 			return null;
 
 		try {
-			return LocalTime.from(DateTimeFormatter.ISO_TIME.parse(t));
+			return LocalTime.from(DateTimeFormatter.ISO_LOCAL_TIME.parse(t.trim()));
 		}
 		catch (Exception x) {			
 		}

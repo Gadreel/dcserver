@@ -11,6 +11,8 @@ public class Ping implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		try {
+			Logger.info("Go a ping request, replying.");
+
 			callback.returnValue(StringStruct.of("Pong"));
 			
 			return;

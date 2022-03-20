@@ -18,9 +18,13 @@
 			<dcf.Form Name="Reset">
 				<dcf.Text Name="Username" Label="Email" placeholder="email or username" Required="true" />
 
-				<dcf.Custom>
-					<dc.Recaptcha id="recaptchaReset" CheckEnabled="true" Func="DoSubmit" />
-				</dcf.Custom>
+				<dcs.If Target="$reCAPTCHA">
+					<dc.Out>
+						<dcf.Custom>
+							<dc.Recaptcha id="recaptchaReset" CheckEnabled="true" Func="DoSubmit" />
+						</dcf.Custom>
+					</dc.Out>
+				</dcs.If>
 
 				<dcf.FormButtons>
 					<dc.Button Label="Cancel" Click="onCancel" />
@@ -40,7 +44,7 @@
 
 		var vres = page.form().validate();
 
-		if (vres.Pass && {$reCAPTCHA}) {
+		if (vres.Pass && ($('#recaptchaReset').length > 0)) {
 			page.callTagFunc('#recaptchaReset', 'execute');
 		}
 		else if (vres.Pass) {
@@ -53,14 +57,19 @@
 	<Function Name="DoSubmit" Params="e"><![CDATA[
 				var entry = this;
 
+				var data = {
+					Username: entry.form().getValue('Username')
+				};
+
+				if ($('#recaptchaReset').length > 0) {
+					data.Captcha = $('#recaptchaReset').attr('data-response');
+				}
+
 				dc.comm.sendMessage({
 					Service: 'dcCoreServices',
 					Feature: 'Users',
 					Op: 'InitiateRecovery',
-					Body: {
-						Username: entry.form().getValue('Username'),
-						Captcha: $('#recaptchaReset').attr('data-response')
-					}
+					Body: data
 				}, function(resp) {
 					if (resp.Result > 0) {
 						dc.pui.Popup.alert('Unable to request a confirmation code.');

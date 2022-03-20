@@ -28,7 +28,7 @@ public class Update implements IStoredProc {
 					.withId(data.getFieldAsString("Id"))
 					.withConditionallyUpdateFields(data, "Alias", "dcmAlias", "Sku", "dcmSku", "Image", "dcmImage",
 							"Price", "dcmPrice", "ShipAmount", "dcmShipAmount", "ShipWeight", "dcmShipWeight",
-							"VariablePrice", "dcmVariablePrice", "MinimumPrice", "dcmMinimumPrice",
+							"VariablePrice", "dcmVariablePrice", "MinimumPrice", "dcmMinimumPrice", "HideGeneral", "dcmHideGeneral",
 							"ShipCost", "dcmShipCost", "TaxFree", "dcmTaxFree", "ShowInStore", "dcmShowInStore",
 							"Inventory", "dcmInventory", "OrderLimit", "dcmOrderLimit")
 					.withConditionallyUpdateTrFields(data, locale, "Title", "dcmTitle",

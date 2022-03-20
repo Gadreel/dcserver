@@ -12,6 +12,7 @@ import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.local.LocalStore;
 import dcraft.filevault.FileStoreVault;
 import dcraft.filevault.IndexTransaction;
+import dcraft.filevault.TransactionFile;
 import dcraft.filevault.Vault;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.IVariableAware;
@@ -109,7 +110,7 @@ public class ReindexFeedWork extends StateWork {
 							ReindexFeedWork.this.folders.addLast(file);
 						}
 						else {
-							ReindexFeedWork.this.tx.withUpdate(file.getPathAsCommon());
+							ReindexFeedWork.this.tx.withUpdate(TransactionFile.of(file));
 						}
 					}
 				}
@@ -150,7 +151,7 @@ public class ReindexFeedWork extends StateWork {
 								adapter.deleteFile(currentVault, path, now, RecordStruct.record()
 										.with("Source", "Scan")
 										.with("Op", "Delete")
-										.with("TimeStamp", now)
+										.with("TimeStamp", now)		// this is okay because a) we don't have another time, b) conflicts with expanding deposit are okay - delete should win no matter the time
 										.with("Node", ApplicationHub.getNodeId()));
 							}
 						}

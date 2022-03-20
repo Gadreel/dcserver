@@ -216,10 +216,44 @@ public class IOUtil {
 		
 		name = name.replace("..", "_").replace("*", "_").replace("\"", "_").replace("/", "_");
 		name = name.replace("\\", "_").replace("<", "_").replace(">", "_").replace(":", "_").replace("?", "_").replace("|", "_");
-		
+
 		return name;
 	}
-	
+
+	static public String toCleanFilename(String name) {
+    	name = IOUtil.toLegalFilename(name);
+
+		if (StringUtil.isEmpty(name))
+			return null;
+
+		name = name.replace(" ", "-").replace("%", "_").replace("@", "_").replace("#", "_");
+		name = name.replace(",", "_").replace("~", "_").replace("`", "_").replace("!", "_");
+		name = name.replace("$", "_").replace("^", "_").replace("&", "_").replace("=", "_");
+		name = name.replace("+", "-").replace("{", "(").replace("}", ")").replace("[", "(");
+		name = name.replace("]", ")").replace(";", "_").replace("'", "_");
+
+		String fname = "";
+		boolean skipon = false;
+
+		for (int i = 0; i < name.length(); i++) {
+			char c = name.charAt(i);
+
+			if ((c == '-') || (c =='_')) {
+				if (skipon)
+					continue;
+
+				skipon = true;
+			}
+			else {
+				skipon = false;
+			}
+
+			fname += c;
+		}
+
+		return fname;
+	}
+
     public static void closeQuietly(Closeable... closeables) {
 		if (closeables == null) 
 			return;

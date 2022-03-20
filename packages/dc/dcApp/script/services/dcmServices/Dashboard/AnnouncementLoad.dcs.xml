@@ -1,0 +1,7 @@
+<dcs.Script>
+	<dcdb.LoadRecord Table="dcmFeed" Id="$Data.Id" Result="AnnouncementData">
+		<Select Composer="dcmFeedFields" As="Fields" />
+	</dcdb.LoadRecord>
+
+	<dcs.Exit Result="$AnnouncementData" />
+</dcs.Script>

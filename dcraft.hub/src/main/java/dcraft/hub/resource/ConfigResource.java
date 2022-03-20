@@ -371,7 +371,12 @@ public class ConfigResource extends ResourceBase {
 		
 		if (cat != null)
 			return cat;
-		
+
+		cat = this.findIdLocal("Catalog", lname + "-Default");
+
+		if (cat != null)
+			return cat;
+
 		ConfigResource parent = this.getParentResource();
 		
 		if (parent != null)

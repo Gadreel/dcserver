@@ -109,7 +109,7 @@ public class EncryptedVault extends Vault {
 						adapter.traverseIndex(EncryptedVault.this, file.getPathAsCommon(), -1, OperationContext.getOrThrow(), new BasicFilter() {
 							@Override
 							public ExpressionResult check(FileIndexAdapter adapter, IVariableAware scope, Vault vault, CommonPath path, RecordStruct file) throws OperatingContextException {
-								ftx.withDelete(path);
+								ftx.withDelete(TransactionFile.of(path, ftx.getTimestamp()));
 								
 								return ExpressionResult.ACCEPTED;
 							}
@@ -120,7 +120,7 @@ public class EncryptedVault extends Vault {
 								buildHistory(ftx, "Delete").with("Source", "User"));
 					}
 					else {
-						ftx.withDelete(file.getPathAsCommon());
+						ftx.withDelete(TransactionFile.of(file.getPathAsCommon(), ftx.getTimestamp()));
 					}
 				}
 				

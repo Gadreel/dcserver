@@ -32,6 +32,7 @@ import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
+import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
@@ -87,21 +88,30 @@ public class PgpSignStream extends TransformFileStream {
 			return this.signgen;
 		
 		try {
-			//Logger.info("getSigner" );
+			Logger.info("getSigner" );
+
 			PGPPublicKey pubkey = this.signkey.getPublicKey();
+
 			Logger.info("public: " + pubkey);
-	        PGPPrivateKey pgpPrivateKey = this.signkey.extractPrivateKey(
-	        	new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(this.passphrase)
-	        );
-			//Logger.info("private: " + pgpPrivateKey);
+
+			BcPGPDigestCalculatorProvider dcalc = new BcPGPDigestCalculatorProvider();
+			BcPBESecretKeyDecryptorBuilder skdecryptbld = new BcPBESecretKeyDecryptorBuilder(dcalc);
+			PBESecretKeyDecryptor skdecrypt = skdecryptbld.build(this.passphrase);
+
+	        PGPPrivateKey pgpPrivateKey = this.signkey.extractPrivateKey(skdecrypt);
+
+	        Logger.info("private: " + pgpPrivateKey);
 	
 	        PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(
 	        	new BcPGPContentSignerBuilder(pubkey.getAlgorithm(), org.bouncycastle.openpgp.PGPUtil.SHA256)
 	        );
-			//Logger.info("gen: " + signatureGenerator);
+
+	        Logger.info("gen: " + signatureGenerator);
 	        
 	        signatureGenerator.init(PGPSignature.BINARY_DOCUMENT, pgpPrivateKey);
-	 
+
+			Logger.info("getSigner" );
+
 	        @SuppressWarnings("rawtypes")
 			Iterator it = pubkey.getUserIDs();
 	        
@@ -113,7 +123,7 @@ public class PgpSignStream extends TransformFileStream {
 		        this.signgen = signatureGenerator;
 	        }
 	        
-			//Logger.info("gen 2: " + this.signgen);
+			Logger.info("gen 2: " + this.signgen);
 			
 			return this.signgen;
 		}

@@ -83,11 +83,25 @@ public class Task extends RecordStruct {
 	static public Task ofSubContext() throws OperatingContextException {
 		return Task.of(OperationContext.getOrThrow());
 	}
-	
+
 	static public Task ofHubRoot() {
 		return Task.of(OperationContext.context(UserContext.rootUser()));
 	}
-	
+
+	static public Task ofHubRootSameSite() throws OperatingContextException {
+		UserContext userContext = OperationContext.getOrThrow().getUserContext();
+
+		OperationContext ctx = OperationContext.context(
+				UserContext.rootUser(userContext.getTenantAlias(), userContext.getSiteAlias())
+		);
+
+		return Task.of(ctx);
+	}
+
+	static public Task ofHubRoot(String tenant, String site) {
+		return Task.of(OperationContext.context(UserContext.rootUser(tenant, site)));
+	}
+
 	static public Task ofHubGuest() {
 		return Task.of(OperationContext.context(UserContext.guestUser()));
 	}

@@ -79,7 +79,7 @@ public class DepositHub {
 			
 			StringBuilder sb = new StringBuilder();
 			
-			ClearsignUtil.verifyFile(new ByteArrayInputStream(Utf8Encoder.encode(result)), keyring, sb, chainsig);
+			ClearsignUtil.verifyFile(new ByteArrayInputStream(Utf8Encoder.encode(result)), keyring, sb, chainsig, null);
 			
 			RecordStruct manifest = Struct.objectToRecord(sb);
 			

@@ -22,6 +22,7 @@ import dcraft.filestore.IFileCollection;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.log.Logger;
 import dcraft.mail.SmtpWork;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
@@ -40,7 +41,15 @@ import dcraft.struct.scalar.BinaryStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.util.StringUtil;
 import dcraft.util.chars.Utf8Encoder;
+import dcraft.web.ui.HtmlPrinter;
+import dcraft.web.ui.inst.W3;
+import dcraft.web.ui.inst.W3Closed;
 import dcraft.xml.XElement;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 public class Stream extends Instruction {
 	static public Stream tag() {
@@ -69,6 +78,21 @@ public class Stream extends Instruction {
 				}
 				else if (source instanceof IFileCollection) {
 					source = CollectionSourceStream.of((IFileCollection) source);
+				}
+				else if (source instanceof W3) {
+					HtmlPrinter prt = new HtmlPrinter();
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+					try (PrintStream ps = new PrintStream(baos, true, "UTF-8")) {
+						prt.setFormatted(true);
+						prt.setOut(ps);
+						prt.print((W3) source);
+
+						source = MemorySourceStream.fromBinary(baos.toByteArray());
+					}
+					catch (UnsupportedEncodingException x) {
+						Logger.warn("encoding restricted: " + x);
+					}
 				}
 				else if (source instanceof BaseStruct) {
 					source = MemorySourceStream.fromBinary(Utf8Encoder.encode(Struct.objectToString(source)));

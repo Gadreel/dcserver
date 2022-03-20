@@ -162,7 +162,7 @@ public class LoadDepositWork extends ChainWork {
 						public void callback(String result) throws OperatingContextException {
 							StringBuilder sb = new StringBuilder();
 							
-							if (! ClearsignUtil.verifyFile(new ByteArrayInputStream(Utf8Encoder.encode(result)), keyring, sb, chainsig)) {
+							if (! ClearsignUtil.verifyFile(new ByteArrayInputStream(Utf8Encoder.encode(result)), keyring, sb, chainsig, null)) {
 								taskctx.returnEmpty();
 								return;
 							}

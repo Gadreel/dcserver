@@ -3,7 +3,7 @@
 		<Tr Locale="eng" Value="Search Users" />
 	</Meta>
 
-	<dc.Body>
+	<dc.Body class="dcuiWide">
 		<dc.PagePanel>
 			<dc.Region Hint="Search Form">
 				<dc.FullLayout Pad="Large">
@@ -31,6 +31,12 @@
 					</dcf.Form>
 				</dc.FullLayout>
 			</dc.Region>
+
+			<dc.Style>
+				#lstSearch td {
+					word-break: break-all;
+				}
+			</dc.Style>
 
 			<dc.Region Label="Search Results">
 				<table class="dc-table-break-std dc-table dc-table-reflow dc-table-stripe">

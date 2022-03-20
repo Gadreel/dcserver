@@ -71,7 +71,7 @@ public class VerifyRemoteChainWork extends StateWork {
 					public void callback(String result) throws OperatingContextException {
 						StringBuilder sb = new StringBuilder();
 						
-						ClearsignUtil.verifyFile(new ByteArrayInputStream(Utf8Encoder.encode(result)), keyring, sb, chainsig);
+						ClearsignUtil.verifyFile(new ByteArrayInputStream(Utf8Encoder.encode(result)), keyring, sb, chainsig, null);
 						
 						trun.clearExitCode();
 						

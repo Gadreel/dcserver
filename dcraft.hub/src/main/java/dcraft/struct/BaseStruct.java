@@ -158,7 +158,7 @@ abstract public class BaseStruct implements IPartSelector {
         if ("Validate".equals(code.getName()))
             this.validate();
         else
-            Logger.error("operation failed, op name not recoginized: " + code.getName());
+            Logger.error("operation failed, op name not recognized: " + code.getName());
 
         return ReturnOption.CONTINUE;
     }

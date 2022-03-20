@@ -1,22 +1,36 @@
 package dcraft.web;
 
+import dcraft.hub.ResourceHub;
+import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.hub.resource.KeyRingResource;
 import dcraft.log.Logger;
 import dcraft.service.ServiceHub;
 import dcraft.service.ServiceRequest;
 import dcraft.session.Session;
 import dcraft.session.SessionHub;
 import dcraft.struct.*;
+import dcraft.struct.scalar.StringStruct;
+import dcraft.tenant.Tenant;
+import dcraft.tenant.TenantHub;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
+import dcraft.util.TimeUtil;
+import dcraft.util.pgp.ClearsignUtil;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -115,15 +129,100 @@ public class RpcHandler implements IContentDecoder {
 		WebController wctrl = (WebController) ctx.getController();
 		
 		wctrl.setDecoder(null);
-		
-		CompositeStruct croot = CompositeParser.parseJson(this.mem);
-		
+
+		this.mem.setPosition(0);
+
+		CompositeStruct croot = null;
+
+		// TODO check for signed message - note cannot handle encrypted (yet)
+
+		String signkey = wctrl.selectAsString("Request.Headers.X-Dc-Sign-Key");
+
+		if (StringUtil.isNotEmpty(signkey)) {
+			// signkey is not enforced, just informational
+			KeyRingResource keys = ResourceHub.getResources().getKeyRing();
+
+			StringBuilder sb = new StringBuilder();
+			StringStruct sig = StringStruct.ofEmpty();
+			StringStruct key = StringStruct.ofEmpty();
+
+			try (InputStream bais = this.mem.getInputStream()) {
+				ClearsignUtil.verifyFile(bais, keys, sb, sig, key);
+			}
+			catch (IOException x) {
+				// na
+			}
+
+			if (sig.isEmpty()) {
+				//System.out.println("failed");
+				Logger.warn("Signed message failed to verify");
+			}
+			else {
+				//System.out.println("success, key: " + key);
+				Logger.info("Got signed message: " + sb);
+
+				RecordStruct message = Struct.objectToRecord(CompositeParser.parseJson(sb));
+
+				if (message != null) {
+					String dest = message.getFieldAsString("Destination");
+
+					if (StringUtil.isNotEmpty(dest)) {
+						ZonedDateTime expires = message.getFieldAsDateTime("Expires");
+
+						if ((expires != null) && expires.isAfter(TimeUtil.now())) {
+							int dpos = dest.indexOf('/');
+
+							if (dpos > 0) {
+								String deployment = dest.substring(0, dpos);
+								String tenantalias = dest.substring(dpos + 1);
+
+								if (ApplicationHub.getDeployment().equals(deployment)) {
+									Tenant tenant = TenantHub.resolveTenant(tenantalias);
+
+									if (tenant != null) {
+										croot = message.getFieldAsRecord("Payload");
+									}
+									else {
+										Logger.warn("Signed message is for a missing tenant");
+									}
+								}
+								else {
+									Logger.warn("Signed message is for a different deployment");
+								}
+							}
+						}
+						else {
+							Logger.warn("Signed message is expired or missing Expires field");
+						}
+					}
+					else {
+						Logger.warn("Signed message is missing Destination field");
+					}
+				}
+				else {
+					Logger.warn("Unable to parse signed message");
+				}
+			}
+		}
+		else {
+			croot = CompositeParser.parseJson(this.mem);
+		}
+
 		if ((croot == null) || ! (croot instanceof RecordStruct)) {
 			wctrl.sendRequestBadRead();
 			return;
 		}
 		
 		RecordStruct msg = (RecordStruct) croot;
+
+		// convert from Op only to three parts, if possible
+		if (msg.isFieldEmpty("Service") && ! msg.isFieldEmpty("Op")) {
+			ServiceRequest request = ServiceRequest.of(msg.getFieldAsString("Op"));
+
+			msg.with("Service", request.getName());
+			msg.with("Feature", request.getFeature());
+			msg.with("Op", request.getOp());
+		}
 		
 		// check that the request conforms to the schema for RpcMessage
 		if (! msg.validate("RpcMessage")) {

@@ -604,6 +604,32 @@ public class UIUtil {
 		return vb;
 	}
 
+	static public void requireStyle(Base element, InstructionWork state, String path) throws OperatingContextException {
+		Base root = element.getRoot(state);
+
+		if (! (root instanceof Html)) {
+			Logger.warn("Require style def failed: " + path);
+			return;
+		}
+
+		root.with(XElement.tag("Require")
+				.attr("Style", path)
+		);
+	}
+
+	static public void requireScript(Base element, InstructionWork state, String path) throws OperatingContextException {
+		Base root = element.getRoot(state);
+
+		if (! (root instanceof Html)) {
+			Logger.warn("Require script def failed: " + path);
+			return;
+		}
+
+		root.with(XElement.tag("Require")
+				.attr("Script", path)
+		);
+	}
+
 	static public void cleanDocReferences(IParentAwareWork stack, XElement src) throws OperatingContextException {
 		if (src.hasAttributes()) {
 			for (String key : src.getAttributes().keySet()) {

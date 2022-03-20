@@ -223,6 +223,7 @@
 			<Tag Name="dcs.IfErrored" Class="dcraft.script.inst.IfErrored" />
 			<Tag Name="dcs.Include" Class="dcraft.script.inst.Include" />
 			<Tag Name="dcs.Indirect" Class="dcraft.script.inst.Indirect" />
+			<Tag Name="dcs.Eval" Class="dcraft.script.inst.Eval" />
 			<Tag Name="dcs.Info" Class="dcraft.script.inst.Info" />
 			<Tag Name="dcs.Main" Class="dcraft.script.inst.Main" />
 			<Tag Name="dcs.Out" Class="dcraft.script.inst.doc.Out" />
@@ -248,8 +249,17 @@
 			<Tag Name="dcdb.UpdateTenant" Class="dcraft.script.inst.db.UpdateTenant" />
 			<Tag Name="dcdb.InsertRecord" Class="dcraft.script.inst.db.InsertRecord" />
 
+			<Tag Name="dcdb.SqlSelect" Class="dcraft.script.inst.sql.SqlSelect" />
+			<Tag Name="dcdb.SqlSelectRow" Class="dcraft.script.inst.sql.SqlSelectRow" />
+			<Tag Name="dcdb.SqlSelectVar" Class="dcraft.script.inst.sql.SqlSelectVar" />
+			<Tag Name="dcdb.SqlExecute" Class="dcraft.script.inst.sql.SqlExecute" />
+			<Tag Name="dcdb.SqlInsertWriter" Class="dcraft.script.inst.sql.SqlInsertWriter" />
+			<Tag Name="dcdb.SqlUpdateWriter" Class="dcraft.script.inst.sql.SqlUpdateWriter" />
+			<Tag Name="dcdb.SqlDeleteWriter" Class="dcraft.script.inst.sql.SqlDeleteWriter" />
+
 			<Tag Name="dcs.SendEmail" Class="dcraft.script.inst.ext.SendEmail" />
 			<Tag Name="dcs.SendText" Class="dcraft.script.inst.ext.SendText" />
+			<Tag Name="dcs.RemoteOp" Class="dcraft.script.inst.ext.RemoteOp" />
 			<Tag Name="dcs.ScriptServiceSwitch" Class="dcraft.script.inst.ext.ScriptServiceSwitch" />
 			<Tag Name="dcs.ScriptServiceSuccess" Class="dcraft.script.inst.ext.ScriptServiceSuccess" />
 
@@ -275,6 +285,9 @@
 		<Formatters>
 			<Definition Code="ascii" Class="dcraft.struct.format.AsciiFormatter" />
 			<Definition Code="pdftext" Class="dcraft.struct.format.PdfTextFormatter" />
+			<Definition Code="cleanfilename" Class="dcraft.struct.format.CleanFilename" />
+			<Definition Code="cleanemail" Class="dcraft.struct.format.CleanEmailAddress" />
+			<Definition Code="cast" Class="dcraft.struct.format.TypeCast" />
 			<Definition Code="dec" Class="dcraft.struct.format.DecimalFormatter" />
 			<Definition Code="dt" Class="dcraft.struct.format.DateTimeFormatter" />
 			<Definition Code="ld" Class="dcraft.struct.format.LocalDateFormatter" />
@@ -286,11 +299,17 @@
 			<Definition Code="substr" Class="dcraft.struct.format.SubstringFormatter" />
 			<Definition Code="tostr" Class="dcraft.struct.format.ToStringFormatter" />
 			<Definition Code="tre" Class="dcraft.struct.format.EnumFormatter" />
+			<Definition Code="trimlist" Class="dcraft.struct.format.TrimList" />
+			<Definition Code="cleanlist" Class="dcraft.struct.format.CleanList" />
+			<Definition Code="trim" Class="dcraft.struct.format.Trim" />
 			<Definition Code="lower" Class="dcraft.struct.format.Lower" />
 			<Definition Code="notempty" Class="dcraft.struct.format.NotEmptyFormatter" />
 			<Definition Code="empty" Class="dcraft.struct.format.EmptyFormatter" />
 			<Definition Code="ifempty" Class="dcraft.struct.format.IfEmptyFormatter" />
 			<Definition Code="join" Class="dcraft.struct.format.JoinFormatter" />
+			<Definition Code="field2list" Class="dcraft.struct.format.FieldToList" />
+			<Definition Code="toslug" Class="dcraft.struct.format.ToSlug" />
+			<Definition Code="slice" Class="dcraft.struct.format.Slice" />
 			<Definition Code="split" Class="dcraft.struct.format.SplitFormatter" />
 			<Definition Code="idx" Class="dcraft.struct.format.IndexFormatter" />
 			<Definition Code="encodejson" Class="dcraft.struct.format.EncodeJsonFormatter" />
@@ -305,6 +324,9 @@
 			<Definition Code="phE164" Class="dcraft.struct.format.PhoneE164" />
 			<Definition Code="upper" Class="dcraft.struct.format.Upper" />
 			<Definition Code="url" Class="dcraft.struct.format.Url" />
+
+			<Definition Code="b64decode" Class="dcraft.struct.format.Base64Decode" />
+			<Definition Code="b64encode" Class="dcraft.struct.format.Base64Encode" />
 
 			<!--
 			// TODO format date/time to chrono

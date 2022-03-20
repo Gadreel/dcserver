@@ -114,10 +114,14 @@
 								<dcf.Text Name="Zip" Label="Zip" DataType="dcUsaZip" />
 							</dc.Out>
 						</dcs.If>
-						
-						<dcf.Custom>
-							<dc.Recaptcha id="recaptchaSignUp" CheckEnabled="true" Func="DoSubmit" />
-						</dcf.Custom>
+
+						<dcs.If Target="$reCAPTCHA">
+							<dc.Out>
+								<dcf.Custom>
+									<dc.Recaptcha id="recaptchaSignUp" CheckEnabled="true" Func="DoSubmit" />
+								</dcf.Custom>
+							</dc.Out>
+						</dcs.If>
 
 						<dcs.If Target="$UserConfig.@SignUpConfirm" Equal="true">
 							<dc.Out>
@@ -161,7 +165,7 @@
 				return;
 			}
 
-			if ({$reCAPTCHA}) {
+			if ($('#recaptchaSignUp').length > 0) {
 				page.callTagFunc('#recaptchaSignUp', 'execute');
 			}
 			else {
@@ -178,7 +182,8 @@
 			page.form().submit();
 	]]></Function>
 	<Function Name="SaveRecord" Params="e"><![CDATA[
-			e.Data.Captcha = $('#recaptchaSignUp').attr('data-response');
+			if ($('#recaptchaSignUp').length > 0)
+				e.Data.Captcha = $('#recaptchaSignUp').attr('data-response');
 
 			delete e.Data.ConfirmPassword;
 

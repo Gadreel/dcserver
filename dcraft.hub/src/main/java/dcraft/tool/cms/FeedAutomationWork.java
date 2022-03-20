@@ -7,6 +7,7 @@ import dcraft.filestore.CommonPath;
 import dcraft.filevault.FeedVault;
 import dcraft.filevault.FileStoreVault;
 import dcraft.filevault.IndexTransaction;
+import dcraft.filevault.TransactionFile;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
@@ -379,10 +380,12 @@ public class FeedAutomationWork extends StateWork {
 		for (int i = 0; i < paths.size(); i++) {
 			String path = paths.getItemAsString(i);
 
+			TransactionFile file = tx.pathToTransactionFile(v, feeds.resolve(path.substring(1)));
+
 			if (path.startsWith("+"))
-				tx.withUpdate(feeds.resolve(path.substring(1)));
+				tx.withUpdate(file);
 			else if (path.startsWith("-"))
-				tx.withDelete(feeds.resolve(path.substring(1)));
+				tx.withDelete(file);
 		}
 
 		TaskHub.submit(

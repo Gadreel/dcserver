@@ -117,13 +117,13 @@ public class TimeStruct extends ScalarStruct {
 		else if ("Add".equals(op)) {
 			try { 
 				if (code.hasAttribute("Seconds")) 
-					this.value = this.value.plusSeconds((int)StackUtil.intFromElement(stack, code, "Seconds"));
+					this.value = this.value.plusSeconds((int)StackUtil.intFromElement(stack, code, "Seconds", 0));
 				else if (code.hasAttribute("Minutes")) 
-					this.value = this.value.plusMinutes((int)StackUtil.intFromElement(stack, code, "Minutes"));
+					this.value = this.value.plusMinutes((int)StackUtil.intFromElement(stack, code, "Minutes", 0));
 				else if (code.hasAttribute("Hours")) 
-					this.value = this.value.plusHours((int)StackUtil.intFromElement(stack, code, "Hours"));
+					this.value = this.value.plusHours((int)StackUtil.intFromElement(stack, code, "Hours", 0));
 				else if (code.hasAttribute("Millis")) 
-					this.value = this.value.plus((int)StackUtil.intFromElement(stack, code, "Millis"), ChronoUnit.MILLIS);
+					this.value = this.value.plus((int)StackUtil.intFromElement(stack, code, "Millis", 0), ChronoUnit.MILLIS);
 				else if (code.hasAttribute("Period")) {
 					PeriodDuration p = PeriodDuration.parse(StackUtil.stringFromElement(stack, code, "Period"));
 					this.value = this.value.plus(p);
@@ -138,13 +138,13 @@ public class TimeStruct extends ScalarStruct {
 		else if ("Subtract".equals(op)) {
 			try { 
 				if (code.hasAttribute("Seconds")) 
-					this.value = this.value.minusSeconds((int)StackUtil.intFromElement(stack, code, "Seconds"));
+					this.value = this.value.minusSeconds((int)StackUtil.intFromElement(stack, code, "Seconds", 0));
 				else if (code.hasAttribute("Minutes")) 
-					this.value = this.value.minusMinutes((int)StackUtil.intFromElement(stack, code, "Minutes"));
+					this.value = this.value.minusMinutes((int)StackUtil.intFromElement(stack, code, "Minutes", 0));
 				else if (code.hasAttribute("Hours")) 
-					this.value = this.value.minusHours((int)StackUtil.intFromElement(stack, code, "Hours"));
+					this.value = this.value.minusHours((int)StackUtil.intFromElement(stack, code, "Hours", 0));
 				else if (code.hasAttribute("Millis")) 
-					this.value = this.value.minus((int)StackUtil.intFromElement(stack, code, "Millis"), ChronoUnit.MILLIS);
+					this.value = this.value.minus((int)StackUtil.intFromElement(stack, code, "Millis", 0), ChronoUnit.MILLIS);
 				else if (code.hasAttribute("Period")) {
 					PeriodDuration p = PeriodDuration.parse(StackUtil.stringFromElement(stack, code, "Period"));
 					this.value = this.value.minus(p);

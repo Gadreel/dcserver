@@ -851,7 +851,7 @@ public class AuthUtil {
         ListStruct results = ListStruct.list();
 
         for (int page = 1; true; page++) {
-            FuncResult<ListStruct> funcResult = getTransactionListSync(batchid, page, 1000, alt, filter);
+            FuncResult<ListStruct> funcResult = getTransactionListSync(batchid, 1000, page, alt, filter);
 
             if (funcResult.isNotEmptyResult())
                 results.withCollection(funcResult.getResult());
@@ -891,7 +891,7 @@ public class AuthUtil {
             body.field("paging");
             body.startRecord();
             body.field("limit", limit);
-            body.field("offset", page);
+            body.field("offset", 1 + ((page - 1) * limit));
             body.endRecord();
 
             HttpRequest.Builder builder = AuthUtil.buildRequest(alt, body);
@@ -902,26 +902,30 @@ public class AuthUtil {
             RecordStruct result = processResponse(response);
 
             if (result != null) {
-                ListStruct alltxs = result.selectAsList("transactions.transaction");
+                ListStruct alltxs = result.selectAsList("transactions");
 
-                if (alltxs.size() < limit)
-                    Logger.boundary("FinalPage");
+                if (alltxs != null) {
+                    if (alltxs.size() < limit)
+                        Logger.boundary("FinalPage");
 
-                if ((filter == null) || filter.isEmpty()) {
-                    funcResult.setResult(alltxs);
+                    if ((filter == null) || filter.isEmpty()) {
+                        funcResult.setResult(alltxs);
+                    } else {
+                        ListStruct results = ListStruct.list();
+
+                        for (int i = 0; i < alltxs.size(); i++) {
+                            RecordStruct tx = alltxs.getItemAsRecord(i);
+                            String txstatus = tx.getFieldAsString("transactionStatus");
+
+                            if (filter.contains(txstatus))
+                                results.with(tx);
+                        }
+
+                        funcResult.setResult(results);
+                    }
                 }
                 else {
-                    ListStruct results = ListStruct.list();
-
-                    for (int i = 0; i < alltxs.size(); i++) {
-                        RecordStruct tx = alltxs.getItemAsRecord(i);
-                        String txstatus = tx.getFieldAsString("transactionStatus");
-
-                        if (filter.contains(txstatus))
-                            results.with(tx);
-                    }
-
-                    funcResult.setResult(results);
+                    Logger.boundary("FinalPage");
                 }
             }
         }

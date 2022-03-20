@@ -68,6 +68,7 @@ public class Response extends RecordStruct {
 	
     protected Map<String, Cookie> cookies = new HashMap<>();
     protected boolean keepAlive = false; 
+    protected boolean sendCookies = true;
     // TODO improve
 	protected Memory body = new Memory();
     //protected Map<CharSequence, String> headers = new HashMap<>();
@@ -99,7 +100,14 @@ public class Response extends RecordStruct {
     	
     	this.getFieldAsRecord("Headers").with(name, value);
     }
-    
+
+	public String getHeader(String name) {
+		if (! this.hasField("Headers"))
+			return null;
+
+		return this.getFieldAsRecord("Headers").getFieldAsString(name);
+	}
+
     public void setDateHeader(String name, long value) {
     	DateParser parser = new DateParser();
     	this.setHeader(name, parser.convert(value));
@@ -116,7 +124,11 @@ public class Response extends RecordStruct {
     public void setKeepAlive(boolean v) {
 		this.keepAlive = v;
 	}
- 
+
+    public void setSendCookies(boolean v) {
+		this.sendCookies = v;
+	}
+
     public void write(PrintStream out) {
         this.body.setPosition(0);
         this.body.copyToStream(out);
@@ -155,8 +167,10 @@ public class Response extends RecordStruct {
         }
 
         // Encode the cookies
-        for (Cookie c : this.cookies.values()) 
-	        response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
+		if (this.sendCookies) {
+			for (Cookie c : this.cookies.values())
+				response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
+		}
 
 		RecordStruct headers = this.getFieldAsRecord("Headers");
 		
@@ -204,9 +218,11 @@ public class Response extends RecordStruct {
             response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
         }
 
-        // Encode the cookies
-        for (Cookie c : this.cookies.values()) 
-	        response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
+        if (this.sendCookies) {
+			// Encode the cookies
+			for (Cookie c : this.cookies.values())
+				response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
+		}
 	
 		RecordStruct headers = this.getFieldAsRecord("Headers");
 	
@@ -263,8 +279,10 @@ public class Response extends RecordStruct {
             response.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
         
         // Encode the cookies
-        for (Cookie c : this.cookies.values()) 
-	        response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
+		if (this.sendCookies) {
+			for (Cookie c : this.cookies.values())
+				response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
+		}
 	
 		RecordStruct headers = this.getFieldAsRecord("Headers");
 	
@@ -321,9 +339,11 @@ public class Response extends RecordStruct {
         // TODO add a customer header telling how many messages are in the session adaptor's queue - if > 0
 
         // Encode the cookies
-        for (Cookie c : this.cookies.values()) 
-	        response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
-	
+		if (this.sendCookies) {
+			for (Cookie c : this.cookies.values())
+				response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
+		}
+
 		RecordStruct headers = this.getFieldAsRecord("Headers");
 	
 		if (headers != null)
@@ -366,12 +386,14 @@ public class Response extends RecordStruct {
 		Cookie dl = new DefaultCookie("fileDownload", "true");
 		dl.setPath("/");
         
-        response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(dl));
-
         // Encode the cookies
-        for (Cookie c : this.cookies.values()) 
-	        response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
-	
+		if (this.sendCookies) {
+			response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(dl));
+
+			for (Cookie c : this.cookies.values())
+				response.headers().add(HttpHeaderNames.SET_COOKIE, ServerCookieEncoder.STRICT.encode(c));
+		}
+
 		RecordStruct headers = this.getFieldAsRecord("Headers");
 	
 		if (headers != null)

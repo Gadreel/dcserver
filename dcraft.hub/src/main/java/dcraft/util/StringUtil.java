@@ -199,7 +199,16 @@ public class StringUtil {
 
 		        return str.substring(start);
 		    }
-		    
+
+			public static String trimLeadingChar(String source, char character) {
+				for (int i = 0; i < source.length(); i++) {
+					if (source.charAt(i) != character)
+						return source.substring(i);
+				}
+
+				return "";
+			}
+
 		    public static String stripTrailingWhitespace(String str) {
 		        if (StringUtil.isEmpty(str)) 
 		            return "";
@@ -751,7 +760,9 @@ public class StringUtil {
 	    		return null;
 	    	
 	    	StringBuilder sb = new StringBuilder();
-	    	
+
+	    	str = str.trim();
+
 			for (int i = 0; i < str.length(); i++) { 
 				char ch = str.charAt(i);
 				

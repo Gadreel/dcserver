@@ -39,6 +39,8 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
+import com.sun.mail.smtp.SMTPMessage;
+import com.sun.mail.util.LogOutputStream;
 import dcraft.filestore.FileStoreFile;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
@@ -79,6 +81,7 @@ public class SmtpWork extends StateWork {
 	protected MimeMultipart content = null;
 	protected int attachcnt = 0;
 	protected int currattach = 0;
+	protected ExtractPrintStream extractStatusStream = new ExtractPrintStream();
 
 	public SmtpWork() {
 	}
@@ -143,6 +146,8 @@ public class SmtpWork extends StateWork {
 			Logger.info("Sending email to: " + to);
 			
 			Properties props = new Properties();
+
+			props.put("mail.mime.allowutf8", "true");
 			
 			if (smtpAuth) {
 				props.put("mail.smtp.auth", "true");
@@ -151,18 +156,24 @@ public class SmtpWork extends StateWork {
 				// see http://stackoverflow.com/questions/12743846/unable-to-send-an-email-using-smtp-getting-javax-mail-messagingexception-could
 				props.put("mail.smtp.starttls.enable", "true");
 			}
-			
+
+			if (smtpDebug) {
+				props.put("mail.debug", "true");
+			}
+
 	        Session sess = Session.getInstance(props);
-	
+
+			sess.setDebug(true);
+			sess.setDebugOut(extractStatusStream);
+
 	        // do debug on task with trace level
 	        if (smtpDebug || (trun.getDebugLevel() == DebugLevel.Trace)) {
-	        	sess.setDebugOut(new DebugPrintStream(trun));
-	        	sess.setDebug(true);			        
+				extractStatusStream.setOut(true);
 	        }
 	        
 	        // Create a new Message
 	    	this.email = new MimeMessage(sess);
-	    	
+
 			InternetAddress fromaddr = StringUtil.isEmpty(from) ? null : InternetAddress.parse(from.replace(';', ','))[0];
 			InternetAddress[] rplyaddrs = null;
 			
@@ -172,7 +183,7 @@ public class SmtpWork extends StateWork {
 			catch (Exception x) {
 				// TODO reply to can be blank
 			}
-			
+
 			if (StringUtil.isNotEmpty(to))
 				this.toaddrs = InternetAddress.parse(to.replace(';', ','));
 			
@@ -180,7 +191,7 @@ public class SmtpWork extends StateWork {
 				this.dbgaddrs = InternetAddress.parse(debugBCC.replace(';', ','));
 			
 			if (StringUtil.isNotEmpty(skipto)) {
-				List<InternetAddress> passed = new ArrayList<InternetAddress>();
+				List<InternetAddress> passed = new ArrayList<>();
 				
 				for (int i = 0; i < toaddrs.length; i++) {
 					InternetAddress toa = toaddrs[i];
@@ -205,7 +216,15 @@ public class SmtpWork extends StateWork {
 	        		this.email.addRecipients(javax.mail.Message.RecipientType.BCC, dbgaddrs);
 	        	
 	        	this.email.setSubject(subject);
-	     
+
+	        	if (this.params.isNotFieldEmpty("InReplyTo"))
+		        	this.email.addHeader("In-Reply-To", this.params.getFieldAsString("InReplyTo"));
+
+	        	if (this.params.isNotFieldEmpty("Unsubscribe")) {
+					this.email.addHeader("List-Unsubscribe", this.params.getFieldAsString("Unsubscribe"));
+					this.email.addHeader("List-Unsubscribe-Post", "List-Unsubscribe=One-Click");
+				}
+
 	            // ALTERNATIVE TEXT/HTML CONTENT
 	            MimeMultipart cover = new MimeMultipart(StringUtil.isNotEmpty(textbody) ? "alternative" : "mixed");
 	            
@@ -405,6 +424,27 @@ public class SmtpWork extends StateWork {
 		else
 			Logger.info("Email sent to: " + this.to);
 
+		if ((this.params != null) && (this.params.getFieldAsBooleanOrFalse("Feedback"))) {
+			ListStruct addresses = ListStruct.list();
+
+			for (int i = 0 ; i < this.toaddrs.length; i++)
+				addresses.with(this.toaddrs[i].toUnicodeString());
+
+			for (int i = 0 ; i < this.dbgaddrs.length; i++)
+				addresses.with(this.dbgaddrs[i].toUnicodeString());
+
+			String mid = null;
+
+			if (StringUtil.isNotEmpty(this.extractStatusStream.getMessageId()))
+				mid = "<" + this.extractStatusStream.getMessageId() + "@email.amazonses.com>";		// TODO configure which MTA can appear here
+
+			trun.setResult(RecordStruct.record()
+					.with("Success", ! trun.hasExitErrors())
+					.with("MessageId", mid)
+					.with("ActualAddresses", addresses)
+			);
+		}
+
 		return StateWorkStep.NEXT;
 	}
 
@@ -420,27 +460,39 @@ public class SmtpWork extends StateWork {
 		super.finalize();
 	}
 
-	public class DebugPrintStream extends PrintStream {
-		//protected OperationContext or = null;
+	public class ExtractPrintStream extends PrintStream {
+		protected boolean toOut = false;
+		protected boolean dataSent = false;
+		protected String messageid = null;
 
-		public DebugPrintStream(OperationContext or) {
-			super(new OutputStream() {
-				@Override
-				public void write(int b) throws IOException {
-					if (b == 13)
-						System.out.println();
-					else
-						System.out.print(HexUtil.charToHex(b));
-				}
-			});
+		public void setOut(boolean v) {
+			this.toOut = v;
+		}
 
-			//this.or = or;
+		public String getMessageId() {
+			return this.messageid;
+		}
+
+		public ExtractPrintStream() {
+			super(LogOutputStream.nullOutputStream());
 		}
 
 		@Override
 		public void println(String msg) {
 			// TODO do we need to `use` context?
-			Logger.trace(msg);
+			//Logger.trace(msg);
+
+			if ("DATA".equals(msg)) {
+				this.dataSent = true;
+			}
+			else if (this.dataSent && StringUtil.isNotEmpty(msg)) {
+				if (msg.startsWith("250 Ok")) {
+					this.messageid = msg.substring(7);
+				}
+			}
+
+			if (this.toOut)
+				System.out.println("----- " + msg);
 		}
 	}
 }

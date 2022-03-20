@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import dcraft.log.Logger;
+import dcraft.util.HexUtil;
 import dcraft.util.RndUtil;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
@@ -89,15 +90,39 @@ public class KeyRingCollection {
     	if (pk == null)
     		return null;
     	
-		@SuppressWarnings("rawtypes")
-		Iterator uit = pk.getUserIDs();
+		Iterator<String> uit = pk.getUserIDs();
 		
 		if (!uit.hasNext()) 
 			return null;
 		
-		return uit.next().toString();
+		return uit.next();
     }
-    
+
+	public static String getUserIds(PGPKeyRing ring) {
+		return KeyRingCollection.getUserIds(ring.getPublicKey());
+    }
+
+	public static String getUserIds(PGPPublicKey pk) {
+		if (pk == null)
+			return null;
+
+		Iterator<String> uit = pk.getUserIDs();
+
+		if (! uit.hasNext())
+			return null;
+
+		String users = "";
+
+		while (uit.hasNext()) {
+			if (users.length() > 0)
+				users += ";";
+
+			users += uit.next();
+		}
+
+		return users;
+	}
+
     public static PGPPublicKeyRing importArmoredPublicKeyToRing(String key, Path ringpath) {
     	KeyRingCollection krc = KeyRingCollection.load(ringpath, true);
     	
@@ -491,9 +516,72 @@ public class KeyRingCollection {
 			Logger.error("Unable to write secret key: " + x);
 		}
 	}
-	
+
+	public void removeKey(String keyid) {
+		if (StringUtil.isEmpty(keyid))
+			return;
+
+		if (keyid.contains("@")) {
+			this.removeUser(keyid);
+			return;
+		}
+
+		this.removeFingerPrint(keyid);
+	}
+
+	public void removeFingerPrint(String fprint) {
+		if (StringUtil.isEmpty(fprint))
+			return;
+
+		boolean fndpub = false;
+		boolean fndsec = false;
+
+		// remove from public keys - don't use findUserKey, it only matches first
+
+		Iterator<PGPPublicKeyRing> krit = this.pubring.iterator();
+
+		while (krit.hasNext()) {
+			PGPPublicKeyRing pkr = krit.next();
+
+			String fp = HexUtil.bufferToHex(pkr.getPublicKey().getFingerprint());
+
+			if (StringUtil.isEmpty(fp))
+				continue;
+
+			if (fp.toLowerCase().contains(fprint)) {
+				this.pubring = PGPPublicKeyRingCollection.removePublicKeyRing(this.pubring, pkr);
+				fndpub = true;
+			}
+		}
+
+		if (fndpub)
+			this.savePublicKeys();
+
+		// remove from secret keys - don't use findUserKey, it only matches first
+
+		Iterator<PGPSecretKeyRing> krit2 = this.secring.iterator();
+
+		while (krit2.hasNext()) {
+			PGPSecretKeyRing skr = krit2.next();
+
+			String fp = HexUtil.bufferToHex(skr.getPublicKey().getFingerprint());
+
+			if (StringUtil.isEmpty(fp))
+				continue;
+
+			if (fp.toLowerCase().contains(fprint)) {
+				this.secring = PGPSecretKeyRingCollection.removeSecretKeyRing(this.secring, skr);
+				fndsec = true;
+			}
+		}
+
+		if (fndsec)
+			this.saveSecretKeys();
+
+
+	}
+
 	// all keys containing this identity, whether it be the name, the email or full (case insensitive match)
-	@SuppressWarnings("rawtypes")
 	public void removeUser(String userid)  {
 		if (StringUtil.isEmpty(userid))
 			return;
@@ -504,12 +592,12 @@ public class KeyRingCollection {
 
     	// remove from public keys - don't use findUserKey, it only matches first
     	
-		Iterator krit = this.pubring.iterator();
+		Iterator<PGPPublicKeyRing> krit = this.pubring.iterator();
         
         while (krit.hasNext()) {
-        	PGPPublicKeyRing pkr = (PGPPublicKeyRing) krit.next();
+        	PGPPublicKeyRing pkr = krit.next();
         	
-        	String uid = KeyRingCollection.getUserId(pkr);
+        	String uid = KeyRingCollection.getUserIds(pkr);
         	
         	if (StringUtil.isEmpty(uid))
         		continue;
@@ -524,13 +612,13 @@ public class KeyRingCollection {
         	this.savePublicKeys();
 
     	// remove from secret keys - don't use findUserKey, it only matches first
-    	
-		krit = this.secring.iterator();
+
+		Iterator<PGPSecretKeyRing> krit2 = this.secring.iterator();
         
-        while (krit.hasNext()) {
-        	PGPSecretKeyRing skr = (PGPSecretKeyRing) krit.next();
+        while (krit2.hasNext()) {
+        	PGPSecretKeyRing skr = krit2.next();
         	
-        	String uid = KeyRingCollection.getUserId(skr);
+        	String uid = KeyRingCollection.getUserIds(skr);
         	
         	if (StringUtil.isEmpty(uid))
         		continue;

@@ -589,6 +589,12 @@ dc.pui.Apps.Menus.dcmGeneral = {
 			Title: 'Users',
 			Auth: [ 'Admin' ],
 			Path: '/dcw/user/list-users'
+		},
+		{
+			Alias: 'Announcements',
+			Title: 'Announcements',
+			Auth: [ 'Admin', 'Editor' ],
+			Path: '/dcm/dashboard/announcements'
 		}
 	],
 	Options: [
@@ -1337,6 +1343,27 @@ dc.pui.TagFuncs['dcm.ListWidget']['doCmsInitWidget'] = function(entry, node) {
 							dc.pui.Loader.MainLayer.refreshPage();
 						}
 					});
+				}
+			},
+			{
+				Icon: 'fa-list',
+				Title: 'List',
+				Auth: [ 'Admin', 'Editor' ],
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+
+					params.Callback = function() {
+						dc.pui.Loader.MainLayer.refreshPage();
+					};
+
+					var propeditor = $(node).attr('data-property-editor');
+
+					if (propeditor)
+						propeditor = '/dcm/cms/list-widget-list/' + params.Feed + '/' + propeditor;
+					else
+						propeditor = '/dcm/cms/list-widget-list/' + params.Feed;
+
+					dc.pui.Dialog.loadPage(propeditor, params);
 				}
 			},
 			{

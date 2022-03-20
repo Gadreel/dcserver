@@ -2,7 +2,9 @@ package dcraft.util.net;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.log.Logger;
 
+import java.io.*;
 import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -11,12 +13,14 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
+import java.util.zip.GZIPInputStream;
 
 abstract public class ByteArraySubscriber<T> implements HttpResponse.BodySubscriber<T>, HttpResponse.BodyHandler<T> {
     protected final CompletableFuture<T> result = new MinimalFuture<>();
     protected final List<ByteBuffer> received = new ArrayList();
     protected volatile Flow.Subscription subscription = null;
     protected OperationContext context = null;
+    protected HttpResponse.ResponseInfo responseInfo = null;
 
     public abstract T transform(byte[] bytes) throws OperatingContextException;
 
@@ -28,6 +32,7 @@ abstract public class ByteArraySubscriber<T> implements HttpResponse.BodySubscri
         this.context = ctx;
     }
 
+    @Override
     public void onSubscribe(Flow.Subscription subscription) {
         if (this.subscription != null) {
             subscription.cancel();
@@ -37,12 +42,14 @@ abstract public class ByteArraySubscriber<T> implements HttpResponse.BodySubscri
         }
     }
 
+    @Override
     public void onNext(List<ByteBuffer> items) {
         assert NetUtil.hasRemaining(items);
 
         this.received.addAll(items);
     }
 
+    @Override
     public void onError(Throwable throwable) {
         this.received.clear();
         this.result.completeExceptionally(throwable);
@@ -63,6 +70,7 @@ abstract public class ByteArraySubscriber<T> implements HttpResponse.BodySubscri
         return res;
     }
 
+    @Override
     public void onComplete() {
         try {
             if (this.context != null) {
@@ -70,7 +78,23 @@ abstract public class ByteArraySubscriber<T> implements HttpResponse.BodySubscri
                 this.context = null;
             }
 
-            this.result.complete(this.transform(this.join(this.received)));
+            byte[] raw = this.join(this.received);
+
+            String encoding = this.responseInfo.headers().firstValue("Content-Encoding").orElse("");
+
+            if (encoding.equals("gzip")) {
+                System.out.println("gzip compressed");
+
+                try (InputStream is = new GZIPInputStream(new ByteArrayInputStream(raw)); ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+                    is.transferTo(os);
+                    raw = os.toByteArray();
+                }
+                catch (IOException x) {
+                    Logger.error("Failed to read gzip response");
+                }
+            }
+
+            this.result.complete(this.transform(raw));
             this.received.clear();
         }
         catch (IllegalArgumentException x) {
@@ -82,12 +106,15 @@ abstract public class ByteArraySubscriber<T> implements HttpResponse.BodySubscri
         }
     }
 
+    @Override
     public CompletionStage<T> getBody() {
         return this.result;
     }
 
     @Override
     public HttpResponse.BodySubscriber<T> apply(HttpResponse.ResponseInfo responseInfo) {
+        this.responseInfo = responseInfo;
+
         return this;
     }
 }

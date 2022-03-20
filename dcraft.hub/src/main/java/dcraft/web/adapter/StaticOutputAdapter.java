@@ -18,6 +18,7 @@ import dcraft.web.IOutputWork;
 import dcraft.web.Response;
 import dcraft.web.WebController;
 import dcraft.web.ui.UIUtil;
+import dcraft.xml.XElement;
 import io.netty.handler.codec.http.HttpChunkedInput;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.stream.ChunkedNioFile;
@@ -87,7 +88,30 @@ public class StaticOutputAdapter implements IOutputWork {
 					return;
 				}
 			}
-			
+
+			boolean suggestdownload = request.getFieldAsRecord("Headers").getFieldAsBooleanOrFalse("X-For-Download");
+
+			if (! suggestdownload && request.getFieldAsRecord("Parameters").isNotFieldEmpty("dc-download"))
+				suggestdownload = true;
+
+			if (request.getFieldAsRecord("Parameters").isNotFieldEmpty("dc-download-as")) {
+				String fname = request.selectAsString("Parameters.dc-download-as.0");
+
+				resp.setHeader("Content-Disposition", "attachment; filename=\"" + fname + "\"");
+
+				// TODO probably support mime type here too
+			}
+			else if (request.getFieldAsRecord("Parameters").isNotFieldEmpty("dc-inline-as")) {
+				String fname = request.selectAsString("Parameters.dc-inline-as.0");
+
+				resp.setHeader("Content-Disposition", "inline; filename=\"" + fname + "\"");
+
+				// TODO probably support mime type here too
+			}
+			else if (suggestdownload) {
+				resp.setHeader("Content-Disposition", "attachment; filename=\"" + webpath.getFileName() + "\"");
+			}
+
 			// send file size if we aren't compressing
 			if (! this.mime.isCompress()) {
 				resp.setHeader(HttpHeaders.Names.CONTENT_ENCODING, HttpHeaders.Values.IDENTITY);

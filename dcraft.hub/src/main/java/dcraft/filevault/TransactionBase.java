@@ -2,6 +2,7 @@ package dcraft.filevault;
 
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileStore;
+import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.local.LocalStore;
 import dcraft.filestore.local.LocalStoreFile;
 import dcraft.hub.op.OperatingContextException;
@@ -16,6 +17,7 @@ import dcraft.task.Task;
 import dcraft.task.TaskContext;
 import dcraft.task.TaskHub;
 import dcraft.task.TaskObserver;
+import dcraft.tenant.Site;
 import dcraft.util.FileUtil;
 import dcraft.util.RndUtil;
 import dcraft.util.TimeUtil;
@@ -42,29 +44,43 @@ abstract public class TransactionBase {
 	protected String nodeid = null;
 	protected Vault vault = null;
 	protected ZonedDateTime timestamp = TimeUtil.now();
-	protected List<CommonPath> deletelist = new ArrayList<>();
-	protected List<CommonPath> updatelist = new ArrayList<>();
+	protected List<TransactionFile> deletelist = new ArrayList<>();
+	protected List<TransactionFile> updatelist = new ArrayList<>();
 	protected CommonPath cleanfolder = null;
 
-	public List<CommonPath> getDeletelist() {
+	public List<TransactionFile> getDeletelist() {
 		return this.deletelist;
 	}
 
-	public TransactionBase withDelete(CommonPath... paths) {
-		for (CommonPath p : paths)
+	public TransactionBase withDelete(TransactionFile... paths) {
+		for (TransactionFile p : paths)
 			this.deletelist.add(p);
 			
 		return this;
 	}
 
-	public TransactionBase withUpdate(CommonPath... paths) {
-		for (CommonPath p : paths)
+	public TransactionBase withUpdate(TransactionFile... paths) {
+		for (TransactionFile p : paths)
 			this.updatelist.add(p);
 			
 		return this;
 	}
-	
-	public List<CommonPath> getUpdateList() {
+
+	public TransactionFile pathToTransactionFile(Vault vault, CommonPath path) throws OperatingContextException {
+		ZonedDateTime when = this.getTimestamp();
+
+		if (vault instanceof FileStoreVault) {
+			// blocking so only works with local file stores, but this is much better than nothing
+			FileStoreFile filedesc = ((FileStoreVault) vault).getFileStore().fileReference(path);
+
+			if ((filedesc != null) && filedesc.isNotFieldEmpty("Modified"))
+				when = filedesc.selectAsDateTime("Modified");
+		}
+
+		return TransactionFile.of(path, when);
+	}
+
+	public List<TransactionFile> getUpdateList() {
 		return this.updatelist;
 	}
 	

@@ -1,0 +1,199 @@
+<dc.Html Badges="Admin,Editor">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="List Entries" />
+	</Meta>
+
+	<Require Script="/js/vendor/sortable.min.js" />
+
+	<dcs.Var Name="FeedName" Type="String" />
+
+	<dcs.If Target="$Page.OriginalPathParts.3" IsEmpty="false">
+		<dcs.With Target="$FeedName" SetTo="$Page.OriginalPathParts.3" />
+	</dcs.If>
+
+	<dcs.Var Name="Alias" Type="String" />
+
+	<dcs.If Target="$Page.OriginalPathParts.4" IsEmpty="false">
+		<dcs.With Target="$Alias" SetTo="$Page.OriginalPathParts.4" />
+	</dcs.If>
+
+	<dc.Body>
+		<dc.Style>
+#dcmslistEntries > div {
+	padding: 12px;
+}
+
+#dcmslistEntriesTable.dc-table-stripe tbody tr:nth-child(odd) td {
+    background-color: lightyellow;
+}
+
+#dcmslistEntries a:visited,
+#dcmslistEntries a {
+	color: black;
+}
+
+#dcmslistEntries a:hover,
+#dcmslistEntries a:focus {
+	color: #444;
+}
+
+		</dc.Style>
+		<dc.PagePanel>
+			<dcf.FormButtons>
+				<dc.Button Label="Save and Preview" Click="DoSave" Scope="Primary" />
+			</dcf.FormButtons>
+
+			<table id="dcmslistEntriesTable" class="dc-table-break-medium dc-table dc-table-stripe dc-pui-sortable">
+				<tbody id="dcmslistEntries" />
+			</table>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load" Params="e"><![CDATA[
+			var entry = this;
+
+			/*
+			if (e.Thaw) {
+				entry.callPageFunc('LoadList');
+				return;
+			}
+			*/
+
+			entry.Store.Aliases = [ ];
+			entry.Store.Changed = false;
+
+			dc.comm.sendMessage({
+				Service: 'dcmServices',
+				Feature: 'Feed',
+				Op: 'LoadPart',
+				Body: {
+					Feed: entry.Params.Feed,
+					Path: entry.Params.Path,
+					PartId: entry.Params.Id
+				}
+			}, function(rmsg) {
+				if (rmsg.Result != 0) {
+					dc.pui.Popup.alert(rmsg.Message);
+					return;
+				}
+
+				entry.Store.Widget = dc.util.Xml.toJQuery(rmsg.Body.Part);
+
+				entry.callPageFunc('LoadList');
+			});
+   ]]></Function>
+	<Function Name="LoadList"><![CDATA[
+			var entry = this;
+
+			var list = $('#dcmslistEntries');
+
+			list.empty();
+
+			var sortable = Sortable.create(list.get(0), {
+			    onEnd: function (evt) {
+			        entry.Store.Changed = true;
+
+			        entry.callPageFunc('ReorderEntries');
+			    }
+		    });
+
+			var widget = entry.Store.Widget;
+
+			var locale = dc.util.Web.getLang();
+
+			var $entries = widget.find('Entry');
+
+			var remFunc = function(e) {
+				$(e.currentTarget).closest('tr').remove();
+
+				entry.Store.Changed = true;
+
+				entry.callPageFunc('ReorderEntries');
+
+				e.preventDefault();
+				return false;
+			};
+
+			for (var i = 0; i < $entries.length; i++) {
+				var xentry = $entries.get(i);
+
+				var value = $(xentry).attr('Title');
+
+				if (! value)
+					value = '';
+
+				var content = value.trim() + '\n';
+
+				list.dcappend(
+					$('<tr>')
+						.addClass('hentry')
+						.attr('data-alias', $(xentry).attr('Alias'))
+						.dcappend(
+							$('<td>').text(content),
+							$('<td>').dcappend(
+								$('<a>')
+									.attr('href', '#')
+									.click($(xentry).attr('Alias'), remFunc)
+									.text('remove')
+							)
+						)
+				);
+			}
+	]]></Function>
+	<Function Name="ReorderEntries"><![CDATA[
+			var entry = this;
+
+			entry.Store.Aliases = [];
+
+			$('#dcmslistEntries > tr').each(function(i) {
+				var calias = $(this).attr('data-alias');
+				entry.Store.Aliases.push(calias);
+			});
+	]]></Function>
+	<Function Name="DoSave"><![CDATA[
+		var entry = this;
+
+		if (entry.Store.Changed) {
+			//console.log('x: ' + JSON.stringify(entry.Store.Aliases));
+
+			dc.comm.call('dcmServices.Feed.AddCommandHistory', {
+				Feed: entry.Params.Feed,
+				Path: entry.Params.Path,
+				Commands: [
+					{
+						Command: 'ReorderAlias',
+						Params: {
+							PartId: entry.Params.Id,
+							Order: entry.Store.Aliases
+						}
+					}
+				]
+			}, function(rmsg2) {
+				if (rmsg2.Result > 0) {
+					dc.pui.Popup.alert(rmsg2.Message);
+					return;
+				}
+
+				entry.Store.Changed = false;
+
+				entry.callPageFunc('DoAfterSave');
+			});
+		}
+		else {
+			entry.callPageFunc('DoAfterSave');
+		}
+	]]></Function>
+	<Function Name="DoAfterSave"><![CDATA[
+		var entry = this;
+
+		if (entry.Store.Callback) {
+			entry.Store.Callback();
+			entry.Store.Callback = null;
+			return;
+		}
+
+		entry.Layer.back();
+
+		if (entry.Params.Callback)
+			entry.Params.Callback();
+	]]></Function>
+</dc.Html>

@@ -27,6 +27,7 @@
 
 			<Tag Name="dc.CodeWidget" Class="dcraft.web.ui.inst.CodeWidget" />
 			<Tag Name="dc.TextWidget" Class="dcraft.web.ui.inst.TextWidget" />
+			<Tag Name="dc.Markdown" Class="dcraft.web.ui.inst.Markdown" />
 			<Tag Name="dc.Button" Class="dcraft.web.ui.inst.Button" />
 			<Tag Name="dc.Callout" Class="dcraft.web.ui.inst.Callout" />
 			<Tag Name="dc.CaptchaButton" Class="dcraft.web.ui.inst.CaptchaButton" />
@@ -96,6 +97,7 @@
 			<Tag Name="dcm.FacebookWidget" Class="dcraft.web.ui.inst.feed.Facebook" />
 			<Tag Name="dcm.FacebookEventsWidget" Class="dcraft.web.ui.inst.feed.FacebookEvents" />
 			<Tag Name="dcm.FeedWidget" Class="dcraft.web.ui.inst.feed.Feed" />
+			<Tag Name="dcm.AnnouncementBand" Class="dcraft.web.ui.inst.feed.AnnouncementBand" />
 
 			<!-- TODO
 			<Tag Name="dcm.FeedDetailWidget" Class="dcraft.web.ui.inst.feed.FeedDetail" />
@@ -140,6 +142,7 @@
 			<Tag Name="dcf.TextArea" Class="dcraft.web.ui.inst.form.TextArea" />
 			<Tag Name="dcf.Uploader" Class="dcraft.web.ui.inst.form.Uploader" />
 			<Tag Name="dcf.YesNo" Class="dcraft.web.ui.inst.form.YesNo" />
+			<Tag Name="dcf.Search" Class="dcraft.web.ui.inst.form.Search" />
 
 			<!-- misc tags -->
 			<Tag Name="dc.Recaptcha" Class="dcraft.web.ui.inst.misc.Recaptcha" />
@@ -190,6 +193,7 @@
 			<Tag Name="head" Class="dcraft.web.ui.inst.W3" />
 			<Tag Name="header" Class="dcraft.web.ui.inst.W3" />
 			<Tag Name="hgroup" Class="dcraft.web.ui.inst.W3" />
+			<Tag Name="html" Class="dcraft.web.ui.inst.W3" />
 			<Tag Name="i" Class="dcraft.web.ui.inst.W3" />
 			<Tag Name="ins" Class="dcraft.web.ui.inst.W3" />
 			<Tag Name="kbd" Class="dcraft.web.ui.inst.W3" />
@@ -283,6 +287,14 @@
 			<Definition Alias="blocks" Title="Content Block"
 				LocaleFields="Title,Description"
 			/>
+			<Definition Alias="announcements" Title="Announcement Entry" Highlight="true"
+				LocaleFields="Title,Description"
+				SharedFields="Topic,Note,StartAt,StartAtInternal,EndAt,PublishAt"
+			>
+				<FieldMap Field="dcmAnnounceTopic" Name="Topic" />
+				<FieldMap Field="dcmAnnounceStartAt" Name="StartAtInternal" />
+				<!-- note: EndAtInternal is in PublishAt -->
+			</Definition>
 		</Feeds>
 
 		<Notices>

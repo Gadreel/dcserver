@@ -116,7 +116,7 @@ public class DateStruct extends ScalarStruct {
 		else if ("SetYear".equals(op)) {
 			try {
 				if (code.hasAttribute("Value"))
-					this.value = this.value.withYear((int)StackUtil.intFromElement(stack, code, "Value"));
+					this.value = this.value.withYear((int)StackUtil.intFromElement(stack, code, "Value", 0));
 			}
 			catch (Exception x) {
 				Logger.error("Error doing " + op + ": " + x);
@@ -127,7 +127,7 @@ public class DateStruct extends ScalarStruct {
 		else if ("SetMonth".equals(op)) {
 			try {
 				if (code.hasAttribute("Value"))
-					this.value = this.value.withMonth((int)StackUtil.intFromElement(stack, code, "Value"));
+					this.value = this.value.withMonth((int)StackUtil.intFromElement(stack, code, "Value", 0));
 			}
 			catch (Exception x) {
 				Logger.error("Error doing " + op + ": " + x);
@@ -138,7 +138,7 @@ public class DateStruct extends ScalarStruct {
 		else if ("SetDay".equals(op)) {
 			try {
 				if (code.hasAttribute("Value"))
-					this.value = this.value.withDayOfMonth((int)StackUtil.intFromElement(stack, code, "Value"));
+					this.value = this.value.withDayOfMonth((int)StackUtil.intFromElement(stack, code, "Value", 0));
 			}
 			catch (Exception x) {
 				Logger.error("Error doing " + op + ": " + x);
@@ -149,16 +149,16 @@ public class DateStruct extends ScalarStruct {
 		else if ("Add".equals(op)) {
 			try { 
 				if (code.hasAttribute("Years")) 
-					this.value = this.value.plusYears((int)StackUtil.intFromElement(stack, code, "Years"));
+					this.value = this.value.plusYears((int)StackUtil.intFromElement(stack, code, "Years", 0));
 				
 				if (code.hasAttribute("Months"))
-					this.value = this.value.plusMonths((int)StackUtil.intFromElement(stack, code, "Months"));
+					this.value = this.value.plusMonths((int)StackUtil.intFromElement(stack, code, "Months", 0));
 				
 				if (code.hasAttribute("Days"))
-					this.value = this.value.plusDays((int)StackUtil.intFromElement(stack, code, "Days"));
+					this.value = this.value.plusDays((int)StackUtil.intFromElement(stack, code, "Days", 0));
 				
 				if (code.hasAttribute("Weeks"))
-					this.value = this.value.plusWeeks((int)StackUtil.intFromElement(stack, code, "Weeks"));
+					this.value = this.value.plusWeeks((int)StackUtil.intFromElement(stack, code, "Weeks", 0));
 				
 				if (code.hasAttribute("Period")) {
 					PeriodDuration p = PeriodDuration.parse(StackUtil.stringFromElement(stack, code, "Period"));
@@ -174,16 +174,16 @@ public class DateStruct extends ScalarStruct {
 		else if ("Subtract".equals(op)) {
 			try { 
 				if (code.hasAttribute("Years")) 
-					this.value = this.value.minusYears((int)StackUtil.intFromElement(stack, code, "Years"));
+					this.value = this.value.minusYears((int)StackUtil.intFromElement(stack, code, "Years", 0));
 				
 				if (code.hasAttribute("Months"))
-					this.value = this.value.minusMonths((int)StackUtil.intFromElement(stack, code, "Months"));
+					this.value = this.value.minusMonths((int)StackUtil.intFromElement(stack, code, "Months", 0));
 				
 				if (code.hasAttribute("Days"))
-					this.value = this.value.minusDays((int)StackUtil.intFromElement(stack, code, "Days"));
+					this.value = this.value.minusDays((int)StackUtil.intFromElement(stack, code, "Days", 0));
 				
 				if (code.hasAttribute("Weeks"))
-					this.value = this.value.minusWeeks((int)StackUtil.intFromElement(stack, code, "Weeks"));
+					this.value = this.value.minusWeeks((int)StackUtil.intFromElement(stack, code, "Weeks", 0));
 				
 				if (code.hasAttribute("Period")) {
 					PeriodDuration p = PeriodDuration.parse(StackUtil.stringFromElement(stack, code, "Period"));

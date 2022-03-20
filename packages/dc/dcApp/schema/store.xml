@@ -163,6 +163,7 @@
 			<Field Name="dcmDescriptionTr" Type="String" List="True" />
 			<Field Name="dcmInstructions" Type="dcString" />
 			<Field Name="dcmInstructionsTr" Type="dcString" List="True" />
+			<Field Name="dcmHideGeneral" Type="Boolean" />
 			<Field Name="dcmImage" Type="dcString" />
 
 			<!-- sid = field name -->
@@ -1040,6 +1041,7 @@
 							<Field Name="Sku" Type="dcmProduct:dcmSku" />
 							<Field Name="Description" Type="dcmProduct:dcmDescription" />
 							<Field Name="Instructions" Type="dcmProduct:dcmInstructions" />
+							<Field Name="HideGeneral" Type="dcmProduct:dcmHideGeneral" />
 							<Field Name="Image" Type="dcmProduct:dcmImage" />
 							<Field Name="CustomDisplayField" Type="AnyList" />
 							<Field Name="Categories">
@@ -1076,6 +1078,7 @@
 							<Field Name="Sku" Type="dcmProduct:dcmSku" />
 							<Field Name="Description" Type="dcmProduct:dcmDescription" />
 							<Field Name="Instructions" Type="dcmProduct:dcmInstructions" />
+							<Field Name="HideGeneral" Type="dcmProduct:dcmHideGeneral" />
 							<Field Name="Image" Type="dcmProduct:dcmImage" />
 							<Field Name="CustomDisplayField" Type="AnyList" />
 							<Field Name="Categories">
@@ -1110,6 +1113,7 @@
 							<Field Name="Sku" Type="dcmProduct:dcmSku" />
 							<Field Name="Description" Type="dcmProduct:dcmDescription" />
 							<Field Name="Instructions" Type="dcmProduct:dcmInstructions" />
+							<Field Name="HideGeneral" Type="dcmProduct:dcmHideGeneral" />
 							<Field Name="Image" Type="dcmProduct:dcmImage" />
 							<Field Name="CustomDisplayField" Type="AnyList" />
 							<Field Name="Categories" Required="True">
@@ -1407,6 +1411,7 @@
 							<Field Name="Sku" Type="dcmProduct:dcmSku" />
 							<Field Name="Description" Type="dcmProduct:dcmDescription" />
 							<Field Name="Instructions" Type="dcmProduct:dcmInstructions" />
+							<Field Name="HideGeneral" Type="dcmProduct:dcmHideGeneral" />
 							<Field Name="Image" Type="dcmProduct:dcmImage" />
 							<Field Name="Price" Type="dcmProduct:dcmPrice" />
 							<Field Name="VariablePrice" Type="dcmProduct:dcmVariablePrice" />

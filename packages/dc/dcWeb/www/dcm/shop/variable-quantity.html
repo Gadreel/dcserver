@@ -45,15 +45,17 @@
 							</dcs.If>
 
 							<dcs.If Target="$StoreSettings.InstructionsProduct" IsEmpty="false">
-								<dc.Out>
-									<dcf.Custom Label="General Instructions">
-										<div>
-											<dc.TextWidget>
-												<Tr Locale="eng">{$StoreSettings.InstructionsProduct}</Tr>
-											</dc.TextWidget>
-										</div>
-									</dcf.Custom>
-								</dc.Out>
+								<dcs.If Target="$Product.HideGeneral" Not="true">
+									<dc.Out>
+										<dcf.Custom Label="General Instructions">
+											<div>
+												<dc.TextWidget>
+													<Tr Locale="eng">{$StoreSettings.InstructionsProduct}</Tr>
+												</dc.TextWidget>
+											</div>
+										</dcf.Custom>
+									</dc.Out>
+								</dcs.If>
 							</dcs.If>
 
 							<dcf.Label Label="Price" Name="Price" />

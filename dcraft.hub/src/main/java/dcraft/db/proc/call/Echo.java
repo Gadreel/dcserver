@@ -10,6 +10,8 @@ public class Echo implements IStoredProc {
 	@Override
 	public void execute(ICallContext request, OperationOutcomeStruct callback) throws OperatingContextException {
 		try {
+			Logger.info("Got an echo request, replying with: " + request.getData());
+
 			callback.returnValue(request.getData());
 			
 			return;

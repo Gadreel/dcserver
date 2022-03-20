@@ -9,12 +9,16 @@ import dcraft.log.DebugLevel;
 import dcraft.log.HubLog;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
+import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.BooleanStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.util.StringUtil;
+import dcraft.xml.XElement;
 
 /*
  * Controller needs to be able to be shared by multiple contexts, even those with
@@ -437,4 +441,22 @@ public class OperationController extends RecordStruct implements IVariableProvid
 	public void setLevel(DebugLevel v) {
 		this.level = v;
 	}
+
+
+	@Override
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
+		if ("HasCode".equals(code.getName())) {
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+			Long value = StackUtil.intFromElement(stack, code, "Value");
+
+			if (StringUtil.isNotEmpty(result) && (value != null)) {
+				StackUtil.addVariable(stack, result, BooleanStruct.of(this.hasCode(value)));
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+
+		return super.operation(stack, code);
+	}
+
 }

@@ -39,6 +39,7 @@ public class Load implements IStoredProc {
 				.with("dcmOrderLimit", "OrderLimit")
 				.with("dcmTaxFree", "TaxFree")
 				.with("dcmShowInStore", "ShowInStore")
+				.with("dcmHideGeneral", "HideGeneral")
 				.with("dcmDelivery", "Delivery")
 				.with("dcmTag", "Tags");
 		

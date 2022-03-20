@@ -1,0 +1,96 @@
+<dc.Html Badges="Editor,Admin"  NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Website Scheduled Announcements" />
+	</Meta>
+
+	<dcdb.Query Table="dcmFeed" Result="AnnouncementData">
+		<Select Field="Id" />
+
+		<Select Field="dcmAnnounceStartAt" As="StartAtSortable" Format="cast:dcMetaString" />
+
+		<Select Composer="dcmFeedFields" As="Fields" />
+
+		<Collector Field="dcmAlias" Values="announcements" />
+	</dcdb.Query>
+
+	<dcs.With Target="$AnnouncementData">
+		<Sort ByField="StartAtSortable" />
+	</dcs.With>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dc.RowLayout>
+				<dc.Column Size="3-4" Pad="Large">
+					<table id="dcalstAnnouncements" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+						<thead>
+							<tr>
+								<th scope="col">Title</th>
+								<th scope="col">Start At</th>
+								<th scope="col">End At</th>
+								<th scope="col">Topics</th>
+								<th scope="col">Actions</th>
+							</tr>
+						</thead>
+						<tbody id="dcalstAnnouncementsBody">
+							<dcs.ForEach Name="Announcement" In="$AnnouncementData">
+								<dc.Out>
+									<tr data-id="{$Announcement.Id}">
+										<td>{$Announcement.Fields.Title}</td>
+										<td>{$Announcement.Fields.StartAt}</td>
+										<td>{$Announcement.Fields.EndAt}</td>
+										<td>{$Announcement.Fields.Topic}</td>
+										<td><dc.Link Label="edit" Click="DoEditAnnoucement" /></td>
+									</tr>
+								</dc.Out>
+							</dcs.ForEach>
+						</tbody>
+					</table>
+				</dc.Column>
+				<dc.Column Size="1-4" Pad="Large">
+					<dcf.FormButtons>
+						<dc.Button Click="DoAddFeed" Label="Add Announcement" />
+						<br />
+						<dc.Button Click="DoReindexFeed" Label="Reindex" />
+					</dcf.FormButtons>
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var page = this;
+	]]></Function>
+	<Function Name="DoAddFeed"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcm/dashboard/announcement-entry', {
+				Callback: function(path) {
+					page.Layer.refreshPage();
+				}
+			});
+	]]></Function>
+	<Function Name="DoEditAnnoucement" Params="e"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcm/dashboard/announcement-entry', {
+				Id: $(e.currentTarget).closest('tr').attr('data-id'),
+				Callback: function(path) {
+					page.Layer.refreshPage();
+				}
+			});
+	]]></Function>
+	<Function Name="DoReindexFeed"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcmServices.Feed.Reindex', {
+					Feed: 'announcements'
+				}, function(resp) {
+					if (resp.Code > 0) {
+						dc.pui.Popup.alert(resp.Message);
+					}
+					else {
+						page.Layer.refreshPage();
+					}
+			});
+
+	]]></Function>
+</dc.Html>

@@ -26,6 +26,7 @@ import dcraft.script.inst.Instruction;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
+import dcraft.script.work.OperationsWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
@@ -128,6 +129,7 @@ public class SendEmail extends Instruction {
 			// body = UIUtil.regularTextToMarkdown(body);
 
 			RecordStruct args = RecordStruct.record()
+					.with("Feedback", true)
 					.with("To", to)
 					.with("From", from)
 					.with("ReplyTo", reply)
@@ -165,6 +167,21 @@ public class SendEmail extends Instruction {
 			OperationContext.getAsTaskOrThrow().resumeWith(new SmtpWork(args));
 
 			return ReturnOption.AWAIT;
+		}
+
+		String resultname = StackUtil.stringFromSource(stack, "Result");
+
+		if (StringUtil.isNotEmpty(resultname)) {
+			RecordStruct smtpResult = Struct.objectToRecord(OperationContext.getAsTaskOrThrow().getResult());
+
+			if (smtpResult != null) {
+				//String mid = smtpResult.getFieldAsString("MessageId");
+
+				StackUtil.addVariable(stack, resultname, smtpResult);
+
+				// TODO set current
+				// ((InstructionWork) stack).setTarget(smtpResult);
+			}
 		}
 
 		return ReturnOption.CONTINUE;

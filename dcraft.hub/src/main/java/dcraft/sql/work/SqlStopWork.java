@@ -1,7 +1,9 @@
 package dcraft.sql.work;
 
+import dcraft.db.DatabaseResource;
 import dcraft.hub.config.CoreCleanerWork;
 import dcraft.hub.resource.ResourceTier;
+import dcraft.sql.SqlDatabaseResource;
 import dcraft.task.TaskContext;
 
 /**
@@ -9,10 +11,12 @@ import dcraft.task.TaskContext;
 public class SqlStopWork extends CoreCleanerWork {
 	@Override
 	public void shutdown(TaskContext taskctx, ResourceTier tier) {
-		// TODO move SQL to HubResources, stop via that
-		// Hub.sqldbman.stop();
-        
-        taskctx.returnEmpty();
+		SqlDatabaseResource dbres = tier.getOrCreateTierSqlDatabases();
+
+		if (dbres != null)
+			dbres.cleanup();
+
+		taskctx.returnEmpty();
 	}
 	
 	@Override

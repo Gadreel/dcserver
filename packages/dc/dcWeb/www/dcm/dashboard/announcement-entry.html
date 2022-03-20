@@ -1,0 +1,74 @@
+<dc.Html Badges="Editor,Admin" NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Announcement Entry" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.Text Name="Title" Label="Title" DataType="dcmPageTitle" Required="true" />
+				<dcf.Text Name="StartAt" Label="Start At" placeholder="YYYY-MM-DD HH:MM am - the time is optional" Required="true" />
+				<dcf.Text Name="EndAt" Label="End At" placeholder="YYYY-MM-DD HH:MM am - the time is optional" Required="true" />
+				<dcf.Text Name="Topic" Label="Topics" placeholder="comma list of topics - use single word topics" Required="true" />
+				<dcf.TextArea Name="Description" Label="Description" DataType="dcmPageDescription" Required="true" />
+				<dcf.TextArea Name="Note" Label="Internal Note" />
+
+				<dcf.FormButtons>
+					<dcf.SubmitButton Label="Save" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load" Params="e"><![CDATA[
+			var page = this;
+
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (page.Params.Id) {
+				e.Message = {
+					Op: 'dcmServices.Dashboard.AnnouncementLoad',
+					Body: {
+						Id: page.Params.Id
+					}
+				};
+			}
+			else {
+				e.AsNew = true;
+				e.Data = {
+				};
+			}
+	]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			e.Data = e.Data.Fields;
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (page.Params.Id) {
+				e.Data.Id = page.Params.Id;
+
+				e.Message = {
+					Op: 'dcmServices.Dashboard.AnnouncementUpdate',
+					Body: e.Data
+				};
+			}
+			else {
+				e.Message = {
+					Op: 'dcmServices.Dashboard.AnnouncementAdd',
+					Body: e.Data
+				};
+			}
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback();
+	]]></Function>
+</dc.Html>

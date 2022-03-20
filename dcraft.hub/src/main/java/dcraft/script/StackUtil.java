@@ -132,18 +132,23 @@ public class StackUtil {
 		return def;
 	}
 
-	static public long intFromSource(InstructionWork stackWork, String attr) throws OperatingContextException {
-		return StackUtil.intFromElement(stackWork, stackWork.getInstruction(), attr, 0);
+	static public Long intFromSource(InstructionWork stackWork, String attr) throws OperatingContextException {
+		return StackUtil.intFromElement(stackWork, stackWork.getInstruction(), attr);
 	}
-	
+
+	static public Long intFromElement(IParentAwareWork stackWork, XElement el, String attr) throws OperatingContextException {
+		if ((el == null) || StringUtil.isEmpty(attr))
+			return null;
+
+		Object ret1 = StackUtil.refFromElement(stackWork, el, attr, true);
+
+		return Struct.objectToInteger(ret1);
+	}
+
 	static public long intFromSource(InstructionWork stackWork, String attr, int def) throws OperatingContextException {
 		return StackUtil.intFromElement(stackWork, stackWork.getInstruction(), attr, def);
 	}
-	
-	static public long intFromElement(IParentAwareWork stackWork, XElement el, String attr) throws OperatingContextException {
-		return StackUtil.intFromElement(stackWork, el, attr, 0);
-	}
-	
+
 	static public long intFromElement(IParentAwareWork stackWork, XElement el, String attr, int def) throws OperatingContextException {
 		if ((el == null) || StringUtil.isEmpty(attr))
 			return def;

@@ -53,8 +53,12 @@ public class Ignite {
 	
 	public static void main(String[] args) {
 		ApplicationHub.init("ignite", "00001");
-		ApplicationHub.setRole("ignite");
-		
+
+		if (args.length > 0)
+			ApplicationHub.setRole(args[0]);
+		else
+			ApplicationHub.setRole("ignite");
+
 		System.out.println("dcServer starting");
 		
 		if (Files.notExists(ApplicationHub.getDeploymentPath())) {

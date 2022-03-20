@@ -36,11 +36,16 @@ public class CallService extends RecordStruct {
 				
 				state.setState(ExecuteState.RESUME);
 
-				ServiceRequest request =  ServiceRequest.of(
-						this.getFieldAsString("Service"),
-						this.getFieldAsString("Feature"),
-						this.getFieldAsString("Op")
-				)
+				ServiceRequest request = (this.isFieldEmpty("Service")
+							? ServiceRequest.of(
+									this.getFieldAsString("Op")
+							)
+							: ServiceRequest.of(
+									this.getFieldAsString("Service"),
+									this.getFieldAsString("Feature"),
+									this.getFieldAsString("Op")
+							)
+						)
 						.withData(this.getField("Params"))
 						.withOutcome(
 								new OperationOutcomeStruct() {

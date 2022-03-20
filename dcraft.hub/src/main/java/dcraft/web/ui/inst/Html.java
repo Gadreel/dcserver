@@ -38,6 +38,7 @@ import dcraft.tenant.Site;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
 import dcraft.util.io.OutputWrapper;
+import dcraft.web.WebController;
 import dcraft.web.ui.JsonPrinter;
 import dcraft.web.ui.UIUtil;
 import dcraft.xml.XElement;
@@ -87,7 +88,7 @@ public class Html extends Base {
 				page.with(name, StackUtil.resolveValueToString(state, FeedUtil.bestLocaleMatch(meta, locale, defloc)));
 			}
 		}
-		
+
 		ListStruct tags = page.getFieldAsList("Tags");
 		
 		if (tags == null) {
@@ -235,23 +236,32 @@ public class Html extends Base {
 		// TODO below stringFromSource won't work because of "hidden" concept - review and fix
 		
 		W3 head = W3.tag("head");
-		
+
+		boolean indexpage = true;
+
+		WebController wctrl = (WebController) OperationContext.getOrThrow().getController();
+
+		// if a test domain
+		if ("noindex".equals(wctrl.getResponse().getHeader("X-Robots-Tag")))
+			indexpage = false;
+		else if ("false".equalsIgnoreCase(StackUtil.stringFromSource(state,"Public", "true")))
+			indexpage = false;
+
 		head
-				.with(W3.tag("meta")
+				.with(W3Closed.tag("meta")
 						.withAttribute("chartset", "utf-8")
 				)
-				.with(W3.tag("meta")
+				.with(W3Closed.tag("meta")
 						.withAttribute("name", "format-detection")
 						.withAttribute("content", "telephone=no")
 				)
-				.with(W3.tag("meta")
+				.with(W3Closed.tag("meta")
 						.withAttribute("name", "viewport")
 						.withAttribute("content", "width=device-width, initial-scale=1")		//, maximum-scale=1.0, user-scalable=no")
 				)
-				.with(W3.tag("meta")
+				.with(W3Closed.tag("meta")
 						.withAttribute("name", "robots")
-						.withAttribute("content", ("false".equals(StackUtil.stringFromSource(state,"Public", "true").toLowerCase()))
-								? "noindex,nofollow" : "index,follow")
+						.withAttribute("content", indexpage ? "index,follow" : "noindex,nofollow")
 				)
 				.with(W3.tag("title").withText("{$Page.Title}"));
 		
@@ -362,14 +372,14 @@ public class Html extends Base {
 		 */
 		
 		head
-				.with(W3.tag("meta")
+				.with(W3Closed.tag("meta")
 						.withAttribute("property", "og:title")
 						.withAttribute("content", "{$Page.Title}")
 				);
 		
 		if (page.isNotFieldEmpty("Keywords")) {
 			head
-				.with(W3.tag("meta")
+				.with(W3Closed.tag("meta")
 						.withAttribute("name", "keywords")
 						.withAttribute("content", "{$Page.Keywords}")
 				);
@@ -377,11 +387,11 @@ public class Html extends Base {
 		
 		if (page.isNotFieldEmpty("Description")) {
 			head
-				.with(W3.tag("meta")
+				.with(W3Closed.tag("meta")
 						.withAttribute("name", "description")
 						.withAttribute("content", "{$Page.Description}")
 				)
-				.with(W3.tag("meta")
+				.with(W3Closed.tag("meta")
 						.withAttribute("property", "og:description")
 						.withAttribute("content", "{$Page.Description}")
 				);
@@ -399,14 +409,14 @@ public class Html extends Base {
 				page.with("Image", domainwebconfig.getAttribute("SiteImage"));
 				
 			head
-					.with(W3.tag("meta")
+					.with(W3Closed.tag("meta")
 							.withAttribute("property", "og:image")
 							.withAttribute("content", "{$IndexUrl}{$Page.Image}")
 					);
 		}
 		
 		/* TODO review
-			.with(W3.tag("meta")
+			.with(W3Closed.tag("meta")
 				.withAttribute("name", "twitter:card")
 				.withAttribute("content", "summary")
 			);
@@ -415,7 +425,7 @@ public class Html extends Base {
 		/* TODO review, generalize so we can override
 		if (domainwebconfig != null) {
 			for (XElement gel : domainwebconfig.selectAll("Meta")) {
-				UIElement m = W3.tag("meta");
+				UIElement m = W3Closed.tag("meta");
 				
 				for (Entry<String, String> mset : gel.getAttributes().entrySet())
 					m.withAttribute(mset.getKey(), mset.getValue());
@@ -424,7 +434,17 @@ public class Html extends Base {
 			}
 		}
 		*/
-		
+
+		for (XNode rel : this.hiddenchildren) {
+			if (! (rel instanceof XElement))
+				continue;
+
+			XElement xel = (XElement) rel;
+
+			if (xel.getName().equals("meta"))
+				head.with(xel);
+		}
+
 		// TODO research canonical url too
 		
 		boolean cachemode = site.isScriptStyleCached() && StringUtil.isEmpty(OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));

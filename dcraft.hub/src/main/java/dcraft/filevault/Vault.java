@@ -184,11 +184,11 @@ abstract public class Vault {
 		
 		FileIndexAdapter adapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
 		
-		for (CommonPath file : tx.getDeletelist()) {
+		for (TransactionFile file : tx.getDeletelist()) {
 			adapter.deleteFile(
 					this,
-					file,
-					tx.getTimestamp(),
+					file.getPath(),
+					file.getTimestamp(),
 					this.buildHistory(tx, "Delete")
 			);
 		}
@@ -198,11 +198,11 @@ abstract public class Vault {
 		if (cleanup != null)
 			adapter.deleteFile(this, cleanup, tx.getTimestamp(), this.buildHistory(tx, "Clean"));
 		
-		for (CommonPath file : tx.getUpdateList()) {
+		for (TransactionFile file : tx.getUpdateList()) {
 			adapter.indexFile(
 					this,
-					file,
-					tx.getTimestamp(),
+					file.getPath(),
+					file.getTimestamp(),
 					this.buildHistory(tx, "Write")
 			);
 		}

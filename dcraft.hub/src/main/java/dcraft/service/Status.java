@@ -145,9 +145,19 @@ public class Status extends BaseService {
 				OperationContext tc = OperationContext.getOrThrow();
 				
 				callback.setResult(RecordStruct.record().with("UserId", tc.getUserContext().getUserId()));
-				
+
 				return true;
-			}			
+			}
+			else if ("StatusReport".equals(request.getOp())) {
+				RecordStruct report = request.getDataAsRecord();
+
+				System.out.println("Got status report from: " + report.getFieldAsString("Deployment") + " - "
+						+ report.getFieldAsString("Node") + " - " + report.getFieldAsString("At"));
+
+				callback.returnEmpty();
+
+				return true;
+			}
 			else if ("HubStatus".equals(request.getOp())) {
 				RecordStruct rec = new RecordStruct();
 

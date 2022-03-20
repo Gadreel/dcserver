@@ -258,6 +258,9 @@ public class Base extends BlockInstruction {
 			// TODO review - usemeta may not even do anything, see below - perhaps remove
 			if (usemeta && "Meta".equals(tname))
 				root.add(el);
+
+			if (usemeta && "meta".equals(tname))
+				root.add(el);
 		}
 
 		// meta becomes a variable always

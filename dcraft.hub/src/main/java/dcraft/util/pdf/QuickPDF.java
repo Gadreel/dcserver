@@ -974,8 +974,8 @@ public class QuickPDF extends RecordStruct {
 				for (XElement cols : code.selectAll("Column")) {
 					table.withColumn(
 							StackUtil.stringFromElement(state, cols, "Title"),
-							(int)StackUtil.intFromElement(state, cols, "Width"),
-							(int)StackUtil.intFromElement(state, cols, "Chars")
+							(int)StackUtil.intFromElement(state, cols, "Width", 0),
+							(int)StackUtil.intFromElement(state, cols, "Chars", 0)
 					);
 				}
 
@@ -1135,7 +1135,7 @@ public class QuickPDF extends RecordStruct {
 		}
 
 		if ("SwitchPage".equals(code.getName())) {
-			long page = StackUtil.intFromElement(state, code, "Number");
+			long page = StackUtil.intFromElement(state, code, "Number", 0);
 
 			try {
 				this.switchPage((int) page);

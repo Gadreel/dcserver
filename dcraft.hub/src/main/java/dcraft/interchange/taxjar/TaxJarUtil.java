@@ -307,6 +307,9 @@ public class TaxJarUtil {
                 .header("Accept", "application/json")
                 .header("Authorization", "Bearer " + token);
 
+        System.out.println("tax jar method: " + method);
+        System.out.println("tax jar request: " + body);
+
         if (body != null)
             builder
                     .header("Content-Type", "application/json")
@@ -379,6 +382,8 @@ public class TaxJarUtil {
             if (StringUtil.isNotEmpty(respraw)) {
                 RecordStruct resp = Struct.objectToRecord(CompositeParser.parseJson(respraw));
 
+                System.out.println("got error: " + resp);
+
                 if (resp != null) {
                     Logger.error("TaxJar error detail: " + resp.getFieldAsString("detail"));
                 }
@@ -389,6 +394,8 @@ public class TaxJarUtil {
 
             if (StringUtil.isNotEmpty(respraw)) {
                 CompositeStruct resp = CompositeParser.parseJson(respraw);
+
+                System.out.println("taxjar resp: " + resp);
 
                 if (resp == null) {
                     Logger.error("Error processing request: TaxJar sent an incomplete response: " + responseCode);

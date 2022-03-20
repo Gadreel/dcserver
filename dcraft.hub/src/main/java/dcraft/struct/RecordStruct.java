@@ -780,7 +780,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 		if (source.hasAttribute("HasField")) {
 			if (logicState.pass) {
 				String other = StackUtil.stringFromElement(stack, source, "HasField");
-				logicState.pass = this.isNotFieldEmpty(other);
+				logicState.pass = this.hasField(other);
 			}
 			
 			logicState.checked = true;
@@ -847,6 +847,23 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 			// not an error if null
 			this.with(name, var);
 			
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("EnsureField".equals(code.getName())) {
+			String def = StackUtil.stringFromElement(stack, code, "Type");
+			String name = StackUtil.stringFromElement(stack, code, "Name");
+
+			if (StringUtil.isEmpty(name) || StringUtil.isEmpty(def)) {
+				Logger.error("Missing field name or definition in EnsureField");
+				return ReturnOption.CONTINUE;
+			}
+
+			// don't change existing type if present
+			if (! this.hasField(name) || (this.getField(name) == null)) {
+				this.with(name, ResourceHub.getResources().getSchema().getType(def).create());
+			}
+
 			return ReturnOption.CONTINUE;
 		}
 
@@ -929,6 +946,15 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 				StackUtil.addVariable(stack, handle, fields);
 			}
+
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("Merge".equals(code.getName())) {
+			BaseStruct var3 = StackUtil.refFromElement(stack, code, "Value", true);
+
+			if (var3 instanceof RecordStruct)
+				this.copyFields((RecordStruct) var3);	// TODO support "except"
 
 			return ReturnOption.CONTINUE;
 		}

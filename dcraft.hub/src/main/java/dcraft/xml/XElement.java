@@ -34,9 +34,13 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.resource.ResourceBase;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
+import dcraft.script.StackUtil;
+import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.struct.*;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.scalar.AnyStruct;
@@ -1490,5 +1494,42 @@ public class XElement extends XNode {
 	@Override
 	public void toBuilder(ICompositeBuilder builder) {
 		// TODO ?
+	}
+
+	@Override
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
+		if ("Append".equals(code.getName())) {
+			if (code.hasNotEmptyAttribute("Value")) {
+				BaseStruct sref = StackUtil.refFromElement(stack, code, "Value", true);
+
+				if (sref != null)
+					this.append(sref);
+				else
+					Logger.warn("Nothing to append.");
+			}
+			else if (code.hasNotEmptyAttribute("Template")) {
+				BaseStruct sref = StackUtil.refFromElement(stack, code, "Template", true);
+
+				if (sref instanceof XElement) {
+					XElement pel = (XElement) sref;
+
+					for (XNode node : pel.getChildren()) {
+						this.append(node);
+					}
+				}
+				else {
+					Logger.warn("Nothing to append.");
+				}
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+		else if ("ClearChildren".equals(code.getName())) {
+			this.clearChildren();
+
+			return ReturnOption.CONTINUE;
+		}
+
+		return super.operation(stack, code);
 	}
 }

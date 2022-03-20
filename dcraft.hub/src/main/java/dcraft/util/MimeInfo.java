@@ -6,7 +6,8 @@ public class MimeInfo extends RecordStruct {
 	//public static String octetStream() {
 	//	return "application/octetstream";
 	//}
-	
+
+	// don't mutate this
 	public static MimeInfo DEFAULT = new MimeInfo().withCompress(false).withExt("txt").withIcon("far/file").withMimeType("text/plain");
 	
 	public static MimeInfo create() {

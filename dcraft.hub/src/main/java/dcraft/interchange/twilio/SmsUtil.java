@@ -49,13 +49,14 @@ public class SmsUtil {
 		}
 		
 		String fromPhone = twilio.getAttribute("FromPhone");
-		
-		if (StringUtil.isEmpty(fromPhone)) {
-			Logger.error("Missing Twilio phone.");
+		String serviceid = twilio.getAttribute("ServiceSid");
+
+		if (StringUtil.isEmpty(serviceid) && StringUtil.isEmpty(fromPhone)) {
+			Logger.error("Missing Twilio sending service or sending phone.");
 			callback.returnEmpty();
 			return;
 		}
-		
+
 		String auth = twilio.getAttribute("AuthPlain");
 		
 		if (StringUtil.isEmpty(auth)) {
@@ -82,8 +83,12 @@ public class SmsUtil {
 			con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 			
 			String body = "To=" + URLEncoder.encode(number, "UTF-8")
-					+ "&From=" + URLEncoder.encode(fromPhone, "UTF-8")
 					+ "&Body=" + URLEncoder.encode(msg, "UTF-8");
+
+			if (StringUtil.isNotEmpty(serviceid))
+				body += "&MessagingServiceSid=" + URLEncoder.encode(serviceid, "UTF-8");
+			else if (StringUtil.isNotEmpty(fromPhone))
+				body+= "&From=" + URLEncoder.encode(fromPhone, "UTF-8");
 
 			if (StringUtil.isNotEmpty(callbackurl))
 				body += "&StatusCallback=" + URLEncoder.encode(callbackurl, "UTF-8");

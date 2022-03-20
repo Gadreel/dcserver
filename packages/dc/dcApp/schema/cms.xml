@@ -20,8 +20,15 @@
 			<StringRestriction Enum="Save,Publish,Discard" />
 		</StringType>
 
+		<!--
+		<StringType Id="dcmOutboundEmailActivityAuditTypeEnum">
+			<StringRestriction Enum="EmailSent,ActivityReport,Acknowledgement,Complete" />
+		</StringType>
+	-->
+
 		<Record Id="dcmQuickPDF" Class="dcraft.util.pdf.QuickPDF" />
 		<Record Id="dcmQuickCSV" Class="dcraft.util.csv.QuickCSV" />
+		<Record Id="dcmQuickXLS" Class="dcraft.util.mso.QuickXLS" />
 
 		<Record Id="dcmFormBuilderInfo">
 			<Field Name="Record" Type="dcMetaString" />
@@ -105,6 +112,11 @@
 				sid = system name (e.g. system "calendar.google", id "4tr2rkstf14u3llvlnt9qvl4ao")
 			<Field Name="dcmExternalId" Type="dcTinyString" Indexed="True" List="True" />
 			-->
+
+			<!-- for the announcements feed feature. note EndAt is the same as dcmPublishAt -->
+
+			<Field Name="dcmAnnounceStartAt" Type="DateTime" Indexed="True" />
+			<Field Name="dcmAnnounceTopic" List="True" Type="dcMetaString" Indexed="True" />   <!-- any single word, no restriction  -->
 		</Table>
 
 		<!-- Index for Feed History / Editor -->
@@ -163,8 +175,30 @@
 			<Field Name="dcmEmail" Type="dcMetaString" />
 		</Table>
 
+		<Table Id="dcmOutboundEmailActivity">
+			<Field Name="dcmMessageId" Type="dcMetaString" Required="True" Unique="True" Indexed="True" />
+			<Field Name="dcmCreatedAt" Type="DateTime" Required="True" Indexed="True" />
+			<Field Name="dcmReportHandler" Type="dcMetaString" />		<!-- Id of the handler object, invoke method on it when reports come -->
+			<Field Name="dcmHandlerData" Type="AnyRecord" />
+
+			<!-- subid = reportat -->
+			<Field Name="dcmReportId" Group="dcmReportAudit" List="True" Type="Id" />	<!-- id on sentinel -->
+			<Field Name="dcmReportType" Group="dcmReportAudit" List="True" Type="Integer" />
+			<Field Name="dcmReportAt" Group="dcmReportAudit" List="True" Type="DateTime" />
+			<Field Name="dcmReportMessage" Group="dcmReportAudit" List="True" Type="AnyRecord" />
+		</Table>
+
+		<Table Id="dcmEmailSuppressionList">
+			<Field Name="dcmEmailAddress" Type="dcMetaString" Required="True" Unique="True" Indexed="True" />
+			<Field Name="dcmAddAt" Type="DateTime" Required="True" Indexed="True" />
+
+			<!-- optional, but all related reports, subid = id -->
+			<Field Name="dcmEmailActivityId" List="True" ForeignKey="dcmOutboundEmailActivity" />
+		</Table>
+
 		<Procedure Name="dcmUpdateFeed" Execute="dcraft.cms.feed.db.Update" />
 		<Procedure Name="dcmServices.Feed.AddFeed" Execute="dcraft.cms.feed.db.AddFeed" />
+		<Procedure Name="dcmServices.Feed.AddOrResetFeed" Execute="dcraft.cms.feed.db.AddOrResetFeed" />
 		<Procedure Name="dcmServices.Feed.Reindex" Execute="dcraft.cms.feed.db.Reindex" />
 		<Procedure Name="dcmServices.Feed.CmsCheck" Execute="dcraft.cms.feed.db.CmsCheck" />
 		<Procedure Name="dcmServices.Feed.LoadMeta" Execute="dcraft.cms.feed.db.LoadMeta" />
@@ -194,7 +228,15 @@
 		<Procedure Name="dcmServices.Dashboard.KillBlockedIP" Execute="dcraft.cms.dashboard.db.KillBlockedIP" />
 		<Procedure Name="dcmServices.Dashboard.KillAllBlockedIP" Execute="dcraft.cms.dashboard.db.KillAllBlockedIP" />
 
+		<!--
+		<Procedure Name="dcmServices.Dashboard.AnnouncementLoad" Execute="dcraft.cms.dashboard.db.AnnouncementLoad" />
+		<Procedure Name="dcmServices.Dashboard.AnnouncementAdd" Execute="dcraft.cms.dashboard.db.AnnouncementAdd" />
+		<Procedure Name="dcmServices.Dashboard.AnnouncementUpdate" Execute="dcraft.cms.dashboard.db.AnnouncementUpdate" />
+		-->
+
 		<Procedure Name="dcmServices.Reports.CreateGoLive" Execute="dcraft.cms.reports.db.CreateGoLive" />
+		<Procedure Name="dcmServices.Reports.OutboundEmailActivity" Execute="dcraft.cms.reports.db.OutboundEmailActivity" />
+		<Procedure Name="dcmServices.Reports.OutboundEmailActivityConfirm" Execute="dcraft.cms.reports.db.OutboundEmailActivityConfirm" />
 
 		<Procedure Name="dcmServices.Common.EmailSubscribe" Execute="dcraft.cms.common.db.EmailSubscribe" />
 
@@ -484,6 +526,29 @@
 						</RecordRequest>
 						<RecordResponse Type="AnyRecord" />
 					</Op>
+					<Op Name="AddOrResetFeed">
+						<Description>
+							Load meta, from file and apply any draft
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Feed" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcPath" Required="True" />
+							<Field Name="Publish" Type="Boolean" />
+							<!-- meta -->
+							<Field Name="Meta">
+								<List Type="AnyRecord" />
+							</Field>
+							<!-- tags -->
+							<Field Name="Tags">
+								<List Type="dcmFeed:dcmTags" />
+							</Field>
+							<!-- content -->
+							<Field Name="Commands">
+								<List Type="AnyRecord" />
+							</Field>
+						</RecordRequest>
+						<RecordResponse Type="AnyRecord" />
+					</Op>
 					<Op Name="LoadMeta">
 						<Description>
 							Load meta, from file and apply any draft
@@ -674,6 +739,44 @@
 							</Record>
 						</ListResponse>
 					</Op>
+					<Op Name="AnnouncementLoad">
+						<Description>
+							Load announcement.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Fields" Type="AnyRecord" />
+						</RecordResponse>
+					</Op>
+					<Op Name="AnnouncementUpdate">
+						<Description>
+							Update an announcement.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Title" Type="dcmPageTitle" Required="IfPresent" />
+							<Field Name="StartAt" Type="dcMetaString" Required="IfPresent" />
+							<Field Name="EndAt" Type="dcMetaString" Required="IfPresent" />
+							<Field Name="Topic" Type="dcMetaString" Required="IfPresent" />
+							<Field Name="Description" Type="dcmPageDescription" Required="IfPresent" />
+							<Field Name="Note" Type="dcString" />
+						</RecordResponse>
+					</Op>
+					<Op Name="AnnouncementAdd">
+						<Description>
+							Add an announcement.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Title" Type="dcmPageTitle" Required="True" />
+							<Field Name="StartAt" Type="dcMetaString" Required="True" />
+							<Field Name="EndAt" Type="dcMetaString" Required="True" />
+							<Field Name="Topic" Type="dcMetaString" Required="True" />
+							<Field Name="Description" Type="dcmPageDescription" Required="True" />
+							<Field Name="Note" Type="dcString" />
+						</RecordResponse>
+					</Op>
 				</Secure>
 				<Secure Badges="SysAdmin,Developer">
 					<Op Name="ArchiveAlerts">
@@ -788,6 +891,30 @@
 						<RecordResponse>
 							<Field Name="Id" Type="Id" />
 						</RecordResponse>
+					</Op>
+					<Op Name="OutboundEmailActivity">
+						<Description>
+							Email bounce, delivery or complaint was reported.
+						</Description>
+						<RecordRequest Required="true">
+							<Field Name="ReportId" Type="Id" Required="true" />
+							<Field Name="ReportAt" Type="dcmOutboundEmailActivity:dcmReportAt" Required="true" />
+							<Field Name="ReportType" Type="dcmOutboundEmailActivity:dcmReportType" Required="true" />
+							<Field Name="Message" Type="dcmOutboundEmailActivity:dcmReportMessage" Required="true" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="OutboundEmailActivityConfirm">
+						<Description>
+							Report of Email bounce, delivery or complaint was recorded.
+						</Description>
+						<RecordRequest Required="true">
+							<Field Name="ReportId" Type="Id" Required="true" />
+							<Field Name="ActivityId" Type="Id" />
+							<Field Name="Note" Type="dcSmallString" />
+						</RecordRequest>
 					</Op>
 				</Secure>
 			</Feature>

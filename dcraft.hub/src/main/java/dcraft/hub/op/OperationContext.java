@@ -28,6 +28,9 @@ import dcraft.locale.LocaleResource;
 import dcraft.locale.Translator;
 import dcraft.log.DebugLevel;
 import dcraft.log.Logger;
+import dcraft.script.StackUtil;
+import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.session.Session;
 import dcraft.session.SessionHub;
 import dcraft.struct.BaseStruct;
@@ -38,6 +41,7 @@ import dcraft.task.TaskContext;
 import dcraft.tenant.Site;
 import dcraft.tenant.Tenant;
 import dcraft.util.StringUtil;
+import dcraft.xml.XElement;
 
 /**
  * Almost all code that executes after Hub.start should have a context.  The context
@@ -561,7 +565,7 @@ public class OperationContext extends RecordStruct implements IVariableProvider 
 
 		return null;
 	}
-	
+
 	@Override
 	public String toString() {
 		return this.toPrettyString();    // TODO review, maybe filter some fields?

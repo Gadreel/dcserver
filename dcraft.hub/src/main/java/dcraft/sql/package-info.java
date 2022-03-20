@@ -18,10 +18,7 @@
 
  /**
   * <p>
-  * Package supports SQL connections.  Roughly modeled after WordPress's
-  * SQL library (get_var, get_row, get_results, insert, update, delete).
-  * This still needs some work.
+  * Package supports pooled SQL connections. Custom pooling is used.  
   * </p>
   */
 package dcraft.sql;
-

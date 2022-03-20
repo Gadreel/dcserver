@@ -160,7 +160,7 @@ public class CmsSyncWork extends StateWork {
 				
 				StringBuilder sb = new StringBuilder();
 				
-				ClearsignUtil.verifyFile(new ByteArrayInputStream(Utf8Encoder.encode(result)), keyring, sb, chainsig);
+				ClearsignUtil.verifyFile(new ByteArrayInputStream(Utf8Encoder.encode(result)), keyring, sb, chainsig, null);
 				
 				manifest = Struct.objectToRecord(sb);
 

@@ -28,7 +28,7 @@ public class VimeoWidget extends Base implements ICMSAware {
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
 		String vid = StackUtil.stringFromSource(state,"VideoId");
-		// 19by9 or 4by3
+		// 16by9 or 4by3
 		String ratio = StackUtil.stringFromSource(state,"Ratio", "16by9");
 		
 		this.with(W3.tag("div")

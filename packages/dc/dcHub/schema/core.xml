@@ -146,6 +146,10 @@
 			<StringRestriction Enum="Production,Local" />
 		</StringType>
 
+		<StringType Id="dcPortalMessageSendTypeEnum">
+			<StringRestriction Enum="Queue,Email" />
+		</StringType>
+
 		<!-- core composite types -->
 
 		<List Id="List" Type="Any" />
@@ -307,6 +311,91 @@
 			</Field>
 		</Record>
 
+		<Record Id="PortableMessageSendMethod">
+			<Field Name="Type" Type="dcPortalMessageSendTypeEnum" Required="True" />
+
+			<Field Name="QueueRegion" Type="dcMetaString" />
+			<Field Name="QueuePath" Type="dcMetaString" />
+
+			<Field Name="EmailAddress" Type="dcMetaString" />
+
+			<!-- user id of key to encrypt to when replying, if none then use plain text -->
+			<Field Name="EncryptTo" Type="dcMetaString" />
+
+			<!-- does not apply to all send types -->
+			<Field Name="DelaySeconds" Type="Integer" />
+		</Record>
+
+		<Record Id="PortableMessage">
+			<Field Name="MessageId" Type="dcMetaString" Required="True" />
+			<Field Name="Version" Type="dcMetaString" Required="True" />
+			<Field Name="Timestamp" Type="DateTime" Required="True" />
+			<Field Name="Expires" Type="DateTime" Required="True" />
+
+			<Field Name="Source" Required="True">
+				<Record>
+					<Field Name="Deployment" Type="dcMetaString" Required="True" />
+					<Field Name="Node" Type="dcMetaString" Required="True" />
+					<Field Name="Tenant" Type="dcMetaString" Required="True" />
+					<Field Name="Site" Type="dcMetaString" />
+				</Record>
+			</Field>
+
+			<Field Name="Destination" Required="True">
+				<Record>
+					<Field Name="Deployment" Type="dcMetaString" Required="True" />
+					<Field Name="Tenant" Type="dcMetaString" Required="True" />
+					<Field Name="Site" Type="dcMetaString" />
+				</Record>
+			</Field>
+
+			<Field Name="Payload" Required="True">
+				<Record>
+					<Field Name="Op" Type="dcMetaString" Required="True" />
+					<Field Name="Body" Type="Any" />
+				</Record>
+			</Field>
+
+			<!-- only needed if want a reply, this describes how to reply and is not meant for the current service target -->
+			<Field Name="Reply">
+				<Record>
+					<!-- what the reply contains -->
+					<Field Name="Payload" Required="True">
+						<Record>
+							<Field Name="Op" Type="dcMetaString" Required="True" />
+							<!--
+								if true, return result from the service called -
+								if using ResultProxy then include service output as a Result field in the Proxy
+								but only if ResultProxy is a Record
+
+								even if IncludeResult is false, we do return the Code and Message, see below
+							-->
+							<Field Name="IncludeResult" Type="Boolean" />
+							<!-- if present, Context becomes the Body of the reply   -->
+							<Field Name="ResultProxy" Type="Any" />
+						</Record>
+					</Field>
+
+					<!-- who to reply to, use message Source if empty -->
+					<Field Name="Destination">
+						<Record>
+							<Field Name="Deployment" Type="dcMetaString" Required="True" />
+							<Field Name="Tenant" Type="dcMetaString" Required="True" />
+							<Field Name="Site" Type="dcMetaString" />
+						</Record>
+					</Field>
+
+					<!-- how to reply -->
+					<Field Name="Method" Type="PortableMessageSendMethod" Required="True" />
+				</Record>
+			</Field>
+
+			<!-- used in a reply, contains the exit code and message -->
+			<Field Name="Code" Type="Integer" />
+			<Field Name="Message" Type="dcString" />
+			<Field Name="ReplyToMessageId" Type="dcMetaString" />
+		</Record>
+
 		<!--
 		<Record Id="dcSearchResult">
 			<Field Name="Table" Type="dcTinyString" />
@@ -433,6 +522,43 @@
 							<Field Name="App" Type="dcSmallString" />
 							<Field Name="Version" Type="dcSmallString" />
 						</RecordResponse>
+					</Op>
+					<Op Name="StatusReport">
+						<Description>
+							Info for Sentinel about a node in an Deployment.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Deployment" Type="dcMetaString" Required="True" />
+							<Field Name="Node" Type="dcMetaString" Required="True" />
+							<Field Name="At" Type="DateTime" Required="True" />
+							<Field Name="Version" Type="dcMetaString" Required="True" />
+							<Field Name="Content" Type="AnyRecord" Required="True" />
+
+							<!--
+								version 2020.03.20
+
+							<Field Name="ServerIdled" Type="Boolean" />
+							<Field Name="WorkPool">
+								<Record>
+									<Field Name="Queued" Type="Integer" />
+									<Field Name="Threads" Type="Integer" />
+									<Field Name="ThreadsCreated" Type="Integer" />
+									<Field Name="ThreadsHung" Type="Integer" />
+									<Field Name="Topics">
+										<List>
+											<Record>
+												<Field Name="Name" Type="dcTinyString" />
+												<Field Name="InProgress" Type="Integer" />
+												<Field Name="Backlogged" Type="Integer" />
+												<Field Name="MaxSize" Type="Integer" />
+											</Record>
+										</List>
+									</Field>
+								</Record>
+							</Field>
+							<Field Name="SessionCount" Type="Integer" />
+							-->
+						</RecordRequest>
 					</Op>
 					<Op Name="HubStatus">
 						<Description>
@@ -754,6 +880,32 @@
 								<Field Name="Use" Type="dcDomainUseEnum" />
 							</Record>
 						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+
+			<Feature Name="Status">
+				<Secure Badges="SysAdmin,Admin">
+					<Op Name="Ping">
+						<Description>
+							Test the database, call Ping and it will return Pong.
+						</Description>
+						<Response Type="String" />
+					</Procedure>
+					<Op Name="Echo">
+						<Description>
+							Test the database, give it a string and it will echo back.
+							Try non-latin unicode characters for fun.
+						</Description>
+						<Request Type="String" Required="True" />
+						<Response Type="String" />
+					</Op>
+					<Op Name="Print">
+						<Description>
+							Test the database, prints a string to the log.
+							Try non-latin unicode characters for fun.
+						</Description>
+						<Request Type="String" Required="True" />
 					</Op>
 				</Secure>
 			</Feature>

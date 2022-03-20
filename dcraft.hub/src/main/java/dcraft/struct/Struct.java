@@ -29,6 +29,7 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 import dcraft.hub.op.OperatingContextException;
@@ -87,7 +88,9 @@ public class Struct {
 			o = ((DateTimeStruct)o).getValue();
 		else if (o instanceof DateStruct)
 			o = ((DateStruct)o).getValue();
-		
+		else if (o instanceof BooleanStruct)
+			o = ((BooleanStruct)o).getValue();
+
 		if (o == null)
 			return null;
 		
@@ -96,13 +99,19 @@ public class Struct {
 		
 		if (o instanceof Number)
 			return ((Number)o).longValue();
-		
+
+		if (o instanceof Boolean)
+			return ((Boolean)o).booleanValue() ? 1L : 0L;
+
 		if (o instanceof TemporalAccessor)
 			o = Instant.from((TemporalAccessor)o);
 		
 		if (o instanceof java.sql.Timestamp)
 			o = ((java.sql.Timestamp)o).toInstant();
-		
+
+		if (o instanceof java.sql.Date)
+			return ((java.sql.Date)o).toLocalDate().toEpochDay();
+
 		if (o instanceof Instant)
 			return ((Instant)o).toEpochMilli();
 		
@@ -147,7 +156,10 @@ public class Struct {
 		
 		if (o instanceof java.sql.Timestamp)
 			return BigInteger.valueOf(((java.sql.Timestamp)o).getTime());
-		
+
+		if (o instanceof java.sql.Date)
+			return BigInteger.valueOf(((java.sql.Date)o).toLocalDate().toEpochDay());
+
 		if (o instanceof CharSequence) {
 			try {
 				return new BigInteger(o.toString());
@@ -463,7 +475,10 @@ public class Struct {
 		// sql dates should just be instants
 		if (o instanceof java.sql.Timestamp)
 			o = ((java.sql.Timestamp)o).toInstant();
-		
+
+		if (o instanceof java.sql.Date)
+			o = ((java.sql.Date)o).toLocalDate();
+
 		// prefer instant over taccess to ensure UTC
 		if (o instanceof LocalDate)
 			return  ((LocalDate) o).atStartOfDay(ZoneId.of("UTC"));
@@ -506,7 +521,9 @@ public class Struct {
 			o = ((StringStruct)o).getValue();
 		else if (o instanceof java.sql.Timestamp)
 			o = ZonedDateTime.ofInstant(((java.sql.Timestamp)o).toInstant(), ZoneId.of("UTC"));
-		
+		else if (o instanceof java.sql.Date)
+			o = ((java.sql.Date)o).toLocalDate();
+
 		if (o == null)
 			return null;
 		
@@ -552,7 +569,15 @@ public class Struct {
 
 		if (o instanceof java.sql.Timestamp)
 			return LocalDate.from(((java.sql.Timestamp)o).toInstant());
-		
+
+		if (o instanceof java.sql.Date)
+			return ((java.sql.Date)o).toLocalDate();
+
+		if (o instanceof GregorianCalendar)
+			return LocalDate.from(((GregorianCalendar)o).toInstant());
+
+		//System.out.println("dl: " + o.getClass().getCanonicalName());
+
 		if (o instanceof CharSequence) {
 			try {
 				return LocalDate.parse(o.toString());
@@ -594,7 +619,7 @@ public class Struct {
 
 		if (o instanceof CharSequence) {
 			try {
-				return LocalTime.parse(o.toString()); 	//, TimeUtil.parseTimeFormat);
+				return TimeUtil.parseLocalTime(o.toString()); 	// TODO support locale
 			}
 			catch (Exception x) {
 			}
@@ -656,7 +681,10 @@ public class Struct {
 		
 		if (o instanceof java.sql.Timestamp)
 			return true;
-		
+
+		if (o instanceof java.sql.Date)
+			return true;
+
 		if (o instanceof java.sql.Clob) 
 			return true;
 		
@@ -733,7 +761,10 @@ public class Struct {
 		
 		if (o instanceof java.sql.Timestamp)
 			o = TimeUtil.convertSqlDate((java.sql.Timestamp)o);
-		
+
+		if (o instanceof java.sql.Date)
+			o = ((java.sql.Date)o).toLocalDate();
+
 		if (o instanceof java.sql.Clob) {
 			try {
 				BufferedReader reader = new BufferedReader(((java.sql.Clob)o).getCharacterStream());
@@ -960,7 +991,10 @@ public class Struct {
 		// going to be returned in the local server's timezone, need to make that into UTC			  
 		if (o instanceof java.sql.Timestamp) 
 			o = ZonedDateTime.ofInstant(((java.sql.Timestamp)o).toInstant(), ZoneId.of("UTC"));
-		
+
+		if (o instanceof java.sql.Date)
+			o = ((java.sql.Date)o).toLocalDate();
+
 		if (o instanceof java.sql.Clob) {
 			try {
 				o = ((java.sql.Clob)o).getSubString(1L, (int)((java.sql.Clob)o).length());
@@ -1060,7 +1094,10 @@ public class Struct {
 			// going to be returned in the local server's timezone, need to make that into UTC			  
 			return TimeUtil.sqlStampFmt.parse(t);
 		}
-		
+
+		if (o instanceof java.sql.Date)
+			return ((java.sql.Date)o).toLocalDate();
+
 		if (o instanceof java.sql.Clob) {
 			try {
 				return ((java.sql.Clob)o).getSubString(1L, (int)((java.sql.Clob)o).length());
