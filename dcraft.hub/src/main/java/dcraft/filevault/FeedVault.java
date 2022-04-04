@@ -38,8 +38,6 @@ public class FeedVault extends FileStoreVault {
 		
 		TablesAdapter adapter = TablesAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
 		
-		FileIndexAdapter fileIndexAdapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
-		
 		for (TransactionFile file : tx.getDeletelist()) {
 			FeedUtilDb.deleteFeedIndex(adapter, file.getPath());
 		}
@@ -51,7 +49,7 @@ public class FeedVault extends FileStoreVault {
 			
 			TaskHub.submit(
 					UIUtil.mockWebRequestTask(this.tenant, this.site, "Feed file search indexing")
-							.withWork(FeedSearchWork.of(this, file.getPath(), fileIndexAdapter))
+							.withWork(FeedSearchWork.of(this, file.getPath()))
 			);
 		}
 	}

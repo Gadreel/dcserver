@@ -57,13 +57,13 @@ public class TableUtil {
 
 		db.executeTrigger(table, id, isUpdate ? "BeforeUpdate" : "BeforeInsert", fields);
 
-		// check for errors here?
-		if (! db.checkFieldsInternal(table, fields, params.getFieldAsString("Id"))) {
-			return null;
-		}
-
 		// it is possible for Id to be set by trigger (e.g. with domains)
 		id = params.getFieldAsString("Id");
+
+		// check for errors here?
+		if (! db.checkFieldsInternal(table, fields, id)) {
+			return null;
+		}
 
 		// TODO add db filter option
 		//d runFilter("Insert" or "Update") quit:Errors  ; if any violations in filter then do not proceed

@@ -579,6 +579,16 @@ dc.pui.Apps.Menus.dcmGeneral = {
 			Path: '/dcm/files/browser'
 		},
 		{
+			Alias: 'CDNFiles',
+			Title: 'CDN Files',
+			Path: '/dcm/cdn/browser'
+		},
+		{
+			Alias: 'CDNVideos',
+			Title: 'CDN Videos',
+			Path: '/dcm/cdn/video-browser'
+		},
+		{
 			Alias: 'Vaults',
 			Title: 'Vaults',
 			Auth: [ 'Developer' ],

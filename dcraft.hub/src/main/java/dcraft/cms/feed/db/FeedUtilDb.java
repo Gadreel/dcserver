@@ -67,12 +67,14 @@ public class FeedUtilDb {
 		CommonPath ochan = opath.subpath(0, 2);		// site and feed
 
 		ZonedDateTime opubtime = null;
+		boolean isUpdate = true;
 
 		RecordStruct fields = RecordStruct.record();
 		
 		String oid = pathToId(db, opath, false);
 
 		if (oid == null) {
+			isUpdate = false;
 			oid = db.createRecord("dcmFeed");
 
 			fields
@@ -414,6 +416,11 @@ public class FeedUtilDb {
 			fields.with("dcmTags", newkeys);
 		}
 
+		// ===========================================
+		//  run before trigger
+		// ===========================================
+		db.executeTrigger("dcmFeed", oid, isUpdate ? "BeforeUpdate" : "BeforeInsert", fields);
+
 		// validate, normalize and store
 		if (db.checkFieldsInternal("dcmFeed", fields, oid)) {
 			db.setFieldsInternal("dcmFeed", oid, fields);
@@ -435,6 +442,11 @@ public class FeedUtilDb {
 			catch (Exception x) {
 				Logger.error("Error updating feed index: " + x);
 			}
+
+			// ===========================================
+			//  run after trigger
+			// ===========================================
+			db.executeTrigger("dcmFeed", oid, isUpdate ? "AfterUpdate" : "AfterInsert", fields);
 		}
 		else {
 			Logger.error("Unable to update feed table or index");

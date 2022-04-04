@@ -1,0 +1,10 @@
+<dcs.Script>
+	<dcs.CatalogSettings Id="Interchange-Aws" Result="AwsConfig" />
+
+	<dcs.Var Name="awsStore" Type="dcmAwsCDNStore">
+		<Connect AwsBucket="$AwsConfig.@CDNBucket" AwsAccount="default" RootFolder="/{$_Node.Deployment}/{$_Tenant.Alias}" />
+		<PresignUpload Path="$Data.Path" Handle="Info" />
+	</dcs.Var>
+
+	<dcs.Exit Result="$Info" />
+</dcs.Script>

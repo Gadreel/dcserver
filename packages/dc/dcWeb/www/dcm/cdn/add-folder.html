@@ -1,0 +1,61 @@
+<dc.Html Badges="User">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Add Folder" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form Name="AddFolder">
+				<dcf.FormButtons>
+					<dcf.SubmitButton Label="Add" />
+				</dcf.FormButtons>
+
+				<dcf.Text Name="Path" Label="Name" Required="true" Pattern="[\w-]+"
+					placeholder="folder name, no spaces - use dash instead of space" />
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var entry = this;
+
+			this.form().query('Path').focus();
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			e.AsNew = true;
+			e.Data = {
+				Path: ''
+			};
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			if (e.Data.Path.indexOf('/') != 0)
+				e.Data.Path = '/' + e.Data.Path;
+
+			if ((entry.Params.Path == '/') && (e.Data.Path == '/videos')) {
+				dc.pui.Popup.alert('"videos" is a reserved folder name.');
+				e.Stop = true;
+				return;
+			}
+
+			if (entry.Params.Path && (entry.Params.Path != '/'))
+				e.Data.Path = entry.Params.Path + e.Data.Path;
+
+			entry.Params.Path = e.Data.Path;
+
+			e.Message = {
+				Op: 'dcmServices.CDN.CreateFolder',
+				Body: {
+					Path: e.Data.Path
+				}
+			};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var entry = this;
+
+			entry.Layer.back();
+
+			if (entry.Params.Callback)
+				entry.Params.Callback( entry.Params.Path );
+	]]></Function>
+</dc.Html>

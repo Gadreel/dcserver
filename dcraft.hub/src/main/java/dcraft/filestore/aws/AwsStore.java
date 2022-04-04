@@ -168,7 +168,7 @@ public class AwsStore extends FileStore {
 	}
 	
 	@Override
-	public void removeFolder(CommonPath path, OperationOutcomeEmpty callback) {
+	public void removeFile(CommonPath path, OperationOutcomeEmpty callback) {
 		AwsStoreFile f = AwsStoreFile.of(this, path, true);
 
 		f.remove(callback);

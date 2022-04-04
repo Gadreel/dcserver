@@ -1,0 +1,85 @@
+<dc.Html Badges="User">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Upload Videos" />
+	</Meta>
+
+	<Require Script="/js/dc.transfer.js" />
+	<Require Script="/js/dc.transfer.cdn.js" />
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form Name="UploadFile">
+				<dcf.Uploader Label="Attachments" Name="Attachments" />
+
+				<dcf.FormButtons>
+					<dc.Button Label="Close" Click="AfterSave" />
+					<dcf.SubmitButton Label="Upload" />
+				</dcf.FormButtons>
+			</dcf.Form>
+
+			<dc.Callout Title="Time Warning">
+				Videos take some time to process before they are ready. After the upload they go through a process of conversion into streaming video. Please don't be alarned if a video doesn't show in the listing after you upload. For shorter videos allow at least 20 minutes then choose the Refresh option. For longer videos allow at least an hour or two. If it has been more than two hours and your videos still aren't showing, there may be a technical issue and please contact your web developer.
+			</dc.Callout>
+		</dc.PagePanel>
+
+				<!-- TODO rename
+				<dcf.Text Name="Path" Label="Name" Required="true" Pattern="[\w-\/]+"
+					placeholder="folder name, no spaces - use dash instead of space" />
+				-->
+
+				<!--  TODO	progress
+				<div class="ui-field-contain">
+					<label id="lblTransfer" class="tlabel">Progress</label>
+					<div class="progress">
+						<div id="fileProgressBar" class="pbar"></div>
+						<div id="fileProgressLabel" class="pbarlabel">0%</div>
+					</div>
+				</div>
+				-->
+
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+				var page = this;
+
+				page.Store.Files = [ ];
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+				var page = this;
+
+				page.Store.Files = [ ];
+
+				e.Wait = true;
+
+				var files = page.form('UploadFile').input('Attachments').Files;
+				var fnames = page.form('UploadFile').input('Attachments').Values;
+				var cfiles = [ ];
+
+				var path = (page.Params.Path && (page.Params.Path != '/')) ? page.Params.Path : '';
+
+				for (var i = 0; i < files.length; i++) {
+					cfiles.push({
+						File: files[i],
+						Name: fnames[i],
+						Path: path
+					});
+
+					page.Store.Files.push({
+						FullPath: path + '/' + fnames[i]
+					});
+				}
+
+				var uploadtask = dc.transfer.cdn.Util.uploadVideos(cfiles);
+
+				dc.pui.Popup.await('Large files may take some time, please wait until the upload is complete.', function() {
+					e.Task.resume();		// resume the Save task
+				}, 'Uploading Files', uploadtask);
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback( page.Store.Files );
+	]]></Function>
+</dc.Html>

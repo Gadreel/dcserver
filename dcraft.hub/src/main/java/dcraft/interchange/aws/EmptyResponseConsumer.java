@@ -22,19 +22,9 @@ public class EmptyResponseConsumer implements BiConsumer<HttpResponse<Void>, Thr
     public void accept(HttpResponse<Void> response, Throwable x) {
         callback.useContext();		// restore context
 
-        System.out.println("code: " + response.statusCode());
-        //System.out.println("got: " + response.body());
-
-        // if there was an exception
-        if (x != null) {
-            Logger.error("Bad Response exception: " + x);     // must be an error so callback gets an error
-            System.out.println("got: " + response);
-        }
-        else if (response.statusCode() >= 400) {
-            Logger.error("Bad Response code: " + response.statusCode());     // must be an error so callback gets an error
-            System.out.println("got: " + response);
-        }
-
-        callback.returnEmpty();
+        if ((response == null) ? AWSUtilCore.checkResponse(x, -1, null) : AWSUtilCore.checkResponse(x, response.statusCode(), response.headers()))
+            callback.returnEmpty();
+        else
+            callback.returnEmpty();
     }
 }

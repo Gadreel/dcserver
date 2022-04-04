@@ -1,0 +1,10 @@
+<dcs.Script>
+	<dcs.CatalogSettings Id="Interchange-Aws" Result="AwsConfig" />
+
+	<dcs.Var Name="awsStore" Type="dcmAwsVideoStore">
+		<Connect AwsBucket="$AwsConfig.@VideoBucket" AwsAccount="default" RootFolder="/videos/{$_Node.Deployment}/{$_Tenant.Alias}/videos" />
+		<PresignUpload Path="$Data.Path" Handle="Info" />
+	</dcs.Var>
+
+	<dcs.Exit Result="$Info" />
+</dcs.Script>

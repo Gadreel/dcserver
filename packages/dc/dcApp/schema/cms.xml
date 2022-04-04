@@ -62,6 +62,26 @@
 				</List>
 			</Field>
 		</Record>
+
+		<Record Id="dcmCDNFileDescriptor" Inherits="dcFileDescriptor">
+			<Field Name="FileName" Type="dcMetaString" />
+			<Field Name="AwsETag" Type="dcMetaString" />
+		</Record>
+
+		<Record Id="dcmAwsCDNStore" Class="dcraft.cms.cdn.aws.AwsCDNStore" />
+
+		<Record Id="dcmAwsCDNStoreFile" Inherits="dcmCDNFileDescriptor" Class="dcraft.cms.cdn.aws.AwsCDNStoreFile" />
+
+		<Record Id="dcmCDNVideoFileDescriptor" Inherits="dcFileDescriptor">
+			<Field Name="FileName" Type="dcMetaString" />
+			<Field Name="VideoIndex" Type="dcMetaString" />
+			<Field Name="Ready" Type="Boolean" />
+			<Field Name="Thumbnail" Type="dcMetaString" />
+		</Record>
+
+		<Record Id="dcmAwsVideoStore" Class="dcraft.cms.cdn.aws.AwsVideoStore" />
+
+		<Record Id="dcmAwsVideoStoreFile" Inherits="dcmCDNVideoFileDescriptor" Class="dcraft.cms.cdn.aws.AwsVideoFile" />
 	</Shared>
 
 	<Database>
@@ -227,12 +247,6 @@
 		<Procedure Name="dcmServices.Dashboard.ListBlockedIP" Execute="dcraft.cms.dashboard.db.ListBlockedIP" />
 		<Procedure Name="dcmServices.Dashboard.KillBlockedIP" Execute="dcraft.cms.dashboard.db.KillBlockedIP" />
 		<Procedure Name="dcmServices.Dashboard.KillAllBlockedIP" Execute="dcraft.cms.dashboard.db.KillAllBlockedIP" />
-
-		<!--
-		<Procedure Name="dcmServices.Dashboard.AnnouncementLoad" Execute="dcraft.cms.dashboard.db.AnnouncementLoad" />
-		<Procedure Name="dcmServices.Dashboard.AnnouncementAdd" Execute="dcraft.cms.dashboard.db.AnnouncementAdd" />
-		<Procedure Name="dcmServices.Dashboard.AnnouncementUpdate" Execute="dcraft.cms.dashboard.db.AnnouncementUpdate" />
-		-->
 
 		<Procedure Name="dcmServices.Reports.CreateGoLive" Execute="dcraft.cms.reports.db.CreateGoLive" />
 		<Procedure Name="dcmServices.Reports.OutboundEmailActivity" Execute="dcraft.cms.reports.db.OutboundEmailActivity" />
@@ -719,6 +733,102 @@
 								<Field Name="Published" Type="dcmFeed:dcmPublishAt" />
 							</Record>
 						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+			<Feature Name="CDN">
+				<Secure Badges="Editor,Admin">
+					<Op Name="ListFolder">
+						<Description>
+							List of files and folders in CDN folder.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Path" Type="dcMetaString" Required="True" />
+						</RecordResponse>
+						<ListResponse Type="dcmCDNFileDescriptor" />
+					</Op>
+					<Op Name="CreateFolder">
+						<Description>
+							Create a folder on the CDN folder.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Path" Type="dcMetaString" Required="True" />
+						</RecordResponse>
+						<RecordResponse Inherits="dcmCDNFileDescriptor" />
+					</Op>
+					<Op Name="FileInfo">
+						<Description>
+							Get information about a file on the CDN folder.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Path" Type="dcMetaString" Required="True" />
+						</RecordResponse>
+						<RecordResponse Inherits="dcmCDNFileDescriptor" />
+					</Op>
+					<Op Name="PresignUpload">
+						<Description>
+							Prepare to upload a file to a CDN folder.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Path" Type="dcMetaString" Required="True" />
+						</RecordResponse>
+						<RecordResponse>
+							<Field Name="Url" Type="dcString" />
+							<Field Name="Stamp" Type="dcMetaString" />
+							<Field Name="ContentType" Type="dcMetaString" />
+						</RecordResponse>
+					</Op>
+					<Op Name="DeleteFiles">
+						<Description>
+							Delete a file from the CDN folder.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Paths" Required="True">
+								<List Type="dcMetaString" />
+							</Field>
+						</RecordResponse>
+					</Op>
+
+					<Op Name="VideoListFolder">
+						<Description>
+							List of videos and folders in CDN video folder.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Path" Type="dcMetaString" Required="True" />
+						</RecordResponse>
+						<ListResponse Type="dcmCDNVideoFileDescriptor" />
+					</Op>
+					<Op Name="VideoCreateFolder">
+						<Description>
+							Create a folder on the CDN video folder.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Path" Type="dcMetaString" Required="True" />
+						</RecordResponse>
+						<RecordResponse Inherits="dcmCDNVideoFileDescriptor" />
+					</Op>
+					<Op Name="VideoPresignUpload">
+						<Description>
+							Prepare to upload a video to a CDN video folder.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Path" Type="dcMetaString" Required="True" />
+						</RecordResponse>
+						<RecordResponse>
+							<Field Name="Url" Type="dcString" />
+							<Field Name="Stamp" Type="dcMetaString" />
+							<Field Name="ContentType" Type="dcMetaString" />
+						</RecordResponse>
+					</Op>
+					<Op Name="VideoDeleteFiles">
+						<Description>
+							Delete a video file from the CDN folder.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Paths" Required="True">
+								<List Type="dcMetaString" />
+							</Field>
+						</RecordResponse>
 					</Op>
 				</Secure>
 			</Feature>

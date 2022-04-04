@@ -61,6 +61,11 @@ public class DynamicReviewAdapter extends ChainWork implements IReviewWork {
 		this.mime = ResourceHub.getResources().getMime().getMimeTypeForPath(this.file);
 	}
 
+	public DynamicReviewAdapter withSource(Script v) {
+		this.script = v;
+		return this;
+	}
+
 	public Script getSource() throws OperatingContextException {
 		if (this.script != null)
 			return this.script;

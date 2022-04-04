@@ -22,25 +22,9 @@ public class XmlResponseConsumer implements BiConsumer<HttpResponse<String>, Thr
     public void accept(HttpResponse<String> response, Throwable x) {
         callback.useContext();		// restore context
 
-        System.out.println("code: " + response.statusCode());
-        //System.out.println("got: " + response.body());
-
-        // if there was an exception
-        if (x != null) {
-            Logger.error("Bad Response exception: " + x);     // must be an error so callback gets an error
-            System.out.println("got: " + response);
-
-            callback.returnEmpty();
-        }
-        else if (response.statusCode() >= 400) {
-            Logger.error("Bad Response code: " + response.statusCode());     // must be an error so callback gets an error
-            System.out.println("got: " + response);
-            System.out.println("got body: " + response.body());
-
-            callback.returnEmpty();
-        }
-        else {
+        if ((response == null) ? AWSUtilCore.checkResponse(x, -1, null) : AWSUtilCore.checkResponse(x, response.statusCode(), response.headers()))
             callback.returnValue(XmlReader.parse(response.body(), true, true));
-        }
+        else
+            callback.returnEmpty();
     }
 }

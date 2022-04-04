@@ -12,6 +12,7 @@ import dcraft.filevault.Vault;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.IVariableAware;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
 import dcraft.locale.IndexInfo;
 import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
@@ -122,6 +123,8 @@ public class FileIndexAdapter {
 				return null;
 			}
 			else if (marker != null) {			// Either is true or "File"
+				String locale = OperationContext.getOrThrow().getLocale();
+
 				// state
 				entrykeys.add("State");
 				entrykeys.add(null);
@@ -170,7 +173,7 @@ public class FileIndexAdapter {
 				
 				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
 				
-				entrykeys.add("eng");        // TODO current locale
+				entrykeys.add(locale);
 				entrykeys.add("Title");
 				
 				frec.with("Title", Struct.objectToString(this.request.getInterface().get(entrykeys.toArray())));
@@ -179,7 +182,7 @@ public class FileIndexAdapter {
 				
 				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
 				
-				entrykeys.add("eng");        // TODO current locale
+				entrykeys.add(locale);
 				entrykeys.add("Summary");
 				
 				frec.with("Summary", Struct.objectToString(this.request.getInterface().get(entrykeys.toArray())));
@@ -189,7 +192,7 @@ public class FileIndexAdapter {
 
 				indexkeys = FileIndexAdapter.pathToIndex(vault, path);
 
-				indexkeys.add("eng");		// TODO current locale
+				indexkeys.add(locale);
 				indexkeys.add("Search");
 
 				frec.with("Search", Struct.objectToString(this.request.getInterface().get(indexkeys.toArray())));
@@ -199,7 +202,7 @@ public class FileIndexAdapter {
 				
 				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
 				
-				entrykeys.add("eng");        // TODO current locale
+				entrykeys.add(locale);
 				entrykeys.add("SortHint");
 				
 				frec.with("SortHint", Struct.objectToString(this.request.getInterface().get(entrykeys.toArray())));

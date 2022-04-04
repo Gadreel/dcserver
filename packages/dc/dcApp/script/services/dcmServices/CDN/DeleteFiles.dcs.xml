@@ -1,0 +1,15 @@
+<dcs.Script>
+	<dcs.CatalogSettings Id="Interchange-Aws" Result="AwsConfig" />
+
+	<dcs.Var Name="awsStore" Type="dcmAwsCDNStore">
+		<Connect AwsBucket="$AwsConfig.@CDNBucket" AwsAccount="default" RootFolder="/{$_Node.Deployment}/{$_Tenant.Alias}" />
+	</dcs.Var>
+
+	<dcs.ForEach Name="Path" In="$Data.Paths">
+		<dcs.With Target="$awsStore">
+			<Delete Path="$Path" />
+		</dcs.With>
+	</dcs.ForEach>
+
+	<dcs.Exit />
+</dcs.Script>

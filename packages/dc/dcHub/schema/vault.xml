@@ -31,7 +31,17 @@
 		<Record Id="dcAwsStoreScanner" Class="dcraft.filestore.aws.AwsStoreScanner" />
 
 		<Record Id="dcAwsStore" Class="dcraft.filestore.aws.AwsStore">
-			<Field Name="Scanner" Type="dcLocalStoreScanner" />
+			<Field Name="Scanner" Type="dcAwsStoreScanner" />
+		</Record>
+
+		<Record Id="dcAwsStoreFile2" Inherits="dcFileDescriptor" Class="dcraft.filestore.aws2.AwsStoreFile">
+			<Field Name="AwsETag" Type="dcTinyString" />
+		</Record>
+
+		<Record Id="dcAwsStoreScanner2" Class="dcraft.filestore.aws2.AwsStoreScanner" />
+
+		<Record Id="dcAwsStore2" Class="dcraft.filestore.aws2.AwsStore">
+			<Field Name="Scanner" Type="dcAwsStoreScanner2" />
 		</Record>
 
 		<Record Id="dcArchiveStoreFile" Inherits="dcFileDescriptor" Class="dcraft.filestore.zip.ArchiveStoreFile">
@@ -41,7 +51,7 @@
 		<Record Id="dcArchiveStoreScanner" Class="dcraft.filestore.zip.ArchiveStoreScanner" />
 
 		<Record Id="dcArchiveStore" Class="dcraft.filestore.zip.ArchiveStore">
-			<Field Name="Scanner" Type="dcLocalStoreScanner" />
+			<Field Name="Scanner" Type="dcArchiveStoreScanner" />
 		</Record>
 
 		<Record Id="dcEncryptedVaultStore" Class="dcraft.filevault.EncryptedVaultStore" />

@@ -382,10 +382,20 @@ public class LocalStore extends FileStore {
 	}
 	
 	@Override
-	public void removeFolder(CommonPath path, OperationOutcomeEmpty callback) {
+	public void removeFile(CommonPath path, OperationOutcomeEmpty callback) {
 		Path localpath = this.resolvePath(path);
-		
-		FileUtil.deleteDirectory(localpath);
+
+		if (Files.isDirectory(localpath)) {
+			FileUtil.deleteDirectory(localpath);
+		}
+		else {
+			try {
+				Files.deleteIfExists(localpath);
+			}
+			catch (IOException x) {
+				Logger.warn("Unable to remove file: " + x);
+			}
+		}
 		
 		callback.returnEmpty();
 	}

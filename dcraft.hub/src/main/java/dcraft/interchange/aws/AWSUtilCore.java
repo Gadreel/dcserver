@@ -11,6 +11,7 @@ import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 import dcraft.util.chars.Utf8Encoder;
 import dcraft.xml.XElement;
+import dcraft.xml.XmlReader;
 import org.apache.commons.codec.net.URLCodec;
 
 import javax.crypto.Mac;
@@ -22,6 +23,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
@@ -100,6 +102,7 @@ public class AWSUtilCore {
 
 		params.with("X-Amz-Algorithm", "AWS4-HMAC-SHA256");
 		params.with("X-Amz-Date", amz_date);
+		params.with("Content-Type", options.getFieldAsString("ContentType"));
 		params.with("X-Amz-SignedHeaders", "host;x-amz-date");
 		params.with("X-Amz-Expires", options.getFieldAsString("Expires", "2000"));		// 33 minutes
 
@@ -223,7 +226,7 @@ public class AWSUtilCore {
 
 		String payload_hash = options.getFieldAsString("PayloadHash", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
 
-		///System.out.println("4: " + payload_hash);
+		//System.out.println("4: " + payload_hash);
 		
 		// Step 7: Combine elements to create create canonical request
 		String canonical_request = options.getFieldAsString("Method", "GET") + "\n"
@@ -272,12 +275,10 @@ public class AWSUtilCore {
 
 			String endpoint = AWSUtilCore.generateEndpoint(options);
 
-			// TODO path and optional query str
 			return HttpRequest.newBuilder(URI.create(endpoint))
-					// TODO added automatically - .header("Host", host)
 					//.header("Content-Type", content_type)
 					.header("x-amz-date", amz_date)
-					.header("x-amz-content-sha256", payload_hash)		// pointless to add, canonical_request already provides a way to confirm the payload sha
+					.header("x-amz-content-sha256", payload_hash)
 					.header("Authorization", authorization_header)
 					//.header("User-Agent", "dcServer/2019.1 (Language=Java/11)")
 					.GET();
@@ -427,4 +428,26 @@ public class AWSUtilCore {
 
 
 	 */
+
+	static public boolean checkResponse(Throwable x, int statusCode, HttpHeaders headers) {
+		// if there was an exception
+		if (x != null) {
+			Logger.error("Bad Response code: " + statusCode);     // must be an error so callback gets an error
+			Logger.error("Bad Response exception: " + x);     // must be an error so callback gets an error
+		}
+		else if (headers != null) {
+			if (statusCode >= 400) {
+				Logger.error("Bad Response code: " + statusCode);     // must be an error so callback gets an error
+			}
+			else {
+				Logger.info("Response code: " + statusCode);
+				return true;
+			}
+		}
+		else {
+			Logger.error("No response or exception");
+		}
+
+		return false;
+	}
 }

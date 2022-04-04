@@ -1,7 +1,9 @@
 package dcraft.locale;
 
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import dcraft.hub.resource.ResourceBase;
@@ -150,7 +152,27 @@ public class LocaleResource extends ResourceBase {
 		
 		return ZoneId.of(name);
 	}
-	
+
+	public List<String> getAlternateLocales() {
+		if (this.locales.size() > 0) {
+			List<String> alternates = new ArrayList<>();
+
+			for (String locale : locales.keySet()) {
+				if (! locale.equals(this.locale))
+					alternates.add(locale);
+			}
+
+			return alternates;
+		}
+
+		LocaleResource parent = this.getParentResource();
+
+		if (parent != null)
+			return parent.getAlternateLocales();
+
+		return null;
+	}
+
 	/*
 	public Map<String, LocaleDefinition> getLocales() {
 		if (this.locales.size() == 0) {

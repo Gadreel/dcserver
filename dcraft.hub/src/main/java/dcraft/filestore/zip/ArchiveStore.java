@@ -183,14 +183,14 @@ public class ArchiveStore extends FileStore {
     }
 
     @Override
-    public void removeFolder(CommonPath path, OperationOutcomeEmpty callback) {
+    public void removeFile(CommonPath path, OperationOutcomeEmpty callback) {
         /*
         Path localpath = this.resolvePath(path);
 
         FileUtil.deleteDirectory(localpath);
          */
 
-        Logger.error("Remove folder feature not currently supported");
+        Logger.error("Remove file feature not currently supported");
 
         callback.returnEmpty();
     }

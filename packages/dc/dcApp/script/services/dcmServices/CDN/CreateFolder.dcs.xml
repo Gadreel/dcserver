@@ -1,0 +1,10 @@
+<dcs.Script>
+	<dcs.CatalogSettings Id="Interchange-Aws" Result="AwsConfig" />
+
+	<dcs.Var Name="awsStore" Type="dcmAwsCDNStore">
+		<Connect AwsBucket="$AwsConfig.@CDNBucket" AwsAccount="default" RootFolder="/{$_Node.Deployment}/{$_Tenant.Alias}" />
+		<CreateFolder Path="$Data.Path" Handle="FolderInfo" />
+	</dcs.Var>
+
+	<dcs.Exit Result="$FolderInfo" />
+</dcs.Script>

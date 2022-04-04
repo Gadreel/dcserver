@@ -21,6 +21,8 @@ import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.net.NetUtil;
 
+import java.nio.file.Path;
+
 // object is to immutable, keep it that way :)
 public class CommonPath implements IDataExposer {
 	static public CommonPath ROOT = new CommonPath("/");
@@ -305,6 +307,24 @@ public class CommonPath implements IDataExposer {
     	}
     	
 		return true;
+    }
+
+    public CommonPath relativize(CommonPath path) {
+        if (path == null)
+            return null;
+
+        if (this.isRoot())
+            return path;
+
+        String newpath = path.path;
+
+        if (! newpath.startsWith(this.path))
+            return null;
+
+        if (newpath.equals(this.path))
+            return CommonPath.ROOT;
+
+        return CommonPath.from(newpath.substring(this.path.length()));
     }
 
     /*  TODO

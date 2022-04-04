@@ -11,15 +11,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DocumentIndexBuilder {
-	static public DocumentIndexBuilder index()  {
+	static public DocumentIndexBuilder index() throws OperatingContextException  {
 		DocumentIndexBuilder builder = new DocumentIndexBuilder();
 
-		try {
-			builder.lang = LocaleUtil.getLocale(OperationContext.getOrThrow().getLocale()).getLanguage();
-		}
-		catch (OperatingContextException x) {
-			// TODO
-		}
+		builder.lang = LocaleUtil.getLocale(OperationContext.getOrThrow().getLocale()).getLanguage();
+
+		return builder;
+	}
+
+	static public DocumentIndexBuilder index(String locale) throws OperatingContextException  {
+		DocumentIndexBuilder builder = new DocumentIndexBuilder();
+
+		builder.lang = LocaleUtil.getLocale(locale).getLanguage();
 
 		return builder;
 	}

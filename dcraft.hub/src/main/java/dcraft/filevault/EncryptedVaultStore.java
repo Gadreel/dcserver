@@ -134,7 +134,7 @@ public class EncryptedVaultStore extends FileStore {
 	}
 	
 	@Override
-	public void removeFolder(CommonPath path, OperationOutcomeEmpty callback) throws OperatingContextException {
+	public void removeFile(CommonPath path, OperationOutcomeEmpty callback) throws OperatingContextException {
 		this.vault.getFileDetail(path, null, new OperationOutcome<FileDescriptor>() {
 			@Override
 			public void callback(FileDescriptor result) throws OperatingContextException {

@@ -1,0 +1,60 @@
+<dc.Html>
+	<Meta Name="Title">
+		<Tr Locale="en" Value="Streaming Video Viewer" />
+	</Meta>
+
+	<!--
+		Video.js:
+
+	-->
+	<Require Style="/css/vendor/videojs/videojs-7.17.0.min.css" />
+	<Require Script="/js/vendor/videojs/videojs-7.17.0.min.js" />
+	<!--
+		This is for HLS compatibility with all major browsers. See:
+		https://github.com/videojs/http-streaming
+	<Require Script="/js/vendor/videojs/videojs-http-streaming-2.13.1.min.js" />
+-->
+
+	<dc.Body>
+		<dc.Style>
+			#vidDcwVideoViewer {
+				height: 100%;
+				width: 100%;
+			}
+		</dc.Style>
+
+		<div id="panDcwVideoViewer" style="height: 100%; background-color: rgba(0,0,0,0.66);">
+			<video-js id="vidDcwVideoViewer" class="vjs-default-skin" controls="controls" preload="auto" />
+
+			<dc.Link id="panDcwImageViewerClose" Click="onClose" style="position: absolute; top: 24px; right: 24px;">
+				<i class="fa fa-times fa-lg" style="font-size: 32px; background-color: rgba(0,0,0,0.50); color: white; border-radius: 22px; padding: 6px 4px; width: 26px; height: 26px;"></i>
+			</dc.Link>
+		</div>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			if (page.Params.Poster)
+				$('#vidDcwVideoViewer').attr('poster', page.Params.Poster);
+
+			$('#vidDcwVideoViewer').dcappend(
+				$('<source>').attr('src', page.Params.Url).attr('type', 'application/x-mpegURL')
+			);
+
+			var videooptions = {
+				autoplay: page.Params.Autoplay ? page.Params.Autoplay : false
+			};
+
+			videojs('vidDcwVideoViewer', videooptions);
+	]]></Function>
+	<Function Name="onClose"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+	]]></Function>
+	<Function Name="onDestroy"><![CDATA[
+			var page = this;
+
+			videojs('vidDcwVideoViewer').dispose();
+	]]></Function>
+</dc.Html>

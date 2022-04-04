@@ -1,0 +1,10 @@
+<dcs.Script>
+	<dcs.CatalogSettings Id="Interchange-Aws" Result="AwsConfig" />
+
+	<dcs.Var Name="awsStore" Type="dcmAwsVideoStore">
+		<Connect AwsBucket="$AwsConfig.@CDNBucket" AwsAccount="default" RootFolder="/{$_Node.Deployment}/{$_Tenant.Alias}/videos" />
+		<FolderListing Path="$Data.Path" Handle="Listing" />
+	</dcs.Var>
+
+	<dcs.Exit Result="$Listing" />
+</dcs.Script>

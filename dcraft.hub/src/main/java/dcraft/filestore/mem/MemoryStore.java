@@ -94,7 +94,7 @@ public class MemoryStore extends FileStore {
 	}
 	
 	@Override
-	public void removeFolder(CommonPath path, OperationOutcomeEmpty callback) {
+	public void removeFile(CommonPath path, OperationOutcomeEmpty callback) {
 		callback.returnEmpty();
 	}
 

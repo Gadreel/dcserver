@@ -1,0 +1,22 @@
+<dcs.Script>
+	<dcs.CatalogSettings Id="Interchange-Aws" Result="AwsConfig" />
+
+	<dcs.Var Name="awsStore" Type="dcmAwsVideoStore">
+		<Connect AwsBucket="$AwsConfig.@CDNBucket" AwsAccount="default" RootFolder="/{$_Node.Deployment}/{$_Tenant.Alias}/videos" />
+	</dcs.Var>
+
+	<dcs.ForEach Name="Path" In="$Data.Paths">
+		<dcs.If Target="$Path" EndsWith=".hls">
+			<dcs.With Target="$awsStore">
+				<DeleteFolder Path="$Path" />
+			</dcs.With>
+		</dcs.If>
+		<dcs.ElseIf Target="$Path" EndsWith=".ready">
+			<dcs.With Target="$awsStore">
+				<Delete Path="$Path" />
+			</dcs.With>
+		</dcs.ElseIf>
+	</dcs.ForEach>
+
+	<dcs.Exit />
+</dcs.Script>
