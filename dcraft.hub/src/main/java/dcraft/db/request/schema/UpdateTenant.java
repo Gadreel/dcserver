@@ -42,9 +42,23 @@ public class UpdateTenant extends RecordStruct {
 			
 			if (code.hasNotEmptyAttribute("Lang"))
 				data.with("Lang", StackUtil.stringFromElement(state, code,"Lang"));
-			
-			if (code.hasNotEmptyAttribute("Value"))
-				data.with("Data", StackUtil.refFromElement(state, code,"Value"));
+
+			if (code.hasNotEmptyAttribute("Value")) {
+				data.with("Data", StackUtil.refFromElement(state, code, "Value", true));
+			}
+			else if (code.hasNotEmptyAttribute("Source")) {
+				String sourcefield = StackUtil.stringFromElementClean(state, code, "Source");
+
+				RecordStruct recsource = state.getStore().getFieldAsRecord("Source");
+
+				if (StringUtil.isNotEmpty(sourcefield) && (recsource != null)) {
+					boolean hasField = recsource.hasField(sourcefield);
+
+					if (hasField || ! StackUtil.boolFromElement(state, code, "Conditional", false)) {
+						data.with("Data", recsource.getField(sourcefield));
+					}
+				}
+			}
 			
 			if (code.hasNotEmptyAttribute("SubId")) {
 				String subid = StackUtil.stringFromElement(state, code, "SubId");

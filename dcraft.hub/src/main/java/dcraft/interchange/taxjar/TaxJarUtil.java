@@ -260,6 +260,10 @@ public class TaxJarUtil {
                     .with("transaction_date", tx.select("OrderDate"));
         }
 
+        if (tx.getFieldAsBooleanOrFalse("TaxExempt"))
+            request
+                    .with("exemption_type", "other");
+
         if (tx.isNotFieldEmpty("Items")) {
             ListStruct itemsin = tx.getFieldAsList("Items");
 

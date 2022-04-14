@@ -743,7 +743,7 @@
 							List of files and folders in CDN folder.
 						</Description>
 						<RecordRequest Required="True">
-							<Field Name="Path" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcString" Required="True" />
 						</RecordResponse>
 						<ListResponse Type="dcmCDNFileDescriptor" />
 					</Op>
@@ -752,7 +752,7 @@
 							Create a folder on the CDN folder.
 						</Description>
 						<RecordRequest Required="True">
-							<Field Name="Path" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcString" Required="True" />
 						</RecordResponse>
 						<RecordResponse Inherits="dcmCDNFileDescriptor" />
 					</Op>
@@ -761,7 +761,7 @@
 							Get information about a file on the CDN folder.
 						</Description>
 						<RecordRequest Required="True">
-							<Field Name="Path" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcString" Required="True" />
 						</RecordResponse>
 						<RecordResponse Inherits="dcmCDNFileDescriptor" />
 					</Op>
@@ -770,7 +770,7 @@
 							Prepare to upload a file to a CDN folder.
 						</Description>
 						<RecordRequest Required="True">
-							<Field Name="Path" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcString" Required="True" />
 						</RecordResponse>
 						<RecordResponse>
 							<Field Name="Url" Type="dcString" />
@@ -784,7 +784,7 @@
 						</Description>
 						<RecordRequest Required="True">
 							<Field Name="Paths" Required="True">
-								<List Type="dcMetaString" />
+								<List Type="dcString" />
 							</Field>
 						</RecordResponse>
 					</Op>

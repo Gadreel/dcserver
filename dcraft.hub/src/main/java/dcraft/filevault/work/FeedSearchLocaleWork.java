@@ -79,8 +79,10 @@ public class FeedSearchLocaleWork extends StateWork {
 			taskctx.setLocale(this.locale);
 
 			Site webSite = taskctx.getSite();
+
 			CommonPath path = this.path;
 
+			/*
 			path = FeedUtil.translateToWebPath(path);
 
 			if (path == null) {
@@ -91,9 +93,12 @@ public class FeedSearchLocaleWork extends StateWork {
 			if (path.getFileName().endsWith(".html"))
 				path = path.getParent().resolve(path.getFileName().substring(0, path.getFileName().length() - 5));
 
+			 */
+
 			if (Logger.isDebug())
 				Logger.debug("Site: " + webSite.getAlias());
 
+			/*
 			if (Logger.isDebug())
 				Logger.debug("Translating path: " + path);
 
@@ -102,9 +107,12 @@ public class FeedSearchLocaleWork extends StateWork {
 				//req.with("Path", path.toString());
 			}
 
+			 */
+
 			if (Logger.isDebug())
 				Logger.debug("Process path: " + path);
 
+			/*
 			// translate above should take us home for root
 			if (path.isRoot()) {
 				Logger.error("Unable to search root path");
@@ -134,12 +142,14 @@ public class FeedSearchLocaleWork extends StateWork {
 				return this.done;
 			}
 
+			 */
+
 			// try non-pages - feed
 			if (this.output == null) {
-				Path fspath = webSite.findSectionFile("feeds", path.toString() + ".html", null);
+				Path fspath = webSite.findSectionFile("feeds", path.toString(), null);
 
 				if (fspath == null) {
-					fspath = webSite.findSectionFile("feeds", path.toString().toLowerCase() + ".html", null);
+					fspath = webSite.findSectionFile("feeds", path.toString().toLowerCase(), null);
 
 					if (fspath != null)
 						path = CommonPath.from(path.toString().toLowerCase());
@@ -149,6 +159,8 @@ public class FeedSearchLocaleWork extends StateWork {
 					String filename = fspath.getFileName().toString();
 
 					HtmlMode hmode = webSite.getHtmlMode();
+
+					// TODO support a Search skeleton for each feed type to replace this
 
 					// currently only supports Dynamic
 					if (filename.endsWith(".html")) {
@@ -233,6 +245,7 @@ public class FeedSearchLocaleWork extends StateWork {
 			indexer.setSortHint(root.getAttribute("SortHint"));
 		}
 
+		// TODO review this - we only want "main" right?
 		UIUtil.indexFinishedDocument(root.selectFirst("body"), indexer);
 
 		indexer.endSection();	// just in case

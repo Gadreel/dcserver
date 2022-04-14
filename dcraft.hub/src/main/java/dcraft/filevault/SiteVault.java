@@ -47,9 +47,12 @@ public class SiteVault extends FileStoreVault {
 					if (fpath.getName(0).equals("feeds"))
 						continue;
 					
+					if (fpath.getName(0).equals("meta"))
+						continue;
+
 					if (fpath.getName(0).equals("galleries"))
 						continue;
-					
+
 					if (fpath.getName(0).equals("sites"))
 						continue;
 					

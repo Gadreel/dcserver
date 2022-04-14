@@ -118,7 +118,7 @@
 					entry.Store.Path = '/';
 			}
 
-			entry.Store.PublicPath = 'https://{$AwsConfig.@CDNDoman}/{$_Node.Deployment}/{$_Tenant.Alias}';
+			entry.Store.PublicPath = 'https://{$AwsConfig.@CDNDomain}/{$_Node.Deployment}/{$_Tenant.Alias}/files';
 
 			var npos = entry.Name.lastIndexOf('/');
 			var nname = entry.Name.substr(npos + 1);

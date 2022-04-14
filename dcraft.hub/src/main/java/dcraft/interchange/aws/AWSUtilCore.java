@@ -1,6 +1,7 @@
 package dcraft.interchange.aws;
 
 import dcraft.aws.Util;
+import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeRecord;
 import dcraft.log.Logger;
@@ -191,7 +192,7 @@ public class AWSUtilCore {
 		
 		// Step 2: Create canonical URI--the part of the URI from domain to query
 		// string (use "/" if no path)
-		String canonical_uri = options.getFieldAsString("Path", "/");
+		String canonical_uri = AWSUtilCore.toCanonicalUri(options.getFieldAsString("Path", "/"));
 
 		// Step 3: Create the canonical query string. In this example, request
 		// parameters are passed in the body of the request and the query string
@@ -300,7 +301,7 @@ public class AWSUtilCore {
 
 	static public String generateEndpoint(RecordStruct options) {
 		String host = options.getFieldAsString("Host") ;
-		String canonical_uri = options.getFieldAsString("Path", "/");
+		String canonical_uri = AWSUtilCore.toCanonicalUri(options.getFieldAsString("Path", "/"));
 
 		String endpoint = "https://" + host + canonical_uri;
 
@@ -312,6 +313,24 @@ public class AWSUtilCore {
 			endpoint += "?" + canonical_querystring;
 
 		return endpoint;
+	}
+
+	static public String toCanonicalUri(String path) {
+		CommonPath commonPath = CommonPath.from(path);
+
+		if (commonPath.isRoot())
+			return path;
+
+		String newpath = "";
+
+		for (String part : commonPath.getParts()) {
+			newpath += "/" + URLEncoder.encode(part, StandardCharsets.UTF_8).replace("+", "%20");
+		}
+
+		if (path.endsWith("/"))
+			newpath += "/";
+
+		return newpath;
 	}
 
 	static public String generateRequestParams(RecordStruct options) {

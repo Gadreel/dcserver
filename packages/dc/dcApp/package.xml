@@ -320,6 +320,7 @@
 			<Site Id="Galleries" VaultClass="dcraft.filevault.GalleryVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/galleries"  />
 			<Site Id="Files" VaultClass="dcraft.filevault.FileStoreVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/files"  />
 			<Site Id="Feeds" VaultClass="dcraft.filevault.FeedVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/feeds"  />
+			<Site Id="Meta" VaultClass="dcraft.filevault.MetaVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/meta"  />
 			<Site Id="SiteFiles" VaultClass="dcraft.filevault.SiteVault" ReadBadges="Developer" WriteBadges="Developer" RootFolder="/"  />
 			<Tenant Id="StoreOrders" VaultClass="dcraft.filevault.FileStoreVault" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />
 			<Tenant Id="ManagedForms" VaultClass="dcraft.filevault.ManagedFormVault" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />

@@ -2,7 +2,7 @@
 	<dcs.CatalogSettings Id="Interchange-Aws" Result="AwsConfig" />
 
 	<dcs.Var Name="awsStore" Type="dcmAwsCDNStore">
-		<Connect AwsBucket="$AwsConfig.@CDNBucket" AwsAccount="default" RootFolder="/{$_Node.Deployment}/{$_Tenant.Alias}" />
+		<Connect AwsBucket="$AwsConfig.@CDNBucket" AwsAccount="default" RootFolder="/{$_Node.Deployment}/{$_Tenant.Alias}/files" />
 		<PresignUpload Path="$Data.Path" Handle="Info" />
 	</dcs.Var>
 

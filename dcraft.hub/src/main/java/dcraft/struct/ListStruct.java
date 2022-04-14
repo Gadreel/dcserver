@@ -684,6 +684,12 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 
 			return ReturnOption.CONTINUE;
 		}
+		else if ("Reverse".equals(code.getName())) {
+			if (this.items != null)
+				Collections.reverse(this.items);
+
+			return ReturnOption.CONTINUE;
+		}
 
 		return super.operation(stack, code);
 	}

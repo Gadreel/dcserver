@@ -376,7 +376,8 @@ public class Html extends Base {
 						.withAttribute("property", "og:title")
 						.withAttribute("content", "{$Page.Title}")
 				);
-		
+
+		/* no longer supported
 		if (page.isNotFieldEmpty("Keywords")) {
 			head
 				.with(W3Closed.tag("meta")
@@ -384,6 +385,7 @@ public class Html extends Base {
 						.withAttribute("content", "{$Page.Keywords}")
 				);
 		}
+		 */
 		
 		if (page.isNotFieldEmpty("Description")) {
 			head

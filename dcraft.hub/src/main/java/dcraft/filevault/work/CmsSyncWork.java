@@ -189,7 +189,7 @@ public class CmsSyncWork extends StateWork {
 		}
 		
 		// TODO expand support for custom vaults
-		if ("Galleries".equals(vault) || "Files".equals(vault) || "Feeds" .equals(vault) || "SiteFiles".equals(vault)) {
+		if ("Galleries".equals(vault) || "Files".equals(vault) || "Feeds" .equals(vault) || "SiteFiles".equals(vault) || "Meta".equals(vault)) {
 			Logger.info("Process vault: " + vault);
 			
 			this.chainThen(

@@ -53,6 +53,11 @@ public class UpdateRecord extends OperationsInstruction {
 							.withAttribute("Value", this.getAttribute("Table"))
 					);
 
+				if (this.hasNotEmptyAttribute("Source"))
+					this.add(0, XElement.tag("Source")
+							.withAttribute("Value", this.getAttribute("Source"))
+					);
+
 				//if (this.hasNotEmptyAttribute("Result"))
 				this.with(XElement.tag("Execute")
 						.withAttribute("Result", this.getAttribute("Result"))
