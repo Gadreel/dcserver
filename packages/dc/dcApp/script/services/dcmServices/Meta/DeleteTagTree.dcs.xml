@@ -1,0 +1,10 @@
+<dcs.Script>
+
+	<dcs.ResourceHelper Find="Tag" Result="TagResources" />
+
+	<dcs.With Target="$TagResources">
+		<DeleteTree Alias="$Data.Alias" />
+	</dcs.With>
+
+	<dcs.Exit />
+</dcs.Script>

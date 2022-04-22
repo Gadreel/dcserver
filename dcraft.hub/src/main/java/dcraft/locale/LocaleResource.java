@@ -6,10 +6,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.resource.ResourceBase;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.log.Logger;
+import dcraft.script.StackUtil;
+import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
+import dcraft.struct.RecordStruct;
+import dcraft.struct.scalar.StringStruct;
 import dcraft.util.StringUtil;
+import dcraft.xml.XElement;
 
 public class LocaleResource extends ResourceBase {
 	protected Dictionary dictionary = null;
@@ -299,5 +306,20 @@ public class LocaleResource extends ResourceBase {
 			return this.tr(locale, singulartoken, params);
 		
 		return this.tr(locale, pluraltoken, params);
+	}
+
+	@Override
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
+		if ("GetLocale".equals(code.getName())) {
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+
+			if (StringUtil.isNotEmpty(result)) {
+				StackUtil.addVariable(stack, result, StringStruct.of(this.locale));
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+
+		return super.operation(stack, code);
 	}
 }

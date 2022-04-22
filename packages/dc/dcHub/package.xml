@@ -269,6 +269,7 @@
 			<Tag Name="dcs.ConfigGetTagList" Class="dcraft.script.inst.ext.ConfigGetTagList" />
 			<Tag Name="dcs.ConfigGetTagListDeep" Class="dcraft.script.inst.ext.ConfigGetTagListDeep" />
 			<Tag Name="dcs.ConfigGetTagListLocal" Class="dcraft.script.inst.ext.ConfigGetTagListLocal" />
+			<Tag Name="dcs.ResourceHelper" Class="dcraft.script.inst.ext.ResourceHelper" />
 			<Tag Name="dcs.SchemaGetTypeDef" Class="dcraft.script.inst.ext.SchemaGetTypeDef" />
 			<Tag Name="dcs.ScriptFindScript" Class="dcraft.script.inst.ext.ScriptFindScript" />
 

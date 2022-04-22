@@ -18,41 +18,60 @@ package dcraft.script.inst.ext;
 
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.resource.ResourceTier;
 import dcraft.schema.DataType;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
-import dcraft.struct.Struct;
+import dcraft.struct.CompositeStruct;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
 // TODO replace with ResourceHelper
-public class SchemaGetTypeDef extends Instruction {
-	static public SchemaGetTypeDef tag() {
-		SchemaGetTypeDef el = new SchemaGetTypeDef();
-		el.setName("dcs.SchemaGetTypeDef");
+public class ResourceHelper extends Instruction {
+	static public ResourceHelper tag() {
+		ResourceHelper el = new ResourceHelper();
+		el.setName("dcs.ResourceHelper");
 		return el;
 	}
 
 	@Override
 	public XElement newNode() {
-		return SchemaGetTypeDef.tag();
+		return ResourceHelper.tag();
 	}
 
 	@Override
 	public ReturnOption run(InstructionWork stack) throws OperatingContextException {
 		if (stack.getState() == ExecuteState.READY) {
-			String name = StackUtil.stringFromSource(stack, "Name");
+			String level = StackUtil.stringFromSource(stack, "Level", "My");
+			String find = StackUtil.stringFromSource(stack, "Find");
 
-			DataType type = ResourceHub.getResources().getSchema().getType(name);
+			ResourceTier tier = null;
 
-			if (type != null) {
+			switch (level) {
+				case "My":
+					tier = ResourceHub.getResources();
+					break;
+				case "Site":
+					tier = ResourceHub.getSiteResources();
+					break;
+				case "Tenant":
+					tier = ResourceHub.getTenantResources();
+					break;
+				default:
+					tier = ResourceHub.getTopResources();
+					break;
+			}
+
+			CompositeStruct struct = tier.get(find);
+
+			if (struct != null) {
 				String result = StackUtil.stringFromSource(stack, "Result");
 				
 				if (StringUtil.isNotEmpty(result)) {
-					StackUtil.addVariable(stack, result, type.toJsonDef());
+					StackUtil.addVariable(stack, result, struct);
 				}
 			}
 			

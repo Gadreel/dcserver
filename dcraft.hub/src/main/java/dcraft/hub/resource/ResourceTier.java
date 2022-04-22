@@ -189,6 +189,23 @@ public class ResourceTier extends CompositeStruct {
 		return r;
 	}
 
+	public TagResouce getTag() {
+		return (TagResouce) this.get("Tag");
+	}
+
+	synchronized public TagResouce getOrCreateTierTag() {
+		TagResouce r = (TagResouce) this.getTier("Tag");
+
+		if (r != null)
+			return r;
+
+		r = new TagResouce();
+
+		this.with(r);
+
+		return r;
+	}
+
 	public ServiceResource getServices() {
 		return (ServiceResource) this.get("Service");
 	}
@@ -323,48 +340,8 @@ public class ResourceTier extends CompositeStruct {
 		
 		String fld = part.getField();
 
-		BaseStruct o = null;
-		
-		if ("Locale".equals(fld)) {
-			o = this.get("Locale");
-		}
-		else if ("Config".equals(fld)) {
-			o = this.get("Config");
-		}
-		else if ("Mime".equals(fld)) {
-			o = this.get("Mime");
-		}
-		else if ("Markdown".equals(fld)) {
-			o = this.get("Markdown");
-		}
-		else if ("KeyRing".equals(fld)) {
-			o = this.get("KeyRing");
-		}
-		else if ("Packages".equals(fld)) {
-			o = this.get("Packages");
-		}
-		else if ("Schema".equals(fld)) {
-			o = this.get("Schema");
-		}
-		else if ("Service".equals(fld)) {
-			o = this.get("Service");
-		}
-		else if ("Script".equals(fld)) {
-			o = this.get("Script");
-		}
-		else if ("Node".equals(fld)) {
-			o = this.get("Node");
-		}
-		else if ("Database".equals(fld)) {
-			o = this.get("Database");
-		}
-		else if ("Class".equals(fld)) {
-			o = this.get("Class");
-		}
-		else if ("Trust".equals(fld)) {
-			o = this.get("Trust");
-		}
-		
+		BaseStruct o = this.get(fld);
+
 		if (path.length == 1)
 			return (o != null) ? o : null;
 		

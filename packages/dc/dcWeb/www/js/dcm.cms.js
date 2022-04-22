@@ -637,6 +637,11 @@ dc.pui.Apps.Menus.dcmSystem = {
 			Path: '/dcr/feeds'
 		},
   	{
+			Alias: 'Tags',
+			Title: 'Meta Tags',
+			Path: '/dcr/meta/tags'
+		},
+  	{
 			Alias: 'Certificates',
 			Title: 'Certificates',
 			Auth: [ 'SysAdmin' ],

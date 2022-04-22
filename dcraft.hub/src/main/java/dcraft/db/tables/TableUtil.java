@@ -369,12 +369,35 @@ public class TableUtil {
 		String subid = field.getFieldAsString("SubId");
 
 		if (StringUtil.isNotEmpty(subid) && fdef.isList()) {
-			if (subselect != null)
+			// GROUP
+			if (field.hasField("KeyName")) {
+				ListStruct subselect2 = TableUtil.buildSubquery(field, table);
+
+				// every field in subselect should be a list item, part of the group
+				for (int f = 0; f < subselect2.size(); f++) {
+					RecordStruct frec = subselect2.getItemAsRecord(f);
+					frec.with("SubId", subid);
+				}
+
+				out.startRecord();
+
+				out.field(field.getFieldAsString("KeyName"), subid);
+
+				// don't create a new scope, this is still the same record
+				TableUtil.writeRecord(out, db, scope, table, id, subselect2, true, true);
+
+				out.endRecord();
+			}
+			// SUBQUERY
+			else if (subselect != null) {
 				foreignSink.apply(db.getList(table, id, fname, subid, format));
-			else if (compact)
+			}
+			else if (compact) {
 				out.value(db.getList(table, id, fname, subid, format));
-			else
+			}
+			else {
 				out.value(db.getListExtended(table, id, fname, subid, format));
+			}
 		}
 		// List
 		else if (fdef.isList()) {

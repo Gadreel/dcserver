@@ -1,0 +1,12 @@
+<dcs.Script>
+
+	<dcs.ResourceHelper Find="Tag" Result="TagResources" />
+
+  <dcs.Console>a: {$Data.Alias}</dcs.Console>
+
+	<dcs.With Target="$TagResources">
+		<LoadTree Alias="$Data.Alias" Result="Tree" />
+	</dcs.With>
+
+	<dcs.Exit Result="$Tree" />
+</dcs.Script>

@@ -200,7 +200,10 @@ public class Load extends RecordStruct {
 				field.with("Name", StackUtil.stringFromElement(state, code,"As"));
 			
 			field.with("KeyName", StackUtil.stringFromElement(state, code,"Key", "SubId"));
-			
+
+			if (code.hasNotEmptyAttribute("SubId"))
+				field.with("SubId", StackUtil.stringFromElement(state, code,"SubId"));
+
 			for (XElement child : code.selectAll("*"))
 				Load.addSelect(field, state, child);
 			

@@ -1041,6 +1041,9 @@ public class TablesAdapter {
 	}
 
 	public byte[] getRaw(String table, String id, String field, String area) throws OperatingContextException {
+		if ("Id".equals(field))
+			return ByteUtil.buildValue(id);
+
 		// checks the Retired flag 
 		BigDecimal stamp = this.getScalarStamp(table, id, field);
 		

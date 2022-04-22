@@ -66,6 +66,7 @@ public class PrepWork extends StateWork {
 				.withStep(StateWorkStep.of("Load Packages", this::loadPackages))		// before schema to pickup new schema
 				.withStep(StateWorkStep.of("Load Schema", this::loadSchema))
 				.withStep(StateWorkStep.of("Load Script", this::loadScript))
+				.withStep(StateWorkStep.of("Load Tags", this::loadTags))
 				.withStep(StateWorkStep.of("Load Services", this::loadServices))
 				.withStep(StateWorkStep.of("Load Sites", this::loadSites))
 				//.withStep(StateWorkStep.of("Load Schedules", this::loadSchedule))
@@ -413,6 +414,46 @@ public class PrepWork extends StateWork {
 		}
 
 		loadVariables(this.tenant, config);
+
+		return StateWorkStep.NEXT;
+	}
+
+	public StateWorkStep loadTags(TaskContext trun) throws OperatingContextException {
+		if (Logger.isDebug())
+			Logger.debug("Starting tenant load tags for: " + this.tenant.getAlias());
+
+		ResourceTier resources = this.tenant.getTierResources();
+
+		Path spath = this.tenant.resolvePath("meta/tags");
+
+		if (Files.exists(spath)) {
+			TagResouce config = resources.getOrCreateTierTag();
+
+			try {
+				// load the trees
+				Files.walk(spath).forEach(sf -> {
+					if (sf.getFileName().toString().endsWith(".tree.json")) {
+						Logger.trace("Loading tag tree: " + sf.toAbsolutePath());
+						config.loadTree(sf);
+					}
+				});
+
+				/* TODO bad idea
+				// load the lang extensions
+				Files.walk(spath).forEach(sf -> {
+					if (sf.getFileName().toString().endsWith(".lang.json")) {
+						Logger.trace("Loading tag lang: " + sf.toAbsolutePath());
+						config.loadLang(sf);
+					}
+				});
+
+				 */
+			}
+			catch (IOException x) {
+				Logger.warn("Unabled to get folder listing: " + x);
+			}
+
+		}
 
 		return StateWorkStep.NEXT;
 	}

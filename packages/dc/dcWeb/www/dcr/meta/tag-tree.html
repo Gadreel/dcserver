@@ -1,0 +1,210 @@
+<dc.Html Badges="SysAdmin,Admin">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Edit Tag Tree" />
+	</Meta>
+
+	<Require Icons="fas/times,fas/plus,fas/minus,fas/pencil-alt,fas/arrow-right" />
+
+	<dcs.ResourceHelper Find="Locale" Result="MyLocaleResource" />
+	<dcs.ResourceHelper Level="Site" Find="Locale" Result="SiteLocaleResource" />
+
+	<dcs.With Target="$MyLocaleResource">
+		<GetLocale Result="MyLocale" />
+	</dcs.With>
+
+	<dcs.With Target="$SiteLocaleResource">
+		<GetLocale Result="SiteLocale" />
+	</dcs.With>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.FormButtons>
+				<dc.Button Label="Save" Click="DoSave" />
+			</dcf.FormButtons>
+
+			<dc.Style>
+			#treeDcrTagsAll,
+			#treeDcrTagsAll ul {
+			  list-style-type: none;
+			}
+
+			#treeDcrTagsAll {
+			  margin: 0;
+			  padding: 0;
+			}
+
+			#treeDcrTagsAll .caret {
+			  cursor: pointer;
+			  -webkit-user-select: none; /* Safari 3.1+ */
+			  -moz-user-select: none; /* Firefox 2+ */
+			  -ms-user-select: none; /* IE 10+ */
+			  user-select: none;
+			}
+
+			#treeDcrTagsAll .caret::before {
+			  content: "\25B6";
+			  color: black;
+			  display: inline-block;
+			  margin-right: 6px;
+			}
+
+			#treeDcrTagsAll .caret-down::before {
+			  -ms-transform: rotate(90deg); /* IE 9 */
+			  -webkit-transform: rotate(90deg); /* Safari */'
+			  transform: rotate(90deg);
+			}
+
+			#treeDcrTagsAll .nested {
+			  display: none;
+			}
+
+			#treeDcrTagsAll .active {
+			  display: block;
+			}
+			</dc.Style>
+
+			<ul id="treeDcrTagsAll" />
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.Store.MyLocale = '{$MyLocale}';
+			page.Store.SiteLocale = '{$SiteLocale}';
+
+			dc.comm.call('dcmServices.Meta.LoadTagTree', { Alias: page.Params.Alias }, function(rmsg) {
+				if (rmsg.Code != 0) {
+					// don't alert
+					return;
+				}
+
+				page.Store.Tree = rmsg.Result;
+
+				page.callPageFunc('DoAddTree');
+			});
+	]]></Function>
+	<Function Name="DoSave"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcmServices.Meta.SaveTagTree', page.Store.Tree, function(rmsg) {
+				if (rmsg.Code != 0) {
+					dc.pui.Popup.alert('Unable to save tree: ' + rmsg.Message);
+					return;
+				}
+
+				dc.pui.Popup.alert('Tree Saved.');
+			});
+	]]></Function>
+	<Function Name="DoAddTree"><![CDATA[
+			var page = this;
+
+			$('#treeDcrTagsAll').empty();
+
+			page.callPageFunc('DoAddTreeNode', $('#treeDcrTagsAll'), page.Store.Tree,null);
+
+			$('#treeDcrTagsAll .caret').click(function(e) {
+		    $(this).parent().find('> ul').toggleClass("active");
+		    $(this).toggleClass("caret-down");
+
+				e.preventDefault();
+				return false;
+			});
+	]]></Function>
+	<Function Name="DoAddTreeNode" Params="dom,node,parent"><![CDATA[
+			var page = this;
+
+			var title = node.Locale[page.Store.MyLocale] ? node.Locale[page.Store.MyLocale].Title : null;
+
+			if (! title)
+				title = node.Locale[page.Store.SiteLocale] ? node.Locale[page.Store.SiteLocale].Title : null;
+
+			var subroot = $('<li>').dcappend(
+				$('<span>').addClass(node.Children ? 'caret' : '').text(title),
+				' ',
+				$('<a>')
+					.attr("href", "#")
+					.attr("tabindex", "0")
+					.attr("role", "button")
+					.attr("class", "pure-button")
+					//.attr("class", "pure-button-default pure-button dc-button")
+					.dcappend(dc.util.Icon.use('fas-pencil-alt'))
+					.click(node, function(e) {
+						dc.pui.Dialog.loadPage('/dcr/meta/edit-tag', {
+							Tag: e.data,
+							Callback: function(tag) {
+								page.callPageFunc('DoAddTree');		// TODO someday refresh tree in place instead of replace
+							}
+						});
+
+						e.preventDefault();
+						return false;
+					}),
+				' ',
+				$('<a>')
+					.attr("href", "#")
+					.attr("tabindex", "0")
+					.attr("role", "button")
+					.attr("class", "pure-button")
+					//.attr("class", "pure-button-default pure-button dc-button")
+					.dcappend(dc.util.Icon.use('fas-plus'))
+					.click(node, function(e) {
+						dc.pui.Dialog.loadPage('/dcr/meta/add-tag', {
+							Callback: function(tag) {
+								if (! node.Children)
+									node.Children = [ ];
+
+								node.Children.push(tag);
+
+								page.callPageFunc('DoAddTree');		// TODO someday refresh tree in place instead of replace
+							}
+						});
+
+						e.preventDefault();
+						return false;
+					}),
+				' ',
+				$('<a>')
+					.attr("href", "#")
+					.attr("tabindex", "0")
+					.attr("role", "button")
+					.attr("class", "pure-button")
+					//.attr("class", "pure-button-default pure-button dc-button")
+					.dcappend(dc.util.Icon.use('fas-times'))
+					.click(node, function(e) {
+						if (! parent || ! parent.Children)
+							return;
+
+						dc.pui.Popup.confirm('Delete this tag?', function(confirm) {
+							if (! confirm)
+								return;
+
+							for (var i = 0; i < parent.Children.length; i++) {
+								if (parent.Children[i].Alias == e.data.Alias) {
+									parent.Children.splice(i, 1);
+									break;
+								}
+							}
+
+							page.callPageFunc('DoAddTree');		// TODO someday refresh tree in place instead of replace
+						});
+
+						e.preventDefault();
+						return false;
+					})
+			);
+
+
+			if (node.Children) {
+				var sublist = $('<ul>').addClass('nested');
+
+				subroot.dcappend(sublist);
+
+				for (var i = 0; i < node.Children.length; i++) {
+						page.callPageFunc('DoAddTreeNode', sublist, node.Children[i], node);
+				}
+			}
+
+			dom.dcappend(subroot);
+	]]></Function>
+</dc.Html>

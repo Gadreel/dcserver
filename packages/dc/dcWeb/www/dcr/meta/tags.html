@@ -1,0 +1,121 @@
+<dc.Html Badges="SysAdmin,Admin">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Meta Tag Trees" />
+	</Meta>
+
+	<Require Icons="fas/times" />
+	<Require Icons="fas/pencil-alt" />
+
+	<dc.Body>
+		<dc.PagePanel>
+			<table id="lstDcrTagsAll" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Alias</th>
+						<th scope="col">Title</th>
+						<th scope="col">Action</th>
+					</tr>
+				</thead>
+				<tbody id="lstDcrTagsAllBody" />
+			</table>
+
+			<dcf.FormButtons>
+				<dc.Button Label="Add Tree" Click="DoAddTree" />
+			</dcf.FormButtons>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.callPageFunc('DoLoadTree');
+	]]></Function>
+	<Function Name="DoLoadTree"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcmServices.Meta.ListTagTrees', null, function(rmsg) {
+				if (rmsg.Code != 0) {
+					// don't alert
+					return;
+				}
+
+				//console.dir(rmsg.Result);
+
+				$feedtable = $('#lstDcrTagsAllBody');
+
+				$feedtable.empty();
+
+				if (rmsg.Result) {
+					rmsg.Result.sort(dc.util.List.sortObjects('Title'));
+
+					// top five
+					for (var i = 0; i < rmsg.Result.length; i++) {
+						var item = rmsg.Result[i];
+
+						$feedtable.dcappend(
+							$('<tr>').attr('data-alias', item.Alias).dcappend(
+								$('<td>').text(item.Alias),
+								$('<td>').text(item.Title),
+								$('<td>').dcappend(
+									$('<a>')
+										.attr("href", "#")
+										.attr("tabindex", "0")
+										.attr("role", "button")
+										.attr("class", "pure-button-default pure-button dc-button")
+										.dcappend(dc.util.Icon.use('fas-pencil-alt'))
+										.click(item, function(e) {
+											page.Layer.loadPage('/dcr/meta/tag-tree', e.data);
+
+											e.preventDefault();
+											return false;
+										}),
+									' ',
+									$('<a>')
+										.attr("href", "#")
+										.attr("tabindex", "0")
+										.attr("role", "button")
+										.attr("class", "pure-button-default pure-button dc-button")
+										.dcappend(dc.util.Icon.use('fas-times'))
+										.click(item, function(e) {
+												dc.pui.Popup.confirm('Delete this tree?', function(confirm) {
+													if (! confirm)
+														return;
+
+													dc.comm.call('dcmServices.Meta.DeleteTagTree', { Alias: e.data.Alias }, function(rmsg) {
+														if (rmsg.Code != 0) {
+															dc.pui.Popup.alert('Unable to delete tree: ' + rmsg.Message);
+															return;
+														}
+
+														page.callPageFunc('DoLoadTree');
+													});
+
+													e.preventDefault();
+													return false;
+												});
+										})
+								)
+							)
+						);
+					}
+				}
+			});
+	]]></Function>
+	<Function Name="DoAddTree" Params="item"><![CDATA[
+			var page = this;
+
+			dc.pui.Dialog.loadPage('/dcr/meta/add-tree', {
+				Callback: function(tag) {
+					dc.comm.call('dcmServices.Meta.SaveTagTree', tag, function(rmsg) {
+						if (rmsg.Code != 0) {
+							dc.pui.Popup.alert('Unable to add tree: ' + rmsg.Message);
+							return;
+						}
+
+						page.callPageFunc('DoLoadTree');
+					});
+				}
+			});
+
+	]]></Function>
+</dc.Html>

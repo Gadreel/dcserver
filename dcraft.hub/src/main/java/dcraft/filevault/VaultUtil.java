@@ -19,6 +19,9 @@ import dcraft.task.Task;
 import dcraft.task.TaskContext;
 import dcraft.task.TaskHub;
 import dcraft.task.TaskObserver;
+import dcraft.tenant.Site;
+import dcraft.tenant.Tenant;
+import dcraft.tenant.TenantHub;
 import dcraft.util.StringUtil;
 
 import java.util.HashMap;
@@ -226,5 +229,55 @@ public class VaultUtil {
 			return null;
 
 		return Struct.objectToString(scache.get(token + "Tx"));
+	}
+
+	static public UserContext userContextFromManifest(RecordStruct manifest) throws OperatingContextException {
+		String tenant = manifest.getFieldAsString("Tenant");
+		String site = manifest.getFieldAsString("Site");
+
+		Tenant t = TenantHub.resolveTenant(tenant);
+
+		if (t == null) {
+			Logger.error("Unable to resolve tenant: " + tenant);
+			return null;
+		}
+
+		Site s = t.resolveSite(site);
+
+		if (s == null) {
+			Logger.error("Unable to resolve site: " + site);
+			return null;
+		}
+
+		return UserContext.rootUser(tenant, site);
+	}
+
+	static public Vault lookupVaultFromManifest(RecordStruct manifest) throws OperatingContextException {
+		String tenant = manifest.getFieldAsString("Tenant");
+		String site = manifest.getFieldAsString("Site");
+		String vault = manifest.getFieldAsString("Vault");
+
+		Tenant t = TenantHub.resolveTenant(tenant);
+
+		if (t == null) {
+			Logger.error("Unable to resolve tenant: " + tenant);
+			return null;
+		}
+
+		Site s = t.resolveSite(site);
+
+		if (s == null) {
+			Logger.error("Unable to resolve site: " + site);
+			return null;
+		}
+
+		Vault v = s.getVault(vault);
+
+		if (v == null) {
+			Logger.error("Unable to resolve vault: " + vault);
+			return null;
+		}
+
+		return v;
 	}
 }

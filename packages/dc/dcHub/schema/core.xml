@@ -78,10 +78,14 @@
 
 		<!-- a flag in databases to indicate that while this is treated as string, it contains JSON -->
 		<!-- TODO add JSON validation scripts, replace hardcoded approach -->
-		<StringType Id="Json" Searchable="False" />
+		<StringType Id="Json" Searchable="False">
+			<StringRestriction MaxLength="16000000" />
+		</StringType>
 
 		<!-- a flag in databases to indicate that while this is treated as string, it contains XML -->
-		<StringType Id="Xml" Searchable="False" />
+		<StringType Id="Xml" Searchable="False">
+			<StringRestriction MaxLength="16000000" />
+		</StringType>
 
 		<NullType Id="Null" />
 

@@ -1,0 +1,207 @@
+<Schema>
+	<Shared>
+	</Shared>
+
+	<Services>
+		<Service Name="dcmServices">
+			<Feature Name="Meta">
+				<Secure Badges="SysAdmin,Admin">
+					<Op Name="ListTagTrees">
+						<Description>
+							List of tag trees.
+						</Description>
+						<ListResponse>
+							<Record>
+								<Field Name="Alias" Type="dcMetaString" />
+								<Field Name="Title" Type="dcString" />
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="LoadTagTree">
+						<Description>
+							Load a specific tag tree.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Alias" Type="dcMetaString" Required="True" />
+						</RecordResponse>
+						<RecordResponse Inherits="dcmTagTreeDefinition" />
+					</Op>
+					<Op Name="SaveTagTree">
+						<Description>
+							Save a specific tag tree.
+						</Description>
+						<RecordRequest Inherits="dcmTagTreeDefinition" Required="True" />
+					</Op>
+					<Op Name="DeleteTagTree">
+						<Description>
+							Delete a specific tag tree.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Alias" Type="dcMetaString" Required="True" />
+						</RecordResponse>
+					</Op>
+
+
+
+					<Op Name="LoadCustomFields">
+						<Description>
+							Load custom fields of a product.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="BasicForm" Type="Id" Required="IfPresent" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<Field Name="Position" Type="dcmProductCustomFields:dcmPosition" />
+								<Field Name="FieldType" Type="dcmProductCustomFields:dcmFieldType" />
+								<Field Name="DataType" Type="dcmProductCustomFields:dcmDataType" />
+								<Field Name="Label" Type="dcmProductCustomFields:dcmLabel" />
+								<Field Name="LongLabel" Type="dcmProductCustomFields:dcmLongLabel" />
+								<Field Name="Placeholder" Type="dcmProductCustomFields:dcmPlaceholder" />
+								<Field Name="Pattern" Type="dcmProductCustomFields:dcmPattern" />
+								<Field Name="Required" Type="dcmProductCustomFields:dcmRequired" />
+								<Field Name="MaxLength" Type="dcmProductCustomFields:dcmMaxLength" />
+								<Field Name="Horizontal" Type="dcmProductCustomFields:dcmHorizontal" />
+								<Field Name="Price" Type="dcmProductCustomFields:dcmPrice" />
+								<Field Name="Options">
+									<List>
+										<Record>
+											<Field Name="Id" Type="dcMetaString" />
+											<Field Name="Label" Type="dcmProductCustomFields:dcmOptionLabel" />
+											<Field Name="Value" Type="dcmProductCustomFields:dcmOptionValue" />
+											<Field Name="Price" Type="dcmProductCustomFields:dcmOptionPrice" />
+											<Field Name="Weight" Type="dcmProductCustomFields:dcmOptionWeight" />
+											<Field Name="Disabled" Type="dcmProductCustomFields:dcmOptionDisabled" />
+										</Record>
+									</List>
+								</Field>
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="LoadCustomField">
+						<Description>
+							Load custom field of a product.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+							<Field Name="Position" Type="dcmProductCustomFields:dcmPosition" />
+							<Field Name="FieldType" Type="dcmProductCustomFields:dcmFieldType" />
+							<Field Name="DataType" Type="dcmProductCustomFields:dcmDataType" />
+							<Field Name="Label" Type="dcmProductCustomFields:dcmLabel" />
+							<Field Name="LongLabel" Type="dcmProductCustomFields:dcmLongLabel" />
+							<Field Name="Placeholder" Type="dcmProductCustomFields:dcmPlaceholder" />
+							<Field Name="Pattern" Type="dcmProductCustomFields:dcmPattern" />
+							<Field Name="Required" Type="dcmProductCustomFields:dcmRequired" />
+							<Field Name="MaxLength" Type="dcmProductCustomFields:dcmMaxLength" />
+							<Field Name="Horizontal" Type="dcmProductCustomFields:dcmHorizontal" />
+							<Field Name="Price" Type="dcmProductCustomFields:dcmPrice" />
+							<Field Name="Options">
+								<List>
+									<Record>
+										<Field Name="Id" Type="dcMetaString" />
+										<Field Name="Label" Type="dcmProductCustomFields:dcmOptionLabel" />
+										<Field Name="Value" Type="dcmProductCustomFields:dcmOptionValue" />
+										<Field Name="Price" Type="dcmProductCustomFields:dcmOptionPrice" />
+										<Field Name="Weight" Type="dcmProductCustomFields:dcmOptionWeight" />
+										<Field Name="Disabled" Type="dcmProductCustomFields:dcmOptionDisabled" />
+									</Record>
+								</List>
+							</Field>
+						</RecordResponse>
+					</Op>
+					<Op Name="AddCustomField">
+						<Description>
+							Add custom field to a product.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="BasicForm" Type="Id" Required="IfPresent" />
+							<Field Name="Position" Type="dcmProductCustomFields:dcmPosition" />
+							<Field Name="FieldType" Type="dcmProductCustomFields:dcmFieldType" Required="True" />
+							<Field Name="DataType" Type="dcmProductCustomFields:dcmDataType" />
+							<Field Name="Label" Type="dcmProductCustomFields:dcmLabel" Required="True" />
+							<Field Name="LongLabel" Type="dcmProductCustomFields:dcmLongLabel" />
+							<Field Name="Placeholder" Type="dcmProductCustomFields:dcmPlaceholder" />
+							<Field Name="Pattern" Type="dcmProductCustomFields:dcmPattern" />
+							<Field Name="Required" Type="dcmProductCustomFields:dcmRequired" />
+							<Field Name="MaxLength" Type="dcmProductCustomFields:dcmMaxLength" />
+							<Field Name="Horizontal" Type="dcmProductCustomFields:dcmHorizontal" />
+							<Field Name="Price" Type="dcmProductCustomFields:dcmPrice" />
+							<Field Name="AddOptions">
+								<List>
+									<Record>
+										<Field Name="Label" Type="dcmProductCustomFields:dcmOptionLabel" Required="True" />
+										<Field Name="Value" Type="dcmProductCustomFields:dcmOptionValue" Required="True" />
+										<Field Name="Price" Type="dcmProductCustomFields:dcmOptionPrice" />
+										<Field Name="Weight" Type="dcmProductCustomFields:dcmOptionWeight" />
+										<Field Name="Disabled" Type="dcmProductCustomFields:dcmOptionDisabled" />
+									</Record>
+								</List>
+							</Field>
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="UpdateCustomField">
+						<Description>
+							Update custom field to a product.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+							<Field Name="Position" Type="dcmProductCustomFields:dcmPosition" />
+							<Field Name="FieldType" Type="dcmProductCustomFields:dcmFieldType" />
+							<Field Name="DataType" Type="dcmProductCustomFields:dcmDataType" />
+							<Field Name="Label" Type="dcmProductCustomFields:dcmLabel" />
+							<Field Name="LongLabel" Type="dcmProductCustomFields:dcmLongLabel" />
+							<Field Name="Placeholder" Type="dcmProductCustomFields:dcmPlaceholder" />
+							<Field Name="Pattern" Type="dcmProductCustomFields:dcmPattern" />
+							<Field Name="Required" Type="dcmProductCustomFields:dcmRequired" />
+							<Field Name="MaxLength" Type="dcmProductCustomFields:dcmMaxLength" />
+							<Field Name="Horizontal" Type="dcmProductCustomFields:dcmHorizontal" />
+							<Field Name="Price" Type="dcmProductCustomFields:dcmPrice" />
+							<Field Name="SetOptions">
+								<List>
+									<Record>
+										<!-- leave off id to add option -->
+										<Field Name="Id" Type="dcMetaString" Required="IfPresent" />
+										<Field Name="Label" Type="dcmProductCustomFields:dcmOptionLabel" Required="True" />
+										<Field Name="Value" Type="dcmProductCustomFields:dcmOptionValue" Required="True" />
+										<Field Name="Price" Type="dcmProductCustomFields:dcmOptionPrice" />
+										<Field Name="Weight" Type="dcmProductCustomFields:dcmOptionWeight" />
+										<Field Name="Disabled" Type="dcmProductCustomFields:dcmOptionDisabled" />
+									</Record>
+								</List>
+							</Field>
+							<Field Name="RemoveOptions">
+								<List Type="dcMetaString" />
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="RemoveCustomField">
+						<Description>
+							Remove custom field from a product.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+						</RecordRequest>
+					</Op>
+					<Op Name="UpdateCustomFieldPositions">
+						<Description>
+							Update all positions of custom fields in a product/form.
+						</Description>
+						<ListRequest Required="True">
+							<Record>
+								<Field Name="Id" Type="Id" Required="True" />
+								<Field Name="Position" Type="dcmProductCustomFields:dcmPosition" Required="True" />
+							</Record>
+						</ListRequest>
+					</Op>
+				</Secure>
+			</Feature>
+		</Service>
+	</Services>
+</Schema>

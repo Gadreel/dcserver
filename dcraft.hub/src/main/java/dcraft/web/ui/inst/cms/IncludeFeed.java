@@ -145,11 +145,12 @@ public class IncludeFeed extends Base {
 				
 				if (frag != null) {
 					if (frag.hasAttributes()) {
-						for (Map.Entry<String, String> attr : frag.getAttributes().entrySet())
-							if (! this.hasAttribute(attr.getKey()) && ! "class".equals(attr.getKey()))
+						for (Map.Entry<String, String> attr : frag.getAttributes().entrySet()) {
+							if (! this.hasAttribute(attr.getKey()) && ! "class".equals(attr.getKey()) && ! "id".equals(attr.getKey()))
 								this.setAttribute(attr.getKey(), attr.getValue());
+						}
 					}
-					
+
 					// copy over the page class
 					String pclass = StackUtil.stringFromElement(state, frag,"class");
 					
@@ -158,6 +159,10 @@ public class IncludeFeed extends Base {
 					
 					// copy appropriate children over
 					for (XElement el : frag.selectAll("*")) {
+						// for the cms, let the band know that it can be manipulated within the fragment
+						if (frag.hasNotEmptyAttribute("id") && "dc.Band".equals(el.getName()))
+							el.attr("data-dc-frag-id", frag.attr("id"));
+
 						this.add(el);
 					}
 				}
@@ -206,10 +211,9 @@ public class IncludeFeed extends Base {
 	@Override
 	public void renderAfterChildren(InstructionWork state) throws OperatingContextException {
 		this
-				.withClass("dc-widget", "dc-widget-image")
 				.withAttribute("data-dc-enhance", "true")
 				.withAttribute("data-dc-tag", this.getName());
-		
+
 		this.setName("div");
 	}
 }

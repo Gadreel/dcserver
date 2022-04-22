@@ -1,0 +1,9 @@
+<dcs.Script>
+	<dcs.ResourceHelper Find="Tag" Result="TagResources" />
+
+	<dcs.With Target="$TagResources">
+		<ListAll Result="Listing" />
+	</dcs.With>
+
+	<dcs.Exit Result="$Listing" />
+</dcs.Script>

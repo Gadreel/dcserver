@@ -39,7 +39,8 @@ abstract public class Vault {
 	protected String[] readauthlist = null;
 	protected String[] writeauthlist = null;
 	protected boolean uploadtoken = false;
-	
+	protected boolean cmsSync = false;
+
 	protected String tenant = null;
 	protected String site = null;
 	
@@ -90,8 +91,10 @@ abstract public class Vault {
 		if (StringUtil.isNotEmpty(watags)) 
 			 this.writeauthlist = watags.split(",");
 		
+		this.cmsSync = Struct.objectToBoolean(bel.getAttribute("CmsSync", "False"));
+
 		this.uploadtoken = Struct.objectToBoolean(bel.getAttribute("UploadToken", "False"));
-		
+
 		this.bestEvidence = bel.getAttribute("BestEvidence", "SHA256");
 		this.minEvidence = bel.getAttribute("MinEvidence","Size");
 	}
@@ -111,7 +114,11 @@ abstract public class Vault {
 	public boolean isUploadtokenRequired() {
 		return this.uploadtoken;
 	}
-	
+
+	public boolean isCmsSync() {
+		return this.cmsSync;
+	}
+
 	public boolean checkReadAccess(String op, String path, RecordStruct params) throws OperatingContextException {
 		UserContext uctx = OperationContext.getOrThrow().getUserContext();
 		

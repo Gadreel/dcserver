@@ -23,7 +23,25 @@ public class ResourceHub {
 		
 		return ResourceHub.top;
 	}
-	
+
+	static public ResourceTier getSiteResources() {
+		OperationContext oc = OperationContext.getOrNull();
+
+		if (oc != null)
+			return oc.getSite().getResources();
+
+		return ResourceHub.top;
+	}
+
+	static public ResourceTier getTenantResources() {
+		OperationContext oc = OperationContext.getOrNull();
+
+		if (oc != null)
+			return oc.getTenant().getResources();
+
+		return ResourceHub.top;
+	}
+
 	static public String tr(long code, Object... params) {
 		return ResourceHub.tr("_code_" + code, params);
 	}

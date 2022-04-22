@@ -8,6 +8,7 @@ import dcraft.filestore.local.LocalStoreFile;
 import dcraft.filevault.DepositHub;
 import dcraft.filevault.ManifestTransaction;
 import dcraft.filevault.Vault;
+import dcraft.filevault.VaultUtil;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
@@ -66,8 +67,7 @@ public class CmsSyncWork extends StateWork {
 	protected StateWorkStep done = null;
 	
 	protected ManifestTransaction manifestTransaction = null;
-	protected OperationContext commitContext = null;
-	
+
 	@Override
 	public void prepSteps(TaskContext trun) throws OperatingContextException {
 		this.localdepositstore = LocalStore.of(ApplicationHub.getDeploymentPath().resolve("nodes/" + prodnodeid + "/deposits"));
@@ -187,9 +187,13 @@ public class CmsSyncWork extends StateWork {
 			Logger.info("Skipping, backups");
 			return this.next;
 		}
-		
-		// TODO expand support for custom vaults
-		if ("Galleries".equals(vault) || "Files".equals(vault) || "Feeds" .equals(vault) || "SiteFiles".equals(vault) || "Meta".equals(vault)) {
+
+		Vault v = VaultUtil.lookupVaultFromManifest(this.manifest);
+
+		if (v == null)
+			return this.next;
+
+		if (v.isCmsSync()) {
 			Logger.info("Process vault: " + vault);
 			
 			this.chainThen(
@@ -208,38 +212,16 @@ public class CmsSyncWork extends StateWork {
 	}
 	
 	public StateWorkStep expand(TaskContext trun) throws OperatingContextException {
-		String tenant = this.manifest.getFieldAsString("Tenant");
-		String site = this.manifest.getFieldAsString("Site");
-		String vault = manifest.getFieldAsString("Vault");
-		
-		Tenant t = TenantHub.resolveTenant(tenant);
-		
-		if (t == null) {
-			Logger.error("Unable to resolve tenant: " + tenant);
+		Vault v = VaultUtil.lookupVaultFromManifest(this.manifest);
+
+		if (v == null)
 			return this.done;
-		}
-		
-		Site s = t.resolveSite(site);
-		
-		if (s == null) {
-			Logger.error("Unable to resolve site: " + site);
-			return this.done;
-		}
-		
-		Vault v = s.getVault(vault);
-		
-		if (v == null) {
-			Logger.error("Unable to resolve vault: " + vault);
-			return this.done;
-		}
-		
+
 		this.manifestTransaction = ManifestTransaction.of(v, this.manifest, this.did, this.prodnodeid);
-		
-		this.commitContext = OperationContext.context(UserContext.rootUser(tenant, site));
-		
+
 		this.chainThen(
 				trun,
-				ExpandDepositWork.of(this.did, this.prodnodeid, this.manifest, (LocalStoreFile) manifestTransaction.getFolder().rootFolder()),
+				ExpandDepositWork.of(this.did, this.prodnodeid, this.manifest, manifestTransaction.getFolder().rootFolder()),
 				this.commit
 		);
 		
@@ -252,7 +234,7 @@ public class CmsSyncWork extends StateWork {
 				new IWork() {
 					@Override
 					public void run(TaskContext taskctx1) throws OperatingContextException {
-						TaskHub.submit(Task.ofContext(commitContext)
+						TaskHub.submit(Task.ofContext(OperationContext.context(VaultUtil.userContextFromManifest(CmsSyncWork.this.manifest)))
 										.withTitle("Process deposit")
 										.withWork(
 												new IWork() {
