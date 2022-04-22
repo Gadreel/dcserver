@@ -1,19 +1,7 @@
 package dcraft.sql;
 
-import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
-import dcraft.service.BaseService;
-import dcraft.service.ServiceRequest;
-import dcraft.task.Task;
-import dcraft.task.TaskContext;
-import dcraft.task.TaskHub;
-import dcraft.task.TaskObserver;
-import z.tws.batch.Frequent;
-import z.tws.batch.Nightly;
-import z.tws.services.BatchScript;
 
-import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.concurrent.ConcurrentLinkedQueue;

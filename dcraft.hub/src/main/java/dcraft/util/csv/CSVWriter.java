@@ -37,8 +37,6 @@ import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.util.StringUtil;
-import z.gei.db.estimator.product.List;
 
 /**
  * CSV4180Writer provides a simple way to export CSV values to a file or

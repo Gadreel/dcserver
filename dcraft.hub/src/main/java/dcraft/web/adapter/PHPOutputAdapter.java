@@ -2,7 +2,6 @@ package dcraft.web.adapter;
 
 import com.caucho.quercus.env.Env;
 import com.caucho.quercus.env.NullValue;
-import com.caucho.quercus.env.StringValue;
 import com.caucho.quercus.env.Value;
 import com.caucho.vfs.ReadStream;
 import dcraft.filestore.CommonPath;
@@ -20,15 +19,13 @@ import dcraft.task.TaskContext;
 import dcraft.tenant.Site;
 import dcraft.util.Memory;
 import dcraft.util.php.PhpUtil;
+import dcraft.util.php.QuercusUtil;
 import dcraft.web.HttpDestStream;
 import dcraft.web.IOutputWork;
 import dcraft.web.Response;
 import dcraft.web.WebController;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.apache.commons.codec.Charsets;
-import org.apache.commons.codec.binary.StringUtils;
-import z.tws.php.QuercusUtil;
 
 import java.io.IOException;
 import java.nio.file.Path;
