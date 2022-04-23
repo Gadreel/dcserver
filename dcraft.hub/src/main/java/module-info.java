@@ -24,6 +24,7 @@ module dcraft.hub {
   requires org.slf4j;
   requires activation;
   requires java.mail;
+  requires org.eclipse.jgit;
   requires jxl;
   requires org.jsoup;
   requires quercus;
