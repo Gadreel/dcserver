@@ -129,7 +129,7 @@ public class Ignite implements ILocalCommandLine {
 		if (! opt.startsWith("y"))
 			return;
 		
-		IServerHelper ssh = (IServerHelper) ResourceHub.getResources().getClassLoader().getInstance("dcraft.custom.release.ServerHelper");
+		IServerHelper ssh = (IServerHelper) ResourceHub.getResources().getClassLoader().getInstance("dcraft.tool.release.ServerHelper");
 
 		if (! ssh.init()) {
 			System.out.println("Missing or incomplete matrix config - a matrix file is required.");
