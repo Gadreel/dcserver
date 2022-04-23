@@ -29,7 +29,4 @@ module dcraft.hub {
   requires org.jsoup;
   requires quercus;
   requires org.mariadb.jdbc;
-
-  exports z.tws.php to quercus;
-  exports z.tws.web to quercus;
 }
