@@ -16,12 +16,8 @@
 ************************************************************************ */
 package dcraft.script.inst.ext;
 
-import com.caucho.quercus.env.NullValue;
 import dcraft.filestore.FileStoreFile;
 import dcraft.hub.op.*;
-import dcraft.interchange.aws.BinaryResponseConsumer;
-import dcraft.interchange.lightspeed.LightspeedRetailUtil;
-import dcraft.interchange.twilio.SmsUtil;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
@@ -30,17 +26,12 @@ import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.struct.*;
 import dcraft.struct.scalar.BinaryStruct;
-import dcraft.struct.scalar.StringStruct;
-import dcraft.task.IWork;
 import dcraft.task.TaskContext;
 import dcraft.util.Memory;
-import dcraft.util.PeopleUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.net.*;
-import dcraft.util.php.PhpUtil;
 import dcraft.xml.XElement;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -48,7 +39,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 public class RemoteOp extends Instruction {
 	static public RemoteOp tag() {

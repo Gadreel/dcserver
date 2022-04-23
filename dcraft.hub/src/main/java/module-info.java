@@ -27,6 +27,5 @@ module dcraft.hub {
   requires org.eclipse.jgit;
   requires jxl;
   requires org.jsoup;
-  requires quercus;
   requires org.mariadb.jdbc;
 }

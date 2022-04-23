@@ -187,11 +187,13 @@
 	  <artifactId>activation</artifactId>
 	  <version>1.1.1</version>
 	</dependency>	
+	<!--
     <dependency>
       <groupId>com.caucho</groupId>
       <artifactId>quercus</artifactId>
       <version>4.0.66</version>
     </dependency>
+    -->
     <dependency>
       <groupId>org.eclipse.jgit</groupId>
       <artifactId>org.eclipse.jgit</artifactId>
