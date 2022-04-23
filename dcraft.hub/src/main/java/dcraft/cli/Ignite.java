@@ -226,19 +226,29 @@ public class Ignite implements ILocalCommandLine {
 
 		Path template = templates.get(mopt.intValue() - 1);
 		*/
-		
+
+		XElement settings = XElement.tag("Settings")
+				.attr("Name", "Default")
+				.attr("InitClass", "dcraft.cli.BasicIgniteTemplate");
+
+		// template can override the settings
+
 		String tname = selected.attr("Template");
 
-		System.out.println();
-		System.out.println("Using template " + tname);
-		
-		Path template = Paths.get("./templates/" + tname);
-		
-		XElement settings = XmlReader.loadFile(template.resolve("template.xml"), false, true);
-		
-		if (settings == null) {
-			System.out.println("Missing template settings");
-			return;
+		Path template = null;
+
+		if (StringUtil.isNotEmpty(tname)) {
+			System.out.println();
+			System.out.println("Using template " + tname);
+
+			template = Paths.get("./templates/" + tname);
+
+			settings = XmlReader.loadFile(template.resolve("template.xml"), false, true);
+
+			if (settings == null) {
+				System.out.println("Missing template settings");
+				return;
+			}
 		}
 		
 		IInitializeDeploymentCli cli = (IInitializeDeploymentCli) ResourceHub.getResources().getClassLoader().getInstance(settings.attr("InitClass"));
