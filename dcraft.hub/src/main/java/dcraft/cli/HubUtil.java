@@ -26,34 +26,26 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Scanner;
 
 import dcraft.api.ApiSession;
 import dcraft.db.Constants;
-import dcraft.db.DatabaseAdapter;
-import dcraft.db.DatabaseException;
 import dcraft.db.DbServiceRequest;
 import dcraft.db.request.DataRequest;
-import dcraft.db.request.common.AddUserRequest;
 import dcraft.db.request.common.RequestFactory;
 import dcraft.db.rocks.Adapter;
 import dcraft.db.rocks.ConnectionManager;
 import dcraft.db.rocks.keyquery.KeyQuery;
-import dcraft.db.tables.TablesAdapter;
 import dcraft.db.util.ByteUtil;
 import dcraft.db.util.DbUtil;
 import dcraft.hub.Foreground;
 import dcraft.hub.ILocalCommandLine;
-import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.log.Logger;
+import dcraft.hub.op.OutcomeDump;
 import dcraft.struct.BaseStruct;
-import dcraft.struct.Struct;
 import dcraft.util.*;
 import dcraft.util.pgp.KeyRingCollection;
 import dcraft.xml.XElement;
@@ -104,7 +96,7 @@ public class HubUtil implements ILocalCommandLine {
 				}
 				
 				case 1: {
-					this.utilityMenu(scan);
+					this.utilityMenu(scan, api);
 					break;
 				}
 				
@@ -173,7 +165,7 @@ public class HubUtil implements ILocalCommandLine {
 		}
 	}
 
-	public void utilityMenu(Scanner scan) {
+	public void utilityMenu(Scanner scan, ApiSession api) {
 		boolean running = true;
 		
 		while(running) {
@@ -192,7 +184,8 @@ public class HubUtil implements ILocalCommandLine {
 				System.out.println("7)  Compact Database - TODO");
 				System.out.println("8)  Mess Database");
 				System.out.println("9)  Re-index dcTables");
-	
+				System.out.println("10)  Add Tenant");
+
 				String opt = scan.nextLine();
 				
 				Long mopt = StringUtil.parseInt(opt);
@@ -569,7 +562,21 @@ public class HubUtil implements ILocalCommandLine {
 					
 					break;
 				}
-				
+
+				case 10: {
+					System.out.print("Template (basic if empty): ");
+					String name = scan.nextLine();
+
+					if (StringUtil.isEmpty(name))
+						name = "basic";
+
+					String tname = "dca/" + name;
+					Path template = Paths.get("./templates/" + tname);
+
+					new PrepareBasicTenant().run(scan, template, api);
+					break;
+				}
+
 				/*
 				case 212: {
 					RocksInterface adapt = ((DatabaseManager)Hub.instance.getDatabase()).allocateAdapter();

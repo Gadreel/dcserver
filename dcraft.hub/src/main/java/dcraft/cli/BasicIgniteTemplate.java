@@ -71,7 +71,13 @@ public class BasicIgniteTemplate implements IInitializeDeploymentCli {
 
 		HubUtil.initDeployTenantKeys(dpath, deployment.attr("Alias"),"root", kpassword);
 
-		XElement siteconfig = XElement.tag("Config").attr("Title", "Root Site");
+		XElement siteconfig = XElement.tag("Config")
+				.attr("Title", "Root Site")
+				.with(
+						XElement.tag("Domain")
+								.attr("Name", "root")
+								.attr("Certificate", "false")
+				);
 
 		IOUtil.saveEntireFile(dpath.resolve("tenants/root/config/config.xml"), siteconfig.toPrettyString());
 	}
