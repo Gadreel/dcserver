@@ -1,0 +1,11 @@
+<Matrix>
+  <DeveloperNodes>
+	  <Node Id="00100" Note="Developer One" IsProduction="False">
+		  <SSH KeyFile="~/path-to-keys/my-servers.pem" PublicKeyFile="~/path-to-keys/my-servers.pub" />
+	  </Node>
+  </DeveloperNodes>
+
+	<Deployment Alias="kipo" Title="quick start server">
+		<Node Id="99999" Note="Demo Server" />
+	</Deployment>
+</Matrix>

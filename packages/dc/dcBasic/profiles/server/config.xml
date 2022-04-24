@@ -1,0 +1,25 @@
+<Config IsProduction="false">
+	<Packages Use="main-packages" />
+
+	<WorkHub>
+		<Topic Name="Batch" RunLimit="1" />
+	</WorkHub>
+
+	<Service Use="main-db" />
+	<Service Use="main-sessions" />
+	<Service Use="main-core" />
+	<Service Use="main-cms" />
+	<Service Use="main-store" />
+	<Service Inherit="dc-status" />
+	<Service Use="main-web" />
+
+	<Database />
+
+	<!-- enable deposits module
+	<Deposits />
+	-->
+
+	<CommandLine ClientClass="dcraft.cli.HubUtil" />
+
+	<Logger EnableDebugger="true" Level="Info" />
+</Config>

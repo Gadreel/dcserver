@@ -1,19 +1,14 @@
 package dcraft.cli;
 
 import dcraft.api.ApiSession;
-import dcraft.custom.work.DocBuilderWork;
 import dcraft.hub.ignite.IInitializeDeploymentCli;
 import dcraft.hub.ignite.IServerHelper;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.struct.RecordStruct;
-import dcraft.task.*;
-import dcraft.util.FileUtil;
 import dcraft.util.IOUtil;
 import dcraft.util.StandardSettingsObfuscator;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
@@ -44,7 +39,7 @@ public class BasicIgniteTemplate implements IInitializeDeploymentCli {
 						XElement.tag("Profiles")
 								.with(
 										XElement.tag("Profile")
-												.attr("TODO", "xxx")
+												.attr("Name", "dc/dcBasic")
 								),
 						XElement.tag("Keyrings")
 							.attr("Password", obfus.encryptStringToHex(kpassword))

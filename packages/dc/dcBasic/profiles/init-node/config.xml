@@ -1,0 +1,12 @@
+<Config Title="Node Initialization">
+	<Packages Use="main-packages" />
+
+	<WorkHub>
+		<Topic Name="Batch" RunLimit="1" />
+	</WorkHub>
+
+	<Service Use="main-sessions" />
+	<Service Use="main-core" />
+
+	<CommandLine ClientClass="dcraft.cli.NodeInit" />
+</Config>
