@@ -564,16 +564,7 @@ public class HubUtil implements ILocalCommandLine {
 				}
 
 				case 10: {
-					System.out.print("Template (basic if empty): ");
-					String name = scan.nextLine();
-
-					if (StringUtil.isEmpty(name))
-						name = "basic";
-
-					String tname = "dca/" + name;
-					Path template = Paths.get("./templates/" + tname);
-
-					new PrepareBasicTenant().run(scan, template, api);
+					new PrepareBasicTenant().run(scan, api);
 					break;
 				}
 

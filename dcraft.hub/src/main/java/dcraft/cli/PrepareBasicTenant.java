@@ -24,10 +24,6 @@ import java.util.Scanner;
 public class PrepareBasicTenant implements ILocalCommandLine {
 	@Override
 	public void run(Scanner scan, ApiSession client) throws Exception {
-		// TODO
-	}
-	
-	public void run(Scanner scan, Path template, ApiSession client) throws OperatingContextException {
 		char[] kpassword = ResourceHub.getResources().getKeyRing().getPassphrase();
 
 		System.out.println("Tenant Alias:");
