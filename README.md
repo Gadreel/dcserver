@@ -1,14 +1,15 @@
 # dcServer
+
 Web server, database and CMS
 
 ## Status
 
-With 20 production websites, dcServer is proving to be a successful multipurpose web server. The project has recently been migrated to OpenJDK 11 (spring 2019), using the Corretto 11 release. The source code compiles. Project lacks documentation on how to run and code using dcServer - planned for summer and fall of 2019.
+With more than 40 production websites, dcServer is proving to be a successful multipurpose web server. The project currently targets OpenJDK 11 platform. The source code compiles. Project lacks signficant amounts of documentation.
 
-## Download 
+## Quick Start
 
-Instructions on download and running coming. TODO
+Instructions to [download and run](https://designcraft.io/docs/quick-start) the server are available, but only the quick start. Detailed install and configuration documentation are not available yet. 
 
 ## Build
 
-Build the JARs using Maven. First `mvn install` in dcraft.third and then `mvn install` in dcraft.hub folder. While this creates the JAR files, you are not ready to run. Instructions on how to run are above. If you want to be sure your compiled code is used, in favor over the downloaded code, please copy the JARs from the respective target folders to the `lib` folder of the downloads.
+Build the JARs using Maven. First `mvn install` in dcraft.third and then `mvn install` in dcraft.hub folder. This creates the dcServer JAR files in the respective target folders.
