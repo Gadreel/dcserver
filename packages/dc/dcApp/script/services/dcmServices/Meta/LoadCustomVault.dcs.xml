@@ -1,0 +1,12 @@
+<dcs.Script>
+
+	<dcs.ResourceHelper Find="CustomVault" Result="CustomVaultResources" />
+
+  <dcs.Console>a: {$Data.Alias}</dcs.Console>
+
+	<dcs.With Target="$CustomVaultResources">
+		<LoadVault Alias="$Data.Alias" Result="Tree" />
+	</dcs.With>
+
+	<dcs.Exit Result="$Tree" />
+</dcs.Script>

@@ -2274,7 +2274,11 @@ dc.pui.Form.prototype = {
 			var iinfo = form.Inputs[name];
 
 			if ((iinfo.Record == info.Record) && info.Data.hasOwnProperty(iinfo.Field)) {
-				iinfo.setValue(info.Data[iinfo.Field]);
+				if (iinfo.thawValue)
+					iinfo.thawValue(info.Data[iinfo.Field]);
+				else
+					iinfo.setValue(info.Data[iinfo.Field]);
+
 				iinfo.OriginalValue = info.Originals[iinfo.Field];
 			}
 		});
@@ -2304,8 +2308,12 @@ dc.pui.Form.prototype = {
 			var iinfo = form.Inputs[name];
 
 			if (iinfo.Record == recname) {
-				form.FreezeInfo[recname].Originals[iinfo.Field] = iinfo.OriginalValue;
-				form.FreezeInfo[recname].Values[iinfo.Field] = iinfo.getValue();
+				form.FreezeInfo[recname].Originals[iinfo.Field] = iinfo.OriginalValue
+
+				if (iinfo.freezeValue)
+					form.FreezeInfo[recname].Values[iinfo.Field] = iinfo.freezeValue();
+				else
+					form.FreezeInfo[recname].Values[iinfo.Field] = iinfo.getValue();
 			}
 		});
 	},

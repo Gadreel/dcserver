@@ -22,6 +22,7 @@ import dcraft.script.StackUtil;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.task.IParentAwareWork;
+import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
 import java.math.BigDecimal;
@@ -32,13 +33,15 @@ import java.util.List;
 public class Term extends BasicFilter {
 	protected List<byte[]> values = new ArrayList<>();
 	protected String lang = null;
-	
+
 	@Override
 	public void init(RecordStruct where) throws OperatingContextException {
-		this.lang = where.getFieldAsString("Locale", OperationContext.getOrThrow().getLocale());
-		
-		String term = where.getFieldAsString("Term");
-		
+		this.init(where.getFieldAsString("Term"), where.getFieldAsString("Locale"));
+	}
+
+	public void init(String term, String locale) throws OperatingContextException {
+		this.lang = StringUtil.isNotEmpty(locale) ? locale : OperationContext.getOrThrow().getLocale();
+
 		List<IndexInfo> tokens = ResourceHub.getResources().getSchema().getType("String").toIndexTokens(term, this.lang);
 		
 		if (tokens != null) {

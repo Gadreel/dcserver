@@ -642,6 +642,11 @@ dc.pui.Apps.Menus.dcmSystem = {
 			Path: '/dcr/meta/tags'
 		},
   	{
+			Alias: 'CustomVaults',
+			Title: 'Record Library',
+			Path: '/dcr/meta/custom-vaults'
+		},
+  	{
 			Alias: 'Certificates',
 			Title: 'Certificates',
 			Auth: [ 'SysAdmin' ],

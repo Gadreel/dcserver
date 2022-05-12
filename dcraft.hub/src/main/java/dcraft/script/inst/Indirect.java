@@ -54,7 +54,7 @@ public class Indirect extends Instruction {
 		}
 
 		if (var == null)
-			return ReturnOption.DONE;
+			return ReturnOption.CONTINUE;
 
 		StackUtil.addVariable(state, name, var);
 

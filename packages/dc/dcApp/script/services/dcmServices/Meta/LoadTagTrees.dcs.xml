@@ -1,0 +1,20 @@
+<dcs.Script>
+
+	<dcs.ResourceHelper Find="Tag" Result="TagResources" />
+
+	<dcs.Var Name="Trees" Type="List" />
+
+	<dcs.ForEach Name="Alias" In="$Data">
+	  <dcs.Console>a: {$Alias}</dcs.Console>
+
+		<dcs.With Target="$TagResources">
+			<LoadTree Alias="$Alias" Result="Tree" />
+		</dcs.With>
+
+		<dcs.With Target="$Trees">
+			<AddItem Value="$Tree" />
+		</dcs.With>
+	</dcs.ForEach>
+
+	<dcs.Exit Result="$Trees" />
+</dcs.Script>

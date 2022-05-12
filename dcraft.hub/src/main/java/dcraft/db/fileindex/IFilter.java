@@ -12,6 +12,7 @@ import dcraft.xml.XElement;
 
 public interface IFilter {
 	void init(RecordStruct filter) throws OperatingContextException;
+	BasicFilter withNested(IFilter v);
 	ExpressionResult check(FileIndexAdapter adapter, IVariableAware scope, Vault vault, CommonPath path, RecordStruct file) throws OperatingContextException;
 	void parse(IParentAwareWork state, XElement code, RecordStruct filter) throws OperatingContextException;
 }

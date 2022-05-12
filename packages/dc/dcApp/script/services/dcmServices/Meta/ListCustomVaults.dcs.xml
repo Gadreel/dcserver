@@ -1,0 +1,9 @@
+<dcs.Script>
+	<dcs.ResourceHelper Find="CustomVault" Result="CustomVaultResources" />
+
+	<dcs.With Target="$CustomVaultResources">
+		<ListAll Result="Listing" />
+	</dcs.With>
+
+	<dcs.Exit Result="$Listing" />
+</dcs.Script>

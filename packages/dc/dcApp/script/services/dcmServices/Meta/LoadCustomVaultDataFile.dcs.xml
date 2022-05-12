@@ -1,0 +1,14 @@
+<dcs.Script>
+
+	<dcs.ResourceHelper Find="CustomVault" Result="CustomVaultResources" />
+
+	<dcs.With Target="$CustomVaultResources">
+		<LoadDataFile Alias="$Data.Alias" Path="$Data.Path" Locale="{$Data.Locale|ifempty:*}" Result="Form" />
+	</dcs.With>
+
+	<dcs.Var Name="Resp" Type="Record">
+		<SetField Name="Form" Value="$Form" />
+	</dcs.Var>
+
+	<dcs.Exit Result="$Resp" />
+</dcs.Script>

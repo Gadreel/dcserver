@@ -1,0 +1,10 @@
+<dcs.Script>
+
+	<dcs.ResourceHelper Find="CustomVault" Result="CustomVaultResources" />
+
+	<dcs.With Target="$CustomVaultResources">
+		<Search Alias="$Data.Alias" Term="$Data.Term" Locale="$Data.Locale" />
+	</dcs.With>
+
+	<dcs.Exit />
+</dcs.Script>

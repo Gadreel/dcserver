@@ -8,7 +8,9 @@ import dcraft.struct.ListStruct;
 import dcraft.util.StringUtil;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class DocumentIndexBuilder {
 	static public DocumentIndexBuilder index() throws OperatingContextException  {
@@ -30,6 +32,8 @@ public class DocumentIndexBuilder {
 	protected List<IndexInfo> index = new ArrayList<>();
 	protected StringBuilder title = null;
 	protected boolean locktitle = false;
+	protected StringBuilder keywords = null;
+	protected boolean lockkeywords = false;
 	protected StringBuilder summary = null;
 	protected boolean locksummary = false;
 	protected int scorelevel = 1;
@@ -54,6 +58,22 @@ public class DocumentIndexBuilder {
 		this.locktitle = true;
 
 		this.withFragments(LocaleUtil.full(v, this.lang),10);
+	}
+
+	public CharSequence getKeywords() {
+		return this.keywords;
+	}
+
+	public void setKeywords(String v) {
+		if (StringUtil.isEmpty(v))
+			return;
+
+		this.keywords = new StringBuilder(v);
+		this.lockkeywords = true;
+
+		List<IndexInfo> list = LocaleUtil.full(v, this.lang);
+
+		this.withFragmentsIgnoreDups(list,6);
 	}
 
 	public String getLang() {
@@ -176,6 +196,22 @@ public class DocumentIndexBuilder {
 		for (IndexInfo info : list) {
 			info.score = this.scorelevel + bonus;
 			this.index.add(info);
+		}
+
+		return this;
+	}
+
+	public DocumentIndexBuilder withFragmentsIgnoreDups(List<IndexInfo> list, int bonus) {
+		Set<String> dupchecker = new HashSet<>();
+
+		for (IndexInfo info : list) {
+			if (dupchecker.contains(info.token))
+				continue;
+
+			info.score = this.scorelevel + bonus;
+			this.index.add(info);
+
+			dupchecker.add(info.token);
 		}
 
 		return this;

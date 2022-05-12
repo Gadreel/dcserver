@@ -17,7 +17,14 @@ public class BasicFilter implements IFilter {
 		this.nested = v;
 		return this;
 	}
-	
+
+	public IFilter shiftNested(IFilter v) {
+		v.withNested(this.nested);
+
+		this.nested = v;
+		return this;
+	}
+
 	public ExpressionResult nestOrAccept(FileIndexAdapter adapter, IVariableAware scope, Vault vault, CommonPath path, RecordStruct file) throws OperatingContextException {
 		if (this.nested != null)
 			return this.nested.check(adapter, scope, vault, path, file);

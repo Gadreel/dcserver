@@ -1,6 +1,6 @@
 <dc.Html Badges="User">
 	<Meta Name="Title">
-		<Tr Locale="eng" Value="CDN Files Browser" />
+		<Tr Locale="eng" Value="Library Browser" />
 	</Meta>
 
 	<Require Script="/js/dc.transfer.js" />
@@ -9,8 +9,6 @@
 	<dcs.With Target="$_Resources.Mime">
 	  <GetMimeDeep Result="Mimes" />
 	</dcs.With>
-
-	<dcs.CatalogSettings Id="Interchange-Aws" Result="AwsConfig" />
 
 	<dc.Body>
 		<div style="display: none;">
@@ -72,42 +70,27 @@
 	padding-right: 6px;
 	color: black;
 }
-
-#btnDepCdnSelectAction {
-	display: none;
-}
 		</dc.Style>
 
 		<dc.PagePanel>
-			<dcs.CatalogSettings Id="Interchange-Aws" Result="AwsConfig" />
+			<h2 class="dc-element-hidden">Options</h3>
 
-			<dcs.If Target="$AwsConfig.@CDNBucket" IsEmpty="false">
-				<dc.Out>
-					<h2 class="dc-element-hidden">Options</h3>
+			<dcf.FormButtons>
+				<!-- TODO support select mode -->
+				<dc.Button Click="DoAdd" Label="Add Record" />
+				<dc.Button Click="DoAddFolder" Label="Add Folder" />
+				<dc.Button Click="DoOptions" Label="Options ..." />
+			</dcf.FormButtons>
 
-					<dcf.FormButtons>
-						<dc.Button id="btnDepCdnSelectAction" Click="DoSelect" Label="Select File(s)" />
-						<dc.Button Click="DoUpload" Label="Upload File" />
-						<dc.Button Click="DoAddFolder" Label="Add Folder" />
-						<dc.Button Click="DoOptions" Label="Options ..." />
-					</dcf.FormButtons>
+			<h2 id="lblDepFbPath" />
 
-					<h2 id="lblDepCdnPath" />
+			<h2>Folders</h3>
 
-					<h2>Folders</h3>
+			<div id="lstDepFbFolders" class="dcm-file-list" />
 
-					<div id="lstDepCdnFolders" class="dcm-file-list" />
+			<h2>Files</h3>
 
-					<h2>Files</h3>
-
-					<div id="lstDepCdnFiles" class="dcm-file-list" />
-				</dc.Out>
-			</dcs.If>
-			<dcs.Else>
-				<dc.Out>
-					<p>Your website does not have a CDN configured, please ask your web developer to assist.</p>
-				</dc.Out>
-			</dc.Else>
+			<div id="lstDepFbFiles" class="dcm-file-list" />
 		</dc.PagePanel>
 	</dc.Body>
 	<Function Name="Load"><![CDATA[
@@ -116,22 +99,24 @@
 			entry.Store.MimeDefs = {$Mimes};
 
 			if (! this.Store.Path) {
-				if (this.Params.Path) {
+				if (this.Params.Path)
 					entry.Store.Path = this.Params.Path;
-				}
-				else {
-					var lastPath = localStorage.getItem('dcCMS-CDNFiles-LastFolder');
-					entry.Store.Path = lastPath || '/';
-				}
+				else
+					entry.Store.Path = '/';
 			}
-
-			entry.Store.PublicPath = 'https://{$AwsConfig.@CDNDomain}/{$_Node.Deployment}/{$_Tenant.Alias}/files';
 
 			var npos = entry.Name.lastIndexOf('/');
 			var nname = entry.Name.substr(npos + 1);
 
+			if (this.Params.Vault)
+				entry.Store.Vault = this.Params.Vault;
+			else if (nname != 'browser')
+				entry.Store.Vault = nname;
+			else
+				entry.Store.Vault = 'Files';
+
 			entry.Store.Menus = {
-				dcmDepCdnFileMenu: {
+				dcmDepFbFileMenu: {
 					Options: [
 						{
 							Title: 'Preview',
@@ -146,7 +131,16 @@
 							Op: function(e) {
 								var files = entry.callPageFunc('GetSelectedFiles');
 
-								window.open(entry.Store.PublicPath + files[0].Path, '_blank');
+								entry.callPageFunc('DoDownload', files[0]);
+							}
+						},
+						{
+							Title: 'Rename',
+							Auth: [ 'Admin', 'Editor' ],
+							Op: function(e) {
+								var files = entry.callPageFunc('GetSelectedFiles');
+
+								entry.callPageFunc('DoRename', files[0]);
 							}
 						},
 						{
@@ -165,27 +159,17 @@
 							}
 						},
 						{
-							Title: 'Copy Link',
+							Title: 'Edit',
+							Auth: [ 'Developer' ],
 							Op: function(e) {
 								var files = entry.callPageFunc('GetSelectedFiles');
 
-						    var input = document.createElement("textarea");
-
-								$(input).addClass('dc-element-hidden');
-
-								document.body.appendChild(input);
-
-						    input.value = entry.Store.PublicPath + files[0].Path;
-						    input.select();
-
-						    document.execCommand("Copy");
-
-						    input.remove();
+								entry.callPageFunc('DoEditCode', files[0]);
 							}
 						}
 					]
 				},
-				dcmDepCdnFilesMenu: {
+				dcmDepFbFilesMenu: {
 					Options: [
 						{
 							Title: 'Preview',
@@ -212,7 +196,7 @@
 						}
 					]
 				},
-				dcmDepCdnEmptyMenu: {
+				dcmDepFbEmptyMenu: {
 					Options: [
 						{
 							Title: 'Preview',
@@ -231,26 +215,29 @@
 			};
 
 			this.callPageFunc('LoadList');
-
-			if (entry.Params.SelectMode)
-				$('#btnDepCdnSelectAction').show();
 	]]></Function>
 	<Function Name="LoadList"><![CDATA[
 			var entry = this;
 
-			$('#lblDepCdnPath').text('Path: ' + entry.Store.Path);
+			$('#lblDepFbPath').text('Path: ' + entry.Store.Path);
 
-			localStorage.setItem('dcCMS-CDNFiles-LastFolder', entry.Store.Path);
+			$('#lstDepFbFolders,#lstDepFbFiles').empty();
 
-			$('#lstDepCdnFolders,#lstDepCdnFiles').empty();
-
-			dc.comm.call('dcmServices.CDN.ListFolder', { Path: entry.Store.Path }, function(resp) {
-				if (resp.Code > 0) {
+			dc.comm.sendMessage({
+				Service: 'dcCoreServices',
+				Feature: 'Vaults',
+				Op: 'ListFiles',
+				Body: {
+					Vault: entry.Store.Vault,
+					Path: entry.Store.Path
+				}
+			}, function(resp) {
+				if (resp.Result > 0) {
 					dc.pui.Popup.alert(resp.Message);
 					return;
 				}
 
-				var items = entry.Store.Items = resp.Result;
+				var items = entry.Store.Items = resp.Body;
 				var sfield = entry.Store.SortField ? entry.Store.SortField : 'FileName';
 
 				// sort
@@ -258,7 +245,7 @@
 
 				// ########## FOLDERS ##########
 
-				var flist = $('#lstDepCdnFolders');
+				var flist = $('#lstDepFbFolders');
 
 				var folderUpFunc = function(e) {
 					var curr = entry.Store.Path;
@@ -297,7 +284,7 @@
 
 				var fileHighlightFunc = function(e) {
 					if (! e.ctrlKey)
-						$('#lstDepCdnFolders a, #lstDepCdnFiles a').not(e.currentTarget).removeClass('dc-selected');
+						$('#lstDepFbFolders a, #lstDepFbFiles a').not(e.currentTarget).removeClass('dc-selected');
 
 					$(e.currentTarget).toggleClass('dc-selected');
 
@@ -355,10 +342,10 @@
 
 				// ########## FILES ##########
 
-				var flist = $('#lstDepCdnFiles');
+				var flist = $('#lstDepFbFiles');
 
 				var fileClickFunc = function(e) {
-					entry.callPageFunc('DoPreview', e.data, null);
+					entry.callPageFunc('DoEditRecord', e.data, null);
 
 					e.preventDefault();
 					return false;
@@ -418,6 +405,32 @@
 
 			});
 	]]></Function>
+	<Function Name="DoEditRecord" Params="file"><![CDATA[
+			var entry = this;
+
+			// TODO support more than just basic custom vaults
+
+			dc.pui.Dialog.loadPage('/dcr/meta/custom-vault-basic-edit-record/' + entry.Store.Vault, {
+				Vault: entry.Store.Vault,
+				Path: file.Path,
+				Callback: function(files) {
+					$('#lstDepFbFolders,#lstDepFbFiles').empty().dcappend(
+						$('<i>')
+							.attr('class', 'fa fa-spinner fa-pulse fa-lg')
+					);
+
+					entry.callPageFunc('LoadList');
+				}
+			});
+	]]></Function>
+	<Function Name="DoEditCode" Params="file"><![CDATA[
+			var entry = this;
+
+			dc.pui.Dialog.loadPage('/dcm/files/edit-file', {
+				Vault: entry.Store.Vault,
+				Path: file.Path
+			});
+	]]></Function>
 	<Function Name="DoPreview" Params="file,list"><![CDATA[
 			var entry = this;
 
@@ -440,7 +453,7 @@
 			}
 
 			var show = {
-				Path: entry.Store.PublicPath + ((entry.Store.Path.length > 1) ? entry.Store.Path : ''),
+				Path: window.location.origin + '/files' + ((entry.Store.Path.length > 1) ? entry.Store.Path : ''),
 				StartPos: startpos,
 				Files: files
 			};
@@ -448,18 +461,28 @@
 			dc.pui.FullScreen.loadPage('/dcw/view-preview', {
 				View: show
 			});
+
+	]]></Function>
+	<Function Name="DoDownload" Params="file"><![CDATA[
+			var entry = this;
+
+			var transfer = new dc.transfer.Vault({
+				Vault: entry.Store.Vault
+			});
+
+			transfer.download(file.Path);
 	]]></Function>
 	<Function Name="DoOptions"><![CDATA[
 			var page = this;
 
-			var filecnt = $('#lstDepCdnFolders a.dc-selected,#lstDepCdnFiles a.dc-selected').length;
+			var filecnt = $('#lstDepFbFolders a.dc-selected,#lstDepFbFiles a.dc-selected').length;
 
 			if (filecnt > 1)
-				dc.pui.Popup.menu(page.Store.Menus.dcmDepCdnFilesMenu);
+				dc.pui.Popup.menu(page.Store.Menus.dcmDepFbFilesMenu);
 			else if (filecnt == 1)
-				dc.pui.Popup.menu(page.Store.Menus.dcmDepCdnFileMenu);
+				dc.pui.Popup.menu(page.Store.Menus.dcmDepFbFileMenu);
 			else
-				dc.pui.Popup.menu(page.Store.Menus.dcmDepCdnEmptyMenu);
+				dc.pui.Popup.menu(page.Store.Menus.dcmDepFbEmptyMenu);
 	]]></Function>
 	<Function Name="DoDelete" Params="files"><![CDATA[
 			var page = this;
@@ -474,15 +497,33 @@
 				if (! confirm)
 					return;
 
-				dc.comm.call('dcmServices.CDN.DeleteFiles', {
+				dc.comm.call('dcCoreServices.Vaults.Delete', {
+						Vault: page.Store.Vault,
 						Paths: paths
 					}, function(resp) {
 						if (resp.Code > 0)
 							dc.pui.Popup.alert(resp.Message);
 						else
-							// take time for delete to register in S3
-							setTimeout(function() { page.callPageFunc('LoadList'); }, 1000);
+							page.callPageFunc('LoadList');
 					});
+			});
+	]]></Function>
+	<Function Name="DoRename" Params="file"><![CDATA[
+			var page = this;
+
+			var path = file.Path;
+			var pos = path.lastIndexOf('/');
+			var name = path.substr(pos + 1);
+
+			path = path.substr(0, pos);
+
+			dc.pui.Dialog.loadPage('/dcm/files/edit-filename', {
+				Vault: page.Store.Vault,
+				Path: path,
+				Name: name,
+				Callback: function() {
+					page.callPageFunc('LoadList');
+				}
 			});
 	]]></Function>
 	<Function Name="GetSelectedFiles"><![CDATA[
@@ -490,7 +531,7 @@
 
 			var list = [ ];
 
-			$('#lstDepCdnFolders a.dc-selected,#lstDepCdnFiles a.dc-selected').each(function() {
+			$('#lstDepFbFolders a.dc-selected,#lstDepFbFiles a.dc-selected').each(function() {
 				var iuuid = $(this).attr('data-id');
 
 				for (var n = 0; n < entry.Store.Items.length; n++) {
@@ -513,7 +554,8 @@
 	<Function Name="DoAddFolder"><![CDATA[
 			var entry = this;
 
-			dc.pui.Dialog.loadPage('/dcm/cdn/add-folder', {
+			dc.pui.Dialog.loadPage('/dcm/files/add-folder', {
+				Vault: entry.Store.Vault,
 				Path: entry.Store.Path,
 				Callback: function(path) {
 					entry.Store.Path = path;
@@ -522,10 +564,13 @@
 				}
 			});
 	]]></Function>
-	<Function Name="DoUpload"><![CDATA[
+	<Function Name="DoAdd"><![CDATA[
 			var entry = this;
 
-			dc.pui.Dialog.loadPage('/dcm/cdn/upload-file', {
+			// TODO support more than just basic custom vaults
+
+			dc.pui.Dialog.loadPage('/dcr/meta/custom-vault-basic-add-record/' + entry.Store.Vault, {
+				Vault: entry.Store.Vault,
 				Path: entry.Store.Path,
 				Callback: function(files) {
 					if (entry.Params.Callback) {
@@ -533,29 +578,18 @@
 						entry.Params.Callback(files);
 					}
 					else {
-						$('#lstDepCdnFolders,#lstDepCdnFiles').empty().dcappend(
+						$('#lstDepFbFolders,#lstDepFbFiles').empty().dcappend(
 							$('<i>')
 								.attr('class', 'fa fa-spinner fa-pulse fa-lg')
 						);
 
 						entry.callPageFunc('LoadList');
+
+						setTimeout(function() {
+							entry.callPageFunc('DoEditRecord', files[0], null);
+						}, 1200);
 					}
 				}
 			});
-	]]></Function>
-	<Function Name="DoSelect"><![CDATA[
-			var entry = this;
-
-			var files = entry.callPageFunc('GetSelectedFiles');
-
-			var results = [ ];
-
-			for (var i = 0; i < files.length; i++)
-				results.push(entry.Store.PublicPath + files[i].Path);
-
-			entry.Layer.back();
-
-			if (entry.Params.Callback)
-				entry.Params.Callback(results);
 	]]></Function>
 </dc.Html>

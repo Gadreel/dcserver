@@ -1,0 +1,37 @@
+<dc.Html Badges="User">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Edit Record" />
+	</Meta>
+
+	<dcs.Var Name="CustomVaultName" Type="String" />
+
+	<dcs.If Target="$Page.OriginalPathParts.3" IsEmpty="false">
+		<dcs.With Target="$CustomVaultName" SetTo="$Page.OriginalPathParts.3" />
+	</dcs.If>
+
+	<dcs.Console>including: {$CustomVaultName}</dcs.Console>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcs.Include Path="/dcr/meta/basic-form-builder" />
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.Store.DataPath = page.Params.Path;
+	]]></Function>
+	<Function Name="AfterDataSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback();
+	]]></Function>
+	<Function Name="AfterCancel"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+	]]></Function>
+</dc.Html>

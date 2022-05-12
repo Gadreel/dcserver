@@ -1,0 +1,68 @@
+<dc.Html Badges="SysAdmin" NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Add Custom Vault" />
+	</Meta>
+
+	<dcs.ResourceHelper Find="Locale" Result="MyLocaleResource" />
+
+	<dcs.With Target="$MyLocaleResource">
+		<GetLocale Result="MyLocale" />
+	</dcs.With>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.Text Label="Alias" Name="Alias" Required="true" placeholder="this is internal and not visible to users, no spaces" Pattern="[\w-]+" Instructions="This Alias must be unqiue to all other custom vaults in the system. Ask your developer about an appropriate prefix to use." />
+				<dcf.Text Label="Title" Name="Title" Required="true" />
+				<dcf.TextArea Label="Description" Name="Description" />
+				<dcf.Text Label="Read Badges" Name="ReadBadges" />
+				<dcf.Text Label="Write Badges" Name="WriteBadges" />
+
+				<dcf.FormButtons>
+					<dcf.SubmitButton Label="Accept" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.Store.MyLocale = '{$MyLocale}';
+			page.Store.NewVault = null;
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.AsNew = true;
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			page.Store.NewVault = {
+				Vault: {
+					Id: e.Data.Alias,
+					CmsSync: true,
+					ReadBadges: e.Data.ReadBadges ? e.Data.ReadBadges.trim().split(',') : [ ],
+					WriteBadges: e.Data.WriteBadges ? e.Data.WriteBadges.trim().split(',') : [ ]
+				},
+			  Title: { },
+			  Description: { },
+			  DataHandler: 'Basic',
+			  DataHandlerConfig: { }
+			};
+
+			page.Store.NewVault.Title[page.Store.MyLocale] = e.Data.Title;
+
+			if (e.Data.hasOwnProperty('Description'))
+				page.Store.NewVault.Description[page.Store.MyLocale] = e.Data.Description;
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback(page.Store.NewVault);
+	]]></Function>
+</dc.Html>

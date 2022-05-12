@@ -686,7 +686,15 @@ var dc = {
 					.attr('aria-hidden', 'true')
 					.attr('class', 'icon-'+ name + ' dc-icon svg-inline--fa fa5-w-12')
 					.dcappend(link);
-			}
+			},
+      toggle: function(svg, a, b) {
+        svg.toggleClass('icon-' + a).toggleClass('icon-' + b);
+
+        if (svg.find('use').attr('href') == '#' + a)
+          svg.find('use').attr('href', '#' + b);
+        else
+          svg.find('use').attr('href', '#' + a);
+      }
 		},
 		Image: {
 			blobToUrl: function(blob) {
@@ -945,6 +953,9 @@ var dc = {
 		},
 		Xml: {
 			toJQuery: function(xmlstr) {
+        xmlstr = xmlstr.replaceAll('&nbsp;', ' ').replaceAll('&trade;', '™')
+          .replaceAll('&reg;', '®').replaceAll('&copy;', '©');
+
 				var xmlDoc = new DOMParser().parseFromString(xmlstr, "application/xml");
 
 				var doc = $(xmlDoc.documentElement);

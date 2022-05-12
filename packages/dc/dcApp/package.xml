@@ -136,13 +136,15 @@
 			<Tag Name="dcf.RadioButton" Class="dcraft.web.ui.inst.form.RadioControl" />
 			<Tag Name="dcf.RadioGroup" Class="dcraft.web.ui.inst.form.RadioGroup" />
 			<Tag Name="dcf.HorizRadioGroup" Class="dcraft.web.ui.inst.form.HorizRadioGroup" />
+			<Tag Name="dcf.Search" Class="dcraft.web.ui.inst.form.Search" />
 			<Tag Name="dcf.Select" Class="dcraft.web.ui.inst.form.SelectField" />
+			<Tag Name="dcf.SingleFileSelector" Class="dcraft.web.ui.inst.form.SingleFileSelector" />
 			<Tag Name="dcf.SubmitButton" Class="dcraft.web.ui.inst.form.SubmitButton" />
 			<Tag Name="dcf.SubmitCaptchaButton" Class="dcraft.web.ui.inst.form.SubmitCaptchaButton" />
+			<Tag Name="dcf.TagSelector" Class="dcraft.web.ui.inst.form.TagSelector" />
 			<Tag Name="dcf.TextArea" Class="dcraft.web.ui.inst.form.TextArea" />
 			<Tag Name="dcf.Uploader" Class="dcraft.web.ui.inst.form.Uploader" />
 			<Tag Name="dcf.YesNo" Class="dcraft.web.ui.inst.form.YesNo" />
-			<Tag Name="dcf.Search" Class="dcraft.web.ui.inst.form.Search" />
 
 			<!-- misc tags -->
 			<Tag Name="dc.Recaptcha" Class="dcraft.web.ui.inst.misc.Recaptcha" />

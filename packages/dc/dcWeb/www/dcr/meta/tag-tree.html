@@ -33,6 +33,10 @@
 			  padding: 0;
 			}
 
+			#treeDcrTagsAll .nocaret {
+		    padding-left: 19px;
+			}
+
 			#treeDcrTagsAll .caret {
 			  cursor: pointer;
 			  -webkit-user-select: none; /* Safari 3.1+ */
@@ -120,7 +124,7 @@
 				title = node.Locale[page.Store.SiteLocale] ? node.Locale[page.Store.SiteLocale].Title : null;
 
 			var subroot = $('<li>').dcappend(
-				$('<span>').addClass(node.Children ? 'caret' : '').text(title),
+				$('<span>').addClass(node.Children ? 'caret' : 'nocaret').text(title),
 				' ',
 				$('<a>')
 					.attr("href", "#")

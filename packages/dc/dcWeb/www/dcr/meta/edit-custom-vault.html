@@ -1,0 +1,120 @@
+<dc.Html Badges="SysAdmin" NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Edit Custom Vault" />
+	</Meta>
+
+	<dcs.ResourceHelper Find="Locale" Result="MyLocaleResource" />
+	<dcs.ResourceHelper Level="Site" Find="Locale" Result="SiteLocaleResource" />
+
+	<dcs.With Target="$MyLocaleResource">
+		<GetLocale Result="MyLocale" />
+	</dcs.With>
+
+	<dcs.With Target="$SiteLocaleResource">
+		<GetLocale Result="SiteLocale" />
+	</dcs.With>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dcf.Text Label="Title" Name="Title" Required="true" />
+				<dcf.Text Label="Ref Title" Name="RefTitle" readonly="readonly" />
+				<dcf.TextArea Label="Description" Name="Description" />
+				<dcf.TextArea Label="Ref Description" Name="RefDescription" readonly="readonly" />
+				<dcf.Text Label="Read Badges" Name="ReadBadges" />
+				<dcf.Text Label="Write Badges" Name="WriteBadges" />
+
+				<dcf.FormButtons>
+					<dc.Button Label="Reindex" Click="DoReindex" />
+					<dcf.SubmitButton Label="Accept" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.Store.MyLocale = '{$MyLocale}';
+			page.Store.SiteLocale = '{$SiteLocale}';
+
+			page.Store.Data = null;
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			e.Message = {
+				Op: 'dcmServices.Meta.LoadCustomVault',
+				Body: {
+					Alias: page.Params.Alias
+				}
+			};
+	]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			var page = this;
+
+			page.Store.Data = e.Data;
+
+			var newdata = { };
+
+			if (e.Data.Vault.ReadBadges)
+				newdata.ReadBadges = e.Data.Vault.ReadBadges.join(',');
+
+			if (e.Data.Vault.WriteBadges)
+				newdata.WriteBadges = e.Data.Vault.WriteBadges.join(',');
+
+			if (e.Data.Title[page.Store.MyLocale])
+				newdata.Title = e.Data.Title[page.Store.MyLocale];
+
+			if (e.Data.Description[page.Store.MyLocale])
+				newdata.Description = e.Data.Description[page.Store.MyLocale];
+
+			if (e.Data.Title[page.Store.SiteLocale])
+				newdata.RefTitle = e.Data.Title[page.Store.SiteLocale];
+
+			if (e.Data.Description[page.Store.SiteLocale])
+				newdata.RefDescription = e.Data.Description[page.Store.SiteLocale];
+
+			e.Data = newdata;
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var page = this;
+
+			if (e.Data.hasOwnProperty('ReadBadges'))
+				page.Store.Data.Vault.ReadBadges = e.Data.ReadBadges ? e.Data.ReadBadges.trim().split(',') : [ ];
+
+			if (e.Data.hasOwnProperty('WriteBadges'))
+				page.Store.Data.Vault.WriteBadges = e.Data.WriteBadges ? e.Data.WriteBadges.trim().split(',') : [ ];
+
+			if (e.Data.hasOwnProperty('Title'))
+				page.Store.Data.Title[page.Store.MyLocale] = e.Data.Title;
+
+			if (e.Data.hasOwnProperty('Description'))
+				page.Store.Data.Description[page.Store.MyLocale] = e.Data.Description;
+
+			e.Message = {
+				Op: 'dcmServices.Meta.SaveCustomVault',
+				Body: page.Store.Data
+			};
+	]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+			var page = this;
+
+			page.Layer.back();
+
+			if (page.Params.Callback)
+				page.Params.Callback();
+	]]></Function>
+	<Function Name="DoReindex"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcmServices.Meta.ReindexCustomVault', { Alias: page.Params.Alias }, function(rmsg) {
+				if (rmsg.Code != 0) {
+					dc.pui.Popup.alert('Unable to reindex vault: ' + rmsg.Message);
+				}
+				else {
+					dc.pui.Popup.alert('Vault reindex completed.');
+				}
+			});
+	]]></Function>
+</dc.Html>

@@ -72,6 +72,10 @@
 	padding-right: 6px;
 	color: black;
 }
+
+#btnDepCdnSelectAction {
+	display: none;
+}
 		</dc.Style>
 
 		<dc.PagePanel>
@@ -82,7 +86,7 @@
 					<h2 class="dc-element-hidden">Options</h3>
 
 					<dcf.FormButtons>
-						<!-- TODO support select mode -->
+						<dc.Button id="btnDepCdnSelectAction" Click="DoSelect" Label="Select File(s)" />
 						<dc.Button Click="DoUpload" Label="Upload File" />
 						<dc.Button Click="DoAddFolder" Label="Add Folder" />
 						<dc.Button Click="DoOptions" Label="Options ..." />
@@ -112,10 +116,13 @@
 			entry.Store.MimeDefs = {$Mimes};
 
 			if (! this.Store.Path) {
-				if (this.Params.Path)
+				if (this.Params.Path) {
 					entry.Store.Path = this.Params.Path;
-				else
-					entry.Store.Path = '/';
+				}
+				else {
+					var lastPath = localStorage.getItem('dcCMS-CDNVideos-LastFolder');
+					entry.Store.Path = lastPath || '/';
+				}
 			}
 
 			entry.Store.PublicPath = 'https://{$AwsConfig.@CDNDomain}/{$_Node.Deployment}/{$_Tenant.Alias}/videos';
@@ -221,11 +228,16 @@
 			};
 
 			this.callPageFunc('LoadList');
+
+			if (entry.Params.SelectMode)
+				$('#btnDepCdnSelectAction').show();
 	]]></Function>
 	<Function Name="LoadList"><![CDATA[
 			var entry = this;
 
 			$('#lblDepCdnPath').text('Path: ' + entry.Store.Path);
+
+			localStorage.setItem('dcCMS-CDNVideos-LastFolder', entry.Store.Path);
 
 			$('#lstDepCdnFolders,#lstDepCdnFiles').empty();
 
@@ -506,5 +518,20 @@
 					}
 				}
 			});
+	]]></Function>
+	<Function Name="DoSelect"><![CDATA[
+			var entry = this;
+
+			var files = entry.callPageFunc('GetSelectedFiles');
+
+			var results = [ ];
+
+			for (var i = 0; i < files.length; i++)
+				results.push(entry.Store.PublicPath + files[i].Path + '.hls/' + files[i].VideoIndex);
+
+			entry.Layer.back();
+
+			if (entry.Params.Callback)
+				entry.Params.Callback(results);
 	]]></Function>
 </dc.Html>

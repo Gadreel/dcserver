@@ -57,7 +57,7 @@ public class IndexSiteFilesWork extends StateWork {
 	public StateWorkStep prepVaults(TaskContext trun) throws OperatingContextException {
 		this.adapter.clearSiteIndex(trun.getSite());
 		
-		for (Vault vault : trun.getSite().getSiteVaults())
+		for (Vault vault : trun.getSite().getVaults())
 			this.vaults.addLast(vault);
 		
 		return this.indexVault;

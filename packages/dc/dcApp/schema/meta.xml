@@ -1,5 +1,41 @@
 <Schema>
 	<Shared>
+		<Record Id="dcmTagDefinition">
+			<Field Name="Alias" Type="dcMetaString" />
+			<Field Name="Locale" Type="AnyRecord" />
+			<Field Name="Children">
+				<List Type="dcmTagDefinition" />
+			</Field>
+		</Record>
+
+		<Record Id="dcmTagTreeDefinition" Inherits="dcmTagDefinition">
+			<Field Name="Index" Type="Boolean" />
+			<Field Name="Keyword" Type="Boolean" />
+		</Record>
+
+		<Record Id="dcmCustomVaultDefinition">
+			<Field Name="Vault">
+				<Record>
+					<Field Name="Id" Type="dcMetaString" />
+					<Field Name="CmsSync" Type="Boolean" />
+					<Field Name="VaultClass" Type="dcSmallString" />
+					<Field Name="SecurityChecker" Type="dcString" />
+					<Field Name="UploadToken" Type="Boolean" />
+					<Field Name="Encrypted" Type="Boolean" />
+					<Field Name="ReadBadges">
+						<List Type="dcMetaString" />
+					</Field>
+					<Field Name="WriteBadges">
+						<List Type="dcMetaString" />
+					</Field>
+				</Record>
+			</Field>
+			<Field Name="DataHandler" Type="dcMetaString" />
+			<Field Name="DataHandlerConfig" Type="AnyRecord" />
+			<Field Name="Title" Type="AnyRecord" />
+			<Field Name="Description" Type="AnyRecord" />
+			<Field Name="Version" Type="dcMetaString" />
+		</Record>
 	</Shared>
 
 	<Services>
@@ -26,6 +62,27 @@
 						</RecordResponse>
 						<RecordResponse Inherits="dcmTagTreeDefinition" />
 					</Op>
+					<Op Name="LoadTagTitles">
+						<Description>
+							Load a list of specific tag paths and titles.
+						</Description>
+						<ListRequest Type="dcString" Required="True" />
+						<ListResponse>
+							<Record>
+								<Field Name="Path" Type="dcString" />
+								<Field Name="Title" Type="dcString" />
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="LoadTagTrees">
+						<Description>
+							Load a collection of tag trees.
+						</Description>
+						<ListRequest Type="dcMetaString" Required="True" />
+						<ListResponse>
+							<Record Inherits="dcmTagTreeDefinition" />
+						</ListResponse>
+					</Op>
 					<Op Name="SaveTagTree">
 						<Description>
 							Save a specific tag tree.
@@ -40,9 +97,110 @@
 							<Field Name="Alias" Type="dcMetaString" Required="True" />
 						</RecordResponse>
 					</Op>
+					<Op Name="ListCustomVaults">
+						<Description>
+							List of custom vaults.
+						</Description>
+						<ListResponse>
+							<Record>
+								<Field Name="Alias" Type="dcMetaString" />
+								<Field Name="Title" Type="dcString" />
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="LoadCustomVault">
+						<Description>
+							Load a specific custom vault.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Alias" Type="dcMetaString" Required="True" />
+						</RecordResponse>
+						<RecordResponse Inherits="dcmCustomVaultDefinition" />
+					</Op>
+					<Op Name="SaveCustomVault">
+						<Description>
+							Save a specific custom vault.
+						</Description>
+						<RecordRequest Inherits="dcmCustomVaultDefinition" Required="True" />
+					</Op>
+					<Op Name="DeleteCustomVault">
+						<Description>
+							Delete a specific custom vault.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Alias" Type="dcMetaString" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="ReindexCustomVault">
+						<Description>
+							Reindex a specific custom vault.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Alias" Type="dcMetaString" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="SearchCustomVault">
+						<Description>
+							Searches the file index of a given custom vault.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Alias" Type="dcMetaString" Required="True" />
+							<Field Name="Term" Type="dcString" Required="True" />
+							<Field Name="Locale" Type="dcMetaString" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Path" Type="dcString" />
+								<Field Name="State" Type="dcValueIndexState" />
+								<Field Name="Score" Type="Integer" />
+								<Field Name="Public" Type="Boolean" />
+								<Field Name="Title" Type="dcString" />
+								<Field Name="Summary" Type="String" />
+								<Field Name="SortHint" Type="dcString" />
+								<Field Name="Modified" Type="Integer" />
+								<Field Name="Badges">
+									<List Type="dcTinyString" />
+								</Field>
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="LoadCustomVaultDataFile">
+						<Description>
+							Add a new data file to a custom vault.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Alias" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcString" Required="True" />
+							<Field Name="Locale" Type="dcMetaString" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Form" Type="Any" />
+						</RecordResponse>
+					</Op>
+					<Op Name="AddCustomVaultDataFile">
+						<Description>
+							Add a new data file to a custom vault.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Alias" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcString" Required="True" />
+							<Field Name="Form" Type="Any" Required="True" />
+							<Field Name="Locale" Type="dcMetaString" />
+						</RecordRequest>
+					</Op>
+					<Op Name="SaveCustomVaultDataFile">
+						<Description>
+							Updates a data file for a given custom vault.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Alias" Type="dcMetaString" Required="True" />
+							<Field Name="Path" Type="dcString" Required="True" />
+							<Field Name="Form" Type="Any" Required="True" />
+							<Field Name="Locale" Type="dcMetaString" />
+						</RecordRequest>
+					</Op>
 
-
-
+					<!--
 					<Op Name="LoadCustomFields">
 						<Description>
 							Load custom fields of a product.
@@ -166,7 +324,7 @@
 							<Field Name="SetOptions">
 								<List>
 									<Record>
-										<!-- leave off id to add option -->
+										- leave off id to add option -
 										<Field Name="Id" Type="dcMetaString" Required="IfPresent" />
 										<Field Name="Label" Type="dcmProductCustomFields:dcmOptionLabel" Required="True" />
 										<Field Name="Value" Type="dcmProductCustomFields:dcmOptionValue" Required="True" />
@@ -200,6 +358,7 @@
 							</Record>
 						</ListRequest>
 					</Op>
+					-->
 				</Secure>
 			</Feature>
 		</Service>

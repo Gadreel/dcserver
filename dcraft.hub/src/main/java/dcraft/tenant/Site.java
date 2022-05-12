@@ -296,8 +296,9 @@ public class Site extends Base {
 		
 		return IOUtil.readEntireFile(fpath).toString();
 	}
-	
-	public Collection<Vault> getSiteVaults() throws OperatingContextException {
+
+	@Override
+	public Collection<Vault> getVaults() throws OperatingContextException {
 		List<XElement> vaults = this.getResources().getConfig().getTagListDeep("Vaults/Site");
 
 		for (XElement bucket : vaults) {
@@ -321,7 +322,8 @@ public class Site extends Base {
 		
 		return copy;
 	}
-	
+
+	/*
 	public Collection<Vault> getVaults() throws OperatingContextException {
 		List<XElement> vaults = this.getResources().getConfig().getTagListDeep("Vaults/Site");
 
@@ -345,6 +347,8 @@ public class Site extends Base {
 
 		return copy;
 	}
+
+	 */
 
 	@Override
 	public Vault getVault(String id) throws OperatingContextException {
@@ -373,7 +377,14 @@ public class Site extends Base {
 
 		return this.getTenant().getVault(id);
 	}
-	
+
+	@Override
+	public void flushVaults() throws OperatingContextException {
+		this.vaults.clear();
+
+		this.getTenant().flushVaults();
+	}
+
 	public FileStoreVault getGalleriesVault() throws OperatingContextException {
 		Vault vault = this.getVault("Galleries");
 		

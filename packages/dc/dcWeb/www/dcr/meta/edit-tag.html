@@ -46,7 +46,9 @@
 	<Function Name="LoadRecord" Params="e"><![CDATA[
 			var page = this;
 
-			e.Data = page.Params.Tag.Locale[page.Store.MyLocale];
+			// copy, don't alter the source object
+			
+			$.extend(e.Data, page.Params.Tag.Locale[page.Store.MyLocale]);
 
 			var sitedata = page.Params.Tag.Locale[page.Store.SiteLocale];
 

@@ -15,9 +15,7 @@ import dcraft.script.work.StackWork;
 import dcraft.service.ServiceResource;
 import dcraft.sql.SqlDatabaseResource;
 import dcraft.struct.*;
-import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
-import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 
 public class ResourceTier extends CompositeStruct {
@@ -189,17 +187,34 @@ public class ResourceTier extends CompositeStruct {
 		return r;
 	}
 
-	public TagResouce getTag() {
-		return (TagResouce) this.get("Tag");
+	public TagResource getTag() {
+		return (TagResource) this.get("Tag");
 	}
 
-	synchronized public TagResouce getOrCreateTierTag() {
-		TagResouce r = (TagResouce) this.getTier("Tag");
+	synchronized public TagResource getOrCreateTierTag() {
+		TagResource r = (TagResource) this.getTier("Tag");
 
 		if (r != null)
 			return r;
 
-		r = new TagResouce();
+		r = new TagResource();
+
+		this.with(r);
+
+		return r;
+	}
+
+	public CustomVaultResource getCustomVault() {
+		return (CustomVaultResource) this.get("CustomVault");
+	}
+
+	synchronized public CustomVaultResource getOrCreateTierCustomVault() {
+		CustomVaultResource r = (CustomVaultResource) this.getTier("CustomVault");
+
+		if (r != null)
+			return r;
+
+		r = new CustomVaultResource();
 
 		this.with(r);
 

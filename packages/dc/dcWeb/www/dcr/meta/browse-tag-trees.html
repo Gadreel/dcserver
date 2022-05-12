@@ -1,0 +1,159 @@
+<dc.Html Badges="SysAdmin,Admin">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Edit Tag Tree" />
+	</Meta>
+
+	<Require Icons="fas/times,fas/plus,fas/minus,fas/pencil-alt,fas/arrow-right,fas/square,fas/check-square" />
+
+	<dcs.ResourceHelper Find="Locale" Result="MyLocaleResource" />
+	<dcs.ResourceHelper Level="Site" Find="Locale" Result="SiteLocaleResource" />
+
+	<dcs.With Target="$MyLocaleResource">
+		<GetLocale Result="MyLocale" />
+	</dcs.With>
+
+	<dcs.With Target="$SiteLocaleResource">
+		<GetLocale Result="SiteLocale" />
+	</dcs.With>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.FormButtons>
+				<dc.Button Label="Select" Click="DoSelect" />
+			</dcf.FormButtons>
+
+			<dc.Style>
+			#treeDcrTagsAll,
+			#treeDcrTagsAll ul {
+			  list-style-type: none;
+			}
+
+			#treeDcrTagsAll {
+			  margin: 0;
+			  padding: 0;
+			}
+
+			#treeDcrTagsAll .nocaret {
+		    padding-left: 22px;
+			}
+
+			#treeDcrTagsAll .caret {
+			  cursor: pointer;
+			  -webkit-user-select: none; /* Safari 3.1+ */
+			  -moz-user-select: none; /* Firefox 2+ */
+			  -ms-user-select: none; /* IE 10+ */
+			  user-select: none;
+			}
+
+			#treeDcrTagsAll .caret::before {
+			  content: "\25B6";
+			  color: black;
+			  display: inline-block;
+			  margin-right: 6px;
+			}
+
+			#treeDcrTagsAll .caret-down::before {
+			  -ms-transform: rotate(90deg); /* IE 9 */
+			  -webkit-transform: rotate(90deg); /* Safari */'
+			  transform: rotate(90deg);
+			}
+
+			#treeDcrTagsAll .nested {
+			  display: none;
+			}
+
+			#treeDcrTagsAll .active {
+			  display: block;
+			}
+			</dc.Style>
+
+			<ul id="treeDcrTagsAll" />
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.Store.MyLocale = '{$MyLocale}';
+			page.Store.SiteLocale = '{$SiteLocale}';
+
+			dc.comm.call('dcmServices.Meta.LoadTagTrees', page.Params.Trees, function(rmsg) {
+				if (rmsg.Code != 0) {
+					// don't alert
+					return;
+				}
+
+				$('#treeDcrTagsAll').empty();
+
+				for (var i = 0; i < rmsg.Result.length; i++)
+					page.callPageFunc('DoAddTreeNode', $('#treeDcrTagsAll'), rmsg.Result[i], null, rmsg.Result[i].Alias);
+
+				$('#treeDcrTagsAll .caret').click(function(e) {
+			    $(this).parent().find('> ul').toggleClass("active");
+			    $(this).toggleClass("caret-down");
+
+					e.preventDefault();
+					return false;
+				});
+			});
+	]]></Function>
+	<Function Name="DoAddTreeNode" Params="dom,node,parent,path"><![CDATA[
+			var page = this;
+
+			var title = node.Locale[page.Store.MyLocale] ? node.Locale[page.Store.MyLocale].Title : null;
+
+			if (! title)
+				title = node.Locale[page.Store.SiteLocale] ? node.Locale[page.Store.SiteLocale].Title : null;
+
+			var isselected = false;
+
+			if (page.Params.Selected) {
+				for (var i = 0; i < page.Params.Selected.length; i++) {
+					if (page.Params.Selected[i].Path == path) {
+						isselected = true;
+						break;
+					}
+				}
+			}
+
+			var subroot = $('<li>').dcappend(
+				$('<span>').addClass(node.Children ? 'caret caret-down' : 'nocaret'),
+				' ',
+				$('<a>')
+					.attr('href', '#')
+					.attr('data-path', path)
+					.attr('data-title', title)
+					.dcappend(
+						dc.util.Icon.use(isselected ? 'fas-check-square' : 'fas-square')
+							.addClass('fa5-lg fa5-fw checkbox')
+					).click(function(e) {
+						dc.util.Icon.toggle($(e.currentTarget).find('svg'), 'fas-square', 'fas-check-square');
+					}),
+				' ',
+				title
+			);
+
+			if (node.Children) {
+				var sublist = $('<ul>').addClass('nested active');
+
+				subroot.dcappend(sublist);
+
+				for (var i = 0; i < node.Children.length; i++) {
+						page.callPageFunc('DoAddTreeNode', sublist, node.Children[i], node, path + ':' + node.Children[i].Alias);
+				}
+			}
+
+			dom.dcappend(subroot);
+	]]></Function>
+	<Function Name="DoSelect"><![CDATA[
+			var page = this;
+
+			var selected = $('#treeDcrTagsAll svg.icon-fas-check-square').map(function() { return { Title: $(this).parent().attr('data-title'), Path: $(this).parent().attr('data-path') } }).get();
+
+			page.Layer.back();
+
+			if (page.Params.Callback) {
+				page.Params.Callback(selected);
+			}
+	]]></Function>
+</dc.Html>

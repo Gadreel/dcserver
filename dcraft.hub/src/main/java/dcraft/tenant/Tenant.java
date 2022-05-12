@@ -161,6 +161,7 @@ public class Tenant extends Base {
 	protected Tenant() {
 	}
 
+	@Override
 	public Collection<Vault> getVaults() throws OperatingContextException {
 		List<XElement> vaults = this.getResources().getConfig().getTagListDeep("Vaults/Tenant");
 
@@ -198,7 +199,12 @@ public class Tenant extends Base {
 		
 		return b;
 	}
-	
+
+	@Override
+	public void flushVaults() throws OperatingContextException {
+		this.vaults.clear();
+	}
+
 	/* TODO move to CoreService
 	public void watchSettingsChange(Path path) {
 		WatchKey key = ApplicationHub.registerFileWatcher(this, path);

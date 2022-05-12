@@ -1,0 +1,243 @@
+<dc.Fragment>
+	<dcs.Console>include for: {$CustomVaultName}</dcs.Console>
+
+	<!--
+		set $CustomVaultName before calling this
+
+		TODO check badges and skip if not secure
+
+	-->
+	<div class="dc-form-builder-script">
+		<dcs.ResourceHelper Find="Locale" Result="MyLocaleResource" />
+		<dcs.ResourceHelper Level="Site" Find="Locale" Result="SiteLocaleResource" />
+
+		<dcs.With Target="$MyLocaleResource">
+			<GetLocale Result="MyLocale" />
+		</dcs.With>
+
+		<dcs.With Target="$SiteLocaleResource">
+			<GetLocale Result="SiteLocale" />
+		</dcs.With>
+
+		<dcs.ResourceHelper Find="CustomVault" Result="CustomVaultResources" />
+
+		<dcs.With Target="$CustomVaultResources">
+			<LoadVault Alias="$CustomVaultName" Result="VaultInfo" />
+		</dcs.With>
+
+		<dcf.Form Name="$CustomVaultName" Prefix="cvf">
+			<dcs.ForEach Name="Control" In="$VaultInfo.DataHandlerConfig.Fields">
+				<dcs.Indirect Name="Label" Value="Control.Label.{$MyLocale}" />
+				<dcs.Indirect Name="Placeholder" Value="Control.Placeholder.{$MyLocale}" />
+
+				<!-- TODO if empty, consider site locale defaults -->
+
+				<dcs.If Target="$Control.FieldType" Equal="Text">
+					<dc.Out>
+						<dcf.Text Label="{$Label}" Name="{$Control.Name}"
+							Required="{$Control.Required|ifempty:false}"
+							DataType="{$Control.DataType|ifempty:String}"
+							maxlength="{$Control.MaxLength|ifempty:200}"
+							placeholder="{$Placeholder}"
+						/>
+					</dc.Out>
+				</dcs.If>
+				<dcs.ElseIf Target="$Control.FieldType" Equal="TextPattern">
+					<dc.Out>
+						<dcf.Text Label="{$Label}" Name="{$Control.Name}"
+							Required="{$Control.Required|ifempty:false}"
+							Pattern="{$Control.Pattern}"
+							maxlength="{$Control.MaxLength|ifempty:250}"
+							placeholder="{$Placeholder}"
+						/>
+					</dc.Out>
+				</dcs.ElseIf>
+				<dcs.ElseIf Target="$Control.FieldType" Equal="TextArea">
+					<dc.Out>
+						<dcf.TextArea Label="{$Label}" Name="{$Control.Name}"
+							Required="{$Control.Required|ifempty:false}"
+							maxlength="{$Control.MaxLength|ifempty:4000}"
+							placeholder="{$Placeholder}"
+						/>
+					</dc.Out>
+				</dcs.ElseIf>
+				<dcs.ElseIf Target="$Control.FieldType" Equal="YesNo">
+					<dc.Out>
+						<dcf.YesNo Label="{$Label}" Name="{$Control.Name}"
+							Required="{$Control.Required|ifempty:false}"
+						/>
+					</dc.Out>
+				</dcs.ElseIf>
+				<dcs.ElseIf Target="$Control.FieldType" Equal="Checkbox">
+					<dc.Out>
+						<dcf.Checkbox Label="{$Label}" Name="{$Control.Name}"
+							LongLabel="{$Control.LongLabel}"
+							Required="{$Control.Required|ifempty:false}"
+						/>
+					</dc.Out>
+				</dcs.ElseIf>
+				<dcs.ElseIf Target="$Control.FieldType" Equal="Tags">
+					<dc.Out>
+						<dcf.TagSelector Label="{$Label}" Name="{$Control.Name}" Trees="{$Control.TagTrees|join:,}" />
+					</dc.Out>
+				</dcs.ElseIf>
+				<dcs.ElseIf Target="$Control.FieldType" Equal="SingleFileSelector">
+					<dc.Out>
+						<dcf.SingleFileSelector Label="{$Label}" Name="{$Control.Name}" Source="{$Control.FileSource}" />
+					</dc.Out>
+				</dcs.ElseIf>
+				<dcs.ElseIf Target="$Control.FieldType" Equal="Select">
+					<dc.Template Name="CtrlOpts">
+						<dcs.ForEach Name="Option" In="$Control.Options">
+							<dcs.If Not="true" Target="$Option.Disabled">
+								<dcs.If Target="$Option.Price" IsEmpty="false">
+									<dc.Out>
+										<option value="{$Option.Value}">{$Option.Label} - ${$Option.Price|dec:Money}</option>
+									</dc.Out>
+								</dcs.If>
+								<dcs.Else>
+									<dc.Out>
+										<option value="{$Option.Value}">{$Option.Label}</option>
+									</dc.Out>
+								</dcs.Else>
+							</dcs.If>
+						</dcs.ForEach>
+					</dc.Template>
+
+					<dc.Out>
+						<dcf.Select Label="{$Label}" Name="{$Control.Name}"
+							Required="{$Control.Required|ifempty:false}"
+							FieldParams="CtrlOpts"
+						/>
+					</dc.Out>
+				</dcs.ElseIf>
+				<dcs.ElseIf Target="$Control.FieldType" Equal="CheckGroup">
+					<dc.Template Name="CtrlOpts">
+						<dcs.ForEach Name="Option" In="$Control.Options">
+							<dcs.If Not="true" Target="$Option.Disabled">
+								<dcs.If Target="$Option.Price" IsEmpty="false">
+									<dc.Out>
+										<Checkbox Value="{$Option.Value}" Label="{$Option.Label} - ${$Option.Price|dec:Money}" />
+									</dc.Out>
+								</dcs.If>
+								<dcs.Else>
+									<dc.Out>
+										<Checkbox Value="{$Option.Value}" Label="{$Option.Label}" />
+									</dc.Out>
+								</dcs.Else>
+							</dcs.If>
+						</dcs.ForEach>
+					</dc.Template>
+
+					<dcs.If Target="$Control.Horizontal">
+						<dc.Out>
+							<dcf.HorizCheckGroup Label="{$Label}" Name="{$Control.Name}"
+								Required="{$Control.Required|ifempty:false}"
+								FieldParams="CtrlOpts"
+							/>
+						</dc.Out>
+					</dcs.If>
+					<dcs.Else>
+						<dc.Out>
+							<dcf.CheckGroup Label="{$Label}" Name="{$Control.Name}"
+								Required="{$Control.Required|ifempty:false}"
+								FieldParams="CtrlOpts"
+							/>
+						</dc.Out>
+					</dcs.Else>
+				</dcs.ElseIf>
+				<dcs.ElseIf Target="$Control.FieldType" Equal="RadioGroup">
+					<dc.Template Name="CtrlOpts">
+						<dcs.ForEach Name="Option" In="$Control.Options">
+							<dcs.If Not="true" Target="$Option.Disabled">
+								<dcs.If Target="$Option.Price" IsEmpty="false">
+									<dc.Out>
+										<RadioButton Value="{$Option.Value}" Label="{$Option.Label} - ${$Option.Price|dec:Money}" />
+									</dc.Out>
+								</dcs.If>
+								<dcs.Else>
+									<dc.Out>
+										<RadioButton Value="{$Option.Value}" Label="{$Option.Label}" />
+									</dc.Out>
+								</dcs.Else>
+							</dcs.If>
+						</dcs.ForEach>
+					</dc.Template>
+
+					<dcs.If Target="$Control.Horizontal">
+						<dc.Out>
+							<dcf.HorizRadioGroup Label="{$Label}" Name="{$Control.Name}"
+								Required="{$Control.Required|ifempty:false}"
+								FieldParams="CtrlOpts"
+							/>
+						</dc.Out>
+					</dcs.If>
+					<dcs.Else>
+						<dc.Out>
+							<dcf.RadioGroup Label="{$Label}" Name="{$Control.Name}"
+								Required="{$Control.Required|ifempty:false}"
+								FieldParams="CtrlOpts"
+							/>
+						</dc.Out>
+					</dcs.Else>
+				</dcs.ElseIf>
+			</dcs.ForEach>
+
+			<dcf.FormButtons>
+				<!-- dc.Button Click="cvf-DoCancel" Label="Cancel" / -->
+				<dcf.SubmitButton Label="Save" />
+			</dcf.FormButtons>
+		</dcf.Form>
+
+		<dc.Out For="Top" ExpandValues="true">
+			<Function Name="cvf-Load" Mode="Load"><![CDATA[
+					var page = this;
+
+					page.Store.Fields = {$VaultInfo.DataHandlerConfig.Fields};
+			]]></Function>
+			<Function Name="cvf-LoadRecord" Params="e"><![CDATA[
+					var page = this;
+
+					//e.Data = page.Store.Data;
+
+					//if (! e.Data)
+					//	e.AsNew = true;
+
+					e.Message = {
+						Op: 'dcmServices.Meta.LoadCustomVaultDataFile',
+						Body: {
+							Alias: '{$CustomVaultName}',
+							Path: page.Store.DataPath
+						}
+					};
+			]]></Function>
+			<Function Name="cvf-AfterLoadRecord" Params="e"><![CDATA[
+					var page = this;
+
+					e.Data = e.Data.Form;
+			]]></Function>
+			<Function Name="cvf-SaveRecord" Params="e"><![CDATA[
+					var page = this;
+
+					e.Message = {
+						Op: 'dcmServices.Meta.SaveCustomVaultDataFile',
+						Body: {
+							Alias: '{$CustomVaultName}',
+							Path: page.Store.DataPath,
+							Form: e.Data
+						}
+					};
+			]]></Function>
+			<Function Name="cvf-AfterSave"><![CDATA[
+					var page = this;
+
+					page.callPageFunc('AfterDataSave');
+			]]></Function>
+			<Function Name="cvf-DoCancel"><![CDATA[
+					var page = this;
+
+					page.callPageFunc('AfterCancel');
+			]]></Function>
+		</dc.Out>
+	</div>
+</dc.Fragment>

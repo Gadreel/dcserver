@@ -67,6 +67,7 @@ public class PrepWork extends StateWork {
 				.withStep(StateWorkStep.of("Load Schema", this::loadSchema))
 				.withStep(StateWorkStep.of("Load Script", this::loadScript))
 				.withStep(StateWorkStep.of("Load Tags", this::loadTags))
+				.withStep(StateWorkStep.of("Load Custom Vaults", this::loadCustomVaults))
 				.withStep(StateWorkStep.of("Load Services", this::loadServices))
 				.withStep(StateWorkStep.of("Load Sites", this::loadSites))
 				//.withStep(StateWorkStep.of("Load Schedules", this::loadSchedule))
@@ -424,11 +425,11 @@ public class PrepWork extends StateWork {
 
 		ResourceTier resources = this.tenant.getTierResources();
 
+		TagResource config = resources.getOrCreateTierTag();		// always create, even if folder not there
+
 		Path spath = this.tenant.resolvePath("meta/tags");
 
 		if (Files.exists(spath)) {
-			TagResouce config = resources.getOrCreateTierTag();
-
 			try {
 				// load the trees
 				Files.walk(spath).forEach(sf -> {
@@ -437,23 +438,44 @@ public class PrepWork extends StateWork {
 						config.loadTree(sf);
 					}
 				});
-
-				/* TODO bad idea
-				// load the lang extensions
-				Files.walk(spath).forEach(sf -> {
-					if (sf.getFileName().toString().endsWith(".lang.json")) {
-						Logger.trace("Loading tag lang: " + sf.toAbsolutePath());
-						config.loadLang(sf);
-					}
-				});
-
-				 */
 			}
 			catch (IOException x) {
-				Logger.warn("Unabled to get folder listing: " + x);
+				Logger.warn("Unable to get folder listing: " + x);
 			}
 
 		}
+
+		return StateWorkStep.NEXT;
+	}
+
+	public StateWorkStep loadCustomVaults(TaskContext trun) throws OperatingContextException {
+		if (Logger.isDebug())
+			Logger.debug("Starting tenant load custom vaults for: " + this.tenant.getAlias());
+
+		ResourceTier resources = this.tenant.getTierResources();
+
+		CustomVaultResource vaultResource = resources.getOrCreateTierCustomVault();		// always create, even if folder not there
+
+		Path spath = this.tenant.resolvePath("meta/vaults");
+
+		if (Files.exists(spath)) {
+			try {
+				// load the vault info
+				Files.walk(spath).forEach(sf -> {
+					if (sf.getFileName().toString().endsWith(".vault.json")) {
+						Logger.trace("Loading custom vault: " + sf.toAbsolutePath());
+						vaultResource.loadInfo(sf);
+					}
+				});
+			}
+			catch (IOException x) {
+				Logger.warn("Unable to get folder listing: " + x);
+			}
+		}
+
+		// add custom vault definitions to a new layer of config
+		// always add, even if not previously used
+		resources.getOrCreateTierConfig().add(vaultResource.getCustomVaultConfigLayer());
 
 		return StateWorkStep.NEXT;
 	}

@@ -16,6 +16,7 @@ import dcraft.hub.op.OperationContext;
 import dcraft.locale.IndexInfo;
 import dcraft.locale.LocaleUtil;
 import dcraft.log.Logger;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -563,7 +564,103 @@ public class FileIndexAdapter {
 			Logger.error("Unable to search index file " + path + " in db: " + x);
 		}
 	}
-	
+
+	public void clearSearch(Vault vault, CommonPath path, String locale) throws OperatingContextException {
+		try {
+			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
+			if (! this.request.getInterface().isSet(indexkeys.toArray())) {
+				return;
+			}
+
+			// TODO remove indexes for Tags, Location, Area, Start, End
+
+			// remove public marker
+			indexkeys.add("Public");
+
+			this.request.getInterface().kill(indexkeys.toArray());
+
+			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
+			indexkeys.add(locale);
+			indexkeys.add("Title");
+
+			this.request.getInterface().kill(indexkeys.toArray());
+
+			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
+			indexkeys.add(locale);
+			indexkeys.add("Summary");
+
+			this.request.getInterface().kill(indexkeys.toArray());
+
+			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
+			indexkeys.add(locale);
+			indexkeys.add("SortHint");
+
+			this.request.getInterface().kill(indexkeys.toArray());
+
+			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
+			indexkeys.add("Badges");
+
+			this.request.getInterface().kill(indexkeys.toArray());
+
+			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
+			indexkeys.add(locale);
+			indexkeys.add("Search");
+
+			this.request.getInterface().kill(indexkeys.toArray());
+
+			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
+			indexkeys.add("Data");
+
+			this.request.getInterface().kill(indexkeys.toArray());
+
+			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
+			indexkeys.add("LocaleData");
+
+			this.request.getInterface().kill(indexkeys.toArray());
+
+			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
+			indexkeys.add("Tags");
+
+			this.request.getInterface().kill(indexkeys.toArray());
+
+			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
+			indexkeys.add("Location");
+
+			this.request.getInterface().kill(indexkeys.toArray());
+
+			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
+			indexkeys.add("Area");
+
+			this.request.getInterface().kill(indexkeys.toArray());
+
+			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
+			indexkeys.add("Start");
+
+			this.request.getInterface().kill(indexkeys.toArray());
+
+			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
+			indexkeys.add("End");
+
+			this.request.getInterface().kill(indexkeys.toArray());
+		}
+		catch (DatabaseException x) {
+			Logger.error("Unable to search index file " + path + " in db: " + x);
+		}
+	}
+
 	public void deleteFile(Vault vault, CommonPath path, ZonedDateTime time, RecordStruct history) {
 		try {
 			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
@@ -644,6 +741,40 @@ public class FileIndexAdapter {
 		}
 		catch (DatabaseException x) {
 			Logger.error("Unable to delete index file " + path + " in db: " + x);
+		}
+	}
+
+	public void setData(Vault vault, CommonPath path, BaseStruct data) throws OperatingContextException {
+		try {
+			this.indexFileEnsure(vault, path);
+
+			// set public marker
+			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
+			indexkeys.add("Data");
+			indexkeys.add(data);
+
+			this.request.getInterface().set(indexkeys.toArray());
+		}
+		catch (DatabaseException x) {
+			Logger.error("Unable to set index file " + path + " data in db: " + x);
+		}
+	}
+
+	public void setTags(Vault vault, CommonPath path, ListStruct tags) throws OperatingContextException {
+		try {
+			this.indexFileEnsure(vault, path);
+
+			// set public marker
+			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+
+			indexkeys.add("Tags");
+			indexkeys.add("|" + tags.join("|") + "|");
+
+			this.request.getInterface().set(indexkeys.toArray());
+		}
+		catch (DatabaseException x) {
+			Logger.error("Unable to set index file " + path + " tags in db: " + x);
 		}
 	}
 }

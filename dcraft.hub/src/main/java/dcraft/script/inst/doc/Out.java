@@ -8,8 +8,12 @@ import dcraft.struct.Struct;
 import dcraft.struct.scalar.AnyStruct;
 import dcraft.task.IParentAwareWork;
 import dcraft.util.StringUtil;
+import dcraft.web.ui.inst.W3Closed;
 import dcraft.xml.XElement;
+import dcraft.xml.XNode;
+import dcraft.xml.XText;
 
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Out extends Base {
@@ -53,6 +57,13 @@ public class Out extends Base {
 	
 	@Override
 	public void renderAfterChildren(InstructionWork state) throws OperatingContextException {
+		boolean expandValues = StackUtil.boolFromSource(state, "ExpandValues");
+
+		if (expandValues && this.hasChildren()) {
+			for (int i = 0; i < this.children.size(); i++)
+				Out.expandValues(state, this.children.get(i));
+		}
+
 		// copy current content up into the document
 		String forid = StackUtil.stringFromSource(state,"For");
 		//String name = StackUtil.stringFromSource(state,"Name");
@@ -122,5 +133,47 @@ public class Out extends Base {
 		this.replace((XElement) state.getStore().getFieldAsComposite("Original"));
 		
 		//ystem.out.println("> " + this.hashCode());
+	}
+
+	static protected String valueMacro(InstructionWork stack, String value) throws OperatingContextException {
+		return StackUtil.resolveValueToString(stack, value,true);
+	}
+
+	static public void expandValues(InstructionWork stack, XNode node) throws OperatingContextException {
+		if (node instanceof XText) {
+			String val = ((XText) node).getRawValue();
+
+			val = Out.valueMacro(stack, val);
+
+			((XText) node).setRawValue(val);
+		}
+		else if (node instanceof XElement) {
+			if ((node instanceof Base) && ((Base)node).isExclude())
+				return;
+
+			XElement el = (XElement) node;
+
+			// Write the attributes out
+			if (el.hasAttributes()) {
+				for (Map.Entry<String, String> entry : el.getAttributes().entrySet()) {
+					String aname = entry.getKey();
+
+					// note that we do not officially support any special entities in our code
+					// except for the XML standards of &amp; &lt; &gt; &quot; &apos;
+					// while entities - including &nbsp; - may work in text nodes we aren't supporting
+					// them in attributes and suggest the dec/hex codes - &spades; should be &#9824; or &#x2660;
+					String normvalue = XNode.unquote(entry.getValue());
+
+					String expandvalue = Out.valueMacro(stack, normvalue);
+
+					el.attr(aname, expandvalue);
+				}
+			}
+
+			if (el.hasChildren()) {
+				for (XNode cnode : el.getChildren())
+					Out.expandValues(stack, cnode);
+			}
+		}
 	}
 }

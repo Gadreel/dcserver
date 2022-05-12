@@ -1,0 +1,9 @@
+.dc-tag-selector-list-area {
+	border: 2px solid lightgrey;
+	padding: 1.5rem;
+  border-radius: 4px;
+}
+
+.dc-tag-selector-btn {
+	padding: 1rem 0;
+}

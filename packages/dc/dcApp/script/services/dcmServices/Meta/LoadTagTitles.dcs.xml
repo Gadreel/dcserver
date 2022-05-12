@@ -1,0 +1,27 @@
+<dcs.Script>
+
+	<dcs.ResourceHelper Find="Tag" Result="TagResources" />
+
+	<dcs.Var Name="Display" Type="List" />
+
+	<dcs.ForEach Name="Path" In="$Data">
+	  <dcs.Console>a: {$Path}</dcs.Console>
+
+		<dcs.With Target="$TagResources">
+			<LoadTreeNode Path="$Path" Result="Node" Localize="*" />
+		</dcs.With>
+
+		<dcs.If Target="$Node" IsEmpty="false">
+			<dcs.Var Name="Entry" Type="Record">
+				<SetField Name="Path" Value="$Path" />
+				<SetField Name="Title" Value="$Node.Title" />
+			</dcs.Var>
+
+			<dcs.With Target="$Display">
+				<AddItem Value="$Entry" />
+			</dcs.With>
+		</dcs.If>
+	</dcs.ForEach>
+
+	<dcs.Exit Result="$Display" />
+</dcs.Script>

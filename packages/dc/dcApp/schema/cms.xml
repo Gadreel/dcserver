@@ -82,19 +82,6 @@
 		<Record Id="dcmAwsVideoStore" Class="dcraft.cms.cdn.aws.AwsVideoStore" />
 
 		<Record Id="dcmAwsVideoStoreFile" Inherits="dcmCDNVideoFileDescriptor" Class="dcraft.cms.cdn.aws.AwsVideoFile" />
-
-		<Record Id="dcmTagDefinition">
-			<Field Name="Alias" Type="dcMetaString" />
-			<Field Name="Locale" Type="AnyRecord" />
-			<Field Name="Children">
-				<List Type="dcmTagDefinition" />
-			</Field>
-		</Record>
-
-		<Record Id="dcmTagTreeDefinition" Inherits="dcmTagDefinition">
-			<Field Name="Index" Type="Boolean" />
-			<Field Name="Keyword" Type="Boolean" />
-		</Record>
 	</Shared>
 
 	<Database>

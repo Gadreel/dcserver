@@ -198,7 +198,7 @@ public class EmailActivityProcessWork extends StateWork {
 
 						// TODO notify tenant instead -- remove someday
 
-						BackupUtil.notifyProgress(ApplicationHub.getDeployment() + " : " + ApplicationHub.getNodeId() + " : successfully routed email delivery report: " + reportid);
+						//BackupUtil.notifyProgress(ApplicationHub.getDeployment() + " : " + ApplicationHub.getNodeId() + " : successfully routed email delivery report: " + reportid);
 					}
 					else if (reportType == 2) {
 						Logger.warn("Got email BOUNCE report, tenant found: " + this.currtenant + " Report Id: " + reportid);
