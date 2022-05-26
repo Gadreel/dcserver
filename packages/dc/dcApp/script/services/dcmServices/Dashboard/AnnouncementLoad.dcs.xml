@@ -3,5 +3,5 @@
 		<Select Composer="dcmFeedFields" As="Fields" />
 	</dcdb.LoadRecord>
 
-	<dcs.Exit Result="$AnnouncementData" />
+	<dcs.Exit Scope="Task" Result="$AnnouncementData" />
 </dcs.Script>

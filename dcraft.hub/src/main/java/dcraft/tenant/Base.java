@@ -11,10 +11,7 @@ import dcraft.hub.op.OperationObserver;
 import dcraft.log.Logger;
 import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
-import dcraft.util.groovy.GCompClassLoader;
-import dcraft.xml.XElement;
 
 abstract public class Base extends RecordStruct implements IVariableProvider {
 	public BaseStruct getCacheEntry(String name) {

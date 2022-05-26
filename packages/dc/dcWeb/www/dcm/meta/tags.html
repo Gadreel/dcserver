@@ -64,7 +64,7 @@
 										.attr("class", "pure-button-default pure-button dc-button")
 										.dcappend(dc.util.Icon.use('fas-pencil-alt'))
 										.click(item, function(e) {
-											page.Layer.loadPage('/dcr/meta/tag-tree', e.data);
+											page.Layer.loadPage('/dcm/meta/tag-tree', e.data);
 
 											e.preventDefault();
 											return false;
@@ -104,7 +104,7 @@
 	<Function Name="DoAddTree" Params="item"><![CDATA[
 			var page = this;
 
-			dc.pui.Dialog.loadPage('/dcr/meta/add-tree', {
+			dc.pui.Dialog.loadPage('/dcm/meta/add-tree', {
 				Callback: function(tag) {
 					dc.comm.call('dcmServices.Meta.SaveTagTree', tag, function(rmsg) {
 						if (rmsg.Code != 0) {

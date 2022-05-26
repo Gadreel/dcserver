@@ -5,6 +5,7 @@ import dcraft.db.fileindex.FileIndexAdapter;
 import dcraft.db.util.DocumentIndexBuilder;
 import dcraft.filestore.CommonPath;
 import dcraft.filevault.Vault;
+import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationMarker;
 import dcraft.log.Logger;
@@ -29,6 +30,7 @@ import dcraft.xml.XElement;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 /*
 	Task must be run with a WebController for controller, but not need to prep the WC vars
@@ -46,9 +48,13 @@ public class FeedSearchWork extends ChainWork {
 
 	@Override
 	protected void init(TaskContext taskctx) throws OperatingContextException {
-		List<String> locales = taskctx.getResources().getLocale().getAlternateLocales();
+		/*
+		Set<String> locales = taskctx.getResources().getLocale().getAlternateLocales();
 
 		locales.add(taskctx.getResources().getLocale().getDefaultLocale());
+		 */
+
+		Set<String> locales = ResourceHub.getSiteResources().getLocale().getAllLocales();
 
 		for (String locale : locales)
 			this.then(FeedSearchLocaleWork.of(this.vault, this.path, locale));

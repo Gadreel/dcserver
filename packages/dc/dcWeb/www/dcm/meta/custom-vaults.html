@@ -63,7 +63,7 @@
 										.attr("class", "pure-button-default pure-button dc-button")
 										.dcappend(dc.util.Icon.use('fas-pencil-alt'))
 										.click(item, function(e) {
-											dc.pui.Dialog.loadPage('/dcr/meta/edit-custom-vault', {
+											dc.pui.Dialog.loadPage('/dcm/meta/edit-custom-vault', {
 												Alias: e.data.Alias,
 												Callback: function() {
 													page.callPageFunc('DoLoadVaults');
@@ -81,7 +81,7 @@
 										.attr("class", "pure-button-default pure-button dc-button")
 										.dcappend(dc.util.Icon.use('fas-list-alt'))
 										.click(item, function(e) {
-											page.Layer.loadPage('/dcr/meta/custom-vault-browser/' + e.data.Alias);
+											page.Layer.loadPage('/dcm/meta/custom-vault-browser/' + e.data.Alias);
 
 											e.preventDefault();
 											return false;
@@ -121,7 +121,7 @@
 	<Function Name="DoAddVault" Params="item"><![CDATA[
 			var page = this;
 
-			dc.pui.Dialog.loadPage('/dcr/meta/add-custom-vault', {
+			dc.pui.Dialog.loadPage('/dcm/meta/add-custom-vault', {
 				Callback: function(tag) {
 					dc.comm.call('dcmServices.Meta.SaveCustomVault', tag, function(rmsg) {
 						if (rmsg.Code != 0) {

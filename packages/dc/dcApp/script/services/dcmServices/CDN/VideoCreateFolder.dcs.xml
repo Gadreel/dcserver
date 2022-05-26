@@ -6,5 +6,5 @@
 		<CreateFolder Path="$Data.Path" Handle="FolderInfo" />
 	</dcs.Var>
 
-	<dcs.Exit Result="$FolderInfo" />
+	<dcs.Exit Scope="Task" Result="$FolderInfo" />
 </dcs.Script>

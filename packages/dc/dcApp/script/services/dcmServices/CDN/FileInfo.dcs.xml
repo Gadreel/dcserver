@@ -3,8 +3,8 @@
 
 	<dcs.Var Name="awsStore" Type="dcmAwsCDNStore">
 		<Connect AwsBucket="$AwsConfig.@CDNBucket" AwsAccount="default" RootFolder="/{$_Node.Deployment}/{$_Tenant.Alias}/files" />
-		<GetFileDetails Path="$Data.Path" Handle="FileInfo" />		
+		<GetFileDetails Path="$Data.Path" Handle="FileInfo" />
 	</dcs.Var>
 
-	<dcs.Exit Result="$FileInfo" />
+	<dcs.Exit Scope="Task" Result="$FileInfo" />
 </dcs.Script>

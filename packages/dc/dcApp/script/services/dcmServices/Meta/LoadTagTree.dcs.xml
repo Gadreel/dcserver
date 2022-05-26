@@ -8,5 +8,5 @@
 		<LoadTree Alias="$Data.Alias" Result="Tree" />
 	</dcs.With>
 
-	<dcs.Exit Result="$Tree" />
+	<dcs.Exit Scope="Task" Result="$Tree" />
 </dcs.Script>

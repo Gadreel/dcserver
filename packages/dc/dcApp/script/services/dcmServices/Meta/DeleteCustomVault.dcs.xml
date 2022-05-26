@@ -6,5 +6,5 @@
 		<DeleteVault Alias="$Data.Alias" />
 	</dcs.With>
 
-	<dcs.Exit />
+	<dcs.Exit Scope="Task" />
 </dcs.Script>

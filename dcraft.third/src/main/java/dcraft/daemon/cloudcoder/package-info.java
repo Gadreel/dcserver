@@ -1,4 +1,4 @@
-package org.cloudcoder.daemon;
+package dcraft.daemon.cloudcoder;
 
 /*
     based off of

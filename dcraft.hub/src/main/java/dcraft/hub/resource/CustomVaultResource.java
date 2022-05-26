@@ -1,42 +1,19 @@
 package dcraft.hub.resource;
 
 import dcraft.cms.meta.CustomVaultUtil;
-import dcraft.db.BasicRequestContext;
-import dcraft.db.IConnectionManager;
-import dcraft.db.fileindex.FileIndexAdapter;
-import dcraft.db.util.DocumentIndexBuilder;
 import dcraft.filestore.CommonPath;
-import dcraft.filestore.FileDescriptor;
-import dcraft.filestore.local.LocalStore;
-import dcraft.filestore.mem.MemoryStoreFile;
-import dcraft.filevault.CustomLocalVault;
-import dcraft.filevault.Vault;
-import dcraft.filevault.VaultUtil;
-import dcraft.hub.ResourceHub;
 import dcraft.hub.op.*;
-import dcraft.hub.resource.lib.FolderLibLoader;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
 import dcraft.struct.*;
-import dcraft.util.FileUtil;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
-import dcraft.util.TimeUtil;
-import dcraft.web.ui.UIUtil;
-import dcraft.web.ui.inst.form.Custom;
 import dcraft.xml.XElement;
 
-import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class CustomVaultResource extends ResourceBase {
@@ -314,28 +291,35 @@ public class CustomVaultResource extends ResourceBase {
             CustomVaultUtil.loadDataFile(alias, CommonPath.from(path), new OperationOutcomeComposite() {
                 @Override
                 public void callback(CompositeStruct found) throws OperatingContextException {
-                    if (found != null) {
-                        if (StringUtil.isNotEmpty(flocale))
-                            found = CustomVaultUtil.mergeLocaleDataFile(alias, found, datafile, flocale);
-                        else
-                            found = CustomVaultUtil.mergeDataFile(alias, found, datafile);
+                    try (OperationMarker om = OperationMarker.create()) {
+                        if (found != null) {
+                            if (StringUtil.isNotEmpty(flocale))
+                                found = CustomVaultUtil.mergeLocaleDataFile(alias, found, datafile, flocale);
+                            else
+                                found = CustomVaultUtil.mergeDataFile(alias, found, datafile);
 
-                        // TODO validate the data
+                            if (! om.hasErrors()) {
+                                found = CustomVaultUtil.validateNormalize(alias, found);
 
-                        CustomVaultUtil.saveDataFile(alias, CommonPath.from(path), found, new OperationOutcomeEmpty() {
-                            @Override
-                            public void callback() throws OperatingContextException {
-                                stack.withContinueFlag();
+                                if (! om.hasErrors()) {
+                                    CustomVaultUtil.saveDataFile(alias, CommonPath.from(path), found, new OperationOutcomeEmpty() {
+                                        @Override
+                                        public void callback() throws OperatingContextException {
+                                            stack.withContinueFlag();
 
-                                OperationContext.getAsTaskOrThrow().resume();
+                                            OperationContext.getAsTaskOrThrow().resume();
+                                        }
+                                    });
+
+                                    return;
+                                }
                             }
-                        });
+                        }
                     }
-                    else {
-                        stack.withContinueFlag();
 
-                        OperationContext.getAsTaskOrThrow().resume();
-                    }
+                    stack.withContinueFlag();
+
+                    OperationContext.getAsTaskOrThrow().resume();
                 }
             });
 

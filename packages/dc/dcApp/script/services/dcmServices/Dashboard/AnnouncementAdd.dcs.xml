@@ -119,4 +119,6 @@
 	</dcs.Var>
 
 	<dcs.CallService Op="dcmServices.Feed.AddFeed" Params="$Body" Result="NullOut" />
+
+	<dcs.Exit Scope="Task" />
 </dcs.Script>

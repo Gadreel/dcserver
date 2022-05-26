@@ -639,12 +639,12 @@ dc.pui.Apps.Menus.dcmSystem = {
   	{
 			Alias: 'Tags',
 			Title: 'Meta Tags',
-			Path: '/dcr/meta/tags'
+			Path: '/dcm/meta/tags'
 		},
   	{
 			Alias: 'CustomVaults',
 			Title: 'Record Library',
-			Path: '/dcr/meta/custom-vaults'
+			Path: '/dcm/meta/custom-vaults'
 		},
   	{
 			Alias: 'Certificates',

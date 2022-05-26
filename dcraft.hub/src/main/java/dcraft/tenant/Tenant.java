@@ -21,14 +21,12 @@ import java.util.*;
 
 import dcraft.filestore.local.LocalStore;
 import dcraft.filestore.local.LocalStoreFile;
-import dcraft.filevault.GalleryVault;
 import dcraft.filevault.Vault;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.util.ISettingsObfuscator;
 import dcraft.util.StringUtil;
-import dcraft.util.groovy.GCompClassLoader;
 import dcraft.xml.XElement;
 
 public class Tenant extends Base {

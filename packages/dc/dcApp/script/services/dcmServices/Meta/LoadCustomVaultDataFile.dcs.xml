@@ -10,5 +10,5 @@
 		<SetField Name="Form" Value="$Form" />
 	</dcs.Var>
 
-	<dcs.Exit Result="$Resp" />
+	<dcs.Exit Scope="Task" Result="$Resp" />
 </dcs.Script>

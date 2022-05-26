@@ -6,5 +6,5 @@
 		<FolderListing Path="$Data.Path" Handle="Listing" />
 	</dcs.Var>
 
-	<dcs.Exit Result="$Listing" />
+	<dcs.Exit Scope="Task" Result="$Listing" />
 </dcs.Script>

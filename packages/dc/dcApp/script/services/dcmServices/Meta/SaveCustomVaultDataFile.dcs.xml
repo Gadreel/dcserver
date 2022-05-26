@@ -6,5 +6,5 @@
 		<UpdateDataFile Alias="$Data.Alias" Path="$Data.Path" Locale="{$Data.Locale|ifempty:*}" Form="$Data.Form" />
 	</dcs.With>
 
-	<dcs.Exit />
+	<dcs.Exit Scope="Task" />
 </dcs.Script>

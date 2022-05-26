@@ -38,7 +38,7 @@ dc.pui.controls.TagSelector.prototype.init = function(entry, node) {
 		ctrl.Trees = $(node).attr('data-dc-tag-trees').split(',');
 
 	$(node).find('.dc-tag-selector-btn a').click(function(e) {
-		dc.pui.Dialog.loadPage('/dcr/meta/browse-tag-trees', {
+		dc.pui.Dialog.loadPage('/dcm/meta/browse-tag-trees', {
 			Trees: ctrl.Trees,
 			Selected: ctrl.Values,
 			Callback: function(selected) {

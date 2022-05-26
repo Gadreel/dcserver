@@ -6,5 +6,5 @@
 		<Search Alias="$Data.Alias" Term="$Data.Term" Locale="$Data.Locale" />
 	</dcs.With>
 
-	<dcs.Exit />
+	<dcs.Exit Scope="Task" />
 </dcs.Script>

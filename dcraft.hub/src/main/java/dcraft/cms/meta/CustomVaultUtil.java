@@ -25,6 +25,8 @@ import dcraft.hub.op.*;
 import dcraft.hub.resource.CustomVaultResource;
 import dcraft.hub.resource.TagResource;
 import dcraft.log.Logger;
+import dcraft.schema.DataType;
+import dcraft.schema.SchemaResource;
 import dcraft.struct.*;
 import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
@@ -32,6 +34,7 @@ import dcraft.struct.builder.ObjectBuilder;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
+import dcraft.xml.XElement;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -41,6 +44,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class CustomVaultUtil {
 	static public void saveVault(RecordStruct vaultinfo, OperationOutcomeStruct callback) throws OperatingContextException {
@@ -270,9 +274,7 @@ public class CustomVaultUtil {
 			return;
 		}
 
-		List<String> locales = ResourceHub.getResources().getLocale().getAlternateLocales();
-
-		locales.add(ResourceHub.getResources().getLocale().getDefaultLocale());
+		Set<String> locales = ResourceHub.getSiteResources().getLocale().getAllLocales();
 
 		CustomLocalVault localVault = (CustomLocalVault) cv;
 
@@ -818,4 +820,157 @@ public class CustomVaultUtil {
 
 		return originalfile;
 	}
+
+	static public CompositeStruct validateNormalize(String vaultname, CompositeStruct input) throws OperatingContextException {
+		return CustomVaultUtil.validateNormalize(ResourceHub.getResources().getCustomVault().getVaultInfo(vaultname), input);
+	}
+
+	static public CompositeStruct validateNormalize(RecordStruct vaultinfo, CompositeStruct input) throws OperatingContextException {
+		if (vaultinfo == null) {
+			Logger.error("Custom Vault not found");
+			return null;
+		}
+
+		if (input == null) {
+			Logger.error("Data not provided");
+			return null;
+		}
+
+		// TODO eventually make DataHandler an extendable feature
+		if (! "Basic".equals(vaultinfo.getFieldAsString("DataHandler"))) {
+			Logger.error("Custom Vault DataHandler not supported.");
+			return null;
+		}
+
+		RecordStruct handlerConfig = vaultinfo.getFieldAsRecord("DataHandlerConfig");
+
+		if (handlerConfig == null) {
+			Logger.error("Custom Vault DataHandler not configured.");
+			return null;
+		}
+
+		ListStruct fields = handlerConfig.getFieldAsList("Fields");
+
+		if (fields == null) {
+			Logger.error("Custom Vault DataHandler not configured with fields.");
+			return null;
+		}
+
+		RecordStruct inputfile = Struct.objectToRecord(input);
+
+		if (inputfile == null) {
+			Logger.error("Custom Vault input file not in correct format");
+			return null;
+		}
+
+		SchemaResource sr = OperationContext.getOrThrow().getOrCreateResources().getOrCreateTierSchema();
+
+		String customRecordType = "zCustomVaultRecordType" + vaultinfo.selectAsString("Vault/Id");
+
+		Set<String> locales = ResourceHub.getSiteResources().getLocale().getAllLocales();
+
+		XElement shared = XElement.tag("Shared")
+				.with(CustomVaultUtil.fieldsToDefinition(customRecordType, fields, locales));
+
+		XElement schema = XElement.tag("Schema").with(shared);
+
+		//System.out.println("temp schema: " + schema.toPrettyString());
+
+		sr.loadSchema("/custom-vault-data-type/" + customRecordType, schema);
+
+		sr.compile();
+
+		DataType dataType = sr.getType(customRecordType);
+
+		inputfile = Struct.objectToRecord(dataType.normalizeValidate(true, false, inputfile));
+
+		return inputfile;
+	}
+
+	static public XElement fieldsToDefinition(String defid, ListStruct fields, Set<String> locales) throws OperatingContextException {
+		XElement def = XElement.tag("Record");
+
+		// this is top level
+		if (StringUtil.isNotEmpty(defid)) {
+			def.attr("Id", defid);
+
+			def.with(
+					XElement.tag("Field")
+							.attr("Name", "Meta")
+							.attr("Type", "dcmCustomVaultBasicRecordMetaDefinition")
+							.attr("Required",  "true")
+			);
+		}
+
+		for (int i = 0; i < fields.size(); i++) {
+			RecordStruct fld = fields.getItemAsRecord(i);
+
+			String fname = fld.getFieldAsString("Name");
+
+			XElement fdef = XElement.tag("Field")
+					.attr("Name", fname)
+					.attr("Required",  fld.getFieldAsBooleanOrFalse("Required") ? "true" : "false");
+
+			boolean localeInput = fld.selectAsBooleanOrFalse("LocaleInput");
+
+			String datatype = fld.selectAsString("DataType");
+
+			if (localeInput) {
+				XElement record = XElement.tag("Record");
+
+				for (String locale : locales) {
+					XElement lfdef = XElement.tag("Field")
+							.attr("Name", locale);
+
+					// should only be variants on String
+					if (StringUtil.isNotEmpty(datatype))
+						lfdef.attr("Type", datatype);
+
+					record.with(lfdef);
+				}
+
+				fdef.with(record);
+			}
+			else {
+				String fieldType = fld.selectAsString("FieldType");
+
+				if ("Tags".equals(fieldType)) {
+					fdef.with(
+							XElement.tag("List")
+									.attr("Type", StringUtil.isNotEmpty(datatype) ? datatype : "String")
+					);
+				}
+				else if ("RecordList".equals(fieldType)) {
+					// TODO untested
+
+					fdef.with(
+							XElement.tag("List")
+									.with(CustomVaultUtil.fieldsToDefinition(null, fld.getFieldAsList("Fields"), locales))
+					);
+				}
+				else if (StringUtil.isNotEmpty(datatype)) {
+					fdef.attr("Type", datatype);
+				}
+
+				// TODO support  TextPattern, CheckGroup
+			}
+
+			def.with(fdef);
+		}
+
+		return def;
+	}
+
+	/*
+	static public Set<String> vaultLocales(RecordStruct vaultInfo) throws OperatingContextException {
+		Set<String> locales = ResourceHub.getResources().getLocale().getAlternateLocales();
+
+		String deflocale = OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale();
+
+		locales.add(deflocale);
+
+		return locales;
+	}
+
+	 */
 }

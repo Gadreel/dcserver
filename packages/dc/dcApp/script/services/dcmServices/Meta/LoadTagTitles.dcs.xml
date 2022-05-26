@@ -23,5 +23,5 @@
 		</dcs.If>
 	</dcs.ForEach>
 
-	<dcs.Exit Result="$Display" />
+	<dcs.Exit Scope="Task" Result="$Display" />
 </dcs.Script>

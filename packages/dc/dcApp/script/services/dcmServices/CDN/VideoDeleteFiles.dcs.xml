@@ -18,5 +18,5 @@
 		</dcs.ElseIf>
 	</dcs.ForEach>
 
-	<dcs.Exit />
+	<dcs.Exit Scope="Task" />
 </dcs.Script>

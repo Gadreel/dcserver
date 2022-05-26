@@ -1,27 +1,14 @@
 package dcraft.service;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
-
-import dcraft.log.Logger;
 import dcraft.tenant.Tenant;
-import dcraft.util.groovy.GCompClassLoader;
 
 public class TenantWatcherAdapter {
 	protected Path tenantpath = null;
-	/* groovy
-	protected GroovyObject script = null;
-	*/
-	
+
 	public TenantWatcherAdapter(Path dpath) {
 		this.tenantpath = dpath;
 	}
-	
-	/* groovy
-	public GroovyObject getScript() {
-		return this.script;
-	}
-	*/
 
 	public void init(Tenant domaininfo) {
 	/* groovy

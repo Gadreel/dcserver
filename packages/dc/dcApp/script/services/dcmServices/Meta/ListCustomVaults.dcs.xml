@@ -5,5 +5,5 @@
 		<ListAll Result="Listing" />
 	</dcs.With>
 
-	<dcs.Exit Result="$Listing" />
+	<dcs.Exit Scope="Task" Result="$Listing" />
 </dcs.Script>

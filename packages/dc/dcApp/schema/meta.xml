@@ -36,6 +36,11 @@
 			<Field Name="Description" Type="AnyRecord" />
 			<Field Name="Version" Type="dcMetaString" />
 		</Record>
+
+		<Record Id="dcmCustomVaultBasicRecordMetaDefinition">
+			<Field Name="Version" Type="DateTime" />
+		</Record>
+
 	</Shared>
 
 	<Services>

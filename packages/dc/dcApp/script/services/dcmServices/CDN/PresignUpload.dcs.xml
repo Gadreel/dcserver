@@ -6,5 +6,5 @@
 		<PresignUpload Path="$Data.Path" Handle="Info" />
 	</dcs.Var>
 
-	<dcs.Exit Result="$Info" />
+	<dcs.Exit Scope="Task" Result="$Info" />
 </dcs.Script>

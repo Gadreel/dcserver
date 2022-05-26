@@ -134,7 +134,7 @@
 					//.attr("class", "pure-button-default pure-button dc-button")
 					.dcappend(dc.util.Icon.use('fas-pencil-alt'))
 					.click(node, function(e) {
-						dc.pui.Dialog.loadPage('/dcr/meta/edit-tag', {
+						dc.pui.Dialog.loadPage('/dcm/meta/edit-tag', {
 							Tag: e.data,
 							Callback: function(tag) {
 								page.callPageFunc('DoAddTree');		// TODO someday refresh tree in place instead of replace
@@ -153,7 +153,7 @@
 					//.attr("class", "pure-button-default pure-button dc-button")
 					.dcappend(dc.util.Icon.use('fas-plus'))
 					.click(node, function(e) {
-						dc.pui.Dialog.loadPage('/dcr/meta/add-tag', {
+						dc.pui.Dialog.loadPage('/dcm/meta/add-tag', {
 							Callback: function(tag) {
 								if (! node.Children)
 									node.Children = [ ];

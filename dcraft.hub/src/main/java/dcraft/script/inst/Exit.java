@@ -17,6 +17,8 @@
 package dcraft.script.inst;
 
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
+import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
@@ -24,6 +26,7 @@ import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.IResultAwareWork;
+import dcraft.task.TaskContext;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
@@ -60,6 +63,24 @@ public class Exit extends Instruction {
 				oparams[i] = StackUtil.refFromElement(state, params.get(i), "Value").toString();
 			
 			resultAwareWork.setExitCodeTr(code, oparams);
+		}
+		else if (this.hasAttribute("Scope")) {
+			String scope = StackUtil.stringFromSource(state, "Scope");
+
+			// TODO support for other scope levels - also for OperationMarkers (by name) set in the main level script
+
+			if ("Task".equals(scope)) {
+				OperationContext ctx = OperationContext.getOrThrow();		//.getController().getFirstActivity()
+
+				if (ctx instanceof TaskContext) {
+					TaskContext taskContext = (TaskContext) ctx;
+
+					resultAwareWork.setExitCode(taskContext.getExitCode(), taskContext.getExitMessage());
+				}
+				else {
+					Logger.warn("Unable to set exit code from task, not in a task context.");
+				}
+			}
 		}
 		
 		if ((result == null) && StringUtil.isNotEmpty(output))

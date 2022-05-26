@@ -130,4 +130,6 @@
 	</dcs.Var>
 
 	<dcs.CallService Op="dcmServices.Feed.SaveCommandHistory" Params="$Body2" Result="NullOut" />
+
+	<dcs.Exit Scope="Task" />
 </dcs.Script>

@@ -333,15 +333,13 @@ public class CoreType {
 	public ScalarStruct wrap(DataType dt, Object data) {
 		if (this.root == null) 
 			return null;
-		
-		// TODO support groovy code too - like Class 
-		
+
 		//String cname = this.getClassName();
 		
 		//System.out.println("Normalizing object from " + data.getClass().getName() + " to " + cname);
 		
 		ScalarStruct nv  = this.create(dt);
-		nv.adaptValue(data);
+		nv.adaptValue(data);						// TODO needs to be more precise - for example Boolean will accept string values that don't match without error
 		
 		if (nv.isNull())
 			nv = null;

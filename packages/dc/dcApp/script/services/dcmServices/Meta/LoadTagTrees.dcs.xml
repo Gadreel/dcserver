@@ -16,5 +16,5 @@
 		</dcs.With>
 	</dcs.ForEach>
 
-	<dcs.Exit Result="$Trees" />
+	<dcs.Exit Scope="Task" Result="$Trees" />
 </dcs.Script>

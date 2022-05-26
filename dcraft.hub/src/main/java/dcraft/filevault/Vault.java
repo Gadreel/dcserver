@@ -52,33 +52,14 @@ abstract public class Vault {
 		
 		return tenant.resolveSite(this.site);
 	}
-	
-	/* groovy
-	protected GroovyObject script = null;
-	*/
-	
+
 	public void init(Site di, XElement bel, OperationOutcomeEmpty cb) throws OperatingContextException {
 		this.name = bel.getAttribute("Id");
 		
 		this.tenant = di.getTenant().getAlias();
 		this.site = di.getAlias();
 		
-		/* TODO restore groovy support - where to put scriptold?
-		Path bpath = di.resolvePath("buckets").resolve(bname + ".groovy");
-		
-		if (Files.exists(bpath)) {
-			try {
-				Class<?> groovyClass = di.getScriptLoader().toClass(bpath);
-				
-				this.scriptold = (GroovyObject) groovyClass.newInstance();
-				
-				this.tryExecuteMethod("Init", new Object[] { di });
-			}
-			catch (Exception x) {
-				Logger.error("Unable to prepare bucket scriptold: " + bpath);
-				Logger.error("Error: " + x);
-			}
-		}
+		/* TODO restore script support
 		*/
 		
 		String ratags = bel.getAttribute("ReadBadges");
