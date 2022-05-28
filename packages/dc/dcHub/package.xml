@@ -87,6 +87,7 @@
 			<Definition Ext="jar" Note="Java Archive (JAR)" Type="application/java-archive" />
 			<Definition Ext="mid" Note="Musical Instrument Digital Interface (MIDI)" Type="audio/midi" />
 			<Definition Ext="midi" Note="Musical Instrument Digital Interface (MIDI)" Type="audio/midi" />
+			<Definition Ext="mjs" Note="JavaScript module" Type="text/javascript" Compress="True" Icon="far/file-code" />
 			<Definition Ext="mpeg" Note="MPEG Video" Type="video/mpeg" />
 			<Definition Ext="mpkg" Note="Apple Installer Package" Type="application/vnd.apple.installer+xml" />
 			<Definition Ext="odp" Note="OpenDocument presentation document" Type="application/vnd.oasis.opendocument.presentation" />

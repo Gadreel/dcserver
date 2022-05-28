@@ -16,6 +16,7 @@ import dcraft.util.StringUtil;
 import dcraft.util.csv.CSVWriter;
 import dcraft.util.io.OutputWrapper;
 import dcraft.xml.XElement;
+import jxl.CellView;
 import jxl.Workbook;
 import jxl.write.*;
 import jxl.write.Number;
@@ -106,6 +107,19 @@ public class QuickXLS extends RecordStruct {
 
 		this.currentrow = 0;
 		this.currentcol = 0;
+	}
+
+	// for current sheet
+	public void autoSizeColumns() throws IOException {
+    	if (this.currntsheet != null) {
+    		int cols = this.currntsheet.getColumns();
+
+			for(int i = 0; i < cols; i++) {
+				CellView view = this.currntsheet.getColumnView(i);
+				view.setAutosize(true);
+				this.currntsheet.setColumnView(i, view);
+			}
+		}
 	}
 
 	public void closeDocument() throws IOException {
@@ -228,6 +242,17 @@ public class QuickXLS extends RecordStruct {
 			}
 			catch (IOException x) {
 				Logger.error("Error skipping line in PDF: " + x);
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("AutoSizeColumns".equals(code.getName())) {
+			try {
+				this.autoSizeColumns();
+			}
+			catch (IOException x) {
+				Logger.error("Error saving CSV: " + x);
 			}
 
 			return ReturnOption.CONTINUE;

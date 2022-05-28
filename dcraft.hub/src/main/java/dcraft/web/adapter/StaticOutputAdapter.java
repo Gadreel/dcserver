@@ -70,7 +70,7 @@ public class StaticOutputAdapter implements IOutputWork {
 			// dc-cache indicates max cache life - 1 yr
 			if (request.getFieldAsRecord("Parameters").isNotFieldEmpty("dc-cache"))
 				resp.setHeader("Cache-Control", "public, max-age=31536000");
-			else if ("text/css".equals(mtype) || "application/javascript".equals(mtype) || "application/json".equals(mtype))
+			else if ("text/css".equals(mtype) || "application/javascript".equals(mtype) || "text/javascript".equals(mtype) || "application/json".equals(mtype))
 				resp.setHeader("Cache-Control", "no-cache");
 			else
 				resp.setHeader("Cache-Control", "max-age=900");
