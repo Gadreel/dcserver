@@ -73,6 +73,7 @@
 			<Tag Name="dcm.YouTubeWidget" Class="dcraft.web.ui.inst.cms.YouTubeWidget" />
 			<Tag Name="dcm.VimeoWidget" Class="dcraft.web.ui.inst.cms.VimeoWidget" />
 			<Tag Name="dcm.GalleryWidget" Class="dcraft.web.ui.inst.cms.GalleryWidget" />
+			<Tag Name="dcm.LogosWidget" Class="dcraft.web.ui.inst.cms.LogosWidget" />
 			<Tag Name="dcm.StoreGalleryWidget" Class="dcraft.web.ui.inst.cms.StoreGalleryWidget" />
 			<Tag Name="dcm.StoreCategoryWidget" Class="dcraft.web.ui.inst.cms.StoreCategoryWidget" />
 			<Tag Name="dcm.HighlightWidget" Class="dcraft.web.ui.inst.cms.HighlightWidget" />

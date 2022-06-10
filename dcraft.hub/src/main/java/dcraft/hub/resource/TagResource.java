@@ -22,7 +22,6 @@ import java.util.*;
 
 public class TagResource extends ResourceBase {
     protected Map<String, RecordStruct> trees = new HashMap<>();
-    //protected Map<String, Path> treefiles = new HashMap<>();
 
     public TagResource() {
         this.setName("Tag");
@@ -39,7 +38,6 @@ public class TagResource extends ResourceBase {
 
                 if (StringUtil.isNotEmpty(alias)) {
                     this.trees.put(alias, tree);
-                    //this.treefiles.put(alias, file);
                     return;
                 }
             }

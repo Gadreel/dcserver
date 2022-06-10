@@ -1,6 +1,6 @@
 package dcraft.filevault;
 
-import dcraft.filevault.work.CustomVaultIndexingWork;
+import dcraft.filevault.work.CustomVaultCachingWork;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.task.Task;
 import dcraft.task.TaskHub;
@@ -13,7 +13,7 @@ public class CustomLocalVault extends FileStoreVault {
 
         TaskHub.submit(
                 Task.ofSubtask("Custom vault search indexing", "INDX")
-                        .withWork(CustomVaultIndexingWork.of(this, tx))
+                        .withWork(CustomVaultCachingWork.of(this, tx))
         );
     }
 }

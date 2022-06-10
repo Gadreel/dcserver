@@ -28,47 +28,47 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FileIndexAdapter {
-	static public FileIndexAdapter of(IRequestContext request) {
-		FileIndexAdapter adapter = new FileIndexAdapter();
+public class CustomIndexingAdapter {
+	static public CustomIndexingAdapter of(IRequestContext request) {
+		CustomIndexingAdapter adapter = new CustomIndexingAdapter();
 		adapter.request = request;
 		return adapter;
 	}
-	
+
 	static public List<Object> pathToIndex(Vault vault, CommonPath path) {
 		List<Object> indexkeys = new ArrayList<>();
-		
+
 		Site site = vault.getSite();
-		
+
 		indexkeys.add(site.getTenant().getAlias());
-		indexkeys.add("dcFileIndex");
+		indexkeys.add("dcCustomIndex");
 		indexkeys.add(site.getAlias());
 		indexkeys.add(vault.getName());
-		
+
 		if (path != null) {
 			for (String part : path.getParts())
 				indexkeys.add(part);
 		}
-		
+
 		return indexkeys;
 	}
-	
+
 	protected IRequestContext request = null;
-	
+
 	// don't call for general code...
-	protected FileIndexAdapter() {
+	protected CustomIndexingAdapter() {
 	}
 	
 	public IRequestContext getRequest() {
 		return this.request;
 	}
-	
+
+	/*
 	// -1 means recursive, 1 = just this level, > 1 means just this many levels
 	public void traverseIndex(Vault vault, CommonPath path, int depth, IVariableAware scope, IFilter filter) throws OperatingContextException {
 		try {
@@ -81,7 +81,7 @@ public class FileIndexAdapter {
 					return;
 			}
 			else if (depth != 0) {
-				List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+				List<Object> indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 				// start at top
 				indexkeys.add(null);
@@ -110,7 +110,7 @@ public class FileIndexAdapter {
 	//TODO support files too - look at EncryptedFileStore getInfo - also fix the code above to ignore folders
 	public RecordStruct fileInfo(Vault vault, CommonPath path, IVariableAware scope) throws OperatingContextException {
 		try {
-			List<Object> entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+			List<Object> entrykeys = CustomIndexingAdapter.pathToIndex(vault, path);
 			
 			Object marker = this.request.getInterface().get(entrykeys.toArray());
 			
@@ -137,7 +137,7 @@ public class FileIndexAdapter {
 				
 				Object pval = ByteUtil.extractValue(pkey);
 				
-				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+				entrykeys = CustomIndexingAdapter.pathToIndex(vault, path);
 				
 				entrykeys.add("State");
 				entrykeys.add(pval);
@@ -146,14 +146,6 @@ public class FileIndexAdapter {
 				
 				frec.with("State", Struct.objectToString(this.request.getInterface().get(entrykeys.toArray())));
 
-				/*
-				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
-
-				entrykeys.add("History");
-				entrykeys.add(pval);
-
-				frec.with("History", this.request.getInterface().get(entrykeys.toArray()));
-				*/
 
 				BigDecimal stamp = Struct.objectToDecimal(pval);
 				
@@ -164,7 +156,7 @@ public class FileIndexAdapter {
 				
 				// public
 				
-				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+				entrykeys = CustomIndexingAdapter.pathToIndex(vault, path);
 				
 				entrykeys.add("Public");
 				
@@ -172,7 +164,7 @@ public class FileIndexAdapter {
 				
 				// title
 				
-				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+				entrykeys = CustomIndexingAdapter.pathToIndex(vault, path);
 				
 				entrykeys.add(locale);
 				entrykeys.add("Title");
@@ -181,27 +173,16 @@ public class FileIndexAdapter {
 				
 				// summary
 				
-				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+				entrykeys = CustomIndexingAdapter.pathToIndex(vault, path);
 				
 				entrykeys.add(locale);
 				entrykeys.add("Summary");
 				
 				frec.with("Summary", Struct.objectToString(this.request.getInterface().get(entrykeys.toArray())));
 
-				/*
-				// search
-
-				indexkeys = FileIndexAdapter.pathToIndex(vault, path);
-
-				indexkeys.add(locale);
-				indexkeys.add("Search");
-
-				frec.with("Search", Struct.objectToString(this.request.getInterface().get(indexkeys.toArray())));
-				*/
-				
 				// sort hint
 				
-				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+				entrykeys = CustomIndexingAdapter.pathToIndex(vault, path);
 				
 				entrykeys.add(locale);
 				entrykeys.add("SortHint");
@@ -210,7 +191,7 @@ public class FileIndexAdapter {
 				
 				// badges
 				
-				entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+				entrykeys = CustomIndexingAdapter.pathToIndex(vault, path);
 				
 				entrykeys.add("Badges");
 				
@@ -242,7 +223,7 @@ public class FileIndexAdapter {
 
 	public RecordStruct fileDeposit(Vault vault, CommonPath path, IVariableAware scope) throws OperatingContextException {
 		try {
-			List<Object> entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+			List<Object> entrykeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			Object marker = this.request.getInterface().get(entrykeys.toArray());
 
@@ -262,7 +243,7 @@ public class FileIndexAdapter {
 				while (pkey != null) {
 					Object pval = ByteUtil.extractValue(pkey);
 
-					entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+					entrykeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 					entrykeys.add("State");
 					entrykeys.add(pval);
@@ -272,7 +253,7 @@ public class FileIndexAdapter {
 					if (! "Present".equals(state))
 						return null;
 
-					entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+					entrykeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 					entrykeys.add("History");
 					entrykeys.add(pval);
@@ -283,7 +264,7 @@ public class FileIndexAdapter {
 						return hist;
 
 					// go to next State
-					entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+					entrykeys = CustomIndexingAdapter.pathToIndex(vault, path);
 					entrykeys.add("State");
 					entrykeys.add(pval);
 
@@ -303,7 +284,7 @@ public class FileIndexAdapter {
 			List<Object> indexkeys = new ArrayList<>();
 			
 			indexkeys.add(site.getTenant().getAlias());
-			indexkeys.add("dcFileIndex");
+			indexkeys.add("dcCustomIndex");
 			indexkeys.add(site.getAlias());
 			
 			this.request.getInterface().kill(indexkeys.toArray());
@@ -315,7 +296,7 @@ public class FileIndexAdapter {
 	
 	public void clearVaultIndex(Vault vault) {
 		try {
-			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, null);
+			List<Object> indexkeys = CustomIndexingAdapter.pathToIndex(vault, null);
 			
 			this.request.getInterface().kill(indexkeys.toArray());
 		}
@@ -327,14 +308,14 @@ public class FileIndexAdapter {
 	public void indexFile(Vault vault, CommonPath path, ZonedDateTime time, RecordStruct history) throws OperatingContextException {
 		try {
 			// set entry marker
-			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			List<Object> indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 			
 			indexkeys.add("File");
 			
 			this.request.getInterface().set(indexkeys.toArray());
 			
 			// add state
-			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 			
 			indexkeys.add("State");
 			indexkeys.add((time != null) ? ByteUtil.dateTimeToReverse(time) : BigDecimal.ZERO);
@@ -344,7 +325,7 @@ public class FileIndexAdapter {
 			this.request.getInterface().set(indexkeys.toArray());
 			
 			// add history
-			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 			
 			indexkeys.add("History");
 			indexkeys.add((time != null) ? ByteUtil.dateTimeToReverse(time) : BigDecimal.ZERO);
@@ -363,7 +344,7 @@ public class FileIndexAdapter {
 	public void indexFileEnsure(Vault vault, CommonPath path) throws OperatingContextException {
 		try {
 			// set public marker
-			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			List<Object> indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 			
 			ZonedDateTime now = TimeUtil.now();
 			
@@ -382,7 +363,7 @@ public class FileIndexAdapter {
 				if (pkey != null) {
 					Object pval = ByteUtil.extractValue(pkey);
 					
-					indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+					indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 					
 					indexkeys.add("State");
 					indexkeys.add(pval);
@@ -434,7 +415,7 @@ public class FileIndexAdapter {
 		
 		try {
 			// set public marker
-			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			List<Object> indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 			
 			ZonedDateTime now = TimeUtil.now();
 			
@@ -469,27 +450,11 @@ public class FileIndexAdapter {
 	}
 	
 	public void indexSearch(Vault vault, CommonPath path, DocumentIndexBuilder indexer) throws OperatingContextException {
-		/*
-		System.out.println("ib title: " + indexer.getTitle());
-		System.out.println("summ: " + indexer.getSummary());
-		System.out.println("hint: " + indexer.getSortHint());
-		System.out.println("deny: " + indexer.isDenyIndex());
-		System.out.println("badges: " + indexer.getBadges());
-
-		for (StringBuilder sb : indexer.getSections()) {
-			System.out.println();
-			System.out.println(sb);
-		}
-
-		// TODO
-
-		System.out.println(" ----- ");
-		*/
 		try {
 			this.indexFileEnsure(vault, path);
 			
 			// set public marker
-			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			List<Object> indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 			
 			indexkeys.add("Public");
 			indexkeys.add(! indexer.isDenyIndex());
@@ -500,7 +465,7 @@ public class FileIndexAdapter {
 
 			// set title
 			if (StringUtil.isNotEmpty(title)) {
-				indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+				indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 				indexkeys.add(indexer.getLang());
 				indexkeys.add("Title");
@@ -513,7 +478,7 @@ public class FileIndexAdapter {
 
 			// set summary
 			if (StringUtil.isNotEmpty(summary)) {
-				indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+				indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 				indexkeys.add(indexer.getLang());
 				indexkeys.add("Summary");
@@ -526,7 +491,7 @@ public class FileIndexAdapter {
 
 			// set hint
 			if (StringUtil.isNotEmpty(hint)) {
-				indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+				indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 				indexkeys.add(indexer.getLang());
 				indexkeys.add("SortHint");
@@ -539,7 +504,7 @@ public class FileIndexAdapter {
 
 			// set badges
 			if (badges != null) {
-				indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+				indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 				indexkeys.add("Badges");
 				indexkeys.add(badges);
@@ -551,7 +516,7 @@ public class FileIndexAdapter {
 
 			// set search
 			if ((index != null) && (index.size() > 0)) {
-				indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+				indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 				
 				indexkeys.add(indexer.getLang());
 				indexkeys.add("Search");
@@ -567,7 +532,7 @@ public class FileIndexAdapter {
 
 	public void clearSearch(Vault vault, CommonPath path, String locale) throws OperatingContextException {
 		try {
-			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			List<Object> indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			if (! this.request.getInterface().isSet(indexkeys.toArray())) {
 				return;
@@ -580,77 +545,77 @@ public class FileIndexAdapter {
 
 			this.request.getInterface().kill(indexkeys.toArray());
 
-			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			indexkeys.add(locale);
 			indexkeys.add("Title");
 
 			this.request.getInterface().kill(indexkeys.toArray());
 
-			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			indexkeys.add(locale);
 			indexkeys.add("Summary");
 
 			this.request.getInterface().kill(indexkeys.toArray());
 
-			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			indexkeys.add(locale);
 			indexkeys.add("SortHint");
 
 			this.request.getInterface().kill(indexkeys.toArray());
 
-			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			indexkeys.add("Badges");
 
 			this.request.getInterface().kill(indexkeys.toArray());
 
-			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			indexkeys.add(locale);
 			indexkeys.add("Search");
 
 			this.request.getInterface().kill(indexkeys.toArray());
 
-			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			indexkeys.add("Data");
 
 			this.request.getInterface().kill(indexkeys.toArray());
 
-			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			indexkeys.add("LocaleData");
 
 			this.request.getInterface().kill(indexkeys.toArray());
 
-			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			indexkeys.add("Tags");
 
 			this.request.getInterface().kill(indexkeys.toArray());
 
-			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			indexkeys.add("Location");
 
 			this.request.getInterface().kill(indexkeys.toArray());
 
-			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			indexkeys.add("Area");
 
 			this.request.getInterface().kill(indexkeys.toArray());
 
-			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			indexkeys.add("Start");
 
 			this.request.getInterface().kill(indexkeys.toArray());
 
-			indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			indexkeys.add("End");
 
@@ -663,7 +628,7 @@ public class FileIndexAdapter {
 
 	public void deleteFile(Vault vault, CommonPath path, ZonedDateTime time, RecordStruct history) {
 		try {
-			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			List<Object> indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 			
 			Object fmarker = this.request.getInterface().get(indexkeys.toArray());
 			
@@ -678,7 +643,7 @@ public class FileIndexAdapter {
 				this.request.getInterface().set(indexkeys.toArray());
 				
 				// history
-				indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+				indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 				
 				indexkeys.add("History");
 				indexkeys.add((time != null) ? ByteUtil.dateTimeToReverse(time) : BigDecimal.ZERO);
@@ -704,26 +669,6 @@ public class FileIndexAdapter {
 					
 					this.request.getInterface().set(indexkeys.toArray());
 				}
-				
-				/*
-				// start at top
-				indexkeys.add(null);
-				
-				byte[] pkey = this.request.getInterface().nextPeerKey(indexkeys.toArray());
-				
-				while (pkey != null) {
-					Object pval = ByteUtil.extractValue(pkey);
-					
-					if (pval instanceof String) {
-						this.deleteFile(vault, path.resolve((String) pval), time, history);
-					}
-					
-					indexkeys.remove(indexkeys.size() - 1);
-					indexkeys.add(pval);
-					
-					pkey = this.request.getInterface().nextPeerKey(indexkeys.toArray());
-				}
-				*/
 			}
 		}
 		catch (DatabaseException x) {
@@ -733,7 +678,7 @@ public class FileIndexAdapter {
 	
 	public void hideFolder(Vault vault, CommonPath path, ZonedDateTime time, RecordStruct history) {
 		try {
-			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			List<Object> indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 			
 			indexkeys.add("XFolder");
 			
@@ -746,7 +691,7 @@ public class FileIndexAdapter {
 
 	public BaseStruct getData(Vault vault, CommonPath path) throws OperatingContextException {
 		try {
-			List<Object> entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+			List<Object> entrykeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			Object marker = this.request.getInterface().get(entrykeys.toArray());
 
@@ -759,7 +704,7 @@ public class FileIndexAdapter {
 		catch (DatabaseException x) {
 			Logger.error("Unable to get index file " + path + " data in db: " + x);
 		}
-
+		
 		return null;
 	}
 
@@ -768,7 +713,7 @@ public class FileIndexAdapter {
 			this.indexFileEnsure(vault, path);
 
 			// set public marker
-			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			List<Object> indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			indexkeys.add("Data");
 			indexkeys.add(data);
@@ -785,7 +730,7 @@ public class FileIndexAdapter {
 			this.indexFileEnsure(vault, path);
 
 			// set public marker
-			List<Object> indexkeys = FileIndexAdapter.pathToIndex(vault, path);
+			List<Object> indexkeys = CustomIndexingAdapter.pathToIndex(vault, path);
 
 			indexkeys.add("Tags");
 			indexkeys.add("|" + tags.join("|") + "|");
@@ -796,4 +741,6 @@ public class FileIndexAdapter {
 			Logger.error("Unable to set index file " + path + " tags in db: " + x);
 		}
 	}
+
+	*/
 }

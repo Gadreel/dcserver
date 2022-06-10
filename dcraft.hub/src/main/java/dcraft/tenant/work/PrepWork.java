@@ -68,6 +68,7 @@ public class PrepWork extends StateWork {
 				.withStep(StateWorkStep.of("Load Script", this::loadScript))
 				.withStep(StateWorkStep.of("Load Tags", this::loadTags))
 				.withStep(StateWorkStep.of("Load Custom Vaults", this::loadCustomVaults))
+				.withStep(StateWorkStep.of("Load Custom Indexing", this::loadCustomIndexing))
 				.withStep(StateWorkStep.of("Load Services", this::loadServices))
 				.withStep(StateWorkStep.of("Load Sites", this::loadSites))
 				//.withStep(StateWorkStep.of("Load Schedules", this::loadSchedule))
@@ -476,6 +477,34 @@ public class PrepWork extends StateWork {
 		// add custom vault definitions to a new layer of config
 		// always add, even if not previously used
 		resources.getOrCreateTierConfig().add(vaultResource.getCustomVaultConfigLayer());
+
+		return StateWorkStep.NEXT;
+	}
+
+	public StateWorkStep loadCustomIndexing(TaskContext trun) throws OperatingContextException {
+		if (Logger.isDebug())
+			Logger.debug("Starting tenant load custom indexes for: " + this.tenant.getAlias());
+
+		ResourceTier resources = this.tenant.getTierResources();
+
+		CustomIndexResource indexingResource = resources.getOrCreateTierCustomIndexing();		// always create, even if folder not there
+
+		Path spath = this.tenant.resolvePath("meta/indexing");
+
+		if (Files.exists(spath)) {
+			try {
+				// load the vault info
+				Files.walk(spath).forEach(sf -> {
+					if (sf.getFileName().toString().endsWith(".index.json")) {
+						Logger.trace("Loading custom index: " + sf.toAbsolutePath());
+						indexingResource.loadInfo(sf);
+					}
+				});
+			}
+			catch (IOException x) {
+				Logger.warn("Unable to get folder listing: " + x);
+			}
+		}
 
 		return StateWorkStep.NEXT;
 	}

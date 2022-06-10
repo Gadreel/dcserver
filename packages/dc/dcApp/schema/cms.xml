@@ -1,7 +1,7 @@
 <Schema>
 	<Shared>
 		<StringType Id="dcmPageTitle">
-			<StringRestriction MaxLength="70" />
+			<StringRestriction MaxLength="120" />
 		</StringType>
 
 		<StringType Id="dcPageSlug">
@@ -9,11 +9,11 @@
 		</StringType>
 
 		<StringType Id="dcmPageKeywords">
-			<StringRestriction MaxLength="70" />
+			<StringRestriction MaxLength="120" />
 		</StringType>
 
 		<StringType Id="dcmPageDescription">
-			<StringRestriction MaxLength="200" />
+			<StringRestriction MaxLength="250" />
 		</StringType>
 
 		<StringType Id="dcmFeedHistoryOptionsEnum">

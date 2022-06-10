@@ -16,12 +16,11 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CustomVaultResource extends ResourceBase {
-    protected Map<String, RecordStruct> vaults = new HashMap<>();
-    protected XElement configlayer = XElement.tag("Config");
+public class CustomIndexResource extends ResourceBase {
+    protected Map<String, RecordStruct> indexes = new HashMap<>();
 
-    public CustomVaultResource() {
-        this.setName("CustomVault");
+    public CustomIndexResource() {
+        this.setName("CustomIndexing");
     }
 
     public void loadInfo(Path file) {
@@ -31,77 +30,25 @@ public class CustomVaultResource extends ResourceBase {
             RecordStruct tree = Struct.objectToRecord(json);
 
             if (tree != null) {
-                String alias = tree.selectAsString("Vault/Id");
+                String alias = tree.getFieldAsString("Alias");
 
                 if (StringUtil.isNotEmpty(alias)) {
-                    this.vaults.put(alias, tree);
+                    this.indexes.put(alias, tree);
                     return;
                 }
             }
         }
 
-        Logger.error("Unable to load custom vault: " + file);
+        Logger.error("Unable to load custom index: " + file);
     }
 
-    public XElement getCustomVaultConfigLayer() {
-        this.buildConfigLayer();
-
-        return this.configlayer;
-    }
-
-    public void rebuildConfigLayer() throws OperatingContextException {
-        this.configlayer.clearChildren();
-
-        OperationContext.getOrThrow().getSite().flushVaults();
-
-        this.buildConfigLayer();
-    }
-
-    public void buildConfigLayer() {
-        if (this.configlayer.hasChildren())
-            return;
-
-        XElement vaults = XElement.tag("Vaults");
-
-        for (String key : this.vaults.keySet()) {
-            RecordStruct custvault = this.vaults.get(key);
-
-            if (custvault != null) {
-                RecordStruct vinfo = custvault.getFieldAsRecord("Vault");
-
-                if (vinfo != null) {
-                    String alias = vinfo.selectAsString("Id");
-                    String vclass = vinfo.selectAsString("Class", "dcraft.filevault.CustomLocalVault");
-
-                    if (StringUtil.isNotEmpty(alias)) {
-                        XElement vtag = XElement.tag("Tenant")
-                                .attr("Id", alias)
-                                .attr("VaultClass", vclass);
-
-                        if (vinfo.getFieldAsBooleanOrFalse("CmsSync"))
-                            vtag.attr("CmsSync",  "true");
-
-                        if (vinfo.isNotFieldEmpty("ReadBadges"))
-                            vtag.attr("ReadBadges",  vinfo.getFieldAsList("ReadBadges").join(","));
-
-                        if (vinfo.isNotFieldEmpty("WriteBadges"))
-                            vtag.attr("WriteBadges",  vinfo.getFieldAsList("WriteBadges").join(","));
-
-                        vaults.with(vtag);
-                    }
-                }
-            }
-        }
-
-        this.configlayer.with(vaults);
-    }
-
-    public RecordStruct getVaultInfo(String alias) {
-        return this.vaults.get(alias);
+    public RecordStruct getIndexInfo(String alias) {
+        return this.indexes.get(alias);
     }
 
     @Override
     public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
+        /*
         if ("ListAll".equals(code.getName())) {
             String result = StackUtil.stringFromElement(stack, code, "Result");
 
@@ -163,9 +110,9 @@ public class CustomVaultResource extends ResourceBase {
                     if (! this.hasErrors()) {
                         String alias = vaultinfo.selectAsString("Vault/Id");
 
-                        CustomVaultResource.this.vaults.put(alias, vaultinfo);
+                        CustomIndexResource.this.vaults.put(alias, vaultinfo);
 
-                        CustomVaultResource.this.rebuildConfigLayer();
+                        CustomIndexResource.this.rebuildConfigLayer();
                     }
 
                     stack.withContinueFlag();
@@ -184,10 +131,10 @@ public class CustomVaultResource extends ResourceBase {
                 @Override
                 public void callback(BaseStruct result) throws OperatingContextException {
                     if (! this.hasErrors()) {
-                        if (CustomVaultResource.this.vaults.containsKey(alias))
-                            CustomVaultResource.this.vaults.remove(alias);
+                        if (CustomIndexResource.this.vaults.containsKey(alias))
+                            CustomIndexResource.this.vaults.remove(alias);
 
-                        CustomVaultResource.this.rebuildConfigLayer();
+                        CustomIndexResource.this.rebuildConfigLayer();
                     }
 
                     stack.withContinueFlag();
@@ -202,7 +149,7 @@ public class CustomVaultResource extends ResourceBase {
         if ("Reindex".equals(code.getName())) {
             String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias"));
 
-            CustomVaultUtil.updateFileCacheAll(alias, new OperationOutcomeEmpty() {
+            CustomVaultUtil.updateFileIndexAll(alias, new OperationOutcomeEmpty() {
                 @Override
                 public void callback() throws OperatingContextException {
                     stack.withContinueFlag();
@@ -229,7 +176,7 @@ public class CustomVaultResource extends ResourceBase {
             if (StringUtil.isNotEmpty(taglist))
                 tags.with(taglist.split(","));
 
-            CustomVaultUtil.searchFileCache(alias, term, locale, tags, new OperationOutcomeStruct() {
+            CustomVaultUtil.search(alias, term, locale, tags, new OperationOutcomeStruct() {
                 @Override
                 public void callback(BaseStruct found) throws OperatingContextException {
                     if (found != null)
@@ -360,6 +307,7 @@ public class CustomVaultResource extends ResourceBase {
 
             return ReturnOption.AWAIT;
         }
+        */
 
         return super.operation(stack, code);
     }

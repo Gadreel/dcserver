@@ -2,7 +2,6 @@ package dcraft.cms.meta;
 
 import dcraft.db.BasicRequestContext;
 import dcraft.db.DatabaseException;
-import dcraft.db.ICallContext;
 import dcraft.db.IConnectionManager;
 import dcraft.db.fileindex.BasicFilter;
 import dcraft.db.fileindex.FileIndexAdapter;
@@ -11,7 +10,6 @@ import dcraft.db.fileindex.Filter.Tags;
 import dcraft.db.fileindex.Filter.Term;
 import dcraft.db.fileindex.IFilter;
 import dcraft.db.proc.ExpressionResult;
-import dcraft.db.proc.IStoredProc;
 import dcraft.db.util.DocumentIndexBuilder;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.FileDescriptor;
@@ -22,7 +20,6 @@ import dcraft.filevault.Vault;
 import dcraft.filevault.VaultUtil;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.*;
-import dcraft.hub.resource.CustomVaultResource;
 import dcraft.hub.resource.TagResource;
 import dcraft.log.Logger;
 import dcraft.schema.DataType;
@@ -35,6 +32,7 @@ import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
+import jxl.biff.RecordData;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -133,7 +131,7 @@ public class CustomVaultUtil {
 		// TODO remove files from the vault folder as well
 	}
 
-	static public void updateFileIndexAll(String vaultname, OperationOutcomeEmpty callback)
+	static public void updateFileCacheAll(String vaultname, OperationOutcomeEmpty callback)
 			throws OperatingContextException
 	{
 		Vault cv = OperationContext.getOrThrow().getSite().getVault(vaultname);
@@ -169,7 +167,7 @@ public class CustomVaultUtil {
 				}
 			});
 
-			CustomVaultUtil.updateFileIndex(vaultname, updateFiles, null, callback);
+			CustomVaultUtil.updateFileCache(vaultname, updateFiles, null, callback);
 		}
 		catch (IOException x) {
 			Logger.error("Unable to complete folder listing: " + x);
@@ -177,13 +175,13 @@ public class CustomVaultUtil {
 		}
 	}
 
-	static public void updateFileIndex(String vaultname, List<CommonPath> updateFiles, List<CommonPath> deleteFiles, OperationOutcomeEmpty callback)
+	static public void updateFileCache(String vaultname, List<CommonPath> updateFiles, List<CommonPath> deleteFiles, OperationOutcomeEmpty callback)
 			throws OperatingContextException
 	{
-		CustomVaultUtil.updateFileIndex(vaultname, ResourceHub.getResources().getCustomVault().getVaultInfo(vaultname) , updateFiles, deleteFiles, callback);
+		CustomVaultUtil.updateFileCache(vaultname, ResourceHub.getResources().getCustomVault().getVaultInfo(vaultname) , updateFiles, deleteFiles, callback);
 	}
 
-	static public void updateFileIndex(String vaultname, RecordStruct vaultinfo, List<CommonPath> updateFiles, List<CommonPath> deleteFiles, OperationOutcomeEmpty callback)
+	static public void updateFileCache(String vaultname, RecordStruct vaultinfo, List<CommonPath> updateFiles, List<CommonPath> deleteFiles, OperationOutcomeEmpty callback)
 			throws OperatingContextException
 	{
 		if (vaultinfo == null) {
@@ -303,11 +301,12 @@ public class CustomVaultUtil {
 				CharSequence json = IOUtil.readEntireFile(localpath);
 
 				if (StringUtil.isEmpty(json)) {
-					Logger.warn("Unable to read index file: " + localpath);
+					Logger.warn("Unable to read source file: " + localpath);
 					continue;
 				}
 
 				RecordStruct data = Struct.objectToRecord(json);
+				RecordStruct olddata = Struct.objectToRecord(fileIndexAdapter.getData(localVault, updateFile));
 
 				for (String locale : locales) {
 					DocumentIndexBuilder indexer = DocumentIndexBuilder.index(locale);
@@ -360,6 +359,8 @@ public class CustomVaultUtil {
 
 				fileIndexAdapter.setTags(localVault, updateFile, data.getFieldAsList("Tags"));
 				fileIndexAdapter.setData(localVault, updateFile, data);
+
+
 			}
 		}
 
@@ -375,7 +376,7 @@ public class CustomVaultUtil {
 	 ; Result
 	 ;		List of records
 	 */
-	static public void search(String vaultname, String term, String locale, ListStruct tags, OperationOutcomeStruct callback) throws OperatingContextException {
+	static public void searchFileCache(String vaultname, String term, String locale, ListStruct tags, OperationOutcomeStruct callback) throws OperatingContextException {
 		Vault vault = OperationContext.getOrThrow().getSite().getVault(vaultname);
 		
 		if (vault == null) {

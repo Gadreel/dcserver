@@ -17,9 +17,9 @@ import dcraft.task.TaskContext;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CustomVaultIndexingWork implements IWork {
-    static public CustomVaultIndexingWork of(Vault vault, TransactionBase tx) {
-        CustomVaultIndexingWork work = new CustomVaultIndexingWork();
+public class CustomVaultCachingWork implements IWork {
+    static public CustomVaultCachingWork of(Vault vault, TransactionBase tx) {
+        CustomVaultCachingWork work = new CustomVaultCachingWork();
 
         work.vault = vault;
         work.tx = tx;
@@ -46,7 +46,7 @@ public class CustomVaultIndexingWork implements IWork {
                 for (TransactionFile file : this.tx.getUpdateList())
                     updateFiles.add(file.getPath());
 
-                CustomVaultUtil.updateFileIndex(this.vault.getName(), vaultResource.getVaultInfo(this.vault.getName()), updateFiles, deleteFiles, new OperationOutcomeEmpty() {
+                CustomVaultUtil.updateFileCache(this.vault.getName(), vaultResource.getVaultInfo(this.vault.getName()), updateFiles, deleteFiles, new OperationOutcomeEmpty() {
                     @Override
                     public void callback() throws OperatingContextException {
                         taskctx.returnEmpty();
