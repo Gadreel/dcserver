@@ -247,6 +247,13 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		return this;
 	}
 
+	public ListStruct removeCollection(ListStruct coll) {
+		for (BaseStruct o : coll.items())
+			this.removeItem(o);		// extra slow, enhance TODO
+
+		return this;
+	}
+
 	public void replaceItem(int i, BaseStruct o) {
 		if (i < this.items.size())
 			this.items.set(i, o);
@@ -610,7 +617,7 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 			BaseStruct sref = StackUtil.refFromElement(stack, code, "Value", true);
 			if (sref instanceof ListStruct)
 				this.withCollection((ListStruct) sref);
-			else
+			else if (sref != null)
 				Logger.error("Unable to add to list, invalid data type.");
 
 			return ReturnOption.CONTINUE;
@@ -621,6 +628,15 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 			if (idx > -1)
 				this.removeItem((int) idx);
 			
+			return ReturnOption.CONTINUE;
+		}
+		else if ("RemoveAll".equals(code.getName())) {
+			BaseStruct sref = StackUtil.refFromElement(stack, code, "Value", true);
+			if (sref instanceof ListStruct)
+				this.removeCollection((ListStruct) sref);
+			else if (sref != null)
+				Logger.error("Unable to remove from list, invalid data type.");
+
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Clear".equals(code.getName())) {

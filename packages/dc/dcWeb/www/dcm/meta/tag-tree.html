@@ -124,7 +124,7 @@
 				title = node.Locale[page.Store.SiteLocale] ? node.Locale[page.Store.SiteLocale].Title : null;
 
 			var subroot = $('<li>').dcappend(
-				$('<span>').addClass(node.Children ? 'caret' : 'nocaret').text(title),
+				$('<span>').addClass(node.Children ? 'caret caret-down' : 'nocaret').text(title),
 				' ',
 				$('<a>')
 					.attr("href", "#")
@@ -200,7 +200,7 @@
 
 
 			if (node.Children) {
-				var sublist = $('<ul>').addClass('nested');
+				var sublist = $('<ul>').addClass('nested active');
 
 				subroot.dcappend(sublist);
 

@@ -49,6 +49,12 @@ public class Scan implements ICollector {
 				fromdate = ZonedDateTime.of(3000, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC"));
 			else if ("now".equals(frominfo))
 				fromdate = TimeUtil.now();
+			else if ("today".equals(frominfo))
+				fromdate = TimeUtil.now().toLocalDate().atStartOfDay(ZoneId.of("UTC"));
+			else if ("yesterday".equals(frominfo))
+				fromdate = TimeUtil.now().toLocalDate().minusDays(1).atStartOfDay(ZoneId.of("UTC"));
+			else if ("tomorrow".equals(frominfo))
+				fromdate = TimeUtil.now().toLocalDate().plusDays(1).atStartOfDay(ZoneId.of("UTC"));
 
 			if (fromdate == null) {
 				fromdate = collector.getFieldAsDateTime("From");
@@ -90,6 +96,12 @@ public class Scan implements ICollector {
 				todate = ZonedDateTime.of(3000, 1, 1, 0, 0, 0, 0, ZoneId.of("UTC"));
 			else if ("now".equals(toinfo))
 				todate = TimeUtil.now();
+			else if ("today".equals(toinfo))
+				todate = TimeUtil.now().toLocalDate().atStartOfDay(ZoneId.of("UTC"));
+			else if ("yesterday".equals(toinfo))
+				todate = TimeUtil.now().toLocalDate().minusDays(1).atStartOfDay(ZoneId.of("UTC"));
+			else if ("tomorrow".equals(toinfo))
+				todate = TimeUtil.now().toLocalDate().plusDays(1).atStartOfDay(ZoneId.of("UTC"));
 
 			if (todate == null) {
 				todate = collector.getFieldAsDateTime("To");

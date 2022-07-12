@@ -15,9 +15,7 @@
 
 	<Database />
 
-	<!-- enable deposits module
 	<Deposits />
-	-->
 
 	<CommandLine ClientClass="dcraft.cli.HubUtil" />
 

@@ -203,6 +203,10 @@
 		 	-->
 			<Field Name="Fields" Type="Record" />
 		</RecordRequest>
+		
+		<Record Id="dcdbRetireRecord" Inherits="dcdbCall" Class="dcraft.db.request.schema.Retire">
+			<Field Name="Id" Type="Id" />
+		</RecordRequest>
 
 		<Record Id="dcDollarORequest">
 			<Field Name="Keys" Required="True">

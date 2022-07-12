@@ -130,22 +130,24 @@ public class StoreGalleryWidget extends Base implements ICMSAware {
 					.with("Element", prod)
 					.with("Image", img)
 					.with("Data", TableUtil.getRecord(db, OperationContext.getOrThrow(), "dcmProduct", id, fields));
-			
-			String ext = meta.getFieldAsString("Extension", "jpg");
-			
-			String image = Struct.objectToString(db.getScalar("dcmProduct", id, "dcmImage"));
 
-			if (StringUtil.isEmpty(image))
-				image = "main";
+			if (meta != null) {
+				String ext = meta.getFieldAsString("Extension", "jpg");
 
-			ppath = ppath + "/" + image;
-			
-			img.with("Alias", image);
-			img.with("Path", "/galleries" + ppath + ".v/" + vari + "." + ext);
+				String image = Struct.objectToString(db.getScalar("dcmProduct", id, "dcmImage"));
 
-			RecordStruct imgmeta = GalleryUtil.getImageMeta(ppath);
+				if (StringUtil.isEmpty(image))
+					image = "main";
 
-			img.with("Data", imgmeta);
+				ppath = ppath + "/" + image;
+
+				img.with("Alias", image);
+				img.with("Path", "/galleries" + ppath + ".v/" + vari + "." + ext);
+
+				RecordStruct imgmeta = GalleryUtil.getImageMeta(ppath);
+
+				img.with("Data", imgmeta);
+			}
 			
 			try {
 				// setup image for expand

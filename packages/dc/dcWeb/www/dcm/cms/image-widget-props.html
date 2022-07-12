@@ -13,7 +13,7 @@
 						<Button Icon="fas/ellipsis-h" Click="DoSelectImage" />
 					</dcf.Text>
 					<dcf.Text Name="Description" Label="Caption" placeholder="alt or caption for image (for screen reader)" />
-					<dcf.Text Name="Variant" Label="Variant" placeholder="image variant" />
+					<!-- dcf.Text Name="Variant" Label="Variant" placeholder="image variant" / -->
 					<dcf.Text Name="class" Label="CSS Classes" placeholder="custom styling for this section" />
 				</dc.Region>
 
@@ -49,7 +49,7 @@
 
 			e.Data = {
 				Path: widget.attr('Path'),
-				Description: widget.attr('Description'),
+				Description: widget.attr('Description') || widget.attr('alt'),
 				Variant: widget.attr('Variant'),
 				class: widget.attr('class')
 			};
@@ -72,6 +72,9 @@
 			var entry = this;
 
 			e.Wait = true;
+
+			if (e.Data.Description)
+				e.Data.alt = null;
 
 			dc.cms.Loader.saveCommands(entry.Params.Feed, entry.Params.Path, [
 				{
@@ -112,9 +115,6 @@
 						var fh = res.Images[0];
 
 						entry.form().setValue('Path', fh.FullPath.substr(0, fh.FullPath.indexOf('.v')));
-
-						// TODO don't know - in IPC we set the variant in the template and that worked well
-						//entry.form().setValue('Variant', fh.FullPath.substring(fh.FullPath.indexOf('.v') + 3, fh.FullPath.lastIndexOf('.'));
 					}
 				}
 			});

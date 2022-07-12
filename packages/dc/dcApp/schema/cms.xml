@@ -17,7 +17,7 @@
 		</StringType>
 
 		<StringType Id="dcmFeedHistoryOptionsEnum">
-			<StringRestriction Enum="Save,Publish,Discard" />
+			<StringRestriction Enum="Save,Publish,Discard,Add" />
 		</StringType>
 
 		<!--

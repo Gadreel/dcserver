@@ -10,19 +10,18 @@ import dcraft.script.work.InstructionWork;
 import dcraft.script.work.OperationsWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.struct.BaseStruct;
-import dcraft.struct.Struct;
 import dcraft.xml.XElement;
 
-public class UpdateTenant extends OperationsInstruction {
-	static public UpdateTenant tag() {
-		UpdateTenant el = new UpdateTenant();
-		el.setName("dcdb.UpdateTenant");
+public class RetireRecord extends OperationsInstruction {
+	static public RetireRecord tag() {
+		RetireRecord el = new RetireRecord();
+		el.setName("dcdb.RetireRecord");
 		return el;
 	}
 	
 	@Override
 	public XElement newNode() {
-		return UpdateTenant.tag();
+		return RetireRecord.tag();
 	}
 	
 	// TODO add error checking
@@ -32,20 +31,27 @@ public class UpdateTenant extends OperationsInstruction {
 		if (state.getState() == ExecuteState.READY) {
 			String name = StackUtil.stringFromSource(state, "Name");
 
-			BaseStruct var = ResourceHub.getResources().getSchema().getType("dcdbUpdateTenant").create();
+			BaseStruct var = ResourceHub.getResources().getSchema().getType("dcdbRetireRecord").create();
 			
 			if (var == null) {
 				Logger.errorTr(520);
 				return ReturnOption.DONE;
 			}
 
-			if (this.hasNotEmptyAttribute("Source"))
-				this.add(0, XElement.tag("Source")
-						.withAttribute("Value", this.getAttribute("Source"))
-				);
-
 			// in a loop this instruction may be run again, fresh and READY - check to see if so and then skip op prep
 			if (this.find("Execute") == null) {
+				if (this.hasNotEmptyAttribute("Id"))
+					this.add(0, XElement.tag("SetField")
+							.withAttribute("Name", "Id")
+							.withAttribute("Value", this.getAttribute("Id"))
+					);
+
+				if (this.hasNotEmptyAttribute("Table"))
+					this.add(0, XElement.tag("SetField")
+							.withAttribute("Name", "Table")
+							.withAttribute("Value", this.getAttribute("Table"))
+					);
+
 				this.with(XElement.tag("Execute")
 						.withAttribute("Result", this.getAttribute("Result"))
 				);
@@ -65,5 +71,4 @@ public class UpdateTenant extends OperationsInstruction {
 		
 		return ReturnOption.DONE;
 	}
-
 }

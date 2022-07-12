@@ -18,7 +18,7 @@ public class MailUtil {
 
             return address.substring(0, dpos) + "@" + address.substring(dpos + 1).toLowerCase();		// put domain into proper casing, especially for sub key
         }
-        catch (AddressException x) {
+        catch (AddressException | IndexOutOfBoundsException | NullPointerException x) {
             Logger.warn("Unexpected parse error with address: " + address + " - " + x);
 
             return null;

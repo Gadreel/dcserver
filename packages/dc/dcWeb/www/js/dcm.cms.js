@@ -79,7 +79,7 @@ dc.cms.Loader = {
 						//dc.cms.Loader.showMode();
 
 						dc.util.Cookies.setCookie('dcmMode', 'off');
-						dc.pui.Loader.MainLayer.refreshPage()
+						dc.pui.Loader.MainLayer.refreshPage();
 					}
 				});
 

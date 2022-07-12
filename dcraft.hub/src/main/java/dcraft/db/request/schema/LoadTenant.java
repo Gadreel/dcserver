@@ -22,28 +22,9 @@ import dcraft.struct.scalar.NullStruct;
 import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
 
-public class LoadTenant extends RecordStruct {
+public class LoadTenant extends Load {
 	@Override
 	public ReturnOption operation(StackWork state, XElement code) throws OperatingContextException {
-		// TODO add support for select classes - parse like Where does
-		if ("Select".equals(code.getName())) {
-			Load.addSelect(this, state, code);
-			
-			return ReturnOption.CONTINUE;
-		}
-		
-		if ("SelectSubquery".equals(code.getName())) {
-			Load.addSelect(this, state, code);
-			
-			return ReturnOption.CONTINUE;
-		}
-		
-		if ("SelectGroup".equals(code.getName())) {
-			Load.addSelect(this, state, code);
-			
-			return ReturnOption.CONTINUE;
-		}
-		
 		if ("Execute".equals(code.getName())) {
 			String name = StackUtil.stringFromElement(state, code, "Result");
 			
