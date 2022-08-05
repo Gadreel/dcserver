@@ -1,0 +1,9 @@
+<dcs.Script>
+	<dcs.ResourceHelper Find="CustomIndexing" Result="CustomIndexingResources" />
+
+	<dcs.With Target="$CustomIndexingResources">
+		<Reindex Alias="$Data.Alias" />
+	</dcs.With>
+
+	<dcs.Exit Scope="Task" />
+</dcs.Script>

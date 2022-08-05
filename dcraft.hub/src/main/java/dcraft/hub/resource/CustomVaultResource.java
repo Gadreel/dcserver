@@ -250,7 +250,7 @@ public class CustomVaultResource extends ResourceBase {
             String result = StackUtil.stringFromElement(stack, code, "Result");
             String localize = Struct.objectToString(StackUtil.refFromElement(stack, code, "Localize"));
 
-            if (StringUtil.isEmpty(localize) || "*".equals(localize))
+            if ("*".equals(localize))
                 localize = "WithDefault";           // or CurrentOnly or None
 
             String flocalize = localize;
@@ -259,6 +259,7 @@ public class CustomVaultResource extends ResourceBase {
                 @Override
                 public void callback(CompositeStruct found) throws OperatingContextException {
                     if (found != null) {
+                        // TODO support other locales
                         if ("WithDefault".equals(flocalize))
                             found = CustomVaultUtil.localizeDataFile(alias, found);
 
@@ -338,18 +339,7 @@ public class CustomVaultResource extends ResourceBase {
             if ("*".equals(locale))
                 locale = OperationContext.getOrThrow().getLocale();
 
-            String flocale = locale;
-
-            CompositeStruct initialfile = RecordStruct.record();        // TODO add in defaults from the vault info file, also don't assume Record for non-basic types
-
-            if (StringUtil.isNotEmpty(flocale))
-                initialfile = CustomVaultUtil.mergeLocaleDataFile(alias, initialfile, datafile, flocale);
-            else
-                initialfile = CustomVaultUtil.mergeDataFile(alias, initialfile, datafile);
-
-            // TODO validate the data
-
-            CustomVaultUtil.saveDataFile(alias, CommonPath.from(path), initialfile, new OperationOutcomeEmpty() {
+            this.addRecord(alias, path, locale, datafile, new OperationOutcomeEmpty() {
                 @Override
                 public void callback() throws OperatingContextException {
                     stack.withContinueFlag();
@@ -362,5 +352,44 @@ public class CustomVaultResource extends ResourceBase {
         }
 
         return super.operation(stack, code);
+    }
+
+    public void addRecord(String alias, String path, String locale, RecordStruct data, OperationOutcomeEmpty callback) throws OperatingContextException {
+        try (OperationMarker om = OperationMarker.create()) {
+            if ("*".equals(locale))
+                locale = OperationContext.getOrThrow().getLocale();
+
+            CompositeStruct initialfile = RecordStruct.record();        // TODO add in defaults from the vault info file, also don't assume Record for non-basic types
+
+            if (StringUtil.isNotEmpty(locale))
+                initialfile = CustomVaultUtil.mergeLocaleDataFile(alias, initialfile, data, locale);
+            else
+                initialfile = CustomVaultUtil.mergeDataFile(alias, initialfile, data);
+
+            initialfile = CustomVaultUtil.validateNormalize(alias, initialfile);
+
+            if (! om.hasErrors())
+                CustomVaultUtil.saveDataFile(alias, CommonPath.from(path), initialfile, callback);
+            else
+                callback.returnEmpty();
+        }
+    }
+
+    public CompositeStruct validateRecord(String alias, String locale, RecordStruct data) throws OperatingContextException {
+        try (OperationMarker om = OperationMarker.create()) {
+            if ("*".equals(locale))
+                locale = OperationContext.getOrThrow().getLocale();
+
+            CompositeStruct initialfile = RecordStruct.record();        // TODO add in defaults from the vault info file, also don't assume Record for non-basic types
+
+            if (StringUtil.isNotEmpty(locale))
+                initialfile = CustomVaultUtil.mergeLocaleDataFile(alias, initialfile, data, locale);
+            else
+                initialfile = CustomVaultUtil.mergeDataFile(alias, initialfile, data);
+
+            initialfile = CustomVaultUtil.validateNormalize(alias, initialfile);
+
+            return om.hasErrors() ? null : initialfile;
+        }
     }
 }

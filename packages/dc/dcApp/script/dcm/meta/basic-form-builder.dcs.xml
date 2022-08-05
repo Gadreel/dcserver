@@ -28,7 +28,7 @@
 		<dcf.Form Name="$CustomVaultName" Prefix="cvf">
 			<dcs.ForEach Name="Control" In="$VaultInfo.DataHandlerConfig.Fields">
 				<dcs.Indirect Name="Label" Value="Control.Label.{$MyLocale}" />
-				<dcs.Indirect Name="Placeholder" Value="Control.Placeholder.{$MyLocale}" />
+				<dcs.Indirect Name="Placeholder" Value="Control.Placeholder.{$MyLocale}" Default="" />
 
 				<!-- TODO if empty, consider site locale defaults -->
 
@@ -90,14 +90,16 @@
 					<dc.Template Name="CtrlOpts">
 						<dcs.ForEach Name="Option" In="$Control.Options">
 							<dcs.If Not="true" Target="$Option.Disabled">
+								<dcs.Indirect Name="OptLabel" Value="Option.Label.{$MyLocale}" />
+
 								<dcs.If Target="$Option.Price" IsEmpty="false">
 									<dc.Out>
-										<option value="{$Option.Value}">{$Option.Label} - ${$Option.Price|dec:Money}</option>
+										<option value="{$Option.Value}">{$OptLabel} - ${$Option.Price|dec:Money}</option>
 									</dc.Out>
 								</dcs.If>
 								<dcs.Else>
 									<dc.Out>
-										<option value="{$Option.Value}">{$Option.Label}</option>
+										<option value="{$Option.Value}">{$OptLabel}</option>
 									</dc.Out>
 								</dcs.Else>
 							</dcs.If>
@@ -115,14 +117,16 @@
 					<dc.Template Name="CtrlOpts">
 						<dcs.ForEach Name="Option" In="$Control.Options">
 							<dcs.If Not="true" Target="$Option.Disabled">
+								<dcs.Indirect Name="OptLabel" Value="Option.Label.{$MyLocale}" />
+
 								<dcs.If Target="$Option.Price" IsEmpty="false">
 									<dc.Out>
-										<Checkbox Value="{$Option.Value}" Label="{$Option.Label} - ${$Option.Price|dec:Money}" />
+										<Checkbox Value="{$Option.Value}" Label="{$OptLabel} - ${$Option.Price|dec:Money}" />
 									</dc.Out>
 								</dcs.If>
 								<dcs.Else>
 									<dc.Out>
-										<Checkbox Value="{$Option.Value}" Label="{$Option.Label}" />
+										<Checkbox Value="{$Option.Value}" Label="{$OptLabel}" />
 									</dc.Out>
 								</dcs.Else>
 							</dcs.If>
@@ -150,14 +154,16 @@
 					<dc.Template Name="CtrlOpts">
 						<dcs.ForEach Name="Option" In="$Control.Options">
 							<dcs.If Not="true" Target="$Option.Disabled">
+								<dcs.Indirect Name="OptLabel" Value="Option.Label.{$MyLocale}" />
+
 								<dcs.If Target="$Option.Price" IsEmpty="false">
 									<dc.Out>
-										<RadioButton Value="{$Option.Value}" Label="{$Option.Label} - ${$Option.Price|dec:Money}" />
+										<RadioButton Value="{$Option.Value}" Label="{$OptLabel} - ${$Option.Price|dec:Money}" />
 									</dc.Out>
 								</dcs.If>
 								<dcs.Else>
 									<dc.Out>
-										<RadioButton Value="{$Option.Value}" Label="{$Option.Label}" />
+										<RadioButton Value="{$Option.Value}" Label="{$OptLabel}" />
 									</dc.Out>
 								</dcs.Else>
 							</dcs.If>
@@ -181,6 +187,12 @@
 						</dc.Out>
 					</dcs.Else>
 				</dcs.ElseIf>
+
+				<dcs.If Target="$Control.DataType" IsEmpty="false">
+					<dc.Out For="Top" ExpandValues="true">
+						<Require Types="{$Control.DataType}" />
+					</dc.Out>
+				</dc.If>
 			</dcs.ForEach>
 
 			<dcf.FormButtons>

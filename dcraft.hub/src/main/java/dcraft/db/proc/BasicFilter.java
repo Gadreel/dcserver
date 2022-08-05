@@ -20,9 +20,12 @@ abstract public class BasicFilter implements IFilter {
 
 	@Override
 	public IFilter shiftNested(IFilter v) {
-		v.withNested(this.nested);
+		if (v != null) {
+			v.withNested(this.nested);
 
-		this.nested = v;
+			this.nested = v;
+		}
+
 		return this;
 	}
 

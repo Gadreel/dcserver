@@ -178,6 +178,16 @@ public class TimeUtil {
 						Logger.error("Error parsing date time: " + x2);
 					}
 				}
+				else if (t.length() == 10) {
+					try {
+						LocalDate ld = LocalDate.parse(t);
+
+						return TimeUtil.getStartOfDayInContext(ld).withZoneSameInstant(ZoneId.of("UTC"));
+					}
+					catch (Exception x2) {
+						Logger.error("Error parsing local date: " + x2);
+					}
+				}
 			}
 		}
 		

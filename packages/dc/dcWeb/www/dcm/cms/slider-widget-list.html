@@ -153,6 +153,11 @@
 				return false;
 			};
 
+			var vari = $(widget).attr('Variation');
+
+			if (! vari)
+				vari = 'full';
+
 			for (var i = 0; i < $entries.length; i++) {
 				var xentry = $entries.get(i);
 
@@ -166,7 +171,7 @@
 						.attr('data-cms-img-pos', i + '')
 						.dcappend(
 							$('<td>').dcappend(
-								$('<img>').attr('src', '/galleries' + gallerypath + '/' + $(xentry).attr('Alias') + '.v/' + $(widget).attr('Variation')  + '.jpg')
+								$('<img>').attr('src', '/galleries' + gallerypath + '/' + $(xentry).attr('Alias') + '.v/' + vari  + '.jpg')
 							),
 							$('<td>').dcappend(
 								$('<a>')

@@ -286,8 +286,7 @@ public class DateTimeStruct extends ScalarStruct {
 		return this.value;
 	}
 
-	public static int comparison(Object x, Object y)
-	{
+	public static int comparison(Object x, Object y) {
 		ZonedDateTime xv = Struct.objectToDateTime(x);
 		ZonedDateTime yv = Struct.objectToDateTime(y);
 
@@ -300,7 +299,15 @@ public class DateTimeStruct extends ScalarStruct {
 		if (xv == null)
 			return -1;
 
-		// TODO review, not perfect
-		return (int) - ChronoUnit.DAYS.between(xv, yv);
+		try {
+			long xt = xv.toInstant().toEpochMilli();
+			long yt = yv.toInstant().toEpochMilli();
+
+			return Math.toIntExact(xt - yt);
+		}
+		catch (ArithmeticException xx) {
+			// TODO review, may not be accurate at all
+			return (int) - ChronoUnit.DAYS.between(xv, yv);
+		}
 	}
 }

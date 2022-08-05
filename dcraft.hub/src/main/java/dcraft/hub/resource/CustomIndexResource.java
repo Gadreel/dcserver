@@ -1,6 +1,11 @@
 package dcraft.hub.resource;
 
+import dcraft.cms.meta.CustomIndexUtil;
 import dcraft.cms.meta.CustomVaultUtil;
+import dcraft.db.fileindex.Filter.OrderedUnique;
+import dcraft.db.fileindex.Filter.StandardAccess;
+import dcraft.db.fileindex.Filter.Tags;
+import dcraft.db.fileindex.Filter.Term;
 import dcraft.filestore.CommonPath;
 import dcraft.hub.op.*;
 import dcraft.log.Logger;
@@ -10,10 +15,13 @@ import dcraft.script.work.StackWork;
 import dcraft.struct.*;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
+import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
 
 import java.nio.file.Path;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class CustomIndexResource extends ResourceBase {
@@ -48,7 +56,6 @@ public class CustomIndexResource extends ResourceBase {
 
     @Override
     public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
-        /*
         if ("ListAll".equals(code.getName())) {
             String result = StackUtil.stringFromElement(stack, code, "Result");
 
@@ -58,8 +65,8 @@ public class CustomIndexResource extends ResourceBase {
 
                 ListStruct res = ListStruct.list();
 
-                for (String key : this.vaults.keySet()) {
-                    RecordStruct vault = this.vaults.get(key);
+                for (String key : this.indexes.keySet()) {
+                    RecordStruct vault = this.indexes.get(key);
 
                     if (vault != null) {
                         RecordStruct titleinfo = vault.getFieldAsRecord("Title");
@@ -87,6 +94,7 @@ public class CustomIndexResource extends ResourceBase {
             return ReturnOption.CONTINUE;
         }
 
+        /*
         if ("LoadVault".equals(code.getName())) {
             String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias"));
             String result = StackUtil.stringFromElement(stack, code, "Result");
@@ -145,11 +153,12 @@ public class CustomIndexResource extends ResourceBase {
 
             return ReturnOption.AWAIT;
         }
+        */
 
         if ("Reindex".equals(code.getName())) {
             String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias"));
 
-            CustomVaultUtil.updateFileIndexAll(alias, new OperationOutcomeEmpty() {
+            CustomIndexUtil.updateCustomIndexAll(alias, new OperationOutcomeEmpty() {
                 @Override
                 public void callback() throws OperatingContextException {
                     stack.withContinueFlag();
@@ -162,143 +171,151 @@ public class CustomIndexResource extends ResourceBase {
         }
 
         if ("Search".equals(code.getName())) {
-            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias"));
-            String term = Struct.objectToString(StackUtil.refFromElement(stack, code, "Term"));
-            String locale = Struct.objectToString(StackUtil.refFromElement(stack, code, "Locale"));
-            String taglist = Struct.objectToString(StackUtil.refFromElement(stack, code, "Tags"));
+            System.out.println("Search a");
+
             String result = StackUtil.stringFromElement(stack, code, "Result");
+
+            RecordStruct params = Struct.objectToRecord(StackUtil.refFromElement(stack, code, "Params"));
+
+            if (params == null) {
+                String index = Struct.objectToString(StackUtil.refFromElement(stack, code, "Index"));
+
+                params = RecordStruct.record()
+                        .with("IndexName", index);
+
+                String access = Struct.objectToString(StackUtil.refFromElement(stack, code, "Access"));     // Private or Public
+                String term = Struct.objectToString(StackUtil.refFromElement(stack, code, "Term"));
+                String locale = Struct.objectToString(StackUtil.refFromElement(stack, code, "Locale"));
+                String taglist = Struct.objectToString(StackUtil.refFromElement(stack, code, "Tags"));      // better to use a tag index key
+                long max = StackUtil.intFromElement(stack, code, "Max", 0);
+
+                params.with("Max", max);
+
+                if (StringUtil.isNotEmpty(term))
+                    params.with("Term", term);
+
+                if (StringUtil.isNotEmpty(locale))
+                    params.with("Locale", locale);
+
+                // add filters after here
+
+                if (StringUtil.isNotEmpty(access))
+                    params.with("Access", access);
+
+                if (StringUtil.isNotEmpty(taglist)) {
+                    ListStruct tags = ListStruct.list();
+                    tags.with(taglist.split(","));
+                    params.with("Tags", tags);
+                }
+
+                List<XElement> vaults = code.selectAll("IncludeVault");
+
+                if (vaults.size() > 0) {
+                    ListStruct allowed = ListStruct.list();
+
+                    for (XElement vault : vaults) {
+                        String vaultName = Struct.objectToString(StackUtil.refFromElement(stack, vault, "Name"));
+
+                        if (StringUtil.isNotEmpty(vaultName))
+                            allowed.with(vaultName);
+                    }
+
+                    params.with("VaultsAllowed", allowed);
+                }
+
+                vaults = code.selectAll("ExcludeVault");
+
+                if (vaults.size() > 0) {
+                    ListStruct excluded = ListStruct.list();
+
+                    for (XElement vault : vaults) {
+                        String vaultName = Struct.objectToString(StackUtil.refFromElement(stack, vault, "Name"));
+
+                        if (StringUtil.isNotEmpty(vaultName))
+                            excluded.with(vaultName);
+                    }
+
+                    params.with("VaultsExcluded", excluded);
+                }
+
+                List<XElement> keys = code.selectAll("SearchKey");
+
+                if (keys.size() > 0) {
+                    ListStruct keylist = ListStruct.list();
+
+                    for (XElement key : keys) {
+                        String keyName = Struct.objectToString(StackUtil.refFromElement(stack, key, "Name"));
+
+                        if (StringUtil.isNotEmpty(keyName)) {
+                            RecordStruct param = RecordStruct.record()
+                                    .with("KeyName", keyName);
+
+                            if (key.hasNotEmptyAttribute("Values")) {
+                                String values = Struct.objectToString(StackUtil.refFromElement(stack, key, "Values"));
+
+                                param.with("Values", ListStruct.list(values.split("\\|")));
+                            } else if (key.hasNotEmptyAttribute("From")) {
+                                String from = Struct.objectToString(StackUtil.refFromElement(stack, key, "From"));
+                                param.with("From", from);
+
+                                String to = Struct.objectToString(StackUtil.refFromElement(stack, key, "To"));
+                                param.with("To", to);
+                            }
+
+                            keylist.with(param);
+                        }
+                    }
+
+                    params.with("SearchKeys", keylist);
+                }
+            }
+
+            long max = params.getFieldAsInteger("Max", 0);
+
+            OrderedUnique collector = OrderedUnique.unique(OrderedUnique.ResultMode.DataInfo).withMax(max);
+
+            String term = params.getFieldAsString("Term");
+
+            String locale = params.getFieldAsString("Locale");
 
             if (StringUtil.isEmpty(locale))
                 locale = OperationContext.getOrThrow().getLocale();
 
-            ListStruct tags = ListStruct.list();
+            if (StringUtil.isNotEmpty(term)) {
+                // TODO use ScoredOrderedUnique
 
-            if (StringUtil.isNotEmpty(taglist))
-                tags.with(taglist.split(","));
+                Term termfilter = new Term();
 
-            CustomVaultUtil.search(alias, term, locale, tags, new OperationOutcomeStruct() {
-                @Override
-                public void callback(BaseStruct found) throws OperatingContextException {
-                    if (found != null)
-                        StackUtil.addVariable(stack, result, found);
+                termfilter.init(term, locale);
 
-                    stack.withContinueFlag();
+                collector
+                        .shiftNested(termfilter);
+            }
 
-                    OperationContext.getAsTaskOrThrow().resume();
-                }
-            });
+            // add filters after here
 
-            return ReturnOption.AWAIT;
-        }
+            if (! "Private".equals(params.getFieldAsString("Access", "Public")))
+                collector
+                        .shiftNested(StandardAccess.standard());
 
-        if ("LoadDataFile".equals(code.getName())) {
-            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias"));
-            String path = Struct.objectToString(StackUtil.refFromElement(stack, code, "Path"));
-            String result = StackUtil.stringFromElement(stack, code, "Result");
-            String localize = Struct.objectToString(StackUtil.refFromElement(stack, code, "Localize"));
+            ListStruct tags = params.getFieldAsList("Tags");
 
-            if (StringUtil.isEmpty(localize) || "*".equals(localize))
-                localize = "WithDefault";           // or CurrentOnly or None
+            if ((tags != null) && (tags.size() > 0)) {
+                Tags tagfilter = new Tags();
+                tagfilter.init(tags);
+                collector.shiftNested(tagfilter);
+            }
 
-            String flocalize = localize;
+            System.out.println("Search b");
 
-            CustomVaultUtil.loadDataFile(alias, CommonPath.from(path), new OperationOutcomeComposite() {
-                @Override
-                public void callback(CompositeStruct found) throws OperatingContextException {
-                    if (found != null) {
-                        if ("WithDefault".equals(flocalize))
-                            found = CustomVaultUtil.localizeDataFile(alias, found);
-
-                        StackUtil.addVariable(stack, result, found);
-                    }
-
-                    stack.withContinueFlag();
-
-                    OperationContext.getAsTaskOrThrow().resume();
-                }
-            });
-
-            return ReturnOption.AWAIT;
-        }
-
-        if ("UpdateDataFile".equals(code.getName())) {
-            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias"));
-            String path = Struct.objectToString(StackUtil.refFromElement(stack, code, "Path"));
-
-            // TODO check access to vault / path
-
-            String locale = Struct.objectToString(StackUtil.refFromElement(stack, code, "Locale"));
-            RecordStruct datafile = Struct.objectToRecord(StackUtil.refFromElement(stack, code, "Form"));
-
-            if ("*".equals(locale))
-                locale = OperationContext.getOrThrow().getLocale();
-
-            String flocale = locale;
-
-            CustomVaultUtil.loadDataFile(alias, CommonPath.from(path), new OperationOutcomeComposite() {
-                @Override
-                public void callback(CompositeStruct found) throws OperatingContextException {
-                    try (OperationMarker om = OperationMarker.create()) {
-                        if (found != null) {
-                            if (StringUtil.isNotEmpty(flocale))
-                                found = CustomVaultUtil.mergeLocaleDataFile(alias, found, datafile, flocale);
-                            else
-                                found = CustomVaultUtil.mergeDataFile(alias, found, datafile);
-
-                            if (! om.hasErrors()) {
-                                found = CustomVaultUtil.validateNormalize(alias, found);
-
-                                if (! om.hasErrors()) {
-                                    CustomVaultUtil.saveDataFile(alias, CommonPath.from(path), found, new OperationOutcomeEmpty() {
-                                        @Override
-                                        public void callback() throws OperatingContextException {
-                                            stack.withContinueFlag();
-
-                                            OperationContext.getAsTaskOrThrow().resume();
-                                        }
-                                    });
-
-                                    return;
-                                }
-                            }
-                        }
-                    }
-
-                    stack.withContinueFlag();
-
-                    OperationContext.getAsTaskOrThrow().resume();
-                }
-            });
-
-            return ReturnOption.AWAIT;
-        }
-
-        if ("AddDataFile".equals(code.getName())) {
-            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias"));
-            String path = Struct.objectToString(StackUtil.refFromElement(stack, code, "Path"));
-
-            // TODO check access to vault / path
-
-            String locale = Struct.objectToString(StackUtil.refFromElement(stack, code, "Locale"));
-            RecordStruct datafile = Struct.objectToRecord(StackUtil.refFromElement(stack, code, "Form"));
-
-            if ("*".equals(locale))
-                locale = OperationContext.getOrThrow().getLocale();
-
-            String flocale = locale;
-
-            CompositeStruct initialfile = RecordStruct.record();        // TODO add in defaults from the vault info file, also don't assume Record for non-basic types
-
-            if (StringUtil.isNotEmpty(flocale))
-                initialfile = CustomVaultUtil.mergeLocaleDataFile(alias, initialfile, datafile, flocale);
-            else
-                initialfile = CustomVaultUtil.mergeDataFile(alias, initialfile, datafile);
-
-            // TODO validate the data
-
-            CustomVaultUtil.saveDataFile(alias, CommonPath.from(path), initialfile, new OperationOutcomeEmpty() {
+            CustomIndexUtil.searchCustomIndex(params, collector, new OperationOutcomeEmpty() {
                 @Override
                 public void callback() throws OperatingContextException {
+                    //System.out.println("found: " + collector.getValues());
+
+                    if (StringUtil.isNotEmpty(result))
+                        StackUtil.addVariable(stack, result, ListStruct.list(collector.getValues()));
+
                     stack.withContinueFlag();
 
                     OperationContext.getAsTaskOrThrow().resume();
@@ -307,7 +324,6 @@ public class CustomIndexResource extends ResourceBase {
 
             return ReturnOption.AWAIT;
         }
-        */
 
         return super.operation(stack, code);
     }

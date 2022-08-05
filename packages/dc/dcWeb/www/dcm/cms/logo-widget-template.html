@@ -1,0 +1,146 @@
+<dc.Html Badges="Admin,Editor">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Logo Gallery Template" />
+	</Meta>
+
+	<Require Script="/js/vendor/ace-1.1.8/ace.js" />
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.FormButtons>
+				<!-- dc.Button Label="Save" Click="DoSaveOnly" / -->
+				<dc.Button Label="Save and Preview" Click="DoSave" Scope="Primary" />
+			</dcf.FormButtons>
+
+			<!-- TODO create editor control, add Accessibility -->
+			<div id="sectDepEscEdit" style="position: absolute; top: 10rem; left: 0; right: 0; bottom: 0;" />
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load">
+			var entry = this;
+
+			entry.Store.Changed = false;
+			entry.Store.SetMode = false;
+			entry.Store.Editor = ace.edit('sectDepEscEdit');
+
+			var editor = entry.Store.Editor;
+
+			editor.setTheme("ace/theme/chrome");
+			editor.getSession().setMode("ace/mode/xml");
+			editor.setShowPrintMargin(false);
+			editor.getSession().setTabSize(5);
+			editor.getSession().setUseSoftTabs(false);
+			editor.getSession().setUseWrapMode(true);
+
+			editor.on("change", function() {
+				if (! entry.Store.SetMode)
+					entry.Store.Changed = true;
+			});
+
+			if (entry.Store.Template) {
+				entry.Store.SetMode = true;
+
+				if (entry.Store.Template)
+					editor.setValue(entry.Store.Template, -1);
+
+				entry.Store.SetMode = false;
+
+				entry.Store.Editor.focus();
+			}
+			else {
+				var msg = {
+					Service: 'dcmServices',
+					Feature: 'Feed',
+					Op: 'LoadPart',
+					Body: {
+						Feed: entry.Params.Feed,
+						Path: entry.Params.Path,
+						PartId: entry.Params.Id
+					}
+				};
+
+				dc.comm.sendMessage(msg, function(rmsg) {
+					if (rmsg.Result != 0) {
+						dc.pui.Popup.alert(rmsg.Message);
+						return;
+					}
+
+					var widget = entry.Store.Widget = dc.util.Xml.toJQuery(rmsg.Body.Part);
+
+					var value = dc.util.Xml.toString(widget.find('Template'));
+
+					if (! value)
+						value = '';
+					else
+						value = value.substr(0, value.length - 11).substr(10).trim();	// remove the Template tag
+
+					var content = entry.Store.Template = value.trim() + '\n';
+
+					entry.Store.SetMode = true;
+
+					editor.setValue(value, -1);
+
+					entry.Store.SetMode = false;
+
+					entry.Store.Editor.focus();
+				});
+			}
+    </Function>
+	<Function Name="Freeze">
+			var entry = this;
+
+			if (entry.Store.Editor)
+				entry.Store.Template = entry.Store.Editor.getValue();
+	</Function>
+	<Function Name="DoSaveOnly"><![CDATA[
+		var entry = this;
+
+		entry.Params.Preview = false;
+
+		entry.callPageFunc('DoSave2');
+	]]></Function>
+	<Function Name="DoSave"><![CDATA[
+		var entry = this;
+
+		entry.Params.Preview = true;
+
+		entry.callPageFunc('DoSave2');
+	]]></Function>
+	<Function Name="DoSave2"><![CDATA[
+			var entry = this;
+
+			// remember the content
+			var template = entry.Store.Template = entry.Store.Editor.getValue();
+
+			var txml = dc.util.Xml.toJQuery('<Template>' + template + '</Template>');
+
+			if (! txml) {
+				dc.pui.Popup.alert('Invalid XML in the template');
+				return;
+			}
+
+			dc.cms.Loader.saveCommands(entry.Params.Feed, entry.Params.Path, [
+				{
+					Command: 'UpdatePart',
+					Params: {
+						PartId: entry.Params.Id,
+						Area: 'Template',
+						Template: template
+					}
+				}
+			], function() {
+				if (entry.Params.Preview)
+					dc.pui.Loader.MainLayer.refreshPage();
+				else
+					dc.pui.Popup.alert('Saved');
+			});
+	]]></Function>
+	<Function Name="onDestroy">
+			var entry = this;
+
+			if (entry.Store.Editor) {
+				entry.Store.Editor.destroy();
+				delete entry.Store.Editor;
+			}
+	</Function>
+</dc.Html>

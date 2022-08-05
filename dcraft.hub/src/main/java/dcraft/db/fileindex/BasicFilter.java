@@ -19,9 +19,12 @@ public class BasicFilter implements IFilter {
 	}
 
 	public IFilter shiftNested(IFilter v) {
-		v.withNested(this.nested);
+		if (v != null) {
+			v.withNested(this.nested);
 
-		this.nested = v;
+			this.nested = v;
+		}
+
 		return this;
 	}
 
@@ -39,7 +42,7 @@ public class BasicFilter implements IFilter {
 	
 	@Override
 	public ExpressionResult check(FileIndexAdapter adapter, IVariableAware scope, Vault vault, CommonPath path, RecordStruct file) throws OperatingContextException {
-		return ExpressionResult.accepted();
+		return this.nestOrAccept(adapter, scope, vault, path, file);
 	}
 	
 	@Override

@@ -1,0 +1,216 @@
+<dc.Html Badges="SysAdmin,Admin">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Record Library" />
+	</Meta>
+
+	<Require Icons="fas/times,fas/list-alt,fas/pencil-alt" />
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.FormButtons>
+				<dc.Button Label="Reindex All" Click="DoReindexAll" />
+			</dcf.FormButtons>
+
+			<h2>Custom Records</h2>
+
+			<table id="lstDcrVaultsAllRE" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Alias</th>
+						<th scope="col">Title</th>
+						<th scope="col">Action</th>
+					</tr>
+				</thead>
+				<tbody id="lstDcrVaultsAllREBody" />
+			</table>
+
+			<h2>Custom Indexes</h2>
+
+			<table id="lstDcrIndexesAllRE" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Alias</th>
+						<th scope="col">Title</th>
+						<th scope="col">Action</th>
+					</tr>
+				</thead>
+				<tbody id="lstDcrIndexesAllREBody" />
+			</table>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.callPageFunc('DoLoadVaults');
+			page.callPageFunc('DoLoadIndexes');
+	]]></Function>
+	<Function Name="DoLoadVaults"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcmServices.Meta.ListCustomVaults', null, function(rmsg) {
+				if (rmsg.Code != 0) {
+					// don't alert
+					return;
+				}
+
+				//console.dir(rmsg.Result);
+
+				$feedtable = $('#lstDcrVaultsAllREBody');
+
+				$feedtable.empty();
+
+				if (rmsg.Result) {
+					rmsg.Result.sort(dc.util.List.sortObjects('Title'));
+
+					// top five
+					for (var i = 0; i < rmsg.Result.length; i++) {
+						var item = rmsg.Result[i];
+
+						$feedtable.dcappend(
+							$('<tr>').attr('data-alias', item.Alias).dcappend(
+								$('<td>').text(item.Alias),
+								$('<td>').text(item.Title),
+								$('<td>').dcappend(
+									$('<a>')
+										.attr("href", "#")
+										.attr("tabindex", "0")
+										.attr("role", "button")
+										.attr("class", "pure-button-default pure-button dc-button")
+										.dcappend('reindex')
+										.click(item, function(e) {
+											dc.comm.call('dcmServices.Meta.ReindexCustomVault', { Alias: e.data.Alias }, function(rmsg) {
+												if (rmsg.Code != 0) {
+													dc.pui.Popup.alert('Unable to reindex: ' + rmsg.Message);
+												}
+												else {
+													dc.pui.Popup.alert('Reindex complete');
+												}
+											});
+
+											e.preventDefault();
+											return false;
+										})
+								)
+							)
+						);
+					}
+				}
+			});
+	]]></Function>
+	<Function Name="DoLoadIndexes"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcmServices.Meta.ListCustomIndexes', null, function(rmsg) {
+				if (rmsg.Code != 0) {
+					// don't alert
+					return;
+				}
+
+				//console.dir(rmsg.Result);
+
+				$feedtable = $('#lstDcrIndexesAllREBody');
+
+				$feedtable.empty();
+
+				if (rmsg.Result) {
+					rmsg.Result.sort(dc.util.List.sortObjects('Title'));
+
+					// top five
+					for (var i = 0; i < rmsg.Result.length; i++) {
+						var item = rmsg.Result[i];
+
+						$feedtable.dcappend(
+							$('<tr>').attr('data-alias', item.Alias).dcappend(
+								$('<td>').text(item.Alias),
+								$('<td>').text(item.Title),
+								$('<td>').dcappend(
+									$('<a>')
+										.attr("href", "#")
+										.attr("tabindex", "0")
+										.attr("role", "button")
+										.attr("class", "pure-button-default pure-button dc-button")
+										.dcappend('reindex')
+										.click(item, function(e) {
+											dc.comm.call('dcmServices.Meta.ReindexCustomIndex', { Alias: e.data.Alias }, function(rmsg) {
+												if (rmsg.Code != 0) {
+													dc.pui.Popup.alert('Unable to reindex: ' + rmsg.Message);
+												}
+												else {
+													dc.pui.Popup.alert('Reindex complete');
+												}
+											});
+
+											e.preventDefault();
+											return false;
+										})
+								)
+							)
+						);
+					}
+				}
+			});
+	]]></Function>
+	<Function Name="DoReindexAll"><![CDATA[
+			var page = this;
+
+			var steps = [ ];
+
+			$feedtable = $('#lstDcrVaultsAllREBody tr td:first-child');
+
+			for (var i = 0; i < $feedtable.length; i++) {
+				steps.push({
+					Alias: 'ReindexRecords' + i,
+					Title: 'Reindex Records function: ' + i,
+					Params: {
+						Alias: $($feedtable.get(i)).text()
+					},
+					Func: function(step) {
+						var task = this;
+						var alias = step.Params.Alias;
+
+						console.log('reindex records: ' + alias);
+
+						dc.comm.call('dcmServices.Meta.ReindexCustomVault', { Alias: alias }, function(rmsg) {
+							if (rmsg.Code != 0)
+								console.log('reindex records: ' + alias + ' - error: ' + rmsg.Message);
+
+							task.resume();
+						});
+					}
+				});
+			}
+
+			$feedtable = $('#lstDcrIndexesAllREBody tr td:first-child');
+
+			for (var i = 0; i < $feedtable.length; i++) {
+				steps.push({
+					Alias: 'ReindexIndex' + i,
+					Title: 'Reindex Index function: ' + i,
+					Params: {
+						Alias: $($feedtable.get(i)).text()
+					},
+					Func: function(step) {
+						var task = this;
+						var alias = step.Params.Alias;
+
+						console.log('reindex index: ' + alias);
+
+						dc.comm.call('dcmServices.Meta.ReindexCustomIndex', { Alias: alias }, function(rmsg) {
+							if (rmsg.Code != 0)
+								console.log('reindex index: ' + alias + ' - error: ' + rmsg.Message);
+
+							task.resume();
+						});
+					}
+				});
+			}
+
+			var loadtask = new dc.lang.Task(steps, function(res) {
+				dc.pui.Popup.alert('Full Reindex Complete');
+			});
+
+			dc.pui.Popup.await('Large files may take some time, please wait until the upload is complete.', function() { }, 'Uploading Files', loadtask);
+
+	]]></Function>
+</dc.Html>

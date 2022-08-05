@@ -204,6 +204,25 @@
 							<Field Name="Locale" Type="dcMetaString" />
 						</RecordRequest>
 					</Op>
+					<Op Name="ListCustomIndexes">
+						<Description>
+							List of custom vaults.
+						</Description>
+						<ListResponse>
+							<Record>
+								<Field Name="Alias" Type="dcMetaString" />
+								<Field Name="Title" Type="dcString" />
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="ReindexCustomIndex">
+						<Description>
+							Reindex a specific custom vault.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Alias" Type="dcMetaString" Required="True" />
+						</RecordRequest>
+					</Op>
 
 					<!--
 					<Op Name="LoadCustomFields">

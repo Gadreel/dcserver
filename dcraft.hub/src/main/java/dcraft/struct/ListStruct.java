@@ -753,12 +753,12 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		return res.toString();
 	}
 
-	public List<Object> toObjectList() {
-		List<Object> nlist = new ArrayList<>();
+	public List<ScalarStruct> toScalarList() {
+		List<ScalarStruct> nlist = new ArrayList<>();
 		
 		for (BaseStruct s : this.items)
 			if (s instanceof ScalarStruct)
-				nlist.add(((ScalarStruct)s).getGenericValue());
+				nlist.add((ScalarStruct)s);
 		
 		return nlist;
 	}

@@ -2,15 +2,23 @@ package dcraft.struct;
 
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.time.BigDateTime;
 import dcraft.struct.format.FormatResult;
 import dcraft.struct.format.IFormatter;
 import dcraft.struct.format.YesNoFormatter;
+import dcraft.struct.scalar.*;
+import dcraft.util.Memory;
 import dcraft.util.StringUtil;
+import dcraft.xml.XElement;
 import dcraft.xml.XNode;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class DataUtil {
@@ -102,5 +110,44 @@ public class DataUtil {
 		  ;
 
 	*/
-	
+
+	static public int compareCore(Object one, Object two) {
+		if ((one == null) && (two == null))
+			return 0;
+
+		if (one == null)
+			return 1;
+
+		if (two == null)
+			return -1;
+
+		if (one instanceof CharSequence)
+			return StringStruct.comparison(one, two);
+
+		if (one instanceof ZonedDateTime)
+			return DateTimeStruct.comparison(one, two);
+
+		if (one instanceof LocalDate)
+			return DateStruct.comparison(one, two);
+
+		if (one instanceof LocalTime)
+			return TimeStruct.comparison(one, two);
+
+		if (one instanceof BigDateTime)
+			return BigDateTimeStruct.comparison(one, two);
+
+		if ((one instanceof BigDecimal) || (one instanceof Double) || (one instanceof Float))
+			return DecimalStruct.comparison(one, two);
+
+		if ((one instanceof BigInteger) || (one instanceof Number))
+			return IntegerStruct.comparison(one, two);
+
+		if (one instanceof Boolean)
+			return BooleanStruct.comparison(one, two);
+
+		if (one instanceof Memory)
+			return BinaryStruct.comparison(one, two);
+
+		throw new UnsupportedOperationException("Object type cannot be compared: " + one.getClass().getCanonicalName());
+	}
 }

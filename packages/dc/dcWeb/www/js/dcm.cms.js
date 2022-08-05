@@ -637,16 +637,6 @@ dc.pui.Apps.Menus.dcmSystem = {
 			Path: '/dcr/feeds'
 		},
   	{
-			Alias: 'Tags',
-			Title: 'Meta Tags',
-			Path: '/dcm/meta/tags'
-		},
-  	{
-			Alias: 'CustomVaults',
-			Title: 'Record Library',
-			Path: '/dcm/meta/custom-vaults'
-		},
-  	{
 			Alias: 'Certificates',
 			Title: 'Certificates',
 			Auth: [ 'SysAdmin' ],
@@ -679,6 +669,16 @@ dc.pui.Apps.Menus.dcmSystem = {
 				dc.pui.App.startTab({
 					Tab: 'Explorer',
 					Menu: 'dcmGlobals'
+				});
+			}
+		},
+		{
+			Title: 'Custom Records',
+			Auth: [ 'Admin', 'Staff' ],
+			Op: function(e) {
+				dc.pui.App.startTab({
+					Tab: 'CustomVaults',
+					Menu: 'dcmRecords'
 				});
 			}
 		},
@@ -755,6 +755,40 @@ dc.pui.Apps.Menus.dcmGlobals = {
 			Title: 'Explorer',
 			Auth: [ 'SysAdmin' ],
 			Path: '/dcr/global-explorer'
+		}
+	],
+	Options: [
+		{
+			Title: 'Main Menu',
+			Auth: [ 'Admin', 'Staff' ],
+			Op: function(e) {
+				dc.pui.Popup.menu('dcmMain');
+			}
+		}
+	]
+};
+
+dc.pui.Apps.Menus.dcmRecords = {
+	Tabs: [
+		{
+			Alias: 'Tags',
+			Title: 'Meta Tags',
+			Path: '/dcm/meta/tags'
+		},
+  	{
+			Alias: 'CustomVaults',
+			Title: 'Record Library',
+			Path: '/dcm/meta/custom-vaults'
+		},
+  	{
+			Alias: 'CustomIndexing',
+			Title: 'Record Indexing',
+			Path: '/dcm/meta/custom-indexes'
+		},
+  	{
+			Alias: 'FullIndexing',
+			Title: 'Reindexing',
+			Path: '/dcm/meta/reindex'
 		}
 	],
 	Options: [
@@ -1328,6 +1362,267 @@ dc.pui.TagFuncs['dcm.GalleryWidget']['getParams'] = function(entry, node) {
 };
 
 dc.pui.TagFuncs['dcm.GalleryWidget']['doCmsGetPositions'] = function(entry, node) {
+ 	return $(node).find('> *[data-cms-img-pos]').map(function() { return $(this).attr('data-cms-img-pos'); }).get();
+};
+
+if (! dc.pui.TagFuncs['dcm.LogosWidget'])
+	dc.pui.TagFuncs['dcm.LogosWidget'] = { };
+
+dc.pui.TagFuncs['dcm.LogosWidget']['doCmsInitWidget'] = function(entry, node) {
+	var widget = this;
+
+	// after so we don't get drag and drop
+	$(node).dcappend(
+		dc.cms.Loader.createEditToolBar([
+			{
+				Icon: 'fa-plus',
+				Title: 'Add',
+				Auth: [ 'Admin', 'Editor' ],
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+					var path = $(node).attr('data-path');
+
+					dc.pui.Dialog.loadPage('/dcm/files/chooser', {
+						Path: path,
+						Callback: function(res) {
+							if (res && res.length) {
+								var cmds = [ ];
+
+								for (var ii = res.length - 1; ii >= 0; ii--) {
+									var fh = res[ii];
+
+									cmds.push({
+										Command: 'UpdatePart',
+										Params: {
+											PartId: params.Id,
+											Area: 'SetImage',
+											Alias: fh.FileName,
+											AddTop: true
+										}
+									});
+								}
+
+								dc.cms.Loader.saveCommands(params.Feed, params.Path, cmds, function() {
+									dc.pui.Loader.MainLayer.refreshPage();
+								});
+							}
+						}
+					});
+				}
+			},
+			{
+				Icon: 'fa-file-text-o',
+				Title: 'Template',
+				Auth: [ 'Developer' ],
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+					dc.pui.SimpleApp.loadPage('/dcm/cms/logo-widget-template/' + params.Feed, params);
+				}
+			},
+			{
+				Icon: 'fa-cog',
+				Title: 'Properties',
+				Auth: [ 'Developer' ],
+				Op: function(e) {
+					var params = entry.callTagFunc(widget, 'getParams');
+					dc.pui.Dialog.loadPage('/dcm/cms/logo-widget-props/' + params.Feed, params);
+				}
+			}
+		])
+	);
+
+	// look for Id's - include band (parent) must have id
+	if (! $(node).attr('data-cms-reorder-enabled')) {
+		console.log('reorder enable');
+
+		var pos = 0;
+
+		$(node).find('> *:not(.dcuiCmsToolbar)').each(function() {
+			var imgnode = this;
+
+			$(imgnode)
+				.attr('data-cms-img-pos', pos + '')
+				.dcappend($('<div>')
+					.attr('role', 'list')
+					.addClass('dcuiCmsToolbar dcuiCmsToolbarBottom')
+					.dcappend(
+						$('<div>')
+							.attr('role', 'listitem')
+							.dcappend(
+								$('<a>')
+									.attr('href', '#')
+									.attr('role', 'button')
+									//.attr('aria-label', opt.Title)
+									//.addClass('opt.Kind')
+									.addClass('dc-button-toolbar dccms')
+									.dcappend(
+										$('<i>')
+										 	.addClass('fa fa-chevron-down'),  // + opt.Icon),
+									)
+									.click(function(e) {
+										var imgalias = $(imgnode).attr('data-dcm-alias');
+
+										if (! imgalias) {
+											dc.pui.Popup.alert('Missing alias, cannot edit.');
+										}
+										else {
+											dc.pui.Popup.menu({
+												Options: [
+													{
+														Title: 'Properties',
+														Auth: [ 'Admin', 'Editor' ],
+														Op: function(e) {
+															var imgalias = $(imgnode).attr('data-dcm-alias');
+
+															if (! imgalias) {
+																dc.pui.Popup.alert('Missing alias, cannot edit.');
+															}
+															else {
+																var params = entry.callTagFunc(widget, 'getParams');
+
+																var path = $(node).attr('data-path');
+																var propeditor = $(node).attr('data-property-editor');
+
+																if (propeditor)
+																	propeditor = '/dcm/cms/logo-widget-image-props/' + propeditor;
+																else
+																	propeditor = '/dcm/cms/logo-widget-image-props';
+
+																dc.pui.Dialog.loadPage(propeditor, {
+																	Feed: params.Feed,
+																	Path: params.Path,
+																	PartId: params.Id,
+																	Image: imgalias,
+																	Callback: function() {
+																		dc.pui.Loader.MainLayer.refreshPage();
+																	}
+																});
+															}
+														}
+													},
+													{
+														Title: 'Replace',
+														Auth: [ 'Admin', 'Editor' ],
+														Op: function(e) {
+															var imgalias = $(imgnode).attr('data-dcm-alias');
+
+															if (! imgalias) {
+																dc.pui.Popup.alert('Missing alias, cannot edit.');
+															}
+															else {
+																var params = entry.callTagFunc(widget, 'getParams');
+																var path = $(node).attr('data-path');
+
+																dc.pui.Dialog.loadPage('/dcm/files/chooser', {
+																	Path: path,
+																	Callback: function(res) {
+																		if (res && res.length) {
+																			var fh = res[0];
+
+																			dc.cms.Loader.saveCommands(params.Feed, params.Path, [
+																				{
+																					Command: 'UpdatePart',
+																					Params: {
+																						PartId: params.Id,
+																						Area: 'ReplaceImage',
+																						Alias: imgalias,
+																						NewAlias: fh.FileName
+																					}
+																				}
+																			], function() {
+																				dc.pui.Loader.MainLayer.refreshPage();
+																			});
+																		}
+																	}
+																});
+															}
+														}
+													},
+													{
+														Title: 'Remove',
+														Auth: [ 'Admin', 'Editor' ],
+														Op: function(e) {
+															var imgalias = $(imgnode).attr('data-dcm-alias');
+
+															if (! imgalias) {
+																dc.pui.Popup.alert('Missing alias, cannot edit.');
+															}
+															else {
+																var params = entry.callTagFunc(widget, 'getParams');
+
+																dc.cms.Loader.saveCommands(params.Feed, params.Path, [
+																	{
+																		Command: 'UpdatePart',
+																		Params: {
+																			PartId: params.Id,
+																			Area: 'RemoveImage',
+																			Alias: imgalias
+																		}
+																	}
+																], function() {
+																	dc.pui.Loader.MainLayer.refreshPage();
+																});
+															}
+														}
+													}
+												]
+											});
+										}
+
+										e.preventDefault();
+										return false;
+									})
+							)
+					)
+				);
+			pos++;
+		});
+
+		$(node).attr('data-cms-reorder-enabled', 'true');
+	}
+
+	// TODO provide for destroy - dc.cms.Loader.Sortable = Sortable.create
+
+	Sortable.create(node, {
+		filter: ".dc-unsortable",
+		onEnd: function (evt) {
+			// allocate a unique command for this re-order
+			var partid = $(node).attr('id');
+			var cmd = dc.cms.Loader.trackCommnd(partid + '-order');
+
+			// update the positions
+			cmd.Params = {
+				PartId: partid,
+				Order: entry.callTagFunc(node, 'doCmsGetPositions')
+			};
+
+			// queue first time only
+			if (! cmd.Command) {
+				cmd.Command = 'Reorder';
+
+				var params = entry.callTagFunc(node, 'getParams');
+
+				dc.cms.Loader.queueCommands(params.Feed, params.Path, [ cmd ]);
+			}
+		}
+	});
+
+};
+
+dc.pui.TagFuncs['dcm.LogosWidget']['getParams'] = function(entry, node) {
+	var pel = $(node).closest('*[data-cms-type="feed"]').get(0);
+
+	if (! pel)
+		return null;
+
+	return {
+		Feed: $(pel).attr('data-cms-feed'),
+		Path: $(pel).attr('data-cms-path'),
+		Id: $(node).attr('id')
+	};
+};
+
+dc.pui.TagFuncs['dcm.LogosWidget']['doCmsGetPositions'] = function(entry, node) {
  	return $(node).find('> *[data-cms-img-pos]').map(function() { return $(this).attr('data-cms-img-pos'); }).get();
 };
 

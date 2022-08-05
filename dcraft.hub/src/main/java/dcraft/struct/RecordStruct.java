@@ -624,7 +624,11 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 	public CompositeStruct getFieldAsComposite(String name) {
 		return Struct.objectToComposite(this.getField(name));
 	}
-	
+
+	public ScalarStruct getFieldAsScalar(String name) {
+		return Struct.objectToScalar(this.getField(name));
+	}
+
 	/**
 	 * Unlike getField, this returns the value (inner) rather than struct wrapping 
 	 * the value.

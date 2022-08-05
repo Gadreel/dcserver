@@ -167,8 +167,11 @@ public class StoreGalleryWidget extends Base implements ICMSAware {
 					StoreGalleryWidget.this.with(node);
 
 					// if only showing because of CMS, mark it hidden
-					if (! showprod && (node instanceof Base)) {
-						((Base) node).withClass("dc-widget-hidden");
+					if (node instanceof Base) {
+						((Base) node).attr("role", "listitem");
+
+						if (! showprod)
+							((Base) node).withClass("dc-widget-hidden");
 					}
 				}
 			}
@@ -187,7 +190,8 @@ public class StoreGalleryWidget extends Base implements ICMSAware {
 			.withAttribute("data-dc-tag", this.getName())
 			.withAttribute("data-variant", StackUtil.stringFromSource(state,"Variant", "full"))
 			.withAttribute("data-ext", StackUtil.stringFromSource(state,"Extension", "jpg"))
-			.withAttribute("data-path", StackUtil.stringFromSource(state,"Path", "/store/product"));
+			.withAttribute("data-path", StackUtil.stringFromSource(state,"Path", "/store/product"))
+			.withAttribute("role", "list");
 		
 		String size = StackUtil.stringFromSource(state,"Size", "1-3");
 		

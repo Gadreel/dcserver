@@ -878,7 +878,16 @@ public class Struct {
 		// TODO add some other obvious types - List, Array, Map?, etc
 		return null;		
 	}
-	
+
+	static public ScalarStruct objectToScalar(Object o) {
+		BaseStruct cs = Struct.objectToStruct(o);
+
+		if (cs instanceof ScalarStruct)
+			return (ScalarStruct)cs;
+
+		return null;
+	}
+
 	static public XElement objectToXml(Object o) {
 		if (o == null)
 			return null;

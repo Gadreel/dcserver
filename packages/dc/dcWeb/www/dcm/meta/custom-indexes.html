@@ -1,0 +1,150 @@
+<dc.Html Badges="SysAdmin,Admin">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Record Indexing" />
+	</Meta>
+
+	<Require Icons="fas/times,fas/list-alt,fas/pencil-alt" />
+
+	<dc.Body>
+		<dc.PagePanel>
+			<table id="lstDcrIndexesAll" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+				<thead>
+					<tr>
+						<th scope="col">Alias</th>
+						<th scope="col">Title</th>
+						<th scope="col">Action</th>
+					</tr>
+				</thead>
+				<tbody id="lstDcrIndexesAllBody" />
+			</table>
+
+			<dcf.FormButtons>
+				<dc.Button Label="Add Index" Click="DoAddIndex" />
+			</dcf.FormButtons>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+			page.callPageFunc('DoLoadVaults');
+	]]></Function>
+	<Function Name="DoLoadVaults"><![CDATA[
+			var page = this;
+
+			dc.comm.call('dcmServices.Meta.ListCustomIndexes', null, function(rmsg) {
+				if (rmsg.Code != 0) {
+					// don't alert
+					return;
+				}
+
+				//console.dir(rmsg.Result);
+
+				$feedtable = $('#lstDcrIndexesAllBody');
+
+				$feedtable.empty();
+
+				if (rmsg.Result) {
+					rmsg.Result.sort(dc.util.List.sortObjects('Title'));
+
+					// top five
+					for (var i = 0; i < rmsg.Result.length; i++) {
+						var item = rmsg.Result[i];
+
+						$feedtable.dcappend(
+							$('<tr>').attr('data-alias', item.Alias).dcappend(
+								$('<td>').text(item.Alias),
+								$('<td>').text(item.Title),
+								$('<td>').dcappend(
+									/*
+									$('<a>')
+										.attr("href", "#")
+										.attr("tabindex", "0")
+										.attr("role", "button")
+										.attr("class", "pure-button-default pure-button dc-button")
+										.dcappend(dc.util.Icon.use('fas-pencil-alt'))
+										.click(item, function(e) {
+											dc.pui.Dialog.loadPage('/dcm/meta/edit-custom-vault', {
+												Alias: e.data.Alias,
+												Callback: function() {
+													page.callPageFunc('DoLoadVaults');
+												}
+											});
+
+											e.preventDefault();
+											return false;
+										}),
+									' ',
+									*/
+									$('<a>')
+										.attr("href", "#")
+										.attr("tabindex", "0")
+										.attr("role", "button")
+										.attr("class", "pure-button-default pure-button dc-button")
+										.dcappend('reindex')
+										.click(item, function(e) {
+											dc.comm.call('dcmServices.Meta.ReindexCustomIndex', { Alias: e.data.Alias }, function(rmsg) {
+												if (rmsg.Code != 0) {
+													dc.pui.Popup.alert('Unable to reindex: ' + rmsg.Message);
+												}
+												else {
+													dc.pui.Popup.alert('Reindex complete');
+												}
+											});
+
+											e.preventDefault();
+											return false;
+										})
+										/*
+									' ',
+									$('<a>')
+										.attr("href", "#")
+										.attr("tabindex", "0")
+										.attr("role", "button")
+										.attr("class", "pure-button-default pure-button dc-button")
+										.dcappend(dc.util.Icon.use('fas-times'))
+										.click(item, function(e) {
+												dc.pui.Popup.confirm('Delete this vault?', function(confirm) {
+													if (! confirm)
+														return;
+
+													dc.comm.call('dcmServices.Meta.DeleteCustomVault', { Alias: e.data.Alias }, function(rmsg) {
+														if (rmsg.Code != 0) {
+															dc.pui.Popup.alert('Unable to delete vault: ' + rmsg.Message);
+															return;
+														}
+
+														page.callPageFunc('DoLoadVaults');
+													});
+
+													e.preventDefault();
+													return false;
+												});
+										})
+										*/
+								)
+							)
+						);
+					}
+				}
+			});
+	]]></Function>
+	<Function Name="DoAddIndex" Params="item"><![CDATA[
+			var page = this;
+
+			/*
+			dc.pui.Dialog.loadPage('/dcm/meta/add-custom-vault', {
+				Callback: function(tag) {
+					dc.comm.call('dcmServices.Meta.SaveCustomVault', tag, function(rmsg) {
+						if (rmsg.Code != 0) {
+							dc.pui.Popup.alert('Unable to add vault: ' + rmsg.Message);
+							return;
+						}
+
+						page.callPageFunc('DoLoadVaults');
+					});
+				}
+			});
+			*/
+	]]></Function>
+</dc.Html>

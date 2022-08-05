@@ -305,6 +305,8 @@ public class CustomVaultUtil {
 					continue;
 				}
 
+				System.out.println("indexing file: " + localpath);
+
 				RecordStruct data = Struct.objectToRecord(json);
 				RecordStruct olddata = Struct.objectToRecord(fileIndexAdapter.getData(localVault, updateFile));
 
@@ -323,18 +325,26 @@ public class CustomVaultUtil {
 					if (tagResource != null) {
 						ListStruct tags = data.getFieldAsList("Tags");
 
-						for (int i = 0; i < tags.size(); i++) {
-							String tag = tags.getItemAsString(i);
+						System.out.println("found tags: " + tags);
 
-							if (StringUtil.isNotEmpty(tag)) {
-								RecordStruct node = tagResource.selectNode(tag);
+						if (tags != null) {
+							for (int i = 0; i < tags.size(); i++) {
+								String tag = tags.getItemAsString(i);
 
-								if (node != null) {
-									keywords = node.selectAsString("Locale." + locale + ".Keywords");
+								System.out.println("tag: " + tag);
 
-									if (StringUtil.isNotEmpty(keywords)) {
-										sb.append(" ");
-										sb.append(keywords);
+								if (StringUtil.isNotEmpty(tag)) {
+									RecordStruct node = tagResource.selectNode(tag);
+
+									System.out.println("found node: " + node);
+
+									if (node != null) {
+										keywords = node.selectAsString("Locale." + locale + ".Keywords");
+
+										if (StringUtil.isNotEmpty(keywords)) {
+											sb.append(" ");
+											sb.append(keywords);
+										}
 									}
 								}
 							}
@@ -357,7 +367,9 @@ public class CustomVaultUtil {
 					fileIndexAdapter.indexSearch(localVault, updateFile, indexer);
 				}
 
-				fileIndexAdapter.setTags(localVault, updateFile, data.getFieldAsList("Tags"));
+				if (data.isNotFieldEmpty("Tags"))
+					fileIndexAdapter.setTags(localVault, updateFile, data.getFieldAsList("Tags"));
+
 				fileIndexAdapter.setData(localVault, updateFile, data);
 
 
@@ -396,7 +408,7 @@ public class CustomVaultUtil {
 		
 		ICompositeBuilder out = new ObjectBuilder();
 
-		IVariableAware scope = OperationContext.getOrThrow();
+		IVariableAware scope = CustomScope.of(OperationContext.getOrThrow());
 		
 		Term termfilter = new Term();
 		
@@ -472,6 +484,36 @@ public class CustomVaultUtil {
 		}
 		
 		callback.returnValue(out.toLocal());
+	}
+
+	static public void interiateFileCache(String vaultname, IFilter filter, OperationOutcomeEmpty callback) throws OperatingContextException {
+		Vault vault = OperationContext.getOrThrow().getSite().getVault(vaultname);
+
+		if (vault == null) {
+			Logger.error("Invalid vault name");
+			callback.returnEmpty();
+			return;
+		}
+
+		// search params
+
+		CommonPath path = CommonPath.ROOT;
+		long depth = -1;
+
+		IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
+
+		FileIndexAdapter adapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
+
+		IVariableAware scope = OperationContext.getOrThrow();
+
+		try (OperationMarker om = OperationMarker.create()) {
+			adapter.traverseIndex(vault, path, (int) depth, scope, filter);
+		}
+		catch (Exception x) {
+			Logger.error("Issue with select direct: " + x);
+		}
+
+		callback.returnEmpty();
 	}
 
 	static public void loadDataFile(String vaultname, CommonPath file, OperationOutcomeComposite callback)
@@ -921,7 +963,8 @@ public class CustomVaultUtil {
 
 				for (String locale : locales) {
 					XElement lfdef = XElement.tag("Field")
-							.attr("Name", locale);
+							.attr("Name", locale)
+							.attr("Required",  fld.getFieldAsBooleanOrFalse("Required") ? "IfPresent" : "false");
 
 					// should only be variants on String
 					if (StringUtil.isNotEmpty(datatype))
