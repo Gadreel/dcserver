@@ -45,6 +45,9 @@ public class BasicIndexVaultWork implements IWork {
             @Override
             public ExpressionResult check(FileIndexAdapter adapter, IVariableAware scope, Vault vault, CommonPath path, RecordStruct file) throws OperatingContextException {
                 try {
+                    if (path.toString().contains("ab532edb"))
+                        System.out.println("fnd");
+
                     List<Object> entrykeys = FileIndexAdapter.pathToIndex(vault, path);
 
                     entrykeys.add("Data");

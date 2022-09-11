@@ -56,6 +56,7 @@ public class RemoteOp extends Instruction {
 	public ReturnOption run(InstructionWork stack) throws OperatingContextException {
 		if (stack.getState() == ExecuteState.READY) {
 			String url = StackUtil.stringFromSource(stack, "Url");
+			String method = StackUtil.stringFromSource(stack, "Method", "POST");
 
 			if (StringUtil.isEmpty(url)) {
 				Logger.warn("Missing url");
@@ -92,7 +93,10 @@ public class RemoteOp extends Instruction {
 					Memory mem = Struct.objectToBinary(body);
 
 					// review - does it work? is it effecient?
-					builder.POST(HttpRequest.BodyPublishers.ofByteArray(mem.toArray()));
+					if ("PUT".equals(method))
+						builder.PUT(HttpRequest.BodyPublishers.ofByteArray(mem.toArray()));
+					else
+						builder.POST(HttpRequest.BodyPublishers.ofByteArray(mem.toArray()));
 				}
 				else if (body instanceof FileStoreFile) {
 					// TODO
@@ -114,12 +118,21 @@ public class RemoteOp extends Instruction {
 						}
 					}
 
-					builder.POST(HttpRequest.BodyPublishers.ofString(paramstr));
+					if ("PUT".equals(method))
+						builder.PUT(HttpRequest.BodyPublishers.ofString(paramstr));
+					else
+						builder.POST(HttpRequest.BodyPublishers.ofString(paramstr));
 				}
 				else {
 					String strbody = Struct.objectToString(body);
 
-					builder.POST(HttpRequest.BodyPublishers.ofString(strbody));
+					if (stack != null)
+						strbody = StackUtil.resolveValueToString(stack, strbody, true);
+
+					if ("PUT".equals(method))
+						builder.PUT(HttpRequest.BodyPublishers.ofString(strbody));
+					else
+						builder.POST(HttpRequest.BodyPublishers.ofString(strbody));
 				}
 			}
 			else {

@@ -283,4 +283,31 @@ public class Base extends BlockInstruction {
 		
 		return null;
 	}
+
+	static public void cleanReferencesDeep(Base doc, IParentAwareWork state) throws OperatingContextException {
+		if (doc.children != null) {
+			List<XNode> newchildren = new ArrayList<>();
+
+			for (int i = 0 ; i < doc.children.size(); i++) {
+				XNode node = doc.children.get(i);
+
+				if (node instanceof Base) {
+					Base.cleanReferencesDeep((Base) node, state);
+				}
+				else if (node instanceof XText) {
+					XText tnode = (XText) node;
+
+					String val = tnode.getRawValue();
+
+					if (StringUtil.isNotEmpty(val)) {
+						tnode.setRawValue(StackUtil.resolveValueToString(state, val, true), tnode.isCData());
+					}
+				}
+
+				newchildren.add(node);
+			}
+
+			doc.children = newchildren;
+		}
+	}
 }

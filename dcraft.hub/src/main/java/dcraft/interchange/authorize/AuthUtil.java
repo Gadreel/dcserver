@@ -101,6 +101,54 @@ public class AuthUtil {
         }
     }
 
+    /* NOTE auth does care about the order of the fields, so JSON is not ideal - see AuthUtilXml instead
+    // tx = auth payment format
+    public static void authCaptureTransaction(RecordStruct txbody, String refid, String alt, OperationOutcomeRecord callback) {
+        try {
+            OperationContext.getOrThrow().touch();
+
+            JsonBuilder body = startRequestBody(alt, "createTransactionRequest");
+
+            if (StringUtil.isNotEmpty(refid))
+                body.field("refId", refid);
+
+            body.field("transactionRequest");
+            body.value(txbody);
+
+            HttpRequest.Builder builder = AuthUtil.buildRequest(alt, body);
+
+            // Send post request
+            HttpClient.newHttpClient().sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
+                    .thenAcceptAsync(new AuthHttpResponse() {
+                        @Override
+                        public void callback(RecordStruct result) throws OperatingContextException {
+                            if (result == null) {
+                                callback.returnEmpty();
+                            }
+                            else {
+                                RecordStruct resp = result.getFieldAsRecord("transactionResponse");
+
+                                long code = resp.getFieldAsInteger("responseCode", 0);
+
+                                if (code == 1) {
+                                    callback.returnValue(resp);
+                                }
+                                else {
+                                    Logger.error("Card declined");
+                                    callback.returnEmpty();
+                                }
+                            }
+                        }
+                    });
+        }
+        catch (Exception x) {
+            Logger.error("Error processing subscription: Unable to connect to authorize. Error: " + x);
+            callback.returnEmpty();
+        }
+    }
+
+     */
+
     /*
     Incoming:
     {

@@ -42,22 +42,24 @@ public class BasicIndexMap {
     public RecordStruct mapRecord(RecordStruct source) throws OperatingContextException {
         RecordStruct dest = RecordStruct.record();
 
-        if (StringUtil.isNotEmpty(this.srcFirstField) && StringUtil.isNotEmpty(this.destFirstKey)) {
-            BaseStruct value = source.getField(this.srcFirstField);
+        if (source != null) {
+            if (StringUtil.isNotEmpty(this.srcFirstField) && StringUtil.isNotEmpty(this.destFirstKey)) {
+                BaseStruct value = source.getField(this.srcFirstField);
 
-            if (StringUtil.isNotEmpty(this.srcFirstFormatter))
-                value = Struct.objectToStruct(DataUtil.format(value, this.srcFirstFormatter));
+                if (StringUtil.isNotEmpty(this.srcFirstFormatter))
+                    value = Struct.objectToStruct(DataUtil.format(value, this.srcFirstFormatter));
 
-            dest.with(this.destFirstKey, value);
-        }
+                dest.with(this.destFirstKey, value);
+            }
 
-        if (StringUtil.isNotEmpty(this.srcSecondField) && StringUtil.isNotEmpty(this.destSecondKey)) {
-            BaseStruct value = source.getField(this.srcSecondField);
+            if (StringUtil.isNotEmpty(this.srcSecondField) && StringUtil.isNotEmpty(this.destSecondKey)) {
+                BaseStruct value = source.getField(this.srcSecondField);
 
-            if (StringUtil.isNotEmpty(this.srcSecondFormatter))
-                value = Struct.objectToStruct(DataUtil.format(value, this.srcSecondFormatter));
+                if (StringUtil.isNotEmpty(this.srcSecondFormatter))
+                    value = Struct.objectToStruct(DataUtil.format(value, this.srcSecondFormatter));
 
-            dest.with(this.destSecondKey, value);
+                dest.with(this.destSecondKey, value);
+            }
         }
 
         return dest;

@@ -50,6 +50,10 @@ public class CustomIndexResource extends ResourceBase {
         Logger.error("Unable to load custom index: " + file);
     }
 
+    public ListStruct getAllIndexInfo() {
+        return ListStruct.list(this.indexes.values());
+    }
+
     public RecordStruct getIndexInfo(String alias) {
         return this.indexes.get(alias);
     }

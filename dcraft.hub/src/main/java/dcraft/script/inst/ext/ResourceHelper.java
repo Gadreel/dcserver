@@ -29,7 +29,6 @@ import dcraft.struct.CompositeStruct;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
-// TODO replace with ResourceHelper
 public class ResourceHelper extends Instruction {
 	static public ResourceHelper tag() {
 		ResourceHelper el = new ResourceHelper();

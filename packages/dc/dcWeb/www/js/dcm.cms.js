@@ -413,6 +413,7 @@ dc.pui.Apps.Menus.dcmMain = {
 	Options: [
 		{
 			Title: 'Edit Page',
+			Auth: [ 'Admin', 'Editor' ],
 			Op: function(e) {
 				localStorage.setItem('dc-cms-enabled', 'true');
 

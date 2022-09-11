@@ -793,25 +793,133 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 		super.checkLogic(stack, source, logicState);
 	}
 
+	public void expandQuickRecord(StackWork stack, XElement code) throws OperatingContextException {
+		if ((stack == null) || (code == null)) {
+			Logger.error("Missing stack in record quick Set");
+			return;
+		}
+
+		// TODO someday support typed records -- look at DataType attr of code
+
+		String varName = StackUtil.stringFromElementClean(stack, code, "VarName");
+
+		if (StringUtil.isNotEmpty(varName))
+			StackUtil.addVariable(stack, varName, this);
+
+		for (XElement field : code.selectAll("Field")) {
+			String fieldName = StackUtil.stringFromElementClean(stack, field, "Name");
+
+			if (StringUtil.isEmpty(fieldName)) {
+				Logger.error("Missing field name in record quick Set");
+				return;
+			}
+
+			XElement list = field.selectFirst("List");
+
+			if (list != null) {
+				ListStruct lst = ListStruct.list();
+				lst.expandQuickList(stack, list);
+				this.with(fieldName, lst);
+				continue;
+			}
+
+			XElement record = field.selectFirst("Record");
+
+			if (record != null) {
+				RecordStruct rec = RecordStruct.record();
+				rec.expandQuickRecord(stack, record);
+				this.with(fieldName, rec);
+				continue;
+			}
+
+			String def = StackUtil.stringFromElementClean(stack, field, "Type");
+
+			BaseStruct var = null;
+
+			if (StringUtil.isNotEmpty(def))
+				var = ResourceHub.getResources().getSchema().getType(def).create();
+
+			if (field.hasAttribute("Value")) {
+				BaseStruct var3 = StackUtil.refFromElement(stack, field, "Value", true);
+
+				if ((var == null) && (var3 != null)) {
+					DataType v3type = var3.getType();
+
+					// create a copy if possible
+					if (v3type != null)
+						var = v3type.create();
+					else
+						var = var3;
+				}
+
+				if (var instanceof ScalarStruct)
+					((ScalarStruct) var).adaptValue(var3);
+				else
+					var = var3;
+			}
+			else {
+				String value = StackUtil.resolveValueToString(stack, field.getText(), true);
+
+				if (StringUtil.isNotEmpty(value)) {
+					if (var instanceof ScalarStruct)
+						((ScalarStruct) var).adaptValue(value);
+					else
+						var = Struct.objectToStruct(value);
+				}
+			}
+
+			// not an error if null
+			this.with(fieldName, var);
+		}
+	}
+
 	@Override
 	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		if ("Set".equals(code.getName())) {
 			this.clear();
-			
-			String json = StackUtil.resolveValueToString(stack, code.getText(), true);
-			
-			if (StringUtil.isNotEmpty(json)) {
-				json = json.trim();
 
-				if (! json.startsWith("{")) {
-					json = "{ " + json + " }";
+			if (code.selectFirst("Field") != null) {
+				this.expandQuickRecord(stack, code);
+			}
+			else {
+				String json = StackUtil.resolveValueToString(stack, code.getText(), true);
+
+				if (StringUtil.isNotEmpty(json)) {
+					json = json.trim();
+
+					if (!json.startsWith("{")) {
+						json = "{ " + json + " }";
+					}
+
+					RecordStruct pjson = (RecordStruct) CompositeParser.parseJson(json);
+
+					this.copyFields(pjson);
 				}
-
-				RecordStruct pjson = (RecordStruct) CompositeParser.parseJson(json);
-
-				this.copyFields(pjson);
 			}
 			
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("Update".equals(code.getName())) {
+			if (code.selectFirst("Field") != null) {
+				this.expandQuickRecord(stack, code);
+			}
+			else {
+				String json = StackUtil.resolveValueToString(stack, code.getText(), true);
+
+				if (StringUtil.isNotEmpty(json)) {
+					json = json.trim();
+
+					if (!json.startsWith("{")) {
+						json = "{ " + json + " }";
+					}
+
+					RecordStruct pjson = (RecordStruct) CompositeParser.parseJson(json);
+
+					this.copyFields(pjson);
+				}
+			}
+
 			return ReturnOption.CONTINUE;
 		}
 
@@ -954,6 +1062,20 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 			return ReturnOption.CONTINUE;
 		}
 
+		if ("CopySelectFields".equals(code.getName())) {
+			BaseStruct var3 = StackUtil.refFromElement(stack, code, "Source", true);
+			String fields = StackUtil.stringFromElementClean(stack, code, "Fields");
+			String[] selected = new String[0];
+
+			if (StringUtil.isNotEmpty(fields))
+				selected = fields.split(",");
+
+			if (var3 instanceof RecordStruct)
+				this.copySelectFields((RecordStruct) var3, selected);
+
+			return ReturnOption.CONTINUE;
+		}
+
 		if ("Merge".equals(code.getName())) {
 			BaseStruct var3 = StackUtil.refFromElement(stack, code, "Value", true);
 
@@ -979,6 +1101,22 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 				
 				if (!fnd)
 					this.with(fld);				
+			}
+	}
+
+	public void copySelectFields(RecordStruct src, String... include) {
+		if (src != null)
+			for (FieldStruct fld : src.getFields()) {
+				boolean fnd = false;
+
+				for (String x : include)
+					if (fld.getName().equals(x)) {
+						fnd = true;
+						break;
+					}
+
+				if (fnd)
+					this.with(fld);
 			}
 	}
 

@@ -64,14 +64,14 @@ abstract public class BasicCustomIndexer implements ICustomIndexer {
         RecordStruct config = index.getFieldAsRecord("IndexHandlerConfig");
 
         if (config == null) {
-            Logger.error("Single Key custom index missing handler config");
+            Logger.error("Custom index missing handler config");
             return;
         }
 
         ListStruct list = config.getFieldAsList("Maps");
 
         if (list == null) {
-            Logger.error("Single Key custom index missing handler maps");
+            Logger.error("Custom index missing handler maps");
             return;
         }
 
@@ -84,5 +84,31 @@ abstract public class BasicCustomIndexer implements ICustomIndexer {
 
             workChain.then(BasicIndexVaultWork.of(map.getFieldAsString("Vault"), this.adapter, mapper, this));
         }
+    }
+
+    public BasicIndexMap getIndexMap(String vault) {
+        RecordStruct config = index.getFieldAsRecord("IndexHandlerConfig");
+
+        if (config == null) {
+            Logger.error("Custom index missing handler config");
+            return null;
+        }
+
+        ListStruct list = config.getFieldAsList("Maps");
+
+        if (list == null) {
+            Logger.error("Custom index missing handler maps");
+            return null;
+        }
+
+        for (int i = 0; i < list.getSize(); i++) {
+            RecordStruct map = list.getItemAsRecord(i);
+
+            if (vault.equals(map.getFieldAsString("Vault")))
+                return BasicIndexMap.of(config, map);
+        }
+
+        Logger.error("Custom index missing handler maps for vault: " + vault);
+        return null;
     }
 }

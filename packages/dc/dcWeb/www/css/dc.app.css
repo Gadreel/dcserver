@@ -19,6 +19,15 @@ Copyright (c) Nicolas Gallagher and Jonathan Neal
 	--dcm-inline-background: rgba(64,64,64,.8);
 	--dcm-inline-link-color: white;
 	--dcm-inline-link-hover: papayawhip;
+
+	--dcm-accent-primary: #337ab7;
+
+	--dcm-button-base-label: rgba(0, 0, 0, 0.80);
+	--dcm-button-base-background: #E6E6E6;
+	--dcm-button-base-border: #000000;
+	--dcm-button-primary-label: #fff;
+	--dcm-button-primary-background: rgb(0, 120, 231);
+	--dcm-button-primary-border: #000000;
 }
 
 /**
@@ -738,9 +747,12 @@ th {
     padding: 0.8rem 1.6rem;
     color: #444; /* rgba not supported (IE 8) */
     color: rgba(0, 0, 0, 0.80); /* rgba supported */
+		color: var(--dcm-button-base-label);
     border: 1px solid #999;  /*IE 6/7/8*/
-    border: none rgba(0, 0, 0, 0);  /*IE9 + everything else*/
+    border-style: none;
+		border-color: var(--dcm-button-base-border);
     background-color: #E6E6E6;
+		background-color: var(--dcm-button-base-background);
     text-decoration: none;
     border-radius: 2px;
 }
@@ -793,7 +805,10 @@ th {
 a.pure-button-primary,
 a.pure-button-selected {
     background-color: rgb(0, 120, 231);
+		background-color: var(--dcm-button-primary-background);
     color: #fff;
+		color: var(--dcm-button-primary-label);
+		border-color: var(--dcm-button-primary-border);
 }
 
 /* ==========================================================================
@@ -1854,6 +1869,7 @@ input:focus + label.dc-input-button,
 
 .dc-tag-primary {
     background-color: #337ab7;
+		background-color: var(--dcm-accent-primary);
 }
 
 .dc-tag-success {
@@ -1908,12 +1924,15 @@ input:focus + label.dc-input-button,
 
 	.dc-panel-primary {
 	    border-color: #337ab7;
+			border-color: var(--dcm-accent-primary);
 	}
 
 	.dc-panel-primary > .dc-panel-heading {
 	    color: #fff;
 	    background-color: #337ab7;
+			background-color: var(--dcm-accent-primary);
 	    border-color: #337ab7;
+			border-color: var(--dcm-accent-primary);
 	}
 
 	.dc-panel-success {
@@ -2611,6 +2630,7 @@ ol.dc-listview > li img:first-child + * ~ * {
 	#dcuiSimpleApp > a.dcuiCloseButton:hover,
 	#dcuiSimpleApp > a.dcuiCloseButton:focus {
 	    color: #337ab7;
+			color: var(--dcm-accent-primary);
 	}
 
 	#dcuiDialogPane {
@@ -2659,6 +2679,7 @@ ol.dc-listview > li img:first-child + * ~ * {
 	#dcuiAlert > a.dcuiCloseButton:hover,
 	#dcuiAlert > a.dcuiCloseButton:focus {
 	    color: #337ab7;
+			color: var(--dcm-accent-primary);
 	}
 
 	#dcuiAlertPane {
@@ -2685,7 +2706,7 @@ ol.dc-listview > li img:first-child + * ~ * {
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
-		z-index: 1000;
+		z-index: 100;
 	}
 
 	div.dcuiLayer .dcuiCmsToolbarLeft {
@@ -2900,6 +2921,7 @@ ol.dc-listview > li img:first-child + * ~ * {
 	#dcuiFullScreen > a.dcuiCloseButton:hover,
 	#dcuiFullScreen > a.dcuiCloseButton:focus {
 	    color: #337ab7;
+			color: var(--dcm-accent-primary);
 	}
 
 

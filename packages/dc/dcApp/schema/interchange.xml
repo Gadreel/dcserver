@@ -21,4 +21,8 @@
 			<Field Name="dcmAuthLastBatch" Group="dcmAuthBatch" Type="dcSmallString" List="True" />
 		</Table>
   </Database>
+
+	<Shared>
+		<Record Id="dciAuthorizeDotNetInterchange" Class="dcraft.interchange.authorize.AuthInterchange" />
+	</Shared>
 </Schema>

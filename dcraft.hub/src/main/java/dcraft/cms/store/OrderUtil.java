@@ -25,6 +25,7 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
 import dcraft.filestore.mem.MemoryStoreFile;
 import dcraft.filevault.VaultUtil;
+import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.*;
 import dcraft.interchange.authorize.AuthUtil;
@@ -827,6 +828,10 @@ public class OrderUtil {
 
 		items = reduceitems;
 
+		String itemCalcPPName = sset.attr("ItemCalc");
+
+		ICalcItemPrice itemCalcPP = StringUtil.isNotEmpty(itemCalcPPName) ? (ICalcItemPrice) ResourceHub.getResources().getClassLoader().getInstance(itemCalcPPName) : null;
+
 		// calculate / prepare / format order items
 
 		SelectFields selectFields = SelectFields.select()
@@ -1023,6 +1028,14 @@ public class OrderUtil {
 					item.with("CustomFieldsDisplay", displays);
 
 				item.with("Price", price);
+
+				if (itemCalcPP != null)
+					price = itemCalcPP.calc(order, item, displays);
+			}
+			// if no options
+			else {
+				if (itemCalcPP != null)
+					price = itemCalcPP.calc(order, item, null);
 			}
 
 			BigDecimal total = price.multiply(BigDecimal.valueOf(qty));

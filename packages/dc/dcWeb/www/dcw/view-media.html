@@ -1,11 +1,11 @@
 <dc.Html Title="Media Viewer">
 	<Require Lib="https://www.youtube.com/iframe_api" />
-	
+
 	<dc.Body>
 		<div id="panDcwMediaPane">
 			<div id="panDcwMediaViewer" />
 		</div>
-		
+
 		<dc.Link id="panDcwFullClose" Click="onClose">
 			<!--#include virtual="/imgs/go-close.svg" -->
 		</dc.Link>
@@ -16,16 +16,16 @@
 			<!--#include virtual="/imgs/go-right.svg" -->
 		</dc.Link>
 	</dc.Body>
-	
+
 	<Function Name="Load"><![CDATA[
 			var entry = this;
 
 			var view = entry.Store.View = entry.Params.View;
-			
-			if (view.AutoAdvance) 
+
+			if (view.AutoAdvance)
 				$('#panDcwFullClose,#panDcwFullLeft,#panDcwFullRight').hide();
-					
-			YT.ready(function() { 
+
+			YT.ready(function() {
 				entry.callPageFunc('LoadImage');
 			});
 	]]></Function>
@@ -33,85 +33,85 @@
 			var entry = this;
 
 			$('#panDcwFullLeft,#panDcwFullRight').hide();
-			
+
 			var view = entry.Store.View;
-			
+
 			if (! view.AutoAdvance && (view.StartPos > 0))
 				$('#panDcwFullLeft').show();
 
 			if (! view.AutoAdvance && (view.Images.length - 1 > view.StartPos))
 				$('#panDcwFullRight').show();
 
-			if (view.Images[view.StartPos].Image) {	
+			if (view.Images[view.StartPos].Image) {
 				var path = view.Images[view.StartPos].Image;
-	
+
 				// after the load
 				var cd = new dc.lang.CountDownCallback(2, function() {
 					var iel = $('<img />');
 					iel.attr('src', path);
-					
+
 					$('#panDcwMediaViewer').append(iel);
-					
+
 					$('#panDcwMediaViewer').velocity({ opacity: 1 }, { duration: 250 });
-					
+
 					if (view.AutoAdvance)
-						setTimeout(function() { 
+						setTimeout(function() {
 							entry.callPageFunc('onRight', true);
-						}, view.AutoSpeed ? view.AutoSpeed : 8000); 
+						}, view.AutoSpeed ? view.AutoSpeed : 8000);
 				});
-			
-				$('#panDcwMediaViewer').velocity('stop').velocity({ opacity: 0.01 }, { duration: 50, complete: function() { 
+
+				$('#panDcwMediaViewer').velocity('stop').velocity({ opacity: 0.01 }, { duration: 50, complete: function() {
 					if (entry.Store.Viewer) {
 						entry.Store.Viewer.destroy();
 						entry.Store.Viewer = null;
 					}
-					
+
 					$('#panDcwMediaViewer').empty();
-					
+
 					cd.dec();
-				} });			
+				} });
 
 				dc.util.Image.load(path, function(img) {
 					cd.dec();
-				});			
+				});
 			}
 			else if (view.Images[view.StartPos].YouTubeId) {
 				var path = view.Images[view.StartPos].YouTubeId;
-				
-				$('#panDcwMediaViewer').velocity('stop').velocity({ opacity: 0.01 }, { duration: 50, complete: function() { 
+
+				$('#panDcwMediaViewer').velocity('stop').velocity({ opacity: 0.01 }, { duration: 50, complete: function() {
 					if (entry.Store.Viewer) {
 						entry.Store.Viewer.destroy();
 						entry.Store.Viewer = null;
 					}
-					
+
 					$('#panDcwMediaViewer').empty();
-					
+
 					var iel = $('<div id="panDcwMediaVideo"></div>');
-					
+
 					$('#panDcwMediaViewer').append(iel);
-					
+
 					var player = entry.Store.Viewer = new YT.Player('panDcwMediaVideo', {
 						videoId: path,
 						playerVars: {
 							html5: 1,
 							enablejsapi: 1,
 							rel: 0,
-							controls: view.AutoAdvance ? 0 : 1, 
+							controls: view.AutoAdvance ? 0 : 1,
 							origin: window.location.hostname
 						},
 						events: {
 							onReady: function(e) {
-								$('#panDcwMediaViewer').velocity({ opacity: 1 }, { duration: 250, complete: function() { 
+								$('#panDcwMediaViewer').velocity({ opacity: 1 }, { duration: 250, complete: function() {
 									e.target.playVideo();
 								} });
 							},
 							onStateChange: function(e) {
 								if (e.data == 0) {
 									console.log('video done');
-							
+
 									if (view.AutoAdvance)
 										entry.callPageFunc('onRight', true);
-					
+
 									//sequence[showIdx].Ticker = 0;
 								}
 								else if (e.data == 1) {
@@ -120,20 +120,20 @@
 								}
 							}
 						}
-					});	  
-				} });			
+					});
+				} });
 			}
 	]]></Function>
-	
+
 	<!--
 
 function checkframe() {
 	if (sequence[showIdx].isDone()) {
 		showIdx++;
-		
+
 		if (showIdx >= sequence.length)
 			showIdx = 0;
-			
+
 		sequence[showIdx].prep();
 	}
 }
@@ -143,18 +143,18 @@ function videoDone() {
 		resetVideo()
 		return true;
 	}
-	
+
 	if (player && player.getDuration() && (player.getCurrentTime() > (player.getDuration() - 2))) {
 		player.stopVideo();
 		resetVideo()
 		return true;
 	}
-		
+
 	this.Ticker--;
 	return false;
-}	
+}
 	-->
-	
+
 	<Function Name="onLeft"><![CDATA[
 			var entry = this;
 

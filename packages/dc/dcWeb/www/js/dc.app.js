@@ -160,7 +160,8 @@ dc.pui.layer.Base.prototype = {
 
 			layer.enhancePage(false);
 
-			if (! frompop) {
+			//if (! frompop) { TODO if this ever worked (back arrow history) it doesn't any longer
+			if (this == dc.pui.Loader.MainLayer) {
 				// use window.location.pathname so that a Refresh loads the current page, not the dialog/app
 				if (entry.ReplaceState)
 					history.replaceState(
@@ -208,6 +209,21 @@ dc.pui.layer.Base.prototype = {
 			if (layer.Current.Callback)
 				layer.Current.Callback.call(layer.Current);
 		});
+
+		layer.updateFocusable();
+	},
+
+	updateFocusable: function() {
+		// if (this != dc.pui.Loader.MainLayer) {
+		// 	var focusableElements = 'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+		//
+		// 	var focusableContent = $(this.ContentShell).find(focusableElements).filter(function() {
+		// 		return (! $(this).is(':hidden') && ! $(this).is(':disabled') );
+		// 	});
+		//
+		// 	dc.pui.Loader.FirstFocusable = focusableContent[0];
+		// 	dc.pui.Loader.LastFocusable = focusableContent[focusableContent.length - 1];
+		// }
 	},
 
 	refreshPage: function() {
@@ -287,6 +303,9 @@ dc.pui.layer.Base.prototype = {
 	},
 
 	open: function() {
+		// dc.pui.Loader.FirstFocusable = null;
+		// dc.pui.Loader.LastFocusable = null;
+
 		if (this != dc.pui.Loader.MainLayer) {
 			var need = true;
 
@@ -294,8 +313,10 @@ dc.pui.layer.Base.prototype = {
 				if (dc.pui.Loader.Layers[i] == this) {
 					need = false;
 				}
-				else if (! this.ManualVisibility) {
-					$(dc.pui.Loader.Layers[i].ContentShell).css('visibility', 'hidden');
+				else if (! dc.pui.Loader.Layers[i].ManualVisibility) {
+					$(dc.pui.Loader.Layers[i].ContentShell).attr('aria-hidden', 'true');
+					// TODO remove 1 below after testing
+					$(dc.pui.Loader.Layers[i].ContentShell).attr('inert', 'true');
 				}
 			}
 
@@ -303,14 +324,23 @@ dc.pui.layer.Base.prototype = {
 				dc.pui.Loader.addLayer(this);
 
 			if (! this.ManualVisibility) {
-				$(this.ContentShell).show().css('visibility', 'visible');
-				$(dc.pui.Loader.MainLayer.Content).css('visibility', 'hidden');
+				$(this.ContentShell).attr('aria-hidden', 'false');
+				$(dc.pui.Loader.MainLayer.Content).attr('aria-hidden', 'true');
+
+				// TODO remove 2 below after testing
+				$(this.ContentShell).removeAttr('inert');
+				$(dc.pui.Loader.MainLayer.Content).attr('inert', 'true');
+
+				$(this.ContentShell).show();
 				$('body').addClass('dc-hide-scroll');
 			}
 		}
 		else {
 			if (! this.ManualVisibility) {
-				$(this.Content).css('visibility', 'visible');
+				// TODO remove 1 below after testing
+				$(this.Content).removeAttr('inert');
+
+				$(this.Content).attr('aria-hidden', 'false');
 				$('body').removeClass('dc-hide-scroll');
 			}
 		}
@@ -329,7 +359,12 @@ dc.pui.layer.Base.prototype = {
 
 		if (this != dc.pui.Loader.MainLayer) {
 			if (! this.ManualVisibility) {
-				$(this.ContentShell).hide().css('visibility', 'hidden');
+				$(this.ContentShell).attr('aria-hidden', 'true');
+
+				// TODO remove 1 below after testing
+				$(this.ContentShell).attr('inert', 'true');
+
+				$(this.ContentShell).hide();
 			}
 
 			dc.pui.Loader.exposeTopLayer();
@@ -477,7 +512,7 @@ dc.pui.layer.Dialog.prototype.open = function() {
 	var del = $('#dcuiDialog');
 
 	if (! del.length) {
-		$('body').append('<div id="dcuiDialog" class="dcuiLayerShell"><div id="dcuiDialogPane"></div></div>');
+		$('body').append('<div id="dcuiDialog" role="dialog" aria-modal="true" class="dcuiLayerShell"><div id="dcuiDialogPane"></div></div>');
 	}
 
 	dc.pui.layer.Base.prototype.open.call(this);
@@ -498,7 +533,7 @@ dc.pui.layer.Alert.prototype.open = function() {
 	var del = $('#dcuiAlert');
 
 	if (! del.length) {
-		var dbox = $('<div id="dcuiAlert" class="dcuiLayerShell"></div>');
+		var dbox = $('<div id="dcuiAlert" role="dialog" aria-modal="true" class="dcuiLayerShell"></div>');
 
 		$(dbox).click(function (e) {
 			dialog.close();
@@ -536,11 +571,11 @@ dc.pui.layer.Widget = function(uiid, uiidin) {
 dc.pui.layer.Widget.prototype = new dc.pui.layer.Base();
 
 dc.pui.layer.Widget.prototype.open = function() {
-	var del = $(this.ContentShell).show().css('visibility','visible');
+	//var del = $(this.ContentShell).show().removeAttr('inert');
 
 	dc.pui.layer.Base.prototype.open.call(this);
 
-	$(dc.pui.Loader.MainLayer.Content).css('visibility', 'visible');
+	//$(dc.pui.Loader.MainLayer.Content).attr('inert', 'true');
 	$('body').removeClass('dc-hide-scroll');
 };
 
@@ -570,6 +605,8 @@ dc.pui.layer.App.prototype.open = function() {
 	if (! del.length) {
 		var dbox = $('<div>')
 			.attr('id', 'dcuiApp')
+			.attr('role', 'dialog')
+			.attr('aria-modal', 'true')
 			.attr('class', 'dcuiLayerShell dcuiMenu')
 			.dcappend(
 				$('<div>')
@@ -811,7 +848,7 @@ dc.pui.layer.SimpleApp.prototype.open = function() {
 	var del = $('#dcuiSimpleApp');
 
 	if (! del.length) {
-		$('body').append('<div id="dcuiSimpleApp" class="dcuiLayerShell"><div id="dcuiSimpleAppPane"></div></div>');
+		$('body').append('<div id="dcuiSimpleApp" role="dialog" aria-modal="true" class="dcuiLayerShell"><div id="dcuiSimpleAppPane"></div></div>');
 	}
 
 	dc.pui.layer.Base.prototype.open.call(this);
@@ -832,7 +869,7 @@ dc.pui.layer.FullScreen.prototype.open = function() {
 	var del = $('#dcuiFullScreen');
 
 	if (! del.length) {
-		var dbox = $('<div id="dcuiFullScreen" class="dcuiLayerShell dcuiContentLayer"></div>');
+		var dbox = $('<div id="dcuiFullScreen" role="dialog" aria-modal="true" class="dcuiLayerShell dcuiContentLayer"></div>');
 
 		$('body').append(dbox);
 	}
@@ -859,6 +896,8 @@ dc.pui.Loader = {
 	MainLayer: null,
 	Layers: [],
 	TextSize: 'default',
+	// FirstFocusable: null,
+	// LastFocusable: null,
 
 	init: function() {
 		var loader = this;
@@ -897,13 +936,31 @@ dc.pui.Loader = {
 			}
 		}
 
-		document.addEventListener('keydown', function(event) {
-		    if (event.key === 'Escape' || event.keyCode === 27) {
-				var layer = loader.currentLayer();
+		document.addEventListener('keydown', function(e) {
+		    if (e.key === 'Escape' || e.keyCode === 27) {
+					var layer = loader.currentLayer();
 
-				if (layer)
-					layer.close();
+					if (layer)
+						layer.close();
 		    }
+
+				// let isTabPressed = e.key === 'Tab' || e.keyCode === 9;
+				//
+				// if (isTabPressed) {
+				// 	if (e.shiftKey) { // if shift key pressed for shift + tab combination
+				// 		if (document.activeElement === dc.pui.Loader.FirstFocusable) {
+				// 			dc.pui.Loader.LastFocusable.focus(); // add focus for the last focusable element
+				// 			e.preventDefault();
+				// 		}
+				// 	}
+				// 	else { // if tab key is pressed
+				// 		if (document.activeElement === dc.pui.Loader.LastFocusable) { // if focused has reached to last focusable element then focus first focusable element after pressing tab
+				// 			dc.pui.Loader.FirstFocusable.focus(); // add focus for the first focusable element
+				// 			e.preventDefault();
+				// 		}
+				// 	}
+				// }
+
 
 			// TODO support layer key events
 		});
@@ -1186,7 +1243,7 @@ dc.pui.Loader = {
 			var l = loader.Layers[i];
 
 			// skip if hidden or empty
-			if (! l.Current)
+			if (! l.Current || l.ManualVisibility)
 				continue;
 
 			var z = $(l.ContentShell).css('z-index');
@@ -3080,6 +3137,8 @@ dc.pui.Tags = {
 	'dc.PagePanel': function(entry, node) {
 		$(node).find('a').click(function(e) {
 			var processed = false;
+
+			// TODO we need to hide the <li> not just the <a> for the sake of screen readers
 
 			if ($(this).hasClass('dcui-pagepanel-close')) {
 				if (entry.hasPageFunc('onClose'))

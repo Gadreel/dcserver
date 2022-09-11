@@ -23,10 +23,10 @@ public class ThreadObject extends RecordStruct {
 	public ReturnOption operation(StackWork state, XElement code) throws OperatingContextException {
 		if ("Create".equals(code.getName())) {
 			RecordStruct data = RecordStruct.record()
-					.with("Title", StackUtil.stringFromElement(state, code, "Title"))
-					.with("Type", StackUtil.stringFromElement(state, code, "Type"))
-					.with("From", StackUtil.stringFromElement(state, code, "From"))
-					.with("SharedAttributes", StackUtil.refFromElement(state, code, "SharedAttributes"));
+					.with("Title", StackUtil.stringFromElementClean(state, code, "Title"))
+					.with("Type", StackUtil.stringFromElementClean(state, code, "Type"))
+					.with("From", StackUtil.stringFromElementClean(state, code, "From"))
+					.with("SharedAttributes", StackUtil.refFromElement(state, code, "SharedAttributes", true));
 
 			ServiceHub.call(ServiceRequest.of("dcmServices", "Thread", "Create")
 					.withData(data)
@@ -52,7 +52,7 @@ public class ThreadObject extends RecordStruct {
 			RecordStruct data = RecordStruct.record();
 
 			data.copyFields(this);
-			data.with("Parties", StackUtil.refFromElement(state, code, "Value"));
+			data.with("Parties", StackUtil.refFromElement(state, code, "Value", true));
 
 			ServiceHub.call(ServiceRequest.of("dcmServices", "Thread", "AddParties")
 					.withData(data)
@@ -71,7 +71,7 @@ public class ThreadObject extends RecordStruct {
 		}
 
 		if ("SetTitle".equals(code.getName())) {
-			String title = StackUtil.resolveValueToString(state, code.getValue());
+			String title = StackUtil.resolveValueToString(state, code.getValue(), true);
 
 			ServiceHub.call(UpdateRecordRequest.update()
 					.withTable("dcmThread")
@@ -93,9 +93,9 @@ public class ThreadObject extends RecordStruct {
 		}
 
 		if ("AddContent".equals(code.getName())) {
-			String content = StackUtil.resolveValueToString(state, code.getValue());
-			String contenttype = StackUtil.stringFromElement(state, code, "Type");
-			String originator = StackUtil.stringFromElement(state, code, "Originator");
+			String content = StackUtil.resolveValueToString(state, code.getValue(), true);
+			String contenttype = StackUtil.stringFromElementClean(state, code, "Type");
+			String originator = StackUtil.stringFromElementClean(state, code, "Originator");
 
 			//String name = StackUtil.stringFromElement(state, code, "Result");
 

@@ -34,10 +34,12 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.resource.ResourceBase;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
+import dcraft.schema.DataType;
 import dcraft.script.StackUtil;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
@@ -1521,11 +1523,98 @@ public class XElement extends XNode {
 					Logger.warn("Nothing to append.");
 				}
 			}
+			else if(code.hasChildren()) {
+				for (XNode node : code.children) {
+					this.append(node);
+				}
+			}
 
 			return ReturnOption.CONTINUE;
 		}
 		else if ("ClearChildren".equals(code.getName())) {
 			this.clearChildren();
+
+			return ReturnOption.CONTINUE;
+		}
+		else if ("SetAttr".equals(code.getName())) {
+			String name = StackUtil.stringFromElement(stack, code, "Name");
+
+			if (StringUtil.isEmpty(name)) {
+				Logger.error("Missing field name in SetAttr");
+				return ReturnOption.CONTINUE;
+			}
+
+			String value = StackUtil.stringFromElementClean(stack, code, "Value");
+
+			if (value == null)
+				this.removeAttribute(name);
+			else
+				this.attr(name, Struct.objectToString(value));
+
+			return ReturnOption.CONTINUE;
+		}
+		else if ("AppendAttr".equals(code.getName())) {
+			String name = StackUtil.stringFromElement(stack, code, "Name");
+
+			if (StringUtil.isEmpty(name)) {
+				Logger.error("Missing field name in AppendAttr");
+				return ReturnOption.CONTINUE;
+			}
+
+			String value = StackUtil.stringFromElementClean(stack, code, "Value");
+
+			if (StringUtil.isNotEmpty(value))
+				this.attr(name, this.attr(name) + Struct.objectToString(value));
+
+			return ReturnOption.CONTINUE;
+		}
+		else if ("SelectAll".equals(code.getName())) {
+			String path = StackUtil.stringFromElement(stack, code, "Path");
+
+			if (StringUtil.isEmpty(path)) {
+				Logger.error("Missing path in SelectAll");
+				return ReturnOption.CONTINUE;
+			}
+
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+
+			if (StringUtil.isNotEmpty(result)) {
+				List<XElement> matches = this.selectAll(path);
+
+				StackUtil.addVariable(stack, result, ListStruct.list(matches));
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+		else if ("SelectFirst".equals(code.getName())) {
+			String path = StackUtil.stringFromElement(stack, code, "Path");
+
+			if (StringUtil.isEmpty(path)) {
+				Logger.error("Missing path in SelectFirst");
+				return ReturnOption.CONTINUE;
+			}
+
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+
+			if (StringUtil.isNotEmpty(result)) {
+				StackUtil.addVariable(stack, result, this.selectFirst(path));
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+		else if ("SelectFirstText".equals(code.getName())) {
+			String path = StackUtil.stringFromElement(stack, code, "Path");
+
+			if (StringUtil.isEmpty(path)) {
+				Logger.error("Missing path in SelectFirstText");
+				return ReturnOption.CONTINUE;
+			}
+
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+
+			if (StringUtil.isNotEmpty(result)) {
+				StackUtil.addVariable(stack, result, StringStruct.of(this.selectFirstText(path)));
+			}
 
 			return ReturnOption.CONTINUE;
 		}

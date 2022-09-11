@@ -1,6 +1,8 @@
 <dcs.Script>
-
 	<dcs.ResourceHelper Find="CustomVault" Result="CustomVaultResources" />
+
+		<dcs.Console>data: {$Data}</dcs.Console>
+		<dcs.Console>locale: {$Data.Locale|ifempty:*}</dcs.Console>
 
 	<dcs.With Target="$CustomVaultResources">
 		<LoadDataFile Alias="$Data.Alias" Path="$Data.Path" Locale="{$Data.Locale|ifempty:*}" Result="Form" />

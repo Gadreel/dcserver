@@ -274,6 +274,7 @@
 			<Tag Name="dcs.ResourceHelper" Class="dcraft.script.inst.ext.ResourceHelper" />
 			<Tag Name="dcs.SchemaGetTypeDef" Class="dcraft.script.inst.ext.SchemaGetTypeDef" />
 			<Tag Name="dcs.ScriptFindScript" Class="dcraft.script.inst.ext.ScriptFindScript" />
+			<Tag Name="dcs.TaskHelper" Class="dcraft.script.inst.ext.TaskHelper" />
 
 			<Tag Name="dcs.ParseXml" Class="dcraft.script.inst.ext.ParseXml" />
 			<Tag Name="dcs.ParseJson" Class="dcraft.script.inst.ext.ParseJson" />
@@ -285,6 +286,11 @@
 			<Tag Name="dcs.Stream" Class="dcraft.script.inst.file.Stream" />
 
 			<Tag Name="dcs.TranslationTemplate" Class="dcraft.script.inst.doc.TranslationTemplate" />
+
+			<!-- special content tags -->
+			<Tag Name="dc.Out" Class="dcraft.script.inst.doc.Out" />
+			<Tag Name="dc.Include" Class="dcraft.script.inst.doc.Include" />
+			<Tag Name="dc.Template" Class="dcraft.script.inst.doc.Template" />
 		</Instructions>
 
 		<Formatters>
@@ -323,15 +329,19 @@
 			<Definition Code="md" Class="dcraft.struct.format.MarkDown" />
 			<Definition Code="decrypt" Class="dcraft.struct.format.Decrypt" />
 			<Definition Code="encrypt" Class="dcraft.struct.format.Encrypt" />
+			<Definition Code="hash" Class="dcraft.struct.format.Hash" />
 			<Definition Code="img-g2p" Class="dcraft.struct.format.ImageGalleryToPath" />
 			<Definition Code="img-p2g" Class="dcraft.struct.format.ImagePathToGallery" />
 			<Definition Code="padnum" Class="dcraft.struct.format.NumberPad" />
 			<Definition Code="phE164" Class="dcraft.struct.format.PhoneE164" />
 			<Definition Code="upper" Class="dcraft.struct.format.Upper" />
 			<Definition Code="url" Class="dcraft.struct.format.Url" />
+			<Definition Code="youtubeid" Class="dcraft.struct.format.YouTubeId" />
 
 			<Definition Code="b64decode" Class="dcraft.struct.format.Base64Decode" />
 			<Definition Code="b64encode" Class="dcraft.struct.format.Base64Encode" />
+			<Definition Code="hexdecode" Class="dcraft.struct.format.HexDecode" />
+			<Definition Code="hexencode" Class="dcraft.struct.format.HexEncode" />
 
 			<!--
 			// TODO format date/time to chrono

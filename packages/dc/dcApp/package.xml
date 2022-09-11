@@ -44,8 +44,6 @@
 			<Tag Name="dc.StackedIcon" Class="dcraft.web.ui.inst.StackedIcon" />
 
 			<!-- special content tags -->
-			<Tag Name="dc.Out" Class="dcraft.script.inst.doc.Out" />
-			<Tag Name="dc.Template" Class="dcraft.script.inst.doc.Template" />
 			<Tag Name="dc.MixIn" Class="dcraft.web.ui.inst.MixIn" />
 			<Tag Name="dc.Fragment" Class="dcraft.web.ui.inst.Fragment" />
 			<Tag Name="dc.IncludeFragment" Class="dcraft.web.ui.inst.IncludeFragment" />

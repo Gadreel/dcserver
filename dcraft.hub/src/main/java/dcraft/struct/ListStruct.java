@@ -25,6 +25,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 
+import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
@@ -590,22 +591,117 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 		super.checkLogic(stack, source, logicState);
 	}
 
+	public void expandQuickList(StackWork stack, XElement code) throws OperatingContextException {
+		if ((stack == null) || (code == null)) {
+			Logger.error("Missing stack in list quick Set");
+			return;
+		}
+
+		// TODO someday support typed lists -- look at DataType attr of code
+
+		String varName = StackUtil.stringFromElementClean(stack, code, "VarName");
+
+		if (StringUtil.isNotEmpty(varName))
+			StackUtil.addVariable(stack, varName, this);
+
+		for (XElement item : code.selectAll("*")) {
+			if ("List".equals(item.getName())) {
+				ListStruct lst = ListStruct.list();
+				lst.expandQuickList(stack, item);
+				this.with(lst);
+				continue;
+			}
+
+			if ("Record".equals(item.getName())) {
+				RecordStruct rec = RecordStruct.record();
+				rec.expandQuickRecord(stack, item);
+				this.with(rec);
+				continue;
+			}
+
+			// otherwise it is an Item
+
+			String def = StackUtil.stringFromElementClean(stack, item, "Type");
+
+			BaseStruct var = null;
+
+			if (StringUtil.isNotEmpty(def))
+				var = ResourceHub.getResources().getSchema().getType(def).create();
+
+			if (item.hasAttribute("Value")) {
+				BaseStruct var3 = StackUtil.refFromElement(stack, item, "Value", true);
+
+				if ((var == null) && (var3 != null)) {
+					DataType v3type = var3.getType();
+
+					// create a copy if possible
+					if (v3type != null)
+						var = v3type.create();
+					else
+						var = var3;
+				}
+
+				if (var instanceof ScalarStruct)
+					((ScalarStruct) var).adaptValue(var3);
+				else
+					var = var3;
+			}
+			else {
+				String value = StackUtil.resolveValueToString(stack, item.getText(), true);
+
+				if (StringUtil.isNotEmpty(value)) {
+					if (var instanceof ScalarStruct)
+						((ScalarStruct) var).adaptValue(value);
+					else
+						var = Struct.objectToStruct(value);
+				}
+			}
+
+			// not an error if null
+			this.with(var);
+		}
+	}
+
 	@Override
 	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
 		if ("Set".equals(code.getName())) {
 			this.clear();
-			
-			String json = StackUtil.resolveValueToString(stack, code.getText(), true);
-			
-			if (StringUtil.isNotEmpty(json)) {
-				ListStruct pjson = (ListStruct) CompositeParser.parseJson(" [ " + json + " ] ");
 
-				for (BaseStruct s : pjson.items())
-					this.items.add(s);
+			if (code.selectFirst("*") != null) {
+				this.expandQuickList(stack, code);
+			}
+			else {
+				String json = StackUtil.resolveValueToString(stack, code.getText(), true);
+
+				if (StringUtil.isNotEmpty(json)) {
+					ListStruct pjson = (ListStruct) CompositeParser.parseJson(" [ " + json + " ] ");
+
+					for (BaseStruct s : pjson.items())
+						this.items.add(s);
+				}
+
+				// TODO else check for Xml or Yaml
 			}
 			
-			// TODO else check for Xml or Yaml
-			
+			return ReturnOption.CONTINUE;
+		}
+		else if ("Update".equals(code.getName())) {
+			if (code.selectFirst("*") != null) {
+				this.expandQuickList(stack, code);
+			}
+			else {
+				String json = StackUtil.resolveValueToString(stack, code.getText(), true);
+
+				if (StringUtil.isNotEmpty(json)) {
+					ListStruct pjson = (ListStruct) CompositeParser.parseJson(" [ " + json + " ] ");
+
+					for (BaseStruct s : pjson.items())
+						this.items.add(s);
+				}
+
+				// TODO else check for Xml or Yaml
+			}
+
 			return ReturnOption.CONTINUE;
 		}
 		else if ("AddItem".equals(code.getName())) {

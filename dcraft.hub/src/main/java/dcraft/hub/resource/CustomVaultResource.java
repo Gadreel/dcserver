@@ -2,12 +2,15 @@ package dcraft.hub.resource;
 
 import dcraft.cms.meta.CustomVaultUtil;
 import dcraft.filestore.CommonPath;
+import dcraft.filevault.Vault;
 import dcraft.hub.op.*;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
+import dcraft.service.base.Vaults;
 import dcraft.struct.*;
+import dcraft.tenant.Site;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
@@ -103,7 +106,7 @@ public class CustomVaultResource extends ResourceBase {
     @Override
     public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
         if ("ListAll".equals(code.getName())) {
-            String result = StackUtil.stringFromElement(stack, code, "Result");
+            String result = StackUtil.stringFromElementClean(stack, code, "Result");
 
             if (StringUtil.isNotEmpty(result)) {
                 String currlocale = OperationContext.getOrThrow().getLocale();
@@ -141,7 +144,7 @@ public class CustomVaultResource extends ResourceBase {
         }
 
         if ("LoadVault".equals(code.getName())) {
-            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias"));
+            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias", true));
             String result = StackUtil.stringFromElement(stack, code, "Result");
 
             if (StringUtil.isNotEmpty(result) && StringUtil.isNotEmpty(alias)) {
@@ -155,7 +158,7 @@ public class CustomVaultResource extends ResourceBase {
         }
 
         if ("SaveVault".equals(code.getName())) {
-            RecordStruct vaultinfo = Struct.objectToRecord(StackUtil.refFromElement(stack, code, "Value"));
+            RecordStruct vaultinfo = Struct.objectToRecord(StackUtil.refFromElement(stack, code, "Value", true));
 
             CustomVaultUtil.saveVault(vaultinfo, new OperationOutcomeStruct() {
                 @Override
@@ -178,7 +181,7 @@ public class CustomVaultResource extends ResourceBase {
         }
 
         if ("DeleteVault".equals(code.getName())) {
-            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias"));
+            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias", true));
 
             CustomVaultUtil.deleteVault(alias, new OperationOutcomeStruct() {
                 @Override
@@ -200,7 +203,7 @@ public class CustomVaultResource extends ResourceBase {
         }
 
         if ("Reindex".equals(code.getName())) {
-            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias"));
+            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias", true));
 
             CustomVaultUtil.updateFileCacheAll(alias, new OperationOutcomeEmpty() {
                 @Override
@@ -215,11 +218,11 @@ public class CustomVaultResource extends ResourceBase {
         }
 
         if ("Search".equals(code.getName())) {
-            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias"));
-            String term = Struct.objectToString(StackUtil.refFromElement(stack, code, "Term"));
-            String locale = Struct.objectToString(StackUtil.refFromElement(stack, code, "Locale"));
-            String taglist = Struct.objectToString(StackUtil.refFromElement(stack, code, "Tags"));
-            String result = StackUtil.stringFromElement(stack, code, "Result");
+            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias", true));
+            String term = Struct.objectToString(StackUtil.refFromElement(stack, code, "Term", true));
+            String locale = Struct.objectToString(StackUtil.refFromElement(stack, code, "Locale", true));
+            String taglist = Struct.objectToString(StackUtil.refFromElement(stack, code, "Tags", true));
+            String result = StackUtil.stringFromElementClean(stack, code, "Result");
 
             if (StringUtil.isEmpty(locale))
                 locale = OperationContext.getOrThrow().getLocale();
@@ -245,10 +248,10 @@ public class CustomVaultResource extends ResourceBase {
         }
 
         if ("LoadDataFile".equals(code.getName())) {
-            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias"));
-            String path = Struct.objectToString(StackUtil.refFromElement(stack, code, "Path"));
-            String result = StackUtil.stringFromElement(stack, code, "Result");
-            String localize = Struct.objectToString(StackUtil.refFromElement(stack, code, "Localize"));
+            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias", true));
+            String path = Struct.objectToString(StackUtil.refFromElement(stack, code, "Path", true));
+            String result = StackUtil.stringFromElementClean(stack, code, "Result");
+            String localize = Struct.objectToString(StackUtil.refFromElement(stack, code, "Locale", true));
 
             if ("*".equals(localize))
                 localize = "WithDefault";           // or CurrentOnly or None
@@ -276,13 +279,13 @@ public class CustomVaultResource extends ResourceBase {
         }
 
         if ("UpdateDataFile".equals(code.getName())) {
-            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias"));
-            String path = Struct.objectToString(StackUtil.refFromElement(stack, code, "Path"));
+            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias", true));
+            String path = Struct.objectToString(StackUtil.refFromElement(stack, code, "Path", true));
 
             // TODO check access to vault / path
 
-            String locale = Struct.objectToString(StackUtil.refFromElement(stack, code, "Locale"));
-            RecordStruct datafile = Struct.objectToRecord(StackUtil.refFromElement(stack, code, "Form"));
+            String locale = Struct.objectToString(StackUtil.refFromElement(stack, code, "Locale", true));
+            RecordStruct datafile = Struct.objectToRecord(StackUtil.refFromElement(stack, code, "Form", true));
 
             if ("*".equals(locale))
                 locale = OperationContext.getOrThrow().getLocale();
@@ -328,13 +331,13 @@ public class CustomVaultResource extends ResourceBase {
         }
 
         if ("AddDataFile".equals(code.getName())) {
-            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias"));
-            String path = Struct.objectToString(StackUtil.refFromElement(stack, code, "Path"));
+            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias", true));
+            String path = Struct.objectToString(StackUtil.refFromElement(stack, code, "Path", true));
 
             // TODO check access to vault / path
 
-            String locale = Struct.objectToString(StackUtil.refFromElement(stack, code, "Locale"));
-            RecordStruct datafile = Struct.objectToRecord(StackUtil.refFromElement(stack, code, "Form"));
+            String locale = Struct.objectToString(StackUtil.refFromElement(stack, code, "Locale", true));
+            RecordStruct datafile = Struct.objectToRecord(StackUtil.refFromElement(stack, code, "Form", true));
 
             if ("*".equals(locale))
                 locale = OperationContext.getOrThrow().getLocale();
@@ -342,6 +345,30 @@ public class CustomVaultResource extends ResourceBase {
             this.addRecord(alias, path, locale, datafile, new OperationOutcomeEmpty() {
                 @Override
                 public void callback() throws OperatingContextException {
+                    stack.withContinueFlag();
+
+                    OperationContext.getAsTaskOrThrow().resume();
+                }
+            });
+
+            return ReturnOption.AWAIT;
+        }
+
+        if ("DeleteDataFile".equals(code.getName())) {
+            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias", true));
+            String path = Struct.objectToString(StackUtil.refFromElement(stack, code, "Path", true));
+
+            RecordStruct req = RecordStruct.record()
+                    .with("Vault", alias)
+                    .with("Path", path);
+
+            Site site = OperationContext.getOrThrow().getUserContext().getSite();
+
+            Vault vault = site.getVault(req.getFieldAsString("Vault"));
+
+            Vaults.deleteFile(vault, req, false, new OperationOutcomeStruct() {
+                @Override
+                public void callback(BaseStruct result) throws OperatingContextException {
                     stack.withContinueFlag();
 
                     OperationContext.getAsTaskOrThrow().resume();

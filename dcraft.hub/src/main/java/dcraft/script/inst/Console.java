@@ -40,7 +40,7 @@ public class Console extends Instruction {
 	
 	@Override
 	public ReturnOption run(InstructionWork state) throws OperatingContextException {
-		String output = this.hasText() ? StackUtil.resolveValueToString(state, this.getText()) : null;
+		String output = this.hasText() ? StackUtil.resolveValueToString(state, this.getText(), true) : null;
 		long code = StackUtil.intFromSource(state, "Code", 0);
 		
 		if (StringUtil.isEmpty(output)) {
@@ -48,7 +48,7 @@ public class Console extends Instruction {
 			Object[] oparams = new Object[params.size()];
 			
 			for (int i = 0; i < params.size(); i++) 
-				oparams[i] = StackUtil.refFromElement(state, params.get(i), "Value").toString();
+				oparams[i] = StackUtil.refFromElement(state, params.get(i), "Value", true).toString();
 			
 			output = ResourceHub.tr("_code_" + code, oparams);
 		}		

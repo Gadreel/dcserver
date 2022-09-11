@@ -84,6 +84,8 @@ public class RenewSiteAutoWork extends StateWork {
 	}
 	
 	public StateWorkStep prepAcmeAccount(TaskContext trun) throws OperatingContextException {
+		trun.touch();
+
 		try {
 			KeyPair userpair = CertUtil.loadUserKeyPair();
 			
@@ -109,6 +111,8 @@ public class RenewSiteAutoWork extends StateWork {
 	}
 	
 	public StateWorkStep orderCert(TaskContext trun) throws OperatingContextException {
+		trun.touch();
+
 		try {
 			// Order the certificate
 			Order order = this.acct.newOrder().domains(this.domains).create();
@@ -142,6 +146,8 @@ public class RenewSiteAutoWork extends StateWork {
 			int attempts = 10;
 			
 			while ((order.getStatus() != Status.VALID) && (attempts-- > 0)) {
+				trun.touch();
+
 				// Did the order fail?
 				if (order.getStatus() == Status.INVALID) {
 					throw new AcmeException("Order failed... Giving up.");
@@ -177,6 +183,8 @@ public class RenewSiteAutoWork extends StateWork {
 	}
 	
 	public StateWorkStep writeCert(TaskContext trun) throws OperatingContextException {
+		trun.touch();
+
 		try {
 			
 			//Path domainchain = siteconfig.resolve("certs.chain");

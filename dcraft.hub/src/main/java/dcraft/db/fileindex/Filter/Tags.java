@@ -60,7 +60,9 @@ public class Tags extends BasicFilter {
 				indexkeys.add("Tags");
 				
 				byte[] data = adapter.getRequest().getInterface().getRaw(indexkeys.toArray());
-				
+
+				//System.out.println("tags: " + ByteUtil.extractValue(data));
+
 				if (data != null) {
 					for (int i2 = 0; i2 < this.values.size(); i2++) {
 						if (ByteUtil.dataContains(data, this.values.get(i2))) {

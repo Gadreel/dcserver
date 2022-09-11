@@ -447,7 +447,7 @@
 			<Field Name="Feature" Type="dcSmallString" />
 			<Field Name="Op" Type="dcSmallString" />
 			<Field Name="Params" Type="AnyType" />
-		</RecordRequest>
+		</Record>
 	</Shared>
 
 	<Services>

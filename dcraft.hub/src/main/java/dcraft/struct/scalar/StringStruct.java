@@ -371,6 +371,8 @@ public class StringStruct extends ScalarStruct {
 				Long maxChars = StackUtil.intFromElement(stack, code, "MaxChars");
 				String maxTrail = StackUtil.stringFromElement(stack, code, "MaxTrail");
 
+				boolean chopped = false;
+
 				// trim to first paragraph if applicable
 				if (! "Max".equals(mode)) {
 					boolean firstNL = false;
@@ -378,7 +380,12 @@ public class StringStruct extends ScalarStruct {
 					for (int i = 0; i < this.value.length(); i++) {
 						if (this.value.charAt(i) == '\n') {
 							if (firstNL) {
-								this.value = this.value.subSequence(0, i - 2);
+								// if we are already at the end then don't bother chopping
+								if (i < (this.value.length() - 3)) {
+									this.value = this.value.subSequence(0, i - 2);
+									chopped = true;
+								}
+
 								break;
 							}
 							else {
@@ -418,6 +425,9 @@ public class StringStruct extends ScalarStruct {
 
 					if (StringUtil.isNotEmpty(maxTrail))
 						this.value += maxTrail;
+				}
+				else if (StringUtil.isNotEmpty(maxTrail) && chopped) {
+					this.value += maxTrail;
 				}
 			}
 

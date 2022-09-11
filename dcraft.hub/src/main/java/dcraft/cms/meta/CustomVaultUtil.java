@@ -296,6 +296,8 @@ public class CustomVaultUtil {
 			TagResource tagResource = ResourceHub.getResources().getTag();
 
 			for (CommonPath updateFile : updateFiles) {
+				//System.out.println("indexing vault file: " + updateFile);
+
 				Path localpath = ((LocalStore) localVault.getFileStore()).resolvePath(updateFile);
 
 				CharSequence json = IOUtil.readEntireFile(localpath);
@@ -325,18 +327,18 @@ public class CustomVaultUtil {
 					if (tagResource != null) {
 						ListStruct tags = data.getFieldAsList("Tags");
 
-						System.out.println("found tags: " + tags);
+						//System.out.println("found tags: " + tags);
 
 						if (tags != null) {
 							for (int i = 0; i < tags.size(); i++) {
 								String tag = tags.getItemAsString(i);
 
-								System.out.println("tag: " + tag);
+								//System.out.println("tag: " + tag);
 
 								if (StringUtil.isNotEmpty(tag)) {
 									RecordStruct node = tagResource.selectNode(tag);
 
-									System.out.println("found node: " + node);
+									//System.out.println("found node: " + node);
 
 									if (node != null) {
 										keywords = node.selectAsString("Locale." + locale + ".Keywords");
@@ -351,10 +353,17 @@ public class CustomVaultUtil {
 						}
 					}
 
+					//System.out.println("set 2");
+
 					indexer.setKeywords(sb.toString());
 					indexer.setSummary(data.selectAsString("Description." + locale));
+
+					//System.out.println("set 3");
+
 					indexer.setDenyIndex(!handlerConfig.selectAsBooleanOrFalse("Index.Public"));
 					indexer.setBadges(handlerConfig.selectAsList("Vault.ReadBadges"));
+
+					//System.out.println("set 4");
 
                     /* TODO figure this out
                     if (root.hasNotEmptyAttribute("SortHint")) {
@@ -364,15 +373,25 @@ public class CustomVaultUtil {
 
 					indexer.endSection();    // just in case
 
+					//System.out.println("set 5");
+
 					fileIndexAdapter.indexSearch(localVault, updateFile, indexer);
+
+					//System.out.println("set 6");
 				}
 
 				if (data.isNotFieldEmpty("Tags"))
 					fileIndexAdapter.setTags(localVault, updateFile, data.getFieldAsList("Tags"));
 
+				//System.out.println("set 7");
+
 				fileIndexAdapter.setData(localVault, updateFile, data);
 
+				//System.out.println("set 8");
 
+				CustomIndexUtil.updateCustomIndexEntry(localVault.getName(), updateFile, data, olddata);
+
+				//System.out.println("set 9");
 			}
 		}
 

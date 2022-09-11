@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
-// longer term jobs than work pool - recoverable, retry, debugable, etc
+// longer term jobs than work pool - recoverable, retry, debuggable, etc
 public class QueueHub {
 	static protected AtomicLong nextid = new AtomicLong();
 	

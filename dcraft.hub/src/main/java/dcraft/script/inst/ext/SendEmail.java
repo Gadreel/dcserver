@@ -78,13 +78,17 @@ public class SendEmail extends Instruction {
 			// direct send
 			String subject = StackUtil.stringFromSource(stack, "Subject");
 
-			BaseStruct textdoc = StackUtil.refFromSource(stack,"TextMessage");
-			BaseStruct htmldoc = StackUtil.refFromSource(stack,"HtmlMessage");
+			BaseStruct textdoc = StackUtil.refFromSource(stack,"TextMessage", true);
+			BaseStruct htmldoc = StackUtil.refFromSource(stack,"HtmlMessage", true);
 			
 			String text = null;
 			String html = null;
 			
 			if (textdoc != null) {
+				if (textdoc instanceof Base) {
+					Base.cleanReferencesDeep((Base) textdoc, stack);
+				}
+
 				XElement template = Struct.objectToXml(textdoc);
 
 				if (template != null) {
@@ -98,6 +102,10 @@ public class SendEmail extends Instruction {
 						: StackUtil.resolveValueToString(stack, this.getAttribute("Body"), true);
 
 			if (htmldoc != null) {
+				if (htmldoc instanceof Base) {
+					Base.cleanReferencesDeep((Base) htmldoc, stack);
+				}
+
 				XElement template = Struct.objectToXml(htmldoc);
 
 				if (template != null) {

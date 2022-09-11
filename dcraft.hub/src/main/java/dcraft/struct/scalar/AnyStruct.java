@@ -16,10 +16,13 @@
 ************************************************************************ */
 package dcraft.struct.scalar;
 
+import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.time.BigDateTime;
 import dcraft.schema.DataType;
 import dcraft.schema.RootType;
 import dcraft.schema.SchemaHub;
+import dcraft.script.work.ReturnOption;
+import dcraft.script.work.StackWork;
 import dcraft.struct.*;
 import dcraft.task.IParentAwareWork;
 import dcraft.xml.XElement;
@@ -79,10 +82,14 @@ public class AnyStruct extends ScalarStruct {
 		return cp;
 	}
 
+	// TODO shouldn't this be comparing the value, not the Any?
+
 	@Override
 	public boolean equals(Object obj) {
 		return (AnyStruct.comparison(this, obj) == 0);
 	}
+
+	// TODO shouldn't this be comparing the value, not the Any?
 
 	@Override
 	public int compareTo(Object y) {
@@ -166,5 +173,13 @@ public class AnyStruct extends ScalarStruct {
 			return ((IPartSelector)this.value).select(path);
 		
 		return null;
+	}
+
+	@Override
+	public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
+		if (this.value instanceof BaseStruct)
+			return ((BaseStruct) this.value).operation(stack, code);
+
+		return super.operation(stack, code);
 	}
 }

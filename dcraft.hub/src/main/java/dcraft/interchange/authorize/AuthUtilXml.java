@@ -2,21 +2,27 @@ package dcraft.interchange.authorize;
 
 import java.io.DataOutputStream;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.text.DecimalFormat;
+import java.util.function.Consumer;
 
 import javax.net.ssl.HttpsURLConnection;
 
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeRecord;
 import dcraft.log.Logger;
-import dcraft.struct.BaseStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.script.StackUtil;
+import dcraft.struct.*;
+import dcraft.task.IParentAwareWork;
 import dcraft.util.StringUtil;
+import dcraft.util.cb.TimeoutPlan;
 import dcraft.xml.XElement;
 import dcraft.xml.XmlReader;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
@@ -136,7 +142,10 @@ public class AuthUtilXml {
 				.with(
 					XElement.tag("transactionType").withText("authCaptureTransaction"),		// or authOnlyTransaction
 					XElement.tag("amount").withText(new DecimalFormat("0.00").format(total)),
-					XElement.tag("payment").with(payel)
+					XElement.tag("payment").with(payel),
+					XElement.tag("order").with(
+							XElement.tag("invoiceNumber").withText("ORD-" + refid.substring(13))
+					)
 				);
 	    
 		ListStruct items = order.getFieldAsList("Items");
@@ -218,7 +227,7 @@ public class AuthUtilXml {
 							XElement.tag("email").withText(ASCIIFoldingFilter.foldToASCII(custinfo.getFieldAsString("Email")))
 			    		)
 		    );
-	    
+
 	    txreq.with(
 	    		XElement.tag("billTo")
 					.with(
@@ -387,5 +396,148 @@ public class AuthUtilXml {
 						.with("Code", "dc9")
 						.with("Message", "Failed to process payment")
 		);
+	}
+
+	static public void paymentTransaction(IParentAwareWork stack, XElement txbody, String refid, String authalt, OperationOutcome<XElement> callback) throws OperatingContextException {
+		XElement auth = ApplicationHub.getCatalogSettings("CMS-Authorize", authalt);
+
+		if (auth == null) {
+			Logger.error("Missing store Authorize settings.");
+			callback.returnEmpty();
+			return;
+		}
+
+		String authid = auth.getAttribute("LoginId");
+		String key = auth.getAttribute("TransactionKey");
+
+		String authkey = ApplicationHub.getClock().getObfuscator().decryptHexToString(key);
+
+		boolean live = auth.getAttributeAsBooleanOrFalse("Live");
+
+	    XElement root = XElement.tag("createTransactionRequest")
+	    		.withAttribute("xmlns", "AnetApi/xml/v1/schema/AnetApiSchema.xsd")
+				.with(
+					XElement.tag("merchantAuthentication")
+						.with(
+								XElement.tag("name").withText(authid),
+								XElement.tag("transactionKey").withText(authkey)
+			    		)
+				);
+
+		if (StringUtil.isNotEmpty(refid))
+			root.with(
+				XElement.tag("refId")
+						.withText(refid.replace("_", ""))
+			);
+
+		root.with(txbody);
+
+		// Auth documentation:
+	    // http://developer.authorize.net/api/reference/
+
+	    try {
+	    	OperationContext.getOrThrow().touch();
+
+			String endpoint = ! live ? AuthUtilXml.AUTH_TEST_ENDPOINT : AuthUtilXml.AUTH_LIVE_ENDPOINT;
+
+			String xml = root.toPrettyString();
+
+			if (stack != null)
+				xml = StackUtil.resolveValueToString(stack, xml, true);
+
+			System.out.println("in: " + xml);
+
+			HttpRequest.Builder builder = HttpRequest.newBuilder()
+					.uri(URI.create(endpoint))
+					.header("User-Agent", "dcServer/2019.1 (Language=Java/11)")
+					.header("Accept", "application/json")
+					.header("Content-Type", "text/xml")
+					.POST(HttpRequest.BodyPublishers.ofString(xml));
+
+			// Send post request
+			HttpClient.newHttpClient().sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
+					.thenAcceptAsync(new AuthUtilXml.AuthHttpResponse() {
+						@Override
+						public void callback(XElement result) throws OperatingContextException {
+							if (result == null) {
+								callback.returnEmpty();
+							}
+							else if (! this.hasErrors()) {
+								XElement resp = result.selectFirst("transactionResponse");
+
+								if (resp != null) {
+									Long code = Struct.objectToInteger(resp.selectFirstText("responseCode"));
+
+									if ((code != null) && (code == 1)) {
+										callback.returnValue(resp);
+									}
+									else {
+										Logger.error("Card declined");
+										callback.returnEmpty();
+									}
+								}
+								else {
+									Logger.error("Card declined");
+									callback.returnEmpty();
+								}
+							}
+							else {
+								Logger.error("Card declined");
+								callback.returnEmpty();
+							}
+						}
+					});
+	    }
+	    catch (Exception x) {
+			Logger.error("Error processing payment: Unable to connect to payment gateway. Error: " + x);
+
+			callback.returnEmpty();
+	    }
+	}
+
+	static abstract public class AuthHttpResponse extends OperationOutcome<XElement> implements Consumer<HttpResponse<String>> {
+		public AuthHttpResponse() throws OperatingContextException {
+			super();
+		}
+
+		public AuthHttpResponse(TimeoutPlan plan) throws OperatingContextException {
+			super(plan);
+		}
+
+		@Override
+		public void accept(HttpResponse<String> response) {
+			this.useContext();
+
+			this.returnValue(processResponse(response));
+		}
+	}
+
+	static protected XElement processResponse(HttpResponse<String> response) {
+		int responseCode = response.statusCode();
+		XElement respBody = null;
+
+		if ((responseCode < 200) || (responseCode > 299)) {
+			Logger.error("Error processing request: Auth sent an error response code: " + responseCode);
+		}
+		else {
+			String respraw = response.body();
+
+			if (StringUtil.isNotEmpty(respraw)) {
+				respBody = XmlReader.parse(respraw, false, true);
+
+				if (respBody == null) {
+					Logger.error("Error processing request: Auth sent an incomplete response: " + responseCode);
+				}
+				else {
+					System.out.println("Auth Resp: " + responseCode + "\n" + respBody.toPrettyString());
+
+					if (!"Ok".equals(respBody.selectFirstText("messages/resultCode"))) {
+						Logger.error("Error processing auth request: " + responseCode + " : " + respBody.selectFirstText("messages/message/text"));
+					}
+				}
+			}
+		}
+
+		return respBody;
 	}
 }

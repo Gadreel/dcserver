@@ -11,6 +11,7 @@
 	</dcs.With>
 
 	<dcs.CatalogSettings Id="Interchange-Aws" Result="AwsConfig" />
+	<dcs.ConfigGetTag Tag="Web" Result="WebConfig" />
 
 	<dc.Body>
 		<div style="display: none;">
@@ -125,7 +126,12 @@
 				}
 			}
 
-			entry.Store.PublicPath = 'https://{$AwsConfig.@CDNDomain}/{$_Node.Deployment}/{$_Tenant.Alias}/videos';
+			var cdnroot = '{$WebConfig.@CDNDomain}';
+
+			if (! cdnroot)
+				cdnroot = '{$AwsConfig.@CDNDomain}/{$_Node.Deployment}/{$_Tenant.Alias}';
+
+			entry.Store.PublicPath = 'https://' + cdnroot + '/videos';
 
 			var npos = entry.Name.lastIndexOf('/');
 			var nname = entry.Name.substr(npos + 1);

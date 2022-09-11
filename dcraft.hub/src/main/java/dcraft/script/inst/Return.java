@@ -25,6 +25,11 @@ import dcraft.struct.Struct;
 import dcraft.task.IResultAwareWork;
 import dcraft.xml.XElement;
 
+/**
+ * Return does not work inside a loop, so define a result variable outside the loop and set inside loop, then use a Break to get out
+ *
+ * TODO update so it exits the function even from a loop - new ReturnOption
+ */
 public class Return extends Instruction {
 	static public Return tag() {
 		Return el = new Return();

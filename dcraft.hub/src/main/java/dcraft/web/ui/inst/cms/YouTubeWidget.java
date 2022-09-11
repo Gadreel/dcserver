@@ -10,6 +10,7 @@ import dcraft.script.inst.doc.Base;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.format.YouTubeId;
 import dcraft.util.StringUtil;
 import dcraft.web.ui.UIUtil;
 import dcraft.web.ui.inst.ICMSAware;
@@ -31,7 +32,7 @@ public class YouTubeWidget extends Base implements ICMSAware {
 	
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
-		String vid = StackUtil.stringFromSource(state,"VideoId");
+		String vid = YouTubeId.getIdFromUrl(StackUtil.stringFromSource(state,"VideoId"));
 		// 19by9 or 4by3
 		String ratio = StackUtil.stringFromSource(state,"Ratio", "16by9");
 		

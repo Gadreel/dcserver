@@ -55,6 +55,8 @@ public class RenewCertsWork extends StateWork {
 	}
 	
 	public StateWorkStep proccessSite(TaskContext trun) throws OperatingContextException {
+		trun.touch();
+
 		Site site = this.sites.pollFirst();
 
 		if (site == null)
@@ -100,6 +102,8 @@ public class RenewCertsWork extends StateWork {
 			Logger.info("Past due but not auto-renew, skipping SSL cert renewal for " + site.getTenant().getAlias() + " / " + site.getAlias());
 			return StateWorkStep.REPEAT;
 		}
+
+		trun.touch();
 
 		Logger.info("Attempting to renew SSL cert for: " + StringUtil.join(finaldomains, ", "));
 
