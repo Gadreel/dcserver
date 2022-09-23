@@ -362,7 +362,7 @@
 		</StringType>
 
 		<StringType Id="dcmPaymentMethodEnum">
-			<StringRestriction Enum="CreditCard,StoreCredit,PayPal,PayPalV2,Manual" />
+			<StringRestriction Enum="CreditCard,StoreCredit,PayPal,PayPalV2,Manual,PO" />
 		</StringType>
 
 		<StringType Id="dcmTargetUserEnum">
@@ -520,6 +520,8 @@
 			<Field Name="CardNumber" Type="dcTinyString" />
 			<Field Name="Expiration" Type="dcTinyString" />
 			<Field Name="Code" Type="dcTinyString" />
+
+			<Field Name="PONumber" Type="dcMetaString" />
 
 			<Field Name="Token1" Type="dcString" />
 			<Field Name="Token2" Type="dcString" />

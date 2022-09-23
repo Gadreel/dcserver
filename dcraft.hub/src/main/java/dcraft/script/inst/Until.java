@@ -49,7 +49,7 @@ public class Until extends LogicBlockInstruction {
 			if (! ((BlockWork) state).checkClearContinueFlag() && this.gotoNext(state, false))
 				return ReturnOption.CONTINUE;
 
-			if (this.checkLogic(state) && this.gotoTop(state))
+			if (! this.checkLogic(state) && this.gotoTop(state))
 				return ReturnOption.CONTINUE;
 		}
 

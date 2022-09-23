@@ -211,7 +211,12 @@ public class AuthUtilXml {
 							)
 			);
 		}
-			
+
+		if (paymentinfo.isNotFieldEmpty("PONumber"))
+			txreq.with(
+					XElement.tag("poNumber").withText(ASCIIFoldingFilter.foldToASCII(paymentinfo.getFieldAsString("PONumber")))
+			);
+
 	    if (!custinfo.isFieldEmpty("CustomerId"))
 		    txreq.with(
 					XElement.tag("customer")
@@ -228,7 +233,7 @@ public class AuthUtilXml {
 			    		)
 		    );
 
-	    txreq.with(
+		txreq.with(
 	    		XElement.tag("billTo")
 					.with(
 						XElement.tag("firstName").withText(ASCIIFoldingFilter.foldToASCII(billinginfo.getFieldAsString("FirstName"))),

@@ -551,6 +551,8 @@ public class Struct {
 		
 		if (o instanceof AnyStruct)
 			o = ((AnyStruct)o).getValue();
+		else if (o instanceof DateTimeStruct)
+			o = ((DateTimeStruct)o).getValue();
 		else if (o instanceof DateStruct)
 			o = ((DateStruct)o).getValue();
 		else if (o instanceof TimeStruct)

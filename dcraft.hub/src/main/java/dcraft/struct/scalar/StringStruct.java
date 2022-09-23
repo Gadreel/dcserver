@@ -568,6 +568,8 @@ public class StringStruct extends ScalarStruct {
 								fnd = true;
 						}
 					}
+
+					// TODO support a ListStruct as well
 					
 					logicState.pass = fnd;
 				}

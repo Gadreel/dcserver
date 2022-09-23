@@ -37,6 +37,7 @@ public class Switch extends BlockInstruction {
 	
 	@Override
 	public ReturnOption run(InstructionWork state) throws OperatingContextException {
+		// TODO run only the first matching case
 		if (state.getState() == ExecuteState.READY) {
 			if (this.gotoTop(state))
 				return ReturnOption.CONTINUE;

@@ -135,6 +135,9 @@ public class RemoteOp extends Instruction {
 						builder.POST(HttpRequest.BodyPublishers.ofString(strbody));
 				}
 			}
+			else if ("DELETE".equals(method)) {
+				builder.DELETE();
+			}
 			else {
 				builder.GET();
 			}

@@ -318,6 +318,9 @@ dc.cms.cart = {
 								Token2: od.dataValue
 							};
 
+							if (pi.PONumber)
+								me._cart.PaymentInfo.PONumber = pi.PONumber;
+
 							subcomm();
 						}
 					});
@@ -369,6 +372,9 @@ dc.cms.cart = {
 								PaymentMethod: 'CreditCard',
 								Token1: response.id
 							};
+
+							if (pi.PONumber)
+								me._cart.PaymentInfo.PONumber = pi.PONumber;
 
 							subcomm();
 						}
