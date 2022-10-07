@@ -28,6 +28,7 @@ import java.util.Scanner;
 
 import dcraft.api.ApiSession;
 import dcraft.api.LocalSession;
+import dcraft.cli.HubUtil;
 import dcraft.db.BasicRequestContext;
 import dcraft.db.DatabaseAdapter;
 import dcraft.db.DatabaseException;
@@ -331,142 +332,15 @@ public class Foreground {
 				}
 
 				case 10: {
-					System.out.println("Which deployment to check? ");
-					String deploy = scan.nextLine();
-
-					if (StringUtil.isEmpty(deploy))
-						break;
-
-					System.out.println();
-
-					System.out.println("Disk name (enter to default to 'nvme1n1'): ");
-					String diskname = scan.nextLine();
-
-					if (StringUtil.isEmpty(diskname))
-						diskname = "nvme1n1";
-
-					ServerHelper ssh = new ServerHelper();
-
-					if (! ssh.init(deploy)) {
-						System.out.println("Missing or incomplete matrix config");
-						break;
-					}
-
-					SshHelper ph = SshHelper.of(ssh);
-
-					if (ph == null) {
-						System.out.println("Bad publisher");
-						break;
-					}
-
-					try {
-						ph.connect();
-
-						//ph.getShell().getInputStream();
-
-						//String out = ph.exec("ls -la");
-
-						//System.out.println("Got: " + out);
-
-						/* TODO restore these lines
-
-						## Basic Setup: Elastic IP, Security Group, Key Pairs
-
-						## Add Server, disks
-						*/
-
-						if ("Update".equals(ph.checkLinuxUpdateStatus())) {
-							ph.runLinuxUpdate();
-						}
-
-						ph.prepDisk(diskname, "/dcserver");
-
-						ph.checkInstallPackage("htop");
-
-						ph.checkInstallPackage("java-11-amazon-corretto-headless");
-
-						ph.setWebPorts("8080", "8443");
-
-						XElement nodesettings = ssh.findDeployment();
-
-						// TODO enhance for multiple nodes
-						ph.setWebServerVars(deploy, nodesettings.attr("Id"));
-
-						// TODO setup dcServer
-
-						HubLog.setGlobalLevel(DebugLevel.Trace);
-					}
-					finally {
-						ph.disconnect();
-
-						HubLog.setGlobalLevel(DebugLevel.Info);
-					}
-
+					HubUtil.deploySetupRestore(scan);
 					break;
 				}
 
 				case 11: {
-					System.out.println("Which deployment to bundle? ");
-					String deploy = scan.nextLine();
-
-					if (StringUtil.isEmpty(deploy))
-						break;
-
-					System.out.println("Which node to bundle? ");
-					String node = scan.nextLine();
-
-					if (StringUtil.isEmpty(node))
-						break;
-
-					StringBuilder sb = new StringBuilder();
-
-					sb.append("./lib");
-					sb.append('\n');
-					sb.append("./util");
-					sb.append('\n');
-					sb.append("./packages");
-					sb.append('\n');
-					sb.append("./deploy-" + deploy + "/config");
-					sb.append('\n');
-					sb.append("./deploy-" + deploy + "/roles");
-					sb.append('\n');
-					sb.append("./deploy-" + deploy + "/tenants");
-					sb.append('\n');
-					sb.append("./deploy-" + deploy + "/nodes/" + node);
-					sb.append('\n');
-					sb.append("./foreground.sh");
-					sb.append('\n');
-					sb.append("./LICENSE.txt");
-					sb.append('\n');
-					sb.append("./server.sh");
-					sb.append('\n');
-
-					IOUtil.saveEntireFile(Path.of("./temp/filelist.txt"), sb.toString());
-
-					{
-						RecordStruct shellParams = ShellWork.buildTaskParams("./util/bundle.sh", ".", 20000L);
-						ProcessBuilder pb = ShellWork.paramsToProcessBuilder(shellParams);
-
-						Process proc = pb.start();
-
-						try (BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()))) {
-							String line = null;
-							StringBuilder sb2 = new StringBuilder();
-
-							while ((line = reader.readLine()) != null) {
-								sb2.append(line);
-								sb2.append('\n');
-							}
-
-							System.out.println("out: " + sb2);
-						}
-						catch (IOException x) {
-							System.out.println("error: " + x);
-						}
-					}
-
+					HubUtil.deployBundle(scan);
 					break;
 				}
+
 				case 100: {
 					System.out.println("Under construction");;
 					//Foreground.debugScript(scan);

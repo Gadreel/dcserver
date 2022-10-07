@@ -51,7 +51,8 @@ public class Contains implements IExpression {
 		}
 		
 		if (this.fieldInfo.type.isSearchable())
-			this.values = ExpressionUtil.loadSearchValues(where.getFieldAsRecord("B"), this.fieldInfo, this.lang, "|", null);
+			this.values = ExpressionUtil.loadSearchValues(where.getFieldAsRecord("B"), this.fieldInfo, this.lang, null, null);
+			//this.values = ExpressionUtil.loadSearchValues(where.getFieldAsRecord("B"), this.fieldInfo, this.lang, "|", null);		contains does not mean starts with
 		else
 			this.values = ExpressionUtil.loadSearchValues(where.getFieldAsRecord("B"), null, this.lang, null, null);
 		

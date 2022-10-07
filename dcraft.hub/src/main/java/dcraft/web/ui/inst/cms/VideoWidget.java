@@ -24,20 +24,54 @@ public class VideoWidget extends Base implements ICMSAware {
 	public XElement newNode() {
 		return VideoWidget.tag();
 	}
-	
+
+	// for Streaming use VideoClass
+	// vjs-fluid, vjs-16-9, vjs-4-3, vjs-9-16 and vjs-1-1
+	// vjs-fill
+	// see https://videojs.com/guides/layout/
+
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
-		String url = StackUtil.stringFromSource(state,"Url");
-		String preload = StackUtil.stringFromSource(state,"Preload", "auto");
-		
-		this.with(W3.tag("div")
-				.withClass("dc-media-box", "dc-media-video dc-media-video-native")
-				.with(W3.tag("video")
-						.withAttribute("src", url)
-						.withAttribute("preload", preload)
-						.withAttribute("controls", "controls")
-				)
-		);
+		String url = StackUtil.stringFromSourceClean(state,"Url");
+		String preload = StackUtil.stringFromSourceClean(state,"Preload", "auto");
+		String stream = StackUtil.stringFromSourceClean(state,"Stream", "auto");
+
+		// TODO support Poster as well
+
+		if ("auto".equals(stream)) {
+			if (url.toLowerCase().endsWith(".m3u8")) {
+				stream = "true";
+			}
+		}
+
+		if ("true".equals(stream)) {
+			this.attr("data-dc-stream", "true");
+
+			UIUtil.requireScript(this, state, "/js/vendor/videojs/videojs-7.17.0.min.js");
+			UIUtil.requireStyle(this, state, "/css/vendor/videojs/videojs-7.17.0.min.css");
+
+			this.with(
+					W3.tag("video-js")
+							.withClass("dc-media-box dc-media-video dc-media-video-native", "vjs-default-skin", StackUtil.stringFromSourceClean(state,"VideoClass"))
+							.withAttribute("preload", preload)
+							.withAttribute("controls", "controls")
+							.with(
+									W3.tag("source")
+										.withAttribute("type", "application/x-mpegURL")
+										.withAttribute("src", url)
+							)
+			);
+		}
+		else {
+			this.with(W3.tag("div")
+					.withClass("dc-media-box", "dc-media-video dc-media-video-native")
+					.with(W3.tag("video")
+							.withAttribute("src", url)
+							.withAttribute("preload", preload)
+							.withAttribute("controls", "controls")
+					)
+			);
+		}
 		
 		UIUtil.markIfEditable(state, this, "widget");
 	}

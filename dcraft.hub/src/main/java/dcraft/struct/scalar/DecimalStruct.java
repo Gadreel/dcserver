@@ -162,6 +162,8 @@ public class DecimalStruct extends ScalarStruct {
 					? StackUtil.refFromElement(stack, code, "Value", true)
 					: StackUtil.resolveReference(stack, code.getText(), true);
 
+			// TODO support other rounding modes and scales - see integer
+
 			try {
 				this.value = this.value.divide(Struct.objectToDecimal(sref), 6, RoundingMode.HALF_EVEN);
 			}

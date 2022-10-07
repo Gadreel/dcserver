@@ -29,7 +29,7 @@ public class AlignedInstructions extends Base {
 		else 
 			this.fieldid = "gen" + RndUtil.nextUUId();
 		
-		XElement root = UIUtil.translate(state, this, false);
+		XElement root = UIUtil.translate(state, this, true);
 		
 		Base inst = (Base) W3.tag("div")
 				.withAttribute("class", "dc-message dc-message-info");

@@ -20,7 +20,7 @@ public class Instructions extends Base {
 	
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
-		XElement root = UIUtil.translate(state, this, false);
+		XElement root = UIUtil.translate(state, this, true);
 		
 		this.clearChildren();
 		

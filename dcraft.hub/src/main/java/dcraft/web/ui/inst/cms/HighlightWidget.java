@@ -107,7 +107,7 @@ public class HighlightWidget extends Base implements ICMSAware {
 			);
 		}
 
-		boolean safemode = "safe".equals(StackUtil.stringFromSource(state,"ContentMode", "Unsafe").toLowerCase());
+		boolean safemode = "safe".equals(StackUtil.stringFromSource(state,"ContentMode", "Safe").toLowerCase());
 		
 		AtomicLong currimg = new AtomicLong();
 		

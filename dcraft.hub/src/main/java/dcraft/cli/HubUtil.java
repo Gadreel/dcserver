@@ -21,7 +21,9 @@
  */
 package dcraft.cli;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,7 +47,13 @@ import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.op.OutcomeDump;
+import dcraft.log.DebugLevel;
+import dcraft.log.HubLog;
 import dcraft.struct.BaseStruct;
+import dcraft.struct.RecordStruct;
+import dcraft.task.ShellWork;
+import dcraft.tool.release.ServerHelper;
+import dcraft.tool.release.SshHelper;
 import dcraft.util.*;
 import dcraft.util.pgp.KeyRingCollection;
 import dcraft.xml.XElement;
@@ -79,6 +87,8 @@ public class HubUtil implements ILocalCommandLine {
 				System.out.println("1)   dcDatabase Utils");
 				System.out.println("2)   Local Utilities");
 				System.out.println("3)   Crypto Utilities");
+				System.out.println("10)  Production Server Set Up");
+				System.out.println("11)  Production Bundle dcServer");
 				System.out.println("100) dcScript GUI Debugger");
 				System.out.println("101) dcScript Run Script");
 
@@ -109,7 +119,17 @@ public class HubUtil implements ILocalCommandLine {
 					this.cryptoMenu(scan);
 					break;
 				}
-				
+
+				case 10: {
+					HubUtil.deploySetupRestore(scan);
+					break;
+				}
+
+				case 11: {
+					HubUtil.deployBundle(scan);
+					break;
+				}
+
 				/*
 				case 100: {
 					ScriptUtility.goSwing(null);					
@@ -1543,5 +1563,142 @@ public class HubUtil implements ILocalCommandLine {
 		keyring.addPublicKey(pgpPublicKeyRing,false);
 
 		keyring.save();
+	}
+
+	static public void deploySetupRestore(Scanner scan) {
+		System.out.println("Which deployment to check? ");
+		String deploy = scan.nextLine();
+
+		if (StringUtil.isEmpty(deploy))
+			return;
+
+		System.out.println();
+
+		System.out.println("Disk name (enter to default to 'nvme1n1'): ");
+		String diskname = scan.nextLine();
+
+		if (StringUtil.isEmpty(diskname))
+			diskname = "nvme1n1";
+
+		ServerHelper ssh = new ServerHelper();
+
+		if (! ssh.init(deploy)) {
+			System.out.println("Missing or incomplete matrix config");
+			return;
+		}
+
+		SshHelper ph = SshHelper.of(ssh);
+
+		if (ph == null) {
+			System.out.println("Bad publisher");
+			return;
+		}
+
+		try {
+			ph.connect();
+
+			//ph.getShell().getInputStream();
+
+			//String out = ph.exec("ls -la");
+
+			//System.out.println("Got: " + out);
+
+						/* TODO restore these lines
+
+						## Basic Setup: Elastic IP, Security Group, Key Pairs
+
+						## Add Server, disks
+						*/
+
+			if ("Update".equals(ph.checkLinuxUpdateStatus())) {
+				ph.runLinuxUpdate();
+			}
+
+			ph.prepDisk(diskname, "/dcserver");
+
+			ph.checkInstallPackage("htop");
+
+			ph.checkInstallPackage("java-11-amazon-corretto-headless");
+
+			ph.setWebPorts("8080", "8443");
+
+			XElement nodesettings = ssh.findDeployment();
+
+			// TODO enhance for multiple nodes
+			ph.setWebServerVars(deploy, nodesettings.attr("Id"));
+
+			// TODO setup dcServer
+
+			HubLog.setGlobalLevel(DebugLevel.Trace);
+		}
+		finally {
+			ph.disconnect();
+
+			HubLog.setGlobalLevel(DebugLevel.Info);
+		}
+	}
+
+	static public void deployBundle(Scanner scan) {
+		System.out.println("Which deployment to bundle? ");
+		String deploy = scan.nextLine();
+
+		if (StringUtil.isEmpty(deploy))
+			return;
+
+		System.out.println("Which node to bundle? ");
+		String node = scan.nextLine();
+
+		if (StringUtil.isEmpty(node))
+			return;
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("./lib");
+		sb.append('\n');
+		sb.append("./util");
+		sb.append('\n');
+		sb.append("./packages");
+		sb.append('\n');
+		sb.append("./deploy-" + deploy + "/config");
+		sb.append('\n');
+		sb.append("./deploy-" + deploy + "/roles");
+		sb.append('\n');
+		sb.append("./deploy-" + deploy + "/tenants");
+		sb.append('\n');
+		sb.append("./deploy-" + deploy + "/nodes/" + node);
+		sb.append('\n');
+		sb.append("./foreground.sh");
+		sb.append('\n');
+		sb.append("./LICENSE.txt");
+		sb.append('\n');
+		sb.append("./server.sh");
+		sb.append('\n');
+
+		IOUtil.saveEntireFile(Path.of("./temp/filelist.txt"), sb.toString());
+
+		try {
+			RecordStruct shellParams = ShellWork.buildTaskParams("./util/bundle.sh", ".", 20000L);
+			ProcessBuilder pb = ShellWork.paramsToProcessBuilder(shellParams);
+
+			Process proc = pb.start();
+
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()))) {
+				String line = null;
+				StringBuilder sb2 = new StringBuilder();
+
+				while ((line = reader.readLine()) != null) {
+					sb2.append(line);
+					sb2.append('\n');
+				}
+
+				System.out.println("out: " + sb2);
+			}
+			catch (IOException x) {
+				System.out.println("reader error: " + x);
+			}
+		}
+		catch (IOException x) {
+			System.out.println("proc error: " + x);
+		}
 	}
 }

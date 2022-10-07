@@ -399,10 +399,14 @@ public class AuthUtil {
             body.startRecord();
             body.field("setting");
 
+            body.startList();
+
             body.startRecord();
             body.field("settingName", "emailCustomer");
             body.field("settingValue", tx.getFieldAsBooleanOrFalse("EmailNotice") ? "true" : "false");
             body.endRecord();
+
+            body.endList();
 
             body.endRecord();
 

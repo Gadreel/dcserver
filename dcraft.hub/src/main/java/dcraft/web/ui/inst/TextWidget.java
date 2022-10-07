@@ -34,7 +34,7 @@ public class TextWidget extends Base implements ICMSAware {
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
 		// Safe|Unsafe
-		String mode = StackUtil.stringFromSource(state,"Mode", "Unsafe");
+		String mode = StackUtil.stringFromSource(state,"Mode", "Safe");
 		
 		XElement root = UIUtil.translate(state, this, "safe".equals(mode.toLowerCase()));
 		

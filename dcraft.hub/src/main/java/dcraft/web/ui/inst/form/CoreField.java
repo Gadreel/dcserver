@@ -92,7 +92,7 @@ abstract public class CoreField extends Base {
 			XElement instsrc = this.fieldinfo.find("Instructions");
 			
 			if (instsrc != null) {
-				XElement root = UIUtil.translate(state, instsrc, false);
+				XElement root = UIUtil.translate(state, instsrc, true);
 				
 				if (root != null) {
 					// root is just a container and has no value
@@ -150,7 +150,7 @@ abstract public class CoreField extends Base {
 			XElement instsrc = this.fieldinfo.find("Message");
 			
 			if (instsrc != null) {
-				XElement root = UIUtil.translate(state, instsrc, false);
+				XElement root = UIUtil.translate(state, instsrc, true);
 				
 				if (root != null) {
 					// root is just a container and has no value

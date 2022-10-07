@@ -48,7 +48,8 @@ public class Service extends BaseService {
 			if (settings.hasNotEmptyAttribute("Ciphers"))
 				ResourceHub.getTopResources().getTrust().withCiphers(settings.getAttribute("Ciphers").split(","));
 		}
-		
+
+		// TODO review why there are two separate subscriptions...
 		ApplicationHub.subscribeToEvents((e, data) -> {
 			if ((e == HubEvents.HubState) && (data == HubState.Running))
 				this.goOnline();

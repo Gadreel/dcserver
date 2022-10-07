@@ -111,7 +111,7 @@
 			var page = this;
 
 			var qty = page.form().getValue('Quantity');
-			var price = page.Store.Product.Price;
+			var price = dc.util.Number.toNumberStrict(page.Store.Product.Price);
 			var options = page.form().getValues('Options');
 
 			if (options && page.Store.Product.CustomFields.Controls) {

@@ -398,8 +398,8 @@ public class Utils
                 isCloseTag = false;
                 pos = start + 1;
             }
-            if(safeMode)
-            {
+
+            if (safeMode) {
                 StringBuilder temp = new StringBuilder();
                 pos = readRawUntil(temp, in, pos, ' ', '/', '>');
                 if(pos == -1)
@@ -412,13 +412,13 @@ public class Utils
                     out.append('/');
                 out.append(temp);
             }
-            else
-            {
+            else {
                 out.append('<');
                 if(isCloseTag)
                     out.append('/');
                 pos = readRawUntil(out, in, pos, ' ', '/', '>');
             }
+
             if(pos == -1)
                 return -1;
             pos = readRawUntil(out, in, pos, '/', '>');

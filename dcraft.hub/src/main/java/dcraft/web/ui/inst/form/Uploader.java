@@ -83,6 +83,7 @@ public class Uploader extends CoreField {
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
 		super.renderBeforeChildren(state);
 
+		// TODO better way to do this
 		// automatically require the form's data types
 		this.getRoot(state).with(XElement.tag("Require")
 				.withAttribute("Script", "/js/dc.transfer.js")

@@ -79,6 +79,8 @@ public class Sentinel implements ILocalCommandLine {
 				System.out.println("0)   Exit");
 				System.out.println("1)   testing");
 				System.out.println("20)  Hub Utilities");
+				System.out.println("112) Update IP access");
+				System.out.println("113) Review IP access");
 
 				String opt = scan.nextLine();
 

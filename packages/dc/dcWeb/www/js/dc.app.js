@@ -4144,6 +4144,12 @@ dc.pui.Tags = {
 			e.preventDefault();
 			return false;
 		});
+	},
+	'dcm.VideoWidget': function(entry, node) {
+		var vjs = $(node).find('video-js');
+
+		if (vjs.length)
+			videojs(vjs.get(0), { autoplay: false });
 	}
 };
 

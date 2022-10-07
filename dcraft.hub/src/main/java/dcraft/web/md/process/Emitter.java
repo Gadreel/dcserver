@@ -441,7 +441,7 @@ public class Emitter {
             if (pos > 0) {
             	String xml = in.substring(start, pos + 1);
 	
-				if (this.ctx.getConfig().getSafeMode()) {
+				if (! this.ctx.getConfig().getSafeMode()) {
 					String[] lines = xml.split("\n");
 					
 					for (int i = 0; i < lines.length; i++) {
@@ -957,7 +957,7 @@ public class Emitter {
     protected void emitRawLines(XElement parent, Line lines) throws OperatingContextException {
         Line line = lines;
         
-        if (this.ctx.getConfig().getSafeMode()) {
+        if (! this.ctx.getConfig().getSafeMode()) {
             StringBuilder sb = new StringBuilder();
             
             while (line != null) {
