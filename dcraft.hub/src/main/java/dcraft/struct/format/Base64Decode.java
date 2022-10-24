@@ -1,5 +1,6 @@
 package dcraft.struct.format;
 
+import dcraft.struct.ListStruct;
 import dcraft.struct.Struct;
 import dcraft.util.Base64;
 import dcraft.util.StringUtil;
@@ -12,11 +13,30 @@ public class Base64Decode implements IFormatter {
 	public FormatResult format(Object value, String op, String format) {
 		// TODO act on a list as well as on a scalar
 
-		String val = Struct.objectToString(value);
+		if (value instanceof ListStruct) {
+			ListStruct list = (ListStruct) value;
+			ListStruct newlist = ListStruct.list();
 
-		if (StringUtil.isNotEmpty(val)) {
-			// for now String mode turn B64 string into normal string
-			value = new String(Base64.decode(val), StandardCharsets.UTF_8);
+			for (int i = 0; i < list.size(); i++) {
+				String val = list.getItemAsString(i);
+
+				if (StringUtil.isNotEmpty(val)) {
+					// for now String mode turn B64 string into normal string
+					val = Base64.decodeToUtf8(val);
+				}
+
+				newlist.with(val);
+			}
+
+			return FormatResult.result(newlist);
+		}
+		else {
+			String val = Struct.objectToString(value);
+
+			if (StringUtil.isNotEmpty(val)) {
+				// for now String mode turn B64 string into normal string
+				value = Base64.decodeToUtf8(val);
+			}
 		}
 
 		return FormatResult.result(value);

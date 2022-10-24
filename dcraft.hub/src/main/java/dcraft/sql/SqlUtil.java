@@ -320,7 +320,7 @@ public class SqlUtil {
                 return;
             }
 
-            Logger.error("Error executing SQL. Code: " + sx.getErrorCode() + " message: " + x);
+            Logger.error(195,"Error executing SQL. Code: " + sx.getErrorCode() + " message: " + x);
         }
         else {
             Logger.error("Error executing SQL: " + x);

@@ -24,6 +24,7 @@ import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.NullStruct;
 import dcraft.xml.XElement;
+import dcraft.xml.XNode;
 
 abstract public class LogicBlockInstruction extends BlockInstruction {
     protected boolean checkLogic(InstructionWork stack) throws OperatingContextException {
@@ -48,14 +49,93 @@ abstract public class LogicBlockInstruction extends BlockInstruction {
         	target = NullStruct.instance;
 
 		target.checkLogic(stack, source, logicState);
-	
-		// if there were no conditions checked then consider the value of Target for trueness
-		if (! logicState.checked)
-			logicState.pass = Struct.objectToBooleanOrFalse(target);
-  
-		if (StackUtil.boolFromElement(stack, source, "Not"))
-			logicState.pass = ! logicState.pass;
+
+        if (LogicBlockInstruction.isChildrenLogic(source)) {
+            logicState.checked = true;   // if there are any children then treat it as checked, even if the children are empty
+
+            if (logicState.pass)
+                LogicBlockInstruction.checkChildrenLogic(stack, target, source, logicState, ScriptLogicModeEnum.AND);
+        }
+
+        // if there were no conditions checked then consider the value of Target for trueness
+        if (!logicState.checked)
+            logicState.pass = Struct.objectToBooleanOrFalse(target);
+
+        if (StackUtil.boolFromElement(stack, source, "Not"))
+            logicState.pass = !logicState.pass;
 
         return logicState.pass;
+    }
+
+    static public boolean isChildrenLogic(XElement source) throws OperatingContextException {
+        for (int i = 0; i < source.getChildCount(); i++) {
+            XNode node = source.getChild(i);
+
+            if (node instanceof XElement) {
+                XElement element = (XElement) node;
+
+                switch (element.getName()) {
+                    case "And":
+                    case "Or":
+                    case "Is":
+                        return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    static public void checkChildrenLogic(InstructionWork stack, BaseStruct target, XElement source, LogicBlockState logicState, ScriptLogicModeEnum mode) throws OperatingContextException {
+        for (int i = 0; i < source.getChildCount(); i++) {
+            XNode node = source.getChild(i);
+
+            if (node instanceof XElement) {
+                XElement element = (XElement) node;
+
+                BaseStruct localtarget = element.hasAttribute("Target")
+                        ? StackUtil.refFromElement(stack, element, "Target", true)
+                        : target;
+
+                boolean logicElement = false;
+
+                switch (element.getName()) {
+                    case "And":
+                        logicElement = true;
+
+                        LogicBlockInstruction.checkChildrenLogic(stack, localtarget, element, logicState, ScriptLogicModeEnum.AND);
+
+                        break;
+                    case "Or":
+                        logicElement = true;
+
+                        LogicBlockInstruction.checkChildrenLogic(stack, localtarget, element, logicState, ScriptLogicModeEnum.OR);
+
+                        break;
+                    case "Is":
+                        logicElement = true;
+
+                        localtarget.checkLogic(stack, element, logicState);
+                        break;
+                }
+
+                if (logicElement) {
+                    if (StackUtil.boolFromElement(stack, element, "Not"))
+                        logicState.pass = ! logicState.pass;
+
+                    // see if we can short circuit the logic
+
+                    if ((mode == LogicBlockInstruction.ScriptLogicModeEnum.AND) && ! logicState.pass)
+                        return;
+
+                    if ((mode == LogicBlockInstruction.ScriptLogicModeEnum.OR) && logicState.pass)
+                        return;
+                }
+            }
+        }
+    }
+
+    public enum ScriptLogicModeEnum {
+        AND, OR
     }
 }

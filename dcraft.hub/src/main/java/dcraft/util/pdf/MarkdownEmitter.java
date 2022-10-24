@@ -432,7 +432,7 @@ public class MarkdownEmitter {
      *            Starting position.
      * @return The new position or -1 if nothing valid has been found.
      */
-    protected int emitHtml(String in, int start) {
+    protected int emitHtml(ProcessContext ctx, String in, int start) {
         StringBuilder temp = new StringBuilder();
         int pos;
 
@@ -461,7 +461,7 @@ public class MarkdownEmitter {
 
         // Check for inline html
         if (start + 2 < in.length()) 
-        	return Utils.scanHTML(in, start);
+        	return Utils.scanHTML(this.ctx, in, start);
 
         return -1;
     }
@@ -696,7 +696,7 @@ public class MarkdownEmitter {
             	
                 break;
             case HTML:
-                b = this.emitHtml(in, pos);
+                b = this.emitHtml(this.ctx, in, pos);
                 
                 if(b > 0) 
                     pos = b;

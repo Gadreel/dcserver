@@ -436,7 +436,7 @@ public class Emitter {
             //temp.setLength(0);
             //pos = Utils.readXML(temp, in, start, this.config.safeMode);
             
-        	pos = Utils.scanHTML(in, start);
+        	pos = Utils.scanHTML(this.ctx, in, start);
         	
             if (pos > 0) {
             	String xml = in.substring(start, pos + 1);

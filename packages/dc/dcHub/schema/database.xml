@@ -203,7 +203,7 @@
 		 	-->
 			<Field Name="Fields" Type="Record" />
 		</RecordRequest>
-		
+
 		<Record Id="dcdbRetireRecord" Inherits="dcdbCall" Class="dcraft.db.request.schema.Retire">
 			<Field Name="Id" Type="Id" />
 		</RecordRequest>
@@ -254,6 +254,7 @@
 		<Procedure Name="dcCleanup" Execute="dcraft.db.proc.call.Cleanup" />
 		<Procedure Name="dcKeyQuery" Execute="dcraft.db.proc.call.KeyQuery" />
 		<Procedure Name="dcKeyKill" Execute="dcraft.db.proc.call.KeyKill" />
+		<Procedure Name="dcKeySet" Execute="dcraft.db.proc.call.KeySet" />
 		<Procedure Name="dcLoadTenants" Execute="dcraft.db.proc.call.LoadTenants" />
 		<Procedure Name="dcLoadTenant" Execute="dcraft.db.proc.call.LoadTenant" />
 		<Procedure Name="dcSetGlobalPassword" Execute="dcraft.db.proc.call.SetGlobalPassword" />
@@ -613,12 +614,23 @@
 					</Op>
 					<Op Name="dcKeyKill">
 						<Description>
-							Search key patterns in the database.
+							Remove a node from the globals.
 						</Description>
 						<RecordRequest>
 							<Field Name="Keys" Required="True">
 								<List Type="dcString" />
 							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="dcKeySet">
+						<Description>
+							Set a node from the globals.
+						</Description>
+						<RecordRequest>
+							<Field Name="Keys" Required="True">
+								<List Type="dcString" />
+							</Field>
+							<Field Name="Value" Type="Any" Required="True" />
 						</RecordRequest>
 					</Op>
 					<Op Name="dcSetGlobalPassword">

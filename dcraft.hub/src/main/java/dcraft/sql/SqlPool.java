@@ -4,6 +4,7 @@ import dcraft.log.Logger;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -38,6 +39,8 @@ public class SqlPool {
 					// unimportant
 				}
 
+				this.conncount.decrementAndGet();
+
 				conn = this.pool.poll();
 			}
 		}
@@ -47,6 +50,8 @@ public class SqlPool {
 	}
 
 	public SqlConnection getSqlConnection() throws SQLException {
+		//System.out.println("get conn a: " + this.pool.size() + " / " + this.conncount);
+
 		SqlConnection conn = this.pool.poll();
 
 		try {
@@ -54,9 +59,15 @@ public class SqlPool {
 				conn = SqlConnection.of(this.name, DriverManager.getConnection(this.connstring));
 				this.conncount.incrementAndGet();
 
+				System.out.println("opened conn: " + System.identityHashCode(conn));
+
 				// TODO remove this after tests
 				System.out.println("db: " + this.name + " count: " + this.conncount.get());
 			}
+
+			//System.out.println("get conn b: " + this.pool.size() + " / " + this.conncount);
+
+			//System.out.println("got conn: " + System.identityHashCode(conn));
 
 			return conn;
 		}
@@ -67,8 +78,31 @@ public class SqlPool {
 	}
 
 	public void releaseConnection(SqlConnection conn) {
-		if (conn != null)
-			this.pool.add(conn);
+		//System.out.println("release conn a: " + this.pool.size() + " / " + this.conncount);
+
+		if (conn != null) {
+			if (conn.isErrored()) {
+				try {
+					conn.stop();
+				}
+				catch (Exception x) {
+					// unimportant
+				}
+
+				this.conncount.decrementAndGet();
+
+				System.out.println("closed conn: " + System.identityHashCode(conn));
+
+				System.out.println("db: " + this.name + " count: " + this.conncount.get());
+			}
+			else {
+				this.pool.add(conn);
+
+				//System.out.println("returned conn: " + System.identityHashCode(conn));
+			}
+		}
+
+		//System.out.println("release conn b: " + this.pool.size() + " / " + this.conncount);
 	}
 
 	public boolean testConnection() {

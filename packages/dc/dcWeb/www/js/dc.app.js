@@ -4029,7 +4029,7 @@ dc.pui.Tags = {
 		$(node).get(0).addEventListener('touchstart', lock, false);
 
 		$(node).get(0).addEventListener('mousemove', drag, false);
-		$(node).get(0).addEventListener('touchmove', drag, false);
+		// $(node).get(0).addEventListener('touchmove', drag, false);
 
 		$(node).get(0).addEventListener('mouseup', move, false);
 		$(node).get(0).addEventListener('touchend', move, false);

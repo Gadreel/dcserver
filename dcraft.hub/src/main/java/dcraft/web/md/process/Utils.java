@@ -17,6 +17,7 @@ package dcraft.web.md.process;
 
 import java.util.LinkedList;
 
+import dcraft.web.md.ProcessContext;
 import dcraft.web.md.process.Utils;
 
 /**
@@ -288,7 +289,7 @@ public class Utils
         }
     }
 
-    public static int scanHTML(String in, int start) {
+    public static int scanHTML(ProcessContext ctx, String in, int start) {
         LinkedList<String> tags = new LinkedList<String>();
         StringBuilder temp = new StringBuilder();
         int pos = start;
@@ -303,7 +304,7 @@ public class Utils
         }
         */
         
-        pos = Utils.readXML(temp, in, pos, false);
+        pos = Utils.readXML(temp, in, pos, ctx.getConfig().getSafeMode());
         String element, tag;
         
         if (pos > -1) {
@@ -330,7 +331,7 @@ public class Utils
 	            	return -1;
 	
 	            temp.setLength(0);
-	            int newPos = Utils.readXML(temp, in, pos, false);
+	            int newPos = Utils.readXML(temp, in, pos, ctx.getConfig().getSafeMode());
 	            
 	            if (newPos > 0) {
 	                element = temp.toString();
@@ -399,7 +400,7 @@ public class Utils
                 pos = start + 1;
             }
 
-            if (safeMode) {
+            if (! safeMode) {
                 StringBuilder temp = new StringBuilder();
                 pos = readRawUntil(temp, in, pos, ' ', '/', '>');
                 if(pos == -1)

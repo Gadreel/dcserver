@@ -16,6 +16,7 @@
 ************************************************************************ */
 package dcraft.util;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 /** A very fast and memory efficient class to encode and decode to and from BASE64 in full accordance
@@ -475,8 +476,7 @@ public class Base64
 	 * @return The decoded array of bytes. May be of length 0. Will be <code>null</code> if the legal characters
 	 * (including '=') isn't divideable by 4.  (I.e. definitely corrupted).
 	 */
-	public final static byte[] decode(String str)
-	{
+	public final static byte[] decode(String str) {
 		// Check special case
 		int sLen = str != null ? str.length() : 0;
 		if (sLen == 0)
@@ -587,5 +587,9 @@ public class Base64
 		}
 
 		return dArr;
+	}
+
+	public final static String decodeToUtf8(String str) {
+		return new String(Base64.decode(str), StandardCharsets.UTF_8);
 	}
 }

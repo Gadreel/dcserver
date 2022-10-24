@@ -506,7 +506,7 @@ public class Line
                 }
                 else {
                     temp.setLength(0);
-                    int newPos = Utils.readXML(temp, line.value, pos, false);
+                    int newPos = Utils.readXML(temp, line.value, pos, ctx.getConfig().getSafeMode());
                     
                     if (newPos > 0) {
                         element = temp.toString();

@@ -25,12 +25,10 @@ import dcraft.api.ApiSession;
 import dcraft.hub.ILocalCommandLine;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
-import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationContext;
-import dcraft.hub.op.OperationOutcome;
-import dcraft.hub.op.OperationOutcomeStruct;
+import dcraft.hub.op.*;
 import dcraft.hub.resource.KeyRingResource;
 import dcraft.interchange.aws.AWSEC2;
+import dcraft.log.Logger;
 import dcraft.mail.SmtpWork;
 import dcraft.service.ServiceHub;
 import dcraft.service.ServiceRequest;
@@ -42,6 +40,7 @@ import dcraft.struct.*;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.*;
 import dcraft.task.run.WorkHub;
+import dcraft.tool.sentinel.AccessUtil;
 import dcraft.tool.sentinel.EmailActivityPollWork;
 import dcraft.tool.sentinel.EmailActivityProcessWork;
 import dcraft.service.portable.PortableMessageUtil;
@@ -443,137 +442,82 @@ public class Sentinel implements ILocalCommandLine {
 				System.out.println("Update developer IP access");
 				System.out.println("");
 
+				ListStruct users = AccessUtil.getUsersV1();
 
-				try (SqlConnection conn = SqlUtil.getConnection("sentinel-readwrite")) {
-					ListStruct users = conn.getResults("SELECT Id, Username FROM dca_user ORDER BY Username");
+				for (int i = 0; i < users.size(); i++) {
+					RecordStruct user = users.getItemAsRecord(i);
 
-					for (int i = 0; i < users.size(); i++) {
-						RecordStruct user = users.getItemAsRecord(i);
+					String username = user.getFieldAsString("Username");
 
-						String username = user.getFieldAsString("Username");
-
-						System.out.println((i + 1) + ") " + username);
-					}
-
-					System.out.println("");
-					System.out.print("Enter User #: ");
-
-					String tid = scan.nextLine();
-
-					if (StringUtil.isEmpty(tid))
-						break;
-
-					Long ltid = StringUtil.parseInt(tid);
-
-					if ((ltid == null) || (ltid == 0))
-						break;
-
-					RecordStruct seluser = users.getItemAsRecord(ltid.intValue() - 1);
-
-					if (seluser == null)
-						break;
-
-					Long userid = seluser.getFieldAsInteger("Id");
-
-					ListStruct rules = conn.getResults("SELECT Id, Label, IPv4Address FROM dca_user_ip_rules WHERE UserId = ? ORDER BY Label", userid);
-
-					for (int i = 0; i < rules.size(); i++) {
-						RecordStruct rule = rules.getItemAsRecord(i);
-
-						String label = rule.getFieldAsString("Label");
-
-						System.out.println((i + 1) + ") " + label + " - " + rule.getFieldAsString("IPv4Address"));
-					}
-
-					System.out.println("");
-					System.out.print("Enter Label #: ");
-
-					String lid = scan.nextLine();
-
-					if (StringUtil.isEmpty(lid))
-						break;
-
-					Long llid = StringUtil.parseInt(lid);
-
-					if ((llid == null) || (llid == 0))
-						break;
-
-					RecordStruct selrule = rules.getItemAsRecord(llid.intValue() - 1);
-
-					if (selrule == null)
-						break;
-
-					Long ruleid = selrule.getFieldAsInteger("Id");
-
-					System.out.println("");
-					System.out.print("Enter New IPv4 Address: ");
-
-					String ipv4 = scan.nextLine();
-
-					if (StringUtil.isEmpty(ipv4) || "0".equals(ipv4))
-						break;
-
-					String cidr = ipv4 + "/32";
-
-					SqlWriter updaterule = SqlWriter.update("dca_user_ip_rules" , ruleid)
-							.with("IPv4Address", cidr);
-
-					conn.executeWrite(updaterule);
-
-					// find and update security groups
-
-					ListStruct sgrules = conn.getResults("SELECT daa.Id AWSAccountId, daa.Title AWSAccountTitle, daa.Alias AWSAccountAlias, dasg.SecurityGroupId AWSSecurityGroupId,\n" +
-							"\t\t\t\t\t\t\t   usg.IPv4RuleId, usg.Port, uir.IPv4Address, uir.Expires RuleExpires\n" +
-							"\t\t\t\t\t\tFROM dca_user_ip_rules uir\n" +
-							"\t\t\t\t\t\t\tINNER JOIN dca_user_security_group usg ON (usg.UserRuleId = uir.Id)\n" +
-							"\t\t\t\t\t\t\tINNER JOIN dca_deployment_security_group ddsg ON (usg.SecurityGroupId = ddsg.SecurityGroupId)\n" +
-							"\t\t\t\t\t\t\tINNER JOIN dca_aws_security_group dasg ON (ddsg.SecurityGroupId = dasg.Id)\n" +
-							"\t\t\t\t\t\t\tINNER JOIN dca_aws_account daa ON (dasg.AccountId = daa.Id)\n" +
-							"\t\t\t\t\t\tWHERE uir.Id = ?\n" +
-							"\t\t\t\t\t\tORDER BY daa.Id, dasg.Id", ruleid);
-
-					for (int i = 0; i < sgrules.size(); i++) {
-						RecordStruct sgrule = sgrules.getItemAsRecord(i);
-
-						String label = sgrule.getFieldAsString("AWSAccountTitle");
-
-						System.out.println("Updating " + label + " - " + sgrule.getFieldAsString("AWSSecurityGroupId") + " - " + sgrule.getFieldAsString("IPv4RuleId"));
-
-						String alias = sgrule.getFieldAsString("AWSAccountAlias");
-
-						XElement settings = ApplicationHub.getCatalogSettings("Interchange-Aws-" + alias);
-
-						if (settings == null) {
-							System.out.println("Missing settings Interchange-Aws for: " + label);
-							continue;
-						}
-
-						String region = settings.getAttribute("ComputeRegion");			// compute region
-
-						ListStruct updates = ListStruct.list(RecordStruct.record()
-								.with("SecurityGroupRuleId", sgrule.getFieldAsString("IPv4RuleId"))
-								.with("SecurityGroupRule", RecordStruct.record()
-										.with("CidrIpv4", cidr)
-										.with("IpProtocol", "tcp")
-										.with("FromPort", 22)
-										.with("ToPort", 22)
-										.with("Description", seluser.getFieldAsString("Username") + " - " + selrule.getFieldAsString("Label"))
-								)
-						);
-
-						AWSEC2.updateSecurityGroupRuleIngress(settings, region, sgrule.getFieldAsString("AWSSecurityGroupId"), updates, new OperationOutcome<XElement>() {
-							@Override
-							public void callback(XElement result) throws OperatingContextException {
-								if (this.hasErrors())
-									System.out.println("failed: " + alias);
-								else
-									System.out.println("success: " + alias);
-							}
-						});
-					}
-
-					System.out.println("Finishing");
+					System.out.println((i + 1) + ") " + username);
 				}
+
+				System.out.println("");
+				System.out.print("Enter User #: ");
+
+				String tid = scan.nextLine();
+
+				if (StringUtil.isEmpty(tid))
+					break;
+
+				Long ltid = StringUtil.parseInt(tid);
+
+				if ((ltid == null) || (ltid == 0))
+					break;
+
+				RecordStruct seluser = users.getItemAsRecord(ltid.intValue() - 1);
+
+				if (seluser == null)
+					break;
+
+				Long userid = seluser.getFieldAsInteger("Id");
+
+				ListStruct rules = AccessUtil.getUserIPRulesV1(userid);
+
+				for (int i = 0; i < rules.size(); i++) {
+					RecordStruct rule = rules.getItemAsRecord(i);
+
+					String label = rule.getFieldAsString("Label");
+
+					System.out.println((i + 1) + ") " + label + " - " + rule.getFieldAsString("IPv4Address"));
+				}
+
+				System.out.println("");
+				System.out.print("Enter Label #: ");
+
+				String lid = scan.nextLine();
+
+				if (StringUtil.isEmpty(lid))
+					break;
+
+				Long llid = StringUtil.parseInt(lid);
+
+				if ((llid == null) || (llid == 0))
+					break;
+
+				RecordStruct selrule = rules.getItemAsRecord(llid.intValue() - 1);
+
+				if (selrule == null)
+					break;
+
+				Long ruleid = selrule.getFieldAsInteger("Id");
+
+				System.out.println("");
+				System.out.print("Enter New IPv4 Address: ");
+
+				String ipv4 = scan.nextLine();
+
+				if (StringUtil.isEmpty(ipv4) || "0".equals(ipv4))
+					break;
+
+				AccessUtil.updateUserAccessV1(ipv4, ruleid, seluser.getFieldAsString("Username") + " - " + selrule.getFieldAsString("Label"), new OperationOutcomeEmpty() {
+					@Override
+					public void callback() throws OperatingContextException {
+						System.out.println("Finished");
+					}
+				});
+
+				System.out.println("Finishing");
 
 				break;
 			}
@@ -582,120 +526,95 @@ public class Sentinel implements ILocalCommandLine {
 				System.out.println("Review developer IP access");
 				System.out.println("");
 
+				ListStruct users = AccessUtil.getUsersV1();
 
-				try (SqlConnection conn = SqlUtil.getConnection("sentinel-readwrite")) {
-					ListStruct users = conn.getResults("SELECT Id, Username FROM dca_user ORDER BY Username");
+				for (int i = 0; i < users.size(); i++) {
+					RecordStruct user = users.getItemAsRecord(i);
 
-					for (int i = 0; i < users.size(); i++) {
-						RecordStruct user = users.getItemAsRecord(i);
+					String username = user.getFieldAsString("Username");
 
-						String username = user.getFieldAsString("Username");
-
-						System.out.println((i + 1) + ") " + username);
-					}
-
-					System.out.println("");
-					System.out.print("Enter User #: ");
-
-					String tid = scan.nextLine();
-
-					if (StringUtil.isEmpty(tid))
-						break;
-
-					Long ltid = StringUtil.parseInt(tid);
-
-					if ((ltid == null) || (ltid == 0))
-						break;
-
-					RecordStruct seluser = users.getItemAsRecord(ltid.intValue() - 1);
-
-					if (seluser == null)
-						break;
-
-					Long userid = seluser.getFieldAsInteger("Id");
-
-					ListStruct rules = conn.getResults("SELECT Id, Label, IPv4Address FROM dca_user_ip_rules WHERE UserId = ? ORDER BY Label", userid);
-
-					for (int i = 0; i < rules.size(); i++) {
-						RecordStruct rule = rules.getItemAsRecord(i);
-
-						String label = rule.getFieldAsString("Label");
-
-						System.out.println((i + 1) + ") " + label + " - " + rule.getFieldAsString("IPv4Address"));
-					}
-
-					System.out.println("");
-					System.out.print("Enter Label #: ");
-
-					String lid = scan.nextLine();
-
-					if (StringUtil.isEmpty(lid))
-						break;
-
-					Long llid = StringUtil.parseInt(lid);
-
-					if ((llid == null) || (llid == 0))
-						break;
-
-					RecordStruct selrule = rules.getItemAsRecord(llid.intValue() - 1);
-
-					if (selrule == null)
-						break;
-
-					Long ruleid = selrule.getFieldAsInteger("Id");
-
-					// find and update security groups
-
-					ListStruct sgrules = conn.getResults("SELECT daa.Id AWSAccountId, daa.Title AWSAccountTitle, daa.Alias AWSAccountAlias, dasg.SecurityGroupId AWSSecurityGroupId,\n" +
-							"\t\t\t\t\t\t\t   usg.IPv4RuleId, usg.Port, uir.IPv4Address, uir.Expires RuleExpires\n" +
-							"\t\t\t\t\t\tFROM dca_user_ip_rules uir\n" +
-							"\t\t\t\t\t\t\tINNER JOIN dca_user_security_group usg ON (usg.UserRuleId = uir.Id)\n" +
-							"\t\t\t\t\t\t\tINNER JOIN dca_deployment_security_group ddsg ON (usg.SecurityGroupId = ddsg.SecurityGroupId)\n" +
-							"\t\t\t\t\t\t\tINNER JOIN dca_aws_security_group dasg ON (ddsg.SecurityGroupId = dasg.Id)\n" +
-							"\t\t\t\t\t\t\tINNER JOIN dca_aws_account daa ON (dasg.AccountId = daa.Id)\n" +
-							"\t\t\t\t\t\tWHERE uir.Id = ?\n" +
-							"\t\t\t\t\t\tORDER BY daa.Id, dasg.Id", ruleid);
-
-					for (int i = 0; i < sgrules.size(); i++) {
-						RecordStruct sgrule = sgrules.getItemAsRecord(i);
-
-						String label = sgrule.getFieldAsString("AWSAccountTitle");
-
-						System.out.println("Searching " + label + " - " + sgrule.getFieldAsString("AWSSecurityGroupId") + " - " + sgrule.getFieldAsString("IPv4RuleId"));
-
-						String alias = sgrule.getFieldAsString("AWSAccountAlias");
-
-						XElement settings = ApplicationHub.getCatalogSettings("Interchange-Aws-" + alias);
-
-						if (settings == null) {
-							System.out.println("Missing settings Interchange-Aws for: " + label);
-							continue;
-						}
-
-						String region = settings.getAttribute("ComputeRegion");			// compute region
-
-						String target = seluser.getFieldAsString("Username") + " - " + selrule.getFieldAsString("Label") + " - "  + selrule.getFieldAsString("IPv4Address");
-
-						AWSEC2.describeSecurityGroupRule(settings, region, sgrule.getFieldAsString("AWSSecurityGroupId"), sgrule.getFieldAsString("IPv4RuleId"), new OperationOutcome<XElement>() {
-							@Override
-							public void callback(XElement result) throws OperatingContextException {
-								if (this.hasErrors())
-									System.out.println("failed: " + alias);
-								else {
-									XElement item = result.selectFirst("securityGroupRuleSet/item");
-
-									String found = item.selectFirstText("description") + " - "
-											+ item.selectFirstText("fromPort") + " - "
-											+ item.selectFirstText("cidrIpv4");
-
-									System.out.println("success: " + alias + " for " + target + "\nfound: " + found);
-								}
-							}
-						});
-					}
-
-					System.out.println("Finishing");
+					System.out.println((i + 1) + ") " + username);
 				}
+
+				System.out.println("");
+				System.out.print("Enter User #: ");
+
+				String tid = scan.nextLine();
+
+				if (StringUtil.isEmpty(tid))
+					break;
+
+				Long ltid = StringUtil.parseInt(tid);
+
+				if ((ltid == null) || (ltid == 0))
+					break;
+
+				RecordStruct seluser = users.getItemAsRecord(ltid.intValue() - 1);
+
+				if (seluser == null)
+					break;
+
+				Long userid = seluser.getFieldAsInteger("Id");
+
+				ListStruct rules = AccessUtil.getUserIPRulesV1(userid);
+
+				for (int i = 0; i < rules.size(); i++) {
+					RecordStruct rule = rules.getItemAsRecord(i);
+
+					String label = rule.getFieldAsString("Label");
+
+					System.out.println((i + 1) + ") " + label + " - " + rule.getFieldAsString("IPv4Address"));
+				}
+
+				System.out.println("");
+				System.out.print("Enter Label #: ");
+
+				String lid = scan.nextLine();
+
+				if (StringUtil.isEmpty(lid))
+					break;
+
+				Long llid = StringUtil.parseInt(lid);
+
+				if ((llid == null) || (llid == 0))
+					break;
+
+				RecordStruct selrule = rules.getItemAsRecord(llid.intValue() - 1);
+
+				if (selrule == null)
+					break;
+
+				Long ruleid = selrule.getFieldAsInteger("Id");
+
+				// find and update security groups
+
+				ListStruct sgrules = AccessUtil.getUserSGRulesV1(ruleid);
+
+				for (int i = 0; i < sgrules.size(); i++) {
+					RecordStruct sgrule = sgrules.getItemAsRecord(i);
+
+					String label = sgrule.getFieldAsString("AWSAccountTitle");
+
+					System.out.println("Searching " + label + " - " + sgrule.getFieldAsString("AWSSecurityGroupId") + " - " + sgrule.getFieldAsString("IPv4RuleId"));
+
+					String target = seluser.getFieldAsString("Username") + " - " + selrule.getFieldAsString("Label") + " - "  + selrule.getFieldAsString("IPv4Address");
+
+					AccessUtil.lookupSGRuleV1(sgrule.getFieldAsString("AWSAccountAlias"), label,
+							sgrule.getFieldAsString("AWSSecurityGroupId"), sgrule.getFieldAsString("IPv4RuleId"), new OperationOutcomeRecord() {
+								@Override
+								public void callback(RecordStruct result) throws OperatingContextException {
+									if (this.isNotEmptyResult()) {
+										String found = result.getFieldAsString("Description") + " - "
+												+ result.getFieldAsString("FromPort") + " - "
+												+ result.getFieldAsString("CidrIpv4");
+
+										Logger.info("success: " + sgrule.getFieldAsString("AWSAccountAlias") + " for " + target + "\nfound: " + found);
+									}
+								}
+							});
+				}
+
+				System.out.println("Finishing");
 
 				break;
 			}

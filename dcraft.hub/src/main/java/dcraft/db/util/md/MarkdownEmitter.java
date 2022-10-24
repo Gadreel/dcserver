@@ -368,7 +368,7 @@ public class MarkdownEmitter {
 
         // Check for inline html
         if (start + 2 < in.length()) 
-        	return Utils.scanHTML(in, start);
+        	return Utils.scanHTML(this.ctx, in, start);
 
         return -1;
     }
