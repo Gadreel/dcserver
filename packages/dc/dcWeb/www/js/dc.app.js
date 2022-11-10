@@ -453,8 +453,8 @@ dc.pui.layer.Main.prototype.loadPageAdv = function(options) {
 
 dc.pui.layer.Main.prototype.initPage = function() {
 	var entry = new dc.pui.PageEntry({
-		Name: window.location.pathname,
-		Href: window.location.href,
+		Name: decodeURI(window.location.pathname),
+		Href: decodeURI(window.location.href),
 		Layer: this
 	});
 

@@ -1,5 +1,7 @@
 package dcraft.util.json3;
 
+import dcraft.util.json3.mumbers.NumberInput;
+
 import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;

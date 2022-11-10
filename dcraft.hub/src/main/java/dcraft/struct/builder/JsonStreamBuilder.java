@@ -31,13 +31,14 @@ public class JsonStreamBuilder extends JsonBuilder {
 		this.pw = pw;
 	}
 
+	@Override
 	public void write(String v) {
 		this.pw.append(v);
 	}
 
-	public void writeChar(char v) {
-		this.pw.append(v);
-	}
+	//public void writeChar(char v) {
+	//	this.pw.append(v);
+	//}
 
 	public PrintStream startStreamValue() {
 		this.write("\"");
@@ -51,7 +52,7 @@ public class JsonStreamBuilder extends JsonBuilder {
 			
 			@Override
 			public PrintStream append(char c) {
-				JsonStreamBuilder.this.writeEscape(c);
+				JsonStreamBuilder.this.writeEscape(Character.toString(c));
 				return this;
 			}
 		};

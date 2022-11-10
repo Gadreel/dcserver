@@ -1,6 +1,7 @@
 package dcraft.db.util;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,9 +24,8 @@ import dcraft.struct.builder.ObjectBuilder;
 import dcraft.struct.serial.BufferToCompositeParser;
 import dcraft.util.ArrayUtil;
 import dcraft.util.Memory;
-import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
-import dcraft.util.chars.Utf8Decoder;
+import dcraft.util.chars.CharUtil;
 import dcraft.util.chars.Utf8Encoder;
 import dcraft.xml.XElement;
 
@@ -266,7 +266,7 @@ public class ByteUtil {
 					i++;
 				}
 				
-				String num = new String(data, semi2, i - semi2, Charset.forName("UTF-8"));
+				String num = new String(data, semi2, i - semi2, StandardCharsets.UTF_8);
 
 				try {
 					int nv = Integer.parseInt(num);
@@ -317,7 +317,7 @@ public class ByteUtil {
 			return null;
 		
 		Memory key = new Memory();
-		
+
 		for (int i = offset; i < (offset + len); i++) {
 			ByteUtil.encodeValue(key, list[i], true);
 			
@@ -636,15 +636,12 @@ public class ByteUtil {
 		if (v instanceof XElement) {
 			if (forKey) {
 				// index on size only
-				
-				// TODO create a size calculator method 
-				// instead of doing the full encoding
-				int m = Utf8Encoder.size(((XElement)v).toString());
+				int m = v.toString().length();		// TODO maybe this could be more efficient - but we shouldn't index a XML doc anyway
 				ByteUtil.encodeValue(mem, m, forKey);
 			}
 			else {
 				mem.writeByte(Constants.DB_TYPE_XML);
-				mem.write(((XElement)v).toString());		// TODO stream xml to buffer?
+				mem.write(v.toString());		// TODO stream xml to buffer?
 			}
 			
 			return;
@@ -797,7 +794,7 @@ public class ByteUtil {
     	
     	mem.read(str, 0, len);
     	
-    	return Utf8Decoder.decode(str).toString();
+    	return CharUtil.decode(str).toString();
     }    
     
     public static BigDateTime dbStringToBigDateTime(Memory mem) {
@@ -819,7 +816,7 @@ public class ByteUtil {
     	
     	mem.read(str, 0, len);
     	
-    	return BigDateTime.parse(Utf8Decoder.decode(str).toString());
+    	return BigDateTime.parse(CharUtil.decode(str));
     }    
     
     public static ZonedDateTime dbStringToDateTime(Memory mem) {
@@ -841,7 +838,7 @@ public class ByteUtil {
     	
     	mem.read(str, 0, len);
     	
-    	return ZonedDateTime.from(TimeUtil.parseDateTime(Utf8Decoder.decode(str).toString()));
+    	return ZonedDateTime.from(TimeUtil.parseDateTime(CharUtil.decode(str)));
     }    
     
     public static LocalDate dbStringToDate(Memory mem) {
@@ -863,7 +860,7 @@ public class ByteUtil {
     	
     	mem.read(str, 0, len);
     	
-    	return LocalDate.from(ByteUtil.localDate.parse(Utf8Decoder.decode(str).toString()));
+    	return LocalDate.from(ByteUtil.localDate.parse(CharUtil.decode(str)));
     }    
     
     public static LocalTime dbStringToTime(Memory mem) {
@@ -885,7 +882,7 @@ public class ByteUtil {
     	
     	mem.read(str, 0, len);
     	
-    	return LocalTime.from(ByteUtil.localTime.parse(Utf8Decoder.decode(str).toString()));
+    	return LocalTime.from(ByteUtil.localTime.parse(CharUtil.decode(str)));
     }    
     
     public static Number dbNumberToNumber(Memory mem, CoreType coreType) {

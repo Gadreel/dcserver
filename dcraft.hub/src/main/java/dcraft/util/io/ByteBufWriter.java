@@ -1,6 +1,7 @@
 package dcraft.util.io;
 
 import dcraft.hub.app.ApplicationHub;
+import dcraft.util.StringUtil;
 import dcraft.util.chars.Utf8Encoder;
 import io.netty.buffer.ByteBuf;
 
@@ -35,11 +36,14 @@ public class ByteBufWriter implements AutoCloseable {
 	}
 	
 	public void write(CharSequence v) {
-		Utf8Encoder.encode(v, this.buffer);
+		if (StringUtil.isNotEmpty(v))
+			this.buffer.writeBytes(Utf8Encoder.encode(v));
 	}
 	
-	public void writeLine(String v) {
-		Utf8Encoder.encode(v, this.buffer);
+	public void writeLine(CharSequence v) {
+		if (StringUtil.isNotEmpty(v))
+			this.buffer.writeBytes(Utf8Encoder.encode(v));
+
 		this.buffer.writeBytes(Utf8Encoder.encode('\n')); 
 	}
 	

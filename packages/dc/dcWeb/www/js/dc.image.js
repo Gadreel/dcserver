@@ -132,7 +132,7 @@ dc.image.Tasks = {
 					var sizing = step.Params.Sizing;
 
 					var fmt = sizing.Format ? sizing.Format : format ? format : "image/jpeg";
-					var qual = sizing.Quality ? sizing.Quality : quality ? quality : 0.6;
+					var qual = sizing.Quality ? sizing.Quality : quality ? quality : 0.9;
 
 					var fmt2 = 'jpg';
 

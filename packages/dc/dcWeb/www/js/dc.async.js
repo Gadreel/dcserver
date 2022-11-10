@@ -148,4 +148,48 @@ dc.async = {
       });
     }
   }
+};
+
+dc.user.signinAsync = async function(uname, pass, remember) {
+  if (! dc.comm.isSecure()) {
+    dc.pui.Popup.alert('May not sign in on an insecure connection');
+    return;
+  }
+
+  const creds = {
+    Username: uname,
+    Password: pass
+  };
+
+  dc.user._info = { };
+
+  // we take what ever Credentials are supplied, so custom Credentials may be used
+  var msg = {
+    Service: 'dcCoreServices.Authentication.SignIn',
+    Body: creds
+  };
+
+  const resp = await dc.async.comm.call('dcCoreServices.Authentication.SignIn', creds);
+
+  if (resp.Code == 0) {
+    dc.user.setUserInfo(resp.Result);
+
+    // failed login will not wipe out remembered user (could be a server issue or timeout),
+    // only set on success - successful logins will save or wipe out depending on Remember
+    dc.user.saveRemembered(remember, creds);
+
+    if (dc.user._signinhandler)
+      await dc.user._signinhandler.call(dc.user._info);
+  }
+}
+
+dc.user.signoutAsync = async function() {
+  dc.user._info = { };
+  localStorage.removeItem("dc.info.remember");
+
+  try {
+    await dc.async.comm.call('dcCoreServices.Authentication.SignOut', null, 1000);
+  }
+  catch (x) {
+  }
 }

@@ -242,14 +242,21 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 	}
 
 	/**
-	 * Add or replace a specific field with a value, only if value is not NULL.
+	 * Add or replace a specific field with a value, only if value is not NULL or Empty.
 	 *
 	 * @param name of field
 	 * @param value to store with field
 	 * @return self
 	 */
 	public RecordStruct withConditional(String name, Object value) {
-		if ((value != null) && ! (value instanceof NullStruct))
+		if ((value != null) && ! (value instanceof NullStruct) && ! ((value instanceof BaseStruct) && ((BaseStruct)value).isEmpty()))
+			this.with(new FieldStruct(name, value));
+
+		return this;
+	}
+
+	public RecordStruct withConditional(boolean test, String name, Object value) {
+		if (test)
 			this.with(new FieldStruct(name, value));
 
 		return this;

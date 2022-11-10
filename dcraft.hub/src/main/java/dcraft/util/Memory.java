@@ -42,7 +42,7 @@ public class Memory implements IReader {
     protected int length = 0;    // effective length of content, the capacity is total of all buffers
     protected int position = 0;
     protected Utf8Decoder decoder = null;
-    
+
     public Memory() {
     }
 
@@ -244,7 +244,7 @@ public class Memory implements IReader {
      */
     public int readChar() {
     	int b = this.readByte();
-    	
+
     	// decoder is created on demand only
     	if (this.decoder == null)
     		this.decoder = new Utf8Decoder();
@@ -499,8 +499,9 @@ public class Memory implements IReader {
 			Logger.error("MEMORY got a bad char");
 			return false;
 		}
-		
-		this.write(Utf8Encoder.encode(ch));
+
+   		this.write(Utf8Encoder.encode(ch));
+
 		return true;
 	}
 	
@@ -526,7 +527,7 @@ public class Memory implements IReader {
 		}
 		
 		// TODO this could be more efficient - encode <= 64 bytes at a time and add
-		this.write(Utf8Encoder.encode(str));
+        this.write(Utf8Encoder.encode(str));
 		return this.writeChar('\n');
 	}
 	

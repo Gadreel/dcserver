@@ -35,9 +35,8 @@ import dcraft.stream.file.IFileStreamDest;
 import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.task.IParentAwareWork;
 import dcraft.util.*;
-import dcraft.util.chars.Utf8Decoder;
+import dcraft.util.chars.CharUtil;
 import dcraft.util.chars.Utf8Encoder;
 import dcraft.xml.XElement;
 
@@ -271,7 +270,7 @@ public class AwsStoreFile extends FileStoreFile {
 			Logger.debug("Text written to AWS, response: " + code);
 			
 			if ((x.object != null))
-				callback.returnValue(Utf8Decoder.decode(x.object.data).toString());
+				callback.returnValue(CharUtil.decode(x.object.data));
 			else
 				callback.returnEmpty();
 		}

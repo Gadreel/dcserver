@@ -24,7 +24,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import dcraft.log.Logger;
-import dcraft.util.chars.Utf8Decoder;
+import dcraft.util.chars.CharUtil;
 import dcraft.util.chars.Utf8Encoder;
 import dcraft.xml.XElement;
 
@@ -154,7 +154,7 @@ public class BasicSettingsObfuscator implements ISettingsObfuscator {
 			//System.out.println("a1: " + c.getAlgorithm());
 			//System.out.println("a2: " + c.getBlockSize());
 			
-			return Utf8Decoder.decode(c.doFinal(v)).toString();			
+			return CharUtil.decode(c.doFinal(v));
 		}
 		catch(InvalidKeyException x) {
 			Logger.warn("Invalid settings key: " + x, "Code", "202");

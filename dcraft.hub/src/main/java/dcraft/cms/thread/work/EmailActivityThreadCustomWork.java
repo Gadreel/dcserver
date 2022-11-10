@@ -2,15 +2,12 @@ package dcraft.cms.thread.work;
 
 import dcraft.cms.reports.db.EmailActivityUtil;
 import dcraft.db.BasicRequestContext;
-import dcraft.db.IRequestContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
-import dcraft.sql.SqlConnection;
-import dcraft.sql.SqlUtil;
-import dcraft.sql.SqlWriter;
+import dcraft.mail.MailUtil;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
@@ -18,10 +15,8 @@ import dcraft.task.StateWork;
 import dcraft.task.StateWorkStep;
 import dcraft.task.TaskContext;
 import dcraft.tool.backup.BackupUtil;
-import dcraft.util.MailUtil;
 import dcraft.util.StringUtil;
 
-import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -51,7 +46,7 @@ public class EmailActivityThreadCustomWork extends StateWork {
 	public void prepSteps(TaskContext trun) throws OperatingContextException {
 		this
 				.withStep(init = StateWorkStep.of("Init", this::doInit))
-				.withStep(recordStatus = StateWorkStep.of("Record Receipient Status", this::doRecordReceipientStatus))
+				.withStep(recordStatus = StateWorkStep.of("Record Recipient Status", this::doRecordRecipientStatus))
 				.withStep(messageTypeTrigger = StateWorkStep.of("Call Message Type Trigger", this::doMessageTypeTrigger))
 				.withStep(notifySentinel = StateWorkStep.of("Notify Sentinel", this::doNotifySentinel))
 				.withStep(finish = StateWorkStep.of("Finish", this::doFinish));
@@ -65,7 +60,7 @@ public class EmailActivityThreadCustomWork extends StateWork {
 		return this.recordStatus;
 	}
 
-	public StateWorkStep doRecordReceipientStatus(TaskContext trun) throws OperatingContextException {
+	public StateWorkStep doRecordRecipientStatus(TaskContext trun) throws OperatingContextException {
 		OperationContext.getOrThrow().touch();
 
 		TablesAdapter db = TablesAdapter.of(BasicRequestContext.ofDefaultDatabase());
@@ -90,7 +85,7 @@ public class EmailActivityThreadCustomWork extends StateWork {
 			ListStruct dlist = reportMessage.selectAsList("delivery.recipients");
 
 			for (int i = 0; i < dlist.size(); i++) {
-				String address = MailUtil.cleanEmailDomainName(dlist.getItemAsString(i));
+				String address = dlist.getItemAsString(i);
 
 				if (StringUtil.isNotEmpty(address))
 					recipients.with(address);
@@ -102,7 +97,7 @@ public class EmailActivityThreadCustomWork extends StateWork {
 			for (int i = 0; i < bouncelist.size(); i++) {
 				RecordStruct bounceuser = bouncelist.getItemAsRecord(i);
 
-				String address = MailUtil.cleanEmailDomainName(bounceuser.getFieldAsString("emailAddress"));
+				String address = bounceuser.getFieldAsString("emailAddress");
 
 				if (StringUtil.isNotEmpty(address))
 					recipients.with(address);
@@ -114,7 +109,7 @@ public class EmailActivityThreadCustomWork extends StateWork {
 			for (int i = 0; i < complist.size(); i++) {
 				RecordStruct compuser = complist.getItemAsRecord(i);
 
-				String address = MailUtil.cleanEmailDomainName(compuser.getFieldAsString("emailAddress"));
+				String address = compuser.getFieldAsString("emailAddress");
 
 				if (StringUtil.isNotEmpty(address))
 					recipients.with(address);
@@ -163,7 +158,7 @@ public class EmailActivityThreadCustomWork extends StateWork {
 		List<String> keys = db.getListKeys("dcmThread", tid, "dcmEmailAddress");
 
 		for (int i = 0; i < recipients.size(); i++) {
-			String address = recipients.getItemAsString(i);
+			String address = MailUtil.indexableEmailAddress(recipients.getItemAsString(i));
 
 			if (keys.contains(address))
 				db.updateList("dcmThread", tid, "dcmEmailState", address, state);

@@ -18,6 +18,7 @@ package dcraft.hub.op;
 
 import java.io.BufferedWriter;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -167,7 +168,7 @@ public class OperationLogger extends OperationObserver implements IOperationLogg
 			try {
 				Files.createDirectories(this.logfile.getParent());
 
-				this.bw = Files.newBufferedWriter(this.logfile, Charset.forName("UTF-8"));
+				this.bw = Files.newBufferedWriter(this.logfile, StandardCharsets.UTF_8);
 			}
 			catch (Exception x) {
 				Logger.errorTr(181, x);

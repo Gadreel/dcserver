@@ -9,7 +9,6 @@ import dcraft.util.HashUtil;
 import dcraft.util.HexUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
-import dcraft.util.chars.Utf8Decoder;
 import dcraft.util.chars.Utf8Encoder;
 import dcraft.xml.XElement;
 

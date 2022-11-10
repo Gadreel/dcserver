@@ -147,7 +147,7 @@ public class SmtpWork extends StateWork {
 			
 			Properties props = new Properties();
 
-			props.put("mail.mime.allowutf8", "true");
+			//props.put("mail.mime.allowutf8", "true");
 			
 			if (smtpAuth) {
 				props.put("mail.smtp.auth", "true");
@@ -439,9 +439,11 @@ public class SmtpWork extends StateWork {
 				mid = "<" + this.extractStatusStream.getMessageId() + "@email.amazonses.com>";		// TODO configure which MTA can appear here
 
 			trun.setResult(RecordStruct.record()
-					.with("Success", ! trun.hasExitErrors())
-					.with("MessageId", mid)
-					.with("ActualAddresses", addresses)
+					.with("Transport", RecordStruct.record()
+						.with("Success", ! trun.hasExitErrors())
+						.with("MessageId", mid)
+						.with("ActualAddresses", addresses)
+					)
 			);
 		}
 

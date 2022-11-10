@@ -303,6 +303,11 @@
 			<Definition Value="email" Label="Send notices to my email account." />
 		</Notices>
 
+		<Email.ExtAdapter Ext=".dcc.xml" Class="dcraft.mail.adapter.DCCerberusAdapter" />
+		<Email.ExtAdapter Ext=".md" Class="dcraft.mail.adapter.MarkdownAdapter" />
+		<Email.ExtAdapter Ext=".html" Class="dcraft.mail.adapter.StaticAdapter" />
+		<Email.ExtAdapter Ext=".dcs.xml" Class="dcraft.mail.adapter.DCScriptAdapter" />
+
 		<Threads>
 			<!--
 			<Type Alias="nnn" Notices="yes|no|default for distribution" />

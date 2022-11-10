@@ -24,7 +24,7 @@ import dcraft.ctp.CtpConstants;
 import dcraft.filestore.CommonPath;
 import dcraft.struct.RecordStruct;
 import dcraft.util.IOUtil;
-import dcraft.util.chars.Utf8Decoder;
+import dcraft.util.chars.CharUtil;
 import dcraft.util.chars.Utf8Encoder;
 
 /*
@@ -117,7 +117,7 @@ public class FileDescriptor {
 		if (attr == null)
 			return null;
 		
-		return Utf8Decoder.decode(attr).toString();
+		return CharUtil.decode(attr);
 	}
 	
 	public CommonPath path() {
@@ -126,7 +126,7 @@ public class FileDescriptor {
 		if (attr == null)
 			return null;
 		
-		return new CommonPath(Utf8Decoder.decode(attr).toString());
+		return new CommonPath(CharUtil.decode(attr));
 	}
 
 	/*

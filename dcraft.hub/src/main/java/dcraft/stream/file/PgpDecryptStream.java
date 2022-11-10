@@ -24,6 +24,7 @@ import javax.crypto.Cipher;
 
 import dcraft.hub.resource.KeyRingResource;
 import dcraft.task.IParentAwareWork;
+import dcraft.util.chars.CharUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -37,7 +38,6 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.stream.ReturnOption;
 import dcraft.util.Memory;
-import dcraft.util.chars.Utf8Decoder;
 import dcraft.util.pgp.KeyRingCollection;
 import dcraft.util.pgp.PublicKeyEncryptedSession;
 import dcraft.xml.XElement;
@@ -490,7 +490,7 @@ public class PgpDecryptStream extends TransformFileStream {
 		            }
                 	
 		            this.currfile = new FileDescriptor();
-                	this.currfile.withPath("/" + Utf8Decoder.decode(fnbuf));
+                	this.currfile.withPath("/" + CharUtil.decode(fnbuf));
                 	
                 	//System.out.println("got filename: " + this.currfile.getPath());
                 	

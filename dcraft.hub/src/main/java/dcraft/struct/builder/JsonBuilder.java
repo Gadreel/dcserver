@@ -16,6 +16,7 @@
 ************************************************************************ */
 package dcraft.struct.builder;
 
+import dcraft.util.json3.JsonStringEncoder;
 import io.netty.buffer.ByteBuf;
 
 import java.nio.ByteBuffer;
@@ -42,7 +43,7 @@ import dcraft.util.TimeUtil;
 
 abstract public class JsonBuilder implements ICompositeBuilder {
 	protected BuilderInfo cstate = null;
-	protected List<BuilderInfo> bstate = new ArrayList<BuilderInfo>(); 
+	protected List<BuilderInfo> bstate = new ArrayList<>();
 	protected boolean complete = false;
 	protected boolean pretty = false;
 	protected int streamindent = 0;
@@ -290,13 +291,13 @@ abstract public class JsonBuilder implements ICompositeBuilder {
 	
 	protected void indent() {
 		for (int i = 0; i < this.streamindent; i++)
-			this.writeChar('\t');
+			this.write("\t");
 		
 		if (this.cstate == null)
 			return;
 		
 		for (int i = 0; i < this.cstate.indent; i++)
-			this.writeChar('\t');
+			this.write("\t");
 	}
 
 	protected void endItem() throws BuilderStateException {
@@ -475,10 +476,17 @@ abstract public class JsonBuilder implements ICompositeBuilder {
 	}
 	
 	public void writeEscape(CharSequence str) {
-		for (int i = 0; i < str.length(); i++)
-			this.writeEscape(str.charAt(i));
+		JsonStringEncoder stringEncoder = JsonStringEncoder.getInstance();
+
+		char[] xs = stringEncoder.quoteAsString(str.toString());
+
+		this.write(String.valueOf(xs));
+
+//		for (int i = 0; i < str.length(); i++)
+//			this.writeEscape(str.charAt(i));
 	}
-	
+
+	/*
 	public void writeEscape(char ch) {
 		  switch (ch) {
 		    case '\\':
@@ -522,6 +530,7 @@ abstract public class JsonBuilder implements ICompositeBuilder {
 				}
 		  }			
 	}
+	 */
 	
 	protected void popState() throws BuilderStateException {
 		if (this.cstate == null)
@@ -562,5 +571,5 @@ abstract public class JsonBuilder implements ICompositeBuilder {
 	}
 
 	abstract public void write(String v);
-	abstract public void writeChar(char v);
+	//abstract public void writeChar(char v);
 }

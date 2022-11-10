@@ -16,6 +16,7 @@
 ************************************************************************ */
 package dcraft.util.pgp;
 
+import dcraft.util.chars.CharUtil;
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
@@ -36,7 +37,6 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import dcraft.db.util.ByteUtil;
 import dcraft.util.HexUtil;
 import dcraft.util.Memory;
-import dcraft.util.chars.Utf8Decoder;
 
 public class PgpUtil {
     
@@ -278,7 +278,7 @@ public class PgpUtil {
             	byte[] fnbuf = new byte[fnlen];
             	mem.read(fnbuf, 0, fnbuf.length);
             	
-            	System.out.println("got filename: " + Utf8Decoder.decode(fnbuf));
+            	System.out.println("got filename: " + CharUtil.decode(fnbuf));
             	
             	
             	byte[] fmbuf = new byte[4];
@@ -289,7 +289,7 @@ public class PgpUtil {
             	byte[] buf = new byte[bodyLen];
             	mem.read(buf, 0, buf.length - offset);
             	
-            	System.out.println("got content: " + Utf8Decoder.decode(buf));
+            	System.out.println("got content: " + CharUtil.decode(buf));
             	
             	if (partial) {
             		boolean morepartial = true;
@@ -321,7 +321,7 @@ public class PgpUtil {
                         buf = new byte[bodyLen];
                     	mem.read(buf, 0, buf.length);
                     	
-                    	System.out.println("got partial content: " + Utf8Decoder.decode(buf));
+                    	System.out.println("got partial content: " + CharUtil.decode(buf));
             		}
             	}
             	

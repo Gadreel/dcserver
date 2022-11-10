@@ -97,6 +97,9 @@ abstract public class LogicBlockInstruction extends BlockInstruction {
                         ? StackUtil.refFromElement(stack, element, "Target", true)
                         : target;
 
+                if (localtarget == null)
+                    localtarget = NullStruct.instance;
+
                 boolean logicElement = false;
 
                 switch (element.getName()) {
@@ -115,7 +118,17 @@ abstract public class LogicBlockInstruction extends BlockInstruction {
                     case "Is":
                         logicElement = true;
 
-                        localtarget.checkLogic(stack, element, logicState);
+                        LogicBlockState tempLogicState = new LogicBlockState();
+
+                        localtarget.checkLogic(stack, element, tempLogicState);
+
+                        if (! tempLogicState.checked) {
+                            logicState.pass = Struct.objectToBooleanOrFalse(localtarget);
+                        }
+                        else {
+                            logicState.pass = tempLogicState.pass;
+                        }
+
                         break;
                 }
 

@@ -22,10 +22,10 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import dcraft.util.chars.CharUtil;
 import org.mindrot.BCrypt;
 
 import dcraft.log.Logger;
-import dcraft.util.chars.Utf8Decoder;
 import dcraft.util.chars.Utf8Encoder;
 import dcraft.xml.XElement;
 
@@ -138,7 +138,7 @@ public class StandardSettingsObfuscator extends BasicSettingsObfuscator {
 			
 			//System.out.println("");
 
-			return Utf8Decoder.decode(c.doFinal(encrypted)).toString();
+			return CharUtil.decode(c.doFinal(encrypted));
 		}
 		catch(InvalidKeyException x) {
 			Logger.error("Invalid settings key: " + x, "Code", "202");

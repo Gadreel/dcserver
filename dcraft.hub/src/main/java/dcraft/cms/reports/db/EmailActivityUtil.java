@@ -8,11 +8,11 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.log.Logger;
+import dcraft.mail.MailUtil;
 import dcraft.schema.DataType;
 import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.util.MailUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 
@@ -59,7 +59,7 @@ public class EmailActivityUtil {
     }
 
     static public String suppressEmail(TablesAdapter db, String email, String actid) throws OperatingContextException {
-        String emailaddress = MailUtil.cleanEmailDomainName(email);
+        String emailaddress = MailUtil.indexableEmailAddress(email);
 
         if (StringUtil.isEmpty(emailaddress)) {
             Logger.info("Email address unable to suppress: " + email + " activity: " + actid);
@@ -87,7 +87,7 @@ public class EmailActivityUtil {
     }
 
     static public String unsuppressEmail(TablesAdapter db, String email, String actid) throws OperatingContextException {
-        String emailaddress = MailUtil.cleanEmailDomainName(email);
+        String emailaddress = MailUtil.indexableEmailAddress(email);
 
         if (StringUtil.isEmpty(emailaddress)) {
             Logger.info("Email address unable to unsuppress: " + email + " activity: " + actid);

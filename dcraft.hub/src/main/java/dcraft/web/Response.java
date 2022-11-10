@@ -43,6 +43,7 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.cookie.CookieHeaderNames;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
@@ -464,12 +465,14 @@ public class Response extends RecordStruct {
 			String name = StackUtil.stringFromElement(stack, code, "Name");
 			String value = StackUtil.stringFromElement(stack, code, "Value");
 
-			Cookie cookie = new DefaultCookie(name, (value != null) ? value : "");
+			DefaultCookie cookie = new DefaultCookie(name, (value != null) ? value : "");
 			cookie.setPath(StackUtil.stringFromElement(stack, code, "Path", "/"));
 			cookie.setHttpOnly(StackUtil.boolFromElement(stack, code, "HttpOnly", true));
 
 			// help pass security tests if Secure by default when using https
 			cookie.setSecure(StackUtil.boolFromElement(stack, code, "Secure", true));
+
+			cookie.setSameSite(CookieHeaderNames.SameSite.valueOf(StackUtil.stringFromElementClean(stack, code, "SameSite", "Lax")));
 
 			setCookie(cookie);
 

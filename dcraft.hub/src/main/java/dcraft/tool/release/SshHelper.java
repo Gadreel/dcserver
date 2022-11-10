@@ -4,7 +4,7 @@ import com.jcraft.jsch.*;
 import dcraft.log.Logger;
 import dcraft.util.StringBuilder32;
 import dcraft.util.StringUtil;
-import dcraft.util.chars.Utf8Decoder;
+import dcraft.util.chars.CharUtil;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -96,7 +96,7 @@ public class SshHelper {
 
 					//System.out.print(new String(tmp, 0, i));
 
-					sb.append(Utf8Decoder.decode(tmp, i));
+					sb.append(CharUtil.decode(tmp, i));
 				}
 
 				if (channel.isClosed()) {

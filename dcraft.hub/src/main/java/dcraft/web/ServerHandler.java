@@ -32,6 +32,7 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.CookieHeaderNames;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.ReadTimeoutException;
@@ -284,20 +285,23 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 				if (sess != null) {
 					if (! sess.getKey().equals(accesscode) || ! sess.isKnownAuthToken(fauthtoken)) {
 						// TODO sess is there but wrong key - major, 100%, trust issue!
-						Cookie sessk = new DefaultCookie("dcSessionId", "");
+						DefaultCookie sessk = new DefaultCookie("dcSessionId", "");
 						sessk.setPath("/");
 						sessk.setHttpOnly(true);
-						
+
+						sessk.setSameSite(CookieHeaderNames.SameSite.None);
+
 						// help pass security tests if Secure by default when using https
 						sessk.setSecure(wctrl.isSecure());
 						
 						wctrl.getResponse().setCookie(sessk);
 						
 						// TODO sess is there, authtoken is there, but wrong token - major, 100%, trust issue!
-						Cookie authk = new DefaultCookie("dcAuthToken", "");
+						DefaultCookie authk = new DefaultCookie("dcAuthToken", "");
 						authk.setPath("/");
 						authk.setHttpOnly(true);
-						
+
+						authk.setSameSite(CookieHeaderNames.SameSite.None);
 						// help pass security tests if Secure by default when using https
 						authk.setSecure(wctrl.isSecure());
 						
@@ -342,11 +346,12 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 			/* TODO adapter review
 			sess.setAdatper(new HttpAdapter(wctx));
 			*/
-			
-			Cookie sk = new DefaultCookie("dcSessionId", sess.getId() + "_" + sess.getKey());
+
+			DefaultCookie sk = new DefaultCookie("dcSessionId", sess.getId() + "_" + sess.getKey());
 			sk.setPath("/");
 			sk.setHttpOnly(true);
-			
+			sk.setSameSite(CookieHeaderNames.SameSite.None);
+
 			// help pass security tests if Secure by default when using https
 			sk.setSecure(wctrl.isSecure());
 			
@@ -430,8 +435,10 @@ public class ServerHandler extends SimpleChannelInboundHandler<Object> {
 			}
 			
 			if (! locale.getName().equals(langcookie)) {
-				Cookie localek = new DefaultCookie("dcLang", locale.getName());
+				DefaultCookie localek = new DefaultCookie("dcLang", locale.getName());
 				localek.setPath("/");
+
+				localek.setSameSite(CookieHeaderNames.SameSite.None);
 
 				// help pass security tests if Secure by default when using https
 				localek.setSecure(wctrl.isSecure());

@@ -24,7 +24,7 @@ import dcraft.hub.app.ApplicationHub;
 import dcraft.struct.CompositeStruct;
 import dcraft.struct.Struct;
 import dcraft.util.FileUtil;
-import dcraft.util.chars.Utf8Decoder;
+import dcraft.util.chars.CharUtil;
 import dcraft.xml.XElement;
 import dcraft.xml.XmlReader;
 import io.netty.buffer.ByteBuf;
@@ -128,7 +128,7 @@ public class CacheFile {
 		ByteBuf b = this.asBuffer();
 
 		if (b != null) {
-			CharSequence ret = Utf8Decoder.decode(b);
+			CharSequence ret = CharUtil.decode(b);
 			b.release();
 			return ret;
 		}

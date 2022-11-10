@@ -4,22 +4,25 @@ import java.util.Arrays;
 
 public final class CharTypes
 {
-    private final static char[] HC = "0123456789ABCDEF".toCharArray();
-    private final static byte[] HB;
+    protected final static char[] HC = "0123456789ABCDEF".toCharArray();
+    protected final static char[] HClower = "0123456789abcdef".toCharArray();
+    protected final static byte[] HB;
+    protected final static byte[] HBlower;
     static {
         int len = HC.length;
         HB = new byte[len];
+        HBlower = new byte[len];
         for (int i = 0; i < len; ++i) {
             HB[i] = (byte) HC[i];
+            HBlower[i] = (byte) HClower[i];
         }
     }
-
 
     /**
      * Lookup table used for determining which input characters
      * need special handling when contained in text segment.
      */
-    final static int[] sInputCodes;
+    protected final static int[] sInputCodes;
     static {
         /* 96 would do for most cases (backslash is ASCII 94)
          * but if we want to do lookups by raw bytes it's better
@@ -40,7 +43,7 @@ public final class CharTypes
      * Additionally we can combine UTF-8 decoding info into similar
      * data table.
      */
-    final static int[] sInputCodesUTF8;
+    protected final static int[] sInputCodesUTF8;
     static {
         final int[] table = new int[sInputCodes.length];
         System.arraycopy(sInputCodes, 0, table, 0, table.length);
@@ -70,7 +73,7 @@ public final class CharTypes
      * Basically this is list of 8-bit ASCII characters that are legal
      * as part of Javascript identifier
      */
-    final static int[] sInputCodesJsNames;
+    protected final static int[] sInputCodesJsNames;
     static {
         final int[] table = new int[256];
         // Default is "not a name char", mark ones that are
@@ -97,7 +100,7 @@ public final class CharTypes
      * code as ok. They will be validated at a later point, when decoding
      * name
      */
-    final static int[] sInputCodesUtf8JsNames;
+    protected final static int[] sInputCodesUtf8JsNames;
     static {
         final int[] table = new int[256];
         // start with 8-bit JS names
@@ -110,7 +113,7 @@ public final class CharTypes
      * Decoding table used to quickly determine characters that are
      * relevant within comment content.
      */
-    final static int[] sInputCodesComment;
+    protected final static int[] sInputCodesComment;
     static {
         final int[] buf = new int[256];
         // but first: let's start with UTF-8 multi-byte markers:
@@ -127,10 +130,10 @@ public final class CharTypes
 
     /**
      * Decoding table used for skipping white space and comments.
-     * 
+     *
      * @since 2.3
      */
-    final static int[] sInputCodesWS;
+    protected final static int[] sInputCodesWS;
     static {
         // but first: let's start with UTF-8 multi-byte markers:
         final int[] buf = new int[256];
@@ -148,12 +151,12 @@ public final class CharTypes
         buf['#'] = '#'; // start marker for YAML comments
         sInputCodesWS = buf;
     }
-    
+
     /**
      * Lookup table used for determining which output characters in
      * 7-bit ASCII range need to be quoted.
      */
-    final static int[] sOutputEscapes128;
+    protected final static int[] sOutputEscapes128;
     static {
         int[] table = new int[128];
         // Control chars need generic escape sequence
@@ -161,9 +164,7 @@ public final class CharTypes
             // 04-Mar-2011, tatu: Used to use "-(i + 1)", replaced with constant
             table[i] = CharacterEscapes.ESCAPE_STANDARD;
         }
-        /* Others (and some within that range too) have explicit shorter
-         * sequences
-         */
+        // Others (and some within that range too) have explicit shorter sequences
         table['"'] = '"';
         table['\\'] = '\\';
         // Escaping of slash is optional, so let's not add it
@@ -176,11 +177,13 @@ public final class CharTypes
     }
 
     /**
-     * Lookup table for the first 128 Unicode characters (7-bit ASCII)
+     * Lookup table for the first 256 Unicode characters (ASCII / UTF-8)
      * range. For actual hex digits, contains corresponding value;
      * for others -1.
+     *<p>
+     * NOTE: before 2.10.1, was of size 128, extended for simpler handling
      */
-    final static int[] sHexValues = new int[128];
+    protected final static int[] sHexValues = new int[256];
     static {
         Arrays.fill(sHexValues, -1);
         for (int i = 0; i < 10; ++i) {
@@ -201,22 +204,59 @@ public final class CharTypes
     public static int[] getInputCodeComment() { return sInputCodesComment; }
     public static int[] getInputCodeWS() { return sInputCodesWS; }
 
-    /*
+    /**
      * Accessor for getting a read-only encoding table for first 128 Unicode
      * code points (single-byte UTF-8 characters).
      * Value of 0 means "no escaping"; other positive values that value is character
      * to use after backslash; and negative values that generic (backslash - u)
      * escaping is to be used.
+     *
+     * @return 128-entry {@code int[]} that contains escape definitions
      */
     public static int[] get7BitOutputEscapes() { return sOutputEscapes128; }
 
-    public static int charToHex(int ch)
-    {
-        return (ch > 127) ? -1 : sHexValues[ch];
+    /**
+     * Alternative to {@link #get7BitOutputEscapes()} when a non-standard quote character
+     * is used.
+     *
+     * @param quoteChar Character used for quoting textual values and property names;
+     *    usually double-quote but sometimes changed to single-quote (apostrophe)
+     *
+     * @return 128-entry {@code int[]} that contains escape definitions
+     *
+     * @since 2.10
+     */
+    public static int[] get7BitOutputEscapes(int quoteChar) {
+        if (quoteChar == '"') {
+            return sOutputEscapes128;
+        }
+        return AltEscapes.instance.escapesFor(quoteChar);
     }
 
-    public static void appendQuoted(StringBuilder sb, String content)
+    public static int charToHex(int ch)
     {
+        // 08-Nov-2019, tatu: As per [core#540] and [core#578], changed to
+        //   force masking here so caller need not do that.
+        return sHexValues[ch & 0xFF];
+    }
+
+    // @since 2.13
+    public static char hexToChar(int ch)
+    {
+        return HC[ch];
+    }
+
+
+    /**
+     * Helper method for appending JSON-escaped version of contents
+     * into specific {@link StringBuilder}, using default JSON specification
+     * mandated minimum escaping rules.
+     *
+     * @param sb Buffer to append escaped contents in
+     *
+     * @param content Unescaped String value to append with escaping applied
+     */
+    public static void appendQuoted(StringBuilder sb, String content) {
         final int[] escCodes = sOutputEscapes128;
         int escLen = escCodes.length;
         for (int i = 0, len = content.length(); i < len; ++i) {
@@ -248,12 +288,53 @@ public final class CharTypes
         }
     }
 
+    /**
+     * @deprecated Since 2.14
+     */
+    @Deprecated // since 2.14
     public static char[] copyHexChars() {
-        return (char[]) HC.clone();
+        return copyHexChars(true);
     }
 
+    public static char[] copyHexChars(boolean uppercase) {
+        return (uppercase) ? HC.clone() : HClower.clone();
+    }
+
+    /**
+     * @deprecated Since 2.14
+     */
+    @Deprecated // since 2.14
     public static byte[] copyHexBytes() {
-        return (byte[]) HB.clone();
+        return copyHexBytes(true);
+    }
+
+    public static byte[] copyHexBytes(boolean uppercase) {
+        return (uppercase) ? HB.clone() : HBlower.clone();
+    }
+
+    /**
+     * Helper used for lazy initialization of alternative escape (quoting)
+     * table, used for escaping content that uses non-standard quote
+     * character (usually apostrophe).
+     *
+     * @since 2.10
+     */
+    private static class AltEscapes {
+        public final static AltEscapes instance = new AltEscapes();
+
+        private int[][] _altEscapes = new int[128][];
+
+        public int[] escapesFor(int quoteChar) {
+            int[] esc = _altEscapes[quoteChar];
+            if (esc == null) {
+                esc = Arrays.copyOf(sOutputEscapes128, 128);
+                // Only add escape setting if character does not already have it
+                if (esc[quoteChar] == 0) {
+                    esc[quoteChar] = CharacterEscapes.ESCAPE_STANDARD;
+                }
+                _altEscapes[quoteChar] = esc;
+            }
+            return esc;
+        }
     }
 }
-

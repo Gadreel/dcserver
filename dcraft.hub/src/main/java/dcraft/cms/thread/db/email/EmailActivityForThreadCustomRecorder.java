@@ -7,18 +7,10 @@ import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
-import dcraft.script.StackUtil;
+import dcraft.mail.MailUtil;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
-import dcraft.util.MailUtil;
 import dcraft.util.StringUtil;
-import dcraft.util.TimeUtil;
-
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
-import java.time.ZonedDateTime;
-import java.util.Locale;
 
 public class EmailActivityForThreadCustomRecorder implements IStoredProc {
 	@Override
@@ -49,16 +41,17 @@ public class EmailActivityForThreadCustomRecorder implements IStoredProc {
 		db.updateScalar("dcmOutboundEmailActivity", actid, "dcmHandlerData", RecordStruct.record().with("ThreadId", tid));
 
 		for (int i = 0; i < actualAddresses.getSize(); i++) {
-			String address = MailUtil.cleanEmailDomainName(actualAddresses.getItemAsString(i));
+			String address = actualAddresses.getItemAsString(i);
+			String idxaddress = MailUtil.indexableEmailAddress(address);
 
 			// TODO should we IDNA domain addresses ? here or in suppression list?
 			// need to review how AWS handles and reports unicode addresses
 
 			if (StringUtil.isNotEmpty(address)) {
-				db.updateList("dcmThread", tid, "dcmEmailAddress", address, address);
-				db.updateList("dcmThread", tid, "dcmEmailMessageId", address, msgid);
-				db.updateList("dcmThread", tid, "dcmEmailActivityId", address, actid);
-				db.updateList("dcmThread", tid, "dcmEmailState", address, "Sent");
+				db.updateList("dcmThread", tid, "dcmEmailAddress", idxaddress, address);
+				db.updateList("dcmThread", tid, "dcmEmailMessageId", idxaddress, msgid);
+				db.updateList("dcmThread", tid, "dcmEmailActivityId", idxaddress, actid);
+				db.updateList("dcmThread", tid, "dcmEmailState", idxaddress, "Sent");
 			}
 		}
 

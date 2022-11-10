@@ -37,20 +37,14 @@ import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.HashUtil;
 import dcraft.util.Memory;
-import dcraft.util.TimeUtil;
-import dcraft.util.chars.Utf8Decoder;
-import dcraft.util.chars.Utf8Encoder;
 import dcraft.util.web.DateParser;
 import dcraft.xml.XElement;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class AwsStoreFile extends FileStoreFile {
 	static public AwsStoreFile of(AwsStore driver, CommonPath path, boolean confirmed) {

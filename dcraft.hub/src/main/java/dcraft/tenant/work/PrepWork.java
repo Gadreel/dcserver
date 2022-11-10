@@ -1028,6 +1028,16 @@ public class PrepWork extends StateWork {
 			}
 		}
 
+		for (XElement adaptor : sconfig.getTagListDeepFirst("Email.ExtAdapter")) {
+			String classname = adaptor.getAttribute("Class");
+			String ext = adaptor.getAttribute("Ext");
+
+			if (StringUtil.isEmpty(classname) || StringUtil.isEmpty(ext))
+				continue;
+
+			site.addEmailExtAdapater(ext, classname);
+		}
+
 		// TODO enable the web cache Work
 		//if (((this.htmlmode == HtmlMode.Dynamic) || (this.htmlmode == HtmlMode.Strict))
 		//		&& (mod != null) && mod.isScriptStyleCached())

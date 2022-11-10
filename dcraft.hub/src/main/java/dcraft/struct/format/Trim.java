@@ -1,12 +1,8 @@
 package dcraft.struct.format;
 
-import dcraft.hub.ResourceHub;
 import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
-import dcraft.struct.ScalarStruct;
-import dcraft.struct.Struct;
 import dcraft.struct.scalar.StringStruct;
-import dcraft.util.MailUtil;
 import dcraft.util.StringUtil;
 
 public class Trim implements IFormatter {

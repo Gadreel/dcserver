@@ -24,5 +24,16 @@
   * TODO minimize and refine.
   * </p>
   */
+
+/*
+    ByteArrayBuilder
+    CharTypes
+    JsonStringEncoder
+    TextBuffer
+    classes up to date with
+    https://github.com/FasterXML/jackson-core/commit/0d48020b844617789439e03b822d30917b030e80
+
+    Rest are probably from 2018 or older
+ */
 package dcraft.util.json3;
 

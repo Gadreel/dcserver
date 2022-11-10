@@ -22,6 +22,7 @@ import dcraft.util.pgp.ClearsignUtil;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.CookieHeaderNames;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 
 import java.io.IOException;
@@ -321,10 +322,11 @@ public class RpcHandler implements IContentDecoder {
 					String authupdate = ctx.getUserContext().getAuthToken();
 					
 					if (! Objects.equals(oldtoken, authupdate)) {
-						Cookie sk = new DefaultCookie("dcAuthToken", authupdate);
+						DefaultCookie sk = new DefaultCookie("dcAuthToken", authupdate);
 						sk.setPath("/");
 						sk.setHttpOnly(true);
-						
+
+						sk.setSameSite(CookieHeaderNames.SameSite.None);
 						// help pass security tests if Secure by default when using https
 						sk.setSecure(wctrl.isSecure());
 						

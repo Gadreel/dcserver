@@ -1,5 +1,7 @@
 package dcraft.util.json3;
 
+import dcraft.util.json3.mumbers.NumberInput;
+
 /**
  * Implementation of
  * <a href="http://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-03">JSON Pointer</a>

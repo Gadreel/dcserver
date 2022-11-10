@@ -20,10 +20,14 @@ import dcraft.task.TaskContext;
 import dcraft.tenant.Site;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
+import dcraft.web.adapter.RedirectOutputAdapter;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.CookieHeaderNames;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 
 import javax.management.monitor.CounterMonitor;
@@ -118,10 +122,11 @@ public class RequestWork extends ChainWork {
 			//System.out.println("NOVHOATS final token: " + vauthtoken);
 			
 			if (! Objects.equals(this.oldAuthToken, vauthtoken)) {
-				Cookie authk = new DefaultCookie("dcAuthToken", (vauthtoken != null) ? vauthtoken : "");
+				DefaultCookie authk = new DefaultCookie("dcAuthToken", (vauthtoken != null) ? vauthtoken : "");
 				authk.setPath("/");
 				authk.setHttpOnly(true);
-				
+
+				authk.setSameSite(CookieHeaderNames.SameSite.None);
 				// help pass security tests if Secure by default when using https
 				authk.setSecure(wctrl.isSecure());
 				
@@ -488,7 +493,10 @@ public class RequestWork extends ChainWork {
 				path = webSite.getNotFoundPath();
 
 				if (path != null) {
-					output = webSite.webFindFile(path, wctrl.getFieldAsRecord("Request").getFieldAsString("View"));
+					// redirect instead, we don't want crawlers get the wrong idea that this path is good
+					//output = webSite.webFindFile(path, wctrl.getFieldAsRecord("Request").getFieldAsString("View"));
+
+					return RedirectOutputAdapter.of(path);
 				}
 			}
 

@@ -219,8 +219,8 @@ abstract public class CompositeStruct extends BaseStruct implements ICompositeOu
 	 * @throws BuilderStateException if the structure is invalid then this exception arises
 	 */
 	public Memory toMemory() throws BuilderStateException {		// TODO return funcresult
-		JsonMemoryBuilder rb = new JsonMemoryBuilder();		
-		this.toBuilder(rb);		
+		JsonMemoryBuilder rb = new JsonMemoryBuilder();
+		this.toBuilder(rb);
 		return rb.getMemory();
 	}
 	

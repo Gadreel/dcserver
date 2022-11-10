@@ -50,9 +50,4 @@ public class JsonMemoryBuilder extends JsonBuilder {
 	public void write(String v) {
 		this.mem.write(v);		
 	}
-
-	@Override
-	public void writeChar(char v) {
-		this.mem.writeChar(v);		
-	}
 }

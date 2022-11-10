@@ -1,8 +1,7 @@
 package dcraft.struct.format;
 
+import dcraft.mail.MailUtil;
 import dcraft.struct.Struct;
-import dcraft.util.IOUtil;
-import dcraft.util.MailUtil;
 import dcraft.util.StringUtil;
 
 public class CleanEmailAddress implements IFormatter {
@@ -13,7 +12,9 @@ public class CleanEmailAddress implements IFormatter {
 		String val = Struct.objectToString(value);
 
 		if (StringUtil.isNotEmpty(val)) {
-			value = MailUtil.cleanEmailDomainName(val);
+			boolean index = StringUtil.isNotEmpty(format) ? format.contains("index") : false;
+
+			value = index ? MailUtil.indexableEmailAddress(val) : MailUtil.normalizeEmailAddress(val);
 		}
 		
 		return FormatResult.result(value);

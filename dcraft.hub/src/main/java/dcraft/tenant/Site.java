@@ -2,11 +2,7 @@ package dcraft.tenant;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import dcraft.filestore.CollectionSourceStream;
 import dcraft.filestore.CommonPath;
@@ -72,9 +68,13 @@ public class Site extends Base {
 	protected boolean srcptstlcache = false;
 	protected List<XElement> webglobals = null;
 	protected String webversion = "7001010000";		// YYMMDDhhmm
-	
+
+	// web
 	protected Map<String, IWebWorkBuilder> dynadapaters = new HashMap<>();
 	protected Map<String, IWebWorkBuilder> dynextadapaters = new HashMap<>();
+
+	// email
+	protected Map<String, String> emailadapaters = new HashMap<>();
 
 	public HtmlMode getHtmlMode() {
 		return this.htmlmode;
@@ -116,6 +116,21 @@ public class Site extends Base {
 
 	public void addDynamicExtAdapater(String ext, IWebWorkBuilder builder) {
 		this.dynextadapaters.put(ext, builder);
+	}
+
+	public void addEmailExtAdapater(String ext, String className) {
+		this.emailadapaters.put(ext, className);
+	}
+
+	public String getEmailBuilder(String ext) {
+		if (StringUtil.isNotEmpty(ext))
+			return this.emailadapaters.get(ext);
+
+		return null;
+	}
+
+	public Set<String> getEmailExtensions() {
+		return this.emailadapaters.keySet();
 	}
 
 	public void setSpecialExtensions(List<String> v) {

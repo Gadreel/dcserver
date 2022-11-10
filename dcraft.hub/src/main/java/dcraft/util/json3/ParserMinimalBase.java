@@ -1,5 +1,7 @@
 package dcraft.util.json3;
 
+import dcraft.util.json3.mumbers.NumberInput;
+
 import static dcraft.util.json3.JsonTokenId.*;
 
 import java.io.IOException;

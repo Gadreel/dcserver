@@ -18,14 +18,11 @@ package dcraft.stream.file;
 
 import dcraft.hub.app.ApplicationHub;
 import dcraft.task.IParentAwareWork;
-import dcraft.util.HexUtil;
 import dcraft.util.StringUtil;
-import dcraft.util.chars.Utf8Decoder;
+import dcraft.util.chars.CharUtil;
 import io.netty.buffer.ByteBuf;
 
-import io.netty.buffer.PooledByteBufAllocator;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarConstants;
 import org.apache.commons.compress.archivers.zip.ZipEncoding;
 import org.apache.commons.compress.archivers.zip.ZipEncodingHelper;
@@ -301,7 +298,7 @@ public class UntarStream extends TransformFileStream {
 					if (this.remainContent > 0)
 						continue;
 					
-					this.longname = Utf8Decoder.decode(this.longnamebuff);
+					this.longname = CharUtil.decode(this.longnamebuff);
 					
 					//System.out.println("name: " + longname);
 					

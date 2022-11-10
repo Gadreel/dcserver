@@ -8,7 +8,7 @@ import com.jcraft.jsch.SftpException;
 import dcraft.log.Logger;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.util.chars.Utf8Decoder;
+import dcraft.util.chars.CharUtil;
 import dcraft.util.chars.Utf8Encoder;
 import dcraft.xml.XElement;
 import org.eclipse.jgit.diff.DiffEntry;
@@ -124,7 +124,7 @@ public class PublishHelper {
 			
 			in.read(bb, 0, 40);
 			
-			lastsync = Utf8Decoder.decode(bb).toString();
+			lastsync = CharUtil.decode(bb);
 			
 			if (lastsync.length() != 40)
 				throw new Exception("Unable to read the *sync* file correctly.");

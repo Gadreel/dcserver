@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
  * thanks Netty :)
  */
 public class DomainNameMapping<V> {
-    protected static final Pattern DNS_WILDCARD_PATTERN = Pattern.compile("^\\*\\..*");
     protected Map<String, V> map = new HashMap<>();
 
     /*
@@ -23,11 +22,11 @@ public class DomainNameMapping<V> {
      * </p>
      */
     public void add(String hostname, V di) {
-        map.put(normalizeHostname(hostname), di);
+        map.put(WebUtil.normalizeDomainName(hostname), di);
     }
     
     public void remove(String hostname) {
-        map.remove(normalizeHostname(hostname));
+        map.remove(WebUtil.normalizeDomainName(hostname));
     }
     
     public Set<String> getDomains() {
@@ -38,46 +37,9 @@ public class DomainNameMapping<V> {
     	return this.map.values();
     }
 
-    /**
-     * Simple function to match <a href="http://en.wikipedia.org/wiki/Wildcard_DNS_record">DNS wildcard</a>.
-     */
-    protected static boolean matches(String hostNameTemplate, String hostName) {
-        // note that inputs are converted and lowercased already
-        if (DNS_WILDCARD_PATTERN.matcher(hostNameTemplate).matches()) {
-            return hostNameTemplate.substring(2).equals(hostName) ||
-                    hostName.endsWith(hostNameTemplate.substring(1));
-        } 
-        else {
-            return hostNameTemplate.equals(hostName);
-        }
-    }
-
-    /**
-     * IDNA ASCII conversion and case normalization
-     */
-    protected static String normalizeHostname(String hostname) {
-        if (needsNormalization(hostname)) 
-            hostname = IDN.toASCII(hostname, IDN.ALLOW_UNASSIGNED);
-
-        return hostname.toLowerCase(Locale.US);
-    }
-
-    protected static boolean needsNormalization(String hostname) {
-        int length = hostname.length();
-        
-        for (int i = 0; i < length; i ++) {
-            int c = hostname.charAt(i);
-            
-            if (c > 0x7F) 
-                return true;
-        }
-        
-        return false;
-    }
-
     public V get(String name) {
         if (name != null) {
-        	name = normalizeHostname(name);
+        	name = WebUtil.normalizeDomainName(name);
         	
         	// prefer exact matches over wild
         	V exact = map.get(name);
@@ -86,7 +48,7 @@ public class DomainNameMapping<V> {
         		return exact;
 
             for (Map.Entry<String, V> entry : map.entrySet()) {
-                if (matches(entry.getKey(), name)) 
+                if (WebUtil.matchesDomainName(entry.getKey(), name))
                     return entry.getValue();
             }
         }

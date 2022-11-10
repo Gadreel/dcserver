@@ -134,7 +134,7 @@ public class ApplicationHub {
 		// not all JVM's set this correctly, works with JVM 7+
 		java.security.Security.setProperty("networkaddress.cache.ttl" , "60");
 
-		System.setProperty("mail.mime.allowutf8", "true");
+		//System.setProperty("mail.mime.allowutf8", "true");
 	}
 	
 	static public boolean isValidNodeId(String id) {

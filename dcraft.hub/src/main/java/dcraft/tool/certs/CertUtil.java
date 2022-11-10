@@ -29,6 +29,7 @@ import java.io.*;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyPair;
@@ -499,7 +500,7 @@ public class CertUtil {
 
 		ssh.makeDirSftp(sftp, remotepath);
 
-		InputStream is = new ByteArrayInputStream(challenge.getAuthorization().getBytes(Charset.forName("UTF-8")));
+		InputStream is = new ByteArrayInputStream(challenge.getAuthorization().getBytes(StandardCharsets.UTF_8));
 
 		String token = remotepath.resolve(challenge.getToken()).toString();
 

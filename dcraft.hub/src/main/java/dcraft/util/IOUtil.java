@@ -26,6 +26,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -46,7 +47,7 @@ public class IOUtil {
      * @return file content if readable, otherwise null
      */
     public static CharSequence readEntireFile(Path file) {
-        try (BufferedReader br = Files.newBufferedReader(file, Charset.forName("UTF-8"))) {
+        try (BufferedReader br = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             StringBuilder sb = new StringBuilder();
         	
             String line = br.readLine();

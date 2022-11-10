@@ -20,11 +20,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import dcraft.struct.CompositeParser;
-import dcraft.struct.CompositeStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
 
@@ -304,7 +300,7 @@ public class ObjectBuilder implements ICompositeBuilder {
 			this.cstate.CurrentValue = value;
 		else if (value instanceof ZonedDateTime) 
 			this.cstate.CurrentValue = value;
-		else if (value instanceof Struct) 
+		else if (value instanceof BaseStruct)
 			this.cstate.CurrentValue = value;
 		else if (value instanceof ICompositeOutput) {
 			((ICompositeOutput)value).toBuilder(this);	
