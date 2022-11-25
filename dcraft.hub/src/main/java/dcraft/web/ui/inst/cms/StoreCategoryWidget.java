@@ -233,7 +233,7 @@ public class StoreCategoryWidget extends Base implements ICMSAware {
 					FileTime fileTime = Files.getLastModifiedTime(imgpath);
 					category.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
 				}
-				catch (IOException x) {
+				catch (IOException | NullPointerException x) {
 					Logger.warn("Problem finding image file: " + lpath);
 					category.with("Path", "/galleries" + lpath);
 				}

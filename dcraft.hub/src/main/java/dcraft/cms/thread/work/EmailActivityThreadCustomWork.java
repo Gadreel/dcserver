@@ -1,12 +1,13 @@
 package dcraft.cms.thread.work;
 
-import dcraft.cms.reports.db.EmailActivityUtil;
+import dcraft.mail.EmailActivityUtil;
 import dcraft.db.BasicRequestContext;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
+import dcraft.mail.EmailAddress;
 import dcraft.mail.MailUtil;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
@@ -122,7 +123,8 @@ public class EmailActivityThreadCustomWork extends StateWork {
 			// this is a Not Spam "complaint"
 			if ("Complaint".equals(notiType)) {
 				for (int i = 0; i < recipients.size(); i++) {
-					EmailActivityUtil.unsuppressEmail(db, recipients.getItemAsString(i), actid);
+					EmailAddress emailaddress = EmailAddress.parseSingle(recipients.getItemAsString(i));
+					EmailActivityUtil.unsuppressEmail(db, emailaddress, actid);
 				}
 			}
 		}
@@ -133,7 +135,8 @@ public class EmailActivityThreadCustomWork extends StateWork {
 			if ("Permanent".equals(reportMessage.selectAsString("bounce.bounceType"))) {
 				// add ALL to suppression list
 				for (int i = 0; i < recipients.size(); i++) {
-					EmailActivityUtil.suppressEmail(db, recipients.getItemAsString(i), actid);
+					EmailAddress emailaddress = EmailAddress.parseSingle(recipients.getItemAsString(i));
+					EmailActivityUtil.suppressEmail(db, emailaddress, actid);
 				}
 			}
 		}
@@ -149,7 +152,8 @@ public class EmailActivityThreadCustomWork extends StateWork {
 			 */
 			if (recipients.size() == 1) {
 				// add to suppression list
-				EmailActivityUtil.suppressEmail(db, recipients.getItemAsString(0), actid);
+				EmailAddress emailaddress = EmailAddress.parseSingle(recipients.getItemAsString(0));
+				EmailActivityUtil.suppressEmail(db, emailaddress, actid);
 			}
 		}
 

@@ -131,7 +131,7 @@ public class ImageWidget extends Base implements ICMSAware {
 
 			img.with("Path", fpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
 		}
-		catch (IOException x) {
+		catch (IOException | NullPointerException x) {
 			Logger.warn("Problem finding image file: " + lpath);
 			img.with("Path", "/galleries" + lpath);
 		}

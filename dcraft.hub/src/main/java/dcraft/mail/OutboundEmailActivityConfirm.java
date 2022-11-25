@@ -1,4 +1,4 @@
-package dcraft.cms.reports.db;
+package dcraft.mail;
 
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;

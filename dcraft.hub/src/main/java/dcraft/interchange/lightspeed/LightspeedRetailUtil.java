@@ -5,6 +5,7 @@ import dcraft.hub.op.*;
 import dcraft.log.Logger;
 import dcraft.struct.*;
 import dcraft.util.StringUtil;
+import dcraft.util.TimeUtil;
 import dcraft.util.net.JSONSubscriber;
 import dcraft.xml.XElement;
 
@@ -14,12 +15,54 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.function.Consumer;
 
 public class LightspeedRetailUtil {
+	static public final DateTimeFormatter lsStampFmt = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'");
+
 	static public void account(String accessToken, OperationOutcomeRecord callback) throws OperatingContextException {
 		LightspeedRetailUtil.buildSendRequest(accessToken, "Account.json", "GET", null, callback);
 	}
+
+	// new way
+	static public void itemList(String alt, String accessToken, ListStruct relations, ZonedDateTime from, String after, String query, OperationOutcomeRecord callback) throws OperatingContextException {
+		XElement mc = ApplicationHub.getCatalogSettings("CMS-LightspeedRetail", alt);
+
+		if (mc == null) {
+			Logger.error("Missing Lightspeed Retail settings.");
+
+			if (callback != null)
+				callback.returnEmpty();
+
+			return;
+		}
+
+		String accountId = mc.attr("AccountId");
+
+		LightspeedRetailUtil.itemList(null, accessToken, accountId, relations, from, after, query, callback);
+	}
+
+	static public void itemList(String alt, String accessToken, String accountid, ListStruct relations, ZonedDateTime from, String after, String query, OperationOutcomeRecord callback) throws OperatingContextException {
+		if ((relations == null) || relations.isEmpty())
+			relations = ListStruct.list().with("ItemShops");
+
+		String path = "Account/" + accountid + "/Item.json?ItemShops.timeStamp=%3E%2C" + LightspeedRetailUtil.lsStampFmt.format(from)
+				+ "&load_relations=" + URLEncoder.encode(relations.toString().replace(" ", ""), StandardCharsets.UTF_8);
+
+		if (StringUtil.isNotEmpty(after))
+			path += "&after=" + after;
+
+		if (StringUtil.isNotEmpty(query))
+			path += "&" + query;
+
+		//System.out.println(path);
+
+		LightspeedRetailUtil.buildSendRequest(accessToken, path, "GET", null, callback);
+	}
+
+	// old way
 
 	static public void itemList(String alt, String accessToken, ListStruct relations, int offset, String query, OperationOutcomeRecord callback) throws OperatingContextException {
 		XElement mc = ApplicationHub.getCatalogSettings("CMS-LightspeedRetail", alt);
@@ -98,12 +141,14 @@ public class LightspeedRetailUtil {
 	}
 
 	static public HttpRequest.Builder buildRequest(String accesstoken, String path, String method, CompositeStruct post) {
-		String endpoint = "https://api.lightspeedapp.com/API/" + path;
+		String endpoint = "https://api.lightspeedapp.com/API/V3/" + path;
 
 		HttpRequest.Builder builder = HttpRequest.newBuilder()
 				.uri(URI.create(endpoint))
 				.header("User-Agent", "dcServer/2021.7 (Language=Java/11)")
 				.header("Authorization", "Bearer " + accesstoken);
+
+		System.out.println("- " + accesstoken + " - " + endpoint);
 
 		if (post != null) {
 			builder.header("Content-Type", "application/json");
@@ -202,6 +247,9 @@ public class LightspeedRetailUtil {
 				callback.returnEmpty();
 			}
 			else {
+
+				//System.out.println("- got: " + response.body());
+
 				callback.returnValue(Struct.objectToRecord(response.body()));
 			}
 		}

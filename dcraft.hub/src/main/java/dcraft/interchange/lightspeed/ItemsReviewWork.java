@@ -1,8 +1,6 @@
 package dcraft.interchange.lightspeed;
 
 import dcraft.hub.op.*;
-import dcraft.interchange.bigcommerce.BigCommerceUtil;
-import dcraft.interchange.moodle.MoodleUtil;
 import dcraft.log.Logger;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
@@ -11,8 +9,6 @@ import dcraft.task.StateWork;
 import dcraft.task.StateWorkStep;
 import dcraft.task.TaskContext;
 import dcraft.util.StringUtil;
-import dcraft.util.TimeUtil;
-import org.apache.lucene.util.ThreadInterruptedException;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -37,8 +33,9 @@ public class ItemsReviewWork extends StateWork {
 	protected ListStruct relations = ListStruct.list("ItemShops","ItemPrices","TagRelations");
 
 	protected int currentOffset = 0;   // paging starts from 0 in LS
-	protected int totalCnt = -1;
 	protected int reviewedCnt = 0;
+	protected String after = null;
+	protected boolean runonce = false;
 
 	protected Deque<RecordStruct> items = new ArrayDeque<>();	// for current page
 
@@ -87,23 +84,27 @@ public class ItemsReviewWork extends StateWork {
 	public StateWorkStep doCollectItems(TaskContext trun) throws OperatingContextException {
 		Logger.info("Loading page: " + this.currentOffset);
 
-		System.out.println(" - total " + totalCnt + " - reviewed " + reviewedCnt);
+		System.out.println(" - page " + currentOffset +  " - reviewed " + reviewedCnt + " - after " + after);
 
 		// always load at least once, but don't load if we've seen all the items
-		if ((this.totalCnt != -1)  && (this.reviewedCnt >= this.totalCnt))
+		if (this.runonce  && StringUtil.isEmpty(this.after))
 			return finish;
 
 		try {
 			// don't overrun the rate
-			Thread.sleep(1000L);
+			if (this.runonce)
+				Thread.sleep(1000L);
 		}
 		catch (InterruptedException x) {
 		}
 
-		LightspeedRetailUtil.itemList(this.settingsalt, this.access, this.relations, this.currentOffset, this.query, new OperationOutcomeRecord() {
+		this.runonce = true;
+
+		OperationOutcomeRecord outcomeRecord = new OperationOutcomeRecord() {
 			@Override
 			public void callback(RecordStruct result) throws OperatingContextException {
 				currentOffset++;
+				after = null;
 
 				if (this.hasErrors()) {
 					Logger.error("Cannot load items");
@@ -112,11 +113,23 @@ public class ItemsReviewWork extends StateWork {
 				}
 
 				// first load get the total count of items for this query
-				if (totalCnt == -1) {
-					RecordStruct meta = result.getFieldAsRecord("@attributes");
+				RecordStruct meta = result.getFieldAsRecord("@attributes");
 
-					if (meta != null)
-						totalCnt = (int)meta.getFieldAsInteger("count", 0);
+				if (meta != null) {
+					String nextPagePath = meta.getFieldAsString("next");
+
+					if (StringUtil.isNotEmpty(nextPagePath)) {
+						int pos = nextPagePath.indexOf("after=");
+
+						if (pos > -1) {
+							after = nextPagePath.substring(pos + 6);
+
+							pos = after.indexOf('&');
+
+							if (pos != -1)
+								after = after.substring(0, pos);
+						}
+					}
 				}
 
 				ListStruct list = result.getFieldAsList("Item");
@@ -141,7 +154,9 @@ public class ItemsReviewWork extends StateWork {
 
 				ItemsReviewWork.this.transition(trun, consumeItem);
 			}
-		});
+		};
+
+		LightspeedRetailUtil.itemList(this.settingsalt, this.access, this.relations, this.lastsync, this.after, this.query, outcomeRecord);
 
 		return StateWorkStep.WAIT;
 	}
@@ -171,7 +186,7 @@ public class ItemsReviewWork extends StateWork {
 	public StateWorkStep doFinish(TaskContext trun) throws OperatingContextException {
 		Logger.info("Item review complete");
 
-		System.out.println(" - total " + totalCnt + " - reviewed " + reviewedCnt);
+		System.out.println(" - page " + currentOffset + " - reviewed " + reviewedCnt);
 
 		return StateWorkStep.STOP;
 	}

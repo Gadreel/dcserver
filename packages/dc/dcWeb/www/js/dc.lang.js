@@ -827,6 +827,7 @@ var dc = {
 			}
 		},
 		Text: {
+      // TODO replace with standard JS function?
 			// inspired by https://github.com/coolaj86/TextEncoderLite/
 			// return an ArrayBuffer
 			utf8Encode: function(str, units) {

@@ -322,7 +322,7 @@ public class RpcHandler implements IContentDecoder {
 					String authupdate = ctx.getUserContext().getAuthToken();
 					
 					if (! Objects.equals(oldtoken, authupdate)) {
-						DefaultCookie sk = new DefaultCookie("dcAuthToken", authupdate);
+						DefaultCookie sk = new DefaultCookie("dcAuthToken", (authupdate == null) ? "" : authupdate);
 						sk.setPath("/");
 						sk.setHttpOnly(true);
 

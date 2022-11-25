@@ -1,26 +1,16 @@
 package dcraft.cms.thread.schema;
 
-import dcraft.cms.thread.db.email.IEmailActivityForThreadCustomReporter;
+import dcraft.mail.IEmailActivityForCustomReporter;
 import dcraft.cms.thread.work.EmailActivityThreadCustomWork;
-import dcraft.db.request.update.UpdateRecordRequest;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationContext;
-import dcraft.hub.op.OperationOutcomeStruct;
-import dcraft.hub.op.UserContext;
-import dcraft.script.StackUtil;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
-import dcraft.service.ServiceHub;
-import dcraft.service.ServiceRequest;
-import dcraft.struct.BaseStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
-import dcraft.task.IWork;
 import dcraft.task.Task;
 import dcraft.task.TaskHub;
 import dcraft.xml.XElement;
 
-public class EmailActivityForThreadCustomReporter extends RecordStruct implements IEmailActivityForThreadCustomReporter {
+public class EmailActivityForThreadCustomReporter extends RecordStruct implements IEmailActivityForCustomReporter {
 	@Override
 	public boolean reportReceived(String actid, String auditkey, RecordStruct reportData, RecordStruct handlerData) throws OperatingContextException {
 		System.out.println("EmailActivityForThreadCustomReporter got report: " + reportData.toPrettyString() + " related to: " + handlerData.toPrettyString());

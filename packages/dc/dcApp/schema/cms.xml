@@ -208,12 +208,58 @@
 			<Field Name="dcmReportMessage" Group="dcmReportAudit" List="True" Type="AnyRecord" />
 		</Table>
 
+		<!-- TODO remove this  -->
 		<Table Id="dcmEmailSuppressionList">
 			<Field Name="dcmEmailAddress" Type="dcMetaString" Required="True" Unique="True" Indexed="True" />
 			<Field Name="dcmAddAt" Type="DateTime" Required="True" Indexed="True" />
 
 			<!-- optional, but all related reports, subid = id -->
 			<Field Name="dcmEmailActivityId" List="True" ForeignKey="dcmOutboundEmailActivity" />
+		</Table>
+
+		<!--
+			this is used to track identities internally and should be considered shared data.
+			it is not appropriate for siloed data such as a user's personal contact list
+		-->
+
+		<Table Id="dcmIdentity">
+			<!-- default to email if necessary -->
+			<Field Name="dcmName" Type="dcSmallString" Required="True" />
+			<!-- - Uuid (unique value used in all external references used for this identity, such as email linking) -->
+			<Field Name="dcmUuid" Type="dcMetaString" Required="True" Indexed="True" />
+
+			<!-- - SystemNeeds (t/f - this is an email used by a webmaster / web admin for the website - if suppressed raise an alert) -->
+			<Field Name="dcmAppNeeds" Type="Boolean" Indexed="True" />
+
+			<Field Name="dcmPreferredEmailId" ForeignKey="dcmIdentityEmail" />
+			<Field Name="dcmSecondaryEmailId" ForeignKey="dcmIdentityEmail" />
+			<Field Name="dcmAllEmailId" ForeignKey="dcmIdentityEmail" List="True" />
+
+			<!-- TODO support multiple phone numbers and multiple addresses similar to above -->
+
+			<!-- - Banned At (do not allow View Message on Website, do not allow links or attachments) for all messages -->
+			<Field Name="dcmBannedAt" Type="DateTime" />
+			<Field Name="dcmBannedReason" Type="dcString" />
+		</Table>
+
+		<Table Id="dcmIdentityEmail">
+			- Status (Unconfirmed, Confirmed, Inactive)
+			<Field Name="dcmStatus" Type="dcMetaString" Required="True" Indexed="True" />
+
+			<!--
+				displayName need not be a personal name, it could be a "contact" or "info" and thus should have
+				the business or department name. even so, multiple identities could be associated with the email address.
+			-->
+			<Field Name="dcmDisplayName" Type="dcSmallString" />
+			<Field Name="dcmDisplayAddress" Type="dcMetaString" Required="True" />
+			<Field Name="dcmIndexAddress" Type="dcMetaString" Required="True" Unique="True" Indexed="True" />
+
+			<!-- - SuppressedWhen  (do not send emails to this address) -->
+			<Field Name="dcmSuppressedAt" Type="DateTime" Required="True" Indexed="True" />
+			<Field Name="dcmSuppressedReason" Type="dcString" />
+
+			<!-- optional, but all related reports, subid = id -->
+			<Field Name="dcmSuppressedActivityId" List="True" ForeignKey="dcmOutboundEmailActivity" />
 		</Table>
 
 		<Procedure Name="dcmUpdateFeed" Execute="dcraft.cms.feed.db.Update" />
@@ -249,8 +295,8 @@
 		<Procedure Name="dcmServices.Dashboard.KillAllBlockedIP" Execute="dcraft.cms.dashboard.db.KillAllBlockedIP" />
 
 		<Procedure Name="dcmServices.Reports.CreateGoLive" Execute="dcraft.cms.reports.db.CreateGoLive" />
-		<Procedure Name="dcmServices.Reports.OutboundEmailActivity" Execute="dcraft.cms.reports.db.OutboundEmailActivity" />
-		<Procedure Name="dcmServices.Reports.OutboundEmailActivityConfirm" Execute="dcraft.cms.reports.db.OutboundEmailActivityConfirm" />
+		<Procedure Name="dcmServices.Reports.OutboundEmailActivity" Execute="dcraft.mail.OutboundEmailActivity" />
+		<Procedure Name="dcmServices.Reports.OutboundEmailActivityConfirm" Execute="dcraft.mail.OutboundEmailActivityConfirm" />
 
 		<Procedure Name="dcmServices.Common.EmailSubscribe" Execute="dcraft.cms.common.db.EmailSubscribe" />
 

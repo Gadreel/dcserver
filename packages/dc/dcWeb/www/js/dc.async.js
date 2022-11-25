@@ -183,13 +183,18 @@ dc.user.signinAsync = async function(uname, pass, remember) {
   }
 }
 
+/**
+ *  Sign out the current user, kill session on server, clears the cookie from browser
+ *  (only server can clear the cookie, please wait for reply)
+ */
 dc.user.signoutAsync = async function() {
   dc.user._info = { };
   localStorage.removeItem("dc.info.remember");
 
   try {
-    await dc.async.comm.call('dcCoreServices.Authentication.SignOut', null, 1000);
+    await dc.async.comm.call('dcCoreServices.Authentication.SignOut');
   }
   catch (x) {
+    // nothing we can do, ignore it
   }
 }

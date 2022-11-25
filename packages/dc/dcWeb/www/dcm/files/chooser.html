@@ -158,8 +158,8 @@
 
 					litm.attr('href', path);
 
-					if (item.FileName.indexOf('.') != -1) {
-						var fext = item.FileName.substr(item.FileName.indexOf('.')).toLowerCase();
+					if (item.FileName.lastIndexOf('.') != -1) {
+						var fext = item.FileName.substr(item.FileName.lastIndexOf('.')).toLowerCase();
 						var icon = '/imgs/ext-unk.png';
 
 						if ((fext == '.png') || (fext == '.jpg') || (fext == '.jpeg') || (fext == '.gif')) {

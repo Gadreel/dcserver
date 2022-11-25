@@ -194,7 +194,7 @@ public class SliderWidget extends Base implements ICMSAware {
                         }
                     }
                 }
-                catch (IOException x) {
+                catch (IOException | NullPointerException x) {
                     Logger.warn("Problem finding image file: " + lpath);
                     img.with("Path", "/galleries" + lpath);
                 }

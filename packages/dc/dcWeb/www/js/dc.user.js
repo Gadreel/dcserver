@@ -270,7 +270,8 @@ dc.user = {
 	},
 
 	/**
-	 *  Sign out the current user, kill session on server
+	 *  Sign out the current user, kill session on server, clears the cookie from browser
+	 *  (only server can clear the cookie, please wait for reply)
 	 */
 	signout : function(callback) {
 		dc.user._info = { };
@@ -283,8 +284,7 @@ dc.user = {
 		}, function() {
 			if (callback)
 				callback();
-		},
-		1000);
+		});
 	}
 
 }

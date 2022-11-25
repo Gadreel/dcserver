@@ -4,35 +4,22 @@ import dcraft.filestore.CommonPath;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
-import dcraft.hub.op.OperationOutcomeComposite;
-import dcraft.interchange.aws.AWSSMS;
-import dcraft.locale.LocaleUtil;
-import dcraft.log.DebugLevel;
 import dcraft.log.Logger;
-import dcraft.mail.adapter.StaticAdapter;
 import dcraft.script.Script;
 import dcraft.script.StackUtil;
 import dcraft.struct.*;
 import dcraft.task.IParentAwareWork;
 import dcraft.task.IWork;
-import dcraft.task.StateWorkStep;
-import dcraft.task.TaskContext;
 import dcraft.tenant.Site;
 import dcraft.tenant.WebFindResult;
-import dcraft.util.HashUtil;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
-import dcraft.util.web.WebUtil;
 import dcraft.web.md.MarkdownUtil;
 import dcraft.web.ui.inst.Html;
 import dcraft.xml.XElement;
-import dcraft.xml.XText;
 
-import javax.mail.Session;
-import javax.mail.internet.*;
 import java.io.BufferedReader;
 import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -362,14 +349,14 @@ public class MailUtil {
         ListStruct replylist = ListStruct.list();
 
         if (StringUtil.isNotEmpty(to)) {
-            ListStruct parsed = MailUtil.normalizeEmailAddresses(to.replace(';', ','));
+            List<EmailAddress> parsed = EmailAddress.parseList(to);
 
-            for (int i = 0; i < parsed.size(); i++) {
-                String toa = parsed.getItemAsString(i);
-
-                if (! toa.contains(skipto)) {
-                    tolist.with(toa);
-                    actuallist.with(toa);
+            if (parsed != null) {
+                for (EmailAddress address : parsed) {
+                    if (!address.containsDomain(skipto)) {
+                        tolist.with(address.toStringForTransport("aws"));       // TODO don't hard code, configure
+                        actuallist.with(address.toStringNormalized());
+                    }
                 }
             }
         }
@@ -380,73 +367,78 @@ public class MailUtil {
         }
 
         if (StringUtil.isNotEmpty(cc)) {
-            ListStruct parsed = MailUtil.normalizeEmailAddresses(cc.replace(';', ','));
+            List<EmailAddress> parsed = EmailAddress.parseList(cc);
 
-            for (int i = 0; i < parsed.size(); i++) {
-                String toa = parsed.getItemAsString(i);
-
-                if (! toa.contains(skipto)) {
-                    cclist.with(toa);
-                    actuallist.with(toa);
+            if (parsed != null) {
+                for (EmailAddress address : parsed) {
+                    if (!address.containsDomain(skipto)) {
+                        cclist.with(address.toStringForTransport("aws"));       // TODO don't hard code, configure
+                        actuallist.with(address.toStringNormalized());
+                    }
                 }
             }
         }
 
         if (StringUtil.isNotEmpty(bcc)) {
-            ListStruct parsed = MailUtil.normalizeEmailAddresses(bcc.replace(';', ','));
+            List<EmailAddress> parsed = EmailAddress.parseList(bcc);
 
-            for (int i = 0; i < parsed.size(); i++) {
-                String toa = parsed.getItemAsString(i);
-
-                if (! toa.contains(skipto)) {
-                    bcclist.with(toa);
-                    actuallist.with(toa);
+            if (parsed != null) {
+                for (EmailAddress address : parsed) {
+                    if (!address.containsDomain(skipto)) {
+                        bcclist.with(address.toStringForTransport("aws"));       // TODO don't hard code, configure
+                        actuallist.with(address.toStringNormalized());
+                    }
                 }
             }
         }
 
         if (StringUtil.isNotEmpty(reply)) {
-            ListStruct parsed = MailUtil.normalizeEmailAddresses(reply.replace(';', ','));
+            List<EmailAddress> parsed = EmailAddress.parseList(reply);
 
-            if (parsed.size() == 0) {
+            if ((parsed == null) || (parsed.size() == 0)) {
                 if (settings.hasNotEmptyAttribute("DefaultReplyTo")) {
                     reply = settings.getAttribute("DefaultReplyTo");
-                    parsed = MailUtil.normalizeEmailAddresses(reply.replace(';', ','));
+                    parsed = EmailAddress.parseList(reply);
                 }
             }
 
-            for (int i = 0; i < parsed.size(); i++)
-                replylist.with(parsed.getItemAsString(i));
+            if (parsed != null) {
+                for (EmailAddress address : parsed) {
+                    if (!address.containsDomain(skipto)) {
+                        replylist.with(address.toStringForTransport("aws"));       // TODO don't hard code, configure
+                    }
+                }
+            }
         }
 
         return RecordStruct.record()
                 .with("ActualAddresses", actuallist)
                 .with("Sms", RecordStruct.record()
-                    .with("FromEmailAddress", fromfinal)
-                    .with("Destination", RecordStruct.record()
-                            .with("ToAddresses", tolist)
-                            .withConditional( "CcAddresses", cclist)
-                            .withConditional( "BccAddresses", bcclist)
-                    )
-                    .with("Content", RecordStruct.record()
-                            .with("Simple", RecordStruct.record()
-                                    .with("Subject", RecordStruct.record()
-                                            .with("Charset", "UTF-8")
-                                            .with("Data", subject)
-                                    )
-                                    .with("Body", RecordStruct.record()
-                                            .withConditional(StringUtil.isNotEmpty(textbody), "Text", RecordStruct.record()
-                                                    .with("Charset", "UTF-8")
-                                                    .with("Data", textbody)
-                                            )
-                                            .withConditional(StringUtil.isNotEmpty(body), "Html", RecordStruct.record()
-                                                    .with("Charset", "UTF-8")
-                                                    .with("Data", body)
-                                            )
-                                    )
-                            )
-                    )
-                    .withConditional( "ReplyToAddresses", replylist)
+                        .with("FromEmailAddress", fromfinal)
+                        .with("Destination", RecordStruct.record()
+                                .with("ToAddresses", tolist)
+                                .withConditional("CcAddresses", cclist)
+                                .withConditional("BccAddresses", bcclist)
+                        )
+                        .with("Content", RecordStruct.record()
+                                .with("Simple", RecordStruct.record()
+                                        .with("Subject", RecordStruct.record()
+                                                .with("Charset", "UTF-8")
+                                                .with("Data", subject)
+                                        )
+                                        .with("Body", RecordStruct.record()
+                                                .withConditional(StringUtil.isNotEmpty(textbody), "Text", RecordStruct.record()
+                                                        .with("Charset", "UTF-8")
+                                                        .with("Data", textbody)
+                                                )
+                                                .withConditional(StringUtil.isNotEmpty(body), "Html", RecordStruct.record()
+                                                        .with("Charset", "UTF-8")
+                                                        .with("Data", body)
+                                                )
+                                        )
+                                )
+                        )
+                        .withConditional("ReplyToAddresses", replylist)
                 );
     }
 
@@ -459,52 +451,12 @@ public class MailUtil {
     // for all valid email addresses (which should be under 80 chars) this is not a problem
     // but to be sure we use a hash if the value is too large
     static public String indexableEmailAddress(String address) {
-        if (StringUtil.isEmpty(address)) {
-            Logger.warn("Email address is missing for cleanEmailAddress");
+        List<EmailAddress> parsed = EmailAddress.parseList(address);
+
+        if ((parsed == null) || (parsed.size() == 0))
             return null;
-        }
 
-        try {
-            // TODO either update javamail or replace so that we can support ALL special characters in domains, for example
-            // does not currently support the valid address andy@\uD834\uDD1E-\uD834\uDD31-\uD834\uDD2B.designcraft.io
-            InternetAddress[] toaddrs = InternetAddress.parse(address);
-
-            if ((toaddrs == null) || (toaddrs.length == 0)) {
-                Logger.warn("Email address is not valid: " + address);
-                return null;
-            }
-
-            address = toaddrs[0].getAddress();
-
-            // https://en.wikipedia.org/wiki/Internationalized_domain_name
-
-            int dpos = address.indexOf('@');
-            String local = address.substring(0, dpos);
-            String domain = address.substring(dpos + 1);
-
-            // some mail providers may support mixed case email address, if we run into that we
-            // should consider a domain lookup in the dcTenant to see if that domain supports mixed casing
-            // and then skip the below
-
-            // currently going along with l3x answer https://stackoverflow.com/questions/9807909/are-email-addresses-case-sensitive
-            // but only for accounts with 7 bit ascii
-
-            local = WebUtil.toASCIILower(local);
-
-            // put domain into proper casing, especially for sub key
-            domain = WebUtil.normalizeDomainName(domain);
-
-            String cleaned = local + "@" + domain;
-
-            if (StringUtil.isNotEmpty(cleaned) && (cleaned.length() > 1000))
-                cleaned = HashUtil.getSha256(cleaned);
-
-            return cleaned;
-        }
-        catch (AddressException | IndexOutOfBoundsException | NullPointerException x) {
-            Logger.warn("Email address is not valid: " + address + " - " + x);
-            return null;
-        }
+        return parsed.get(0).toStringForIndex();
     }
 
     // for sending, not for storage or display
@@ -512,87 +464,11 @@ public class MailUtil {
     //
     // lowercase 7 bit ascii and idn domains
     static public String normalizeEmailAddress(String address) {
-        if (StringUtil.isEmpty(address)) {
-            Logger.warn("Email address is missing for cleanEmailAddress");
+        List<EmailAddress> parsed = EmailAddress.parseList(address);
+
+        if ((parsed == null) || (parsed.size() == 0))
             return null;
-        }
 
-        try {
-            // TODO either update javamail or replace so that we can support ALL special characters in domains, for example
-            // does not currently support the valid address andy@\uD834\uDD1E-\uD834\uDD31-\uD834\uDD2B.designcraft.io
-            InternetAddress[] toaddrs = InternetAddress.parse(address);
-
-            if ((toaddrs == null) || (toaddrs.length == 0)) {
-                Logger.warn("Email address is not valid: " + address);
-                return null;
-            }
-
-            MailUtil.normalizeEmailAddress(toaddrs[0]);
-
-            return toaddrs[0].getAddress();
-        }
-        catch (AddressException | IndexOutOfBoundsException | NullPointerException x) {
-            Logger.warn("Email address is not valid: " + address + " - " + x);
-            return null;
-        }
-    }
-
-    // for sending, not for storage or display
-    //
-    // lowercase 7 bit ascii and idn domains
-    static public ListStruct normalizeEmailAddresses(String address) {
-        ListStruct result = ListStruct.list();
-
-        if (StringUtil.isEmpty(address)) {
-            Logger.warn("Email address is missing for cleanEmailAddress");
-            return result;
-        }
-
-        try {
-            // TODO either update javamail or replace so that we can support ALL special characters in domains, for example
-            // does not currently support the valid address andy@\uD834\uDD1E-\uD834\uDD31-\uD834\uDD2B.designcraft.io
-            InternetAddress[] toaddrs = InternetAddress.parse(address);
-
-            if ((toaddrs == null) || (toaddrs.length == 0)) {
-                Logger.warn("Email address is not valid: " + address);
-                return result;
-            }
-
-            for (int i = 0; i < toaddrs.length; i++) {
-                MailUtil.normalizeEmailAddress(toaddrs[i]);
-
-                result.with(toaddrs[i].toString());
-            }
-        }
-        catch (AddressException | IndexOutOfBoundsException | NullPointerException x) {
-            Logger.warn("Email address is not valid: " + address + " - " + x);
-        }
-
-        return result;
-    }
-
-    // for sending, not for storage or display
-    //
-    // lowercase 7 bit ascii and idn domains
-    //
-    // TODO either update javamail or replace so that we can support ALL special characters in domains, for example
-    // does not currently support the valid address andy@\uD834\uDD1E-\uD834\uDD31-\uD834\uDD2B.designcraft.io
-    static public void normalizeEmailAddress(InternetAddress address) {
-        if (address == null) {
-            Logger.warn("Email address is missing for normalizeEmailAddress");
-            return;
-        }
-
-        String fulladdress = address.getAddress();
-
-        // would not be a valid address (non-null object) if @ was not present - safe to assume
-        int dpos = fulladdress.indexOf('@');
-        String local = fulladdress.substring(0, dpos);
-        String domain = fulladdress.substring(dpos + 1);
-
-        // put domain into proper casing / idn
-        // https://en.wikipedia.org/wiki/Internationalized_domain_name
-
-        address.setAddress(local + "@" + WebUtil.normalizeDomainName(domain));
+        return parsed.get(0).toStringNormalized();
     }
 }

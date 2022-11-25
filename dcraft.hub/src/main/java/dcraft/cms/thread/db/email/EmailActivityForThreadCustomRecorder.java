@@ -1,6 +1,6 @@
 package dcraft.cms.thread.db.email;
 
-import dcraft.cms.reports.db.EmailActivityUtil;
+import dcraft.mail.EmailActivityUtil;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
 import dcraft.db.tables.TablesAdapter;
@@ -11,6 +11,8 @@ import dcraft.mail.MailUtil;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.util.StringUtil;
+
+// TODO move this into a schema - adapter? or maybe adapter calls this?
 
 public class EmailActivityForThreadCustomRecorder implements IStoredProc {
 	@Override
@@ -34,6 +36,8 @@ public class EmailActivityForThreadCustomRecorder implements IStoredProc {
 			callback.returnEmpty();
 			return;
 		}
+
+		// TODO create contacts as well
 
 		String actid = EmailActivityUtil.createGetRecord(db, msgid);
 
