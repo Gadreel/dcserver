@@ -1,16 +1,23 @@
 package dcraft.web.ui.inst;
 
+import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.hub.op.OperationMarker;
+import dcraft.log.Logger;
+import dcraft.script.ScriptHub;
 import dcraft.script.StackUtil;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.StackWork;
+import dcraft.struct.FieldStruct;
+import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
 import dcraft.web.ui.UIUtil;
 import dcraft.xml.XElement;
 
-public class Link extends Base {
+public class Link extends Base implements ICMSAware {
 	static public Link tag() {
 		Link el = new Link();
 		el.setName("dc.Link");
@@ -186,4 +193,32 @@ public class Link extends Base {
 			this.setName("a");
 		}
     }
+
+	@Override
+	public boolean applyCommand(CommonPath path, XElement root, RecordStruct command) throws OperatingContextException {
+		String cmd = command.getFieldAsString("Command");
+
+		if ("UpdatePart".equals(cmd)) {
+			// TODO check that the changes made are allowed - e.g. on TextWidget
+			RecordStruct params = command.getFieldAsRecord("Params");
+			String area = params.selectAsString("Area");
+
+			if ("Props".equals(area)) {
+				RecordStruct props = params.getFieldAsRecord("Properties");
+
+				if (props != null) {
+					for (FieldStruct fld : props.getFields()) {
+						if (fld.getValue() != null)
+							this.attr(fld.getName(), Struct.objectToString(fld.getValue()));
+						else
+							this.removeAttribute(fld.getName());
+					}
+				}
+
+				return true;
+			}
+		}
+
+		return false;
+	}
 }

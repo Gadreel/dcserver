@@ -225,6 +225,7 @@
 			<Tag Name="dcs.Include" Class="dcraft.script.inst.Include" />
 			<Tag Name="dcs.Indirect" Class="dcraft.script.inst.Indirect" />
 			<Tag Name="dcs.Eval" Class="dcraft.script.inst.Eval" />
+			<Tag Name="dcs.EvalCode" Class="dcraft.script.inst.EvalCode" />
 			<Tag Name="dcs.Info" Class="dcraft.script.inst.Info" />
 			<Tag Name="dcs.Main" Class="dcraft.script.inst.Main" />
 			<Tag Name="dcs.Out" Class="dcraft.script.inst.doc.Out" />

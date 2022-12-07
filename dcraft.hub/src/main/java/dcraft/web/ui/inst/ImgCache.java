@@ -84,6 +84,11 @@ public class ImgCache extends Base {
 		if (StringUtil.isEmpty(path))
 			return;
 
+		if (path.startsWith("http")) {
+			this.attr("src", path);
+			return;
+		}
+
 		CommonPath commonPath = CommonPath.from(path);
 
 		if ((commonPath == null) || commonPath.isRoot())

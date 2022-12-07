@@ -174,9 +174,21 @@ public class StringStruct extends ScalarStruct {
 			if (this.value == null)
 				this.value = "";
 			
-			String sref = code.hasAttribute("Value")
-					? StackUtil.stringFromElement(stack, code, "Value")
-					: StackUtil.resolveValueToString(stack, code.getText());
+			String sref = null;
+
+			if (code.hasAttribute("Value")) {
+				if (StackUtil.boolFromElement(stack, code, "Raw")) {
+					BaseStruct rawsrc = StackUtil.refFromElement(stack, code, "Value");
+
+					sref = Struct.objectToString(rawsrc);
+				}
+				else {
+					sref = StackUtil.stringFromElement(stack, code, "Value");
+				}
+			}
+			else {
+				sref = StackUtil.resolveValueToString(stack, code.getText());
+			}
 
 			String its = Struct.objectToString(sref);
 			

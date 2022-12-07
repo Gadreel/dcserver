@@ -46,6 +46,11 @@ dc.async = {
       blobToImage: async function(blob) {
         const dataUrl = await dc.async.util.File.dataUrlReader(blob);
         return await dc.async.util.Image.loadImage(dataUrl);
+      },
+      canvasToBlob: async function(canvas, type, quality) {
+        return new Promise(function(resolve) {
+          canvas.toBlob(resolve, type || 'image/jpeg', quality ?? .9);
+        });
       }
     }
   },

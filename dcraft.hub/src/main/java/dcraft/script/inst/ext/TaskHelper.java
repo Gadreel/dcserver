@@ -23,6 +23,7 @@ import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.hub.resource.CustomVaultResource;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.log.Logger;
+import dcraft.script.Script;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
 import dcraft.script.work.ExecuteState;
@@ -68,6 +69,7 @@ public class TaskHelper extends Instruction {
 			String title = StackUtil.stringFromSourceClean(stack, "Title");
 			String topic = StackUtil.stringFromSourceClean(stack, "Topic", "Batch");
 			String script = StackUtil.stringFromSourceClean(stack, "Script");
+			String code = StackUtil.stringFromSourceClean(stack, "Code");
 
 			Task task = (context != null) ? Task.of((RecordStruct) context) : Task.ofSubContext();
 
@@ -78,6 +80,8 @@ public class TaskHelper extends Instruction {
 
 			if (StringUtil.isNotEmpty(script))
 				task.withScript(script);
+			else if (StringUtil.isNotEmpty(code))
+				task.withWork(Script.of(code).toWork());
 
 			if (params != null)
 				task.withParams(params);
