@@ -151,6 +151,7 @@ public class SmsUtil {
 		callback.returnEmpty();
 	}
 
+	/*
 	static public void sendSms(String alt, String number, String msg, OperationOutcomeRecord callback) {
 		SmsUtil.sendSms(alt, number, msg, null, callback);
 	}
@@ -245,6 +246,9 @@ public class SmsUtil {
 		}
 	}
 
+	 */
+
+	// TODO can we reuse this idea in the SendText feature?
 	static public HttpRequest.Builder buildBasicRequest(String alt, String path, String post) {
 		XElement twilio = ApplicationHub.getCatalogSettings("CMS-SMS-Twilio", alt);
 
