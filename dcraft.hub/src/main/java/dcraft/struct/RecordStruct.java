@@ -21,6 +21,7 @@ import dcraft.script.inst.LogicBlockState;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.StackUtil;
 import dcraft.script.work.StackWork;
+import dcraft.struct.scalar.StringStruct;
 import dcraft.task.IParentAwareWork;
 
 import java.math.BigDecimal;
@@ -790,8 +791,11 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 	public void checkLogic(IParentAwareWork stack, XElement source, LogicBlockState logicState) throws OperatingContextException {
 		if (source.hasAttribute("HasField")) {
 			if (logicState.pass) {
-				String other = StackUtil.stringFromElement(stack, source, "HasField");
-				logicState.pass = this.hasField(other);
+				BaseStruct other = StackUtil.refFromElement(stack, source, "HasField", true);
+				String fieldName = Struct.objectToString(other);
+
+				if (StringUtil.isNotEmpty(fieldName))
+					logicState.pass = this.hasField(fieldName);
 			}
 			
 			logicState.checked = true;
@@ -931,13 +935,16 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 		}
 
 		if ("SetField".equals(code.getName())) {
-            String def = StackUtil.stringFromElement(stack, code, "Type");
-            String name = StackUtil.stringFromElement(stack, code, "Name");
-			
+			BaseStruct name1 = StackUtil.refFromElement(stack, code, "Name", true);
+			String name = Struct.objectToString(name1);
+
 			if (StringUtil.isEmpty(name)) {
 				Logger.error("Missing field name in SetField");
 				return ReturnOption.CONTINUE;
 			}
+
+			BaseStruct def1 = StackUtil.refFromElement(stack, code, "Type", true);
+			String def = Struct.objectToString(def1);
 
 			BaseStruct var = null;
             
@@ -970,8 +977,11 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 		}
 
 		if ("EnsureField".equals(code.getName())) {
-			String def = StackUtil.stringFromElement(stack, code, "Type");
-			String name = StackUtil.stringFromElement(stack, code, "Name");
+			BaseStruct name1 = StackUtil.refFromElement(stack, code, "Name", true);
+			String name = Struct.objectToString(name1);
+
+			BaseStruct def1 = StackUtil.refFromElement(stack, code, "Type", true);
+			String def = Struct.objectToString(def1);
 
 			if (StringUtil.isEmpty(name) || StringUtil.isEmpty(def)) {
 				Logger.error("Missing field name or definition in EnsureField");
@@ -987,8 +997,9 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 		}
 
 		if ("RemoveField".equals(code.getName())) {
-			String name = StackUtil.stringFromElement(stack, code, "Name");
-			
+			BaseStruct name1 = StackUtil.refFromElement(stack, code, "Name", true);
+			String name = Struct.objectToString(name1);
+
 			if (StringUtil.isEmpty(name)) {
 				Logger.error("Missing field name in RemoveField");
 				return ReturnOption.CONTINUE;
@@ -1000,8 +1011,9 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 		}
 
 		if ("NewList".equals(code.getName())) {
-			String name = StackUtil.stringFromElement(stack, code, "Name");
-			
+			BaseStruct name1 = StackUtil.refFromElement(stack, code, "Name", true);
+			String name = Struct.objectToString(name1);
+
 			if (StringUtil.isEmpty(name)) {
 				Logger.error("Missing field name in NewList");
 				return ReturnOption.CONTINUE;
@@ -1015,8 +1027,9 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 		}
 
 		if ("NewRecord".equals(code.getName())) {
-			String name = StackUtil.stringFromElement(stack, code, "Name");
-			
+			BaseStruct name1 = StackUtil.refFromElement(stack, code, "Name", true);
+			String name = Struct.objectToString(name1);
+
 			if (StringUtil.isEmpty(name)) {
 				Logger.error("Missing field name in NewRecord");
 				return ReturnOption.CONTINUE;
@@ -1029,24 +1042,63 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 			return ReturnOption.CONTINUE;
 		}
 
+		if ("RenameField".equals(code.getName())) {
+			BaseStruct from1 = StackUtil.refFromElement(stack, code, "From", true);
+			String from = Struct.objectToString(from1);
+
+			BaseStruct to1 = StackUtil.refFromElement(stack, code, "To", true);
+			String to = Struct.objectToString(to1);
+
+			if (StringUtil.isNotEmpty(from) && StringUtil.isNotEmpty(to))
+				this.renameField(from, to);
+
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("GetField".equals(code.getName())) {
+			BaseStruct name1 = StackUtil.refFromElement(stack, code, "Name", true);
+			String name = Struct.objectToString(name1);
+
+			String handle = StackUtil.stringFromElementClean(stack, code, "Result");
+
+			if (handle != null) {
+				if (StringUtil.isEmpty(name))
+					StackUtil.addVariable(stack, handle, NullStruct.instance);
+				else
+					StackUtil.addVariable(stack, handle, this.getField(name));
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+
 		if ("HasField".equals(code.getName())) {
-			String name = StackUtil.stringFromElement(stack, code, "Name");
-			String handle = StackUtil.stringFromElement(stack, code, "Handle");
-			
+			BaseStruct name1 = StackUtil.refFromElement(stack, code, "Name", true);
+			String name = Struct.objectToString(name1);
+
+			String handle = StackUtil.stringFromElementClean(stack, code, "Handle");
+
+			if (StringUtil.isEmpty(handle))
+				handle = StackUtil.stringFromElementClean(stack, code, "Result");
+
 			if (handle != null) {
 				if (StringUtil.isEmpty(name))
 					StackUtil.addVariable(stack, handle, BooleanStruct.of(false));
 				else
 					StackUtil.addVariable(stack, handle, BooleanStruct.of(this.hasField(name)));
 			}
-			
+
 			return ReturnOption.CONTINUE;
 		}
 
 		if ("IsFieldEmpty".equals(code.getName())) {
-			String name = StackUtil.stringFromElement(stack, code, "Name");
-			String handle = StackUtil.stringFromElement(stack, code, "Handle");
-			
+			BaseStruct name1 = StackUtil.refFromElement(stack, code, "Name", true);
+			String name = Struct.objectToString(name1);
+
+			String handle = StackUtil.stringFromElementClean(stack, code, "Handle");
+
+			if (StringUtil.isEmpty(handle))
+				handle = StackUtil.stringFromElementClean(stack, code, "Result");
+
 			if (handle != null) {
 				if (StringUtil.isEmpty(name))
 					StackUtil.addVariable(stack, handle, BooleanStruct.of(true));
@@ -1059,6 +1111,9 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 		if ("FieldsToList".equals(code.getName())) {
 			String handle = StackUtil.stringFromElement(stack, code, "Handle");
+
+			if (StringUtil.isEmpty(handle))
+				handle = StackUtil.stringFromElementClean(stack, code, "Result");
 
 			if (handle != null) {
 				ListStruct fields = ListStruct.list(this.fields.keySet());

@@ -97,9 +97,17 @@ public class SqlUtil {
                         RecordStruct rec = RecordStruct.record();
 
                         for(int i=1; i<=columns; i++) {
-                            //System.out.println("columnlabel: " + md.getColumnLabel(i));
+                            //if ("Tags".equals(md.getColumnLabel(i)))
+                            //   System.out.println("columnlabel: " + md.getColumnLabel(i) + " : " + md.getColumnTypeName(i) + " : " + md.getColumnType(i));
 
-                            rec.with(md.getColumnLabel(i), rs.getObject(i));
+                            if ("JSON".equals(md.getColumnTypeName(i)) && (rs.getObject(i) instanceof CharSequence)) {
+                                //CompositeParser.parseJson(this.value)
+                                //System.out.println("parse it");
+                                rec.with(md.getColumnLabel(i), CompositeParser.parseJson((CharSequence) rs.getObject(i)));
+                            }
+                            else {
+                                rec.with(md.getColumnLabel(i), rs.getObject(i));
+                            }
                         }
 
                         list.with(rec);
@@ -157,6 +165,11 @@ public class SqlUtil {
             return res;
         }
 
+        return executeUpdateFreestyle(conn, writer.toSql(), writer.toParams());
+    }
+
+    // return count of records updated
+    static public FuncResult<Long> executeDelete(Connection conn, SqlWriter writer) throws OperatingContextException {
         return executeUpdateFreestyle(conn, writer.toSql(), writer.toParams());
     }
 

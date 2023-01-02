@@ -39,7 +39,7 @@ public class SqlDeleteWriter extends Instruction {
 				SqlWriter writer = SqlWriter.delete(table, id);
 
 				try (SqlConnection conn = SqlUtil.getConnection(db)) {
-					FuncResult<Long> results = conn.executeWrite(writer);
+					FuncResult<Long> results = conn.executeDelete(writer);
 
 					if (StringUtil.isNotEmpty(result))
 						StackUtil.addVariable(state, result, IntegerStruct.of(results.getResult()));

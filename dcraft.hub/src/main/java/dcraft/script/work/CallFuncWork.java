@@ -10,6 +10,7 @@ import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
 import dcraft.struct.BaseStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.NullStruct;
 import dcraft.task.IParentAwareWork;
 import dcraft.task.IProgressAwareWork;
 import dcraft.task.IResultAwareWork;
@@ -53,6 +54,13 @@ public class CallFuncWork extends InstructionWork implements IResultAwareWork, I
 	// this is called from within the Script context, bypassing the std run ctx
 	@Override
 	public ReturnOption run() throws OperatingContextException {
+		if (this.state == ExecuteState.READY) {
+			String result = StackUtil.stringFromSource(this, "Result");
+
+			if (StringUtil.isNotEmpty(result))
+				StackUtil.addVariable(this.parent, result, NullStruct.instance);  // set default result
+		}
+
 		if ((inst == null) || (this.state == ExecuteState.DONE))
 			return ReturnOption.DONE;
 		
@@ -97,9 +105,8 @@ public class CallFuncWork extends InstructionWork implements IResultAwareWork, I
 
 		String result = StackUtil.stringFromSource(this, "Result");
 
-		if (StringUtil.isNotEmpty(result)) {
+		if (StringUtil.isNotEmpty(result))
 			StackUtil.addVariable(this.parent, result, v);
-		}
 	}
 	
 	/**

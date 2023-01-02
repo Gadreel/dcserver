@@ -29,6 +29,7 @@ import dcraft.script.StackUtil;
 import dcraft.script.work.StackWork;
 import dcraft.struct.BaseStruct;
 import dcraft.task.IParentAwareWork;
+import dcraft.util.StringUtil;
 import org.threeten.extra.PeriodDuration;
 
 import dcraft.hub.op.OperatingContextException;
@@ -202,17 +203,24 @@ public class DateTimeStruct extends ScalarStruct {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("ParseLocal".equals(code.getName())) {
-			String datetime = code.hasAttribute("Value")
-					? StackUtil.stringFromElementClean(stack, code, "Value")
-					: StackUtil.resolveValueToString(stack, code.getText(), true);
+			BaseStruct datetime1 = StackUtil.refFromElement(stack, code, "Value", true);
+			String datetime = Struct.objectToString(datetime1);
+
+			if (StringUtil.isEmpty(datetime))
+				datetime = StackUtil.resolveValueToString(stack, code.getText(), true);
+
+			BaseStruct fmt1 = StackUtil.refFromElement(stack, code, "Format", true);
+			String fmt = Struct.objectToString(fmt1);
 
 			datetime = datetime.trim();
 
 			try {
-				String fmt = "yyyy-M-d h:m[:s] a";
+				if (StringUtil.isEmpty(fmt)) {
+					fmt = "yyyy-M-d h:m[:s] a";
 
-				if (datetime.indexOf(' ') == -1)
-					fmt = "yyyy-M-d";
+					if (datetime.indexOf(' ') == -1)
+						fmt = "yyyy-M-d";
+				}
 
 				DateTimeFormatter dtf = new DateTimeFormatterBuilder()
 						.parseCaseInsensitive()

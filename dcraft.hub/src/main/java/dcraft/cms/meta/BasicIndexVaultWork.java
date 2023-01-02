@@ -73,7 +73,7 @@ public class BasicIndexVaultWork implements IWork {
         // run map
         // if not empty then index
 
-        CustomVaultUtil.interiateFileCache(vaultName, recordFilter, new OperationOutcomeEmpty() {
+        CustomVaultUtil.interiateFileCache(vaultName, CommonPath.ROOT, -1, recordFilter, new OperationOutcomeEmpty() {
             @Override
             public void callback() throws OperatingContextException {
                 taskctx.returnEmpty();

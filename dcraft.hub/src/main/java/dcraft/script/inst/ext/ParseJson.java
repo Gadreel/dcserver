@@ -22,8 +22,11 @@ import dcraft.script.inst.Instruction;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
+import dcraft.struct.BaseStruct;
 import dcraft.struct.CompositeParser;
 import dcraft.struct.CompositeStruct;
+import dcraft.struct.scalar.NullStruct;
+import dcraft.struct.scalar.StringStruct;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 import dcraft.xml.XmlReader;
@@ -43,18 +46,16 @@ public class ParseJson extends Instruction {
 	@Override
 	public ReturnOption run(InstructionWork stack) throws OperatingContextException {
 		if (stack.getState() == ExecuteState.READY) {
-			String source = StackUtil.stringFromSourceClean(stack, "Source");
+			BaseStruct source = StackUtil.refFromSource(stack, "Source");
+			String result = StackUtil.stringFromSource(stack, "Result");
+			BaseStruct struct = NullStruct.instance;
 
-			CompositeStruct struct = CompositeParser.parseJson(source);
+			if (source instanceof StringStruct)
+				struct = CompositeParser.parseJson(((StringStruct)source).getValue());
 
-			if (struct != null) {
-				String result = StackUtil.stringFromSource(stack, "Result");
-				
-				if (StringUtil.isNotEmpty(result)) {
-					StackUtil.addVariable(stack, result, struct);
-				}
-			}
-			
+			if (StringUtil.isNotEmpty(result))
+				StackUtil.addVariable(stack, result, struct);
+
 			return ReturnOption.CONTINUE;
 		}
 

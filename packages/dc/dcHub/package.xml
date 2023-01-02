@@ -344,6 +344,8 @@
 			<Definition Code="hexdecode" Class="dcraft.struct.format.HexDecode" />
 			<Definition Code="hexencode" Class="dcraft.struct.format.HexEncode" />
 
+			<Definition Code="stdcanonicalpath" Class="dcraft.struct.format.StandardCanonicalPath" />
+
 			<!--
 			// TODO format date/time to chrono
 

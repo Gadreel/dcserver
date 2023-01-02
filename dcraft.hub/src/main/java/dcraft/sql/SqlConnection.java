@@ -157,6 +157,18 @@ public class SqlConnection implements AutoCloseable {
     }
 
     // return count of records updated
+    public FuncResult<Long> executeDelete(SqlWriter writer) throws OperatingContextException {
+        try (OperationMarker om = OperationMarker.create()) {
+            FuncResult<Long> result = SqlUtil.executeDelete(this.conn, writer);
+
+            if (om.hasCode(195))
+                this.errored = true;
+
+            return result;
+        }
+    }
+
+    // return count of records updated
     public FuncResult<Long> executeWrite(SqlWriter writer) throws OperatingContextException {
         try (OperationMarker om = OperationMarker.create()) {
             FuncResult<Long> result = SqlUtil.executeWrite(this.conn, writer);

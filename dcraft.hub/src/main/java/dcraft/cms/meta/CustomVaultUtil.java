@@ -398,6 +398,89 @@ public class CustomVaultUtil {
 		callback.returnEmpty();
 	}
 
+	/*
+	 ;  Vault           name
+	 ;	Path			path to list
+	 ;	Locale			to search in
+	 ;
+	 ; Result
+	 ;		List of records
+	 */
+	static public void listFileCacheFolder(String vaultname, CommonPath path, OperationOutcomeStruct callback) throws OperatingContextException {
+		Vault vault = OperationContext.getOrThrow().getSite().getVault(vaultname);
+		
+		if (vault == null) {
+			Logger.error("Invalid vault name");
+			callback.returnEmpty();
+			return;
+		}
+
+		long depth = 1;
+
+		IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
+
+		FileIndexAdapter adapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
+		
+		ICompositeBuilder out = new ObjectBuilder();
+
+		IVariableAware scope = CustomScope.of(OperationContext.getOrThrow());
+
+		BasicFilter addFilter = new BasicFilter() {
+			@Override
+			public ExpressionResult check(FileIndexAdapter adapter, IVariableAware scope, Vault vault, CommonPath path, RecordStruct file) throws OperatingContextException {
+				file.with("Path", path);
+
+				RecordStruct rcache = (RecordStruct) scope.queryVariable("_RecordCache");
+
+				if (rcache != null) {
+					file.with("Score", rcache.getFieldAsInteger("TermScore"));
+				}
+
+				try {
+					List<Object> entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+
+					entrykeys.add("Data");
+
+					BaseStruct data = Struct.objectToComposite(adapter.getRequest().getInterface().get(entrykeys.toArray()));
+
+					file.with("Data", data);
+
+					out.value(file);
+				}
+				catch (BuilderStateException x) {
+
+				}
+				catch (DatabaseException x) {
+					// TODO
+				}
+
+				return ExpressionResult.accepted();
+			}
+		};
+
+		IFilter filter = new StandardAccess()
+					.withNested(
+						addFilter
+					);
+
+		try (OperationMarker om = OperationMarker.create()) {
+			out.startList();
+			
+			adapter.traverseIndex(vault, path, (int) depth, scope, filter);
+			
+			out.endList();
+			
+			if (! om.hasErrors()) {
+				callback.returnValue(out.toLocal());
+				return;
+			}
+		}
+		catch (Exception x) {
+			Logger.error("Issue with select direct: " + x);
+		}
+		
+		callback.returnValue(out.toLocal());
+	}
 
 	/*
 	 ;  Vault           name
@@ -409,7 +492,7 @@ public class CustomVaultUtil {
 	 */
 	static public void searchFileCache(String vaultname, String term, String locale, ListStruct tags, OperationOutcomeStruct callback) throws OperatingContextException {
 		Vault vault = OperationContext.getOrThrow().getSite().getVault(vaultname);
-		
+
 		if (vault == null) {
 			Logger.error("Invalid vault name");
 			callback.returnEmpty();
@@ -424,45 +507,43 @@ public class CustomVaultUtil {
 		IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
 
 		FileIndexAdapter adapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
-		
+
 		ICompositeBuilder out = new ObjectBuilder();
 
 		IVariableAware scope = CustomScope.of(OperationContext.getOrThrow());
-		
+
 		Term termfilter = new Term();
-		
+
 		termfilter.init(term, locale);
 
 		BasicFilter addFilter = new BasicFilter() {
 			@Override
 			public ExpressionResult check(FileIndexAdapter adapter, IVariableAware scope, Vault vault, CommonPath path, RecordStruct file) throws OperatingContextException {
-				if (file.getFieldAsBooleanOrFalse("Public")) {
-					file.with("Path", path);
+				file.with("Path", path);
 
-					RecordStruct rcache = (RecordStruct) scope.queryVariable("_RecordCache");
+				RecordStruct rcache = (RecordStruct) scope.queryVariable("_RecordCache");
 
-					if (rcache != null) {
-						file.with("Score", rcache.getFieldAsInteger("TermScore"));
-					}
+				if (rcache != null) {
+					file.with("Score", rcache.getFieldAsInteger("TermScore"));
+				}
 
 
-					try {
-						List<Object> entrykeys = FileIndexAdapter.pathToIndex(vault, path);
+				try {
+					List<Object> entrykeys = FileIndexAdapter.pathToIndex(vault, path);
 
-						entrykeys.add("Data");
+					entrykeys.add("Data");
 
-						BaseStruct data = Struct.objectToComposite(adapter.getRequest().getInterface().get(entrykeys.toArray()));
+					BaseStruct data = Struct.objectToComposite(adapter.getRequest().getInterface().get(entrykeys.toArray()));
 
-						file.with("Data", data);
+					file.with("Data", data);
 
-						out.value(file);
-					}
-					catch (BuilderStateException x) {
+					out.value(file);
+				}
+				catch (BuilderStateException x) {
 
-					}
-					catch (DatabaseException x) {
-						// TODO
-					}
+				}
+				catch (DatabaseException x) {
+					// TODO
 				}
 
 				return ExpressionResult.accepted();
@@ -488,11 +569,11 @@ public class CustomVaultUtil {
 
 		try (OperationMarker om = OperationMarker.create()) {
 			out.startList();
-			
+
 			adapter.traverseIndex(vault, path, (int) depth, scope, filter);
-			
+
 			out.endList();
-			
+
 			if (! om.hasErrors()) {
 				callback.returnValue(out.toLocal());
 				return;
@@ -501,11 +582,11 @@ public class CustomVaultUtil {
 		catch (Exception x) {
 			Logger.error("Issue with select direct: " + x);
 		}
-		
+
 		callback.returnValue(out.toLocal());
 	}
 
-	static public void interiateFileCache(String vaultname, IFilter filter, OperationOutcomeEmpty callback) throws OperatingContextException {
+	static public void interiateFileCache(String vaultname, CommonPath path, long depth, IFilter filter, OperationOutcomeEmpty callback) throws OperatingContextException {
 		Vault vault = OperationContext.getOrThrow().getSite().getVault(vaultname);
 
 		if (vault == null) {
@@ -515,9 +596,6 @@ public class CustomVaultUtil {
 		}
 
 		// search params
-
-		CommonPath path = CommonPath.ROOT;
-		long depth = -1;
 
 		IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
 

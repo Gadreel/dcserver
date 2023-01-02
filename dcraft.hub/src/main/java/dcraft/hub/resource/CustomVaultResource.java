@@ -10,6 +10,7 @@ import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
 import dcraft.service.base.Vaults;
 import dcraft.struct.*;
+import dcraft.struct.scalar.NullStruct;
 import dcraft.tenant.Site;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
@@ -232,7 +233,32 @@ public class CustomVaultResource extends ResourceBase {
             if (StringUtil.isNotEmpty(taglist))
                 tags.with(taglist.split(","));
 
+            if (StringUtil.isNotEmpty(result))
+                StackUtil.addVariable(stack, result, NullStruct.instance);
+
             CustomVaultUtil.searchFileCache(alias, term, locale, tags, new OperationOutcomeStruct() {
+                @Override
+                public void callback(BaseStruct found) throws OperatingContextException {
+                    if (StringUtil.isNotEmpty(result) && (found != null))
+                        StackUtil.addVariable(stack, result, found);
+
+                    stack.withContinueFlag();
+
+                    OperationContext.getAsTaskOrThrow().resume();
+                }
+            });
+
+            return ReturnOption.AWAIT;
+        }
+
+        if ("ListDataFoler".equals(code.getName())) {
+            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias", true));
+            String path = Struct.objectToString(StackUtil.refFromElement(stack, code, "Path", true));
+            String result = StackUtil.stringFromElementClean(stack, code, "Result");
+
+            CommonPath p = StringUtil.isNotEmpty(path) ? CommonPath.from(path) : CommonPath.ROOT;
+
+            CustomVaultUtil.listFileCacheFolder(alias, p, new OperationOutcomeStruct() {
                 @Override
                 public void callback(BaseStruct found) throws OperatingContextException {
                     if (found != null)

@@ -757,7 +757,10 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 					);
 				}
 
-				this.sortRecords(fields);
+				if (fields.isEmpty())
+					this.sortList(descending);
+				else
+					this.sortRecords(fields);
 			}
 			
 			return ReturnOption.CONTINUE;
@@ -910,6 +913,33 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 			return;
 
 		this.sort(NestedCompareSorter.of(fields));
+	}
+
+	public void sortList(boolean descending) {
+		this.sort(new Comparator<BaseStruct>() {
+			@Override
+			public int compare(BaseStruct o1, BaseStruct o2) {
+				if ((o1 == null) && (o2 == null))
+					return 0;
+
+				if (o1 == null)
+					return descending ? -1 : 1;
+
+				if (o2 == null)
+					return descending ? 1 : -1;
+
+				if ((o1 instanceof ScalarStruct) && (o2 instanceof ScalarStruct)) {
+					int cp = ((ScalarStruct) o1).compareToIgnoreCase(o2);
+
+					if (descending)
+						cp = -cp;
+
+					return cp;
+				}
+
+				return 0;
+			}
+		});
 	}
 
 	@Override

@@ -447,8 +447,14 @@ public class Html extends Base {
 				head.with(xel);
 		}
 
-		// TODO research canonical url too
-		
+		if (page.isNotFieldEmpty("Canonical")) {
+			head
+					.with(W3Closed.tag("link")
+							.withAttribute("rel", "canonical")
+							.withAttribute("content", "{$Page.Canonical}")
+					);
+		}
+
 		boolean cachemode = site.isScriptStyleCached() && StringUtil.isEmpty(OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
 		
 		// --- styles ---
