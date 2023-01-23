@@ -23,6 +23,9 @@ public class SingleFileSelector extends InputField {
 		if (this.hasNotEmptyAttribute("Source"))
 			this.attr("data-dc-file-source", StackUtil.stringFromSource(state,"Source"));
 
+		if (this.hasNotEmptyAttribute("Path"))
+			this.attr("data-dc-file-path", StackUtil.stringFromSource(state,"Path"));
+
 		this.with(
 			XElement.tag("Input"),
 			XElement.tag("Button")

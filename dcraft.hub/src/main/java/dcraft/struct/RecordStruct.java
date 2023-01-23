@@ -29,9 +29,7 @@ import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import dcraft.hub.op.OperatingContextException;
@@ -1010,6 +1008,12 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 			return ReturnOption.CONTINUE;
 		}
 
+		if ("Clear".equals(code.getName())) {
+			this.clear();
+
+			return ReturnOption.CONTINUE;
+		}
+
 		if ("NewList".equals(code.getName())) {
 			BaseStruct name1 = StackUtil.refFromElement(stack, code, "Name", true);
 			String name = Struct.objectToString(name1);
@@ -1141,8 +1145,40 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 		if ("Merge".equals(code.getName())) {
 			BaseStruct var3 = StackUtil.refFromElement(stack, code, "Value", true);
 
-			if (var3 instanceof RecordStruct)
-				this.copyFields((RecordStruct) var3);	// TODO support "except"
+			if (var3 instanceof RecordStruct) {
+				this.copyFields((RecordStruct) var3);    // TODO support "except"
+			}
+			else {
+				Logger.error("Unable to Merge a Record with other data type");
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("ReplaceWith".equals(code.getName())) {
+			BaseStruct var3 = StackUtil.refFromElement(stack, code, "Value", true);
+
+			if (var3 instanceof RecordStruct) {
+				RecordStruct src = (RecordStruct) var3;
+
+				// safe even if we Replace ourself
+				Iterable<FieldStruct> fields = src.getFields();
+
+				List<FieldStruct> fieldstemp = new ArrayList<>();
+
+				for (FieldStruct fld : fields) {
+					fieldstemp.add(fld);
+				}
+
+				this.clear();
+
+				for (FieldStruct fld : fieldstemp) {
+					this.with(fld);
+				}
+			}
+			else {
+				Logger.error("Unable to Replace a Record with other data type");
+			}
 
 			return ReturnOption.CONTINUE;
 		}

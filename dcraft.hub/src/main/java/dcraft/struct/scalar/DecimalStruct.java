@@ -173,6 +173,22 @@ public class DecimalStruct extends ScalarStruct {
 			
 			return ReturnOption.CONTINUE;
 		}
+		else if ("Remainder".equals(code.getName())) {
+			BaseStruct sref = code.hasAttribute("Value")
+					? StackUtil.refFromElement(stack, code, "Value", true)
+					: StackUtil.resolveReference(stack, code.getText(), true);
+
+			// TODO support other rounding modes and scales - see integer
+
+			try {
+				this.value = this.value.remainder(Struct.objectToDecimal(sref));
+			}
+			catch (Exception x) {
+				Logger.error("Error doing " + code.getName() + ": " + x);
+			}
+
+			return ReturnOption.CONTINUE;
+		}
 		else if ("Min".equals(code.getName())) {
 			BaseStruct sref = code.hasAttribute("Value")
 					? StackUtil.refFromElement(stack, code, "Value", true)

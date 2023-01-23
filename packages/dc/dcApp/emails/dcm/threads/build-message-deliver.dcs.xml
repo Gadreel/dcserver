@@ -3,7 +3,9 @@
 
 	<dcs.Var Name="ThreadId" Type="String" SetTo="{$_Param.Id}" />
 
-	<dcdb.LoadRecord Table="dcmThread" Id="{$_Param.Id}" Result="Data">
+	<!-- <dcs.Console>n: {$ThreadId}</dcs.Console> -->
+
+	<dcdb.LoadRecord Table="dcmThread" Id="{$ThreadId}" Result="Data">
 		<Select Field="Id" />
 		<Select Field="dcmUuid" As="Uuid" />
 		<Select Field="dcmTitle" As="Title" />
@@ -14,10 +16,15 @@
 		<Select Field="dcmSharedAttributes" As="SharedAttributes" />
 	</dcdb.LoadRecord>
 
+
+		<!-- <dcs.Console>o: {$Data}</dcs.Console> -->
+
 	<dcdb.LoadRecord Table="dcUser" Id="$Data.ThreadOriginator" Result="TheOriginator">
 		<Select Field="dcFirstName" As="FirstName" />
 		<Select Field="dcLastName" As="LastName" />
 	</dcdb.LoadRecord>
+
+		<!-- <dcs.Console>p: {$TheOriginator}</dcs.Console> -->
 
 	<dcs.With Target="$Data">
 		<SetField Name="ThreadOriginatorName" Value="{$TheOriginator.FirstName} {$TheOriginator.LastName}" />
@@ -29,16 +36,32 @@
 
 	<dcs.Include Path="/dcm/threads/{$Data.MessageType}" />
 
+<!-- <dcs.Console>1: {$Data}</dcs.Console> -->
+
+		<!-- <dcs.Console>2: {$Title}</dcs.Console> -->
+
 	<!-- BuildMessage function overrides entire process -->
 	<dcs.If Target="$BuildMessage" IsEmpty="false">
 		<dcs.CallFunc Name="BuildMessage" Arg="$Data" />
+
+		<!-- <dcs.Console>9: {$Data}</dcs.Console> -->
 	</dcs.If>
 	<dcs.Else>
+		<!-- <dcs.Console>3: {$Title}</dcs.Console> -->
+
 		<dcs.If Target="$BuildData" IsEmpty="false">
-			<dcs.CallFunc Name="BuildData" Arg="$Data" Result="Data" />
+			<!-- <dcs.Console>4: {$Data}</dcs.Console> -->
+
+			<dcs.CallFunc Name="BuildData" Arg="$Data" Result="ReplaceData" />
+
+			<dcs.With Target="$Data">
+				<ReplaceWith Value="$ReplaceData" />
+			</dcs.With>
 
 			<dcs.Info>BuildData: {$Data}</dcs.Info>
 		</dcs.If>
+
+		<!-- <dcs.Console>5: {$Title}</dcs.Console> -->
 
 		<dcs.With Target="$Title">
 			<Translate Result="TrTitle" />

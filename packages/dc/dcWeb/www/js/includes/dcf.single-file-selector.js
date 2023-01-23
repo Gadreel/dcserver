@@ -41,13 +41,12 @@ dc.pui.controls.SingleFileSelector.prototype.init = function(entry, node) {
 dc.pui.controls.SingleFileSelector.prototype.open = function(entry, node) {
 	var ctrl = this;
 
-	var source = $(node).closest('.dc-field').attr('data-dc-file-source');
-
-	if (! source)
-		source = 'Files';
+	var source = $(node).closest('.dc-field').attr('data-dc-file-source') || 'Files';
+	var path = $(node).closest('.dc-field').attr('data-dc-file-path') || null;
 
 	if (source == 'Files') {
 		dc.pui.Dialog.loadPage('/dcm/files/chooser', {
+			Path: path,
 			Callback: function(files) {
 				if (files) {
 					var path = '/files' + files[0].FullPath;
@@ -66,6 +65,7 @@ dc.pui.controls.SingleFileSelector.prototype.open = function(entry, node) {
 	}
 	else if (source == 'CDNFiles') {
 		dc.pui.Dialog.loadPage('/dcm/cdn/browser', {
+			Path: path,
 			SelectMode: true,
 			Callback: function(files) {
 				if (files) {
@@ -85,6 +85,7 @@ dc.pui.controls.SingleFileSelector.prototype.open = function(entry, node) {
 	}
 	else if (source == 'CDNVideos') {
 		dc.pui.Dialog.loadPage('/dcm/cdn/video-browser', {
+			Path: path,
 			SelectMode: true,
 			Callback: function(files) {
 				if (files) {

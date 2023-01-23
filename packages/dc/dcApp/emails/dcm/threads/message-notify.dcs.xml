@@ -50,7 +50,11 @@
 		-->
 
 		<dcs.If Target="$BuildData" IsEmpty="false">
-			<dcs.CallFunc Name="BuildData" Arg="$Data" Result="Data" />
+			<dcs.CallFunc Name="BuildData" Arg="$Data" Result="ReplaceData" />
+
+			<dcs.With Target="$Data">
+				<ReplaceWith Value="$ReplaceData" />
+			</dcs.With>
 		</dcs.If>
 
 		<!--
@@ -68,7 +72,11 @@
 		-->
 
 		<dcs.If Target="$ChannelReview" IsEmpty="false">
-			<dcs.CallFunc Name="ChannelReview" Arg="$Data" Result="Data" />
+			<dcs.CallFunc Name="ChannelReview" Arg="$Data" Result="ReplaceData" />
+
+			<dcs.With Target="$Data">
+				<ReplaceWith Value="$ReplaceData" />
+			</dcs.With>
 		</dcs.If>
 
 		<!--

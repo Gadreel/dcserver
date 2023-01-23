@@ -78,10 +78,10 @@ public class QuickPDF extends RecordStruct {
 	protected PDPageContentStream stream = null;
     protected float indent = 0;
     protected int pagenum = 0;
-    protected int pagetop = 730;
-    protected int pagebottom = 70;
-    protected int pageleft = 60;
-    protected int pageright = 560;
+    protected float pagetop = 730;
+    protected float pagebottom = 70;
+    protected float pageleft = 60;
+    protected float pageright = 560;
     protected PDFont font = PDType1Font.HELVETICA;
     protected PDFont boldfont = PDType1Font.HELVETICA_BOLD;
     protected PDFont italicfont = PDType1Font.HELVETICA_OBLIQUE;
@@ -103,35 +103,35 @@ public class QuickPDF extends RecordStruct {
     	this.currpos = v;
     }
     
-    public int getPageTop() {
+    public float getPageTop() {
 		return this.pagetop;
 	}
     
-    public void setPageTop(int v) {
+    public void setPageTop(float v) {
 		this.pagetop = v;
 	}
     
-    public int getPageBottom() {
+    public float getPageBottom() {
 		return this.pagebottom;
 	}
     
-    public void setPageBottom(int v) {
+    public void setPageBottom(float v) {
 		this.pagebottom = v;
 	}
     
-    public int getPageLeft() {
+    public float getPageLeft() {
 		return this.pageleft;
 	}
     
-    public void setPageLeft(int v) {
+    public void setPageLeft(float v) {
 		this.pageleft = v;
 	}
     
-    public int getPageRight() {
+    public float getPageRight() {
 		return this.pageright;
 	}
     
-    public void setPageRight(int v) {
+    public void setPageRight(float v) {
 		this.pageright = v;
 	}
     
@@ -179,16 +179,16 @@ public class QuickPDF extends RecordStruct {
 					return IntegerStruct.of(this.pagenum);
 				}
 				else if ("PageTop".equals(part.getField())) {
-					return IntegerStruct.of(this.pagetop);
+					return DecimalStruct.of(this.pagetop);
 				}
 				else if ("PageLeft".equals(part.getField())) {
-					return IntegerStruct.of(this.pageleft);
+					return DecimalStruct.of(this.pageleft);
 				}
 				else if ("PageRight".equals(part.getField())) {
-					return IntegerStruct.of(this.pageright);
+					return DecimalStruct.of(this.pageright);
 				}
 				else if ("PageBottom".equals(part.getField())) {
-					return IntegerStruct.of(this.pagebottom);
+					return DecimalStruct.of(this.pagebottom);
 				}
 				else if ("Indent".equals(part.getField())) {
 					return DecimalStruct.of(this.indent);
@@ -736,17 +736,29 @@ public class QuickPDF extends RecordStruct {
 								
 								StackUtil.addVariable(state, "_PdfPageNumber", IntegerStruct.of(pagenumber));
 								StackUtil.addVariable(state, "_PdfPageCount", IntegerStruct.of(QuickPDF.this.getDoc().getNumberOfPages()));
-								
+
+								DecimalStruct pageLeft = DecimalStruct.of(QuickPDF.this.getPageLeft());
+
 								for (XElement el : code.selectAll("Header")) {
+									BigDecimal x = pageLeft.getValue();
+
+									if (el.hasNotEmptyAttribute("X"))
+										x = Struct.objectToDecimal(StackUtil.refFromElement(state, el, "X", true));
+
 									stream.beginText();
-									stream.newLineAtOffset(StackUtil.intFromElement(state, el, "X", QuickPDF.this.getPageLeft()), 760);
+									stream.newLineAtOffset(x.floatValue(), 760);
 									stream.showText(StackUtil.stringFromElement(state, el, "Value"));
 									stream.endText();
 								}
 								
 								for (XElement el : code.selectAll("Footer")) {
+									BigDecimal x = pageLeft.getValue();
+
+									if (el.hasNotEmptyAttribute("X"))
+										x = Struct.objectToDecimal(StackUtil.refFromElement(state, el, "X", true));
+
 									stream.beginText();
-									stream.newLineAtOffset(StackUtil.intFromElement(state, el, "X", QuickPDF.this.getPageLeft()), 20);
+									stream.newLineAtOffset(x.floatValue(), 20);
 									stream.showText(StackUtil.stringFromElement(state, el, "Value"));
 									stream.endText();
 								}
@@ -796,6 +808,22 @@ public class QuickPDF extends RecordStruct {
 				this.setIndent(Float.valueOf(StackUtil.stringFromElement(state, code, "X")));
 			else
 				this.setIndent(this.currpos.getX() - this.pageleft);
+
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("PageSettings".equals(code.getName())) {
+			if (code.hasNotEmptyAttribute("Top"))
+				this.setPageTop(Float.valueOf(StackUtil.stringFromElement(state, code, "Top")));
+
+			if (code.hasNotEmptyAttribute("Bottom"))
+				this.setPageBottom(Float.valueOf(StackUtil.stringFromElement(state, code, "Bottom")));
+
+			if (code.hasNotEmptyAttribute("Left"))
+				this.setPageLeft(Float.valueOf(StackUtil.stringFromElement(state, code, "Left")));
+
+			if (code.hasNotEmptyAttribute("Right"))
+				this.setPageRight(Float.valueOf(StackUtil.stringFromElement(state, code, "Right")));
 
 			return ReturnOption.CONTINUE;
 		}
@@ -1311,6 +1339,18 @@ public class QuickPDF extends RecordStruct {
 			}
 			catch (IOException x) {
 				Logger.error("Error loading PDF: " + x);
+			}
+
+
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("NewPage".equals(code.getName())) {
+			try {
+				this.addPage();
+			}
+			catch (IOException x) {
+				Logger.error("unable to add page");
 			}
 
 			return ReturnOption.CONTINUE;
