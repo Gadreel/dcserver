@@ -1,6 +1,5 @@
 package dcraft.tool.sentinel;
 
-import com.caucho.util.Log;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcome;
