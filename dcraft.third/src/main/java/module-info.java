@@ -1,5 +1,6 @@
 module dcraft.third {
   requires java.xml;
+  requires java.desktop;
 
   exports org.apache.lucene.util;
   exports org.apache.lucene.analysis;
@@ -10,5 +11,6 @@ module dcraft.third {
   exports org.apache.lucene.analysis.en;
   exports org.apache.lucene.analysis.es;
   exports org.mindrot;
+  exports com.pnuema.java.barcode;
   exports dcraft.daemon;
 }

@@ -19,6 +19,8 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
+import com.pnuema.java.barcode.Barcode;
+import com.pnuema.java.barcode.EncodingType;
 import dcraft.db.Constants;
 import dcraft.db.DbServiceRequest;
 import dcraft.db.request.schema.Load;
@@ -83,6 +85,7 @@ public class QuickPDF extends RecordStruct {
     protected float pageleft = 60;
     protected float pageright = 560;
     protected PDFont font = PDType1Font.HELVETICA;
+    protected PDFont stdfont = PDType1Font.HELVETICA;
     protected PDFont boldfont = PDType1Font.HELVETICA_BOLD;
     protected PDFont italicfont = PDType1Font.HELVETICA_OBLIQUE;
     protected PDFont bolditalicfont = PDType1Font.HELVETICA_BOLD_OBLIQUE;
@@ -439,23 +442,81 @@ public class QuickPDF extends RecordStruct {
     }
 	
     // upper left
-    public void image(String imageName) throws FileNotFoundException, IOException {
-    	this.image(ImageIO.read(new File(imageName)));
-    }
-    
+//    public void image(String imageName) throws FileNotFoundException, IOException {
+//    	this.image(ImageIO.read(new File(imageName)));
+//    }
+//
     public void image(File image) throws FileNotFoundException, IOException {
     	this.image(ImageIO.read(image));
     }
 
-    public void image(BufferedImage img) throws FileNotFoundException, IOException {
+    public void image(BufferedImage img) throws IOException {
         PDImageXObject image = JPEGFactory.createFromImage(this.doc, img);
-        
-        this.stream.drawImage(image, this.currpos.getX(), this.currpos.getY() - image.getHeight());  
+
+        this.stream.drawImage(image, this.currpos.getX(), this.currpos.getY() - image.getHeight());
     }
-        
-    public void image(PDImageXObject img, float x, float y, float width, float height) throws IOException {
-        this.stream.drawImage(img, x, y, width, height);  
+
+    public void image(BufferedImage img, float width, float height) throws IOException {
+		PDImageXObject image = JPEGFactory.createFromImage(this.doc, img);
+
+		if (width == -1)
+			width = image.getWidth();
+
+		if (height == -1)
+			height = image.getHeight();
+
+		this.stream.drawImage(image, this.currpos.getX(), this.currpos.getY() - height, width, height);
+	}
+
+    public void image(BufferedImage img, float x, float y, float width, float height) throws IOException {
+        PDImageXObject image = JPEGFactory.createFromImage(this.doc, img);
+
+		if (width == -1)
+			width = image.getWidth();
+
+		if (height == -1)
+			height = image.getHeight();
+
+		if (x == -1)
+			x = this.currpos.getX();
+
+		if (y == -1)
+			y = this.currpos.getY() - height;
+
+        this.stream.drawImage(image, x, y, width, height);
     }
+
+    public void image(PDImageXObject image, float x, float y, float width, float height) throws IOException {
+		if (width == -1)
+			width = image.getWidth();
+
+		if (height == -1)
+			height = image.getHeight();
+
+		if (x == -1)
+			x = this.currpos.getX();
+
+		if (y == -1)
+			y = this.currpos.getY() - height;
+
+        this.stream.drawImage(image, x, y, width, height);
+	}
+
+	public void barCode(String code, EncodingType barcodeType, float width, float height) throws IOException {
+		// TODO check for -1 dimensions and default in best calc
+
+		this.barCode(code, barcodeType, this.currpos.getX(), this.currpos.getY(), width, height);
+    }
+
+	public void barCode(String code, EncodingType barcodeType, float x, float y, float width, float height) throws IOException {
+		Barcode barcode = new Barcode();
+
+		BufferedImage img = barcode.encode(barcodeType, code);
+
+		PDImageXObject image = JPEGFactory.createFromImage(this.doc, img);
+
+		this.stream.drawImage(image, x, y, width, height);
+	}
 
 	public void setStrokeColor(String rgb) throws IOException {
     	String[] cparts = rgb.split(",");
@@ -781,13 +842,20 @@ public class QuickPDF extends RecordStruct {
 			if (code.hasNotEmptyAttribute("Size"))
 				this.setFontSize(Float.valueOf(StackUtil.stringFromElement(state, code, "Size")));
 
-			if (code.hasNotEmptyAttribute("Bold")) {
-				if (StackUtil.boolFromElement(state, code, "Bold", false)) {
-					this.font = PDType1Font.HELVETICA_BOLD;
-				}
-				else {
-					this.font = PDType1Font.HELVETICA;
-				}
+			boolean bold = StackUtil.boolFromElement(state, code, "Bold", false);
+			boolean italic = StackUtil.boolFromElement(state, code, "Italic", false);
+
+			if (bold && italic) {
+				this.font = this.bolditalicfont;
+			}
+			else if (bold) {
+				this.font = this.boldfont;   // PDType1Font.HELVETICA_BOLD;
+			}
+			else if (italic) {
+				this.font = this.italicfont;
+			}
+			else {
+				this.font = this.stdfont;
 			}
 
 			String color = StackUtil.stringFromElement(state, code, "Color");
@@ -1040,6 +1108,11 @@ public class QuickPDF extends RecordStruct {
 		}
 		
 		if ("Image".equals(code.getName())) {
+			BigDecimal posx = Struct.objectToDecimal(StackUtil.refFromElement(state, code, "X", true));
+			BigDecimal posy = Struct.objectToDecimal(StackUtil.refFromElement(state, code, "Y", true));
+			BigDecimal w = Struct.objectToDecimal(StackUtil.refFromElement(state, code, "Width", true));
+			BigDecimal h = Struct.objectToDecimal(StackUtil.refFromElement(state, code, "Height", true));
+
 			String base64 = StackUtil.stringFromElement(state, code, "Base64");
 			
 			if (StringUtil.isEmpty(base64)) {
@@ -1048,117 +1121,74 @@ public class QuickPDF extends RecordStruct {
 				if (StringUtil.isNotEmpty(base64) && (base64.contains(",")))
 					base64 = base64.substring(base64.indexOf(',') + 1);
 			}
-			
-			if (StringUtil.isNotEmpty(base64)) {
-				try (InputStream is = new ByteArrayInputStream(Base64.decode(base64))) {
-					BufferedImage img = ImageIO.read(is);
 
-					if (code.hasNotEmptyAttribute("Width")) {
-						Long w = StackUtil.intFromElement(state, code, "Width", -1);
-						Long h = StackUtil.intFromElement(state, code, "Height", -1);
+			BufferedImage img = null;
 
-						if ((w != -1) && (h != -1)) {
-							img = ImageUtil.resize(img, w.intValue(), h.intValue());
-						}
-						else if (w != -1) {
-							BigDecimal ratio = BigDecimal.valueOf(img.getWidth()).divide(BigDecimal.valueOf(img.getHeight()), RoundingMode.HALF_UP);
+			try {
+				if (StringUtil.isNotEmpty(base64)) {
+					byte[] bin64 = Base64.decode(base64);
 
-							h = BigDecimal.valueOf(w).divide(ratio, RoundingMode.HALF_UP).longValue();
-							img = ImageUtil.resize(img, w.intValue(), h.intValue());
-						}
-						else if (h != -1) {
-							BigDecimal ratio = BigDecimal.valueOf(img.getWidth()).divide(BigDecimal.valueOf(img.getHeight()), RoundingMode.HALF_UP);
+					try (InputStream is = new ByteArrayInputStream(bin64)) {
+						img = ImageIO.read(is);
 
-							w = BigDecimal.valueOf(h).multiply(ratio).longValue();
-							img = ImageUtil.resize(img, w.intValue(), h.intValue());
-						}
-					}
-					
-					this.image(img);
-				}
-				catch (IOException x) {
-					Logger.error("Error writing image in PDF: " + x);
-				}
-			}
-			else  {
-				FileStoreFile file = (FileStoreFile) StackUtil.refFromElement(state, code, "File");
-				
-				// TODO support other file systems
-				if (file instanceof LocalStoreFile) {
-					LocalStoreFile lfile = (LocalStoreFile) file;
-					
-					Memory mem = IOUtil.readEntireFileToMemory(lfile.getLocalPath());
-					
-					try (InputStream is = new ByteArrayInputStream(mem.toArray())) {
-						BufferedImage img = ImageIO.read(is);
-						
-						if (code.hasNotEmptyAttribute("Width")) {
-							Long w = StackUtil.intFromElement(state, code, "Width", -1);
-							Long h = StackUtil.intFromElement(state, code, "Height", -1);
+						this.image(img, (posx != null) ? posx.floatValue() : -1, (posy != null) ? posy.floatValue() : -1, (w != null) ? w.floatValue() : -1, (h != null) ? h.floatValue() : -1);
 
-							if ((w != -1) && (h != -1)) {
-								img = ImageUtil.resize(img, w.intValue(), h.intValue());
-							}
-							else if (w != -1) {
-								BigDecimal ratio = BigDecimal.valueOf(img.getWidth()).divide(BigDecimal.valueOf(img.getHeight()), RoundingMode.HALF_UP);
-
-								h = BigDecimal.valueOf(w).divide(ratio, RoundingMode.HALF_UP).longValue();
-								img = ImageUtil.resize(img, w.intValue(), h.intValue());
-							}
-							else if (h != -1) {
-								BigDecimal ratio = BigDecimal.valueOf(img.getWidth()).divide(BigDecimal.valueOf(img.getHeight()), RoundingMode.HALF_UP);
-
-								w = BigDecimal.valueOf(h).multiply(ratio).longValue();
-								img = ImageUtil.resize(img, w.intValue(), h.intValue());
-							}
-						}
-						
-						this.image(img);
-					}
-					catch (IOException x) {
-						Logger.error("Error writing image in PDF: " + x);
 					}
 				}
 				else {
-					BinaryStruct bin = (BinaryStruct) StackUtil.refFromElement(state, code, "Memory");
+					FileStoreFile file = (FileStoreFile) StackUtil.refFromElement(state, code, "File");
 
 					// TODO support other file systems
-					if (bin != null) {
-						Memory mem = bin.getValue();
+					if (file instanceof LocalStoreFile) {
+						LocalStoreFile lfile = (LocalStoreFile) file;
+
+						Memory mem = IOUtil.readEntireFileToMemory(lfile.getLocalPath());
 
 						try (InputStream is = new ByteArrayInputStream(mem.toArray())) {
-							BufferedImage img = ImageIO.read(is);
-
-							if (code.hasNotEmptyAttribute("Width")) {
-								Long w = StackUtil.intFromElement(state, code, "Width", -1);
-								Long h = StackUtil.intFromElement(state, code, "Height", -1);
-
-								if ((w != -1) && (h != -1)) {
-									img = ImageUtil.resize(img, w.intValue(), h.intValue());
-								}
-								else if (w != -1) {
-									BigDecimal ratio = BigDecimal.valueOf(img.getWidth()).divide(BigDecimal.valueOf(img.getHeight()), RoundingMode.HALF_UP);
-
-									h = BigDecimal.valueOf(w).divide(ratio, RoundingMode.HALF_UP).longValue();
-									img = ImageUtil.resize(img, w.intValue(), h.intValue());
-								}
-								else if (h != -1) {
-									BigDecimal ratio = BigDecimal.valueOf(img.getWidth()).divide(BigDecimal.valueOf(img.getHeight()), RoundingMode.HALF_UP);
-
-									w = BigDecimal.valueOf(h).multiply(ratio).longValue();
-									img = ImageUtil.resize(img, w.intValue(), h.intValue());
-								}
-							}
-
-							this.image(img);
+							img = ImageIO.read(is);
 						}
-						catch (IOException x) {
-							Logger.error("Error writing image in PDF: " + x);
+					}
+					else {
+						BinaryStruct bin = (BinaryStruct) StackUtil.refFromElement(state, code, "Memory");
+
+						// TODO support other file systems
+						if (bin != null) {
+							Memory mem = bin.getValue();
+
+							try (InputStream is = new ByteArrayInputStream(mem.toArray())) {
+								img = ImageIO.read(is);
+							}
 						}
 					}
 				}
+
+				this.image(img, (posx != null) ? posx.floatValue() : -1, (posy != null) ? posy.floatValue() : -1, (w != null) ? w.floatValue() : -1, (h != null) ? h.floatValue() : -1);
 			}
-			
+			catch (IOException x) {
+				Logger.error("Error writing image in PDF: " + x);
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("Barcode".equals(code.getName())) {
+			String barcode = StackUtil.stringFromElementClean(state, code, "Code");
+			String bartype = StackUtil.stringFromElementClean(state, code, "Type", "CODE128B");
+
+			BigDecimal x = Struct.objectToDecimal(StackUtil.refFromElement(state, code, "X", true));
+			BigDecimal y = Struct.objectToDecimal(StackUtil.refFromElement(state, code, "Y", true));
+			BigDecimal w = Struct.objectToDecimal(StackUtil.refFromElement(state, code, "Width", true));
+			BigDecimal h = Struct.objectToDecimal(StackUtil.refFromElement(state, code, "Height", true));
+
+			EncodingType btype = EncodingType.valueOf(bartype);
+
+			try {
+				this.barCode(barcode, btype, x.floatValue(), y.floatValue(), w.floatValue(), h.floatValue());
+			}
+			catch (IOException x3) {
+				Logger.error("Error moving PDF: " + x3);
+			}
+
 			return ReturnOption.CONTINUE;
 		}
 

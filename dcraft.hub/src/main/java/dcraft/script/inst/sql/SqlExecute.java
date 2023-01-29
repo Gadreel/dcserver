@@ -139,9 +139,8 @@ public class SqlExecute extends Instruction {
 
 			Object value = SqlExecute.toParam(state, ref, param);
 
-			if (value != null) {
+			if (value != null)
 				writer.with(name, value);
-			}
 		}
 	}
 
