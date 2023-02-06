@@ -154,8 +154,8 @@ public class PublishHelper {
 			
 			System.out.println("You are on branch: " + repository.getBranch());
 			
-			if (! "master".equals(repository.getBranch())) {
-				System.out.println("Must be on Master branch to continue.");
+			if (! "master".equals(repository.getBranch()) && ! "main".equals(repository.getBranch())) {
+				System.out.println("Must be on main (old master) branch to continue.");
 				repository.close();
 				return;
 			}

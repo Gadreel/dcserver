@@ -1365,11 +1365,13 @@ dc.lang.Task.prototype.resume = function() {
 		return;
 	}
 
-	var step = this.Steps[this.CurrentStep];
+	if (this.CurrentStep < this.Steps.length) {
+		var step = this.Steps[this.CurrentStep];
 
-	if (! step.Repeat) {
-		step.Amount = step.TotalAmount;
-		this.CurrentStep++;
+		if (! step.Repeat) {
+			step.Amount = step.TotalAmount;
+			this.CurrentStep++;
+		}
 	}
 
 	var task = this;
