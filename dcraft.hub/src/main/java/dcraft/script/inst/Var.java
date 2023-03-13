@@ -55,8 +55,11 @@ public class Var extends OperationsInstruction {
 			if (StringUtil.isNotEmpty(def))
 				var = ResourceHub.getResources().getSchema().getType(def).create();
 			
-			if (this.hasAttribute("SetTo")) {
+			if (this.hasAttribute("SetTo") || this.hasAttribute("Value")) {
 				BaseStruct var3 = StackUtil.refFromSource(state, "SetTo", true);
+
+				if (var3 == null)
+					var3 = StackUtil.refFromSource(state, "Value", true);
 
 				// if we cannot infer data type then error
 				if ((var3 == null) && (var == null)) {

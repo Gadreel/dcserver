@@ -1,12 +1,16 @@
 import TextureNode from './TextureNode.js';
 import UniformNode from '../core/UniformNode.js';
-import ReflectNode from './ReflectNode.js';
+import { reflectVector } from './ReflectVectorNode.js';
+import { addNodeClass } from '../core/Node.js';
+import { addNodeElement, nodeProxy, vec3 } from '../shadernode/ShaderNode.js';
 
 class CubeTextureNode extends TextureNode {
 
-	constructor( value, uvNode = new ReflectNode(), biasNode = null ) {
+	constructor( value, uvNode = null, levelNode = null ) {
 
-		super( value, uvNode, biasNode );
+		super( value, uvNode, levelNode );
+
+		this.isCubeTextureNode = true;
 
 	}
 
@@ -16,7 +20,15 @@ class CubeTextureNode extends TextureNode {
 
 	}
 
+	getDefaultUV() {
+
+		return reflectVector;
+
+	}
+
 	generate( builder, output ) {
+
+		const { uvNode, levelNode } = builder.getNodeProperties( this );
 
 		const texture = this.value;
 
@@ -40,18 +52,24 @@ class CubeTextureNode extends TextureNode {
 
 			const nodeData = builder.getDataFromNode( this );
 
-			let snippet = nodeData.snippet;
+			let propertyName = nodeData.propertyName;
 
-			if ( snippet === undefined ) {
+			if ( propertyName === undefined ) {
 
-				const uvSnippet = this.uvNode.build( builder, 'vec3' );
-				const biasNode = this.biasNode;
+				const cubeUV = vec3( uvNode.x.negate(), uvNode.yz );
+				const uvSnippet = cubeUV.build( builder, 'vec3' );
 
-				if ( biasNode !== null ) {
+				const nodeVar = builder.getVarFromNode( this, 'vec4' );
 
-					const biasSnippet = biasNode.build( builder, 'float' );
+				propertyName = builder.getPropertyName( nodeVar );
 
-					snippet = builder.getCubeTextureBias( textureProperty, uvSnippet, biasSnippet );
+				let snippet = null;
+
+				if ( levelNode && levelNode.isNode === true ) {
+
+					const levelSnippet = levelNode.build( builder, 'float' );
+
+					snippet = builder.getCubeTextureLevel( textureProperty, uvSnippet, levelSnippet );
 
 				} else {
 
@@ -59,11 +77,14 @@ class CubeTextureNode extends TextureNode {
 
 				}
 
+				builder.addFlowCode( `${propertyName} = ${snippet}` );
+
 				nodeData.snippet = snippet;
+				nodeData.propertyName = propertyName;
 
 			}
 
-			return builder.format( snippet, 'vec4', output );
+			return builder.format( propertyName, 'vec4', output );
 
 		}
 
@@ -71,6 +92,10 @@ class CubeTextureNode extends TextureNode {
 
 }
 
-CubeTextureNode.prototype.isCubeTextureNode = true;
-
 export default CubeTextureNode;
+
+export const cubeTexture = nodeProxy( CubeTextureNode );
+
+addNodeElement( 'cubeTexture', cubeTexture );
+
+addNodeClass( CubeTextureNode );

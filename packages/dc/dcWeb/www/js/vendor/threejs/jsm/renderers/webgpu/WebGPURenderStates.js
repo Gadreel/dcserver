@@ -1,10 +1,10 @@
-import LightsNode from 'three-nodes/lights/LightsNode.js';
+import { lights } from 'three/nodes';
 
 class WebGPURenderState {
 
 	constructor() {
 
-		this.lightsNode = new LightsNode();
+		this.lightsNode = lights( [] );
 
 		this.lightsArray = [];
 
@@ -22,7 +22,7 @@ class WebGPURenderState {
 
 	}
 
-	getLightNode() {
+	getLightsNode() {
 
 		return this.lightsNode.fromLights( this.lightsArray );
 
@@ -38,7 +38,7 @@ class WebGPURenderStates {
 
 	}
 
-	get( scene, camera ) {
+	get( scene, /* camera */ ) {
 
 		const renderStates = this.renderStates;
 

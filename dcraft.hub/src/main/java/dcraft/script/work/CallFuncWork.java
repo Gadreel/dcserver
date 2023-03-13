@@ -9,6 +9,8 @@ import dcraft.log.HubLog;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
 import dcraft.struct.BaseStruct;
+import dcraft.struct.ListStruct;
+import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.NullStruct;
 import dcraft.task.IParentAwareWork;
@@ -83,8 +85,25 @@ public class CallFuncWork extends InstructionWork implements IResultAwareWork, I
 	
 	@Override
 	public BaseStruct queryVariable(String name) throws OperatingContextException {
-		if ("_Arg".equals(name))
-			return StackUtil.refFromSource(this, "Arg");
+		if ("_Arg".equals(name)) {
+			BaseStruct argattr = StackUtil.refFromSource(this, "Arg");
+
+			if (argattr != null)
+				return argattr;
+
+			if (this.inst.selectFirst("Field") != null) {
+				RecordStruct arg = RecordStruct.record();
+				arg.expandQuickRecord(this, this.inst);
+				return arg;
+			}
+			else if (this.inst.selectFirst("*") != null) {
+				ListStruct arg = ListStruct.list();
+				arg.expandQuickList(this, this.inst);
+				return arg;
+			}
+
+			return null;
+		}
 		
 		IVariableAware va = StackUtil.queryVarAware(this.parent);
 

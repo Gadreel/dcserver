@@ -272,6 +272,7 @@ public class TaxJarUtil {
 
                 RecordStruct itemout = RecordStruct.record()
                         .withConditional("id", itemin.select("Id"))
+                        .withConditional("product_identifier", itemin.select("ProductId"))
                         .with("quantity", itemin.select("Quantity"))
                         .with("unit_price", itemin.select("Amount"))
                         .with("product_tax_code", itemin.select("TaxCode"))

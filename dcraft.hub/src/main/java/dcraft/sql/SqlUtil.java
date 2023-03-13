@@ -158,6 +158,48 @@ public class SqlUtil {
     }
 
     // return count of records updated
+    static public FuncResult<Long> executeInsertFreestyle(Connection conn, String sql, Object... params) throws OperatingContextException {
+        FuncResult<Long> res = new FuncResult<>();
+
+        res.setResult(0L);
+
+        // if connection is bad/missing then just try again later
+        if (conn == null) {
+            Logger.error("Missing sql connection");
+            return res;
+        }
+
+        try {
+            FuncResult<PreparedStatement> psres = SqlUtil.prepStatement(conn, sql, params);
+
+            if (res.hasErrors()) {
+                if (psres.isNotEmptyResult())
+                    psres.getResult().close();
+
+                return res;
+            }
+
+            try (PreparedStatement pstmt = psres.getResult()) {
+                int count = pstmt.executeUpdate();
+
+                if (count == 1) {
+                    try (PreparedStatement pstmt2 = conn.prepareStatement("SELECT LAST_INSERT_ID() AS lid")) {
+                        ResultSet rs = pstmt2.executeQuery();
+
+                        if (rs.next())
+                            res.setResult(rs.getLong("lid"));
+                    }
+                }
+            }
+        }
+        catch (Exception x) {
+            SqlUtil.processException(x, res);
+        }
+
+        return res;
+    }
+
+    // return count of records updated
     static public FuncResult<Long> executeWrite(Connection conn, SqlWriter writer) throws OperatingContextException {
         if (writer.getFieldCount() == 0) {
             FuncResult<Long> res = new FuncResult<>();
@@ -290,6 +332,8 @@ public class SqlUtil {
                     else if (param == SqlNull.VarChar) {
                         pstmt.setNull(i + 1, Types.VARCHAR);
                     }
+                    else if (param == SqlNull.Decimal)
+                        pstmt.setNull(i + 1, Types.DECIMAL);
                     else if (param == SqlNull.BigDecimal)
                         pstmt.setNull(i + 1, Types.DECIMAL);
                     else if (param == SqlNull.Double)

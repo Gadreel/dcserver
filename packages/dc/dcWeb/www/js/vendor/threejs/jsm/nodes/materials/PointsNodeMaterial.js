@@ -1,4 +1,5 @@
-import NodeMaterial from './NodeMaterial.js';
+import NodeMaterial, { addNodeMaterial } from './NodeMaterial.js';
+
 import { PointsMaterial } from 'three';
 
 const defaultValues = new PointsMaterial();
@@ -8,6 +9,11 @@ class PointsNodeMaterial extends NodeMaterial {
 	constructor( parameters ) {
 
 		super();
+
+		this.isPointsNodeMaterial = true;
+
+		this.lights = false;
+		this.normals = false;
 
 		this.transparent = true;
 
@@ -47,6 +53,6 @@ class PointsNodeMaterial extends NodeMaterial {
 
 }
 
-PointsNodeMaterial.prototype.isPointsNodeMaterial = true;
-
 export default PointsNodeMaterial;
+
+addNodeMaterial( PointsNodeMaterial );

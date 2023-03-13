@@ -7,6 +7,7 @@ public enum SqlNull {
     Int,
     Double,
     BigDecimal,
+    Decimal,
     Text;
 
     static public Object orValue(Object value, SqlNull alt) {

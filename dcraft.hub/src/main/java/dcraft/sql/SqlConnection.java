@@ -157,6 +157,20 @@ public class SqlConnection implements AutoCloseable {
     }
 
     // return count of records updated
+    public FuncResult<Long> executeInsertFreestyle(String sql, Object... params) throws OperatingContextException {
+        try (OperationMarker om = OperationMarker.create()) {
+            //System.out.println("params: " + params);
+
+            FuncResult<Long> result = SqlUtil.executeInsertFreestyle(this.conn, sql, params);
+
+            if (om.hasCode(195))
+                this.errored = true;
+
+            return result;
+        }
+    }
+
+    // return count of records updated
     public FuncResult<Long> executeDelete(SqlWriter writer) throws OperatingContextException {
         try (OperationMarker om = OperationMarker.create()) {
             FuncResult<Long> result = SqlUtil.executeDelete(this.conn, writer);

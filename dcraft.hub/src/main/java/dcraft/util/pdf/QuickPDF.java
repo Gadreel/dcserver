@@ -620,7 +620,20 @@ public class QuickPDF extends RecordStruct {
 
 		this.currpos = new Position(newx, this.currpos.getY());
 	}
-	
+
+	public float outWidth(CharSequence line) throws IOException {
+		if (line == null)
+			line = "";
+
+		line = PdfUtil.stripAllRestrictedPDFChars(line);
+
+		TextFlow textFlow = new TextFlow();
+
+		textFlow.addText(line.toString(), this.fontsize, this.font);
+
+		return textFlow.getWidth();
+	}
+
 	public void startField(CharSequence line) throws IOException {
 		this.checkPage();
 		
@@ -990,6 +1003,28 @@ public class QuickPDF extends RecordStruct {
 					line = StackUtil.resolveValueToString(state, code.getAttribute("Value"), true);
 
 				this.out(line);
+			}
+			catch (IOException x) {
+				Logger.error("Error writing line in PDF: " + x);
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("CalcOut".equals(code.getName())) {
+			try {
+				String line = StackUtil.resolveValueToString(state, code.getText(), true);
+
+				if (StringUtil.isEmpty(line))
+					line = StackUtil.resolveValueToString(state, code.getAttribute("Value"), true);
+
+				float outWidth = this.outWidth(line);
+
+				String name = StackUtil.stringFromElement(state, code, "Result");
+
+				if (StringUtil.isNotEmpty(name)) {
+					StackUtil.addVariable(state, name, DecimalStruct.of(outWidth));
+				}
 			}
 			catch (IOException x) {
 				Logger.error("Error writing line in PDF: " + x);

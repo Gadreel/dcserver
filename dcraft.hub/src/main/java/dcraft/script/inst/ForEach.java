@@ -60,7 +60,9 @@ public class ForEach extends BlockInstruction {
 
 		// TODO support more than just ListStruct and XElement someday
 		if (! (source instanceof ListStruct)) {
-			Logger.error("Expected ListStruct in ForEach");
+			if (! StackUtil.boolFromSource(state, "SkipEmpty"))
+				Logger.error("Expected ListStruct in ForEach");
+
 			return ReturnOption.DONE;
 		}
 

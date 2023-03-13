@@ -31,6 +31,7 @@ import dcraft.struct.BaseStruct;
 import dcraft.struct.ScalarStruct;
 import dcraft.struct.Struct;
 import dcraft.task.IParentAwareWork;
+import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
 public class DecimalStruct extends ScalarStruct {
@@ -171,6 +172,14 @@ public class DecimalStruct extends ScalarStruct {
 				Logger.error("Error doing " + code.getName() + ": " + x);
 			}
 			
+			return ReturnOption.CONTINUE;
+		}
+		else if ("Scale".equals(code.getName())) {
+			int size = (int) StackUtil.intFromElement(stack, code, "Size", 2);
+			this.value = this.value.setScale(size, RoundingMode.HALF_EVEN);
+
+			// TODO support other rounding modes
+
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Remainder".equals(code.getName())) {

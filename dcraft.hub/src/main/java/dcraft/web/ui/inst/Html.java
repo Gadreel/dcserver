@@ -485,7 +485,7 @@ public class Html extends Base {
 		
 		for (XElement stag : scripts)
 			head.with(stag);
-		
+
 		/*
 $(document).ready(function() {
 	

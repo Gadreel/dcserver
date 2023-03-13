@@ -74,7 +74,9 @@ public class StaticOutputAdapter implements IOutputWork {
 				resp.setHeader("Cache-Control", "no-cache");
 			else
 				resp.setHeader("Cache-Control", "max-age=900");
-			
+
+			resp.setHeader("Service-Worker-Allowed", "/");
+
 			if (request.getFieldAsRecord("Headers").isNotFieldEmpty("If-Modified-Since")) {
 				long dd = when - UIUtil.getDateHeader(request.getFieldAsRecord("Headers"), "If-Modified-Since");
 				

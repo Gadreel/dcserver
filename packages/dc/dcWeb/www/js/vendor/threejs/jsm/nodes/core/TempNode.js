@@ -1,4 +1,4 @@
-import Node from './Node.js';
+import Node, { addNodeClass } from './Node.js';
 
 class TempNode extends Node {
 
@@ -6,16 +6,30 @@ class TempNode extends Node {
 
 		super( type );
 
+		this.isTempNode = true;
+
+	}
+
+	hasDependencies( builder ) {
+
+		return builder.getDataFromNode( this ).dependenciesCount > 1;
+
 	}
 
 	build( builder, output ) {
 
-		const type = builder.getVectorType( this.getNodeType( builder, output ) );
-		const nodeData = builder.getDataFromNode( this );
+		const buildStage = builder.getBuildStage();
 
-		if ( builder.context.temp !== false && type !== 'void ' && output !== 'void' && nodeData.dependenciesCount > 1 ) {
+		if ( buildStage === 'generate' ) {
 
-			if ( nodeData.snippet === undefined ) {
+			const type = builder.getVectorType( this.getNodeType( builder, output ) );
+			const nodeData = builder.getDataFromNode( this );
+
+			if ( builder.context.tempRead !== false && nodeData.propertyName !== undefined ) {
+
+				return builder.format( nodeData.propertyName, type, output );
+
+			} else if ( builder.context.tempWrite !== false && type !== 'void' && output !== 'void' && this.hasDependencies( builder ) ) {
 
 				const snippet = super.build( builder, type );
 
@@ -27,9 +41,9 @@ class TempNode extends Node {
 				nodeData.snippet = snippet;
 				nodeData.propertyName = propertyName;
 
-			}
+				return builder.format( nodeData.propertyName, type, output );
 
-			return builder.format( nodeData.propertyName, type, output );
+			}
 
 		}
 
@@ -40,3 +54,5 @@ class TempNode extends Node {
 }
 
 export default TempNode;
+
+addNodeClass( TempNode );

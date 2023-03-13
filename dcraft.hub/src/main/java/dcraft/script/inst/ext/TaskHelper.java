@@ -19,6 +19,7 @@ package dcraft.script.inst.ext;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
+import dcraft.mail.SmtpWork;
 import dcraft.script.Script;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
@@ -70,9 +71,18 @@ public class TaskHelper extends Instruction {
 
 			// TODO support QueueHub as well
 
+			/*
+			// don't do this if the Topic is restricted - can get jammed waiting on child
+			--- considered not safe
 			String result = StackUtil.stringFromSourceClean(stack, "Result");
 
 			if (StringUtil.isNotEmpty(result)) {
+				stack.setState(ExecuteState.RESUME);
+
+				OperationContext.getAsTaskOrThrow().resumeWith(task.buildWork());
+
+				return ReturnOption.AWAIT;
+
 				TaskHub.submit(task, new TaskObserver() {
 					@Override
 					public void callback(TaskContext task) {
@@ -98,11 +108,13 @@ public class TaskHelper extends Instruction {
 				return ReturnOption.AWAIT;
 			}
 			else {
+
+			 */
 				// background, do not wait
 				TaskHub.submit(task);
 
 				return ReturnOption.CONTINUE;
-			}
+			//}
 		}
 
 		return ReturnOption.CONTINUE;

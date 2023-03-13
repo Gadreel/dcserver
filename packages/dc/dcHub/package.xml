@@ -256,6 +256,7 @@
 			<Tag Name="dcdb.SqlSelectRow" Class="dcraft.script.inst.sql.SqlSelectRow" />
 			<Tag Name="dcdb.SqlSelectVar" Class="dcraft.script.inst.sql.SqlSelectVar" />
 			<Tag Name="dcdb.SqlExecute" Class="dcraft.script.inst.sql.SqlExecute" />
+			<Tag Name="dcdb.SqlExecuteInsert" Class="dcraft.script.inst.sql.SqlExecuteInsert" />
 			<Tag Name="dcdb.SqlInsertWriter" Class="dcraft.script.inst.sql.SqlInsertWriter" />
 			<Tag Name="dcdb.SqlUpdateWriter" Class="dcraft.script.inst.sql.SqlUpdateWriter" />
 			<Tag Name="dcdb.SqlDeleteWriter" Class="dcraft.script.inst.sql.SqlDeleteWriter" />
@@ -304,6 +305,7 @@
 			<Definition Code="dt" Class="dcraft.struct.format.DateTimeFormatter" />
 			<Definition Code="ld" Class="dcraft.struct.format.LocalDateFormatter" />
 			<Definition Code="lt" Class="dcraft.struct.format.LocalTimeFormatter" />
+			<Definition Code="ldt" Class="dcraft.struct.format.LocalDateTimeFormatter" />
 			<Definition Code="yn" Class="dcraft.struct.format.YesNoFormatter" />
 			<Definition Code="tf" Class="dcraft.struct.format.TrueFalseFormatter" />
 			<Definition Code="xmlescape" Class="dcraft.struct.format.XmlEscapeFormatter" />

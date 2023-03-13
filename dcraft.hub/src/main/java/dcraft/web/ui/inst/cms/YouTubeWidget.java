@@ -35,7 +35,11 @@ public class YouTubeWidget extends Base implements ICMSAware {
 		String vid = YouTubeId.getIdFromUrl(StackUtil.stringFromSource(state,"VideoId"));
 		// 19by9 or 4by3
 		String ratio = StackUtil.stringFromSource(state,"Ratio", "16by9");
-		
+		String mod = "";
+
+		if (StackUtil.boolFromSource(state, "Autoplay"))
+			mod += "&autoplay=1";
+
 		this.with(W3.tag("div")
 				.withClass("dc-media-box", "dc-media-video", "dc-youtube-container-" + ratio)
 				.with(W3.tag("img")
@@ -43,9 +47,10 @@ public class YouTubeWidget extends Base implements ICMSAware {
 						.attr("alt", "")
 				)
 				.with(W3.tag("iframe")
-						.withAttribute("src", "https://www.youtube.com/embed/" + vid + "?html5=1&rel=0&showinfo=0")
+						.withAttribute("src", "https://www.youtube.com/embed/" + vid + "?html5=1&rel=0&showinfo=0" + mod)
 						.withAttribute("frameborder", "0")
 						.withAttribute("allowfullscreen", "allowfullscreen")
+						.withAttribute("allow", "autoplay;")
 				)
 		);
 		

@@ -166,7 +166,7 @@ public class SqlExecute extends Instruction {
 				ref = Struct.objectToDateTime(ref);
 			else if ("Double".equals(nullType))
 				ref = Struct.objectToDecimal(ref);
-			else if ("BigDecimal".equals(nullType))
+			else if ("BigDecimal".equals(nullType) || "Decimal".equals(nullType))
 				ref = Struct.objectToDecimal(ref);
 			else if ("VarChar".equals(nullType))
 				ref = Struct.objectToString(ref);
@@ -187,6 +187,8 @@ public class SqlExecute extends Instruction {
 				ref = SqlNull.VarChar;
 			else if ("BigDecimal".equals(nullType))
 				ref = SqlNull.BigDecimal;
+			else if ("Decimal".equals(nullType))
+				ref = SqlNull.Decimal;
 			else if ("Text".equals(nullType))
 				ref = SqlNull.Text;
 		}

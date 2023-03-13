@@ -1,10 +1,13 @@
-import Node from './Node.js';
+import Node, { addNodeClass } from './Node.js';
+import { addNodeElement, nodeProxy } from '../shadernode/ShaderNode.js';
 
 class BypassNode extends Node {
 
 	constructor( returnNode, callNode ) {
 
 		super();
+
+		this.isBypassNode = true;
 
 		this.outputNode = returnNode;
 		this.callNode = callNode;
@@ -33,6 +36,10 @@ class BypassNode extends Node {
 
 }
 
-BypassNode.prototype.isBypassNode = true;
-
 export default BypassNode;
+
+export const bypass = nodeProxy( BypassNode );
+
+addNodeElement( 'bypass', bypass );
+
+addNodeClass( BypassNode );

@@ -54,9 +54,12 @@ public class With extends OperationsInstruction {
 			}
 
 			// don't check empty, needs to be able to handle empty
-			if (this.hasAttribute("SetTo")) {
+			if (this.hasAttribute("SetTo") || this.hasAttribute("Value")) {
 				BaseStruct var3 = StackUtil.refFromSource(state, "SetTo");
-				
+
+				if (var3 == null)
+					var3 = StackUtil.refFromSource(state, "Value", true);
+
 				if (var instanceof ScalarStruct) {
 					if (var instanceof ScalarStruct) {
 						((ScalarStruct) var).adaptValue(var3);
