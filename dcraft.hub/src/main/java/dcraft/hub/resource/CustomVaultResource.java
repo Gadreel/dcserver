@@ -251,7 +251,7 @@ public class CustomVaultResource extends ResourceBase {
             return ReturnOption.AWAIT;
         }
 
-        if ("ListDataFoler".equals(code.getName())) {
+        if ("ListDataFolder".equals(code.getName())) {
             String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias", true));
             String path = Struct.objectToString(StackUtil.refFromElement(stack, code, "Path", true));
             String result = StackUtil.stringFromElementClean(stack, code, "Result");
@@ -259,6 +259,28 @@ public class CustomVaultResource extends ResourceBase {
             CommonPath p = StringUtil.isNotEmpty(path) ? CommonPath.from(path) : CommonPath.ROOT;
 
             CustomVaultUtil.listFileCacheFolder(alias, p, new OperationOutcomeStruct() {
+                @Override
+                public void callback(BaseStruct found) throws OperatingContextException {
+                    if (found != null)
+                        StackUtil.addVariable(stack, result, found);
+
+                    stack.withContinueFlag();
+
+                    OperationContext.getAsTaskOrThrow().resume();
+                }
+            });
+
+            return ReturnOption.AWAIT;
+        }
+
+        if ("CountDataFolder".equals(code.getName())) {
+            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias", true));
+            String path = Struct.objectToString(StackUtil.refFromElement(stack, code, "Path", true));
+            String result = StackUtil.stringFromElementClean(stack, code, "Result");
+
+            CommonPath p = StringUtil.isNotEmpty(path) ? CommonPath.from(path) : CommonPath.ROOT;
+
+            CustomVaultUtil.countFileCacheFolder(alias, p, new OperationOutcomeStruct() {
                 @Override
                 public void callback(BaseStruct found) throws OperatingContextException {
                     if (found != null)

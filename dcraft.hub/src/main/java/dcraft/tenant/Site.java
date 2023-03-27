@@ -63,7 +63,7 @@ public class Site extends Base {
 
 	protected HtmlMode htmlmode = HtmlMode.Dynamic;
 	protected CommonPath homepath = Site.PATH_HOME;
-	protected CommonPath notfoundpath = null;
+	protected CommonPath notfoundpath = CommonPath.ROOT;
 	protected String[] specialExtensions = Site.EXTENSIONS_STD;
 	protected boolean srcptstlcache = false;
 	protected List<XElement> webglobals = null;

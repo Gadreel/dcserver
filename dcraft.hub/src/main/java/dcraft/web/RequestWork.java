@@ -492,11 +492,15 @@ public class RequestWork extends ChainWork {
 			if (output == null) {
 				path = webSite.getNotFoundPath();
 
-				if (path != null) {
-					// redirect instead, we don't want crawlers get the wrong idea that this path is good
-					//output = webSite.webFindFile(path, wctrl.getFieldAsRecord("Request").getFieldAsString("View"));
+				if (path.isRoot())
+					path = CommonPath.from("/home");			// default if nothing else worked
 
-					return RedirectOutputAdapter.of(path);
+				if (path != null) {
+					output = webSite.webFindFile(path, wctrl.getFieldAsRecord("Request").getFieldAsString("View"));
+
+					// this idea did not work out - consider where home page has an parameter coming into it
+					// NOPE -- redirect instead, we don't want crawlers get the wrong idea that this path is good -- use of canonical instead
+					// NOPE -- return RedirectOutputAdapter.of(path);
 				}
 			}
 

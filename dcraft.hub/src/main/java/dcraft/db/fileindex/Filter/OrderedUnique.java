@@ -47,6 +47,7 @@ public class OrderedUnique extends BasicFilter {
         return this.values.size() > 0 ? this.values.get(0) : null;
     }
 
+
     @Override
     public ExpressionResult check(FileIndexAdapter adapter, IVariableAware scope, Vault vault, CommonPath path, RecordStruct file) throws OperatingContextException {
         String val = vault.getName() + "|" + path.toString();

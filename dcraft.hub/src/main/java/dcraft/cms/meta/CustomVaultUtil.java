@@ -28,6 +28,7 @@ import dcraft.struct.*;
 import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.builder.ObjectBuilder;
+import dcraft.struct.scalar.IntegerStruct;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
@@ -480,6 +481,56 @@ public class CustomVaultUtil {
 		}
 		
 		callback.returnValue(out.toLocal());
+	}
+
+	static public void countFileCacheFolder(String vaultname, CommonPath path, OperationOutcomeStruct callback) throws OperatingContextException {
+		Vault vault = OperationContext.getOrThrow().getSite().getVault(vaultname);
+
+		if (vault == null) {
+			Logger.error("Invalid vault name");
+			callback.returnEmpty();
+			return;
+		}
+
+		long depth = 1;
+
+		IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
+
+		FileIndexAdapter adapter = FileIndexAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
+
+		IntegerStruct out = new IntegerStruct();
+
+		IVariableAware scope = CustomScope.of(OperationContext.getOrThrow());
+
+		BasicFilter addFilter = new BasicFilter() {
+			@Override
+			public ExpressionResult check(FileIndexAdapter adapter, IVariableAware scope, Vault vault, CommonPath path, RecordStruct file) {
+
+					out.setValue(out.getValue() + 1);
+
+				return ExpressionResult.accepted();
+			}
+		};
+
+		IFilter filter = new StandardAccess()
+				.withNested(
+						addFilter
+				);
+
+		try (OperationMarker om = OperationMarker.create()) {
+
+			adapter.traverseIndex(vault, path, (int) depth, scope, filter);
+
+			if (! om.hasErrors()) {
+				callback.returnValue(out);
+				return;
+			}
+		}
+		catch (Exception x) {
+			Logger.error("Issue with select direct: " + x);
+		}
+
+		callback.returnEmpty();
 	}
 
 	/*

@@ -24,6 +24,8 @@ public class Unique extends BasicFilter {
         return this.unique;
     }
 
+    public int getCount() { return this.unique.size(); }
+
     public boolean isEmpty() {
         return this.unique.isEmpty();
     }

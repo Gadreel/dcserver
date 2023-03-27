@@ -536,7 +536,13 @@
 				Callback: function(files) {
 					if (entry.Params.Callback) {
 						entry.Layer.back();
-						entry.Params.Callback(files);
+
+						var results = [ ];
+
+						for (var i = 0; i < files.length; i++)
+							results.push(entry.Store.PublicPath + files[i].FullPath);
+
+						entry.Params.Callback(results);
 					}
 					else {
 						$('#lstDepCdnFolders,#lstDepCdnFiles').empty().dcappend(
