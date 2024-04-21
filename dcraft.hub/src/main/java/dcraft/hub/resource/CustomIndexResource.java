@@ -308,7 +308,7 @@ public class CustomIndexResource extends ResourceBase {
                 collector.shiftNested(tagfilter);
             }
 
-            System.out.println("Search b");
+            System.out.println("Search b: " + params);
 
             CustomIndexUtil.searchCustomIndex(params, collector, new OperationOutcomeEmpty() {
                 @Override

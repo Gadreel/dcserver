@@ -298,6 +298,10 @@ public class UserDataUtil {
 		String userid = Struct.objectToString(db.firstInIndex("dcUser", "dcUsername", data.getFieldAsString("Username").trim().toLowerCase(), false));
 
 		if (userid == null) {
+			userid = Struct.objectToString(db.firstInIndex("dcUser", "dcEmail", data.getFieldAsString("Username").trim().toLowerCase(), false));
+		}
+
+		if (userid == null) {
 			Logger.error("Recovery failed.");
 			return null;
 		}

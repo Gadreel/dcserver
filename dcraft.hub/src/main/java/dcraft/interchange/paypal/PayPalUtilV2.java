@@ -247,6 +247,8 @@ public class PayPalUtilV2 {
 						int responseCode = response.statusCode();
 						String respBody = response.body();
 
+						System.out.println("pp2 resp: " + respBody);
+
 						if (StringUtil.isNotEmpty(respBody)) {
 							if ((responseCode <  200) || (responseCode > 299)) {
 								Logger.error("Unable to capture auth: " + responseCode);

@@ -18,7 +18,7 @@ import io.netty.util.concurrent.ProgressivePromise;
 import java.net.IDN;
 import java.util.Locale;
 
-import static io.netty.handler.codec.http2.Http2SecurityUtil.CIPHERS;
+//import static io.netty.handler.codec.http2.Http2SecurityUtil.CIPHERS;
 
 /**
  */

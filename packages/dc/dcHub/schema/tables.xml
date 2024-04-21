@@ -390,6 +390,9 @@
 							<Field Name="Captcha" Type="String" />
 							<Field Name="Username" Type="dcSmallString" Required="True" />
 						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Uuid" Type="dcString" />
+						</RecordResponse>
 					</Op>
 					<Op Name="SignUp">
 						<Description>
@@ -499,7 +502,7 @@
 							<Field Name="EthnicityNote" Type="dcUser:dcEthnicityNote" />
 							<Field Name="EducationMax" Type="dcUser:dcEducationMax" />
 						</RecordRequest>
-					</Op>
+					</Op>					
 					<Op Name="RetireSelf">
 						<Description>
 							Remove user's own record.

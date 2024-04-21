@@ -21,6 +21,8 @@ import dcraft.hub.op.OperationContext;
 import dcraft.log.count.CountHub;
 import dcraft.mail.MailUtil;
 import dcraft.script.Script;
+import dcraft.struct.ListStruct;
+import dcraft.struct.RecordStruct;
 import dcraft.task.IWork;
 import dcraft.task.TaskContext;
 
@@ -32,6 +34,12 @@ public class DCCerberusAdapter extends BaseAdapter {
 		CountHub.countObjects("dcEmailScriptCount-" + OperationContext.getOrThrow().getTenant().getAlias(), this);
 
 		Script script = Script.of(DCCerberusAdapter.this.file);
+
+		RecordStruct page = RecordStruct.record()
+				.with("Path", this.emailpath)
+				.with("View", this.view);
+
+		taskctx.addVariable("_Email", page);
 
 		if (script != null)
 			this.then(script.toWork())

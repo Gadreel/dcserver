@@ -36,6 +36,7 @@ import javax.xml.stream.XMLStreamReader;
 
 import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
 import dcraft.hub.resource.ResourceBase;
 import dcraft.hub.time.BigDateTime;
 import dcraft.log.Logger;
@@ -49,6 +50,7 @@ import dcraft.struct.scalar.AnyStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
+import dcraft.web.ui.UIUtil;
 
 /**
  * Represents a XML element and contains all the information that the
@@ -1524,7 +1526,15 @@ public class XElement extends XNode {
 				}
 			}
 			else if(code.hasChildren()) {
-				for (XNode node : code.children) {
+				XElement rootcode = code;
+
+				if (StackUtil.boolFromElement(stack, code, "Expand", false)) {
+					rootcode = rootcode.deepCopy();		// so we don't mess up the original source
+
+					UIUtil.cleanDocReferences(stack, rootcode);
+				}
+
+				for (XNode node : rootcode.children) {
 					this.append(node);
 				}
 			}

@@ -15,7 +15,7 @@ import dcraft.util.Base64;
 import dcraft.util.StringUtil;
 
 public class DecryptPortableMessageWork extends ChainWork {
-    static public DecryptPortableMessageWork of(String source) {
+    static public DecryptPortableMessageWork of(CharSequence source) {
         DecryptPortableMessageWork work = new DecryptPortableMessageWork();
         work.source = source;
         return work;

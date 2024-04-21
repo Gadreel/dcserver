@@ -1,5 +1,6 @@
 package dcraft.tool.release;
 
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -8,6 +9,7 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
 
+import dcraft.filestore.CommonPath;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.ignite.IServerHelper;
 import dcraft.log.Logger;
@@ -135,7 +137,9 @@ public class ServerHelper implements IServerHelper {
 			
 			session.connect(30000); // making a connection with timeout.
 			session.setTimeout(20000);   // 20 second read timeout
-			
+
+			System.out.println("ssh session open: " + session);
+
 			return session;
 		}
 		catch (Exception x) {
@@ -144,19 +148,33 @@ public class ServerHelper implements IServerHelper {
 		
 		return null;
 	}
-	
-	// intended to have a ./ before path 
-	public boolean makeDirSftp(ChannelSftp sftp, Path path) {
-		System.out.println("mkdir: " + path +  "  ------   " + path.getNameCount());
+
+	public boolean put(ChannelSftp sftp, InputStream in, CommonPath dest) {
+		try (in) {
+			this.makeDirSftp(sftp, dest.getParent());
+			sftp.put(in, dest.toString().substring(1));
+			return true;
+		}
+		catch (Exception x) {
+			System.out.println("Sftp Error: " + x);
+		}
+
+		return false;
+	}
+
+	public boolean makeDirSftp(ChannelSftp sftp, CommonPath path) {
+		//System.out.println("mkdir: " + path +  "  ------   " + path.getNameCount());
 		
 		// path "." should be there
 		if (path.getNameCount() < 2)
 			return true;
 		
 		//System.out.println("checking");
+
+		String remotepath = path.toString().substring(1).replace('\\', '/');
 		
 		try {
-		    sftp.stat(path.toString().replace('\\', '/'));
+		    sftp.stat(remotepath);
 		    return true;		// path is there 
 		} 
 		catch (Exception x) {
@@ -165,8 +183,8 @@ public class ServerHelper implements IServerHelper {
 		this.makeDirSftp(sftp, path.getParent());
 		
 		try {
-			sftp.mkdir(path.toString().replace('\\', '/'));
-    		sftp.chmod(493, path.toString().replace('\\', '/'));		// 755 octal = 493 dec
+			sftp.mkdir(remotepath);
+    		sftp.chmod(493, remotepath);		// 755 octal = 493 dec
 		} 
 		catch (Exception x) {
 			System.out.println("Failed to create directory: " + x);
@@ -175,7 +193,38 @@ public class ServerHelper implements IServerHelper {
 		
 		return true;
 	}
-	
+
+	// intended to have a ./ before path
+	public boolean makeDirSftp(ChannelSftp sftp, Path path) {
+		System.out.println("mkdir: " + path +  "  ------   " + path.getNameCount());
+
+		// path "." should be there
+		if (path.getNameCount() < 2)
+			return true;
+
+		//System.out.println("checking");
+
+		try {
+		    sftp.stat(path.toString().replace('\\', '/'));
+		    return true;		// path is there
+		}
+		catch (Exception x) {
+		}
+
+		this.makeDirSftp(sftp, path.getParent());
+
+		try {
+			sftp.mkdir(path.toString().replace('\\', '/'));
+    		sftp.chmod(493, path.toString().replace('\\', '/'));		// 755 octal = 493 dec
+		}
+		catch (Exception x) {
+			System.out.println("Failed to create directory: " + x);
+			return false;
+		}
+
+		return true;
+	}
+
 	public XElement findDeployment() {
 		return this.hostconfig;
 	}

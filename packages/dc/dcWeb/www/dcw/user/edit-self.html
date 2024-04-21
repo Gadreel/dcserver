@@ -1,4 +1,4 @@
-<dc.Html Badges="User">
+<dc.Html Badges="User" xAsync="true">
 	<dcs.With Target="$_Resources.Config">
 		<GetTag Path="Users" Result="UserConfig" />
 	</dcs.With>
@@ -141,32 +141,39 @@
 			};
 	]]></Function>
 	<Function Name="AfterSave"><![CDATA[
-			var entry = this;
+			var page = this;
 
-			entry.Layer.back();
+			page.Layer.back();
 
-			if (entry.Params.Callback)
-				entry.Params.Callback();
+			if (page.Params.Callback)
+				page.Params.Callback();
 	]]></Function>
 	<Function Name="DoDelete"><![CDATA[
-			var entry = this;
+		(async() => {
+			try {
+				const confirm = await dc.pui.Popup.confirmAsync('Are you sure you want to delete your account?');
 
-			dc.pui.Popup.confirm('Are you sure you want to delete your account?', function(confirm) {
 				if (! confirm)
 					return;
 
-				dc.comm.sendMessage({
-					Service: 'dcCoreServices',
-					Feature: 'Users',
-					Op: 'RetireSelf'
-				}, function(resp) {
-					if (resp.Result > 0) {
-						dc.pui.Popup.alert(resp.Message);
-						return;
-					}
+				if (dc.handler?.user?.beforeRetireSelf)
+					await dc.handler.user.beforeRetireSelf();		// must be promise
 
-					window.location.load('/', true);
-				});
-			});
+				await dc.comm.tryRemote('dcCoreServices.Users.RetireSelf');
+
+				if (dc.handler?.user?.afterRetireSelf)
+					await dc.handler.user.afterRetireSelf();		// must be promise
+				else
+					window.location = '/';
+			}
+			catch(x) {
+				console.log('async button failure: ' + x);
+
+				if (x.stack)
+					console.log(x.stack);
+
+				await dc.pui.Popup.alertAsync(x.message);
+			}
+		})();
 	]]></Function>
 </dc.Html>

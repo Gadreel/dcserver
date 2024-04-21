@@ -226,10 +226,18 @@ dc.pui.layer.Base.prototype = {
 		// }
 	},
 
-	refreshPage: function() {
+	refreshPage: function(clean) {
 		var options = this.Current;
 
 		options.Loaded = false;
+
+		if (clean) {
+			options.onDestroy();
+
+			options.Callback = null;
+			options.Store = { };
+			options.Forms = { };
+		}
 
 		delete dc.pui.Loader.StalePages[options.Name];		// no longer stale
 
@@ -974,7 +982,7 @@ dc.pui.Loader = {
 		if (dc.handler && dc.handler.settings && dc.handler.settings.fbpixel)
 			loadFBPixel();
 
-		dc.comm.init(function() {
+		dc.comm.init().then(function() {
 			if (dc.handler && dc.handler.init)
 				dc.handler.init();
 
@@ -2506,6 +2514,8 @@ dc.pui.Form.prototype = {
 								title += event.Data[fname];
 							}
 						}
+
+						task.Store.Form.raiseEvent('SaveRecordManaged', event);
 
 						var captcha = task.Store.Captcha ? task.Store.Captcha : 'xyz';
 
@@ -4389,7 +4399,7 @@ dc.pui.controls.Range.prototype.setValue = function(value) {
 	value = dc.util.String.toString(value);
 
 	if (!value)
-		value = '';
+		value = '0';
 
 	$('#' + this.Id).val(value);
 
@@ -4812,7 +4822,7 @@ dc.pui.controls.Uploader.prototype.removeAll = function() {
 	this.Values = [ ];
 	this.Files = [ ];
 
-	$('#fld' + this.Id + ' .dc-uploader-listing').empty();
+	$('#fld' + this.Id + ' .dc-uploader-listing tbody').empty();
 };
 
 dc.pui.controls.Uploader.prototype.getUploads = function(pre) {

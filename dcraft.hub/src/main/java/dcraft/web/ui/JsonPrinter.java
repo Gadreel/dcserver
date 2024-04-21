@@ -147,20 +147,35 @@ public class JsonPrinter extends XmlToJsonPrinterOld {
 			//  Functions
 			// ==============================================
 
+			boolean isPageAsync = Struct.objectToBooleanOrFalse(doc.attr("Async"));
+
+			if (isPageAsync)
+				this.jsb.field("Async", true);
+
 			this.jsb.field("Functions");
 			
 			this.jsb.startRecord();
 			
 			for (XElement func : this.selectAll("Function", hidden)) {
-				if (!func.hasNotEmptyAttribute("Name"))
+				if (! func.hasNotEmptyAttribute("Name"))
 					continue;
-				
-				this.jsb.field(func.getAttribute("Name"));
+
+				String funcName = func.getAttribute("Name");
+
+				this.jsb.field(funcName);
 				
 				StringBuilder sb = new StringBuilder();
-				
-				sb.append(" function(" + func.getAttribute("Params", "") + ") { ");
-				
+
+				if (isPageAsync && ! funcName.startsWith("on")) {
+					sb.append(" async function(" + func.getAttribute("Params", "") + ") { ");
+					sb.append("\n\t\t\t\tconst page = this; ");
+					//sb.append("\n\t\t\t\tconst loadtracker = page.allocatePageFuncTimeout(); \n ");
+					//sb.append("\n\t\t\t\tloadtracker.startWork(5000, 'Method taking too long to complete.', async function() {\n ");
+				}
+				else {
+					sb.append(" function(" + func.getAttribute("Params", "") + ") { ");
+				}
+
 				String code = valueMacro(func.getText(), func);
 				
 				code = StringUtil.stripTrailingWhitespace(code);
@@ -169,7 +184,14 @@ public class JsonPrinter extends XmlToJsonPrinterOld {
 					sb.append("\n");
 				
 				sb.append(code);
-				
+
+				//if (isPageAsync && ! funcName.startsWith("on")) {
+					//sb.append("\n\t\t\t\t}; ");
+					//sb.append("\n\t\t\t\treturn pagefunc(this); ");
+					//sb.append("\n\t\t\t\t}); ");
+					//sb.append("\n\t\t\t\treturn loadtracker.Promise; ");
+				//}
+
 				sb.append("\n\t\t\t}");
 				
 				this.jsb.rawValue(sb);
@@ -194,9 +216,17 @@ public class JsonPrinter extends XmlToJsonPrinterOld {
 				}
 				else {
 					StringBuilder sb = new StringBuilder();
-					
-					sb.append(" function(" + func.getAttribute("Params", "") + ") { ");
-					
+
+					if (isPageAsync) {
+						sb.append(" async function(" + func.getAttribute("Params", "") + ") { ");
+						sb.append("\n\t\t\t\tconst page = this; ");
+						//sb.append("\n\t\t\t\tconst loadtracker = page.allocatePageFuncTimeout(); \n ");
+						//sb.append("\n\t\t\t\tloadtracker.startWork(5000, 'Page taking too long to load.', async function() {\n ");
+					}
+					else {
+						sb.append(" function(" + func.getAttribute("Params", "") + ") { ");
+					}
+
 					String code = valueMacro(func.getText(), func);
 					
 					code = StringUtil.stripTrailingWhitespace(code);
@@ -205,7 +235,12 @@ public class JsonPrinter extends XmlToJsonPrinterOld {
 						sb.append("\n");
 					
 					sb.append(code);
-					
+
+					//if (isPageAsync) {
+					//	sb.append("\n\t\t\t\t}); ");
+					//	sb.append("\n\t\t\t\treturn loadtracker.Promise; ");
+					//}
+
 					sb.append("\n\t\t\t}");
 					
 					this.jsb.rawValue(sb);

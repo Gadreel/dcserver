@@ -4,8 +4,10 @@ import dcraft.hub.config.CoreLoaderWork;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.log.Logger;
 import dcraft.service.IService;
+import dcraft.service.ServiceHub;
 import dcraft.service.ServiceResource;
 import dcraft.task.TaskContext;
+import dcraft.task.queue.QueueHub;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
@@ -37,7 +39,9 @@ public class ServiceStartWork extends CoreLoaderWork {
 				Logger.error("Unable to load serivce: " + el);
 			}
 		}
-		
+
+		ServiceHub.enableMessageChecker();
+
         taskctx.returnEmpty();
 	}
 	

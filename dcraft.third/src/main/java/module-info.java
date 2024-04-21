@@ -1,6 +1,8 @@
 module dcraft.third {
   requires java.xml;
   requires java.desktop;
+  requires org.apache.commons.codec;
+  requires org.apache.commons.compress;
 
   exports org.apache.lucene.util;
   exports org.apache.lucene.analysis;
@@ -13,4 +15,6 @@ module dcraft.third {
   exports org.mindrot;
   exports com.pnuema.java.barcode;
   exports dcraft.daemon;
+  exports com.samstevens.totp.util;
+  exports com.samstevens.totp.exceptions;
 }

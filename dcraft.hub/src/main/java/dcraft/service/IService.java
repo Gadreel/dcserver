@@ -19,6 +19,8 @@ package dcraft.service;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.hub.resource.ResourceTier;
+import dcraft.schema.SchemaResource;
+import dcraft.schema.ServiceSchema;
 import dcraft.xml.XElement;
  
 public interface IService {
@@ -28,7 +30,9 @@ public interface IService {
 	
 	void start();
 	void stop();
-	
+
+	SchemaResource.OpInfo lookupOpInfo(ServiceRequest request) throws OperatingContextException;
+
 	// true if handled
 	boolean handle(ServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException;
 }

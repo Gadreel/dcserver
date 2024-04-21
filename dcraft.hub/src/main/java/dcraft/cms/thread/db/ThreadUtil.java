@@ -192,6 +192,8 @@ public class ThreadUtil {
 		ThreadUtil.deliver(db, id, deliver, false);
 	}
 
+	// TODO there really should be a "Delivered" field indicating that this has been sent - otherwise when we reindex the
+	// dcmThreadA we don't know who should be in the the index or not
 	public static void deliver(TablesAdapter db, String id, ZonedDateTime deliver, boolean indexonly) throws OperatingContextException {
 		try {
 

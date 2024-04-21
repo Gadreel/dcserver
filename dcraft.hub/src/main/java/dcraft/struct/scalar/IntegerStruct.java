@@ -215,13 +215,13 @@ public class IntegerStruct extends ScalarStruct {
 		}
 		else if ("Random".equals(code.getName())) {
 			long from = 1;
-			long to = 100;
+			long to = 100;	// to is exclusive, so default includes numbers 1 to 99
 			
 			try {
 				if (code.hasAttribute("From")) 
 						from = Struct.objectToInteger(StackUtil.refFromElement(stack, code, "From"));
 				
-				if (code.hasAttribute("To")) 
+				if (code.hasAttribute("To")) 	// note this is exclusive
 						to = Struct.objectToInteger(StackUtil.refFromElement(stack, code, "To"));
 
 				if (StackUtil.boolFromElement(stack, code, "Quick"))

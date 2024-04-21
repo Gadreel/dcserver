@@ -31,19 +31,38 @@ public class RequestFactory {
 	 * @param username entered by user
 	 * @param password entered by user
 	 */
-	static public DataRequest signInRequest(String username, String password, String keyprint) {
-		DataRequest request = DataRequest.of("dcSignIn")
+	static public DataRequest signInPreflightRequest(String username, String password) {
+		DataRequest request = DataRequest.of("dcSignInPreflight")
 			.withParam("Username", (username != null) ? username.trim().toLowerCase() : null);
 		
 		if (StringUtil.isNotEmpty(password)) 
 			request.withParam("Password", password.trim());		// password crypto handled in stored proc
-		
-		if (StringUtil.isNotEmpty(keyprint))
-			request.withParam("ClientKeyPrint", keyprint.trim());
-		
+
 		return request;
 	}
-	
+
+	/**
+	 * Sign in to confirm user, includes user name, password and optional confirm code.
+	 *
+	 * @param username entered by user
+	 * @param password entered by user
+	 */
+	static public DataRequest signInRequest(String username, String password, String keyprint, String code) {
+		DataRequest request = DataRequest.of("dcSignIn")
+			.withParam("Username", (username != null) ? username.trim().toLowerCase() : null);
+
+		if (StringUtil.isNotEmpty(password))
+			request.withParam("Password", password.trim());		// password crypto handled in stored proc
+
+		if (StringUtil.isNotEmpty(keyprint))
+			request.withParam("ClientKeyPrint", keyprint.trim());
+
+		if (StringUtil.isNotEmpty(code))
+			request.withParam("Code", code.trim());
+
+		return request;
+	}
+
 	static public DataRequest signOutRequest() {
 		return DataRequest.of("dcSignOut");
 	}

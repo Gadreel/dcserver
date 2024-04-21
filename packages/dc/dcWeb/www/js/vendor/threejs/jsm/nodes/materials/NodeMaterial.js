@@ -1,5 +1,5 @@
-import { Material, ShaderMaterial, NoToneMapping } from 'three';
-import { getNodesKeys, getCacheKey } from '../core/NodeUtils.js';
+import { Material, ShaderMaterial, NoColorSpace } from 'three';
+import { getNodeChildren, getCacheKey } from '../core/NodeUtils.js';
 import { attribute } from '../core/AttributeNode.js';
 import { diffuseColor } from '../core/PropertyNode.js';
 import { materialNormal } from '../accessors/ExtendedMaterialNode.js';
@@ -7,17 +7,16 @@ import { materialAlphaTest, materialColor, materialOpacity, materialEmissive } f
 import { modelViewProjection } from '../accessors/ModelViewProjectionNode.js';
 import { transformedNormalView } from '../accessors/NormalNode.js';
 import { instance } from '../accessors/InstanceNode.js';
-import { positionLocal } from '../accessors/PositionNode.js';
-import { reference } from '../accessors/ReferenceNode.js';
+import { positionLocal, positionView } from '../accessors/PositionNode.js';
 import { skinning } from '../accessors/SkinningNode.js';
+import { morph } from '../accessors/MorphNode.js';
 import { texture } from '../accessors/TextureNode.js';
-import { toneMapping } from '../display/ToneMappingNode.js';
-import { rangeFog } from '../fog/FogRangeNode.js';
-import { densityFog } from '../fog/FogExp2Node.js';
+import { cubeTexture } from '../accessors/CubeTextureNode.js';
 import { lightsWithoutWrap } from '../lighting/LightsNode.js';
+import { mix, dFdx, dFdy } from '../math/MathNode.js';
+import { float, vec3, vec4 } from '../shadernode/ShaderNode.js';
 import AONode from '../lighting/AONode.js';
 import EnvironmentNode from '../lighting/EnvironmentNode.js';
-import { float, vec3, vec4 } from '../shadernode/ShaderNode.js';
 
 const NodeMaterials = new Map();
 
@@ -31,16 +30,29 @@ class NodeMaterial extends ShaderMaterial {
 
 		this.type = this.constructor.name;
 
+		this.forceSinglePass = false;
+
 		this.lights = true;
 		this.normals = true;
 
 		this.lightsNode = null;
+		this.envNode = null;
+
+		this.colorNode = null;
+		this.normalNode = null;
+		this.opacityNode = null;
+		this.backdropNode = null;
+		this.backdropAlphaNode = null;
+		this.alphaTestNode = null;
+
+		this.positionNode = null;
+		this.outputNode = null;
 
 	}
 
 	customProgramCacheKey() {
 
-		return getCacheKey( this );
+		return this.type + getCacheKey( this );
 
 	}
 
@@ -52,70 +64,83 @@ class NodeMaterial extends ShaderMaterial {
 
 	construct( builder ) {
 
-		// < STACKS >
-
-		const vertexStack = builder.createStack();
-		const fragmentStack = builder.createStack();
-
 		// < VERTEX STAGE >
 
-		vertexStack.outputNode = this.constructPosition( builder, vertexStack );
+		builder.addStack();
+
+		builder.stack.outputNode = this.constructPosition( builder );
+
+		builder.addFlow( 'vertex', builder.removeStack() );
 
 		// < FRAGMENT STAGE >
 
-		if ( this.normals === true ) this.constructNormal( builder, fragmentStack );
+		builder.addStack();
 
-		this.constructDiffuseColor( builder, fragmentStack );
-		this.constructVariants( builder, fragmentStack );
+		if ( this.isUnlit === false ) {
 
-		const outgoingLightNode = this.constructLighting( builder, fragmentStack );
+			if ( this.normals === true ) this.constructNormal( builder );
 
-		fragmentStack.outputNode = this.constructOutput( builder, fragmentStack, outgoingLightNode, diffuseColor.a );
+			this.constructDiffuseColor( builder );
+			this.constructVariants( builder );
 
-		// < FLOW >
+			const outgoingLightNode = this.constructLighting( builder );
 
-		builder.addFlow( 'vertex', vertexStack );
-		builder.addFlow( 'fragment', fragmentStack );
+			builder.stack.outputNode = this.constructOutput( builder, vec4( outgoingLightNode, diffuseColor.a ) );
+
+		} else {
+
+			builder.stack.outputNode = this.constructOutput( builder, this.outputNode || vec4( 0, 0, 0, 1 ) );
+
+		}
+
+		builder.addFlow( 'fragment', builder.removeStack() );
 
 	}
 
 	constructPosition( builder ) {
 
 		const object = builder.object;
+		const geometry = object.geometry;
 
-		let vertex = positionLocal;
+		builder.addStack();
 
-		if ( this.positionNode !== null ) {
+		if ( geometry.morphAttributes.position || geometry.morphAttributes.normal || geometry.morphAttributes.color ) {
 
-			vertex = vertex.bypass( positionLocal.assign( this.positionNode ) );
-
-		}
-
-		if ( ( object.instanceMatrix && object.instanceMatrix.isInstancedBufferAttribute === true ) && builder.isAvailable( 'instance' ) === true ) {
-
-			vertex = vertex.bypass( instance( object ) );
+			builder.stack.add( morph( object ) );
 
 		}
 
 		if ( object.isSkinnedMesh === true ) {
 
-			vertex = vertex.bypass( skinning( object ) );
+			builder.stack.add( skinning( object ) );
 
 		}
 
-		builder.context.vertex = vertex;
+		if ( ( object.instanceMatrix && object.instanceMatrix.isInstancedBufferAttribute === true ) && builder.isAvailable( 'instance' ) === true ) {
+
+			builder.stack.add( instance( object ) );
+
+		}
+
+		if ( this.positionNode !== null ) {
+
+			builder.stack.assign( positionLocal, this.positionNode );
+
+		}
+
+		builder.context.vertex = builder.removeStack();
 
 		return modelViewProjection();
 
 	}
 
-	constructDiffuseColor( builder, stack ) {
+	constructDiffuseColor( { stack, geometry } ) {
 
 		let colorNode = this.colorNode ? vec4( this.colorNode ) : materialColor;
 
 		// VERTEX COLORS
 
-		if ( this.vertexColors === true && builder.geometry.hasAttribute( 'color' ) ) {
+		if ( this.vertexColors === true && geometry.hasAttribute( 'color' ) ) {
 
 			colorNode = vec4( colorNode.xyz.mul( attribute( 'color' ) ), colorNode.a );
 
@@ -132,9 +157,9 @@ class NodeMaterial extends ShaderMaterial {
 
 		// ALPHA TEST
 
-		if ( this.alphaTestNode || this.alphaTest > 0 ) {
+		if ( this.alphaTestNode !== null || this.alphaTest > 0 ) {
 
-			const alphaTestNode = this.alphaTestNode ? float( this.alphaTestNode ) : materialAlphaTest;
+			const alphaTestNode = this.alphaTestNode !== null ? float( this.alphaTestNode ) : materialAlphaTest;
 
 			stack.add( diffuseColor.a.lessThanEqual( alphaTestNode ).discard() );
 
@@ -148,23 +173,56 @@ class NodeMaterial extends ShaderMaterial {
 
 	}
 
-	constructNormal( builder, stack ) {
+	constructNormal( { stack } ) {
 
 		// NORMAL VIEW
 
-		const normalNode = this.normalNode ? vec3( this.normalNode ) : materialNormal;
+		if ( this.flatShading === true ) {
 
-		stack.assign( transformedNormalView, normalNode );
+			const fdx = dFdx( positionView );
+			const fdy = dFdy( positionView.negate() ); // use -positionView ?
+			const normalNode = fdx.cross( fdy ).normalize();
 
-		return normalNode;
+			stack.assign( transformedNormalView, normalNode );
+
+		} else {
+
+			const normalNode = this.normalNode ? vec3( this.normalNode ) : materialNormal;
+
+			stack.assign( transformedNormalView, normalNode );
+
+		}
+
+	}
+
+	getEnvNode( builder ) {
+
+		let node = null;
+
+		if ( this.envNode ) {
+
+			node = this.envNode;
+
+		} else if ( this.envMap ) {
+
+			node = this.envMap.isCubeTexture ? cubeTexture( this.envMap ) : texture( this.envMap );
+
+		} else if ( builder.environmentNode ) {
+
+			node = builder.environmentNode;
+
+		}
+
+		return node;
 
 	}
 
 	constructLights( builder ) {
 
-		let lightsNode = this.lightsNode || builder.lightsNode;
+		const envNode = this.getEnvNode( builder );
 
-		const envNode = this.envNode || builder.scene.environmentNode;
+		//
+
 		const materialLightsNode = [];
 
 		if ( envNode ) {
@@ -178,6 +236,8 @@ class NodeMaterial extends ShaderMaterial {
 			materialLightsNode.push( new AONode( texture( builder.material.aoMap ) ) );
 
 		}
+
+		let lightsNode = this.lightsNode || builder.lightsNode;
 
 		if ( materialLightsNode.length > 0 ) {
 
@@ -198,27 +258,33 @@ class NodeMaterial extends ShaderMaterial {
 	constructLighting( builder ) {
 
 		const { material } = builder;
+		const { backdropNode, backdropAlphaNode, emissiveNode } = this;
 
 		// OUTGOING LIGHT
 
 		const lights = this.lights === true || this.lightsNode !== null;
 
 		const lightsNode = lights ? this.constructLights( builder ) : null;
-		const lightingModelNode = lightsNode ? this.constructLightingModel( builder ) : null;
 
 		let outgoingLightNode = diffuseColor.rgb;
 
 		if ( lightsNode && lightsNode.hasLight !== false ) {
 
-			outgoingLightNode = lightsNode.lightingContext( lightingModelNode );
+			const lightingModelNode = this.constructLightingModel( builder );
+
+			outgoingLightNode = lightsNode.lightingContext( lightingModelNode, backdropNode, backdropAlphaNode );
+
+		} else if ( backdropNode !== null ) {
+
+			outgoingLightNode = vec3( backdropAlphaNode !== null ? mix( outgoingLightNode, backdropNode, backdropAlphaNode ) : backdropNode );
 
 		}
 
 		// EMISSIVE
 
-		if ( ( this.emissiveNode && this.emissiveNode.isNode === true ) || ( material.emissive && material.emissive.isColor === true ) ) {
+		if ( ( emissiveNode && emissiveNode.isNode === true ) || ( material.emissive && material.emissive.isColor === true ) ) {
 
-			outgoingLightNode = outgoingLightNode.add( this.emissiveNode ? vec3( this.emissiveNode ) : materialEmissive );
+			outgoingLightNode = outgoingLightNode.add( emissiveNode ? vec3( emissiveNode ) : materialEmissive );
 
 		}
 
@@ -226,72 +292,56 @@ class NodeMaterial extends ShaderMaterial {
 
 	}
 
-	constructOutput( builder, stack, outgoingLight, opacity ) {
+	constructOutput( builder, outputNode ) {
 
 		const renderer = builder.renderer;
 
 		// TONE MAPPING
 
-		let toneMappingNode = renderer.toneMappingNode;
+		const toneMappingNode = builder.toneMappingNode;
 
-		if ( ! toneMappingNode && renderer.toneMapping !== NoToneMapping ) {
+		if ( toneMappingNode ) {
 
-			toneMappingNode = toneMapping( renderer.toneMapping, reference( 'toneMappingExposure', 'float', renderer ), outgoingLight );
-
-		}
-
-		if ( toneMappingNode && toneMappingNode.isNode === true ) {
-
-			outgoingLight = toneMappingNode.context( { color: outgoingLight } );
+			outputNode = vec4( toneMappingNode.context( { color: outputNode.rgb } ), outputNode.a );
 
 		}
-
-		// @TODO: Optimize outputNode to vec3.
-
-		let outputNode = vec4( outgoingLight, opacity );
 
 		// ENCODING
 
-		outputNode = outputNode.colorSpace( renderer.outputEncoding );
+		const renderTarget = renderer.getRenderTarget();
 
-		// FOG
+		let outputColorSpace;
 
-		let fogNode = builder.fogNode;
+		if ( renderTarget !== null ) {
 
-		if ( ( fogNode && fogNode.isNode !== true ) && builder.scene.fog ) {
+			outputColorSpace = renderTarget.texture.colorSpace;
 
-			const fog = builder.scene.fog;
+		} else {
 
-			if ( fog.isFogExp2 ) {
-
-				fogNode = densityFog( reference( 'color', 'color', fog ), reference( 'density', 'float', fog ) );
-
-			} else if ( fog.isFog ) {
-
-				fogNode = rangeFog( reference( 'color', 'color', fog ), reference( 'near', 'float', fog ), reference( 'far', 'float', fog ) );
-
-			} else {
-
-				console.error( 'NodeMaterial: Unsupported fog configuration.', fog );
-
-			}
+			outputColorSpace = renderer.outputColorSpace;
 
 		}
 
-		if ( fogNode ) outputNode = vec4( fogNode.mix( outputNode.rgb ), outputNode.a );
+		if ( outputColorSpace !== NoColorSpace ) outputNode = outputNode.linearToColorSpace( outputColorSpace );
+
+		// FOG
+
+		const fogNode = builder.fogNode;
+
+		if ( fogNode ) outputNode = vec4( fogNode.mixAssign( outputNode.rgb ), outputNode.a );
 
 		return outputNode;
 
 	}
 
-	setDefaultValues( values ) {
+	setDefaultValues( material ) {
 
 		// This approach is to reuse the native refreshUniforms*
 		// and turn available the use of features like transmission and environment in core
 
-		for ( const property in values ) {
+		for ( const property in material ) {
 
-			const value = values[ property ];
+			const value = material[ property ];
 
 			if ( this[ property ] === undefined ) {
 
@@ -303,7 +353,20 @@ class NodeMaterial extends ShaderMaterial {
 
 		}
 
-		Object.assign( this.defines, values.defines );
+		Object.assign( this.defines, material.defines );
+
+		const descriptors = Object.getOwnPropertyDescriptors( material.constructor.prototype );
+
+		for ( const key in descriptors ) {
+
+			if ( Object.getOwnPropertyDescriptor( this.constructor.prototype, key ) === undefined &&
+			     descriptors[ key ].get !== undefined ) {
+
+				Object.defineProperty( this.constructor.prototype, key, descriptors[ key ] );
+
+			}
+
+		}
 
 	}
 
@@ -322,13 +385,13 @@ class NodeMaterial extends ShaderMaterial {
 		}
 
 		const data = Material.prototype.toJSON.call( this, meta );
-		const nodeKeys = getNodesKeys( this );
+		const nodeChildren = getNodeChildren( this );
 
 		data.inputNodes = {};
 
-		for ( const name of nodeKeys ) {
+		for ( const { property, childNode } of nodeChildren ) {
 
-			data.inputNodes[ name ] = this[ name ].toJSON( meta ).uuid;
+			data.inputNodes[ property ] = childNode.toJSON( meta ).uuid;
 
 		}
 
@@ -366,7 +429,38 @@ class NodeMaterial extends ShaderMaterial {
 
 	}
 
+	get isUnlit() {
+
+		return this.constructor === NodeMaterial.prototype.constructor;
+
+	}
+
+	copy( source ) {
+
+		this.lightsNode = source.lightsNode;
+		this.envNode = source.envNode;
+
+		this.colorNode = source.colorNode;
+		this.normalNode = source.normalNode;
+		this.opacityNode = source.opacityNode;
+		this.backdropNode = source.backdropNode;
+		this.backdropAlphaNode = source.backdropAlphaNode;
+		this.alphaTestNode = source.alphaTestNode;
+
+		this.positionNode = source.positionNode;
+		this.outputNode = source.outputNode;
+
+		return super.copy( source );
+
+	}
+
 	static fromMaterial( material ) {
+
+		if ( material.isNodeMaterial === true ) { // is already a node material
+
+			return material;
+
+		}
 
 		const type = material.type.replace( 'Material', 'NodeMaterial' );
 
@@ -374,13 +468,7 @@ class NodeMaterial extends ShaderMaterial {
 
 		if ( nodeMaterial === undefined ) {
 
-			if ( material.isNodeMaterial !== true ) {
-
-				throw new Error( `NodeMaterial: Material "${ material.type }" is not compatible.` );
-
-			}
-
-			return material; // is already a node material
+			throw new Error( `NodeMaterial: Material "${ material.type }" is not compatible.` );
 
 		}
 
@@ -417,6 +505,6 @@ export function createNodeMaterialFromType( type ) {
 
 	}
 
-};
+}
 
 addNodeMaterial( NodeMaterial );

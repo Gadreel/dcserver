@@ -2,13 +2,11 @@ package dcraft.service.portable;
 
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
-import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationContext;
-import dcraft.hub.op.OperationOutcome;
-import dcraft.hub.op.OperationOutcomeEmpty;
+import dcraft.hub.op.*;
 import dcraft.hub.resource.KeyRingResource;
 import dcraft.interchange.aws.AWSSQS;
 import dcraft.log.Logger;
+import dcraft.service.ServiceHub;
 import dcraft.service.work.EncryptPortableMessageWork;
 import dcraft.sql.SqlConnection;
 import dcraft.sql.SqlUtil;
@@ -18,15 +16,13 @@ import dcraft.struct.Struct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.ChainWork;
 import dcraft.task.TaskHub;
-import dcraft.util.Memory;
-import dcraft.util.RndUtil;
-import dcraft.util.StringUtil;
-import dcraft.util.TimeUtil;
+import dcraft.util.*;
 import dcraft.util.pgp.ClearsignUtil;
 import dcraft.xml.XElement;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 
 public class PortableMessageUtil {
     static public void sendMessageToRemoteTenantByQueue(Long tenantid, String op, BaseStruct data, Long delaysec, RecordStruct replypayload, OperationOutcomeEmpty callback) throws OperatingContextException {
@@ -248,6 +244,39 @@ public class PortableMessageUtil {
             newmessage.with("Code", exitcode).with("Message", exitmsg);
 
         return newmessage;
+    }
+
+    static public void buildMessageForServiceQueue(RecordStruct payload, String deployment, String tenant, String site, OperationOutcomeString callback) throws OperatingContextException {
+        RecordStruct message = PortableMessageUtil.buildCoreMessage(null, null);
+
+        message
+                .with("Destination", RecordStruct.record()
+                        .with("Deployment", deployment)
+                        .with("Tenant", tenant)
+                        .with("Site", site)
+                )
+                .with("Payload", payload);
+
+        RecordStruct sendinfo = RecordStruct.record()
+                .with("Type", "FileQueue")
+                .with("EncryptTo", "encryptor@" + deployment + ".dc");
+
+        ChainWork work = ChainWork
+                .of(EncryptPortableMessageWork.of(message, sendinfo))
+                .then(taskctx -> {
+                    String pmsg = Struct.objectToString(taskctx.getParams());
+
+                    if (callback != null)
+                        callback.callback(pmsg);
+
+                    taskctx.returnEmpty();
+                });
+
+        TaskHub.submit(work);
+    }
+
+    static public String buildServiceQueueFilename() {
+        return TimeUtil.stampFmt.format(TimeUtil.now()) + "_" + ApplicationHub.getDeployment() + "_" + ApplicationHub.getNodeId() + ".pmsg";
     }
 
     static public CharSequence verifyPortableMessage(CharSequence message) {

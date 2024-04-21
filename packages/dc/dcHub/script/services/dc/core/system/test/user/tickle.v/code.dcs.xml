@@ -1,0 +1,5 @@
+<dcs.Script>
+	<dcs.Info>Tickle got: {$Data}</dcs.Info>
+
+	<dcs.Exit Scope="Task" />
+</dcs.Script>

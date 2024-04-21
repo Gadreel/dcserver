@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
+import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Transport;
@@ -76,7 +77,11 @@ public class SmtpWork extends StateWork {
 	protected RecordStruct params = null;
 	protected javax.mail.Message email = null;
 	protected String to = null;
+	protected String cc = null;
+	protected String bcc = null;
 	protected InternetAddress[] toaddrs = new InternetAddress[0];
+	protected InternetAddress[] ccaddrs = new InternetAddress[0];
+	protected InternetAddress[] bccaddrs = new InternetAddress[0];
 	protected InternetAddress[] dbgaddrs = new InternetAddress[0];
 	protected MimeMultipart content = null;
 	protected int attachcnt = 0;
@@ -127,6 +132,8 @@ public class SmtpWork extends StateWork {
 				reply = settings.getAttribute("DefaultReplyTo");
 			
 			this.to = this.params.getFieldAsString("To");
+			this.cc = this.params.getFieldAsString("Cc");
+			this.bcc = this.params.getFieldAsString("Bcc");
 			String subject = this.params.getFieldAsString("Subject");
 			String body = this.params.getFieldAsString("Html");
 			String textbody = this.params.getFieldAsString("Text");
@@ -186,7 +193,13 @@ public class SmtpWork extends StateWork {
 
 			if (StringUtil.isNotEmpty(to))
 				this.toaddrs = InternetAddress.parse(to.replace(';', ','));
-			
+
+			if (StringUtil.isNotEmpty(cc))
+				this.ccaddrs = InternetAddress.parse(cc.replace(';', ','));
+
+			if (StringUtil.isNotEmpty(bcc))
+				this.bccaddrs = InternetAddress.parse(bcc.replace(';', ','));
+
 			if (StringUtil.isNotEmpty(debugBCC))
 				this.dbgaddrs = InternetAddress.parse(debugBCC.replace(';', ','));
 			
@@ -201,6 +214,19 @@ public class SmtpWork extends StateWork {
 				}
 				
 				toaddrs = passed.stream().toArray(InternetAddress[]::new);
+
+				// cc
+
+				List<InternetAddress> passedcc = new ArrayList<>();
+
+				for (int i = 0; i < ccaddrs.length; i++) {
+					InternetAddress toa = ccaddrs[i];
+
+					if (!toa.getAddress().contains(skipto))
+						passedcc.add(toa);
+				}
+
+				ccaddrs = passedcc.stream().toArray(InternetAddress[]::new);
 			}
 			
 	        try {				
@@ -211,7 +237,13 @@ public class SmtpWork extends StateWork {
 	        	
 	        	if (toaddrs != null)
 	        		this.email.addRecipients(javax.mail.Message.RecipientType.TO, toaddrs);
-	        	
+
+	        	if (ccaddrs != null)
+	        		this.email.addRecipients(Message.RecipientType.CC, ccaddrs);
+
+	        	if (bccaddrs != null)
+	        		this.email.addRecipients(Message.RecipientType.BCC, bccaddrs);
+
 	        	if (dbgaddrs != null)
 	        		this.email.addRecipients(javax.mail.Message.RecipientType.BCC, dbgaddrs);
 	        	
@@ -384,8 +416,13 @@ public class SmtpWork extends StateWork {
 				? ApplicationHub.getClock().getObfuscator().decryptHexToString(settings.getAttribute("SmtpPassword"))
 				: null;
 
-		InternetAddress[] recip = Stream.concat(Arrays.stream(this.toaddrs),
-				Arrays.stream(this.dbgaddrs)).toArray(InternetAddress[]::new);
+		ArrayList<InternetAddress> recips = new ArrayList<>();
+		recips.addAll(Arrays.asList(this.toaddrs));
+		recips.addAll(Arrays.asList(this.ccaddrs));
+		recips.addAll(Arrays.asList(this.bccaddrs));
+		recips.addAll(Arrays.asList(this.dbgaddrs));
+
+		InternetAddress[] recip = recips.toArray(InternetAddress[]::new);
 
 		if (! trun.hasExitErrors() && (recip.length > 0)) {
 			Transport t = null;
@@ -429,6 +466,12 @@ public class SmtpWork extends StateWork {
 
 			for (int i = 0 ; i < this.toaddrs.length; i++)
 				addresses.with(this.toaddrs[i].toUnicodeString());
+
+			for (int i = 0 ; i < this.ccaddrs.length; i++)
+				addresses.with(this.ccaddrs[i].toUnicodeString());
+
+			for (int i = 0 ; i < this.bccaddrs.length; i++)
+				addresses.with(this.bccaddrs[i].toUnicodeString());
 
 			for (int i = 0 ; i < this.dbgaddrs.length; i++)
 				addresses.with(this.dbgaddrs[i].toUnicodeString());

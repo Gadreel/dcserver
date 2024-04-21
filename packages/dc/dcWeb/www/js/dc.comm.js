@@ -22,16 +22,12 @@ dc.comm = {
 	_initFlag: false,
 	_session: null,
 
-	init: function(callback) {
+	init: async function() {
 		// only init once per page load
-		if (dc.comm._initFlag) {
-			callback();
+		if (dc.comm._initFlag)
 			return;
-		}
 
 		dc.comm._initFlag = true;
-
-		callback();
 	},
 
 	// this is slower than RPC because it must validate the Auth token before each call
@@ -136,12 +132,144 @@ dc.comm = {
 		}, timeout);
 	},
 
+	tryRemote: function(service, params, timeout) {
+		return new Promise((resolve, reject) => {
+			dc.comm.remote(service, params, timeout)
+				.then(function(response) {
+					if (response.Code != 0) {
+						reject(new TaskException(response.Code, response.Message));
+						return;
+					}
+
+					resolve(response.Result);
+				})
+				.catch(function(x) {
+					reject(new TaskException(x.Code, x.Message));
+				});
+		});
+	},
+
+	remote: function(op, params, timeout) {
+		return new Promise((resolve, reject) => {
+			var msg = {
+				Op: op
+			};
+
+			if (params)
+				msg.Body = params;
+
+			var onsuccess = function(rmsg) {
+				var ee = dc.comm.Messages.findExitEntry(rmsg.Messages);
+
+				// setup the "result" of the message based on the exit entry
+				if (!ee) {
+					rmsg.Code = 0;
+				}
+				else {
+					rmsg.Code = ee.Code;
+					rmsg.Message = ee.Message;
+				}
+
+				rmsg.Result = rmsg.Body;
+				delete rmsg.Body;
+
+				dc.comm._session = rmsg.Session;
+
+				if (rmsg.SessionChanged) {
+					console.log('session changed');
+
+					if (dc.pui && dc.pui.Loader)
+						dc.pui.Apps.sessionChanged();
+				}
+
+				try {
+					 resolve(rmsg);
+				 }
+				 catch (x) {
+					 console.log('error processing rpc result: ' + x);
+				 }
+			};
+
+			var processRequest = function(e) {
+					if (xhr.readyState == 4) {
+						try {
+							if (xhr.status == 200) {
+								var rmsg = JSON.parse(xhr.responseText);
+
+								onsuccess(rmsg);
+							}
+							else {
+								reject({
+									Result: 1,
+									Message: 'Server responded with an error code.'
+								});
+							}
+						}
+						catch (x) {
+							reject({
+								Result: 1,
+								Message: 'Server responded with an invalid message.'
+							});
+						}
+					}
+			};
+
+			var xhr = new XMLHttpRequest();
+			xhr.open('PUT', '/dcdyn/rpc?nocache=' + dc.util.Crypto.makeSimpleKey(), true);
+
+			xhr.timeout = timeout ? timeout : 5000;
+
+			xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+
+			//xhr.addEventListener("readystatechange", processRequest, false);
+
+			xhr.addEventListener("load", function() {
+				try {
+					if (xhr.status == 200) {
+						var rmsg = JSON.parse(xhr.responseText);
+
+						onsuccess(rmsg);
+					}
+					else {
+						reject({
+							Result: 1,
+							Message: 'Server responded with an error code.'
+						});
+					}
+				}
+				catch (x) {
+					reject({
+						Result: 1,
+						Message: 'Server responded with an invalid message.'
+					});
+				}
+			}, false);
+
+			xhr.addEventListener("error", function() {
+					reject({
+						Result: 1,
+						Message: 'Network problem, no response.'
+					});
+			}, false);
+
+			xhr.addEventListener("timeout", function() {
+					reject({
+						Result: 1,
+						Message: 'Server timed out, no response.'
+					});
+			}, false);
+
+			xhr.send(JSON.stringify(msg));
+		});
+	},
+
 	sendForgetMessage: function(msg) {
 		msg.RespondTag = 'SendForget';
 
 		dc.comm.sendMessage(msg);
 	},
 
+	// TODO migrate to use async, then call back
 	sendMessage: function(msg, callbackfunc, timeout) {
 		// TODO consider
 		//if (dc.comm._session)
@@ -265,6 +393,17 @@ dc.comm = {
 			}
 
 			return firsterror;
+		},
+		hasCode : function(list, code) {
+			if (!dc.util.Struct.isList(list))
+				return false;
+
+			for (var i = list.length - 1; i >= 0; i--) {
+				if (code == list[i].Code)
+					return true;
+			}
+
+			return false;
 		}
 	/* TODO
 	},

@@ -1,0 +1,7 @@
+<dcs.Script>
+	<dcs.Info>Echo Reverse got: {$Data}</dcs.Info>
+
+	<!-- TODO reverse  -->
+	
+	<dcs.Exit Scope="Task" Result="$Data" />
+</dcs.Script>

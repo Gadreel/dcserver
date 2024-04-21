@@ -238,6 +238,23 @@ public class ResourceTier extends CompositeStruct {
 		return r;
 	}
 
+	public StandardIndexResource getStandardIndexing() {
+		return (StandardIndexResource) this.get("StandardIndexing");
+	}
+
+	synchronized public StandardIndexResource getOrCreateTierStandardIndexing() {
+		StandardIndexResource r = (StandardIndexResource) this.getTier("StandardIndexing");
+
+		if (r != null)
+			return r;
+
+		r = new StandardIndexResource();
+
+		this.with(r);
+
+		return r;
+	}
+
 	public ServiceResource getServices() {
 		return (ServiceResource) this.get("Service");
 	}

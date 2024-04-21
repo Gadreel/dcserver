@@ -13,6 +13,7 @@ import dcraft.script.StackUtil;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
 import dcraft.struct.*;
+import dcraft.struct.scalar.NullStruct;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
@@ -167,11 +168,10 @@ public class TagResource extends ResourceBase {
             String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias"));
             String result = StackUtil.stringFromElement(stack, code, "Result");
 
-            if (StringUtil.isNotEmpty(result) && StringUtil.isNotEmpty(alias)) {
-                RecordStruct tree = this.trees.get(alias);
+            if (StringUtil.isNotEmpty(result)) {
+                RecordStruct tree = StringUtil.isNotEmpty(alias) ? this.trees.get(alias) : null;
 
-                if (tree != null)
-                    StackUtil.addVariable(stack, result, tree);
+                StackUtil.addVariable(stack, result, tree != null ? tree : NullStruct.instance);
             }
 
             return ReturnOption.CONTINUE;
@@ -185,10 +185,10 @@ public class TagResource extends ResourceBase {
             if (StringUtil.isEmpty(localize) || "*".equals(localize))
                 localize = "WithDefault";           // or CurrentOnly or None
 
-            if (StringUtil.isNotEmpty(result) && StringUtil.isNotEmpty(path)) {
-                RecordStruct node = this.selectNode(path, localize);
+            if (StringUtil.isNotEmpty(result)) {
+                RecordStruct node = StringUtil.isNotEmpty(path) ? this.selectNode(path, localize) : null;
 
-                StackUtil.addVariable(stack, result, node);
+                StackUtil.addVariable(stack, result, node != null ? node : NullStruct.instance);
             }
 
             return ReturnOption.CONTINUE;

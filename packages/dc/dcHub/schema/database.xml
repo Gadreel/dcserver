@@ -233,6 +233,7 @@
 		<Procedure Name="dcHash" Execute="dcraft.db.proc.call.Hash" />
 		<Procedure Name="dcIndexCounter" Execute="dcraft.db.proc.call.CountIndexes" />
 		<Procedure Name="dcSignIn" Execute="dcraft.db.proc.call.SignIn" />
+		<Procedure Name="dcSignInPreflight" Execute="dcraft.db.proc.call.SignInPreflight" />
 		<Procedure Name="dcStartSession" Execute="dcraft.db.proc.call.StartSession" />
 		<Procedure Name="dcSignOut" Execute="dcraft.db.proc.call.SignOut" />
 		<Procedure Name="dcVerifySession" Execute="dcraft.db.proc.call.VerifySession" />
@@ -266,11 +267,11 @@
 
 		<Procedure Name="dcCoreServices.Authentication.Confirm" Execute="dcraft.core.db.auth.Confirm" />
 		<Procedure Name="dcCoreServices.Authentication.Recover" Execute="dcraft.core.db.auth.Recover" />
-		<Procedure Name="dcCoreServices.Authentication.FacebookSignIn" Execute="dcraft.core.db.auth.FacebookSignIn" />
-		<Procedure Name="dcCoreServices.Authentication.LinkFacebookAccount" Execute="dcraft.core.db.auth.LinkFacebookAccount" />
 
 		<Procedure Name="dcCoreServices.Management.Backup" Execute="dcraft.core.db.admin.Backup" />
 		<Procedure Name="dcCoreServices.Management.GoLiveReport" Execute="dcraft.core.db.admin.GoLiveReport" />
+		<Procedure Name="dcCoreServices.Management.CheckServiceQueue" Execute="dcraft.core.db.admin.CheckServiceQueue" />
+		<Procedure Name="dcCoreServices.Management.ProcessTenantFileUpdates" Execute="dcraft.core.db.admin.ProcessTenantFileUpdates" />
 
 		<Procedure Name="dcCoreServices.Config.LoadTenantDomains" Execute="dcraft.core.db.config.LoadTenantDomains" />
 
@@ -363,6 +364,18 @@
 							</Record>
 						</ListResponse>
 					</Op>
+					<Op Name="dcSignInPreflight">
+						<Description>
+							Check if extra handling is needed, beyond a password.
+						</Description>
+						<RecordRequest Inherits="dcdbCallBasic">
+							<Field Name="Username" Type="dcUser:dcUsername" Required="True" />
+							<Field Name="Password" Type="dcSmallString" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Handler" Type="dcMetaString" />
+						</RecordResponse>
+					</Op>
 					<Op Name="dcSignIn">
 						<Description>
 							Start a user session if credentials pass.
@@ -371,6 +384,7 @@
 							<Field Name="Username" Type="dcUser:dcUsername" Required="True" />
 							<Field Name="Password" Type="dcSmallString" />
 							<Field Name="ClientKeyPrint" Type="dcSmallString" />
+							<Field Name="Code" Type="dcMetaString" />
 						</RecordRequest>
 						<RecordResponse>
 							<Field Name="UserId" Type="Id" />

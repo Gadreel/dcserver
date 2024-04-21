@@ -1,0 +1,4 @@
+<Op>
+	<Request Type="String" Required="True" />
+	<Response Type="String" />
+</Op>

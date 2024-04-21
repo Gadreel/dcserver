@@ -67,6 +67,7 @@ public class PrepWork extends StateWork {
 				.withStep(StateWorkStep.of("Load Schema", this::loadSchema))
 				.withStep(StateWorkStep.of("Load Script", this::loadScript))
 				.withStep(StateWorkStep.of("Load Tags", this::loadTags))
+				.withStep(StateWorkStep.of("Load Standard indexing", this::loadStandardIndexing))
 				.withStep(StateWorkStep.of("Load Custom Vaults", this::loadCustomVaults))
 				.withStep(StateWorkStep.of("Load Custom Indexing", this::loadCustomIndexing))
 				.withStep(StateWorkStep.of("Load Services", this::loadServices))
@@ -445,6 +446,17 @@ public class PrepWork extends StateWork {
 			}
 
 		}
+
+		return StateWorkStep.NEXT;
+	}
+
+	public StateWorkStep loadStandardIndexing(TaskContext trun) throws OperatingContextException {
+		if (Logger.isDebug())
+			Logger.debug("Starting tenant load standard indexes for: " + this.tenant.getAlias());
+
+		ResourceTier resources = this.tenant.getTierResources();
+
+		resources.getOrCreateTierStandardIndexing();		// always create, even if folder not there
 
 		return StateWorkStep.NEXT;
 	}

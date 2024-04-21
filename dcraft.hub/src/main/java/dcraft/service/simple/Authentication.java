@@ -58,17 +58,29 @@ public class Authentication {
 			return true;
 		}
 		
-		if ("SignIn".equals(op)) {
+		if ("SignInPreflight".equals(op)) {
 			RecordStruct rec = request.getDataAsRecord();
 			
 			String uname = rec.getFieldAsString("Username").toLowerCase();
 			String passwd = rec.getFieldAsString("Password");
 			
-			du.verifyCreds(uname, passwd, callback);
+			du.preflightCreds(uname, passwd, callback);
 			
 			return true;
 		}
-		
+
+		if ("SignIn".equals(op)) {
+			RecordStruct rec = request.getDataAsRecord();
+
+			String uname = rec.getFieldAsString("Username").toLowerCase();
+			String passwd = rec.getFieldAsString("Password");
+			String code = rec.getFieldAsString("Code");
+
+			du.verifyCreds(uname, passwd, code, callback);
+
+			return true;
+		}
+
 		if ("SignOut".equals(op)) {
 			du.clear(uc.getAuthToken(), callback);
 

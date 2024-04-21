@@ -92,3 +92,35 @@ prods.forEach(prod => {
 		}
 	})
 });
+
+
+## Async dc.app.js migration
+
+### 'on' handling
+
+- reserved for events
+- no result is ever used (no await, no value returned)
+- if always scripted by server as sync code, for things like destroy which are order dependent, but it is okay to launch an async section from within
+
+
+### Review in dc.app.js
+
+- Recaptcha control needs to support async callPageFunc
+
+
+// TODO should we provide alternative handling  for async
+
+//place to add functions to tags
+dc.pui.TagFuncs = {
+
+
+// TODO reconsider this concept
+
+// this returns a promise - either undefined or from a function
+callTagFuncAsync: function(selector, method) {
+
+
+// TODO reconsider this concept
+
+// this returns a promise - either undefined or from a function
+callInputFunc: function(field, method) {

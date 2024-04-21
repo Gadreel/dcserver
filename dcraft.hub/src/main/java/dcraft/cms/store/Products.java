@@ -300,7 +300,7 @@ public class Products {
 					.with("dcmInstructions", "Instructions")
 					.with("dcmHideGeneral", "HideGeneral")
 					.with("dcmImage", "Image")
-					.withComposer("dcmProductPrice", "Price")
+					.withComposer("dcmProductPrice", "Price", RecordStruct.record().with("Format","Basic"))
 					.with("dcmVariablePrice", "VariablePrice")
 					.with("dcmMinimumPrice", "MinimumPrice")
 					.with("dcmTaxFree", "TaxFree")

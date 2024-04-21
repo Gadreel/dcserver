@@ -1,6 +1,7 @@
 package dcraft.struct;
 
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
 import dcraft.schema.DataType;
 import dcraft.schema.SchemaHub;
@@ -8,7 +9,9 @@ import dcraft.script.StackUtil;
 import dcraft.script.inst.LogicBlockState;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
+import dcraft.struct.scalar.BooleanStruct;
 import dcraft.task.IParentAwareWork;
+import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
 abstract public class BaseStruct implements IPartSelector {
@@ -155,10 +158,21 @@ abstract public class BaseStruct implements IPartSelector {
     }
 
     public ReturnOption operation(StackWork stack, XElement code) throws OperatingContextException {
-        if ("Validate".equals(code.getName()))
-            this.validate();
-        else
+        if ("Validate".equals(code.getName())) {
+            String name = StackUtil.stringFromElementClean(stack, code, "Result");
+            boolean pass = false;
+
+            if (code.hasNotEmptyAttribute("Type"))
+                pass = this.validate(StackUtil.stringFromElementClean(stack, code, "Type"));
+            else
+                pass = this.validate();
+
+            if (StringUtil.isNotEmpty(name))
+                OperationContext.getOrThrow().addVariable(name, BooleanStruct.of(pass));
+        }
+        else {
             Logger.error("operation failed, op name not recognized: " + code.getName());
+        }
 
         return ReturnOption.CONTINUE;
     }

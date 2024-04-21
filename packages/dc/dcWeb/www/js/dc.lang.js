@@ -1312,6 +1312,202 @@ var dc = {
 	}
 }
 
+dc.lang.promise = {
+	// thanks to Carlos Delgado
+	makeQuerablePromise: function(promise) {
+		// Don't modify any promise that has been already modified.
+		if (promise.isFulfilled) return promise;
+
+		// Set initial state
+		var isPending = true;
+		var isRejected = false;
+		var isFulfilled = false;
+
+		// Observe the promise, saving the fulfillment in a closure scope.
+		var result = promise.then(
+				function(v) {
+						isFulfilled = true;
+						isPending = false;
+						return v;
+				},
+				function(e) {
+						isRejected = true;
+						isPending = false;
+						throw e;
+				}
+		);
+
+		result.isFulfilled = function() { return isFulfilled; };
+		result.isPending = function() { return isPending; };
+		result.isRejected = function() { return isRejected; };
+
+		return result;
+	}
+};
+
+dc.lang.promise.CountdownPromise = function(cnt) {
+	this.Count = cnt;
+
+	// used in tracking, ignore otherwise
+	this.Number = null;
+	this.Amount = 0;
+
+	var token = this;
+
+	this.Promise = dc.lang.promise.makeQuerablePromise(new Promise((resolve, reject) => {
+		token._resolve = resolve;
+		token._reject = reject;
+	}));
+
+	this.dec = function() {
+		if (this.Promise.isFulfilled())
+			return;
+
+		this.Count--;
+
+		if (this.Count == 0)
+			this._resolve();
+	};
+
+	this.inc = function() {
+		if (this.Promise.isFulfilled())
+			return;
+
+		this.Count++;
+	};
+
+	this.wait = async function() {
+		return this.Promise;
+	};
+};
+
+dc.lang.promise.TimeoutPromise = function() {
+	var topromise = this;
+
+	topromise.TimeoutMessage = 'Process is taking too long.';
+
+	// used in tracking, ignore otherwise
+	topromise.TimeoutId = null;
+
+	topromise.TimeoutAllocAdapter = function(period,func) {
+		topromise.Tid = window.setTimeout(func, period);
+	};
+
+	topromise.TimeoutClearAdapter = function() {
+		if (topromise.Tid) {
+			console.log('timeout cleared by timeout promise: ' + topromise.Tid);
+
+			window.clearTimeout(topromise.Tid);
+			topromise.TimeoutId = null;
+		}
+	};
+
+	topromise.wait = async function() {
+		return topromise.Promise;
+	};
+
+	topromise.hasFinished = function() {
+		return ! topromise.Promise.isPending();
+	}
+
+	topromise.clearTime = function() {
+		if (topromise.Tid) {
+			//console.log('clear timeout: ' + topromise.Tid);
+
+			this.TimeoutClearAdapter();
+		}
+
+		topromise.Tid = null;
+	};
+
+	topromise.allocateTime = function(period) {
+		topromise.clearTime();
+
+		topromise.Tid = topromise.TimeoutAllocAdapter(period, function () {
+			topromise.clearTime();
+
+			// this is okay, even if resolve, promise can only have one outcome
+			topromise._reject(new TaskException(1, topromise.TimeoutMessage));
+		});
+	};
+
+	topromise.startWork = function(period, msg, work) {
+		topromise.Work = work;
+		topromise.TimeoutMessage = msg;
+
+		topromise.allocateTime(period);
+
+		topromise.Promise = dc.lang.promise.makeQuerablePromise(new Promise((resolve, reject) => {
+			topromise._resolve = resolve;
+			topromise._reject = reject;
+		}));
+
+		work()
+			.then(function(result) {
+				topromise._resolve(result);
+			})
+			.catch(function(x) {
+				topromise._reject(x);
+			})
+			.finally(function() {
+				topromise.clearTime();
+			});
+	}
+};
+
+dc.lang.tasks = {
+	sleep: (delay) => new Promise((resolve) => setTimeout(resolve, delay))
+}
+
+// refer to deploy-gei/tenants/gei/sites/designer-ext/www/js/builder-core.mjs
+/* TODO enable
+dc.lang.tasks.ProgressMonitor = function(tracker) {
+	this.ProgressSlots = [ ];
+	this.TotalProgress = 0;
+	this.Tracker = tracker;
+
+	this.allocateSlot = function(cnt) {
+		const slot = new dc.lang.promise.CountdownPromise(cnt);
+		slot.Number = this.ProgressSlots.length;
+		this.ProgressSlots.push(slot);
+		return slot;
+	};
+
+	this.awaitAll = async function(v) {
+		const promises = [ ];
+
+		for (let i = 0; i < this.ProgressSlots.length; i++)
+			promises.push(this.ProgressSlots[i].Promise);
+
+		await Promise.all(promises);
+	};
+
+	this.update = function() {
+		let progress = 0;
+
+		for (let i = 0; i < this.ProgressSlots.length; i++)
+			progress += this.ProgressSlots[i].Amount;
+
+		this.TotalProgress = Math.round(progress / this.ProgressSlots.length);
+
+		if (this.Tracker)
+			this.Tracker({ Amount: this.TotalProgress });
+	};
+};
+*/
+
+class TaskException extends Error {
+  constructor(code, message) {
+    super(message);
+    this.Code = code;
+    this.Message = message;
+  }
+
+	toString() {
+		return this.Code + ': ' + this.message;
+	}
+}
+
 dc.lang.Task = function(steps, observer) {
 	this.init(steps, observer);
 };

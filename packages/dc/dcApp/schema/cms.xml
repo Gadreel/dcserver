@@ -13,7 +13,7 @@
 		</StringType>
 
 		<StringType Id="dcmPageDescription">
-			<StringRestriction MaxLength="250" />
+			<StringRestriction MaxLength="500" />
 		</StringType>
 
 		<StringType Id="dcmFeedHistoryOptionsEnum">

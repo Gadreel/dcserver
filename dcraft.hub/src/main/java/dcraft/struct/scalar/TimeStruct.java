@@ -16,7 +16,9 @@
 ************************************************************************ */
 package dcraft.struct.scalar;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 
@@ -25,6 +27,7 @@ import dcraft.script.StackUtil;
 import dcraft.script.work.StackWork;
 import dcraft.struct.BaseStruct;
 import dcraft.task.IParentAwareWork;
+import dcraft.util.TimeUtil;
 import org.threeten.extra.PeriodDuration;
 
 import dcraft.hub.op.OperatingContextException;
@@ -156,7 +159,19 @@ public class TimeStruct extends ScalarStruct {
 			
 			return ReturnOption.CONTINUE;
 		}
-		
+		else if ("Now".equals(op)) {
+			String zone = StackUtil.stringFromElement(stack, code, "Zone", "default").toLowerCase();
+
+			if ("default".equals(zone))
+				this.value = LocalTime.now();
+			else if ("context".equals(zone))
+				this.value = LocalTime.now(TimeUtil.zoneInContext());
+			else
+				this.value = LocalTime.now(ZoneId.of(zone));
+
+			return ReturnOption.CONTINUE;
+		}
+
 		return super.operation(stack, code);
 	}
 

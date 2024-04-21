@@ -106,6 +106,18 @@ public class InputControl extends Base {
 		}
 		else if ("dcf.Range".equals(fld.getName())) {
 			ic.withAttribute("type", "range");		// is otherwise just like a text field
+
+			if (! input.hasNotEmptyAttribute("min") && fld.hasNotEmptyAttribute("min"))
+				ic.withAttribute("min", fld.getAttribute("min"));
+
+			if (! input.hasNotEmptyAttribute("max") && fld.hasNotEmptyAttribute("max"))
+				ic.withAttribute("max", fld.getAttribute("max"));
+
+			if (! input.hasNotEmptyAttribute("step") && fld.hasNotEmptyAttribute("step"))
+				ic.withAttribute("step", fld.getAttribute("step"));
+
+			if (! input.hasNotEmptyAttribute("list") && fld.hasNotEmptyAttribute("list"))
+				ic.withAttribute("list", fld.getAttribute("list"));
 		}
 		else if ("dcf.Number".equals(fld.getName())) {
 			ic.withAttribute("type", "number");		// is otherwise just like a text field

@@ -23,7 +23,7 @@ import java.sql.SQLException;
 public class AccessUtil {
     static public ListStruct getUsersV1() {
         try (SqlConnection conn = SqlUtil.getConnection("sentinel-readwrite")) {
-            return conn.getResults("SELECT Id, Username FROM dca_user ORDER BY Username");
+            return conn.getResults("SELECT Id, Username, SystemUserId FROM dca_user ORDER BY Username");
         }
         catch (Exception x) {
             Logger.error("SQL error: " + x);

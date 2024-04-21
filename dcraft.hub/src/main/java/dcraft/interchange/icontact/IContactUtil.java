@@ -76,6 +76,57 @@ public class IContactUtil {
         }
     }
 
+    static public void getFolder(String alt, OperationOutcomeRecord callback) {
+        XElement mc = ApplicationHub.getCatalogSettings("Integration-iContact", alt);
+
+        if (mc == null) {
+            Logger.error("Missing iContact settings.");
+
+            if (callback != null)
+                callback.returnEmpty();
+
+            return;
+        }
+
+        IContactUtil.getFolder(mc.attr("AppId"), mc.attr("AppUser"), mc.attr("AppPasswordPlain"),
+                mc.attr("AccountId"), mc.attr("FolderId"), callback);
+    }
+
+    static public void getFolder(String appid, String appuser, String aapppass, String account, String folder, OperationOutcomeRecord callback) {
+        try {
+            OperationContext.getOrThrow().touch();
+
+            HttpRequest.Builder builder = IContactUtil.buildRequest(appid, appuser, aapppass, account + "/c/" + folder + "/", null);
+
+            // Send post request
+            HttpClient.newHttpClient().sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
+                    .thenAcceptAsync(response -> {
+                        callback.useContext();		// restore our operation context
+
+                        int responseCode = response.statusCode();
+
+                        if ((responseCode < 200) || (responseCode > 299))
+                            Logger.error("Error processing request: iContact sent an unexpected response code: " + responseCode);
+
+                        CompositeStruct resp = CompositeParser.parseJson(response.body());
+
+                        if (resp == null) {
+                            Logger.error("Error processing request: iContact sent an incomplete response: " + responseCode);
+                            callback.returnEmpty();
+                            return;
+                        }
+
+                        System.out.println("iContact Resp: " + responseCode + "\n" + resp.toPrettyString());
+
+                        callback.returnValue((RecordStruct) resp);
+                    });
+        }
+        catch (Exception x) {
+            Logger.error("Error processing listing: Unable to connect to mailchimp. Error: " + x);
+            callback.returnEmpty();
+        }
+    }
+
     /*
     {
         "email":"lightofgadrel@gmail.com",

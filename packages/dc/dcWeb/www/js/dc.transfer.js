@@ -564,6 +564,9 @@ dc.transfer = {
 
 	CVS: {
 		writeRecordsToCSV: function(fileName, recs, options) {
+			if (options.Transform)
+				recs = options.Transform(recs);
+
 			if (options.Sort) {
 				if (options.SortDescending) {
 					recs.sort(dc.util.List.sortDescObjects(options.Sort));

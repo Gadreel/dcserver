@@ -188,10 +188,17 @@
 			delete e.Data.ConfirmPassword;
 
 			e.Message = {
-				Service: 'dcCoreServices',
-				Feature: 'Users',
-				Op: 'SignUp',
+				Op: 'dcCoreServices.Users.SignUp',
 				Body: e.Data
+			};
+
+			e.ErrorHandler = function(msg) {
+				debugger;
+
+				if (dc?.handler?.user?.SignUpError)
+					dc.handler.user.SignUpError(msg)
+				else
+					dc.pui.Popup.alert(e.Message);
 			};
 	]]></Function>
 	<Function Name="AfterSaveRecord" Params="result"><![CDATA[
@@ -202,28 +209,23 @@
 	<Function Name="AfterSave"><![CDATA[
 			var entry = this;
 
-			var p1 = entry.form().getValue('Password');
-
-			// if there is a password then we are not in "confirm" mode so reload
-			if (p1) {
-				if (entry.Params.Callback) {
-					entry.Layer.back();
-					entry.Params.Callback(entry.Params.Result);
-				}
-				else {
-					window.location.reload(true);
-				}
-			}
-			else if (dc.handler && dc.handler.user && dc.handler.user.SignUpConfirm) {
-				dc.handler.user.SignUpConfirm(entry.Params.Result);
-			}
-			else {
+			// Callback overrides SignUpConfirm
+			if (entry.Params.Callback || ! dc?.handler?.user?.SignUpConfirm) {
 				dc.pui.Popup.alert("Sign up submitted, a notice should arrive shortly.", function() {
 					entry.Layer.back();
 
-					if (entry.Params.Callback)
+					if (entry.Params.Callback) {
 						entry.Params.Callback(entry.Params.Result);
+					}
+					else {
+						window.location.reload(true);
+					}
 				});
+			}
+			else {
+				entry.Layer.back();
+
+				dc.handler.user.SignUpConfirm(entry.Params.Result);
 			}
 	]]></Function>
 </dc.Html>

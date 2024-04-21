@@ -10,12 +10,16 @@
 	</dcs.If>
 
 	<Meta Name="Title">
-		<Tr Locale="eng" Value="Account Recovery" />
+		<Tr Locale="eng" Value="Password Reset" />
 	</Meta>
 
 	<dc.Body>
 		<dc.PagePanel>
 			<dcf.Form Name="Reset">
+				<p>
+					You must confirm your account. A confirmation email will be sent containing a confirmation code or a link.
+				</p>
+
 				<dcf.Text Name="Username" Label="Email" placeholder="email or username" Required="true" />
 
 				<dcs.If Target="$reCAPTCHA">
@@ -28,7 +32,7 @@
 
 				<dcf.FormButtons>
 					<dc.Button Label="Cancel" Click="onCancel" />
-					<dc.Button Label="Request Reset" Click="DoRecaptcha" />
+					<dc.Button Label="Request Code" Click="DoRecaptcha" />
 				</dcf.FormButtons>
 			</dcf.Form>
 		</dc.PagePanel>
@@ -65,18 +69,30 @@
 					data.Captcha = $('#recaptchaReset').attr('data-response');
 				}
 
-				dc.comm.sendMessage({
-					Service: 'dcCoreServices',
-					Feature: 'Users',
-					Op: 'InitiateRecovery',
-					Body: data
-				}, function(resp) {
-					if (resp.Result > 0) {
+				dc.comm.call('dcCoreServices.Users.InitiateRecovery', data, function(resp) {
+					if (resp.Code > 0) {
 						dc.pui.Popup.alert('Unable to request a confirmation code.');
 					}
 					else {
 						dc.pui.Popup.alert('Request sent.', function() {
-							entry.Layer.back();
+							// Callback overrides ResetConfirm
+							if (entry.Params.Callback || ! dc?.handler?.user?.ResetConfirm) {
+								dc.pui.Popup.alert("Sign up submitted, a notice should arrive shortly.", function() {
+									entry.Layer.back();
+
+									if (entry.Params.Callback) {
+										entry.Params.Callback(resp.Result);
+									}
+									else {
+										window.location.reload(true);
+									}
+								});
+							}
+							else {
+								entry.Layer.back();
+
+								dc.handler.user.ResetConfirm(resp.Result);
+							}
 						});
 					}
 				});

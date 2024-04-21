@@ -26,18 +26,31 @@ import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.struct.*;
 import dcraft.struct.scalar.BinaryStruct;
+import dcraft.struct.scalar.DateStruct;
 import dcraft.task.TaskContext;
+import dcraft.tool.certs.CertUtil;
+import dcraft.util.KeyUtil;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
 import dcraft.util.net.*;
 import dcraft.xml.XElement;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.List;
 import java.util.function.BiConsumer;
 
 public class RemoteOp extends Instruction {
@@ -158,6 +171,7 @@ public class RemoteOp extends Instruction {
 
 			String result = StackUtil.stringFromSource(stack, "Result");
 			String responseResult = StackUtil.stringFromSource(stack, "ResponseResult");
+			String certResult = StackUtil.stringFromSource(stack, "CertResult");
 
 			TaskContext ctx = OperationContext.getAsTaskOrThrow();
 
@@ -172,6 +186,73 @@ public class RemoteOp extends Instruction {
 
 					if (response != null) {
 						try {
+							if (StringUtil.isNotEmpty(certResult)) {
+								RecordStruct certResultRecord = RecordStruct.record()
+										.with("Status", "Not Present");
+
+								if (response.sslSession().isPresent()) {
+									try {
+										Certificate[] certificates = response.sslSession().get().getPeerCertificates();
+
+										// the first should the server's
+										if (certificates.length > 0) {
+											certResultRecord.with("Status", "Server Cert Not Found");
+
+											Certificate certificate = certificates[0];
+
+											//try {
+												/*
+												CertificateFactory cf = CertificateFactory.getInstance("X.509");
+												ByteArrayInputStream bais = new ByteArrayInputStream(certificate.getEncoded());
+												X509Certificate x509 = (X509Certificate) cf.generateCertificate(bais);
+												 */
+
+												if (certificate instanceof X509Certificate) {
+													X509Certificate x509 = (X509Certificate) certificate;
+
+													///x509.getKeyUsage()
+
+													//List<String> usage = x509.getExtendedKeyUsage();
+
+													Date after = x509.getNotAfter();
+
+													String subject = x509.getSubjectDN().toString();
+													String thumbprint = KeyUtil.getCertThumbprint(x509);
+
+													//System.out.println("Shared Cert - Subject: " + subject + " - Thumbprint: " + thumbprint
+													//		+ " - Date: " + after);
+													//System.out.println("   usage: " + usage);
+
+													certResultRecord
+															.with("Status", "Checked")
+															.with("Subject", subject)
+															.with("AlternativeNames", ListStruct.list(CertUtil.getSubjectAlternativeNames(x509)))
+															.with("Thumbprint", thumbprint)
+															.with("Expires", LocalDate.ofInstant(after.toInstant(), ZoneId.of("UTC")))
+													;
+												}
+												else {
+													certResultRecord.with("Status", "Wrong Cert Format");
+												}
+
+												/*
+											}
+											catch (CertificateException x) {
+												System.out.println("bad cert format");
+											}
+
+												 */
+										}
+									}
+									catch (SSLPeerUnverifiedException x) {
+										//Logger.error("Peer certificate unverified. Error: " + x);
+										certResultRecord.with("Status", "Unverified");
+									}
+								}
+
+								StackUtil.addVariable(stack, certResult, certResultRecord);
+							}
+
 							if ((response.body() != null) && StringUtil.isNotEmpty(result))
 								StackUtil.addVariable(stack, result, response.body());
 

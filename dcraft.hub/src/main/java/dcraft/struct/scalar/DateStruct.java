@@ -18,7 +18,9 @@ package dcraft.struct.scalar;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
 import dcraft.hub.ResourceHub;
 import dcraft.script.work.ReturnOption;
@@ -27,6 +29,7 @@ import dcraft.script.work.StackWork;
 import dcraft.struct.*;
 import dcraft.task.IParentAwareWork;
 import dcraft.util.StringUtil;
+import dcraft.util.TimeUtil;
 import org.threeten.extra.PeriodDuration;
 
 import dcraft.hub.op.OperatingContextException;
@@ -198,25 +201,54 @@ public class DateStruct extends ScalarStruct {
 		}
 		else if ("Difference".equals(op)) {
 			try {
-				BaseStruct sref = StackUtil.refFromElement(stack, code, "Value", true);
-				
-				if (sref instanceof DateStruct) {
-					DateStruct ref = (DateStruct) sref;
-					
-					PeriodDuration period = PeriodDuration.between(ref.value, this.value);
-					
-					String result = StackUtil.stringFromElement(stack, code, "Result");
-					
-					if (StringUtil.isNotEmpty(result)) {
-						RecordStruct res = RecordStruct.record();
-						
-						res
-								.with("Years", period.getPeriod().getYears())
-								.with("Months", period.getPeriod().getMonths())
-								.with("Days", period.getPeriod().getDays());
-						
-						StackUtil.addVariable(stack, result, res);
+				String result = StackUtil.stringFromElement(stack, code, "Result");
+
+				if (StringUtil.isNotEmpty(result)) {
+					BaseStruct sref = StackUtil.refFromElement(stack, code, "Value", true);
+
+					if (sref instanceof DateStruct) {
+						DateStruct ref = (DateStruct) sref;
+
+						String unit = StackUtil.stringFromElement(stack, code, "Unit");
+
+						if ("Days".equals(unit)) {
+							long days = ChronoUnit.DAYS.between(ref.value, this.value);
+
+							StackUtil.addVariable(stack, result, IntegerStruct.of(days));
+
+							return ReturnOption.CONTINUE;
+						}
+						else if ("Months".equals(unit)) {
+							long months = ChronoUnit.MONTHS.between(ref.value, this.value);
+
+							StackUtil.addVariable(stack, result, IntegerStruct.of(months));
+
+							return ReturnOption.CONTINUE;
+						}
+						else if ("Years".equals(unit)) {
+							long years = ChronoUnit.YEARS.between(ref.value, this.value);
+
+							StackUtil.addVariable(stack, result, IntegerStruct.of(years));
+
+							return ReturnOption.CONTINUE;
+						}
+						else {
+							PeriodDuration period = PeriodDuration.between(ref.value, this.value);
+
+							RecordStruct res = RecordStruct.record();
+
+							res
+									.with("Years", period.getPeriod().getYears())
+									.with("Months", period.getPeriod().getMonths())
+									.with("Days", period.getPeriod().getDays());
+
+							StackUtil.addVariable(stack, result, res);
+
+							return ReturnOption.CONTINUE;
+						}
 					}
+
+					StackUtil.addVariable(stack, result, NullStruct.instance);
 				}
 			}
 			catch (Exception x) {
@@ -225,8 +257,15 @@ public class DateStruct extends ScalarStruct {
 			
 			return ReturnOption.CONTINUE;
 		}
-		else if ("Now".equals(op)) {
-			this.value = LocalDate.now();
+		else if ("Now".equals(op) || "Today".equals(op)) {
+			String zone = StackUtil.stringFromElement(stack, code, "Zone", "default").toLowerCase();
+
+			if ("default".equals(zone))
+				this.value = LocalDate.now();
+			else if ("context".equals(zone))
+				this.value = LocalDate.now(TimeUtil.zoneInContext());
+			else
+				this.value = LocalDate.now(ZoneId.of(zone));
 
 			return ReturnOption.CONTINUE;
 		}

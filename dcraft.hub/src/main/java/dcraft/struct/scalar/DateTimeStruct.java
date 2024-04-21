@@ -104,6 +104,15 @@ public class DateTimeStruct extends ScalarStruct {
 			this.value = ZonedDateTime.now();
 		
 		if ("Now".equals(op)) {
+			String zone = StackUtil.stringFromElement(stack, code, "Zone", "default").toLowerCase();
+
+			if ("default".equals(zone))
+				this.value = ZonedDateTime.now();
+			else if ("context".equals(zone))
+				this.value = TimeUtil.nowInContext();
+			else
+				this.value = ZonedDateTime.now(ZoneId.of(zone));
+
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Inc".equals(op)) {

@@ -10,6 +10,7 @@ import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
 import dcraft.service.base.Vaults;
 import dcraft.struct.*;
+import dcraft.struct.scalar.BooleanStruct;
 import dcraft.struct.scalar.NullStruct;
 import dcraft.tenant.Site;
 import dcraft.util.IOUtil;
@@ -148,11 +149,10 @@ public class CustomVaultResource extends ResourceBase {
             String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias", true));
             String result = StackUtil.stringFromElement(stack, code, "Result");
 
-            if (StringUtil.isNotEmpty(result) && StringUtil.isNotEmpty(alias)) {
-                RecordStruct tree = this.vaults.get(alias);
+            if (StringUtil.isNotEmpty(result)) {
+                RecordStruct tree = StringUtil.isNotEmpty(alias) ? this.vaults.get(alias) : null;
 
-                if (tree != null)
-                    StackUtil.addVariable(stack, result, tree);
+                StackUtil.addVariable(stack, result, tree != null ? tree : NullStruct.instance);
             }
 
             return ReturnOption.CONTINUE;
@@ -239,8 +239,8 @@ public class CustomVaultResource extends ResourceBase {
             CustomVaultUtil.searchFileCache(alias, term, locale, tags, new OperationOutcomeStruct() {
                 @Override
                 public void callback(BaseStruct found) throws OperatingContextException {
-                    if (StringUtil.isNotEmpty(result) && (found != null))
-                        StackUtil.addVariable(stack, result, found);
+                    if (StringUtil.isNotEmpty(result))
+                        StackUtil.addVariable(stack, result, found != null ? found : NullStruct.instance);
 
                     stack.withContinueFlag();
 
@@ -261,12 +261,11 @@ public class CustomVaultResource extends ResourceBase {
             CustomVaultUtil.listFileCacheFolder(alias, p, new OperationOutcomeStruct() {
                 @Override
                 public void callback(BaseStruct found) throws OperatingContextException {
-                    if (found != null)
-                        StackUtil.addVariable(stack, result, found);
+                StackUtil.addVariable(stack, result, found != null ? found : NullStruct.instance);
 
-                    stack.withContinueFlag();
+                stack.withContinueFlag();
 
-                    OperationContext.getAsTaskOrThrow().resume();
+                OperationContext.getAsTaskOrThrow().resume();
                 }
             });
 
@@ -283,12 +282,30 @@ public class CustomVaultResource extends ResourceBase {
             CustomVaultUtil.countFileCacheFolder(alias, p, new OperationOutcomeStruct() {
                 @Override
                 public void callback(BaseStruct found) throws OperatingContextException {
-                    if (found != null)
-                        StackUtil.addVariable(stack, result, found);
+                StackUtil.addVariable(stack, result, found != null ? found : NullStruct.instance);
 
-                    stack.withContinueFlag();
+                stack.withContinueFlag();
 
-                    OperationContext.getAsTaskOrThrow().resume();
+                OperationContext.getAsTaskOrThrow().resume();
+                }
+            });
+
+            return ReturnOption.AWAIT;
+        }
+
+        if ("HasDataFile".equals(code.getName())) {
+            String alias = Struct.objectToString(StackUtil.refFromElement(stack, code, "Alias", true));
+            String path = Struct.objectToString(StackUtil.refFromElement(stack, code, "Path", true));
+            String result = StackUtil.stringFromElementClean(stack, code, "Result");
+
+            CustomVaultUtil.hasDataFile(alias, CommonPath.from(path), new OperationOutcomeBoolean() {
+                @Override
+                public void callback(Boolean found) throws OperatingContextException {
+                StackUtil.addVariable(stack, result, BooleanStruct.of(found));
+
+                stack.withContinueFlag();
+
+                OperationContext.getAsTaskOrThrow().resume();
                 }
             });
 
@@ -315,6 +332,9 @@ public class CustomVaultResource extends ResourceBase {
                             found = CustomVaultUtil.localizeDataFile(alias, found);
 
                         StackUtil.addVariable(stack, result, found);
+                    }
+                    else {
+                        StackUtil.addVariable(stack, result, NullStruct.instance);
                     }
 
                     stack.withContinueFlag();

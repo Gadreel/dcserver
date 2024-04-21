@@ -173,12 +173,12 @@ Each of the public domains must have a routing rule. The primary domain only nee
 These _Route_ tags must be inside the _Web_ tag (and there can only be one _Web_ tag). For the primary domain use the _ForceTls_ attribute and set it to "true" and for the other domains include a _RedirectName_ and set it to the primary domain. Example (first rule is primary, second is alternate):
 
 ``` xml
-<Web HtmlMode="Dynamic" IndexUrl="https://designcraftadvertising.com/"
-	SiteImage="/imgs/share-image.jpg" SolidIcons="true"
+<Web HtmlMode="Dynamic" IndexUrl="https://designcraftadvertising.com/" NotFoundPath="/" SiteImage="/imgs/share-image.jpg" SolidIcons="true"
 >
 	<Route ForceTls="true" Name="designcraftadvertising.com" />
 	<Route ForceTls="true" Name="www.designcraftadvertising.com"
 			RedirectName="designcraftadvertising.com" />
+	<Route Path="/home" RedirectPath="/" />
 </Web>
 ```
 

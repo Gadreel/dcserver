@@ -48,67 +48,21 @@ public class CallService extends OperationsInstruction {
 			
 			// in a loop this instruction may be run again, fresh and READY - check to see if so and then skip op prep
 			if (this.find("Execute") == null) {
-				if (this.hasNotEmptyAttribute("Service"))
-					this.add(0, XElement.tag("SetField")
-							.withAttribute("Name", "Service")
-							.withAttribute("Value", this.getAttribute("Service"))
-					);
-				
-				if (this.hasNotEmptyAttribute("Feature"))
-					this.add(0, XElement.tag("SetField")
-							.withAttribute("Name", "Feature")
-							.withAttribute("Value", this.getAttribute("Feature"))
-					);
-				
-				if (this.hasNotEmptyAttribute("Op")) {
-					String op = this.getAttribute("Op");
-					
-					if (op.contains(".")) {
-						String[] parts = op.split("\\.");
-						
-						if (parts.length != 3) {
-							Logger.error("Op path invalid");
-							return ReturnOption.DONE;
-						}
-						
-						this.add(0, XElement.tag("SetField")
-								.withAttribute("Name", "Service")
-								.withAttribute("Value", parts[0])
-						);
-						
-						this.add(0, XElement.tag("SetField")
-								.withAttribute("Name", "Feature")
-								.withAttribute("Value", parts[1])
-						);
-						
-						this.add(0, XElement.tag("SetField")
-								.withAttribute("Name", "Op")
-								.withAttribute("Value", parts[2])
-						);
-					}
-					else {
-						this.add(0, XElement.tag("SetField")
-								.withAttribute("Name", "Op")
-								.withAttribute("Value", op)
-						);
-					}
-				}
-				
+				// handle params first so that Op does not get confused with legit params
+
 				if (this.hasNotEmptyAttribute("Params")) {
 					this.add(0, XElement.tag("SetField")
 							.withAttribute("Name", "Params")
 							.withAttribute("Value", this.getAttribute("Params"))
 					);
-				}
-				else if (this.selectFirst("*") != null) {
+				} else if (this.selectFirst("*") != null) {
 					BaseStruct arg = null;
 					String tname = "_temp-" + StringUtil.buildSecurityCode();
 
 					if (this.selectFirst("Field") != null) {
 						arg = RecordStruct.record();
-						((RecordStruct)arg).expandQuickRecord(state, this);
-					}
-					else {
+						((RecordStruct) arg).expandQuickRecord(state, this);
+					} else {
 						arg = ListStruct.list();
 						((ListStruct) arg).expandQuickList(state, this);
 					}
@@ -125,8 +79,53 @@ public class CallService extends OperationsInstruction {
 					this.with(XElement.tag("Execute")
 							.withAttribute("Result", this.getAttribute("Result"))
 					);
+
+				if (this.hasNotEmptyAttribute("Service"))
+					this.add(0, XElement.tag("SetField")
+							.withAttribute("Name", "Service")
+							.withAttribute("Value", this.getAttribute("Service"))
+					);
+
+				if (this.hasNotEmptyAttribute("Feature"))
+					this.add(0, XElement.tag("SetField")
+							.withAttribute("Name", "Feature")
+							.withAttribute("Value", this.getAttribute("Feature"))
+					);
+
+				if (this.hasNotEmptyAttribute("Op")) {
+					String op = this.getAttribute("Op");
+
+					if (op.contains(".")) {
+						String[] parts = op.split("\\.");
+
+						if (parts.length != 3) {
+							Logger.error("Op path invalid");
+							return ReturnOption.DONE;
+						}
+
+						this.add(0, XElement.tag("SetField")
+								.withAttribute("Name", "Service")
+								.withAttribute("Value", parts[0])
+						);
+
+						this.add(0, XElement.tag("SetField")
+								.withAttribute("Name", "Feature")
+								.withAttribute("Value", parts[1])
+						);
+
+						this.add(0, XElement.tag("SetField")
+								.withAttribute("Name", "Op")
+								.withAttribute("Value", parts[2])
+						);
+					} else {
+						this.add(0, XElement.tag("SetField")
+								.withAttribute("Name", "Op")
+								.withAttribute("Value", op)
+						);
+					}
+				}
 			}
-			
+
 			StackUtil.addVariable(state, name, var);
 			
 			((OperationsWork) state).setTarget(var);

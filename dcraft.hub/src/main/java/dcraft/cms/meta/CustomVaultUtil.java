@@ -28,6 +28,7 @@ import dcraft.struct.*;
 import dcraft.struct.builder.BuilderStateException;
 import dcraft.struct.builder.ICompositeBuilder;
 import dcraft.struct.builder.ObjectBuilder;
+import dcraft.struct.scalar.BooleanStruct;
 import dcraft.struct.scalar.IntegerStruct;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
@@ -285,6 +286,10 @@ public class CustomVaultUtil {
 
 		if (deleteFiles != null) {
 			for (CommonPath deleteFile : deleteFiles) {
+				RecordStruct olddata = Struct.objectToRecord(fileIndexAdapter.getData(localVault, deleteFile));
+
+				CustomIndexUtil.updateCustomIndexEntry(localVault.getName(), deleteFile, null, olddata);
+
 				for (String locale : locales) {
 					fileIndexAdapter.clearSearch(localVault, deleteFile, locale);
 				}
@@ -662,6 +667,55 @@ public class CustomVaultUtil {
 		}
 
 		callback.returnEmpty();
+	}
+
+	static public void hasDataFile(String vaultname, CommonPath file, OperationOutcomeBoolean callback)
+			throws OperatingContextException
+	{
+		CustomVaultUtil.hasDataFile(vaultname, ResourceHub.getResources().getCustomVault().getVaultInfo(vaultname) , file, callback);
+	}
+
+	static public void hasDataFile(String vaultname, RecordStruct vaultinfo, CommonPath file, OperationOutcomeBoolean callback)
+			throws OperatingContextException
+	{
+		if (vaultinfo == null) {
+			Logger.error("Custom Vault not found");
+			callback.returnEmpty();
+			return;
+		}
+
+		if (file == null) {
+			Logger.error("Custom Vault path not provided");
+			callback.returnEmpty();
+			return;
+		}
+
+		// TODO eventually make DataHandler an extendable feature
+		if (! "Basic".equals(vaultinfo.getFieldAsString("DataHandler"))) {
+			Logger.error("Custom Vault DataHandler not supported.");
+			callback.returnEmpty();
+			return;
+		}
+
+		Vault cv = OperationContext.getOrThrow().getSite().getVault(vaultname);
+
+		if (cv == null) {
+			Logger.error("Custom Vault class cannot be created.");
+			callback.returnEmpty();
+			return;
+		}
+
+		if (! (cv instanceof CustomLocalVault)) {
+			Logger.error("Custom Vault class is not local.");
+			callback.returnEmpty();
+			return;
+		}
+
+		CustomLocalVault localVault = (CustomLocalVault) cv;
+
+		Path localpath = ((LocalStore) localVault.getFileStore()).resolvePath(file);
+
+		callback.returnValue(Files.exists(localpath));
 	}
 
 	static public void loadDataFile(String vaultname, CommonPath file, OperationOutcomeComposite callback)

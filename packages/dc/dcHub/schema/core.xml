@@ -71,6 +71,8 @@
 			<StringRestriction Pattern="t\d{11,21}" />
 		</StringType>
 
+		<Record Id="dcSecurityAdapter" Class="dcraft.util.SecurityAdapter" />
+
 		<StringType Id="Id">
 			<StringRestriction Pattern="\d{5}_\d{15}" />
 			<StringRestriction Pattern="\d{1,25}" />
@@ -151,7 +153,8 @@
 		</StringType>
 
 		<StringType Id="dcPortalMessageSendTypeEnum">
-			<StringRestriction Enum="Queue,Email" />
+			<!-- Queue = AWS SQS Queue, FileQueue = Service Message Queue = tenants/[alias]/nodes/[node]/messages -->
+			<StringRestriction Enum="Queue,Email,FileQueue" />
 		</StringType>
 
 		<!-- core composite types -->
@@ -298,7 +301,7 @@
 		</Record>
 
 		<Record Id="RpcMessage">
-			<Field Name="Service" Type="dcSmallString" Required="True" />
+			<Field Name="Service" Type="dcSmallString" />
 			<Field Name="Feature" Type="dcTinyString" />
 			<Field Name="Op" Type="dcTinyString" />
 
@@ -748,6 +751,20 @@
 		<Service Name="dcCoreServices">
 			<Feature Name="Authentication">
 				<Secure Badges="Guest,User">
+					<Op Name="SignInPreflight">
+						<Description>
+							Check what sort of security handler is needed to verify this account. Always return something,
+							even if the account does not exist, so that this service cannot be used to discover user accouunts.
+							"Standard" should be the handler returned if no special handler is needed for this account, or the account does not exist.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Username" Type="dcUser:dcUsername" />
+							<Field Name="Password" Type="dcUser:dcPassword" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Handler" Type="dcMetaString" />
+						</RecordResponse>
+					</Op>
 					<Op Name="SignIn">
 						<Description>
 							Verify credentials, start a session (AuthToken) indirectly as Verify is called implicitly.
@@ -755,6 +772,7 @@
 						<RecordRequest Required="True">
 							<Field Name="Username" Type="dcUser:dcUsername" />
 							<Field Name="Password" Type="dcUser:dcPassword" />
+							<Field Name="Code" Type="dcMetaString" />
 						</RecordRequest>
 						<RecordResponse>
 							<Field Name="UserId" Type="Id" />
@@ -823,30 +841,6 @@
 							</Field>
 						</RecordResponse>
 					</Op>
-					<Op Name="FacebookSignIn">
-						<Description>
-							Verify credentials, start a session (AuthToken) indirectly as Verify is called implicitly.
-						</Description>
-						<RecordRequest Required="True">
-							<Field Name="Token" Type="dcString" Required="True" />
-						</RecordRequest>
-						<RecordResponse>
-							<Field Name="UserId" Type="Id" />
-							<Field Name="Username" Type="dcUser:dcUsername" />
-							<Field Name="FirstName" Type="dcUser:dcFirstName" />
-							<Field Name="LastName" Type="dcUser:dcLastName" />
-							<Field Name="Email" Type="dcUser:dcEmail" />
-							<Field Name="Locale">
-								<List Type="dcUser:dcLocale" />
-							</Field>
-							<Field Name="Chronology">
-								<List Type="dcUser:dcChronology" />
-							</Field>
-							<Field Name="Badges">
-								<List Type="dcUser:dcBadges" />
-							</Field>
-						</RecordResponse>
-					</Op>
 					<Op Name="SignOut">
 						<Description>
 							End a session (AuthToken).
@@ -856,16 +850,6 @@
 						<Description>
 							Verify auth token if present - if not try credentials, start a new session (AuthToken).
 						</Description>
-					</Op>
-				</Secure>
-				<Secure Badges="User">
-					<Op Name="LinkFacebookAccount">
-						<Description>
-							Link a Facebook account to the current account (only one account supported, overwrites).
-						</Description>
-						<RecordRequest Required="True">
-							<Field Name="Token" Type="dcString" />
-						</RecordRequest>
 					</Op>
 				</Secure>
 			</Feature>
@@ -895,7 +879,7 @@
 							Test the database, call Ping and it will return Pong.
 						</Description>
 						<Response Type="String" />
-					</Procedure>
+					</Op>
 					<Op Name="Echo">
 						<Description>
 							Test the database, give it a string and it will echo back.
@@ -949,6 +933,26 @@
 							<Field Name="Params" Type="AnyRecord" />
 							<Field Name="Options" Type="AnyList" />
 						</RecordResponse>
+					</Op>
+					<Op Name="CheckServiceQueue">
+						<Description>
+							Attempt to load and run the messages from the Service Message Queue (from the node's messages folder).
+							See dcraft.service.work.FileQueuePollWork
+						</Description>
+					</Op>
+					<Op Name="ProcessTenantFileUpdates">
+						<Description>
+							List files that where updated outside of the system and that may need to be reindexed, reviewed or removed.
+							The file paths should be relative to the /tenants folder - for example /dca/files/readme.md
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Updates" Required="True">
+								<List Type="dcString" />
+							</Field>
+							<Field Name="Deletes" Required="True">
+								<List Type="dcString" />
+							</Field>
+						</RecordRequest>
 					</Op>
 				</Secure>
 			</Feature>

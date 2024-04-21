@@ -18,6 +18,7 @@ package dcraft.schema;
 
 import java.util.HashMap;
 
+import dcraft.struct.RecordStruct;
 import dcraft.util.ArrayUtil;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
@@ -116,7 +117,42 @@ public class ServiceSchema {
 			}			
 		}			
 	}
-	
+
+	public Op loadIsloated(Schema schema, RecordStruct security, XElement opel) {
+		String[] tags = (security != null) && (security.isNotFieldEmpty("Badges"))
+			? security.getFieldAsList("Badges").toStringList().toArray(new String[0])
+			: new String[] { "Guest", "User" };
+
+		//String oname = opel.getAttribute("Name");
+
+		//if (StringUtil.isEmpty(oname))
+		//	return null;
+
+		Op opt = new Op();
+		//opt.name = oname;
+		opt.securityTags = tags;
+
+		XElement req = opel.find("Request", "ListRequest", "RecordRequest");
+
+		if (req != null) {
+			opt.request = new DataType(schema);
+			opt.request.load(req);
+			opt.request.compile();
+		}
+
+		XElement resp = opel.find("Response", "ListResponse", "RecordResponse");
+
+		if (resp != null) {
+			opt.response = new DataType(schema);
+			opt.response.load(resp);
+			opt.response.compile();
+		}
+
+		// TODO maybe support streams someday...
+
+		return opt;
+	}
+
 	public Op getOp(String service, String feature, String op) {
 		if (StringUtil.isEmpty(service))
 			return null;

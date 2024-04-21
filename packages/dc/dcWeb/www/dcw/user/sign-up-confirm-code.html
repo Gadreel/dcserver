@@ -1,0 +1,80 @@
+<dc.Html NoCache="true">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Confirm Account" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<p>
+				Please look for a notice (email or text) with a confirmation code. Confirm your account by entering the 6 character code found in your email or text below and choose a password for your account.
+			</p>
+
+			<dcf.Form>
+				<dcf.Text Name="Code" Label="Code" Required="true" />
+				<dcf.Password Name="Password" Label="Password" autocomplete="new-password" Required="true" />
+				<dcf.Password Name="ConfirmPassword" autocomplete="new-password" Label="Confirm Password" Required="true" />
+			</dcf.Form>
+
+			<dcf.FormButtons>
+				<dc.Button Label="Submit Code" Click="OnSubmitCode" />
+			</dcf.FormButtons>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var page = this;
+
+	]]></Function>
+	<Function Name="OnSubmitCode"><![CDATA[
+			var page = this;
+
+			var code = page.form().getValue('Code');
+			var pw = page.form().getValue('Password');
+			var cpw = page.form().getValue('ConfirmPassword');
+
+			if (! code) {
+				dc.pui.Popup.alert('Code required');
+				return;
+			}
+
+			if (! pw || (pw != cpw)) {
+				dc.pui.Popup.alert('Password missing or does not match');
+				return;
+			}
+
+			dc.comm.call('dcCoreServices.Authentication.Confirm', {
+					Uuid: page.Params.Uuid,
+					Code: code
+				}, function(resp) {
+					if (resp.Result > 0) {
+						dc.pui.Popup.alert('Error confirming account: ' + resp.Message);
+						return;
+					}
+
+					dc.user.setUserInfo(resp.Result);
+
+					dc.comm.call('dcCoreServices.Users.UpdateSelf', {
+							Password: pw
+						}, function(resp2) {
+							if (resp2.Result > 0) {
+								dc.pui.Popup.alert('Error saving password: ' + resp2.Message);
+								return;
+							}
+
+							// Callback overrides SignUpDone
+							if (page.Params.Callback || ! dc?.handler?.user?.SignUpDone) {
+								dc.pui.Popup.alert('Account confirmed. You are now signed in.', function() {
+									page.Layer.back();
+
+									if (page.Params.Callback)
+										page.Params.Callback();
+								});
+							}
+							else {
+								page.Layer.back();
+
+								dc.handler.user.SignUpDone();
+							}
+						});
+				});
+	]]></Function>
+</dc.Html>

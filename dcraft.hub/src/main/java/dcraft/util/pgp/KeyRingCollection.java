@@ -276,6 +276,9 @@ public class KeyRingCollection {
     	}
     	else {
     		// create an empty collection
+			rings.pubring = new BcPGPPublicKeyRingCollection(new ArrayList());
+
+			/*
 			try {
 				rings.pubring = new BcPGPPublicKeyRingCollection(new ArrayList());
 			}
@@ -287,6 +290,8 @@ public class KeyRingCollection {
 				Logger.error("Unable to initialize public key: " + x);
 				return null;
 			}
+
+			 */
     	}
     	
     	if (Files.exists(rings.seccoll)) {
@@ -305,6 +310,8 @@ public class KeyRingCollection {
     	}
     	else {
     		// create an empty collection
+			rings.secring = new BcPGPSecretKeyRingCollection(new ArrayList());
+			/*
 			try {
 	    		rings.secring = new BcPGPSecretKeyRingCollection(new ArrayList());
 			}
@@ -316,6 +323,8 @@ public class KeyRingCollection {
 				Logger.error("Unable to initialize secret key: " + x);
 				return null;
 			}
+
+			 */
     	}
 		
     	return rings;
@@ -454,6 +463,7 @@ public class KeyRingCollection {
 	
 	public void addPublicKey(PGPPublicKeyRing pub, boolean save)  {
 		// ensure the same id is not listed twice - remove original if so
+		/*
 		try {
 			PGPPublicKeyRing oldkey = this.pubring.getPublicKeyRing(pub.getPublicKey().getKeyID());
 			
@@ -464,7 +474,14 @@ public class KeyRingCollection {
 			Logger.error("Unable to remove old public key: " + x);
 			return;
 		}
-		
+
+		 */
+
+		PGPPublicKeyRing oldkey = this.pubring.getPublicKeyRing(pub.getPublicKey().getKeyID());
+
+		if (oldkey != null)
+			this.pubring = PGPPublicKeyRingCollection.removePublicKeyRing(this.pubring, oldkey);
+
 		this.pubring = PGPPublicKeyRingCollection.addPublicKeyRing(this.pubring, pub);
         
 		if (save)
@@ -477,6 +494,7 @@ public class KeyRingCollection {
 
 	public void addSecretKey(PGPSecretKeyRing skr, boolean save)  {
 		// ensure the same id is not listed twice - remove original if so  (Id is always based on public key)
+		/*
 		try {
 			PGPSecretKeyRing oldkey = this.secring.getSecretKeyRing(skr.getPublicKey().getKeyID());
 			
@@ -487,9 +505,16 @@ public class KeyRingCollection {
 			Logger.error("Unable to remove old secret key: " + x);
 			return;
 		}
-		
+
+		 */
+
+		PGPSecretKeyRing oldkey = this.secring.getSecretKeyRing(skr.getPublicKey().getKeyID());
+
+		if (oldkey != null)
+			this.secring = PGPSecretKeyRingCollection.removeSecretKeyRing(this.secring, oldkey);
+
 		this.secring = PGPSecretKeyRingCollection.addSecretKeyRing(this.secring, skr);
-        
+
 		if (save)
 			this.saveSecretKeys();
 	}
@@ -741,7 +766,7 @@ public class KeyRingCollection {
 			return;
 		}
 		
-		try {
+		//try {
 			PGPSecretKeyRing sec = this.secring.getSecretKeyRing(pkr.getPublicKey().getKeyID());
 			
 			// this is not an error, not all users have a secret key
@@ -755,10 +780,10 @@ public class KeyRingCollection {
 				Logger.error("Unable to write secret key: " + x);
 				return;
 			}
-		}
-		catch (PGPException x) {
-			Logger.error("Unable to access secret key: " + userid);
-		}
+		//}
+		//catch (PGPException x) {
+		//	Logger.error("Unable to access secret key: " + userid);
+		//}
 	}
 
 	public List<PGPPublicKeyRing> getPublicKeys() {

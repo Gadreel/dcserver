@@ -1,5 +1,6 @@
 package dcraft.service;
 
+import dcraft.filestore.CommonPath;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
@@ -55,21 +56,41 @@ public class ServiceRequest implements IServiceRequestBuilder, IWorkBuilder {
 		return req;
 	}
 
+	static public ServiceRequest of(CommonPath path) {
+		ServiceRequest req = new ServiceRequest();
+		req.path = path;
+		return req;
+	}
+
+	// be aware that this can throw IllegalArgumentException if using a path
 	static public ServiceRequest of(String op) {
 		if (StringUtil.isEmpty(op))
 			return null;
 
-		String[] parts = op.split("\\.");
-
-		if (parts.length != 3)
-			return null;
-
 		ServiceRequest req = new ServiceRequest();
-		req.name = parts[0];
-		req.feature = parts[1];
-		req.op = parts[2];
-		return req;
+
+		if (op.startsWith("/")) {
+			req.path = CommonPath.from(op);
+
+			return req;
+		}
+		else if (op.contains(".")) {
+			String[] parts = op.split("\\.");
+
+			if (parts.length != 3)
+				return null;
+
+			req.name = parts[0];
+			req.feature = parts[1];
+			req.op = parts[2];
+
+			return req;
+		}
+
+		return null;
 	}
+
+	protected CommonPath path = null;
 
 	protected String name = null;
 	protected String feature = null;
@@ -163,6 +184,10 @@ public class ServiceRequest implements IServiceRequestBuilder, IWorkBuilder {
 		return this;
 	}
 
+	public CommonPath getPath() {
+		return this.path;
+	}
+
 	// on available after call to validate
 	public OpInfo getDefinition() {
 		return this.def;
@@ -250,7 +275,7 @@ public class ServiceRequest implements IServiceRequestBuilder, IWorkBuilder {
 			return false;
 		}
 		
-		this.def = SchemaHub.getServiceOpInfo(name, feature, op);
+		//this.def = SchemaHub.getServiceOpInfo(name, feature, op);
 		
 		if (this.def == null) {
 			Logger.error(1, "Service schema not on this hub: " + name);
@@ -329,5 +354,13 @@ public class ServiceRequest implements IServiceRequestBuilder, IWorkBuilder {
 	@Override
 	public ServiceRequest toServiceRequest() {
 		return this;
+	}
+
+	@Override
+	public String toString() {
+		if (this.path != null)
+			return this.path.toString();
+
+		return this.getName() + "." + this.getFeature() + "." + this.getOp();
 	}
 }

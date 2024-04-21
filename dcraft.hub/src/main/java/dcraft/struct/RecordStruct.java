@@ -1142,6 +1142,20 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 			return ReturnOption.CONTINUE;
 		}
 
+		if ("CopyExceptFields".equals(code.getName())) {
+			BaseStruct var3 = StackUtil.refFromElement(stack, code, "Source", true);
+			String fields = StackUtil.stringFromElementClean(stack, code, "Fields");
+			String[] exclude = new String[0];
+
+			if (StringUtil.isNotEmpty(fields))
+				exclude = fields.split(",");
+
+			if (var3 instanceof RecordStruct)
+				this.copyFields((RecordStruct) var3, exclude);
+
+			return ReturnOption.CONTINUE;
+		}
+
 		if ("Merge".equals(code.getName())) {
 			BaseStruct var3 = StackUtil.refFromElement(stack, code, "Value", true);
 

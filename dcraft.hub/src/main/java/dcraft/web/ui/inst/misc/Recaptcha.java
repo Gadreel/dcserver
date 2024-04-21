@@ -32,20 +32,17 @@ public class Recaptcha extends Base {
 		if (capsettings == null)
 			capsettings = ApplicationHub.getCatalogSettings("Google", alt);
 
-		String key = null;
+		String key = "";
 		String service = null;
-		boolean disabled = false;
 
 		if (capsettings != null) {
 			service = capsettings.getAttribute("Service", "reCAPTCHA");		// google for now, until migrate away
 
 			XElement rsettings = capsettings.find(service);
 
-			if (rsettings != null) {
+			if ((rsettings != null) && ! rsettings.getAttributeAsBooleanOrFalse("Disabled")) {
 				key = rsettings.getAttribute("SiteKey");
 			}
-
-			disabled = rsettings.getAttributeAsBooleanOrFalse("Disabled");
 		}
 
 		// use either CheckEnabled or Func, combined won't likely work out well
@@ -55,7 +52,7 @@ public class Recaptcha extends Base {
 				.attr("data-func", StackUtil.stringFromSource(state, "Func"))
 				.attr("data-ready-func", StackUtil.stringFromSource(state, "ReadyFunc"))
 				.attr("data-size", StackUtil.boolFromSource(state, "CheckEnabled") ? "visible" : "invisible")
-				.attr("data-sitekey", disabled ? "" : key)
+				.attr("data-sitekey", key)
 				.attr("data-service", service)
 				.attr("data-type", rtype)
 				.withAttribute("data-dc-enhance", "true")

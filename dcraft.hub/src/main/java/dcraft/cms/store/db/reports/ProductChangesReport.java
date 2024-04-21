@@ -31,7 +31,8 @@ public class ProductChangesReport implements IStoredProc {
 		RecordStruct data = request.getDataAsRecord();
 
 		ZonedDateTime from = TimeUtil.getStartOfDayInContext(data.getFieldAsDate("From"));
-		ZonedDateTime to = TimeUtil.getStartOfDayInContext(data.getFieldAsDate("To"));
+		//ZonedDateTime to = TimeUtil.getStartOfDayInContext(data.getFieldAsDate("To"));
+		ZonedDateTime to = TimeUtil.getEndOfDayInContext(data.getFieldAsDate("To"));
 
 		BigDecimal fromstamp = BigDecimal.valueOf(request.getInterface().inverseTime(from));
 		BigDecimal tostamp = BigDecimal.valueOf(request.getInterface().inverseTime(to));

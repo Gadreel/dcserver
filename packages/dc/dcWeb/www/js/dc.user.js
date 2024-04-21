@@ -145,9 +145,7 @@ dc.user = {
 
 		// we take what ever Credentials are supplied, so custom Credentials may be used
 		var msg = {
-			Service: 'dcCoreServices',
-			Feature: 'Authentication',
-			Op: 'SignIn',
+			Op: 'dcCoreServices.Authentication.SignIn',
 			Body: creds
 		};
 
@@ -208,50 +206,9 @@ dc.user = {
 		});
 	},
 
-	facebookSignin : function(token, callback) {
-		if (! dc.comm.isSecure()) {
-			dc.pui.Popup.alert('May not sign in on an insecure connection');
-
-			if (callback)
-				callback(null);
-
-			return;
-		}
-
-		dc.user._info = { };
-
-		// we take what ever Credentials are supplied, so custom Credentials may be used
-		var msg = {
-			Service: 'dcCoreServices',
-			Feature: 'Authentication',
-			Op: 'FacebookSignIn',
-			Body: {
-				Token: token
-			}
-		};
-
-		dc.comm.sendMessage(msg, function(rmsg) {
-			if (rmsg.Result == 0) {
-				dc.user.setUserInfo(rmsg.Body);
-
-				// failed login will not wipe out remembered user (could be a server issue or timeout),
-				// only set on success - successful logins will save or wipe out depending on Remember
-				dc.user.saveRemembered(false);
-
-				if (dc.user._signinhandler)
-					dc.user._signinhandler.call(dc.user._info);
-			}
-
-			if (callback)
-				callback();
-		});
-	},
-
 	currentLocale: function() {
 		return dc.util.Cookies.getCookie('dcLang');
 	},
-
-	/* TODO - for facebook review dcServer 2016 */
 
 	updateUser : function(callback) {
 		dc.user._info = { };
@@ -287,4 +244,71 @@ dc.user = {
 		});
 	}
 
+}
+
+/**
+ * Given the current user info, try to sign in.  Trigger the callback whether sign in works or fails.
+ * {
+ *	 Username: uname,
+ *	 Password: pass
+ * }
+ */
+dc.user.signinPreflight = async function(creds) {
+	if (! dc.comm.isSecure()) {
+    dc.pui.Popup.alert('May not sign in on an insecure connection');
+    return undefined;
+  }
+
+	if (! dc.comm.isSecure())
+		return undefined;
+
+	// we take what ever Credentials are supplied, so custom Credentials may be used
+	const result = await dc.comm.tryRemote('dcCoreServices.Authentication.SignInPreflight', creds);
+
+	// TODO maybe route through dc.handler ?
+
+	return result;
+};
+
+/**
+ * we take what ever Credentials are supplied, so custom Credentials may be used
+ * {
+ *	 Username: uname,
+ *	 Password: pass
+ * }
+ */
+dc.user.signinAsync = async function(creds, remember) {
+  if (! dc.comm.isSecure()) {
+    dc.pui.Popup.alert('May not sign in on an insecure connection');
+    return;
+  }
+
+  dc.user._info = { };
+
+  const userinfo = await dc.comm.tryRemote('dcCoreServices.Authentication.SignIn', creds);
+
+  dc.user.setUserInfo(userinfo);
+
+  // failed login will not wipe out remembered user (could be a server issue or timeout),
+  // only set on success - successful logins will save or wipe out depending on Remember
+  dc.user.saveRemembered(remember, creds);
+
+  if (dc.user._signinhandler)
+    await dc.user._signinhandler.call(dc.user._info);
+}
+
+/**
+ *  Sign out the current user, kill session on server, clears the cookie from browser
+ *  (only server can clear the cookie, please wait for reply)
+ */
+dc.user.signoutAsync = async function() {
+  dc.user._info = { };
+  localStorage.removeItem("dc.info.remember");
+
+  try {
+    await dc.async.comm.call('dcCoreServices.Authentication.SignOut');
+  }
+  catch (x) {
+    // nothing we can do, ignore it
+  }
 }

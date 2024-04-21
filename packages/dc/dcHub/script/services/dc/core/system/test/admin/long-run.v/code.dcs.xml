@@ -1,0 +1,5 @@
+<dcs.Script>
+	<dcs.Sleep Seconds="{$Data}" />
+
+	<dcs.Exit Scope="Task" />
+</dcs.Script>

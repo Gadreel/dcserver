@@ -4,17 +4,14 @@ import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.*;
 import dcraft.interchange.aws.AWSSQS;
 import dcraft.log.Logger;
-import dcraft.service.portable.PortableMessageUtil;
 import dcraft.struct.*;
 import dcraft.task.*;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class InBoxQueuePollWork extends StateWork {
+public class InBoxQueuePollWork extends MessageQueuePollWork {
 	static public InBoxQueuePollWork of(String alt) {
 		InBoxQueuePollWork work = new InBoxQueuePollWork();
 		work.awsalt = alt;
@@ -22,30 +19,12 @@ public class InBoxQueuePollWork extends StateWork {
 		return work;
 	}
 
-	protected XElement awssettings = null;
-	protected String awsalt = null;
-	protected AtomicLong callcount = new AtomicLong();
-	protected AtomicBoolean stopPolling = new AtomicBoolean(false);
 	protected AtomicReference<RecordStruct> message = new AtomicReference<>();
 
-	protected StateWorkStep doInit = null;
-	protected StateWorkStep collectMessage = null;
-	protected StateWorkStep extractMessage = null;
-	protected StateWorkStep handleMessage = null;
-	protected StateWorkStep deleteMessage = null;
-	protected StateWorkStep finish = null;
+	protected XElement awssettings = null;
+	protected String awsalt = null;
 
 	@Override
-	public void prepSteps(TaskContext trun) throws OperatingContextException {
-		this
-				.withStep(this.doInit = StateWorkStep.of("Init", this::doInit))
-				.withStep(this.collectMessage = StateWorkStep.of("Collect Queue Message", this::doCollectMessages))
-				.withStep(this.extractMessage = StateWorkStep.of("Extract Payload Message", this::doExtractPayload))
-				.withStep(this.handleMessage = StateWorkStep.of("Handle Payload Message", this::doHandlePayload))
-				.withStep(this.deleteMessage = StateWorkStep.of("Delete Queue Message", this::doDeleteMessage))
-				.withStep(this.finish = StateWorkStep.of("Finish", this::doFinish));
-	}
-
 	public StateWorkStep doInit(TaskContext trun) throws OperatingContextException {
 		OperationContext.getOrThrow().touch();
 
@@ -61,6 +40,7 @@ public class InBoxQueuePollWork extends StateWork {
 		return this.collectMessage;
 	}
 
+	@Override
 	public StateWorkStep doCollectMessages(TaskContext trun) throws OperatingContextException {
 		OperationContext.getOrThrow().touch();
 
@@ -121,6 +101,7 @@ public class InBoxQueuePollWork extends StateWork {
 		return StateWorkStep.WAIT;
 	}
 
+	@Override
 	public StateWorkStep doExtractPayload(TaskContext trun) throws OperatingContextException {
 		OperationContext.getOrThrow().touch();
 
@@ -135,7 +116,7 @@ public class InBoxQueuePollWork extends StateWork {
 		Logger.info("Extracting from queue: " + mhandle);
 
 		if (this.message.get().isFieldEmpty("Payload"))
-			return this.deleteMessage;
+			return this.cleanMessage;
 
 		String protectedMessage = this.message.get().getFieldAsString("Payload");
 
@@ -160,6 +141,7 @@ public class InBoxQueuePollWork extends StateWork {
 		return StateWorkStep.WAIT;
 	}
 
+	@Override
 	public StateWorkStep doHandlePayload(TaskContext trun) throws OperatingContextException {
 		OperationContext.getOrThrow().touch();
 
@@ -174,14 +156,15 @@ public class InBoxQueuePollWork extends StateWork {
 		Logger.info("Handling from queue: " + mhandle);
 
 		if (this.message.get().isFieldEmpty("Payload"))
-			return this.deleteMessage;
+			return this.cleanMessage;
 
-		this.chainThen(trun, PortableRequestProcessWork.of(this.message.get().getFieldAsRecord("Payload")), this.deleteMessage);
+		this.chainThen(trun, PortableRequestProcessWork.of(this.message.get().getFieldAsRecord("Payload")), this.cleanMessage);
 
 		return StateWorkStep.WAIT;
 	}
 
-	public StateWorkStep doDeleteMessage(TaskContext trun) throws OperatingContextException {
+	@Override
+	public StateWorkStep doCleanMessage(TaskContext trun) throws OperatingContextException {
 		OperationContext.getOrThrow().touch();
 
 		if (this.message.get() == null)
@@ -217,6 +200,7 @@ public class InBoxQueuePollWork extends StateWork {
 		return StateWorkStep.WAIT;
 	}
 
+	@Override
 	public StateWorkStep doFinish(TaskContext trun) throws OperatingContextException {
 		Logger.info("Finish Checking SQS Queues for service messages");
 

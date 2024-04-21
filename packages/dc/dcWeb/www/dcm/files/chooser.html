@@ -195,6 +195,7 @@
 							path = entry.Store.Path + '/' + e.data.FileName;
 
 						if (entry.Params.Callback) {
+							//debugger
 							entry.Layer.back();
 
 							entry.Params.Callback( [ {
@@ -334,8 +335,22 @@
 				Path: this.Store.Path,
 				Callback: function(files) {
 					if (entry.Params.Callback) {
+						//debugger
+						var correctedFiles = [];
+
+						files.forEach(item => {
+					    var tempArray = item.FullPath.split('/')
+					    correctedFiles.push({
+					        "FullPath": item.FullPath,
+					        "FileName": tempArray[tempArray.length-1]
+					    })
+						})
+
 						entry.Layer.back();
-						entry.Params.Callback(files);
+						//entry.Params.Callback(files);
+						entry.Params.Callback(correctedFiles);
+
+
 					}
 					else {
 						$('#lstDepFcFolders,#lstDepFcFiles').empty().dcappend(

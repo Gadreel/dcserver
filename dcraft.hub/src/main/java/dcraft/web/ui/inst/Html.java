@@ -126,12 +126,12 @@ public class Html extends Base {
 	@Override
 	public void renderBeforeChildren(InstructionWork state) throws OperatingContextException {
 		Html.mergePageVariables(state, this);
-		
+
 		String skeleton = StackUtil.stringFromSource(state, "Skeleton");
-		
+
 		if (StringUtil.isNotEmpty(skeleton)) {
 			this.with(IncludeFragmentInline.tag()
-				.withAttribute("Path", "/skeletons/" + skeleton));
+					.withAttribute("Path", "/skeletons/" + skeleton));
 		}
 	}
 	
@@ -238,6 +238,7 @@ public class Html extends Base {
 		W3 head = W3.tag("head");
 
 		boolean indexpage = true;
+		boolean userscale = true;
 
 		WebController wctrl = (WebController) OperationContext.getOrThrow().getController();
 
@@ -247,17 +248,20 @@ public class Html extends Base {
 		else if ("false".equalsIgnoreCase(StackUtil.stringFromSource(state,"Public", "true")))
 			indexpage = false;
 
+		if ("false".equalsIgnoreCase(StackUtil.stringFromSource(state,"UserScale", "true")))
+			userscale = false;
+
 		head
 				.with(W3Closed.tag("meta")
 						.withAttribute("chartset", "utf-8")
 				)
 				.with(W3Closed.tag("meta")
 						.withAttribute("name", "format-detection")
-						.withAttribute("content", "telephone=no")
+						.withAttribute("content", "telephone=no,address=no,email=no,date=no,url=no")
 				)
 				.with(W3Closed.tag("meta")
 						.withAttribute("name", "viewport")
-						.withAttribute("content", "width=device-width, initial-scale=1")		//, maximum-scale=1.0, user-scalable=no")
+						.withAttribute("content", userscale ? "width=device-width, initial-scale=1" : "width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no")
 				)
 				.with(W3Closed.tag("meta")
 						.withAttribute("name", "robots")

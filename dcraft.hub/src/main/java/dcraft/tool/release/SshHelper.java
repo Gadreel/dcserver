@@ -37,6 +37,8 @@ public class SshHelper {
 		try {
 			session = server.openSession();
 
+			System.out.println("ssh session open: " + session);
+
 			/*
 			Channel channel = session.openChannel("shell");
 			//channel.setInputStream();
@@ -66,6 +68,9 @@ public class SshHelper {
 		}*/
 
 		if (session != null) {
+
+			System.out.println("ssh session close: " + session);
+
 			session.disconnect();
 			session = null;
 		}
@@ -82,6 +87,8 @@ public class SshHelper {
 			InputStream in = channel.getInputStream();
 
 			channel.connect();
+
+			System.out.println("ssh channel open: " + channel.getId());
 
 			StringBuilder32 sb = new StringBuilder32();
 
@@ -110,6 +117,8 @@ public class SshHelper {
 				catch (Exception ee) {
 				}
 			}
+
+			System.out.println("ssh channel close: " + channel);
 
 			channel.disconnect();
 

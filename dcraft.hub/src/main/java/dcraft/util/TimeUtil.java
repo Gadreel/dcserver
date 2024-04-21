@@ -277,6 +277,10 @@ public class TimeUtil {
 		return date.atStartOfDay(TimeUtil.zoneInContext());
 	}
 
+	static public ZonedDateTime getEndOfDayInContext(LocalDate date) throws OperatingContextException {
+		return date.atStartOfDay(TimeUtil.zoneInContext()).plusDays(1).minusSeconds(1);
+	}
+
 	/**
 	 * Format date and time in Long format
 	 * 

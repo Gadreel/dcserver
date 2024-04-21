@@ -133,7 +133,7 @@ public class HubLog {
     		if (HubLog.config.hasAttribute("NettyLevel")) {
     			ResourceLeakDetector.setLevel(Level.valueOf(HubLog.config.getAttribute("NettyLevel")));
     			
-    			Logger.debug("Netty Level set to: " + ResourceLeakDetector.getLevel());    			
+    			Logger.info("Netty Level set to: " + ResourceLeakDetector.getLevel());
     		}
     		else if (! "none".equals(System.getenv("dcnet"))) {
     			// TODO anything more we should do here?  maybe paranoid isn't helpful?

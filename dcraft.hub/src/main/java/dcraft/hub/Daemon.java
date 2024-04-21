@@ -70,9 +70,16 @@ public class Daemon implements dcraft.daemon.IDaemon {
 
 		if (msg != null) {
 			try {
+				UserContext userContext = null;
 
-				OperationContext tctx = OperationContext.context(
-						UserContext.rootUser());
+				if (msg.isNotFieldEmpty("Tenant") && msg.isNotFieldEmpty("Site"))
+					userContext = UserContext.rootUser(msg.getFieldAsString("Tenant"), msg.getFieldAsString("Site"));
+				else if (msg.isNotFieldEmpty("Tenant"))
+					userContext = UserContext.rootUser(msg.getFieldAsString("Tenant"), "root");
+				else
+					userContext = UserContext.rootUser();
+
+				OperationContext tctx = OperationContext.context(userContext);
 
 				TaskHub.submit(Task.ofContext(tctx)
 								.withTitle("Daemon message")

@@ -224,7 +224,7 @@
 		<Entry Token="_code_438" Value="No data type options match.  Could not validate: {$1}" />
 		<Entry Token="_code_439" Value="Tried to wrap a non-list, unknown resolution: {$1}" />
 		<Entry Token="_code_440" Value="No data type options match.  Could not validate: {$1}" />
-		<Entry Token="_code_441" Value="Service '{$1}' does not support this feature '{$2}' with operation '{$3}'" />
+		<Entry Token="_code_441" Value="Service operation not supported: '{$1}'" />
 		<Entry Token="_code_442" Value="Missing or invalid user credentials" />
 		<Entry Token="_code_443" Value="Data Store unavailable" />
 		<Entry Token="_code_444" Value="Missing or invalid user context" />

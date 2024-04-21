@@ -1,7 +1,14 @@
 package dcraft.cms.thread.schema;
 
+import dcraft.cms.meta.CustomIndexAdapter;
+import dcraft.cms.thread.db.ThreadUtil;
+import dcraft.db.BasicRequestContext;
+import dcraft.db.DatabaseAdapter;
 import dcraft.db.DbServiceRequest;
+import dcraft.db.IConnectionManager;
 import dcraft.db.request.update.UpdateRecordRequest;
+import dcraft.db.tables.TablesAdapter;
+import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
@@ -12,10 +19,12 @@ import dcraft.script.work.StackWork;
 import dcraft.service.ServiceHub;
 import dcraft.service.ServiceRequest;
 import dcraft.struct.BaseStruct;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.NullStruct;
 import dcraft.util.StringUtil;
+import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
 
 public class ThreadObject extends RecordStruct {
@@ -26,6 +35,8 @@ public class ThreadObject extends RecordStruct {
 					.with("Title", StackUtil.stringFromElementClean(state, code, "Title"))
 					.with("Type", StackUtil.stringFromElementClean(state, code, "Type"))
 					.with("From", StackUtil.stringFromElementClean(state, code, "From"))
+					.with("Deliver", StackUtil.stringFromElementClean(state, code, "Deliver"))
+					.with("End", StackUtil.stringFromElementClean(state, code, "End"))
 					.with("SharedAttributes", StackUtil.refFromElement(state, code, "SharedAttributes", true));
 
 			ServiceHub.call(ServiceRequest.of("dcmServices", "Thread", "Create")
@@ -175,6 +186,46 @@ public class ThreadObject extends RecordStruct {
 			);
 
 			return ReturnOption.AWAIT;
+		}
+
+		if ("CollectMessageAccess".equals(code.getName())) {
+			String result = StackUtil.stringFromElement(state, code, "Result");
+
+			if (StringUtil.isNotEmpty(result)) {
+				String tid = this.getFieldAsString("Id");
+
+				IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
+
+				TablesAdapter adapter = TablesAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
+
+				java.util.List<String> access = ThreadUtil.collectMessageAccess(adapter, OperationContext.getOrThrow(), tid);
+
+				StackUtil.addVariable(state, result, ListStruct.list(access));
+			}
+
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("DeliverReply".equals(code.getName())) {
+			String tid = this.getFieldAsString("Id");
+
+			IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
+
+			TablesAdapter adapter = TablesAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
+
+			java.util.List<String> myparties = ThreadUtil.collectMessageAccess(adapter, OperationContext.getOrThrow(), tid);
+
+			java.util.List<String> parties = adapter.getListKeys("dcmThread", tid, "dcmParty");
+
+			for (String party : parties) {
+				if (! myparties.contains(party)) {
+					ThreadUtil.updateFolder(adapter, tid, party, "/InBox", false);
+				}
+			}
+
+			ThreadUtil.updateDeliver(adapter, tid, TimeUtil.now());
+
+			return ReturnOption.CONTINUE;
 		}
 
 		return super.operation(state, code);

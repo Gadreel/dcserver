@@ -63,6 +63,8 @@ public class SendEmail extends Instruction {
 			String from = StackUtil.resolveValueToString(stack,  this.attr("From"), true);        // optional
 			String reply = StackUtil.resolveValueToString(stack,  this.attr("ReplyTo"), true);        // optional
 			String to = StackUtil.resolveValueToString(stack, this.attr("To"), true);
+			String cc = StackUtil.resolveValueToString(stack, this.attr("Cc"), true);
+			String bcc = StackUtil.resolveValueToString(stack, this.attr("Bcc"), true);
 
 			if (StringUtil.isEmpty(to)) {
 				String tolist = StackUtil.stringFromSource(stack, "ToList", "WebMaster");
@@ -144,6 +146,12 @@ public class SendEmail extends Instruction {
 					.with("Subject", subject)
 					.with("Html", html)
 					.with("Text", text);
+
+			if (StringUtil.isNotEmpty(cc))
+				args.with("Cc", cc);
+
+			if (StringUtil.isNotEmpty(bcc))
+				args.with("Bcc", bcc);
 
 			ListStruct attachments = Struct.objectToList(StackUtil.resolveReference(stack,  this.attr("Attachments"), true));
 

@@ -6,8 +6,11 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.resource.ResourceBase;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.log.Logger;
+import dcraft.schema.SchemaResource;
 
 public class ServiceResource extends ResourceBase {
+	static protected StandardService STANDARD_SERVICE = new StandardService();
+
 	protected Map<String, IService> registered = new HashMap<>();
 	protected List<String> serviceorder = new ArrayList<>();
 	
@@ -41,25 +44,56 @@ public class ServiceResource extends ResourceBase {
 		return null;
 	}
 
+	public SchemaResource.OpInfo lookupOp(ServiceRequest request) throws OperatingContextException {
+		// modern service, doesn't need to look through parents
+		if (request.getPath() != null) {
+			SchemaResource.OpInfo opInfo = STANDARD_SERVICE.lookupOpInfo(request);
+
+			if (opInfo != null)
+				return opInfo;
+		}
+		// old services, look through schema levels
+		else {
+			IService s = this.registered.get(request.getName());
+
+			if ((s != null) && s.isEnabled()) {
+				SchemaResource.OpInfo opInfo = s.lookupOpInfo(request);
+
+				if (opInfo != null)
+					return opInfo;
+			}
+
+			ServiceResource parent = this.getParentResource();
+
+			if (parent != null)
+				return parent.lookupOp(request);
+		}
+		
+		Logger.errorTr(441, request.toString());
+		request.requireOutcome().returnEmpty();
+		
+		return null;
+	}
+
 	public boolean handle(ServiceRequest request) throws OperatingContextException {
 		IService s = this.registered.get(request.getName());
-		
+
 		if ((s != null) && s.isEnabled()) {
 			if (s.handle(request, request.getOutcome()))
 				return true;
 		}
-		
+
 		ServiceResource parent = this.getParentResource();
 
 		if (parent != null)
 			return parent.handle(request);
-		
-		Logger.errorTr(441, request.getName(), request.getFeature(), request.getOp());
+
+		Logger.errorTr(441, request.toString());
 		request.requireOutcome().returnEmpty();
-		
+
 		return false;
 	}
-	
+
 	public boolean isServiceAvailable(String name) {
 		if (this.registered.containsKey(name))
 			return true;

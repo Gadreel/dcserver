@@ -24,11 +24,9 @@ import dcraft.hub.op.UserContext;
 import dcraft.script.StackUtil;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
-import dcraft.struct.FieldStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
+import dcraft.struct.*;
 import dcraft.struct.scalar.BooleanStruct;
+import dcraft.struct.scalar.NullStruct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.util.FileUtil;
 import dcraft.util.StringUtil;
@@ -589,7 +587,37 @@ public class WebController extends OperationController {
 			
 			return ReturnOption.CONTINUE;
 		}
-		
+
+		if ("ParseQueryString".equals(code.getName())) {
+			String value = StackUtil.stringFromElementClean(stack, code, "Value");
+			String result = StackUtil.stringFromElementClean(stack, code, "Result");
+			boolean flatten = StackUtil.boolFromElement(stack, code, "Flatten", true);
+
+			RecordStruct parameters = RecordStruct.record();
+
+			if (StringUtil.isNotEmpty(value)) {
+				QueryStringDecoder decoderQuery = new QueryStringDecoder("http://fake.com/?" + value);
+				Map<String, List<String>> params = decoderQuery.parameters();
+
+				for (Map.Entry<String, List<String>> entry : params.entrySet()) {
+					List<String> v = entry.getValue();
+					BaseStruct dest = null;
+
+					if (flatten && (v.size() == 1))
+						dest = StringStruct.of(v.get(0));
+					else
+						dest = ListStruct.list().withCollection(v);
+
+					parameters.with(entry.getKey(), dest);
+				}
+			}
+
+			if (StringUtil.isNotEmpty(result))
+				StackUtil.addVariable(stack, result, parameters);
+
+			return ReturnOption.CONTINUE;
+		}
+
 		return super.operation(stack, code);
 	}
 }

@@ -1,6 +1,6 @@
 import AnalyticLightNode from './AnalyticLightNode.js';
 import { addLightNode } from './LightsNode.js';
-import getDistanceAttenuation from '../functions/light/getDistanceAttenuation.js';
+import { getDistanceAttenuation } from './LightUtils.js';
 import { uniform } from '../core/UniformNode.js';
 import { objectViewPosition } from '../accessors/Object3DNode.js';
 import { positionView } from '../accessors/PositionNode.js';
@@ -34,12 +34,12 @@ class PointLightNode extends AnalyticLightNode {
 
 		const { colorNode, cutoffDistanceNode, decayExponentNode, light } = this;
 
-		const lVector = objectViewPosition( light ).sub( positionView );
+		const lVector = objectViewPosition( light ).sub( positionView ); // @TODO: Add it into LightNode
 
 		const lightDirection = lVector.normalize();
 		const lightDistance = lVector.length();
 
-		const lightAttenuation = getDistanceAttenuation.call( {
+		const lightAttenuation = getDistanceAttenuation( {
 			lightDistance,
 			cutoffDistance: cutoffDistanceNode,
 			decayExponent: decayExponentNode
@@ -52,11 +52,11 @@ class PointLightNode extends AnalyticLightNode {
 
 		if ( lightingModelFunctionNode && lightingModelFunctionNode.direct ) {
 
-			lightingModelFunctionNode.direct.call( {
+			lightingModelFunctionNode.direct( {
 				lightDirection,
 				lightColor,
 				reflectedLight
-			}, builder );
+			} );
 
 		}
 

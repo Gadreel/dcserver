@@ -7,10 +7,6 @@
 		<Tr Locale="eng" Value="Sign In" />
 	</Meta>
 
-	<dcs.With Target="$_Resources.Config">
-		<GetCatalog Name="Facebook-SignIn" Result="FBCatalog" />
-	</dcs.With>
-
 	<dc.Body>
 		<dc.PagePanel>
 			<dcf.Form Name="SignIn">
@@ -29,11 +25,6 @@
 							<dc.Button Label="Sign Up for Account" Click="onSignUp" />
 						</dc.Out>
 					</dcs.If>
-					<dcs.If Target="$FBCatalog.Settings.0.@AppId" IsEmpty="false">
-						<dc.Out>
-							<dc.Button Label="Sign In with Facebook" Click="onFacebook" />
-						</dc.Out>
-					</dcs.If>
 					<dc.Button Label="Reset Password" Click="onRecover" />
 					<dc.Button Label="Cancel" Click="onCancel" />
 					<dcf.SubmitButton Label="Sign In" />
@@ -44,57 +35,21 @@
 	<Function Name="Load"><![CDATA[
 			var page = this;
 
-	]]>
-	<dcs.If Target="$FBCatalog.Settings.0.@AppId" IsEmpty="false">
-		<dc.Out><![CDATA[
-			// TODO optimize to load on page load
-			window.fbAsyncInit = function() {
-				FB.init({
-					appId      : '{$FBCatalog.Settings.0.@AppId}',
-					cookie     : true,
-					xfbml      : true,
-					version    : 'v3.1'
-				});
-
-				FB.AppEvents.logPageView();
-			};
-
-			(function(d, s, id){
-				var js, fjs = d.getElementsByTagName(s)[0];
-				if (d.getElementById(id)) {return;}
-				js = d.createElement(s); js.id = id;
-				js.src = "https://connect.facebook.net/en_US/sdk.js";
-				fjs.parentNode.insertBefore(js, fjs);
-			}(document, 'script', 'facebook-jssdk'));
-		]]></dc.Out>
-	</dcs.If>
-	</Function>
-	<Function Name="onCancel">
-				this.Layer.back();
-	</Function>
-	<Function Name="onRecover">
-				this.Layer.loadPage('/dcw/user/reset.html');
-	</Function>
-	<Function Name="onSignUp">
-				this.Layer.loadPage('/dcw/user/sign-up.html');
-	</Function>
-	<Function Name="onFacebook"><![CDATA[
-				FB.login(function(response) {
-					if (response.status == 'connected') {
-						console.log('token: ' + response.authResponse.accessToken)
-
-						dc.user.facebookSignin(response.authResponse.accessToken, function() {
-							if (dc.user.isVerified()) {
-								window.location.assign('/portal');
-							}
-							else {
-								dc.pui.Popup.alert('Invalid sign in, your facebook account may not be linked to this website.');
-							}
-						});
-					}
-				}, { scope: 'email' });
 	]]></Function>
-	<Function Name="LoadRecord" Params="e">
+	<Function Name="onCancel"><![CDATA[
+				this.Layer.back();
+	]]></Function>
+	<Function Name="onRecover"><![CDATA[
+				this.Layer.back();
+
+				this.Layer.loadPage('/dcw/user/reset.html');
+	]]></Function>
+	<Function Name="onSignUp"><![CDATA[
+				this.Layer.back();
+
+				this.Layer.loadPage('/dcw/user/sign-up.html');
+	]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
 				var entry = this;
 
 				var info = dc.user.loadRemembered();
@@ -102,8 +57,8 @@
 				if (info) {
 					e.Data = $.extend(true, { RememberMe: true }, info);
 				}
-	</Function>
-	<Function Name="AfterSave" Params="e">
+	]]></Function>
+	<Function Name="AfterSave" Params="e"><![CDATA[
 				var entry = this;
 
 				var values = this.form().getValues();
@@ -121,5 +76,5 @@
 						dc.pui.Popup.alert('Invalid sign in');
 					}
 				});
-	</Function>
+	]]></Function>
 </dc.Html>

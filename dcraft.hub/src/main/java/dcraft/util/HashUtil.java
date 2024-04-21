@@ -17,7 +17,9 @@
 package dcraft.util;
 
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
+import java.util.zip.CRC32;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -39,6 +41,9 @@ public class HashUtil {
 
 			if ("MD5".equals(method))
 				return HashUtil.getMd5(in);
+
+			if ("CRC32".equals(method))
+				return HashUtil.getCrc32(in);
 
 			Logger.errorTr(1, "Method not supported!");
 			return null;
@@ -99,6 +104,33 @@ public class HashUtil {
 			IOUtil.closeQuietly(str);
 		}
     }
+
+	public static String getCrc32(InputStream str) {
+		try {
+			CRC32 md = new CRC32();
+
+			byte[] buffer = new byte[16 * 4096];		// TODO config?
+
+			int cnt = str.read(buffer);
+
+			while (cnt != -1) {
+				md.update(buffer, 0, cnt);
+				cnt = str.read(buffer);
+			}
+
+			long hash = md.getValue();
+			byte[] rv = ByteBuffer.allocate(8).putLong(hash).array();
+			return HexUtil.bufferToHex(rv, 0, rv.length);
+		}
+		catch (Exception x) {
+			Logger.errorTr(1, "Hash errored: " + x);
+
+			return null;
+		}
+		finally {
+			IOUtil.closeQuietly(str);
+		}
+	}
 	
 	/**
 	 * Calculate an SHA-128 on a string, return a hex formated string of the SHA

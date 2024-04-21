@@ -216,15 +216,6 @@ public class RpcHandler implements IContentDecoder {
 		
 		RecordStruct msg = (RecordStruct) croot;
 
-		// convert from Op only to three parts, if possible
-		if (msg.isFieldEmpty("Service") && ! msg.isFieldEmpty("Op")) {
-			ServiceRequest request = ServiceRequest.of(msg.getFieldAsString("Op"));
-
-			msg.with("Service", request.getName());
-			msg.with("Feature", request.getFeature());
-			msg.with("Op", request.getOp());
-		}
-		
 		// check that the request conforms to the schema for RpcMessage
 		if (! msg.validate("RpcMessage")) {
 			wctrl.sendRequestBadRead();
@@ -250,11 +241,21 @@ public class RpcHandler implements IContentDecoder {
 		if (Logger.isDebug())
 			Logger.debug("RPC Message: " + msg.getFieldAsString("Service") + " - " + msg.getFieldAsString("Feature")
 					+ " - " + msg.getFieldAsString("Op"));
-		
-		ServiceRequest request = ServiceRequest.of(msg.getFieldAsString("Service"), msg.getFieldAsString("Feature"), msg.getFieldAsString("Op"))
-				.withData(msg.getField("Body"))
-				.withAsIncomplete()		// service doesn't have to be final data, that can be a separate app logic check
-				.withFromRpc();
+
+		ServiceRequest request = null;
+
+		// convert from Op only to three parts, if possible
+		if (msg.isFieldEmpty("Service") && ! msg.isFieldEmpty("Op")) {
+			request = ServiceRequest.of(msg.getFieldAsString("Op"));
+		}
+		else {
+			request = ServiceRequest.of(msg.getFieldAsString("Service"), msg.getFieldAsString("Feature"), msg.getFieldAsString("Op"));
+		}
+
+		request
+			.withData(msg.getField("Body"))
+			.withAsIncomplete()		// service doesn't have to be final data, that can be a separate app logic check
+			.withFromRpc();
 		
 		// for SendForget don't wait for a callback, just return success
 		if ("SendForget".equals(msg.getFieldAsString("RespondTag"))) {

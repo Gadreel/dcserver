@@ -105,9 +105,23 @@ public class TenantData {
 		}
 	}
 	
-	public void verifyCreds(String username, String password, OperationOutcomeStruct callback) throws OperatingContextException {
+	public void preflightCreds(String username, String password, OperationOutcomeStruct callback) throws OperatingContextException {
 		if (ResourceHub.getResources().getDatabases().hasDefaultDatabase()) {
-			ServiceHub.call(RequestFactory.signInRequest(username, password, null)
+			ServiceHub.call(RequestFactory.signInPreflightRequest(username, password)
+					.toServiceRequest()
+					.withOutcome(callback)
+			);
+		}
+		else {
+			Logger.error("Module not enabled");
+			this.clear(null, callback);
+			return;
+		}
+	}
+
+	public void verifyCreds(String username, String password, String code, OperationOutcomeStruct callback) throws OperatingContextException {
+		if (ResourceHub.getResources().getDatabases().hasDefaultDatabase()) {
+			ServiceHub.call(RequestFactory.signInRequest(username, password, null, code)
 					.toServiceRequest()
 					.withOutcome(callback)
 			);

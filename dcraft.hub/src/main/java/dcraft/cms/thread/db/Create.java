@@ -14,8 +14,8 @@ public class Create implements IStoredProc {
 		
 		TablesAdapter db = TablesAdapter.of(request);
 
-		String id = ThreadUtil.createThread(db, data.getFieldAsString("Title"), data.getFieldAsString("Type"),
-				data.getFieldAsString("From"));
+		String id = ThreadUtil.createThread(db, data.getFieldAsString("Title"), false, data.getFieldAsString("Type"),
+				data.getFieldAsString("From"), data.getFieldAsDateTime("Deliver"), data.getFieldAsDateTime("End"));
 
 		RecordStruct shared = data.getFieldAsRecord("SharedAttributes");
 

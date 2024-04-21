@@ -1,4 +1,4 @@
-import { defaultShaderStages, NodeFrame, MathNode, GLSLNodeParser, NodeBuilder } from 'three/nodes';
+import { defaultShaderStages, NodeFrame, MathNode, GLSLNodeParser, NodeBuilder, normalView } from 'three/nodes';
 import SlotNode from './SlotNode.js';
 import { PerspectiveCamera, ShaderChunk, ShaderLib, UniformsUtils, UniformsLib } from 'three';
 
@@ -10,11 +10,18 @@ const nodeShaderLib = {
 	MeshBasicNodeMaterial: ShaderLib.basic,
 	PointsNodeMaterial: ShaderLib.points,
 	MeshStandardNodeMaterial: ShaderLib.standard,
-	MeshPhysicalNodeMaterial: ShaderLib.physical
+	MeshPhysicalNodeMaterial: ShaderLib.physical,
+	MeshPhongNodeMaterial: ShaderLib.phong
 };
 
 const glslMethods = {
 	[ MathNode.ATAN2 ]: 'atan'
+};
+
+const precisionLib = {
+	low: 'lowp',
+	medium: 'mediump',
+	high: 'highp'
 };
 
 function getIncludeSnippet( name ) {
@@ -58,18 +65,6 @@ class WebGLNodeBuilder extends NodeBuilder {
 
 	}
 
-	addFlowCode( code ) {
-
-		if ( ! /;\s*$/.test( code ) ) {
-
-			code += ';';
-
-		}
-
-		super.addFlowCode( code + '\n\t' );
-
-	}
-
 	_parseShaderLib() {
 
 		const material = this.material;
@@ -80,6 +75,7 @@ class WebGLNodeBuilder extends NodeBuilder {
 
 		if ( material.isMeshPhysicalNodeMaterial ) type = 'MeshPhysicalNodeMaterial';
 		else if ( material.isMeshStandardNodeMaterial ) type = 'MeshStandardNodeMaterial';
+		else if ( material.isMeshPhongNodeMaterial ) type = 'MeshPhongNodeMaterial';
 		else if ( material.isMeshBasicNodeMaterial ) type = 'MeshBasicNodeMaterial';
 		else if ( material.isPointsNodeMaterial ) type = 'PointsNodeMaterial';
 		else if ( material.isLineBasicNodeMaterial ) type = 'LineBasicNodeMaterial';
@@ -103,6 +99,14 @@ class WebGLNodeBuilder extends NodeBuilder {
 
 		const { material, renderer } = this;
 
+		this.addSlot( 'fragment', new SlotNode( {
+			node: normalView,
+			nodeType: 'vec3',
+			source: getIncludeSnippet( 'clipping_planes_fragment' ),
+			target: 'vec3 TransformedNormalView = %RESULT%;',
+			inclusionType: 'append'
+		} ) );
+
 		if ( renderer.toneMappingNode && renderer.toneMappingNode.isNode === true ) {
 
 			this.addSlot( 'fragment', new SlotNode( {
@@ -122,7 +126,7 @@ class WebGLNodeBuilder extends NodeBuilder {
 				node: material.colorNode,
 				nodeType: 'vec4',
 				source: 'vec4 diffuseColor = vec4( diffuse, opacity );',
-				target: 'vec4 diffuseColor = %RESULT%;'
+				target: 'vec4 diffuseColor = %RESULT%; diffuseColor.a *= opacity;',
 			} ) );
 
 		}
@@ -136,10 +140,6 @@ class WebGLNodeBuilder extends NodeBuilder {
 				target: 'diffuseColor.a = %RESULT%;',
 				inclusionType: 'append'
 			} ) );
-
-		} else {
-
-			this.addCode( 'fragment', getIncludeSnippet( 'alphatest_fragment' ), 'diffuseColor.a = opacity;', this.shader );
 
 		}
 
@@ -354,17 +354,6 @@ class WebGLNodeBuilder extends NodeBuilder {
 
 					}
 
-					if ( material.thicknessNode && material.thicknessNode.isNode ) {
-
-						this.addSlot( 'fragment', new SlotNode( {
-							node: material.thicknessNode,
-							nodeType: 'float',
-							source: 'material.thickness = thickness;',
-							target: 'material.thickness = %RESULT%;'
-						} ) );
-
-					}
-
 					if ( material.attenuationDistanceNode && material.attenuationDistanceNode.isNode ) {
 
 						this.addSlot( 'fragment', new SlotNode( {
@@ -428,27 +417,21 @@ class WebGLNodeBuilder extends NodeBuilder {
 
 	}
 
-	getTexture( textureProperty, uvSnippet ) {
+	getTexture( texture, textureProperty, uvSnippet ) {
 
-		return `texture2D( ${textureProperty}, ${uvSnippet} )`;
+		if ( texture.isTextureCube ) {
 
-	}
+			return `textureCube( ${textureProperty}, ${uvSnippet} )`;
 
-	getTextureBias( textureProperty, uvSnippet, biasSnippet ) {
+		} else {
 
-		if ( this.material.extensions !== undefined ) this.material.extensions.shaderTextureLOD = true;
+			return `texture2D( ${textureProperty}, ${uvSnippet} )`;
 
-		return `textureLod( ${textureProperty}, ${uvSnippet}, ${biasSnippet} )`;
-
-	}
-
-	getCubeTexture( textureProperty, uvSnippet ) {
-
-		return `textureCube( ${textureProperty}, ${uvSnippet} )`;
+		}
 
 	}
 
-	getCubeTextureBias( textureProperty, uvSnippet, biasSnippet ) {
+	getTextureBias( texture, textureProperty, uvSnippet, biasSnippet ) {
 
 		if ( this.material.extensions !== undefined ) this.material.extensions.shaderTextureLOD = true;
 
@@ -460,29 +443,48 @@ class WebGLNodeBuilder extends NodeBuilder {
 
 		const uniforms = this.uniforms[ shaderStage ];
 
-		let snippet = '';
+		let output = '';
 
 		for ( const uniform of uniforms ) {
 
+			if ( /^(modelViewMatrix|projectionMatrix)$/.test( uniform.name ) )
+				continue;
+
+			let snippet = null;
+
 			if ( uniform.type === 'texture' ) {
 
-				snippet += `uniform sampler2D ${uniform.name}; `;
+				snippet = `sampler2D ${uniform.name}; `;
 
 			} else if ( uniform.type === 'cubeTexture' ) {
 
-				snippet += `uniform samplerCube ${uniform.name}; `;
+				snippet = `samplerCube ${uniform.name}; `;
 
 			} else {
 
 				const vectorType = this.getVectorType( uniform.type );
 
-				snippet += `uniform ${vectorType} ${uniform.name}; `;
+				snippet = `${vectorType} ${uniform.name}; `;
 
 			}
 
+			const precision = uniform.node.precision;
+
+			if ( precision !== null ) {
+
+				snippet = 'uniform ' + precisionLib[ precision ] + ' ' + snippet;
+
+			} else {
+
+				snippet = 'uniform ' + snippet;
+
+			}
+
+			output += snippet;
+
 		}
 
-		return snippet;
+		return output;
 
 	}
 
@@ -497,7 +499,7 @@ class WebGLNodeBuilder extends NodeBuilder {
 			for ( const attribute of attributes ) {
 
 				// ignore common attributes to prevent redefinitions
-				if ( attribute.name === 'uv' || attribute.name === 'position' || attribute.name === 'normal' )
+				if ( /^(position|normal|uv\d?)$/.test( attribute.name ) )
 					continue;
 
 				snippet += `attribute ${attribute.type} ${attribute.name}; `;
@@ -568,6 +570,12 @@ class WebGLNodeBuilder extends NodeBuilder {
 		const shaderProperty = getShaderStageProperty( shaderStage );
 
 		scope[ shaderProperty ] = scope[ shaderProperty ].replaceAll( source, target );
+
+	}
+
+	getVertexIndex() {
+
+		return 'gl_VertexID';
 
 	}
 

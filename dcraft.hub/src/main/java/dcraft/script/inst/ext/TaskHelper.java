@@ -27,6 +27,7 @@ import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.struct.BaseStruct;
+import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.task.*;
 import dcraft.util.StringUtil;
@@ -66,8 +67,21 @@ public class TaskHelper extends Instruction {
 			else if (StringUtil.isNotEmpty(code))
 				task.withWork(Script.of(code).toWork());
 
-			if (params != null)
+			if ((params == null) && (this.selectFirst("*") != null)) {
+				BaseStruct arg = null;
+
+				if (this.selectFirst("Field") != null) {
+					params = RecordStruct.record();
+					((RecordStruct) params).expandQuickRecord(stack, this);
+				} else {
+					params = ListStruct.list();
+					((ListStruct) params).expandQuickList(stack, this);
+				}
+			}
+
+			if (params != null) {
 				task.withParams(params);
+			}
 
 			// TODO support QueueHub as well
 

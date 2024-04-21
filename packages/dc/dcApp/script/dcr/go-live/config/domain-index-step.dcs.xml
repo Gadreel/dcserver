@@ -42,6 +42,7 @@ In the config.xml file there should be only one _Web_ tag and it should have the
 <Web
 	HtmlMode="Dynamic"
 	IndexUrl="https://designcraftadvertising.com/"
+	NotFoundPath="/"
 	SiteImage="/imgs/share-image.jpg"
 	SolidIcons="true"
 >

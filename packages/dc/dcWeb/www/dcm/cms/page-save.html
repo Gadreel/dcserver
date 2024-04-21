@@ -39,9 +39,10 @@
 							<h2>{$FeedName} : {$SplitPart.1}</h2>
 
 							<br />
+							<p style="margin-left: 15rem;" id="optionInfo">Select an option for more info on functionality.</p>
 
 							<dcf.HorizRadioGroup Label="Option" Name="Option-{$FeedHex}" value="Save">
-								<RadioButton Value="Save" Label="Save" />
+								<RadioButton Value="Save" Label="Save Preview" />
 								<RadioButton Value="Publish" Label="Publish" />
 								<RadioButton Value="Discard" Label="Discard" />
 							</dcf.HorizRadioGroup>
@@ -62,6 +63,24 @@
 	</dc.Body>
 	<Function Name="Load" Params="e"><![CDATA[
 			var page = this;
+
+			const btns = document.querySelectorAll("input");
+			const info = document.querySelector("#optionInfo");
+			const saveHelp = "Saves preview of changes and adds notes below to change history. Does NOT make changes live to website.";
+			info.innerText = saveHelp;
+
+			btns.forEach((btn) => {
+				btn.addEventListener("click", (e) => {
+					if (btn.value == "Save"){
+						info.innerText = saveHelp;
+					} else if (btn.value == "Publish") {
+						info.innerText = "Publishes all pending changes to live website.";
+					} else if (btn.value == "Discard") {
+						info.innerText = "Discards any pending changes and reverts page to current live version.";
+					}
+				})
+			})
+
 	]]></Function>
 	<Function Name="SaveRecord" Params="e"><![CDATA[
 			var page = this;

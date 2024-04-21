@@ -167,6 +167,7 @@ abstract public class BasicCustomIterator implements ICustomIterator {
         IndexKeyInfo levelKey = levels.get(0);
 
         // don't change the real from, may need it for other loops
+        // we don't currently support NULL for either From or To
         Object localFrom = levelKey.from;
         Object localTo = levelKey.to;
 
@@ -184,9 +185,15 @@ abstract public class BasicCustomIterator implements ICustomIterator {
                 localFrom = ByteUtil.extractValue(this.adapter.getRequest().getInterface().getOrPrevPeerKey(indexkeys.toArray()));
                 indexkeys.remove(indexkeys.size() - 1);
 
+                if (localFrom == null)
+                    return ExpressionResult.REJECTED;
+
                 indexkeys.add(localTo);     // find the actual end
                 localTo = ByteUtil.extractValue(this.adapter.getRequest().getInterface().getOrNextPeerKey(indexkeys.toArray()));
                 indexkeys.remove(indexkeys.size() - 1);
+
+                if ((localTo == null) || (DataUtil.compareCore(localFrom, localTo) < 0))
+                    return ExpressionResult.REJECTED;
 
                 while ((localFrom != null) && (DataUtil.compareCore(localFrom, localTo) >= 0)) {
                     indexkeys.add(localFrom);
@@ -207,9 +214,17 @@ abstract public class BasicCustomIterator implements ICustomIterator {
                 localFrom = ByteUtil.extractValue(this.adapter.getRequest().getInterface().getOrNextPeerKey(indexkeys.toArray()));
                 indexkeys.remove(indexkeys.size() - 1);
 
+                if (localFrom == null)
+                    return ExpressionResult.REJECTED;
+
                 indexkeys.add(localTo);     // find the actual end
                 localTo = ByteUtil.extractValue(this.adapter.getRequest().getInterface().getOrPrevPeerKey(indexkeys.toArray()));
                 indexkeys.remove(indexkeys.size() - 1);
+
+                if ((localTo == null) || (DataUtil.compareCore(localFrom, localTo) > 0))
+                    return ExpressionResult.REJECTED;
+
+                //System.out.println("search from / to: " + " - actual from: " + localFrom + " - actual to: " + localTo + " - looking for: " + levelKey.from);
 
                 while ((localFrom != null) && (DataUtil.compareCore(localFrom, localTo) <= 0)) {
                     indexkeys.add(localFrom);
@@ -242,7 +257,12 @@ abstract public class BasicCustomIterator implements ICustomIterator {
 
         IndexKeyInfo levelKey = levels.get(0);
 
+        //if ("Tags".equals(levelKey.keyName))
+        //    System.out.println("search tags");
+
         for (Object value : levelKey.values) {
+            Object currvalue = value;
+
             // only for Tags
             if ("Tags".equals(levelKey.keyName) && (value instanceof String) && ((String) value).endsWith("*")) {
                 String strvalue = (String) value;
@@ -250,7 +270,7 @@ abstract public class BasicCustomIterator implements ICustomIterator {
                 IndexKeyInfo altlevelKey = levelKey.deepCopy();
 
                 String from = strvalue.substring(0, strvalue.length() - 1);
-                String to = from.endsWith(":") ? from.substring(0, from.length() - 1) + ";" : from + ";";
+                String to = from.endsWith(":") ? from.substring(0, from.length() - 1) + ";" : from + "~";       // high ascii value
 
                 altlevelKey.srcValues = null;
                 altlevelKey.srcFrom = StringStruct.of(from);
@@ -267,11 +287,15 @@ abstract public class BasicCustomIterator implements ICustomIterator {
                 if (! subresult.resume)
                     return subresult;
 
-                continue;
+                // if ends with : then also collect direct matches, but if not then skip to next value
+                if (! from.endsWith(":"))
+                    continue;
+
+                currvalue = from.substring(0, from.length() - 1);
             }
 
             try {
-                indexkeys.add(value);
+                indexkeys.add(currvalue);
 
                 if (this.adapter.getRequest().getInterface().hasAny(indexkeys.toArray())) {
                     ExpressionResult subresult = (sublist.size() > 0) ? this.searchLevel(indexkeys, sublist) : this.searchTail(indexkeys);
@@ -285,7 +309,7 @@ abstract public class BasicCustomIterator implements ICustomIterator {
                 indexkeys.remove(indexkeys.size() - 1);
             }
             catch (DatabaseException x) {
-                Logger.error("Unable to scan record index " + value + " in db: " + x);
+                Logger.error("Unable to scan record index " + currvalue + " in db: " + x);
             }
         }
 
@@ -328,7 +352,7 @@ abstract public class BasicCustomIterator implements ICustomIterator {
                                 RecordStruct frec = this.fileAdapter.fileInfo(vault, path, scope);
 
                                 if ((frec != null) && !frec.getFieldAsBooleanOrFalse("IsFolder")) {
-                                    //System.out.println("Found: " + path + " - " + state + " - " + title);
+                                    //System.out.println("Found: " + path);
 
                                     ExpressionResult fileresult = this.recordFilter.check(this.fileAdapter, this.scope, vault, path, frec);
 

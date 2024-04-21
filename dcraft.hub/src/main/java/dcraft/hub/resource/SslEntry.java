@@ -108,7 +108,7 @@ public class SslEntry {
 				.ciphers(trust.getCiphers())
 				.protocols(trust.getProtocols().toArray(new String[0]))
 				.applicationProtocolConfig(apn)
-				.sslProvider(SslProvider.OPENSSL);
+				.sslProvider(OpenSsl.isAvailable() ? SslProvider.OPENSSL : SslProvider.JDK);
 	}
 	
 	public void loadSelfSignedCert(TrustResource trust) {

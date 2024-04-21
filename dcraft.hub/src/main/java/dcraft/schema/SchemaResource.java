@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import dcraft.filestore.CommonPath;
 import dcraft.hub.resource.ResourceBase;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.log.Logger;
@@ -551,6 +552,16 @@ public class SchemaResource extends ResourceBase {
 
 	public void loadService(Schema schema, XElement xml) {
 		this.service.load(schema, xml);
+	}
+
+	public OpInfo loadIsloatedInfo(CommonPath path, RecordStruct security, XElement opel) {
+		Schema schema = Schema.create("dynamic: " + path, this);
+
+		OpInfo info = new OpInfo();
+
+		info.op = this.service.loadIsloated(schema, security, opel);
+
+		return info;
 	}
 
 	public ListStruct toJsonDef(String... names) {

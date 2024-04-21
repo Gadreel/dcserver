@@ -320,6 +320,8 @@
 							<Field Name="Title" Type="dcmThread:dcmTitle" />
 							<Field Name="Type" Type="dcmThread:dcmMessageType" />
 							<Field Name="From" Type="dcmThread:dcmOriginator" />
+							<Field Name="Deliver" Type="dcmThread:dcmTargetDate" />
+							<Field Name="End" Type="dcmThread:dcmEndDate" />
 							<Field Name="SharedAttributes" Type="AnyRecord" />
 						</RecordRequest>
 						<RecordResponse>

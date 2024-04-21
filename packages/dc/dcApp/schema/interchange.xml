@@ -24,6 +24,8 @@
 
 	<Shared>
 		<Record Id="dciAuthorizeDotNetInterchange" Class="dcraft.interchange.authorize.AuthInterchange" />
+		<Record Id="dciIContactAdapter" Class="dcraft.interchange.icontact.IContactAdapter" />
 		<Record Id="dciTaxJarAdapter" Class="dcraft.interchange.taxjar.TaxJarAdapter" />
+		<Record Id="dciMapAdapter" Class="dcraft.util.map.MapAdapter" />
 	</Shared>
 </Schema>
