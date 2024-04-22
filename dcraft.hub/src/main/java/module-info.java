@@ -7,17 +7,33 @@ module dcraft.hub {
   requires java.compiler;
   requires java.management;
   requires dcraft.third;
-  requires io.netty.all;
+  requires io.netty.buffer;
+  requires io.netty.codec;
+  requires io.netty.codec.http;
+  requires io.netty.common;
+  requires io.netty.handler;
+  requires io.netty.resolver;
+  requires io.netty.transport;
+  requires io.netty.internal.tcnative.openssl.linux.aarch_64;
+  requires io.netty.internal.tcnative.openssl.linux.x86_64;
+  requires io.netty.internal.tcnative.openssl.osx.aarch_64;
+  requires io.netty.internal.tcnative.openssl.windows.x86_64;
+  requires io.netty.transport.classes.epoll;
+  requires io.netty.transport.unix.common;
+  requires io.netty.transport.epoll.linux.aarch_64;
+  requires io.netty.transport.epoll.linux.x86_64;
+  requires io.netty.transport.kqueue.osx.aarch_64;
   requires org.bouncycastle.pg;
-  requires org.bouncycastle.provider;
   requires org.bouncycastle.pkix;
+  requires org.bouncycastle.util;
+  requires bcprov.ext.jdk15to18;
   requires org.threeten.extra;
   requires org.apache.commons.codec;
   requires org.apache.commons.compress;
   requires org.apache.pdfbox;
-  requires jsch;
+  requires com.jcraft.jsch;
   requires rocksdbjni;
-  requires commons.logging;
+  requires org.apache.commons.logging;
   requires org.shredzone.acme4j;
   requires org.shredzone.acme4j.utils;
   requires java.ipv6;
@@ -29,3 +45,4 @@ module dcraft.hub {
   requires org.jsoup;
   requires org.mariadb.jdbc;
 }
+
