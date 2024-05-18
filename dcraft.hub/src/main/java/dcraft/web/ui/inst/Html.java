@@ -177,6 +177,8 @@ public class Html extends Base {
 		if (this.headdone)
 			return;
 
+		boolean mjsmode = Struct.objectToBooleanOrFalse(this.attr("Async"));
+
 		Base body = (Base) this.find("body");
 		
 		if (body == null) {
@@ -519,7 +521,24 @@ $(document).ready(function() {
 			
 			try (OutputWrapper out = new OutputWrapper(mem)) {
 				try (PrintStream ps = new PrintStream(out)) {
-					ps.append("function dcReadyScript() {\n");
+					if (mjsmode) {
+						for (XElement func : this.selectAll("Function")) {
+							if (! "Init".equals(func.getAttribute("Mode")))
+								continue;
+
+							String code = StringUtil.stripTrailingWhitespace(func.getText());
+
+							if ((code.length() == 0) || (code.charAt(0) != '\n'))
+								ps.append("\n");
+
+							ps.append(code);
+
+							ps.append("\n");
+							ps.append("\n");
+						}
+					}
+
+					ps.append("globalThis.dcReadyScript = async function() {\n");
 					
 					ps.append("if (! dc.handler)\n\tdc.handler = { };\n\n");
 					
@@ -576,6 +595,17 @@ $(document).ready(function() {
 					ps.append("\n\n");
 					ps.append("\tdc.pui.Loader.init();\n");
 					ps.append("};\n");
+
+					ps.append("\n\n");
+
+					/*
+					if (mjsmode) {
+						ps.append("$(document).ready(function() {\n");
+						ps.append("\tdcReadyScript();\n");
+						ps.append("});\n");
+					}
+
+					 */
 				}
 			}
 			catch (IOException x ) {
@@ -585,10 +615,18 @@ $(document).ready(function() {
 			// TODO nounce inline script - CSP like this
 			// script-src 'strict-dynamic' 'nonce-abcdefg'
 			// https://www.html5rocks.com/en/tutorials/security/content-security-policy/
-			
-			head.with(W3.tag("script")
-					.with(XRawText.of(mem.toString()))
-			);
+
+			if (mjsmode) {
+				head.with(W3.tag("script")
+						.attr("type", "module")
+						.with(XRawText.of(mem.toString()))
+				);
+			}
+			else {
+				head.with(W3.tag("script")
+						.with(XRawText.of(mem.toString()))
+				);
+			}
 		}
 		
 		super.renderAfterChildren(state);

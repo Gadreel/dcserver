@@ -238,12 +238,6 @@ public class Task extends RecordStruct {
 
 		return this;
 	}
-	
-	public Task withNodeScript(String path) {
-		this.with("ScriptPath", path);
-
-		return this;
-	}
 
 	public Task withScript(CommonPath path) {
 		this.with("ScriptPath", path);
@@ -272,9 +266,6 @@ public class Task extends RecordStruct {
 
 						this.work = scrpt.toWork();
 					}
-				}
-				else if (scriptPath.endsWith(".js")) {
-					this.work = NodeWork.of(CommonPath.from(scriptPath));
 				}
 			}
 			else if (this.isNotFieldEmpty("ScriptLocalPath")) {

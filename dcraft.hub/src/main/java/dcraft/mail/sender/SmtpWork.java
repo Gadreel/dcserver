@@ -14,7 +14,7 @@
 #    * Andy White
 #
 ************************************************************************ */
-package dcraft.mail;
+package dcraft.mail.sender;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
@@ -40,32 +39,27 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
-import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.util.LogOutputStream;
 import dcraft.filestore.FileStoreFile;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.log.DebugLevel;
 import dcraft.log.Logger;
 import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
 import dcraft.struct.scalar.StringStruct;
 import dcraft.task.StateWork;
 import dcraft.task.StateWorkStep;
 import dcraft.task.TaskContext;
-import dcraft.util.HexUtil;
 import dcraft.util.IOUtil;
 import dcraft.util.Memory;
 import dcraft.util.StringUtil;
 import dcraft.util.io.InputWrapper;
 import dcraft.util.io.OutputWrapper;
 import dcraft.web.md.MarkdownUtil;
-import dcraft.web.ui.UIUtil;
 import dcraft.xml.XElement;
 
 public class SmtpWork extends StateWork {

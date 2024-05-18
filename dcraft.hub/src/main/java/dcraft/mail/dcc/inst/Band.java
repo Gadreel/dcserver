@@ -74,17 +74,20 @@ public class Band extends Base {
 
 		emailContainer.with(bandTableStart);
 
+		XElement emailContainerCell = W3.tag("td");
+
 		XElement emailContainerInner = W3.tag("table")
 				.attr("role", "presentation")
 				.attr("cellspacing", "0")
 				.attr("cellpadding", "0")
 				.attr("border", "0")
 				.attr("width", "100%")
-				.attr("style", "margin: auto;");
+				.attr("style", "margin: auto;")
+				.with(W3.tag("tr").with(emailContainerCell));
 
 		if (hiddenchildren != null) {
 			for (XNode n : hiddenchildren)
-				emailContainerInner.add(n);
+				emailContainerCell.add(n);
 		}
 
 		emailContainer.with(emailContainerInner);

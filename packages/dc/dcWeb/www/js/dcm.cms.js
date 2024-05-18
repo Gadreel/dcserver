@@ -936,6 +936,66 @@ dc.pui.TagFuncs['dcm.ImageWidget']['getParams'] = function(entry, node) {
 };
 
 
+if (! dc.pui.TagFuncs['dcm.Button'])
+	dc.pui.TagFuncs['dcm.Button'] = { };
+
+dc.pui.TagFuncs['dcm.Button']['doCmsInitWidget'] = function(entry, node) {
+	var widget = this;
+};
+
+dc.pui.TagFuncs['dcm.Button']['edit'] = function(entry, node) {
+	var widget = this;
+
+	var params = entry.callTagFunc(node, 'getParams');
+
+	// TODO
+	dc.pui.Dialog.loadPage('/dcm/cms/button-widget-props/' + params.Feed, params);
+};
+
+dc.pui.TagFuncs['dcm.Button']['getParams'] = function(entry, node) {
+	var pel = $(node).closest('*[data-cms-type="feed"]').get(0);
+
+	if (! pel)
+		return null;
+
+	return {
+		Feed: $(pel).attr('data-cms-feed'),
+		Path: $(pel).attr('data-cms-path'),
+		Id: $(node).attr('id')
+	};
+};
+
+
+if (! dc.pui.TagFuncs['dcm.Link'])
+	dc.pui.TagFuncs['dcm.Link'] = { };
+
+dc.pui.TagFuncs['dcm.Link']['doCmsInitWidget'] = function(entry, node) {
+	var widget = this;
+};
+
+dc.pui.TagFuncs['dcm.Link']['edit'] = function(entry, node) {
+	var widget = this;
+
+	var params = entry.callTagFunc(node, 'getParams');
+
+	// TODO
+	dc.pui.Dialog.loadPage('/dcm/cms/button-widget-props/' + params.Feed, params);
+};
+
+dc.pui.TagFuncs['dcm.Link']['getParams'] = function(entry, node) {
+	var pel = $(node).closest('*[data-cms-type="feed"]').get(0);
+
+	if (! pel)
+		return null;
+
+	return {
+		Feed: $(pel).attr('data-cms-feed'),
+		Path: $(pel).attr('data-cms-path'),
+		Id: $(node).attr('id')
+	};
+};
+
+
 if (! dc.pui.TagFuncs['dcm.BannerWidget'])
 	dc.pui.TagFuncs['dcm.BannerWidget'] = { };
 

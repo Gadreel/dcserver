@@ -2,6 +2,8 @@ package dcraft.mail.adapter;
 
 import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.log.count.CountHub;
+import dcraft.mail.CommInfo;
 import dcraft.mail.IEmailOutputWork;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
@@ -15,27 +17,31 @@ import java.nio.file.Path;
 // TODO support stream attachments someday
 
 abstract public class BaseAdapter extends ChainWork implements IEmailOutputWork {
-    protected CommonPath emailpath = null;
-    protected Path file = null;
-    protected String view = null;
+    protected CommInfo commInfo = null;
 
-    protected boolean runonce = false;
-
-    protected RecordStruct result = RecordStruct.record();
-
-    public Path getFile() {
-        return this.file;
-    }
+    //protected RecordStruct result = RecordStruct.record();
 
     @Override
+    public CommInfo getInfo() {
+        return this.commInfo;
+    }
+
+    /*
     public CommonPath getPath() {
-        return this.emailpath;
+        return this.commInfo.folder;
+    }
+
+     */
+
+    @Override
+    public void init(CommInfo info) throws OperatingContextException {
+        this.commInfo = info;
     }
 
     @Override
-    public void init(Path file, CommonPath email, String view) throws OperatingContextException {
-        this.emailpath = email;
-        this.file = file;
-        this.view = view;
+    protected void init(TaskContext taskctx) throws OperatingContextException {
+        super.init(taskctx);
+
+        CountHub.countObjects("dcCommRunCount-" + taskctx.getTenant().getAlias(), this);
     }
 }

@@ -1,0 +1,50 @@
+<dcs.Script>
+	<dcdb.LoadRecord Table="dccCommSend" Id="$_Param.SendId" Result="SendData">
+		<Select Field="dccUuid" As="Uuid" />
+		<Select Field="dccPath" As="Path" />
+		<Select Field="dccDisplayName" As="DisplayName" />
+		<Select Field="dccStatus" As="Status" />
+		<Select Field="dccArgs" As="Args" />
+		<SelectSubquery Field="dccTrackerId" As="Tracker">
+			<Select Field="Id" />
+			<Select Field="dccDisplayAddress" As="Address" />
+		</SelectSubquery>
+	</dcdb.LoadRecord>
+
+	<dcs.Info>send email background task: {$_Param.SendId} - {$SendData.Path}</dcs.Info>
+
+	<dcs.Var Name="Comm" Type="dccCommAdapter">
+		<BuildContent
+			Channel="email"
+			Path="$SendData.Path"
+			Args="$_Param"
+			Result="MessageContent"
+		/>
+	</dcs.Var>
+
+	<dcs.Info>content: {$MessageContent}</dcs.Info>
+
+	<dcs.With Target="$MessageContent">
+		<SetField Name="To" Value="{$SendData.DisplayName} &lt;{$SendData.Tracker.0.Address}&gt;" />
+		<SetField Name="Path" Value="$SendData.Path" />
+		<SetField Name="Args" Value="$SendData.Args" />
+	</dcs.With>
+
+	<dcs.Info>content ext: {$SendData} -- {$MessageContent}</dcs.Info>
+
+	<dcs.With Target="$_Param">
+		<SetField Name="Request" Value="$MessageContent" />
+	</dcs.With>
+
+	<dcs.With Target="$Comm">
+		<Deliver
+			Channel="email"
+			Args="$_Param"
+			Result="DeliverInfo"
+		/>
+	</dcs.With>
+
+	<dcs.Info>deliver: {$DeliverInfo}</dcs.Info>
+
+	<dcs.Exit Scope="Task" />
+</dcs.Script>

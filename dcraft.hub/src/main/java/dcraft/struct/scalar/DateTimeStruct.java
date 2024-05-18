@@ -104,11 +104,11 @@ public class DateTimeStruct extends ScalarStruct {
 			this.value = ZonedDateTime.now();
 		
 		if ("Now".equals(op)) {
-			String zone = StackUtil.stringFromElement(stack, code, "Zone", "default").toLowerCase();
+			String zone = StackUtil.stringFromElement(stack, code, "Zone", "default"); //.toLowerCase();
 
-			if ("default".equals(zone))
+			if ("default".equals(zone) || "Default".equals(zone))
 				this.value = ZonedDateTime.now();
-			else if ("context".equals(zone))
+			else if ("context".equals(zone) || "Context".equals(zone))
 				this.value = TimeUtil.nowInContext();
 			else
 				this.value = ZonedDateTime.now(ZoneId.of(zone));
@@ -203,11 +203,20 @@ public class DateTimeStruct extends ScalarStruct {
 			String result = StackUtil.stringFromElement(stack, code, "Result");
 			String format = StackUtil.stringFromElement(stack, code, "Pattern");
 
-			String out = DateTimeFormatter.ofPattern(format)
-					.withZone(ZoneId.of(ResourceHub.getResources().getLocale().getDefaultChronology()))
-					.format(this.value);
+			String zone = StackUtil.stringFromElement(stack, code, "Zone", "default"); //.toLowerCase();
+			ZoneId zoneId = null;
 
-			StackUtil.addVariable(stack, result, StringStruct.of(out));
+			if ("default".equals(zone) || "Default".equals(zone))
+				zoneId = ZoneId.of(ResourceHub.getResources().getLocale().getDefaultChronology());
+			else if ("context".equals(zone) || "Context".equals(zone))
+				zoneId = TimeUtil.zoneInContext();
+			else
+				zoneId = ZoneId.of(zone);
+
+			String out = DateTimeFormatter.ofPattern(format).withZone(zoneId).format(this.value);
+
+			if (StringUtil.isNotEmpty(result))
+				StackUtil.addVariable(stack, result, StringStruct.of(out));
 
 			return ReturnOption.CONTINUE;
 		}

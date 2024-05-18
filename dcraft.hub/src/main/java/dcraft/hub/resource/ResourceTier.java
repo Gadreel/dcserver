@@ -8,6 +8,7 @@ import dcraft.db.DatabaseResource;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.locale.LocaleResource;
 import dcraft.log.Logger;
+import dcraft.mail.CommResource;
 import dcraft.schema.SchemaResource;
 import dcraft.script.ScriptResource;
 import dcraft.script.work.ReturnOption;
@@ -289,17 +290,17 @@ public class ResourceTier extends CompositeStruct {
 		return r;
 	}
 
-	public NodeResource getNodes() {
-		return (NodeResource) this.get("Node");
+	public CommResource getComm() {
+		return (CommResource) this.get("Comm");
 	}
 
-	synchronized public NodeResource getOrCreateTierNodes() {
-		NodeResource r = (NodeResource) this.getTier("Node");
+	synchronized public CommResource getOrCreateTierComm() {
+		CommResource r = (CommResource) this.getTier("Comm");
 
 		if (r != null)
 			return r;
 
-		r = new NodeResource();
+		r = new CommResource();
 
 		this.with(r);
 

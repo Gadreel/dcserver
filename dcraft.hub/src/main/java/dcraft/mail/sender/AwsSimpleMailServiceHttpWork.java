@@ -1,4 +1,4 @@
-package dcraft.mail;
+package dcraft.mail.sender;
 
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcomeComposite;
@@ -8,13 +8,13 @@ import dcraft.struct.RecordStruct;
 import dcraft.task.IWork;
 import dcraft.task.TaskContext;
 
-public class SimpleSmsWork implements IWork {
+public class AwsSimpleMailServiceHttpWork implements IWork {
     protected RecordStruct params = null;
 
-    public SimpleSmsWork() {
+    public AwsSimpleMailServiceHttpWork() {
     }
 
-    public SimpleSmsWork(RecordStruct params) {
+    public AwsSimpleMailServiceHttpWork(RecordStruct params) {
         this.params = params;
     }
 
@@ -23,7 +23,7 @@ public class SimpleSmsWork implements IWork {
         // params in should be like what we see in MailUtil.createSimpleSMSParams
         RecordStruct paramsIn = (this.params != null) ? this.params : taskctx.getFieldAsRecord("Params");
 
-        AWSSMS.sendEmail(null, paramsIn.getFieldAsRecord("Sms"), new OperationOutcomeComposite() {
+        AWSSMS.sendEmail(null, paramsIn.getFieldAsRecord("AwsMailHttp"), new OperationOutcomeComposite() {
             @Override
             public void callback(CompositeStruct result) throws OperatingContextException {
                 System.out.println("done: " + result);

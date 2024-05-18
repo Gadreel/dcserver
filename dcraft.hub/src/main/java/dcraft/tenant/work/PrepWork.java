@@ -377,6 +377,12 @@ public class PrepWork extends StateWork {
 			if (Files.exists(spath))
 				resources.getOrCreateTierScripts().withPath(spath);
 
+			Path commpath = this.tenant.resolvePath("communicate");
+
+			if (Files.exists(commpath))
+				resources.getOrCreateTierComm().withPath(commpath);
+
+			/*
 			spath = pkg.getPath().resolve("node-modules");
 
 			if (Files.exists(spath))
@@ -386,6 +392,8 @@ public class PrepWork extends StateWork {
 
 			if (Files.exists(spath))
 				resources.getOrCreateTierNodes().withScript(spath);
+
+			 */
 		}
 
 		// --- load tenant level script paths, if any ---
@@ -400,6 +408,12 @@ public class PrepWork extends StateWork {
 		if (Files.exists(spath))
 			resources.getOrCreateTierScripts().withPath(spath);
 
+		Path commpath = this.tenant.resolvePath("communicate");
+
+		if (Files.exists(commpath))
+			resources.getOrCreateTierComm().withPath(commpath);
+
+		/*
 		spath = this.tenant.resolvePath("node-modules");
 
 		if (Files.exists(spath))
@@ -409,6 +423,8 @@ public class PrepWork extends StateWork {
 
 		if (Files.exists(spath))
 			resources.getOrCreateTierNodes().withScript(spath);
+
+		 */
 
 		ConfigResource config = resources.getOrCreateTierConfig();
 		
@@ -667,10 +683,18 @@ public class PrepWork extends StateWork {
 					if (Files.exists(spath))
 						site.getResourcesOrCreate(resources).getOrCreateTierScripts().withPath(spath);
 
+					Path commpath = site.resolvePath("communicate");
+
+					if (Files.exists(commpath))
+						site.getResourcesOrCreate(resources).getOrCreateTierComm().withPath(commpath);
+
+					/*
 					spath = site.resolvePath("node");
 
 					if (Files.exists(spath))
 						resources.getOrCreateTierNodes().withScript(spath);
+
+					 */
 				}
 				
 				for (XElement del : sconfig.getTagListLocal("Domain")) {
@@ -1040,14 +1064,10 @@ public class PrepWork extends StateWork {
 			}
 		}
 
-		for (XElement adaptor : sconfig.getTagListDeepFirst("Email.ExtAdapter")) {
-			String classname = adaptor.getAttribute("Class");
-			String ext = adaptor.getAttribute("Ext");
+		ResourceTier resources = this.tenant.getTierResources();
 
-			if (StringUtil.isEmpty(classname) || StringUtil.isEmpty(ext))
-				continue;
-
-			site.addEmailExtAdapater(ext, classname);
+		for (XElement handler : sconfig.getTagListDeepFirst("Comm.Handler")) {
+			site.getResourcesOrCreate(resources).getOrCreateTierComm().addEmailHandler(handler);
 		}
 
 		// TODO enable the web cache Work

@@ -107,14 +107,14 @@ public class FeedUtilDb {
 		FileStoreVault fvault = OperationContext.getOrThrow().getSite().getFeedsVault();
 
 		if (fvault == null) {
-			Logger.error("Missing Feeds vault");
+			Logger.error("Missing Feeds vault from site: " + OperationContext.getOrThrow().getSite().getAlias());
 			return;
 		}
 
 		FileStore fs = fvault.getFileStore();
 
 		if (!(fs instanceof LocalStore)) {
-			Logger.error("Feeds vault must be local");  // for now
+			Logger.error("Feeds vault must be local, on site: " + OperationContext.getOrThrow().getSite().getAlias());  // for now
 			return;
 		}
 
@@ -133,6 +133,12 @@ public class FeedUtilDb {
 		SchemaResource schemares = ResourceHub.getResources().getSchema();
 
 		RecordStruct feedDef = FeedUtil.getFeedDefinition(opath.getName(1));
+
+		if (feedDef == null) {
+			Logger.error("Missing feed definition: " + path);
+			return;
+		}
+
 		ListStruct fieldMap = feedDef.getFieldAsList("FieldMap");
 
 		// shared fields

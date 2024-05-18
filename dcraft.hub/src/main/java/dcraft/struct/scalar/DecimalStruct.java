@@ -166,7 +166,7 @@ public class DecimalStruct extends ScalarStruct {
 			// TODO support other rounding modes and scales - see integer
 
 			try {
-				this.value = this.value.divide(Struct.objectToDecimal(sref), 6, RoundingMode.HALF_EVEN);
+				this.value = this.value.divide(Struct.objectToDecimal(sref), 6, RoundingMode.HALF_UP);
 			}
 			catch (Exception x) {
 				Logger.error("Error doing " + code.getName() + ": " + x);
@@ -176,7 +176,7 @@ public class DecimalStruct extends ScalarStruct {
 		}
 		else if ("Scale".equals(code.getName())) {
 			int size = (int) StackUtil.intFromElement(stack, code, "Size", 2);
-			this.value = this.value.setScale(size, RoundingMode.HALF_EVEN);
+			this.value = this.value.setScale(size, RoundingMode.HALF_UP);
 
 			// TODO support other rounding modes
 

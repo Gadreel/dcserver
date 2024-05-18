@@ -1,22 +1,32 @@
 package dcraft.mail.adapter;
 
+import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationContext;
-import dcraft.log.count.CountHub;
+import dcraft.mail.CommInfo;
 import dcraft.mail.MailUtil;
 import dcraft.script.StackUtil;
 import dcraft.struct.RecordStruct;
-import dcraft.struct.scalar.StringStruct;
 import dcraft.task.IWork;
 import dcraft.task.TaskContext;
 import dcraft.util.IOUtil;
 
-public class StaticAdapter extends BaseAdapter {
+import java.nio.file.Path;
+
+public class HtmlBasicAdapter extends BaseAdapter {
+	protected Path file = null;
+
+	@Override
+	public void init(CommInfo info) throws OperatingContextException {
+		super.init(info);
+
+		// TODO search locales
+
+		this.file = ResourceHub.getResources().getComm().findCommFile(info.folder.resolve("code-email.html"));
+	}
+
 	@Override
 	protected void init(TaskContext taskctx) throws OperatingContextException {
 		super.init(taskctx);
-
-		CountHub.countObjects("dcEmailStaticCount-" + OperationContext.getOrThrow().getTenant().getAlias(), this);
 
 		StringBuilder htmlBuffer = new StringBuilder();
 		StringBuilder textBuffer = new StringBuilder();
@@ -24,9 +34,9 @@ public class StaticAdapter extends BaseAdapter {
 		this.then(new IWork() {
 			@Override
 			public void run(TaskContext taskctx) throws OperatingContextException {
-				CharSequence html = MailUtil.processSSIIncludes(IOUtil.readEntireFile(StaticAdapter.this.file), StaticAdapter.this.view);
+				CharSequence html = MailUtil.processSSIIncludes(IOUtil.readEntireFile(HtmlBasicAdapter.this.file));
 
-				html = StackUtil.resolveValueToString(StaticAdapter.this, html.toString());
+				html = StackUtil.resolveValueToString(HtmlBasicAdapter.this, html.toString());
 
 				// TODO support macros?
 

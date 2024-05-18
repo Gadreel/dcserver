@@ -19,11 +19,9 @@ package dcraft.script.inst.file;
 import dcraft.filestore.CollectionSourceStream;
 import dcraft.filestore.FileStoreFile;
 import dcraft.filestore.IFileCollection;
-import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
-import dcraft.mail.SmtpWork;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
 import dcraft.script.work.ExecuteState;
@@ -34,22 +32,16 @@ import dcraft.stream.StreamFragment;
 import dcraft.stream.StreamWork;
 import dcraft.stream.file.MemorySourceStream;
 import dcraft.struct.BaseStruct;
-import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.BinaryStruct;
-import dcraft.struct.scalar.StringStruct;
-import dcraft.util.StringUtil;
 import dcraft.util.chars.Utf8Encoder;
 import dcraft.web.ui.HtmlPrinter;
 import dcraft.web.ui.inst.W3;
-import dcraft.web.ui.inst.W3Closed;
 import dcraft.xml.XElement;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 
 public class Stream extends Instruction {
 	static public Stream tag() {

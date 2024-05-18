@@ -14,18 +14,15 @@
 #    * Andy White
 #
 ************************************************************************ */
-package dcraft.mail;
+package dcraft.mail.sender;
 
-import com.sun.mail.util.LogOutputStream;
 import dcraft.filestore.FileStoreFile;
 import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationOutcome;
 import dcraft.hub.op.OperationOutcomeComposite;
-import dcraft.hub.op.OperationOutcomeEmpty;
 import dcraft.interchange.aws.AWSSMS;
-import dcraft.log.DebugLevel;
 import dcraft.log.Logger;
 import dcraft.struct.BaseStruct;
 import dcraft.struct.CompositeStruct;
@@ -45,7 +42,6 @@ import dcraft.xml.XElement;
 
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
-import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.internet.*;
 import java.io.*;
@@ -57,7 +53,7 @@ import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public class SmsWork extends StateWork {
+public class AwsSimpleMailServiceSmtpWork extends StateWork {
 	public StateWorkStep prepStep = null;
 	public StateWorkStep attachStep = null;
 	public StateWorkStep sendStep = null;
@@ -72,10 +68,10 @@ public class SmsWork extends StateWork {
 	protected int attachcnt = 0;
 	protected int currattach = 0;
 
-	public SmsWork() {
+	public AwsSimpleMailServiceSmtpWork() {
 	}
 
-	public SmsWork(RecordStruct params) {
+	public AwsSimpleMailServiceSmtpWork(RecordStruct params) {
 		this.params = params;
 	}
 
@@ -288,9 +284,9 @@ public class SmsWork extends StateWork {
 					apart.setDataHandler(new DataHandler(source));
 					apart.setFileName(name);
 
-					SmsWork.this.content.addBodyPart(apart);
+					AwsSimpleMailServiceSmtpWork.this.content.addBodyPart(apart);
 
-					SmsWork.this.currattach++;
+					AwsSimpleMailServiceSmtpWork.this.currattach++;
 				} 
 				catch (Exception x) {
 					Logger.error("dcSendMail unable to send message due to invalid fields.");
@@ -320,7 +316,7 @@ public class SmsWork extends StateWork {
 				@Override
 				public void callback(Memory result) throws OperatingContextException {
 					if (this.hasErrors())
-						SmsWork.this.transition(trun, doneStep);
+						AwsSimpleMailServiceSmtpWork.this.transition(trun, doneStep);
 					else
 						addAttach.accept(this.getResult());
 				}

@@ -163,41 +163,43 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 
 		Object fndpass = db.getScalar("dcUser", uid, "dcConfirmCode");
 
-		if (password.equals(fndpass)) {
-			Object ra = db.getScalar("dcUser", uid, "dcRecoverAt");
+		if (StringUtil.isNotEmpty(password)) {
+			if (password.equals(fndpass)) {
+				Object ra = db.getScalar("dcUser", uid, "dcRecoverAt");
 
-			if (ra == null) {
-				// if code matches then good login
-				if (! request.isReplicating() && ! confirmed)
-					db.setScalar("dcUser", uid, "dcConfirmed", true);
-
-				// if code matches then good login
-				this.signIn(request, db, uid);
-				return;
-			}
-
-			if (ra != null) {
-				ZonedDateTime radt = Struct.objectToDateTime(ra);
-				// TODO configure - per deploy? per tenant?
-				boolean issafe = false;
-
-				// user cannot login after 10 tries, but can still use a code within two hours if under 20 tries
-				if ((trustcnt < 20) && ! ZonedDateTime.now().minusHours(2).isAfter(radt)) {
-					issafe = true;
-				}
-				// can still use a code within two days if under 10 tries
-				else if ((trustcnt < 10) && ! ZonedDateTime.now().minusDays(2).isAfter(radt)) {
-					issafe = true;
-				}
-
-				if (issafe) {
+				if (ra == null) {
 					// if code matches then good login
-					if (! request.isReplicating() && ! confirmed)
+					if (!request.isReplicating() && !confirmed)
 						db.setScalar("dcUser", uid, "dcConfirmed", true);
 
-					// if code matches and has not expired then good login
+					// if code matches then good login
 					this.signIn(request, db, uid);
 					return;
+				}
+
+				if (ra != null) {
+					ZonedDateTime radt = Struct.objectToDateTime(ra);
+					// TODO configure - per deploy? per tenant?
+					boolean issafe = false;
+
+					// user cannot login after 10 tries, but can still use a code within two hours if under 20 tries
+					if ((trustcnt < 20) && !ZonedDateTime.now().minusHours(2).isAfter(radt)) {
+						issafe = true;
+					}
+					// can still use a code within two days if under 10 tries
+					else if ((trustcnt < 10) && !ZonedDateTime.now().minusDays(2).isAfter(radt)) {
+						issafe = true;
+					}
+
+					if (issafe) {
+						// if code matches then good login
+						if (!request.isReplicating() && !confirmed)
+							db.setScalar("dcUser", uid, "dcConfirmed", true);
+
+						// if code matches and has not expired then good login
+						this.signIn(request, db, uid);
+						return;
+					}
 				}
 			}
 		}

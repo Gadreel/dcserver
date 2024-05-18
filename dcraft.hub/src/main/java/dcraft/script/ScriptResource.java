@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 
 public class ScriptResource extends ResourceBase {
+	protected Map<String, Class<? extends XElement>> tagmap = new HashMap<>();
+
 	// operator is type specific - [Type][Name] = mutator
 	protected Map<String, Map<String, IOperator>> operationExtensions = new HashMap<>();
 	protected List<Path> paths = new ArrayList<>();
@@ -89,26 +91,27 @@ public class ScriptResource extends ResourceBase {
 		return null;
 	}
 
+	// this means we require a server restart when a new instruction is added
 	public Map<String, Class<? extends XElement>>  getParseMap() {
-		Map<String, Class<? extends XElement>> tagmap = new HashMap<>();
-		
-		for (XElement config : ResourceHub.getResources().getConfig().getTagListDeep("Instructions/Tag")) {
-			String name = config.getAttribute("Name");
-			String cname = config.getAttribute("Class");
-			
-			if (StringUtil.isNotEmpty(name) && StringUtil.isNotEmpty(cname)) {
-				Class<?> cclass = ResourceHub.getResources().getClassLoader().getClass(cname);
-				
-				if (cclass == null) {
-					Logger.warn("Invalid script element: " + cname);
-					continue;
+		if (this.tagmap.isEmpty()) {
+			for (XElement config : ResourceHub.getResources().getConfig().getTagListDeep("Instructions/Tag")) {
+				String name = config.getAttribute("Name");
+				String cname = config.getAttribute("Class");
+
+				if (StringUtil.isNotEmpty(name) && StringUtil.isNotEmpty(cname)) {
+					Class<?> cclass = ResourceHub.getResources().getClassLoader().getClass(cname);
+
+					if (cclass == null) {
+						Logger.warn("Invalid script element: " + cname);
+						continue;
+					}
+
+					this.tagmap.put(name, (Class<? extends XElement>) cclass);
 				}
-				
-				tagmap.put(name, (Class<? extends XElement>) cclass);
 			}
 		}
 		
-		return tagmap;
+		return this.tagmap;
 	}
 	
 	/*

@@ -32,7 +32,9 @@ import dcraft.script.work.StackWork;
 import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
 import dcraft.struct.scalar.StringStruct;
+import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
 import java.util.List;
@@ -132,6 +134,60 @@ public class AwsStore extends FileStore {
 			}
 
 			return ReturnOption.CONTINUE;
+		}
+
+		if ("FolderListingDeep".equals(code.getName())) {
+			BaseStruct spath = StackUtil.refFromElement(stack, code, "Path", true);
+
+			if (spath == null) {
+				Logger.error("Missing path");
+				return ReturnOption.CONTINUE;
+			}
+
+			String handle = StackUtil.stringFromElement(stack, code, "Result");
+
+			this.getFolderListingDeep(CommonPath.from(spath.toString()), new OperationOutcome<List<FileStoreFile>>() {
+				@Override
+				public void callback(List<FileStoreFile> result) throws OperatingContextException {
+					stack.setState(ExecuteState.DONE);
+
+					if (handle != null) {
+						StackUtil.addVariable(stack, handle, ListStruct.list(result));
+					}
+
+					OperationContext.getAsTaskOrThrow().resume();
+				}
+			});
+
+			return ReturnOption.AWAIT;
+		}
+
+		if ("CopyFile".equals(code.getName())) {
+			BaseStruct srcPath = StackUtil.refFromElement(stack, code, "SourcePath", true);
+
+			if (srcPath == null) {
+				Logger.error("Missing source path");
+				return ReturnOption.CONTINUE;
+			}
+
+			String destBucket = Struct.objectToString(StackUtil.refFromElement(stack, code, "DestinationBucket", true));
+			BaseStruct destPath = StackUtil.refFromElement(stack, code, "DestinationPath", true);
+
+			if (destPath == null) {
+				Logger.error("Missing destination path");
+				return ReturnOption.CONTINUE;
+			}
+
+			this.copyFile(CommonPath.from(srcPath.toString()), destBucket, CommonPath.from(destPath.toString()), new OperationOutcomeEmpty() {
+				@Override
+				public void callback() throws OperatingContextException {
+					stack.setState(ExecuteState.DONE);
+
+					OperationContext.getAsTaskOrThrow().resume();
+				}
+			});
+
+			return ReturnOption.AWAIT;
 		}
 
 		return super.operation(stack, code);
@@ -244,9 +300,22 @@ public class AwsStore extends FileStore {
 		f.getFolderListing(callback);
 	}
 
+	public void getFolderListingDeep(CommonPath path, OperationOutcome<List<FileStoreFile>> callback) throws OperatingContextException {
+		AwsStoreFile f = AwsStoreFile.of(this, path, false);
+
+		f.getFolderListingDeep(callback);
+	}
+
 	public RecordStruct presignUpload(CommonPath path) throws OperatingContextException {
 		AwsStoreFile f = AwsStoreFile.of(this, path, false);
 
 		return f.presignUpload();
+	}
+
+	public void copyFile(CommonPath sourcePath, String destBucket, CommonPath destPath, OperationOutcomeEmpty callback) throws OperatingContextException {
+		AwsStoreFile source = AwsStoreFile.of(this, sourcePath, false);
+		AwsStoreFile dest = AwsStoreFile.of(this, destPath, false);
+
+		source.copyFile(destBucket, dest, callback);
 	}
 }

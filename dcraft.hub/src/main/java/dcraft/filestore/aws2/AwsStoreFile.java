@@ -37,6 +37,7 @@ import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.HashUtil;
 import dcraft.util.Memory;
+import dcraft.util.StringUtil;
 import dcraft.util.web.DateParser;
 import dcraft.xml.XElement;
 
@@ -163,6 +164,63 @@ public class AwsStoreFile extends FileStoreFile {
 		CommonPath localPath = this.getPathAsCommon();
 
 		AWSS3.listObjects(connection, region, bucket, this.fullPath(), new OperationOutcome<>() {
+			@Override
+			public void callback(XElement result) throws OperatingContextException {
+				System.out.println("Got: " + result);
+
+				List<FileStoreFile> files = new ArrayList<>();
+
+				if (this.isNotEmptyResult()) {
+					for (XElement srcfile : result.selectAll("Contents")) {
+						CommonPath srcpath = CommonPath.from("/" + srcfile.selectFirstText("Key"));
+
+						srcpath = rootPath.relativize(srcpath);
+
+						if (srcpath.equals(localPath))
+							continue;
+
+						AwsStoreFile file = AwsStoreFile.of(AwsStoreFile.this.awsdriver, srcpath, true);
+
+						file
+								.withModificationTime(srcfile.selectAsDateTime("LastModified.0.#"))
+								.withSize(srcfile.selectAsInteger("Size.0.#"))
+								.withExists(true)
+								.withIsFolder(false)
+								.with("FileName", srcpath.getFileName())
+								.with("AwsETag", srcfile.selectFirstText("ETag").replace("\"", ""));
+
+						files.add(file);
+					}
+
+					for (XElement srcfile : result.selectAll("CommonPrefixes")) {
+						CommonPath srcpath = CommonPath.from("/" + srcfile.selectFirstText("Prefix"));
+
+						srcpath = rootPath.relativize(srcpath);
+
+						AwsStoreFile folder = AwsStoreFile.of(AwsStoreFile.this.awsdriver, srcpath, true);
+
+						folder
+								.withExists(true)
+								.withIsFolder(true)
+								.with("FileName", srcpath.getFileName());
+
+						files.add(folder);
+					}
+				}
+
+				callback.returnValue(files);
+			}
+		});
+	}
+
+	public void getFolderListingDeep(OperationOutcome<List<FileStoreFile>> callback) throws OperatingContextException {
+		XElement connection = this.awsdriver.getConnectSettings();
+		String region = this.awsdriver.getRegion();
+		String bucket = this.awsdriver.getBucket();
+		CommonPath rootPath = AwsStoreFile.this.awsdriver.getRootPath();
+		CommonPath localPath = this.getPathAsCommon();
+
+		AWSS3.listObjectsDeep(connection, region, bucket, this.fullPath(), new OperationOutcome<>() {
 			@Override
 			public void callback(XElement result) throws OperatingContextException {
 				System.out.println("Got: " + result);
@@ -372,6 +430,22 @@ public class AwsStoreFile extends FileStoreFile {
 
 		//  TODO permissions
 		return AWSS3.putFilePresign(connection, region, bucket, this.fullPath()).getResult();
+	}
+
+	public void copyFile(String destBucket, AwsStoreFile dest, OperationOutcomeEmpty callback) throws OperatingContextException {
+		XElement connection = this.awsdriver.getConnectSettings();
+		String region = this.awsdriver.getRegion();
+		String bucket = this.awsdriver.getBucket();
+
+		if (StringUtil.isEmpty(destBucket))
+			destBucket = bucket;
+
+		AWSS3.copyFile(connection, region, CommonPath.from("/" + bucket).resolve(this.fullPath()), destBucket, dest.fullPath(), new OperationOutcome<XElement>() {
+			@Override
+			public void callback(XElement result) throws OperatingContextException {
+				callback.returnEmpty();
+			}
+		});
 	}
 
 	@Override

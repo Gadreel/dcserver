@@ -148,7 +148,7 @@ public class EmailActivityPollWork extends StateWork {
 									rtype = 3;
 
 									if ("not-spam".equals(message.selectAsString("complaint.complaintFeedbackType"))) {
-										rtype = 1;		// reported as not spam - so treat as delivered
+										rtype = 1;		// reported as "not spam" - so treat as delivered
 									}
 								}
 

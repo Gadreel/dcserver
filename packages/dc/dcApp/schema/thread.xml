@@ -52,12 +52,6 @@
 			<Field Name="dcmPaymentAmount" Type="Decimal" />
 			<Field Name="dcmPaymentVerified" Type="Boolean" />
 			<Field Name="dcmPaymentTx" Type="dcMetaString" Indexed="True" />
-
-			<!-- for Custom Email Notice Activity Tracking, subid = address -->
-			<Field Name="dcmEmailAddress" Group="dcmEmailTracking" List="True" Type="dcMetaString" Indexed="True" />
-			<Field Name="dcmEmailMessageId" Group="dcmEmailTracking" List="True" Type="dcMetaString" Indexed="True" />
-			<Field Name="dcmEmailActivityId" Group="dcmEmailTracking" List="True" ForeignKey="dcmOutboundEmailActivity" />
-			<Field Name="dcmEmailState" Group="dcmEmailTracking" List="True" Type="dcmEmailTrackingStateTypeEnum" Indexed="True" />
 		</Table>
 
 		<Collector Name="dcmScanThread" Execute="dcraft.cms.thread.db.Scan" />
@@ -91,8 +85,6 @@
 
 		<Procedure Name="dcmServices.Thread.Email-LoadMessageSection" Execute="dcraft.cms.thread.db.email.LoadMessageSection" />
 		<Procedure Name="dcmServices.Thread.Email-UpdateMessageSection" Execute="dcraft.cms.thread.db.email.UpdateMessageSection" />
-
-		<Procedure Name="dcmServices.Thread.EmailActivityForThreadCustomRecorder" Execute="dcraft.cms.thread.db.email.EmailActivityForThreadCustomRecorder" />
 	</Database>
 
 	<Shared>
@@ -295,12 +287,7 @@
 			<Field Name="Party" Type="dcmThread:dcmParty" />
 		</Record>
 
-		<StringType Id="dcmEmailTrackingStateTypeEnum">
-			<StringRestriction Enum="Sent,Delivery,Bounce,Complaint" />
-		</StringType>
-
 		<Record Id="dcmThreadObject" Class="dcraft.cms.thread.schema.ThreadObject" />
-		<Record Id="dcmThreadEmailActivityCustomReporter" Class="dcraft.cms.thread.schema.EmailActivityForThreadCustomReporter" />
 	</Shared>
 
 	<Services>
@@ -441,21 +428,6 @@
 							<Field Name="Section" Type="dcMetaString" Required="True" />
 							<Field Name="Content" Type="String" Required="True" />
 						</RecordRequest>
-					</Op>
-					<Op Name="EmailActivityForThreadCustomRecorder">
-						<Description>
-							Link up to record email Activity reports for this thread to a custom managed list of email addresses.
-						</Description>
-						<RecordRequest Required="True">
-							<Field Name="Id" Type="Id" Required="True" />
-							<Field Name="MessageId" Type="dcMetaString" Required="True" />
-							<Field Name="ActualAddresses" Required="True">
-								<List Type="String" />
-							</Field>
-						</RecordRequest>
-						<RecordResponse>
-							<Field Name="Id" Type="Id" />
-						</RecordResponse>
 					</Op>
 				</Secure>
 				<Secure Badges="User">

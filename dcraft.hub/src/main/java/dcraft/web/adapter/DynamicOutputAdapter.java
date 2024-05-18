@@ -25,6 +25,7 @@ import dcraft.script.Script;
 import dcraft.script.StackUtil;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
+import dcraft.struct.Struct;
 import dcraft.struct.scalar.BooleanStruct;
 import dcraft.task.ChainWork;
 import dcraft.task.TaskContext;
@@ -121,6 +122,11 @@ public class DynamicOutputAdapter extends SsiOutputAdapter implements IOutputWor
 
 		// set at least one header so that the Headers struct is available in script
 		wctrl.getResponse().setHeader("Cache-Control", "no-cache");
+
+		String fname = this.getPath().getFileName();
+
+		if (fname.endsWith("_mjs") || fname.endsWith("_mjs.html"))
+			script.getXml().attr("Async", "true");
 
 		this
 				.then(UIUtil.dynamicToWork(ctx, script))

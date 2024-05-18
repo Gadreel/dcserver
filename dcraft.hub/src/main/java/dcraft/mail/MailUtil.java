@@ -1,12 +1,21 @@
 package dcraft.mail;
 
+import dcraft.db.BasicRequestContext;
+import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
+import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.Logger;
+import dcraft.mail.sender.AwsSimpleMailServiceHttpWork;
+import dcraft.mail.sender.AwsSimpleMailServiceSmtpWork;
+import dcraft.mail.sender.AwsUtil;
+import dcraft.mail.sender.SmtpWork;
+import dcraft.schema.SchemaResource;
 import dcraft.script.Script;
 import dcraft.script.StackUtil;
+import dcraft.service.ServiceRequest;
 import dcraft.struct.*;
 import dcraft.task.IParentAwareWork;
 import dcraft.task.IWork;
@@ -17,6 +26,7 @@ import dcraft.util.StringUtil;
 import dcraft.web.md.MarkdownUtil;
 import dcraft.web.ui.inst.Html;
 import dcraft.xml.XElement;
+import dcraft.xml.XmlReader;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
@@ -26,140 +36,36 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MailUtil {
-    static public final Pattern SSI_VIRTUAL_PATTERN = Pattern.compile("<!--#include virtual=\"(.*)\" -->");
+    static public final Pattern SSI_PATH_PATTERN = Pattern.compile("<!--#include path=\"(.*)\" -->");
 
-    static public IEmailOutputWork emailFindFile(Site site, CommonPath path, String view) throws OperatingContextException {
-        // =====================================================
-        //  if request has an extension do specific file lookup
-        // =====================================================
+    // add .v to end of comm name
+    static protected CommonPath toCommFolder(CommonPath path) {
+        if (path != null)
+            path = path.getParent().resolve(path.getFileName() + ".v");
 
-        if (Logger.isDebug())
-            Logger.debug("find file before ext check: " + path + " - " + view);
-
-        // if we have an extension then we don't have to do the search below
-        // never go up a level past a file (or folder) with an extension
-        if (path.hasFileExtension()) {
-            WebFindResult wpath = MailUtil.emailFindFilePath(site, path, view);
-
-            if (wpath != null)
-                return MailUtil.emailPathToAdapter(site, view, wpath);
-
-            // let caller decide if error - Logger.errorTr(150007);
-            return null;
-        }
-
-        // =====================================================
-        //  if request does not have an extension look for files
-        //  that might match this path or one of its parents
-        //  using the special extensions
-        // =====================================================
-
-        if (Logger.isDebug())
-            Logger.debug("find dyn file: " + path + " - " + view);
-
-        WebFindResult wpath = MailUtil.emailFindFilePath(site, path, view);
-
-        if (wpath == null) {
-            // let caller decide if error - Logger.errorTr(150007);
-            return null;
-        }
-
-        if (Logger.isDebug())
-            Logger.debug("find file path: " + wpath + " - " + path + " - " + view);
-
-        return MailUtil.emailPathToAdapter(site, view, wpath);
+        return path;
     }
 
-    static public IEmailOutputWork emailPathToAdapter(Site site, String view, WebFindResult wpath) throws OperatingContextException {
-        String filename = wpath.file.getFileName().toString();
-
-        int ldot = filename.indexOf('.');
-        String ext = (ldot >= 0) ? filename.substring(ldot) : null;
-
-        String classname = site.getEmailBuilder(ext);
-
-        if (StringUtil.isNotEmpty(classname)) {
-            try {
-                IEmailOutputWork outputWork = (IEmailOutputWork) site.getResources().getClassLoader().getInstance(classname);
-
-                outputWork.init(wpath.file, wpath.path, view);
-
-                return outputWork;
-            }
-            catch (Exception x) {
-                Logger.error("Bad Dynamic Email Adapter: " + x);
-            }
-        }
-
-        return null;
+    static public IWork buildSendEmailWork(RecordStruct params) throws OperatingContextException {
+        // TODO configure email services someday, right we assume AWS
+        return AwsUtil.buildSendEmailWork(params);
     }
 
-    static public WebFindResult emailFindFilePath(Site site, CommonPath path, String view) {
-        // figure out which section we are looking in
-        String sect = "email";
-
-        if (Logger.isDebug())
-            Logger.debug("find file path: " + path + " in " + sect);
-
-        // =====================================================
-        //  if request has an extension do specific file lookup
-        // =====================================================
-
-        // if we have an extension then we don't have to do the search below
-        // never go up a level past a file (or folder) with an extension
-        if (path.hasFileExtension()) {
-            Path spath = site.findSectionFile(sect, path.toString(), view);
-
-            if (spath == null)
-                return null;
-
-            return WebFindResult.of(spath, path);
-        }
-
-        // =====================================================
-        //  if request does not have an extension look for files
-        //  that might match this path or one of its parents
-        //  using the special extensions
-        // =====================================================
-
-        if (Logger.isDebug())
-            Logger.debug("find file path dyn: " + path + " in " + sect);
-
-        // we get here if we have no extension - thus we need to look for path match with specials
-        int pdepth = path.getNameCount();
-
-        Set<String> specialExtensions = site.getEmailExtensions();
-
-        // check file system
-        while (pdepth > 0) {
-            CommonPath ppath = path.subpath(0, pdepth);
-
-            // we want to check all extensions at folder level then go up the path
-            for (String ext : specialExtensions) {
-                Path cfile = site.findSectionFile(sect, ppath.toString() + ext, view);
-
-                if (cfile != null)
-                    return WebFindResult.of(cfile, ppath);
-            }
-
-            pdepth--;
-        }
-
-        // let caller decide if error
-        return null;
-    }
-
-    static public CharSequence processSSIIncludes(CharSequence content, String view) throws OperatingContextException {
+    // full path support only
+    // include sections like so:  /dcc/skeletons/tx.v/code-email-[section].[locale].html
+    static public CharSequence processSSIIncludes(CharSequence content) throws OperatingContextException {
         if (StringUtil.isEmpty(content))
             return null;
 
         OperationContext ctx = OperationContext.getOrThrow();
 
+        // allow for nested includes
+
         boolean checkmatches = true;
 
         while (checkmatches) {
             checkmatches = false;
-            Matcher m = MailUtil.SSI_VIRTUAL_PATTERN.matcher(content);
+            Matcher m = MailUtil.SSI_PATH_PATTERN.matcher(content);
 
             while (m.find()) {
                 String grp = m.group();
@@ -169,9 +75,7 @@ public class MailUtil {
                 vfilename = vfilename.substring(vfilename.indexOf('"') + 1);
                 vfilename = vfilename.substring(0, vfilename.indexOf('"'));
 
-                //System.out.println("include v file: " + vfilename);
-
-                Path sf = ctx.getSite().findSectionFile("email", vfilename, view);
+                Path sf = ctx.getSite().findSectionFile("communicate", vfilename, null);
 
                 if (sf == null)
                     continue;
@@ -266,180 +170,6 @@ public class MailUtil {
         public RecordStruct fields = RecordStruct.record();
         public String markdown = null;
         public Script script = null;
-    }
-
-    static public IWork buildSendEmailWork(RecordStruct params) throws OperatingContextException {
-        if (MailUtil.isSimpleSMSEmail(params)) {
-            RecordStruct simpleParams = MailUtil.createSimpleSMSParams(params);
-            return new SimpleSmsWork(simpleParams);
-        }
-
-        return new SmtpWork(params);
-    }
-
-    static public boolean isSimpleSMSEmail(RecordStruct params) {
-        // if there are headers we cannot use simple
-        if (params.isNotFieldEmpty("InReplyTo") || params.isNotFieldEmpty("Unsubscribe"))
-            return false;
-
-        // if there are attachments we cannot use simple
-        if (params.isNotFieldEmpty("Attachments"))
-            return false;
-
-        return true;
-    }
-
-    static public RecordStruct createSimpleSMSParams(RecordStruct standardParams) throws OperatingContextException {
-        XElement settings = ApplicationHub.getCatalogSettings("Email-Send");
-
-        if (settings == null) {
-            Logger.error("Missing email settings");
-            return null;
-        }
-
-        // supports only 1 domain/address
-        String skipto = settings.getAttribute("SkipToAddress", "");
-
-        String from = standardParams.getFieldAsString("From");
-        String reply = standardParams.getFieldAsString("ReplyTo");
-
-        if (StringUtil.isEmpty(from))
-            from = settings.getAttribute("DefaultFrom");
-
-        if (StringUtil.isEmpty(reply))
-            reply = settings.getAttribute("DefaultReplyTo");
-
-        String to = standardParams.getFieldAsString("To");
-        String cc = standardParams.getFieldAsString("Cc");
-        String bcc = standardParams.getFieldAsString("Bcc");
-        String subject = standardParams.getFieldAsString("Subject");
-        String body = standardParams.getFieldAsString("Html");
-        String textbody = standardParams.getFieldAsString("Text");
-
-        if (StringUtil.isEmpty(body) && StringUtil.isNotEmpty(textbody)) {
-            XElement root = MarkdownUtil.process(textbody, true);
-
-            if (root == null) {
-                Logger.error("inline md error: ");
-                return null;
-            }
-
-            body = root.toPrettyString();
-        }
-
-        Logger.info("Sending email from: " + from);
-        Logger.info("Sending email to: " + to);
-
-        String fromfinal = MailUtil.normalizeEmailAddress(from);
-
-        if (StringUtil.isEmpty(fromfinal) && settings.hasNotEmptyAttribute("DefaultFrom")) {
-            from = settings.getAttribute("DefaultFrom");
-            fromfinal = MailUtil.normalizeEmailAddress(from);
-        }
-
-        if (StringUtil.isEmpty(fromfinal)) {
-            Logger.error("Missing or invalid from field for email");
-            return null;
-        }
-
-        ListStruct tolist = ListStruct.list();
-        ListStruct cclist = ListStruct.list();
-        ListStruct bcclist = ListStruct.list();
-        ListStruct actuallist = ListStruct.list();
-        ListStruct replylist = ListStruct.list();
-
-        if (StringUtil.isNotEmpty(to)) {
-            List<EmailAddress> parsed = EmailAddress.parseList(to);
-
-            if (parsed != null) {
-                for (EmailAddress address : parsed) {
-                    if (!address.containsDomain(skipto)) {
-                        tolist.with(address.toStringForTransport("aws"));       // TODO don't hard code, configure
-                        actuallist.with(address.toStringNormalized());
-                    }
-                }
-            }
-        }
-
-        if (tolist.isEmpty()) {
-            Logger.error("Missing 'to' field for email");
-            return null;
-        }
-
-        if (StringUtil.isNotEmpty(cc)) {
-            List<EmailAddress> parsed = EmailAddress.parseList(cc);
-
-            if (parsed != null) {
-                for (EmailAddress address : parsed) {
-                    if (!address.containsDomain(skipto)) {
-                        cclist.with(address.toStringForTransport("aws"));       // TODO don't hard code, configure
-                        actuallist.with(address.toStringNormalized());
-                    }
-                }
-            }
-        }
-
-        if (StringUtil.isNotEmpty(bcc)) {
-            List<EmailAddress> parsed = EmailAddress.parseList(bcc);
-
-            if (parsed != null) {
-                for (EmailAddress address : parsed) {
-                    if (!address.containsDomain(skipto)) {
-                        bcclist.with(address.toStringForTransport("aws"));       // TODO don't hard code, configure
-                        actuallist.with(address.toStringNormalized());
-                    }
-                }
-            }
-        }
-
-        if (StringUtil.isNotEmpty(reply)) {
-            List<EmailAddress> parsed = EmailAddress.parseList(reply);
-
-            if ((parsed == null) || (parsed.size() == 0)) {
-                if (settings.hasNotEmptyAttribute("DefaultReplyTo")) {
-                    reply = settings.getAttribute("DefaultReplyTo");
-                    parsed = EmailAddress.parseList(reply);
-                }
-            }
-
-            if (parsed != null) {
-                for (EmailAddress address : parsed) {
-                    if (!address.containsDomain(skipto)) {
-                        replylist.with(address.toStringForTransport("aws"));       // TODO don't hard code, configure
-                    }
-                }
-            }
-        }
-
-        return RecordStruct.record()
-                .with("ActualAddresses", actuallist)
-                .with("Sms", RecordStruct.record()
-                        .with("FromEmailAddress", fromfinal)
-                        .with("Destination", RecordStruct.record()
-                                .with("ToAddresses", tolist)
-                                .withConditional("CcAddresses", cclist)
-                                .withConditional("BccAddresses", bcclist)
-                        )
-                        .with("Content", RecordStruct.record()
-                                .with("Simple", RecordStruct.record()
-                                        .with("Subject", RecordStruct.record()
-                                                .with("Charset", "UTF-8")
-                                                .with("Data", subject)
-                                        )
-                                        .with("Body", RecordStruct.record()
-                                                .withConditional(StringUtil.isNotEmpty(textbody), "Text", RecordStruct.record()
-                                                        .with("Charset", "UTF-8")
-                                                        .with("Data", textbody)
-                                                )
-                                                .withConditional(StringUtil.isNotEmpty(body), "Html", RecordStruct.record()
-                                                        .with("Charset", "UTF-8")
-                                                        .with("Data", body)
-                                                )
-                                        )
-                                )
-                        )
-                        .withConditional("ReplyToAddresses", replylist)
-                );
     }
 
     // for indexing, not for sending, storage or display

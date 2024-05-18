@@ -16,29 +16,21 @@
 ************************************************************************ */
 package dcraft.script.inst.ext;
 
-import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeRecord;
 import dcraft.interchange.twilio.SmsUtil;
-import dcraft.log.Logger;
-import dcraft.mail.SmtpWork;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
-import dcraft.script.inst.doc.Base;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
 import dcraft.struct.BaseStruct;
-import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.struct.scalar.AnyStruct;
-import dcraft.struct.scalar.BinaryStruct;
 import dcraft.task.IWork;
 import dcraft.task.TaskContext;
 import dcraft.util.PeopleUtil;
-import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
 public class SendText extends Instruction {

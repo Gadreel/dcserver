@@ -81,6 +81,21 @@ public class Html extends Base {
 		
 		super.cleanup(state);
 
+		// TODO grab <Subject> - resolveValueToString - put into Config
+
+		RecordStruct process = (RecordStruct) StackUtil.queryVariable(state, "_Process");
+		XElement subjectX = this.selectFirst("Subject");
+
+		if ((process != null) && (subjectX != null) && subjectX.hasText()) {
+			String subject = subjectX.getText();
+
+			if (StringUtil.isNotEmpty(subject)) {
+				subject = StackUtil.resolveValueToString(state, subject);
+				process.selectAsRecord("Config").with("Subject", subject);
+			}
+		}
+
+		/*
 		RecordStruct emailVar = (RecordStruct) StackUtil.queryVariable(state, "_Email");
 
 		if (emailVar != null) {
@@ -105,6 +120,8 @@ public class Html extends Base {
 				}
 			}
 		}
+
+		 */
 		
 		// after cleanup the document will be turned in just body by Base
 		// we only want head and body in translated document
@@ -139,11 +156,11 @@ public class Html extends Base {
 						.withAttribute("chartset", "utf-8")
 				)
 				.with(W3Closed.tag("meta")
-						.withAttribute("http-equiv", "X-UA-Compatible")
+						.withAttribute("name", "viewport")
 						.withAttribute("content", "width=device-width")
 				)
 				.with(W3Closed.tag("meta")
-						.withAttribute("name", "viewport")
+						.withAttribute("http-equiv", "X-UA-Compatible")
 						.withAttribute("content", "IE=edge")
 				)
 				.with(W3Closed.tag("meta")
@@ -161,7 +178,7 @@ public class Html extends Base {
 						.withAttribute("name", "supported-color-schemes")
 						.withAttribute("content", "light dark")
 				)
-				.with(W3.tag("title").withText("{_Email.Title}"));
+				.with(W3.tag("title").withText("{$_Process.Config.Subject}"));
 
 		for (XNode rel : this.hiddenChildren) {
 			if ((rel instanceof XElement) && ((XElement) rel).getName().equals("style"))

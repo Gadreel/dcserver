@@ -620,7 +620,7 @@ Cookie: SessionId=00700_fa2h199tkc2e8i2cs4e8s9ujhh_EetvVV9EocXc; $Path="/"
 		
 		if (wctx != null) {
 			Logger.info("Web Server connection inactive: " + wctx.getSessionId());
-			((WebController) this.context.getController()).closed();
+			((WebController) wctx.getController()).closed();
 		}
 	}
 	

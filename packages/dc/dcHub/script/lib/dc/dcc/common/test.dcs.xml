@@ -1,0 +1,90 @@
+<dcs.Script>
+	<!--
+		SendEmail - send a notice
+	-->
+	<dcs.Function Name="dc_dcc_comm_send_SendEmail">
+		<dcs.Console>se1: {$_Param}</dcs.Console>
+
+		<!-- require Path and To -->
+
+		<dcs.If>
+			<Or>
+				<Is Target="$_Param.To" IsEmpty="true" />
+				<Is Target="$_Param.Path" IsEmpty="true" />
+			</Or>
+
+			<dc.Error Code="1">Path and To are required with this method</dcs.Error>
+
+			<dcs.Return />
+		</dcs.If>
+
+		<!-- reject if CC ir BCC -->
+
+		<dcs.If>
+			<Or>
+				<Is Target="$_Param.Cc" IsEmpty="false" />
+				<Is Target="$_Param.Bcc" IsEmpty="false" />
+			</Or>
+
+			<dc.Error Code="1">CC and BCC are not allowed with this method, see SendEmailConversational</dcs.Error>
+
+			<dcs.Return />
+		</dcs.If>
+
+		<dcs.Var Name="Comm" Type="dccCommAdapter" />
+
+		<dcs.With Target="$Comm">
+			<PrepareAddresses Channel="email" Result="TestComm1"
+				Address="prettyandsimple@example.com; very.common@example.com; disposable.style.email.with+symbol@example.com; other.email-with-dash@example.com; X@Example.com; example-indeed@strange-example.com; #!$%&amp;'*+-/=?^_`{}|~@example.org"
+			/>
+			<PrepareAddresses Channel="email" Result="TestComm2"
+				Address="Very Common <very.common@example.com>; Complex Example With Style <disposable.style.email.with+symbol@example.com>; Other Name <other.email-with-dash@example.com>; Ms. X <x@example.com>; Not Strange <example-indeed@strange-example.com>;"
+			/>
+		</dcs.With>
+
+		<dcs.Console>ts1: {$TestComm1}</dcs.Console>
+		<dcs.Console>ts3: {$TestComm2}</dcs.Console>
+
+		<dcs.Var Name="TestList3" Type="List">
+			<Set>
+				<Item>Andy White &lt;Andy@DesignCraft.io&gt;</Item>
+				<Item>Skip Me &lt;skip@awww.com&gt;</Item>
+				<Item>Valerie Haupt &lt;Val-dca@OutLook.com&gt;</Item>
+				<Item>Korean &lt;지혜@매우-감사합니다.designcraft.io&gt;</Item>
+				<Item>Emoji 🩷 Name &lt;😉.È-ü-Ý@매우-감사합니다.designcraft.io&gt;</Item>
+				<Item>Bradley &lt;brad@www.aBCeTT34Zo.İ-i-È-ü-Ý.매우-감사합니다.tld&gt;</Item>
+				<!-- <Item>Bradley &lt;brad@www.aBCeTT34Zo.¡-ë-Э-Ꮱ.İ-i-È-ü-Ý.매우-감사합니다.𝄞-𝄱-𝄫.⚴-⚵-⚶-♢-♣-⚷.tld&gt;</Item> -->
+				<!-- <Item>Bradley &lt;brad@𝄞.tld&gt;</Item> -->
+			</Set>
+		</dcs.Var>
+
+		<dcs.With Target="$Comm">
+			<PrepareAddresses Channel="email" Result="TestComm3"
+				Address="$TestList3"
+			/>
+		</dcs.With>
+
+		<dcs.Console>ts3: {$TestComm3}</dcs.Console>
+
+
+		<dcs.Return xResult="$Matches" />
+	</dcs.Function>
+
+	<!--
+		SendEmailConversational - send a notice
+
+		TODO keep all the receipients in the same send - one email
+	-->
+	<dcs.Function Name="dc_dcc_comm_send_SendEmailConversational">
+		<dcs.Console>se1: {$_Param}</dcs.Console>
+	</dcs.Function>
+
+	<!--
+		SendNotices - send a notice
+	-->
+	<dcs.Function Name="dc_dcc_comm_send_SendNotices">
+		<dcs.Console>s1: {$_Param}</dcs.Console>
+
+		<dcs.Return xResult="$Matches" />
+	</dcs.Function>
+</dcs.Script>

@@ -18,17 +18,11 @@ package dcraft.script.inst.ext;
 
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationContext;
-import dcraft.mail.SmtpWork;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
-import dcraft.script.inst.doc.Base;
 import dcraft.script.work.ExecuteState;
 import dcraft.script.work.InstructionWork;
 import dcraft.script.work.ReturnOption;
-import dcraft.struct.RecordStruct;
-import dcraft.struct.Struct;
-import dcraft.struct.scalar.AnyStruct;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 

@@ -1,0 +1,1370 @@
+<Schema>
+	<Shared>
+		<StringType Id="dclmsAchivementGoalTypeEnum">
+			<!--
+				Grade = add this to the grade
+				Tally = track but do not restrict or score
+				TallyToPass = must meet a minimum count to pass, not part of grade
+				TallyToScore = must meet a minimum count to receive the score (all or nothing)
+			 -->
+			<StringRestriction Enum="Grade,Tally,TallyToPass,TallyToScore" />
+		</StringType>
+		<StringType Id="dclmsGradeTypeEnum">
+			<StringRestriction Enum="P,A,B,C,D" />
+		</StringType>
+		<StringType Id="dclmsBenchmarkModeEnum">
+			<!--
+			FreezeOnAccepted = student gets benchmarks assigned when accepted to the program
+			FreezeOnGraduate = student gets benchmarks assigned when graduate from the program
+ 			-->
+			<StringRestriction Enum="FreezeOnGraduate,FreezeOnAccepted" />
+		</StringType>
+	</Shared>
+
+	<Database>
+		<!-- tenant wide policies and settings  -->
+
+		<!--
+		All classes are part of a program
+
+		TODO add information about how to apply to a program
+		 -->
+		<Table Id="dclmsProgram">
+			<!-- visible to students / public -->
+			<Field Name="dclmsActive" Type="Boolean" />
+
+			<!-- keyed by locale -->
+			<Field Name="dclmsTitle" List="true" Type="dcSmallString" />
+
+			<Field Name="dclmsBenchmarkMode" Type="dclmsBenchmarkModeEnum" />
+			<!-- this gets replaced each time the objectives are updated and then published -->
+			<Field Name="dclmsCurrentObjectives" ForeignKey="dclmsProgramObjectives" Integrity="Retire" />
+		</Table>
+
+		<!--
+		individual benchmarks for the program
+ 		-->
+		<Table Id="dclmsBenchmark">
+			<Field Name="dclmsProgram" ForeignKey="dclmsProgram" Integrity="Cascade" />
+
+			<!-- keyed by locale -->
+			<Field Name="dclmsTitle" List="true" Type="dcSmallString" />
+		</Table>
+
+		<!--
+		what is needed to complete the program ?
+ 		-->
+		<Table Id="dclmsProgramObjectives">
+			<!-- visible to students / public, set when objectives are published - also set into Current above -->
+			<Field Name="dclmsActive" Type="Boolean" />
+
+			<Field Name="dclmsProgram" ForeignKey="dclmsProgram" Integrity="Cascade" />
+
+			<!-- keyed by benchmark -->
+			<Field Name="dclmsBenchmark" List="true" Group="dclmsBenchmarks" ForeignKey="dclmsBenchmark" Integrity="Retire" />
+			<!-- such as # of hours of study  -->
+			<Field Name="dclmsProficiency" List="true" Group="dclmsBenchmarks" Type="Integer" />
+		</Table>
+
+		<!--
+		TODO sommeday support Program benchmarks - which could be like
+
+		Milk Quality 32 hr
+				Basic 16 hr
+				Advanced 16 hr
+
+		and a course could compleete Milk Quality : Basic
+
+		see below for additional details
+ 		-->
+
+		<!-- term and course related  -->
+		<!--
+		if Active, and Enroll are both empty, and Learn both empty then the term is perptual and enroll any time
+		if Active, and Enroll are both empty, and Learn both empty then the term closed only at the end
+		if Active, and Enroll Start can be empty but End set, etc, and Learn start and end can be open ended
+		 -->
+		<Table Id="dclmsTerm">
+			<!-- visible to students / public -->
+			<Field Name="dclmsActive" Type="Boolean" />
+
+			<Field Name="dclmsProgram" ForeignKey="dclmsProgram" Integrity="Cascade" />
+
+			<!-- keyed by locale -->
+			<Field Name="dclmsTitle" List="true" Type="dcSmallString" />
+
+			<!-- self enrollment -->
+			<Field Name="dclmsEnrollStart" Type="DateTime" />
+			<Field Name="dclmsEnrollEnd" Type="DateTime" />
+
+			<!-- assignments and achivements accepted from students  -->
+			<Field Name="dclmsLearnStart" Type="DateTime" />
+			<Field Name="dclmsLearnEnd" Type="DateTime" />
+		</Table>
+
+		<!--
+		an Ongoing course shows activity only for last 1 year - grading and such - with ability to show all or search
+		if not Ongoing, then it should be a part of a Term and each term the course should be copied
+
+		TODO future - there should also be a benchmark table that lists what the course counts for in a program
+			a single class could cover multiple benchmarks, or a benchmark may require multiple courses (via sub-benchmarks)
+ 		-->
+		<Table Id="dclmsOffering">
+			<!-- visible to students / public -->
+			<Field Name="dclmsActive" Type="Boolean" />
+
+			<Field Name="dclmsTerm" ForeignKey="dclmsTerm" Integrity="Cascade" />
+			<!-- keyed by locale -->
+			<Field Name="dclmsTitle" List="true" Type="dcSmallString" />
+			<!-- keyed by locale -->
+			<Field Name="dclmsDescription" List="true" Type="dcString" />
+			<!-- if false then it is a Pass / Incomplete course  -->
+			<Field Name="dclmsGraded" Type="Boolean" />
+			<!-- if not graded then this is the score to Pass, if graded then it is the score that is 100% -->
+			<Field Name="dclmsTargetScore" Type="Integer" />
+			<!-- based off target score, get a percentage then check grades  -->
+			<Field Name="dclmsPercentForA" Type="Integer" />
+			<Field Name="dclmsPercentForB" Type="Integer" />
+			<Field Name="dclmsPercentForC" Type="Integer" />
+			<Field Name="dclmsPercentForD" Type="Integer" />
+
+			<!-- keyed by user id  -->
+			<Field Name="dclmsInstructor" List="True" ForeignKey="dcUser" Integrity="Retire" />
+
+			<!-- keyed by benchmark -->
+			<Field Name="dclmsBenchmark" List="true" Group="dclmsBenchmarks" ForeignKey="dclmsBenchmark" Integrity="Retire" />
+			<Field Name="dclmsProficiency" List="true" Group="dclmsBenchmarks" Type="Integer" />
+		</Table>
+
+		<!-- viewed per timeline, with course wide as an alternative  -->
+
+		<Table Id="dclmsMaterial">
+			<!-- only for course general material -->
+			<Field Name="dclmsOffering" ForeignKey="dclmsOffering" Integrity="Cascade" />
+			<!-- for timeline specific materials -->
+			<Field Name="dclmsTimeline" ForeignKey="dclmsTimeline" Integrity="Cascade" />
+
+			<!-- keyed by locale -->
+			<Field Name="dclmsTitle" List="true" Type="dcSmallString" />
+
+			<!-- see config for Meterial Types, basic are:
+			 	- dclmsCDNFile
+				- dclmsCDNVideo
+				- dclmsLink
+				- dclmsYouTubeVideo
+				- dclmsVimeoVideo
+				- dclmsMarkdown
+				- dclmsGallery   (future)
+				- dclmsSlider    (future)
+		 	-->
+			<Field Name="dclmsType" Type="dcMetaString" />
+
+			<!-- SPECIAL for TYPES -->
+
+			<!-- for file, video, link, keyed by locale -->
+			<Field Name="dclmsPath" List="True" Type="dcPath" />
+
+			<!-- for markdown, keyed by locale  -->
+			<Field Name="dclmsContent" List="True" Type="dcLargeString" />
+		</Table>
+
+		<!-- viewed as a whole from the course  -->
+
+		<Table Id="dclmsTimeline">
+			<Field Name="dclmsOffering" ForeignKey="dclmsOffering" Integrity="Cascade" />
+			<!-- keyed by locale -->
+			<Field Name="dclmsTitle" List="true" Type="dcSmallString" />
+			<!-- keyed by three digit sequence number padded with 0: 000 to 999 -->
+			<Field Name="dclmsPage" ForeignKey="dclmsMaterial" List="True" Integrity="Retire" />
+
+			<!-- so we can easily clone these - calc days past term start and apply to clone  -->
+			<Field Name="dclmsStartOn" Type="LocalDate" />
+			<Field Name="dclmsStartAt" Type="LocalTime" />
+
+			<Field Name="dclmsEndOn" Type="LocalDate" />
+			<Field Name="dclmsEndAt" Type="LocalTime" />
+		</Table>
+
+		<!-- viewed as a whole from the course  -->
+		<!--
+					Sticker Usage:
+
+					7 required attendance: link to 7 timeline entries, timeline: true, goal type: TallyToPass, required tally: 7
+					3 optional attendance: link to 3 timeline entries, timeline: true, goal type: Tally
+					2 bonus events: link to 3 timeline entries, timeline: true, goal type: TallyToScore, fixed: true, score: 5 points
+
+					participation: link to 10 timeline entries, timeline: true, goal type: TallyToScore, fixed: true, score: 5 points
+					gold star: link to course only, timeline: false, goal type: TallyToScore, fixed: true, score: 5 points
+					bonus star: link to course only, timeline: false, goal type: TallyToScore, fixed: false, score: 5 points
+
+					Assignment Upload Usage:
+
+					1 abc upload: link to 1 timeline entry, timeline: false, goal type: Grade, fixed: false, score: 20 points
+					bonus upload: link to course only, timeline: false, goal type: Grade, fixed: false, score: 10 points
+
+					View Material Usage:
+
+					1 lmo video: link to 1 material entry, timeline: false, goal type: TallyToPass, required tally: 1
+					1 rst video: link to 1 material entry, timeline: false, goal type: Grade, fixed: true, score: 3 points
+		 -->
+		<Table Id="dclmsAchivement">
+			<!-- general course achivements, if no timeline provided -->
+			<Field Name="dclmsOffering" ForeignKey="dclmsOffering" Integrity="Cascade" />
+			<!-- for timeline specific achivements, keyed by Timeline id -->
+			<Field Name="dclmsTimeline" List="True" ForeignKey="dclmsTimeline" Integrity="Null" />
+
+			<!-- keyed by locale -->
+			<Field Name="dclmsTitle" List="true" Type="dcSmallString" />
+
+			<!-- see config for Achivement Types, basic are:
+				- dclmsSticker
+				- dclmsAssignmentUpload
+				- dclmsMaterialViewed
+		 	-->
+			<Field Name="dclmsType" Type="dcMetaString" />
+
+			<!-- is this only for time line - such as meeting Attendance  -->
+			<Field Name="dclmsTimelineOnly" Type="Boolean" />
+			<!-- can this achivement be recorded more than once - per meeting if Timeline is true, per course if not  -->
+			<Field Name="dclmsMultiRecord" Type="Boolean" />
+			<!-- is the score for this achivement fixed? -->
+			<Field Name="dclmsGoalType" Type="dclmsAchivementGoalTypeEnum" />
+			<!-- is the score for this achivement fixed? only used with Grade goal -->
+			<Field Name="dclmsFixedScore" Type="Boolean" />
+			<!-- given score if fixed, max score if variable - if null then no suggested score  -->
+			<Field Name="dclmsScore" Type="Integer" />
+			<!-- how many are required to pass, but not part of the score / grade  -->
+			<Field Name="dclmsRequiredTally" Type="Integer" />
+			<!-- when this is due by (use end of day) - blank for by end of term  -->
+			<Field Name="dclmsDueOn" Type="LocalDate" />
+
+			<!-- SPECIAL for TYPES -->
+
+			<!-- for material -->
+			<Field Name="dclmsViewMaterial" ForeignKey="dclmsMaterial" Integrity="Retire" />
+		</Table>
+
+		<Table Id="dcUser">
+			<!--
+			keyed by program
+			only set the objectives when dclmsBenchmarkMode calls for it (or if set manually), otherwise default to the program's current objectives
+ 			-->
+			<Field Name="dclmsProgram" List="true" Group="dclmsPrograms" ForeignKey="dclmsProgram" Integrity="Retire" />
+			<!-- when the full and final application was submitted, not when application was started  -->
+			<Field Name="dclmsProgramAppliedAt" List="true" Group="dclmsPrograms" Type="DateTime" />
+			<!-- private to admin LearnAdmins and Admins -->
+			<Field Name="dclmsProgramApplicationNotes" List="true" Group="dclmsPrograms" Type="dcString" />
+			<Field Name="dclmsProgramAccepted" List="true" Group="dclmsPrograms" Type="Boolean" />
+			<Field Name="dclmsProgramAcceptedAt" List="true" Group="dclmsPrograms" Type="DateTime" />
+			<Field Name="dclmsProgramObjectives" List="true" Group="dclmsPrograms" ForeignKey="dclmsProgramObjectives" Integrity="Retire" />
+		</Table>
+
+		<Table Id="dclmsEnrollment">
+			<Field Name="dclmsOffering" ForeignKey="dclmsOffering" Integrity="Cascade" />
+			<Field Name="dclmsStudent" ForeignKey="dcUser" Integrity="Cascade" />
+
+			<Field Name="dclmsEnrolledAt" Type="DateTime" />
+
+			<Field Name="dclmsLastScoreAt" Type="DateTime" />
+			<!-- do not override or recal this, just leave it be -->
+			<Field Name="dclmsManualScore" Type="Boolean" />
+			<Field Name="dclmsManualBy" ForeignKey="dcUser" Integrity="Ignore" />
+
+			<Field Name="dclmsCurrentScore" Type="Integer" />
+			<!-- leave null for Incomplete -->
+			<Field Name="dclmsCurrentGrade" Type="dclmsGradeTypeEnum" />
+
+			<!-- keyed by benchmark -->
+			<Field Name="dclmsBenchmark" List="true" Group="dclmsBenchmarks" ForeignKey="dclmsBenchmark" Integrity="Retire" />
+			<!-- such as # of hours of study  -->
+			<Field Name="dclmsProficiency" List="true" Group="dclmsBenchmarks" Type="Integer" />
+		</Table>
+
+		<Table Id="dclmsAchivementRecord">
+			<Field Name="dclmsAchivement" ForeignKey="dclmsAchivement" Integrity="Cascade" />
+			<Field Name="dclmsEnrollment" ForeignKey="dclmsEnrollment" Integrity="Cascade" />
+			<!-- for timeline specific achivement, else a course wide achivement -->
+			<Field Name="dclmsTimeline" ForeignKey="dclmsTimeline" Integrity="Cascade" />
+
+			<Field Name="dclmsSubmitted" Type="DateTime" />
+
+			<Field Name="dclmsCompletedAt" Type="DateTime" />
+			<Field Name="dclmsScore" Type="Integer" />
+			<!-- leave null for Incomplete -->
+			<Field Name="dclmsGrade" Type="dclmsGradeTypeEnum" />
+
+			<!-- SPECIAL for TYPES -->
+
+			<!-- for assignments, filenames relative to this enrollment -->
+			<Field Name="dclmsUploadPaths" Type="List" />
+		</Table>
+	</Database>
+
+	<Services>
+		<Service Name="dcLearn">
+			<Feature Name="Program">
+				<Secure Badges="Instructor,LearnAdmin,Admin">
+					<Op Name="Load">
+						<Description>
+							Load a program record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+							<Field Name="Title" Type="dclmsProgram:dclmsTitle" />
+							<Field Name="Active" Type="dclmsProgram:dclmsActive" />
+							<Field Name="BenchmarkMode" Type="dclmsProgram:dclmsBenchmarkMode" />
+							<Field Name="CurrentObjectives" Type="dclmsProgram:dclmsCurrentObjectives" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Update">
+						<Description>
+							Update a program record.
+						</Description>
+						<RecordRequest Required="True">
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Title" Type="dclmsProgram:dclmsTitle" Required="IfPresent" />
+							<Field Name="Active" Type="dclmsProgram:dclmsActive" Required="IfPresent" />
+							<Field Name="BenchmarkMode" Type="dclmsProgram:dclmsBenchmarkMode" Required="IfPresent" />
+							<Field Name="CurrentObjectives" Type="dclmsProgram:dclmsCurrentObjectives" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Add">
+						<Description>
+							Add a program record.
+						</Description>
+						<RecordRequest Required="True">
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+							<Field Name="Title" Type="dclmsProgram:dclmsTitle" Required="True" />
+							<Field Name="Active" Type="dclmsProgram:dclmsActive" Required="IfPresent" />
+							<Field Name="BenchmarkMode" Type="dclmsProgram:dclmsBenchmarkMode" Required="True" />
+							<Field Name="CurrentObjectives" Type="dclmsProgram:dclmsCurrentObjectives" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Retire">
+						<Description>
+							Remove (retire) program record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Revive">
+						<Description>
+							Undo retirement of program record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="List">
+						<Description>
+							Load a list all program records, no matter how many.
+						</Description>
+						<RecordRequest>
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<Field Name="Title" Type="dclmsProgram:dclmsTitle" />
+								<Field Name="Active" Type="dclmsProgram:dclmsActive" />
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="AddStudents">
+						<Description>
+							Add student records to a program. Sets them as Accepted imedately.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="ProgramId" Type="Id" Required="True" />
+							<Field Name="StudentId" Required="True">
+								<List Type="Id" />
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="RemoveStudents">
+						<Description>
+							Remove student records from a program.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="ProgramId" Type="Id" Required="True" />
+							<Field Name="StudentId" Required="True">
+								<List Type="Id" />
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="ListStudents">
+						<Description>
+							Load a list of students enrolled in a program.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="ProgramId" Type="Id" Required="True" />
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<Field Name="Username" Type="dcUser:dcUsername" />
+								<Field Name="FirstName" Type="dcUser:dcFirstName" />
+								<Field Name="LastName" Type="dcUser:dcLastName" />
+								<Field Name="Email" Type="dcUser:dcEmail" />
+								<Field Name="Status">
+									<Record>
+										<Field Name="AppliedAt" Type="dcUser:dclmsProgramAppliedAt" />
+										<Field Name="Accepted" Type="dcUser:dclmsProgramAccepted" />
+										<Field Name="AcceptedAt" Type="dcUser:dclmsProgramAcceptedAt" />
+									</Record>
+								</Field>
+							</Record>
+						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+			<Feature Name="Objectives">
+				<Secure Badges="Instructor,LearnAdmin,Admin">
+					<Op Name="Load">
+						<Description>
+							Load a program objectives record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+							<Field Name="Active" Type="dclmsProgramObjectives:dclmsActive" />
+							<Field Name="Benchmarks">
+								<List>
+									<Record>
+										<Field Name="Id" Type="dclmsProgramObjectives:dclmsBenchmark" />
+										<Field Name="Proficiency" Type="dclmsProgramObjectives:dclmsProficiency" />
+									</Record>
+								</List>
+							</Field>
+						</RecordResponse>
+					</Op>
+					<Op Name="Update">
+						<Description>
+							Update a program objectives record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Active" Type="dclmsProgramObjectives:dclmsActive" Required="IfPresent" />
+							<Field Name="AddBenchmarks">
+								<List>
+									<Record>
+										<Field Name="Id" Type="dclmsProgramObjectives:dclmsBenchmark" Required="True" />
+										<Field Name="Proficiency" Type="dclmsProgramObjectives:dclmsProficiency" Required="True" />
+									</Record>
+								</List>
+							</Field>
+							<Field Name="DeleteBenchmarks">
+								<List Type="Id" />
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="Add">
+						<Description>
+							Add a program objectives record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Program" Type="Id" Required="True" />
+							<Field Name="Active" Type="dclmsProgramObjectives:dclmsActive" Required="IfPresent" />
+							<Field Name="Benchmarks">
+								<List>
+									<Record>
+										<Field Name="Id" Type="dclmsProgramObjectives:dclmsBenchmark" Required="True" />
+										<Field Name="Proficiency" Type="dclmsProgramObjectives:dclmsProficiency" Required="True" />
+									</Record>
+								</List>
+							</Field>
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Retire">
+						<Description>
+							Remove (retire) program objectives record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Revive">
+						<Description>
+							Undo retirement of program objectives record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+
+					<!-- for Objective Benchmarks  -->
+
+					<Op Name="LoadBenchmark">
+						<Description>
+							Load a term record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+							<Field Name="Title" Type="dclmsBenchmark:dclmsTitle" />
+						</RecordResponse>
+					</Op>
+					<Op Name="UpdateBenchmark">
+						<Description>
+							Update a Benchmark record.
+						</Description>
+						<RecordRequest Required="True">
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Title" Type="dclmsBenchmark:dclmsTitle" Required="IfPresent" />
+						</RecordRequest>
+					</Op>
+					<Op Name="AddBenchmark">
+						<Description>
+							Add a Benchmark record.
+						</Description>
+						<RecordRequest Required="True">
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+							<Field Name="Title" Type="dclmsBenchmark:dclmsTitle" Required="True" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="RetireBenchmark">
+						<Description>
+							Remove (retire) Benchmark record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="ReviveBenchmark">
+						<Description>
+							Undo retirement of Benchmark record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="ListBenchmarksForProgram">
+						<Description>
+							Load a list all Benchmark records for a program.
+						</Description>
+						<RecordRequest>
+							<Field Name="ProgramId" Type="Id" Required="True" />
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<Field Name="Title" Type="dclmsBenchmark:dclmsTitle" />
+							</Record>
+						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+			<Feature Name="Term">
+				<Secure Badges="Instructor,LearnAdmin,Admin">
+					<Op Name="Load">
+						<Description>
+							Load a term record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+							<Field Name="Active" Type="dclmsTerm:dclmsActive" />
+							<Field Name="Title" Type="dclmsTerm:dclmsTitle" />
+							<Field Name="EnrollStart" Type="dclmsTerm:dclmsEnrollStart" />
+							<Field Name="EnrollEnd" Type="dclmsTerm:dclmsEnrollEnd" />
+							<Field Name="LearnStart" Type="dclmsTerm:dclmsLearnStart" />
+							<Field Name="LearnEnd" Type="dclmsTerm:dclmsLearnEnd" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Update">
+						<Description>
+							Update a term record.
+						</Description>
+						<RecordRequest Required="True">
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Active" Type="dclmsTerm:dclmsActive" Required="IfPresent" />
+							<Field Name="Title" Type="dclmsTerm:dclmsTitle" Required="IfPresent" />
+							<Field Name="EnrollStart" Type="dclmsTerm:dclmsEnrollStart" />
+							<Field Name="EnrollEnd" Type="dclmsTerm:dclmsEnrollEnd" />
+							<Field Name="LearnStart" Type="dclmsTerm:dclmsLearnStart" />
+							<Field Name="LearnEnd" Type="dclmsTerm:dclmsLearnEnd" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Add">
+						<Description>
+							Add a term record.
+						</Description>
+						<RecordRequest Required="True">
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+							<Field Name="Active" Type="dclmsTerm:dclmsActive" Required="IfPresent" />
+							<Field Name="Title" Type="dclmsTerm:dclmsTitle" Required="True" />
+							<Field Name="EnrollStart" Type="dclmsTerm:dclmsEnrollStart" />
+							<Field Name="EnrollEnd" Type="dclmsTerm:dclmsEnrollEnd" />
+							<Field Name="LearnStart" Type="dclmsTerm:dclmsLearnStart" />
+							<Field Name="LearnEnd" Type="dclmsTerm:dclmsLearnEnd" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Retire">
+						<Description>
+							Remove (retire) term record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Revive">
+						<Description>
+							Undo retirement of term record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="ListForProgram">
+						<Description>
+							Load a list all term records for a program.
+						</Description>
+						<RecordRequest>
+							<Field Name="ProgramId" Type="Id" Required="True" />
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<Field Name="Title" Type="dclmsTerm:dclmsTitle" />
+								<Field Name="Active" Type="dclmsTerm:dclmsActive" />
+								<Field Name="EnrollStart" Type="dclmsTerm:dclmsEnrollStart" />
+								<Field Name="EnrollEnd" Type="dclmsTerm:dclmsEnrollEnd" />
+								<Field Name="LearnStart" Type="dclmsTerm:dclmsLearnStart" />
+								<Field Name="LearnEnd" Type="dclmsTerm:dclmsLearnEnd" />
+							</Record>
+						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+			<Feature Name="Course">
+				<Secure Badges="Instructor,LearnAdmin,Admin">
+					<Op Name="Load">
+						<Description>
+							Load a course record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+							<Field Name="TermId" Type="Id" />
+							<Field Name="Active" Type="dclmsOffering:dclmsActive" />
+							<!-- for current / selected locale -->
+							<Field Name="Title" Type="dclmsOffering:dclmsTitle" />
+							<Field Name="Description" Type="dclmsOffering:dclmsDescription" />
+							<Field Name="Graded" Type="dclmsOffering:dclmsGraded" />
+							<Field Name="TargetScore" Type="dclmsOffering:dclmsTargetScore" />
+							<Field Name="PercentForA" Type="dclmsOffering:dclmsPercentForA" />
+							<Field Name="PercentForB" Type="dclmsOffering:dclmsPercentForB" />
+							<Field Name="PercentForC" Type="dclmsOffering:dclmsPercentForC" />
+							<Field Name="PercentForD" Type="dclmsOffering:dclmsPercentForD" />
+							<Field Name="Instructors">
+								<List Type="Id" />
+							</Field>
+							<Field Name="Benchmarks">
+								<List>
+									<Record>
+										<Field Name="Id" Type="dclmsOffering:dclmsBenchmark" />
+										<Field Name="Proficiency" Type="dclmsOffering:dclmsProficiency" />
+									</Record>
+								</List>
+							</Field>
+						</RecordResponse>
+					</Op>
+					<Op Name="Update">
+						<Description>
+							Update a course record.
+						</Description>
+						<RecordRequest Required="True">
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="Active" Type="dclmsOffering:dclmsActive" Required="IfPresent" />
+							<!-- for current / selected locale -->
+							<Field Name="Title" Type="dclmsOffering:dclmsTitle" Required="IfPresent" />
+							<Field Name="Description" Type="dclmsOffering:dclmsDescription" />
+							<Field Name="Graded" Type="dclmsOffering:dclmsGraded" />
+							<Field Name="TargetScore" Type="dclmsOffering:dclmsTargetScore" />
+							<Field Name="PercentForA" Type="dclmsOffering:dclmsPercentForA" />
+							<Field Name="PercentForB" Type="dclmsOffering:dclmsPercentForB" />
+							<Field Name="PercentForC" Type="dclmsOffering:dclmsPercentForC" />
+							<Field Name="PercentForD" Type="dclmsOffering:dclmsPercentForD" />
+							<Field Name="AddBenchmarks">
+								<List>
+									<Record>
+										<Field Name="Id" Type="dclmsProgramObjectives:dclmsBenchmark" Required="True" />
+										<Field Name="Proficiency" Type="dclmsProgramObjectives:dclmsProficiency" Required="True" />
+									</Record>
+								</List>
+							</Field>
+							<Field Name="DeleteBenchmarks">
+								<List Type="Id" />
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="Add">
+						<Description>
+							Add a course record.
+						</Description>
+						<RecordRequest Required="True">
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+
+							<Field Name="TermId" Type="Id" Required="True" />
+							<Field Name="Active" Type="dclmsOffering:dclmsActive" Required="IfPresent" />
+							<!-- for current / selected locale -->
+							<Field Name="Title" Type="dclmsOffering:dclmsTitle" Required="True" />
+							<Field Name="Description" Type="dclmsOffering:dclmsDescription" />
+							<Field Name="Graded" Type="dclmsOffering:dclmsGraded" />
+							<Field Name="TargetScore" Type="dclmsOffering:dclmsTargetScore" />
+							<Field Name="PercentForA" Type="dclmsOffering:dclmsPercentForA" />
+							<Field Name="PercentForB" Type="dclmsOffering:dclmsPercentForB" />
+							<Field Name="PercentForC" Type="dclmsOffering:dclmsPercentForC" />
+							<Field Name="PercentForD" Type="dclmsOffering:dclmsPercentForD" />
+							<Field Name="Benchmarks">
+								<List>
+									<Record>
+										<Field Name="Id" Type="dclmsOffering:dclmsBenchmark" />
+										<Field Name="Proficiency" Type="dclmsOffering:dclmsProficiency" />
+									</Record>
+								</List>
+							</Field>
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="UpdateInstructors">
+						<Description>
+							Update the Instructors a course record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+							<Field Name="AddInstructors">
+								<List Type="Id" />
+							</Field>
+							<Field Name="RemoveInstructors">
+								<List Type="Id" />
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="Retire">
+						<Description>
+							Remove (retire) course record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Revive">
+						<Description>
+							Undo retirement of course record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="ListForTerm">
+						<Description>
+							Load a list all course records for a term.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="TermId" Type="Id" Required="True" />
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<Field Name="Active" Type="dclmsOffering:dclmsActive" />
+								<!-- for current / selected locale -->
+								<Field Name="Title" Type="dclmsOffering:dclmsTitle" />
+								<Field Name="Graded" Type="dclmsOffering:dclmsGraded" />
+								<Field Name="TargetScore" Type="dclmsOffering:dclmsTargetScore" />
+							</Record>
+						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+			<Feature Name="Material">
+				<Secure Badges="Instructor,LearnAdmin,Admin">
+					<Op Name="Load">
+						<Description>
+							Load a material record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+							<Field Name="CourseId" Type="Id" />
+							<Field Name="TimelineId" Type="Id" />
+							<!-- for current / selected locale -->
+							<Field Name="Title" Type="dclmsMaterial:dclmsTitle" />
+							<Field Name="Type" Type="dclmsMaterial:dclmsType" />
+							<Field Name="Path" Type="dclmsMaterial:dclmsPath" />
+							<Field Name="Content" Type="dclmsMaterial:dclmsContent" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Update">
+						<Description>
+							Update a material record.
+						</Description>
+						<RecordRequest Required="True">
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+
+							<Field Name="Id" Type="Id" Required="True" />
+							<!-- for current / selected locale -->
+							<Field Name="Title" Type="dclmsMaterial:dclmsTitle" Required="IfPresent" />
+							<Field Name="Path" Type="dclmsMaterial:dclmsPath" />
+							<Field Name="Content" Type="dclmsMaterial:dclmsContent" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Add">
+						<Description>
+							Add a material record.
+						</Description>
+						<RecordRequest Required="True">
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+
+							<Field Name="CourseId" Type="Id" />
+							<Field Name="TimelineId" Type="Id" />
+							<!-- for current / selected locale -->
+							<Field Name="Title" Type="dclmsMaterial:dclmsTitle" Required="True" />
+							<Field Name="Type" Type="dclmsMaterial:dclmsType" Required="True" />
+							<Field Name="Path" Type="dclmsMaterial:dclmsPath" />
+							<Field Name="Content" Type="dclmsMaterial:dclmsContent" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Retire">
+						<Description>
+							Remove (retire) material record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Revive">
+						<Description>
+							Undo retirement of material record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="ListForCourse">
+						<Description>
+							Load a list all material records for a course.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="CourseId" Type="Id" Required="True" />
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<!-- for current / selected locale -->
+								<Field Name="Title" Type="dclmsMaterial:dclmsTitle" />
+								<Field Name="Type" Type="dclmsMaterial:dclmsType" />
+							</Record>
+						</ListResponse>
+					</Op>
+					<Op Name="ListForTimeline">
+						<Description>
+							Load a list all material records for a timeline.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="TimelineId" Type="Id" Required="True" />
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<!-- for current / selected locale -->
+								<Field Name="Title" Type="dclmsMaterial:dclmsTitle" />
+								<Field Name="Type" Type="dclmsMaterial:dclmsType" />
+							</Record>
+						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+			<Feature Name="Timeline">
+				<Secure Badges="Instructor,LearnAdmin,Admin">
+					<Op Name="Load">
+						<Description>
+							Load a timeline record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+							<Field Name="CourseId" Type="Id" />
+							<!-- for current / selected locale -->
+							<Field Name="Title" Type="dclmsTimeline:dclmsTitle" />
+							<Field Name="StartOn" Type="dclmsTimeline:dclmsStartOn" />
+							<Field Name="StartAt" Type="dclmsTimeline:dclmsStartAt" />
+							<Field Name="EndOn" Type="dclmsTimeline:dclmsEndOn" />
+							<Field Name="EndAt" Type="dclmsTimeline:dclmsEndAt" />
+
+							<Field Name="Page">
+								<List Type="Id" />
+							</Field>
+						</RecordResponse>
+					</Op>
+					<Op Name="Update">
+						<Description>
+							Update a timeline record.
+						</Description>
+						<RecordRequest Required="True">
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+
+							<Field Name="Id" Type="Id" Required="True" />
+							<!-- for current / selected locale -->
+							<Field Name="Title" Type="dclmsTimeline:dclmsTitle" Required="IfPresent" />
+							<Field Name="StartOn" Type="dclmsTimeline:dclmsStartOn" />
+							<Field Name="StartAt" Type="dclmsTimeline:dclmsStartAt" />
+							<Field Name="EndOn" Type="dclmsTimeline:dclmsEndOn" />
+							<Field Name="EndAt" Type="dclmsTimeline:dclmsEndAt" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Add">
+						<Description>
+							Add a timeline record.
+						</Description>
+						<RecordRequest Required="True">
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+
+							<Field Name="CourseId" Type="Id" />
+							<!-- for current / selected locale -->
+							<Field Name="Title" Type="dclmsTimeline:dclmsTitle" Required="True" />
+							<Field Name="StartOn" Type="dclmsTimeline:dclmsStartOn" />
+							<Field Name="StartAt" Type="dclmsTimeline:dclmsStartAt" />
+							<Field Name="EndOn" Type="dclmsTimeline:dclmsEndOn" />
+							<Field Name="EndAt" Type="dclmsTimeline:dclmsEndAt" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Retire">
+						<Description>
+							Remove (retire) timeline record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Revive">
+						<Description>
+							Undo retirement of timeline record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="ListForCourse">
+						<Description>
+							Load a list all timeline records for a course.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="CourseId" Type="Id" Required="True" />
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<!-- for current / selected locale -->
+								<Field Name="Title" Type="dclmsTimeline:dclmsTitle" />
+								<Field Name="StartOn" Type="dclmsTimeline:dclmsStartOn" />
+								<Field Name="StartAt" Type="dclmsTimeline:dclmsStartAt" />
+								<Field Name="EndOn" Type="dclmsTimeline:dclmsEndOn" />
+								<Field Name="EndAt" Type="dclmsTimeline:dclmsEndAt" />
+							</Record>
+						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+			<Feature Name="Achivement">
+				<Secure Badges="Instructor,LearnAdmin,Admin">
+					<Op Name="Load">
+						<Description>
+							Load a achivement record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" />
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+							<Field Name="CourseId" Type="Id" />
+							<!-- for current / selected locale -->
+							<Field Name="Title" Type="dclmsAchivement:dclmsTitle" />
+							<Field Name="Type" Type="dclmsAchivement:dclmsType" />
+							<Field Name="TimelineOnly" Type="dclmsAchivement:dclmsTimelineOnly" />
+							<Field Name="MultiRecord" Type="dclmsAchivement:dclmsMultiRecord" />
+							<Field Name="GoalType" Type="dclmsAchivement:dclmsGoalType" />
+							<Field Name="FixedScore" Type="dclmsAchivement:dclmsFixedScore" />
+							<Field Name="Score" Type="dclmsAchivement:dclmsScore" />
+							<Field Name="RequiredTally" Type="dclmsAchivement:dclmsRequiredTally" />
+							<Field Name="DueOn" Type="dclmsAchivement:dclmsDueOn" />
+
+							<Field Name="Timelines">
+								<List Type="Id" />
+							</Field>
+
+							<!-- for types  -->
+							<Field Name="ViewMaterial" Type="dclmsAchivement:dclmsViewMaterial" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Update">
+						<Description>
+							Update a achivement record.
+						</Description>
+						<RecordRequest Required="True">
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+
+							<Field Name="Id" Type="Id" Required="True" />
+							<!-- for current / selected locale -->
+							<Field Name="Title" Type="dclmsAchivement:dclmsTitle" Required="IfPresent" />
+							<Field Name="Type" Type="dclmsAchivement:dclmsType" Required="IfPresent" />
+							<Field Name="TimelineOnly" Type="dclmsAchivement:dclmsTimelineOnly" Required="IfPresent" />
+							<Field Name="MultiRecord" Type="dclmsAchivement:dclmsMultiRecord" Required="IfPresent" />
+							<Field Name="GoalType" Type="dclmsAchivement:dclmsGoalType" Required="IfPresent" />
+							<Field Name="FixedScore" Type="dclmsAchivement:dclmsFixedScore" />
+							<Field Name="Score" Type="dclmsAchivement:dclmsScore" />
+							<Field Name="RequiredTally" Type="dclmsAchivement:dclmsRequiredTally" />
+							<Field Name="DueOn" Type="dclmsAchivement:dclmsDueOn" />
+							<!-- for types  -->
+							<Field Name="ViewMaterial" Type="dclmsAchivement:dclmsViewMaterial" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Add">
+						<Description>
+							Add a achivement record.
+						</Description>
+						<RecordRequest Required="True">
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+
+							<Field Name="CourseId" Type="Id" Required="True" />
+							<!-- optional -->
+							<Field Name="TimelineId">
+								<List Type="Id" />
+							</Field>
+							<!-- for current / selected locale -->
+							<Field Name="Title" Type="dclmsAchivement:dclmsTitle" Required="True" />
+							<Field Name="Type" Type="dclmsAchivement:dclmsType" Required="True" />
+							<Field Name="TimelineOnly" Type="dclmsAchivement:dclmsTimelineOnly" Required="True" />
+							<Field Name="MultiRecord" Type="dclmsAchivement:dclmsMultiRecord" Required="True" />
+							<Field Name="GoalType" Type="dclmsAchivement:dclmsGoalType" Required="True" />
+							<Field Name="FixedScore" Type="dclmsAchivement:dclmsFixedScore" Required="True" />
+							<Field Name="Score" Type="dclmsAchivement:dclmsScore" />
+							<Field Name="RequiredTally" Type="dclmsAchivement:dclmsRequiredTally" />
+							<Field Name="DueOn" Type="dclmsAchivement:dclmsDueOn" />
+							<!-- for types  -->
+							<Field Name="ViewMaterial" Type="dclmsAchivement:dclmsViewMaterial" />
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Retire">
+						<Description>
+							Remove (retire) achivement record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Revive">
+						<Description>
+							Undo retirement of achivement record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="ListForCourse">
+						<Description>
+							Load a list of achivement records for a course.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="CourseId" Type="Id" Required="True" />
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<!-- for current / selected locale -->
+								<Field Name="Title" Type="dclmsAchivement:dclmsTitle" />
+								<Field Name="Type" Type="dclmsAchivement:dclmsType" />
+								<Field Name="GoalType" Type="dclmsAchivement:dclmsGoalType" />
+								<Field Name="FixedScore" Type="dclmsAchivement:dclmsFixedScore" />
+								<Field Name="Score" Type="dclmsAchivement:dclmsScore" />
+								<Field Name="RequiredTally" Type="dclmsAchivement:dclmsRequiredTally" />
+								<Field Name="DueOn" Type="dclmsAchivement:dclmsDueOn" />
+							</Record>
+						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+			<Feature Name="Enrollment">
+				<Secure Badges="Instructor,LearnAdmin,Admin">
+					<Op Name="AddStudents">
+						<Description>
+							Add enrollment records to a course. Students must first be in the program.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="CourseId" Type="Id" Required="True" />
+							<Field Name="StudentId" Required="True">
+								<List Type="Id" />
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="Retire">
+						<Description>
+							Remove (retire) enrollment record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="Revive">
+						<Description>
+							Undo retirement of enrollment record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="ListForCourse">
+						<Description>
+							Load a list of enrollment records for a course.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="CourseId" Type="Id" Required="True" />
+							<!-- override current locale if present -->
+							<Field Name="Locale" Type="dcMetaString" Required="IfPresent" />
+						</RecordRequest>
+						<ListResponse>
+							<Record>
+								<Field Name="Id" Type="Id" />
+								<Field Name="Student">
+									<Record>
+										<Field Name="UserId" Type="Id" />
+										<Field Name="Username" Type="dcUser:dcUsername" />
+										<Field Name="FirstName" Type="dcUser:dcFirstName" />
+										<Field Name="LastName" Type="dcUser:dcLastName" />
+										<Field Name="Email" Type="dcUser:dcEmail" />
+									</Record>
+								</Field>
+								<Field Name="EnrolledAt" Type="dclmsEnrollment:dclmsEnrolledAt" />
+								<Field Name="LastScoreAt" Type="dclmsEnrollment:dclmsLastScoreAt" />
+								<Field Name="IsManual" Type="dclmsEnrollment:dclmsManualScore" />
+								<Field Name="Score" Type="dclmsEnrollment:dclmsCurrentScore" />
+								<Field Name="Grade" Type="dclmsEnrollment:dclmsCurrentGrade" />
+							</Record>
+						</ListResponse>
+					</Op>
+				</Secure>
+			</Feature>
+			<Feature Name="Student">
+				<Secure Badges="Instructor,LearnAdmin,Admin">
+					<Op Name="RecordAchivement">
+						<Description>
+							Record an achivement as an Instructor. For Tally achivements leave score and grade blank - grade is never needed, but can be automatic.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="EnrollmentId" Type="Id" Required="True" />
+							<Field Name="AchivementId" Type="Id" Required="True" />
+							<Field Name="TimelineId" Type="Id" />
+							<!-- defaults to now  -->
+							<Field Name="When" Type="DateTime" />
+							<!-- all optional -->
+							<Field Name="Score" Type="dclmsAchivementRecord:dclmsScore" />
+							<Field Name="AutoGrade" Type="Boolean" />
+							<Field Name="ManualGrade" Type="dclmsAchivementRecord:dclmsGrade" />
+						</RecordRequest>
+					</Op>
+					<Op Name="CalcGrade">
+						<Description>
+							Grade an enrollment record using automatic formula. This should be automatic, but call this if wanting to force a recalc.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="EnrollmentId" Type="Id" Required="True" />
+							<Field Name="SkipBenchmarkCalc" Type="Boolean" />
+						</RecordRequest>
+					</Op>
+					<Op Name="ManualGrade">
+						<Description>
+							Grade an enrollment record.
+							auto assigns benchmarks, but they can be manually set with ManualBenchmark
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="EnrollmentId" Type="Id" Required="True" />
+							<Field Name="Score" Type="dclmsEnrollment:dclmsManualScore" Required="True" />
+							<Field Name="SkipBenchmarkCalc" Type="Boolean" />
+						</RecordRequest>
+					</Op>
+					<Op Name="ManualBenchmark">
+						<Description>
+							Benchmark gains on an enrollment record.
+							often auto assigned and behind the scenes, but can be manually added
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="EnrollmentId" Type="Id" Required="True" />
+							<Field Name="Benchmarks" Required="True">
+								<List>
+									<Record>
+										<Field Name="Id" Type="dclmsOffering:dclmsBenchmark" />
+										<Field Name="Proficiency" Type="dclmsOffering:dclmsProficiency" />
+									</Record>
+								</List>
+							</Field>
+						</RecordRequest>
+					</Op>
+					<Op Name="SetProgramObjectives">
+						<Description>
+							Freeze the student's objectives for the program. (if missing from the student we default to the Current Objectives in program)
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="StudentId" Type="Id" Required="True" />
+							<Field Name="ProgramId" Type="Id" Required="True" />
+							<Field Name="ObjectivesId" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+				</Secure>
+				<Secure Badges="Student,Instructor,LearnAdmin,Admin">
+					<Op Name="Enroll">
+						<Description>
+							Add enrollment records to a course. Students must first be in the program.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="CourseId" Type="Id" Required="True" />
+							<Field Name="StudentId" Type="Id" Required="True" /s>
+						</RecordRequest>
+						<RecordResponse>
+							<Field Name="Id" Type="Id" />
+						</RecordResponse>
+					</Op>
+					<Op Name="Unenroll">
+						<Description>
+							Remove (retire) enrollment record.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="Id" Type="Id" Required="True" />
+						</RecordRequest>
+					</Op>
+					<Op Name="SubmitStickerAchivement">
+						<Description>
+							Submit a sticker style achivement as a Student. EnrollmentId must belong to student,
+							course must be open.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="EnrollmentId" Type="Id" Required="True" />
+							<Field Name="AchivementId" Type="Id" Required="True" />
+							<Field Name="TimelineId" Type="Id" />
+							<!-- defaults to now  -->
+							<Field Name="When" Type="DateTime" />
+						</RecordRequest>
+					</Op>
+					<Op Name="SubmitMaterialViewedAchivement">
+						<Description>
+							Submit a material viewed style achivement as a Student. EnrollmentId must belong to student,
+							course must be open.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="EnrollmentId" Type="Id" Required="True" />
+							<Field Name="AchivementId" Type="Id" Required="True" />
+							<Field Name="TimelineId" Type="Id" />
+							<!-- defaults to now  -->
+							<Field Name="When" Type="DateTime" />
+						</RecordRequest>
+					</Op>
+					<Op Name="SubmitAssignmentUploadAchivement">
+						<Description>
+							Submit a assignment upload style achivement as a Student. EnrollmentId must belong to student,
+							course must be open.
+						</Description>
+						<RecordRequest Required="True">
+							<Field Name="EnrollmentId" Type="Id" Required="True" />
+							<Field Name="AchivementId" Type="Id" Required="True" />
+							<Field Name="TimelineId" Type="Id" />
+							<!-- defaults to now  -->
+							<Field Name="When" Type="DateTime" />
+							<Field Name="UploadPaths" Type="List" />
+						</RecordRequest>
+					</Op>
+				</Secure>
+			</Feature>
+		</Service>
+	</Services>
+</Schema>

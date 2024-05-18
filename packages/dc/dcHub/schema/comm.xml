@@ -1,0 +1,156 @@
+<Schema>
+	<Shared>
+		<StringType Id="dccContactStatusEnum">
+			<StringRestriction Enum="Unconfirmed,Confirmed,SystemBlocked,ExternalBlocked" />
+		</StringType>
+
+		<StringType Id="dccSendActivityStatusEnum">
+			<StringRestriction Enum="Queued,Sent,Delivery,Bounce,Complaint,Blocked,Unblocked,Opened" />
+		</StringType>
+
+		<StringType Id="dccSendActivityTypeEnum">
+			<!-- Attempted = send attempted but failed, try again? -->
+			<StringRestriction Enum="Queued,Attempted,Sent,Delivery,Bounce,Complaint,Blocked,Unblocked,Opened,Reply,Link,Dowload" />
+		</StringType>
+
+		<StringType Id="dccFeedbackReportTypeEnum">
+			<StringRestriction Enum="Sent,Delivery,Bounce,Complaint,Blocked,Unblocked" />
+		</StringType>
+
+		<Record Id="dccCommAdapter" Class="dcraft.mail.CommAdapter" />
+	</Shared>
+
+	<Database>
+		<Table Id="dcUser">
+			<!-- current comm trackers  -->
+
+			<Field Name="dccCurrentEmailTracker" ForeignKey="dccCommTracker" />
+			<Field Name="dccCurrentPhoneTracker" ForeignKey="dccCommTracker" />
+
+			<!-- historical comm trackers, stamp = retired date -->
+
+			<!-- keyed by stamp  -->
+			<Field Name="dccCommHistoryStamp" Group="dccCommHistory" Type="DateTime" List="True" />
+			<Field Name="dccCommHistoryId" Group="dccCommHistory" ForeignKey="dccCommTracker" List="True" />
+		</Table>
+
+		<!--
+		per channel address of attempts to communicate with a target
+		see docs/dcc/channels.md
+		see docs/dcc/comm-exchange.md
+		-->
+
+		<Table Id="dccCommTracker">
+			<!-- email, phone, slack, etc -->
+			<Field Name="dccChannel" Type="dcMetaString" />
+
+			<!-- normalized -->
+			<Field Name="dccAddress" Type="dcMetaString" />
+
+			<!-- combined for indexing, example: email:andy@designcraft.io  -->
+			<!-- combined for indexing, example: phone:+17777777777  -->
+
+			<Field Name="dccChannelAddress" Type="dcMetaString" Indexed="True" Unique="True" />
+
+			<!-- as user providered it  -->
+
+			<Field Name="dccDisplayAddress" Type="dcMetaString" />
+
+			<Field Name="dccStatus" Type="dccContactStatusEnum" Indexed="True" />
+
+			<!-- used when comparing activity on a send, tracks the latest successful activity / report, including "not spam" reports - for updating the Status -->
+			<Field Name="dccLatestActivity" Type="DateTime" Audit="False" />
+
+			<!-- don't report to admin on this channel addrees again (unless serve such as a user block)  -->
+			<Field Name="dccIgnoreReports" Type="Boolean" />
+
+			<!-- optional, if there are (or were, historically) users associated with this  -->
+			<!-- keyed by user -->
+			<Field Name="dccUserId" Group="dccUser" List="True" ForeignKey="dcTaskList" />
+			<Field Name="dccUserStamp" Group="dccUser" List="True" Type="DateTime" />
+
+			<!-- keyed by stamp -->
+			<Field Name="dccHistoryStamp" Group="dccHistory" List="True" Type="DateTime" />
+			<Field Name="dccHistoryStatus" Group="dccHistory" List="True" Type="dccContactStatusEnum" />
+			<Field Name="dccHistoryUser" Group="dccHistory" List="True" ForeignKey="dcUser" />
+			<Field Name="dccHistoryNote" Group="dccHistory" List="True" Type="dcString" />
+			<!-- optional, for those occassions when there is a report involved -->
+			<Field Name="dccHistoryReportId" Group="dccHistory" List="True" Type="dcMetaString" />
+		</Table>
+
+		<!--
+		per send log of attempts to contact channel address
+		-->
+
+		<Table Id="dccCommSend">
+			<!-- unique to this send -->
+			<Field Name="dccUuid" Type="dcMetaString" Indexed="True" />
+
+			<!-- there could be more than one recipient in one send, though we discourage this since the feedback may then be vauge -->
+			<Field Name="dccTrackerId" ForeignKey="dccCommTracker" List="True" Group="dccTracker" />
+			<Field Name="dccTrackerStatus" Type="dccSendActivityStatusEnum" List="True" Group="dccTracker" />
+			<Field Name="dccTrackerLatestActivity" Type="DateTime" List="True" Group="dccTracker" Audit="False" />
+
+			<Field Name="dccQueuedAt" Type="DateTime" />
+
+			<Field Name="dccDisplayName" Type="dcSmallString" />
+
+			<!-- address returned by provider / service
+			<0100018442c32ad3-a4405d3a-f7ec-4133-b30f-7c00ca6794c6-000000@email.amazonses.com>
+ 			-->
+			<Field Name="dccMessageId" Type="dcMetaString" />
+
+			<!-- our way of indexing the message id, includes channel
+			email:<0100018442c32ad3-a4405d3a-f7ec-4133-b30f-7c00ca6794c6-000000@email.amazonses.com>
+			-->
+
+			<Field Name="dccSendIndex" Type="dcMetaString" Indexed="True" />
+
+			<Field Name="dccPath" Type="dcMetaString" />
+			<Field Name="dccArgs" Type="Any" />
+
+			<!-- keyed by self -->
+			<Field Name="dccTag" Type="dcMetaString" List="True" Indexed="True" />
+
+			<!-- if this is associated with a particular thread, link it here -->
+
+			<Field Name="dccThread" ForeignKey="dcmThread" />
+
+			<!--
+			TODO add link tracking
+ 			-->
+
+			<!-- keyed by stamp -->
+			<Field Name="dccActivityStamp" Group="dccActivity" List="True" Type="DateTime" />
+			<Field Name="dccActivityType" Group="dccActivity" List="True" Type="dccSendActivityTypeEnum" />
+			<Field Name="dccActivityData" Group="dccActivity" List="True" Type="AnyRecord" />
+			<Field Name="dccActivityNote" Group="dccActivity" List="True" Type="dcString" />
+			<!-- optional parts of the Activity -->
+			<!--
+			when feedback is added, it looks at the most recent ReportAt and then populates/clears the Bounced and Blocked above, depends on the channel
+
+			future - raise event on the send - see docs/dcc/comm-exchange.md
+			-->
+			<Field Name="dccActivityReportId" Group="dccActivity" List="True" Type="dcMetaString" />
+			<!-- combined for indexing, example: email:[ReportId]  -->
+			<!-- same report id could be used accross multipe records -->
+			<Field Name="dccActivityReportIndex" Group="dccActivity" List="True" Type="dcMetaString" Indexed="True" />
+			<!-- this is a list of dccCommTracker ids -->
+			<Field Name="dccActivityReportTargets" Group="dccActivity" List="True" Type="List" />
+		</Table>
+
+
+		<!-- old email auditing system, used for tracking bounces and complaints that are not in our Comm system  -->
+
+		<Table Id="dcmOutboundEmailActivity">
+			<Field Name="dcmMessageId" Type="dcMetaString" Required="True" Unique="True" Indexed="True" />
+			<Field Name="dcmCreatedAt" Type="DateTime" Required="True" Indexed="True" />
+
+			<!-- subid = reportat -->
+			<Field Name="dcmReportId" Group="dcmReportAudit" List="True" Type="dcMetaString" Indexed="True" />	<!-- id on sentinel -->
+			<Field Name="dcmReportType" Group="dcmReportAudit" List="True" Type="Integer" />
+			<Field Name="dcmReportAt" Group="dcmReportAudit" List="True" Type="DateTime" />
+			<Field Name="dcmReportMessage" Group="dcmReportAudit" List="True" Type="AnyRecord" />
+		</Table>
+	</Database>
+</Schema>

@@ -74,6 +74,19 @@ public class AWSS3 {
                 .whenComplete(HeadResponseConsumer.of(callback));
     }
 
+    static public void copyFile(XElement connection, String region, CommonPath srcpath, String destbucket, CommonPath destpath, OperationOutcome<XElement> callback) {
+        HttpRequest.Builder req = AWSUtilCore.buildRequest(connection, AWSS3.buildHostOptionS3(region, destbucket, destpath)
+                .with("Method", "PUT")
+                .with("SourcePath", srcpath.toString())
+            ).PUT(HttpRequest.BodyPublishers.ofByteArray(new byte[0]));
+
+        //req.header("x-amz-copy-source", srcpath.toString());
+
+        HttpClient.newHttpClient()
+                .sendAsync(req.build(), HttpResponse.BodyHandlers.ofString())
+                .whenComplete(XmlResponseConsumer.of(callback));
+    }
+
     static public void getFileDirect(String bucket, CommonPath path, OperationOutcome<Memory> callback) {
         XElement connection = ApplicationHub.getCatalogSettings("Interchange-Aws");
 

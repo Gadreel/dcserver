@@ -6,11 +6,16 @@ import dcraft.db.proc.call.SignIn;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.mail.CommUtil;
+import dcraft.mail.MailUtil;
 import dcraft.struct.BaseStruct;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
+import dcraft.util.TimeUtil;
+
+import java.time.ZonedDateTime;
 
 public class AfterUserUpdate implements ITrigger {
 	@Override
@@ -26,10 +31,7 @@ public class AfterUserUpdate implements ITrigger {
 
 					// for any change, record once
 					if ("dcAddress".equals(fname) || "dcCity".equals(fname) || "dcState".equals(fname) || "dcZip".equals(fname)) {
-						if (! locupdate) {
-							UserDataUtil.updateUserLocation(db, id);
-							locupdate = true;
-						}
+						locupdate = true;
 					}
 
 					if ("dcZip".equals(fname)) {
@@ -51,6 +53,23 @@ public class AfterUserUpdate implements ITrigger {
 							}
 						}
 					}
+					else if ("dcEmail".equals(fname)) {
+						String newemail = Struct.objectToString(db.getScalar(table, id, "dcEmail"));
+
+						if (StringUtil.isNotEmpty(newemail)) {
+							String trackid = CommUtil.ensureCommTrack("email", newemail, id);
+
+							String currentEmailTracker = Struct.objectToString(db.getScalar(table, id, "dccCurrentEmailTracker"));
+
+							// list it as current
+							if (! trackid.equals(currentEmailTracker))
+								db.updateScalar(table, id, "dccCurrentEmailTracker", trackid);
+						}
+					}
+				}
+
+				if (locupdate) {
+					UserDataUtil.updateUserLocation(db, id);
 				}
 			}
 		}

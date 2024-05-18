@@ -33,6 +33,10 @@ public class AdminUtil {
 			vault = s.getVault("Meta");
 			path = path.subpath(1);
 		}
+		else if ("communicate".equals(firstName)) {
+			vault = s.getVault("Communicate");
+			path = path.subpath(1);
+		}
 		else if ("vault".equals(firstName)) {
 			if (path.getNameCount() > 1) {
 				String secondName = path.getName(1);

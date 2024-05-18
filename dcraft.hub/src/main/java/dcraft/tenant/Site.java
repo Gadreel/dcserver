@@ -73,9 +73,6 @@ public class Site extends Base {
 	protected Map<String, IWebWorkBuilder> dynadapaters = new HashMap<>();
 	protected Map<String, IWebWorkBuilder> dynextadapaters = new HashMap<>();
 
-	// email
-	protected Map<String, String> emailadapaters = new HashMap<>();
-
 	public HtmlMode getHtmlMode() {
 		return this.htmlmode;
 	}
@@ -116,21 +113,6 @@ public class Site extends Base {
 
 	public void addDynamicExtAdapater(String ext, IWebWorkBuilder builder) {
 		this.dynextadapaters.put(ext, builder);
-	}
-
-	public void addEmailExtAdapater(String ext, String className) {
-		this.emailadapaters.put(ext, className);
-	}
-
-	public String getEmailBuilder(String ext) {
-		if (StringUtil.isNotEmpty(ext))
-			return this.emailadapaters.get(ext);
-
-		return null;
-	}
-
-	public Set<String> getEmailExtensions() {
-		return this.emailadapaters.keySet();
 	}
 
 	public void setSpecialExtensions(List<String> v) {
@@ -212,7 +194,7 @@ public class Site extends Base {
 		if (this.integration == SiteIntegration.Full)
 			return true;
 
-		return ("files".equals(section) || "galleries".equals(section));
+		return ("files".equals(section) || "galleries".equals(section) || "communicate".equals(section));
 	}
 
 	@Override

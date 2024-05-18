@@ -40,6 +40,10 @@ public class YouTubeWidget extends Base implements ICMSAware {
 		if (StackUtil.boolFromSource(state, "Autoplay"))
 			mod += "&autoplay=1";
 
+		if (StackUtil.boolFromSource(state, "EnableScript")) {
+			mod += "&enablejsapi=1";
+		}
+
 		this.with(W3.tag("div")
 				.withClass("dc-media-box", "dc-media-video", "dc-youtube-container-" + ratio)
 				.with(W3.tag("img")
@@ -53,17 +57,38 @@ public class YouTubeWidget extends Base implements ICMSAware {
 						.withAttribute("allow", "autoplay;")
 				)
 		);
-		
+
+		this.attr("data-video-id", vid);
+
+		String onReady = StackUtil.stringFromSource(state,"OnReady");
+
+		if (StringUtil.isNotEmpty(onReady))
+			this.withAttribute("data-dc-on-ready", onReady);
+
+		String stateChange = StackUtil.stringFromSource(state,"StateChange");
+
+		if (StringUtil.isNotEmpty(stateChange))
+			this.withAttribute("data-dc-state-change", stateChange);
+
 		UIUtil.markIfEditable(state, this, "widget");
 	}
 	
 	@Override
-	public void renderAfterChildren(InstructionWork state) {
+	public void renderAfterChildren(InstructionWork state) throws OperatingContextException {
 		this
 				.withClass("dc-widget dc-widget-video")
 				.withAttribute("data-dc-enhance", "true")
 				.withAttribute("data-dc-tag", this.getName());
-		
+
+		if (StackUtil.boolFromSource(state, "EnableScript")) {
+			this.attr("data-dc-script", "true");
+
+			UIUtil.requireScript(this, state, "/js/includes/dcm.YouTubeWidget.js");
+
+			// see deploy-cfac/tenants/cfac/sites/portal/www/resources/topic.html
+			UIUtil.requireScript(this, state, "https://www.youtube.com/iframe_api");
+		}
+
 		this.setName("div");
     }
 	

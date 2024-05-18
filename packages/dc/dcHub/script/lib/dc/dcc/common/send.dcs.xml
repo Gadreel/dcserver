@@ -1,0 +1,155 @@
+<dcs.Script>
+	<!--
+		ApplyEmailRestrictionPolicy - send a notice
+
+		TODO keep all the receipients in the same send - one email
+	-->
+	<dcs.Function Name="dc_dcc_comm_send_ApplyEmailRestrictionPolicy">
+		<dcs.Console>se1: {$_Param}</dcs.Console>
+
+		<!-- apply sender restrictions policy  -->
+
+		<dcs.Var Name="FinalTo" Type="List" />
+
+		<dcs.ForEach Name="To" In="$_Param.To">
+			<!-- make this configurable -->
+
+			<!-- TODO link in sender Policy scripts for the Tenant -->
+
+			<dcs.If Target="$To.Address" EndsWith="awww.com">
+				<dcs.With Target="$To">
+					<SetField Name="PlanType" Value="Sent" />
+					<SetField Name="PlanNote" Value="this address is fake, automatically marked as sent" />
+				</dcs.With>
+			</dcs.If>
+			<dcs.ElseIf Target="$To.TrackerStatus" EndsWith="Blocked">
+				<dcs.With Target="$To">
+					<SetField Name="PlanType" Value="Blocked" />
+					<SetField Name="PlanNote" Value="this address is blocked by policy" />
+				</dcs.With>
+			</dcs.ElseIf>
+			<dcs.Else>
+				<dcs.With Target="$To">
+					<SetField Name="PlanType" Value="Queued" />
+				</dcs.With>
+			</dcs.Else>
+		</dcs.ForEach>
+
+		<dcs.Return Result="$_Param.To" />
+	</dcs.Function>
+
+	<!--
+		SendEmail - send a notice
+	-->
+	<dcs.Function Name="dc_dcc_comm_send_SendEmail">
+		<dcs.Console>se1: {$_Param}</dcs.Console>
+
+		<!-- require Path and To -->
+
+		<dcs.If>
+			<Or>
+				<Is Target="$_Param.To" IsEmpty="true" />
+				<Is Target="$_Param.Path" IsEmpty="true" />
+			</Or>
+
+			<dcs.Error Code="1">Path and To are required with this method</dcs.Error>
+
+			<dcs.Return />
+		</dcs.If>
+
+		<!-- reject if CC ir BCC -->
+
+		<dcs.If>
+			<Or>
+				<Is Target="$_Param.Cc" IsEmpty="false" />
+				<Is Target="$_Param.Bcc" IsEmpty="false" />
+			</Or>
+
+			<dcs.Error Code="1">CC and BCC are not allowed with this method, see SendEmailConversational</dcs.Error>
+
+			<dcs.Return />
+		</dcs.If>
+
+		<dcs.Var Name="Comm" Type="dccCommAdapter">
+			<PrepareAddresses Channel="email" Address="$_Param.To" Result="PreppedTo" />
+		</dcs.Var>
+
+		<dcs.CallFunc Name="dc_dcc_comm_send_ApplyEmailRestrictionPolicy" Result="FilteredTo">
+			<Field Name="To" Value="$PreppedTo" />
+		</dcs.CallFunc>
+
+		<dcs.With Target="$_Param">
+			<SetField Name="To" Value="$FilteredTo" />
+		</dcs.With>
+
+		<dcs.Console>ts1: {$_Param}</dcs.Console>
+
+		<dcs.With Target="$Comm">
+			<!-- TODO test with Tags -->
+			<PrepareSend  Channel="email" Path="$_Param.Path" Address="$_Param.To" Args="$_Param.Args" Result="FinalTo" />
+		</dcs.With>
+
+		<dcs.ForEach Name="To" In="$_Param.To">
+			<dcs.If Target="$To.PlanType" Equal="Queued">
+				<!-- TODO put this on actual queue, restartable and multiple tries  -->
+				<dcs.TaskHelper Title="Process the Send Task" Script="/work/dc/dcc/email/send">
+					<Field Name="SendId" Value="$To.SendId" />
+				</dcs.TaskHelper>
+			</dcs.If>
+			<dcs.Else>
+				<!-- TODO trigger a notice to an admin -->
+				<dcs.Info>Skipped queue according to Plan: {$To.SendId}</dcs.Info>
+			</dcs.Else>
+		</dcs.ForEach>
+
+		<dcs.Return Result="$_Param" />
+	</dcs.Function>
+
+	<!--
+		SendEmailConversational - send a notice
+
+		TODO keep all the receipients in the same send - one email
+	-->
+	<dcs.Function Name="dc_dcc_comm_send_SendEmailConversational">
+		<dcs.Console>se1: {$_Param}</dcs.Console>
+
+		<!-- TODO  -->
+
+		<dcs.Return xResult="$Matches" />
+	</dcs.Function>
+
+	<!--
+		SendSms - send a text message
+
+		break into separate messages
+	-->
+	<dcs.Function Name="dc_dcc_comm_send_SendSms">
+		<dcs.Console>s1: {$_Param}</dcs.Console>
+
+		<!-- TODO  -->
+
+		<dcs.Return xResult="$Matches" />
+	</dcs.Function>
+
+	<!--
+		SendSms - send a text message
+
+		keep as one message
+	-->
+	<dcs.Function Name="dc_dcc_comm_send_SendSmsConversational">
+		<dcs.Console>s1: {$_Param}</dcs.Console>
+
+		<!-- TODO  -->
+
+		<dcs.Return xResult="$Matches" />
+	</dcs.Function>
+
+	<!--
+		SendNotices - send a notice
+	-->
+	<dcs.Function Name="dc_dcc_comm_send_SendNotices">
+		<dcs.Console>s1: {$_Param}</dcs.Console>
+
+		<dcs.Return xResult="$Matches" />
+	</dcs.Function>
+</dcs.Script>

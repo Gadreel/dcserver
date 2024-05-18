@@ -148,6 +148,12 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 				if (Files.exists(spath))
 					resources.getOrCreateTierScripts().withPath(spath);
 
+				Path commpath = hpackage.getPath().resolve("communicate");
+
+				if (Files.exists(commpath))
+					resources.getOrCreateTierComm().withPath(commpath);
+
+				/*
 				spath = hpackage.getPath().resolve("node-modules");
 
 				if (Files.exists(spath))
@@ -157,6 +163,8 @@ abstract public class LocalConfigLoader extends CoreLoaderWork {
 
 				if (Files.exists(spath))
 					resources.getOrCreateTierNodes().withScript(spath);
+
+				 */
 			}
 		}
 		

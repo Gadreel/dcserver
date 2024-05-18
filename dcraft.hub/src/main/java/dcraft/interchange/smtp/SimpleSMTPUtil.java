@@ -5,8 +5,6 @@ import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.log.DebugLevel;
 import dcraft.log.Logger;
-import dcraft.mail.SmtpWork;
-import dcraft.struct.ListStruct;
 import dcraft.util.HexUtil;
 import dcraft.util.StringUtil;
 import dcraft.web.md.MarkdownUtil;

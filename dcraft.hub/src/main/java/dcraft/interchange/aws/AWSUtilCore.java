@@ -183,7 +183,7 @@ public class AWSUtilCore {
 		
 		String date_stamp = amz_date.substring(0, 8);   // Date w/o time, used in credential scope
 		
-		//System.out.println("1: " + date_stamp);
+		System.out.println("1: " + date_stamp);
 		
 		// ************* TASK 1: CREATE A CANONICAL REQUEST *************
 		// http://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
@@ -199,15 +199,21 @@ public class AWSUtilCore {
 		// is blank.
 		String canonical_querystring = request_parameters;
 		
-		//System.out.println("2: " + canonical_querystring);
+		System.out.println("2: " + canonical_querystring);
 
 		// Step 4: Create the canonical headers. Header names must be trimmed
 		// and lowercase, and sorted in code point order from low to high.
 		// Note that there is a trailing \n.
 		String canonical_headers = "host:" + host + "\n"
 				+ "x-amz-date:" + amz_date + "\n";
-		
-		//System.out.println("3: " + canonical_headers);
+
+		if (options.isNotFieldEmpty("SourcePath")) {
+			canonical_headers = "host:" + host + "\n"
+					+ "x-amz-copy-source:" + options.getFieldAsString("SourcePath") + "\n"
+					+ "x-amz-date:" + amz_date + "\n";
+		}
+
+		System.out.println("3: " + canonical_headers);
 		
 		// Step 5: Create the list of signed headers. This lists the headers
 		// in the canonical_headers list, delimited with ";" and in alpha order.
@@ -215,6 +221,10 @@ public class AWSUtilCore {
 		// signed_headers include those that you want to be included in the
 		// hash of the request. "Host" and "x-amz-date" are always required.
 		String signed_headers = "host;x-amz-date";
+
+		if (options.isNotFieldEmpty("SourcePath")) {
+			signed_headers = "host;x-amz-copy-source;x-amz-date";
+		}
 		
 		// Step 6: Create payload hash (hash of the request body content). For GET
 		// requests, the payload is an empty string (""). hardcoded the empty hash
@@ -227,7 +237,7 @@ public class AWSUtilCore {
 
 		String payload_hash = options.getFieldAsString("PayloadHash", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
 
-		//System.out.println("4: " + payload_hash);
+		System.out.println("4: " + payload_hash);
 		
 		// Step 7: Combine elements to create create canonical request
 		String canonical_request = options.getFieldAsString("Method", "GET") + "\n"
@@ -237,8 +247,8 @@ public class AWSUtilCore {
 				+ signed_headers + "\n"
 				+ payload_hash;
 		
-		//System.out.println("5: " + canonical_request);
-		//System.out.println("5: " + HexUtil.encodeHex(canonical_request));
+		System.out.println("5: " + canonical_request);
+		System.out.println("5: " + HexUtil.encodeHex(canonical_request));
 
 		// ************* TASK 2: CREATE THE STRING TO SIGN *************
 		// Match the algorithm to the hashing algorithm you use, either SHA-1 or
@@ -250,10 +260,10 @@ public class AWSUtilCore {
 				+  credential_scope + "\n"
 				+  HashUtil.getSha256(canonical_request);
 
-		//System.out.println("6: " + credential_scope);
+		System.out.println("6: " + credential_scope);
 		
-		//System.out.println("7: " + string_to_sign);
-		//System.out.println("7: " + HexUtil.encodeHex(string_to_sign));
+		System.out.println("7: " + string_to_sign);
+		System.out.println("7: " + HexUtil.encodeHex(string_to_sign));
 
 		try {
 			// ************* TASK 3: CALCULATE THE SIGNATURE *************
@@ -263,7 +273,7 @@ public class AWSUtilCore {
 			// Sign the string_to_sign using the signing_key
 			String signature = HexUtil.bufferToHex(HmacSHA256(string_to_sign, signing_key));
 			
-			//System.out.println("8: " + signature);
+			System.out.println("8: " + signature);
 
 			options.with("RequestSignature", signature);
 			
@@ -272,17 +282,23 @@ public class AWSUtilCore {
 			String authorization_header = algorithm + " " + "Credential=" + access_key + "/" + credential_scope + ","
 					+ "SignedHeaders=" + signed_headers + "," + "Signature=" + signature;
 			
-			//System.out.println("9: " + authorization_header);
+			System.out.println("9: " + authorization_header);
 
 			String endpoint = AWSUtilCore.generateEndpoint(options);
 
-			return HttpRequest.newBuilder(URI.create(endpoint))
+			HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(endpoint))
 					//.header("Content-Type", content_type)
 					.header("x-amz-date", amz_date)
 					.header("x-amz-content-sha256", payload_hash)
 					.header("Authorization", authorization_header)
 					//.header("User-Agent", "dcServer/2019.1 (Language=Java/11)")
-					.GET();
+					;
+
+			if (options.isNotFieldEmpty("SourcePath")) {
+					request.header("x-amz-copy-source", options.getFieldAsString("SourcePath"));
+			}
+
+			return request.GET();
 		}
 		catch (GeneralSecurityException x) {
 			Logger.error("AWS signing error: " + x);

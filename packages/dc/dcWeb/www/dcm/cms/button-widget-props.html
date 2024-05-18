@@ -1,0 +1,112 @@
+<dc.Html Badges="Admin,Editor">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="Link Properties" />
+	</Meta>
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dcf.Form>
+				<dc.Region Hint="Button Properties form">
+					<dcf.Text Label="Label" Name="Label" />
+
+					<dcf.Text Label="Local Page" Instructions="For links to other pages on this site, enter the path here, such as '/about'. Do not combine `Page` and `External`, rather use one other the other.">
+						<Input Name="Page" />
+						<Button Icon="fas/ellipsis-h" Click="DoSelectPage" />
+					</dcf.Text>
+
+					<dcf.Text Label="External / Download" Name="To" Instructions="For links to external resources (such as websites) or downloads (such as PDFs) on your website." />
+
+					<!-- <dcf.Text Name="class" Label="CSS Classes" placeholder="custom styling for this section" /> -->
+				</dc.Region>
+
+				<dcf.FormButtons Hint="form options">
+					<dc.Button Label="Save and Preview" Click="DoSave" Scope="Primary" />
+				</dcf.FormButtons>
+			</dcf.Form>
+		</dc.PagePanel>
+	</dc.Body>
+	<Function Name="Load"><![CDATA[
+			var entry = this;
+    ]]></Function>
+	<Function Name="LoadRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			e.Message = {
+				Service: 'dcmServices',
+				Feature: 'Feed',
+				Op: 'LoadPart',
+				Body: {
+					Feed: entry.Params.Feed,
+					Path: entry.Params.Path,
+					PartId: entry.Params.Id
+				}
+			};
+    ]]></Function>
+	<Function Name="AfterLoadRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			// <dcm.ImageWidget Variant="full" Path="/services/coparenting" id="imgCoparenting" class=""/>
+			var widget = entry.Store.Widget = dc.util.Xml.toJQuery(e.Data.Part);
+
+			e.Data = {
+				Label: widget.attr('Label'),
+				Page: widget.attr('Page'),
+				To: widget.attr('To'),
+				class: widget.attr('class')
+			};
+	]]></Function>
+	<Function Name="DoSaveOnly"><![CDATA[
+		var entry = this;
+
+		entry.Params.Preview = false;
+
+		entry.form().submit();
+	]]></Function>
+	<Function Name="DoSave"><![CDATA[
+		var entry = this;
+
+		entry.Params.Preview = true;
+
+		entry.form().submit();
+	]]></Function>
+	<Function Name="SaveRecord" Params="e"><![CDATA[
+			var entry = this;
+
+			e.Wait = true;
+
+			dc.cms.Loader.saveCommands(entry.Params.Feed, entry.Params.Path, [
+				{
+					Command: 'UpdatePart',
+					Params: {
+						PartId: entry.Params.Id,
+						Area: 'Props',
+						Properties: e.Data
+					}
+				}
+			], function() {
+				e.Task.resume();
+			});
+    ]]></Function>
+	<Function Name="AfterSave"><![CDATA[
+		var entry = this;
+
+		if (entry.Params.Preview)
+			dc.pui.Loader.MainLayer.refreshPage();
+		else
+			dc.pui.Popup.alert('Saved');
+	]]></Function>
+	<Function Name="DoSelectPage"><![CDATA[
+			var entry = this;
+
+				dc.pui.Dialog.loadPage('/dcm/feeds/list-feed/pages', {
+				 Select: true,
+				Callback: function(files) {
+					if (files?.length) {
+						let fp = files[0].FullPath;
+
+						entry.form().setValue('Page', fp.substr(0, fp.length - 5));
+					}
+				}
+			});
+	]]></Function>
+</dc.Html>

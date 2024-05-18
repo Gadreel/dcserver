@@ -265,6 +265,10 @@
 		</Table>
 
 		<Trigger Table="dcUser" Operation="AfterCreate" Execute="dcraft.db.proc.trigger.AfterUserCreate" />
+
+		<Trigger Table="dcUser" Operation="BeforeUpdate" Execute="dcraft.db.proc.trigger.BeforeUserUpdate" />
+		<Trigger Table="dcUser" Operation="BeforeInsert" Execute="dcraft.db.proc.trigger.BeforeUserInsert" />
+
 		<Trigger Table="dcUser" Operation="AfterUpdate" Execute="dcraft.db.proc.trigger.AfterUserUpdate" />
 		<Trigger Table="dcUser" Operation="AfterInsert" Execute="dcraft.db.proc.trigger.AfterUserInsert" />
 		<Trigger Table="dcUser" Operation="AfterRetire" Execute="dcraft.db.proc.trigger.AfterUserRetire" />
@@ -502,7 +506,7 @@
 							<Field Name="EthnicityNote" Type="dcUser:dcEthnicityNote" />
 							<Field Name="EducationMax" Type="dcUser:dcEducationMax" />
 						</RecordRequest>
-					</Op>					
+					</Op>
 					<Op Name="RetireSelf">
 						<Description>
 							Remove user's own record.

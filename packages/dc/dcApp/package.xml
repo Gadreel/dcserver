@@ -63,6 +63,7 @@
 			<Tag Name="dcm.IncludeFeed" Class="dcraft.web.ui.inst.cms.IncludeFeed" />
 
 			<!-- cms media extended tags -->
+			<Tag Name="dcm.Button" Class="dcraft.web.ui.inst.cms.Button" />
 			<Tag Name="dcm.CarouselWidget" Class="dcraft.web.ui.inst.cms.CarouselWidget" />
 			<Tag Name="dcm.BannerWidget" Class="dcraft.web.ui.inst.cms.BannerWidget" />
 			<Tag Name="dcm.ImageWidget" Class="dcraft.web.ui.inst.cms.ImageWidget" />
@@ -71,6 +72,7 @@
 			<Tag Name="dcm.YouTubeWidget" Class="dcraft.web.ui.inst.cms.YouTubeWidget" />
 			<Tag Name="dcm.VimeoWidget" Class="dcraft.web.ui.inst.cms.VimeoWidget" />
 			<Tag Name="dcm.GalleryWidget" Class="dcraft.web.ui.inst.cms.GalleryWidget" />
+			<Tag Name="dcm.Link" Class="dcraft.web.ui.inst.cms.Link" />
 			<Tag Name="dcm.LogosWidget" Class="dcraft.web.ui.inst.cms.LogosWidget" />
 			<Tag Name="dcm.StoreGalleryWidget" Class="dcraft.web.ui.inst.cms.StoreGalleryWidget" />
 			<Tag Name="dcm.StoreCategoryWidget" Class="dcraft.web.ui.inst.cms.StoreCategoryWidget" />
@@ -271,6 +273,17 @@
 			<Tag Name="basefont" Class="dcraft.web.ui.inst.ClosedStandard" />
 			<Tag Name="frame" Class="dcraft.web.ui.inst.ClosedStandard" />
 			-->
+
+			<!-- email -->
+			<Tag Name="dcc.Html" Class="dcraft.mail.dcc.inst.Html" />
+			<Tag Name="dcc.Body" Class="dcraft.mail.dcc.inst.Body" />
+			<Tag Name="dcc.MixIn" Class="dcraft.mail.dcc.inst.MixIn" />
+			<Tag Name="dcc.Fragment" Class="dcraft.mail.dcc.inst.Fragment" />
+			<!-- TODO  -->
+			<!-- <Tag Name="dcc.Param" Class="dcraft.mail.dcc.inst.Param" />
+			<Tag Name="dcc.IncludeParam" Class="dcraft.mail.dcc.inst.IncludeParam" /> -->
+
+			<Tag Name="dcc.Band" Class="dcraft.mail.dcc.inst.Band" />
 		</Instructions>
 
 		<Badges>
@@ -303,10 +316,11 @@
 			<Definition Value="email" Label="Send notices to my email account." />
 		</Notices>
 
-		<Email.ExtAdapter Ext=".dcc.xml" Class="dcraft.mail.adapter.DCCerberusAdapter" />
-		<Email.ExtAdapter Ext=".md" Class="dcraft.mail.adapter.MarkdownAdapter" />
-		<Email.ExtAdapter Ext=".html" Class="dcraft.mail.adapter.StaticAdapter" />
-		<Email.ExtAdapter Ext=".dcs.xml" Class="dcraft.mail.adapter.DCScriptAdapter" />
+		<Comm.Handler Name="dcc" Adapter="dcraft.mail.adapter.DCCerberusAdapter" />
+		<Comm.Handler Name="dcs" Adapter="dcraft.mail.adapter.DCScriptAdapter" />
+		<Comm.Handler Name="email-md-basic" Adapter="dcraft.mail.adapter.MarkdownAdapter" />
+		<Comm.Handler Name="email-html-basic" Adapter="dcraft.mail.adapter.HtmlBasicAdapter" />
+		<Comm.Handler Name="email-text-basic" Adapter="dcraft.mail.adapter.EmailTextAdapter" />
 
 		<Threads>
 			<!--
@@ -325,6 +339,7 @@
 		<Vaults>
 			<Site Id="Galleries" VaultClass="dcraft.filevault.GalleryVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/galleries" CmsSync="true"  />
 			<Site Id="Files" VaultClass="dcraft.filevault.FileStoreVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/files" CmsSync="true"  />
+			<Site Id="Communicate" VaultClass="dcraft.filevault.CommunicateStoreVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/communicate" CmsSync="true"  />
 			<Site Id="Feeds" VaultClass="dcraft.filevault.FeedVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/feeds" CmsSync="true"  />
 			<Site Id="Meta" VaultClass="dcraft.filevault.MetaVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/meta" CmsSync="true"  />
 			<Site Id="SiteFiles" VaultClass="dcraft.filevault.SiteVault" ReadBadges="Developer" WriteBadges="Developer" RootFolder="/" CmsSync="true"  />
@@ -332,6 +347,7 @@
 			<Tenant Id="ManagedForms" VaultClass="dcraft.filevault.ManagedFormVault" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />
 			<RootMap Id="TenantGalleries" Alias="Galleries" />
 			<RootMap Id="TenantFiles" Alias="Files" />
+			<RootMap Id="TenantCommunicate" Alias="Communicate" />
 			<RootMap Id="RootSiteFiles" Alias="SiteFiles" />
 		</Vaults>
 	</Config>

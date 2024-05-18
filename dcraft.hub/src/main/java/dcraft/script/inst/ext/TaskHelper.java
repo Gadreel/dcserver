@@ -17,9 +17,6 @@
 package dcraft.script.inst.ext;
 
 import dcraft.hub.op.OperatingContextException;
-import dcraft.hub.op.OperationContext;
-import dcraft.log.Logger;
-import dcraft.mail.SmtpWork;
 import dcraft.script.Script;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
@@ -48,14 +45,15 @@ public class TaskHelper extends Instruction {
 	@Override
 	public ReturnOption run(InstructionWork stack) throws OperatingContextException {
 		if (stack.getState() == ExecuteState.READY) {
-			BaseStruct context = StackUtil.refFromSource(stack, "Context", true);
+			//BaseStruct context = StackUtil.refFromSource(stack, "Context", true);
 			BaseStruct params = StackUtil.refFromSource(stack, "Params", true);
 			String title = StackUtil.stringFromSourceClean(stack, "Title");
 			String topic = StackUtil.stringFromSourceClean(stack, "Topic", "Batch");
 			String script = StackUtil.stringFromSourceClean(stack, "Script");
 			String code = StackUtil.stringFromSourceClean(stack, "Code");
 
-			Task task = (context != null) ? Task.of((RecordStruct) context) : Task.ofSubContext();
+			//Task task = (context != null) ? Task.of((RecordStruct) context) : Task.ofSubContext();
+			Task task = Task.ofHubRootSameSite();
 
 			if (StringUtil.isNotEmpty(title))
 				task.withTitle(title);

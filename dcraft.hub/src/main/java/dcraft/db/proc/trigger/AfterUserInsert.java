@@ -6,11 +6,13 @@ import dcraft.db.proc.call.SignIn;
 import dcraft.db.tables.TablesAdapter;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
+import dcraft.mail.CommUtil;
 import dcraft.struct.BaseStruct;
 import dcraft.struct.FieldStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.util.StringUtil;
+import dcraft.util.map.MapUtil;
 
 public class AfterUserInsert implements ITrigger {
 	@Override
@@ -51,6 +53,14 @@ public class AfterUserInsert implements ITrigger {
 							}
 						}
 					}
+					else if ("dcEmail".equals(fname)) {
+						String newemail = Struct.objectToString(db.getScalar(table, id, "dcEmail"));
+
+						if (StringUtil.isNotEmpty(newemail)) {
+							String trackid = CommUtil.ensureCommTrack("email", newemail, id);
+							db.updateScalar(table, id, "dccCurrentEmailTracker", trackid);
+						}
+					}
 				}
 			}
 		}
@@ -59,6 +69,7 @@ public class AfterUserInsert implements ITrigger {
 			// get proper context in
 			SignIn.updateContext(db, id);
 		}
+
 
 		return true;
 	}

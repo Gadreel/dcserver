@@ -32,7 +32,7 @@ import java.nio.file.Path;
 /**
  */
 public class StandardService implements IService {
-	static protected CommonPath SERVICEPATH = CommonPath.from("/services");
+	static protected CommonPath SERVICE_PATH = CommonPath.from("/services");
 
 	/*
 	protected String name = null;
@@ -66,7 +66,7 @@ public class StandardService implements IService {
 		// add .v to end of service op name
 		path = path.getParent().resolve(path.getFileName() + ".v");
 
-		return SERVICEPATH.resolve(path);
+		return SERVICE_PATH.resolve(path);
 	}
 
 	@Override
@@ -95,6 +95,7 @@ public class StandardService implements IService {
 
 		return null;
 	}
+
 	@Override
 	public boolean handle(ServiceRequest request, OperationOutcomeStruct callback) throws OperatingContextException {
 		CommonPath folder = this.toServiceFolder(request.getPath());

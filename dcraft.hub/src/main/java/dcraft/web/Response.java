@@ -474,6 +474,11 @@ public class Response extends RecordStruct {
 
 			cookie.setSameSite(CookieHeaderNames.SameSite.valueOf(StackUtil.stringFromElementClean(stack, code, "SameSite", "Lax")));
 
+			Long maxAge = StackUtil.intFromElement(stack, code,"MaxAge");
+
+			if (maxAge != null)
+				cookie.setMaxAge(maxAge);
+
 			setCookie(cookie);
 
 			return ReturnOption.CONTINUE;
