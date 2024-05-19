@@ -14,19 +14,19 @@ module dcraft.hub {
   requires io.netty.handler;
   requires io.netty.resolver;
   requires io.netty.transport;
-  requires io.netty.internal.tcnative.openssl.linux.aarch_64;
-  requires io.netty.internal.tcnative.openssl.linux.x86_64;
-  requires io.netty.internal.tcnative.openssl.osx.aarch_64;
-  requires io.netty.internal.tcnative.openssl.windows.x86_64;
+  //requires io.netty.internal.tcnative.openssl.linux.aarch_64;
+  //requires io.netty.internal.tcnative.openssl.linux.x86_64;
+  //requires io.netty.internal.tcnative.openssl.osx.aarch_64;
+  //requires io.netty.internal.tcnative.openssl.windows.x86_64;
   requires io.netty.transport.classes.epoll;
-  requires io.netty.transport.unix.common;
-  requires io.netty.transport.epoll.linux.aarch_64;
-  requires io.netty.transport.epoll.linux.x86_64;
-  requires io.netty.transport.kqueue.osx.aarch_64;
+  //requires io.netty.transport.unix.common;
+  //requires io.netty.transport.epoll.linux.aarch_64;
+  //requires io.netty.transport.epoll.linux.x86_64;
+  //requires io.netty.transport.kqueue.osx.aarch_64;
   requires org.bouncycastle.pg;
   requires org.bouncycastle.pkix;
   requires org.bouncycastle.util;
-  requires bcprov.ext.jdk15to18;
+  //requires org.bouncycastle.prov;
   requires org.threeten.extra;
   requires org.apache.commons.codec;
   requires org.apache.commons.compress;
@@ -45,4 +45,3 @@ module dcraft.hub {
   requires org.jsoup;
   requires org.mariadb.jdbc;
 }
-

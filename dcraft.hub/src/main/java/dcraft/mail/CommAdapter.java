@@ -22,7 +22,6 @@ import dcraft.task.TaskContext;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 import org.mindrot.BCrypt;
-import z.resco.db.eusco.partners.List;
 
 import java.io.IOException;
 

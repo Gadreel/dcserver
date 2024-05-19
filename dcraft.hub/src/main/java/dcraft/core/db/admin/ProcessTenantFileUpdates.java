@@ -1,7 +1,6 @@
 package dcraft.core.db.admin;
 
 import dcraft.core.work.admin.FileUpdatesWork;
-import dcraft.custom.tool.cms.FeedAutomationWork;
 import dcraft.db.ICallContext;
 import dcraft.db.proc.IStoredProc;
 import dcraft.filestore.CommonPath;
