@@ -1,8 +1,5 @@
 package dcraft.mail;
 
-import com.samstevens.totp.exceptions.CodeGenerationException;
-import com.samstevens.totp.exceptions.QrGenerationException;
-import com.samstevens.totp.util.TotpUtil;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeRecord;
@@ -15,14 +12,10 @@ import dcraft.struct.BaseStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
-import dcraft.struct.scalar.BooleanStruct;
 import dcraft.struct.scalar.NullStruct;
 import dcraft.struct.scalar.StringStruct;
-import dcraft.task.TaskContext;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
-import org.mindrot.BCrypt;
-import z.resco.db.eusco.partners.List;
 
 import java.io.IOException;
 

@@ -1,17 +1,14 @@
 package dcraft.core.work.admin;
 
 import dcraft.core.util.AdminUtil;
-import dcraft.custom.tool.cms.FeedAutomationWork;
 import dcraft.filestore.CommonPath;
 import dcraft.filevault.IndexTransaction;
 import dcraft.filevault.TransactionFile;
-import dcraft.filevault.Vault;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.UserContext;
 import dcraft.log.Logger;
 import dcraft.struct.ListStruct;
-import dcraft.struct.RecordStruct;
 import dcraft.task.*;
 import dcraft.tenant.Site;
 import dcraft.tenant.Tenant;
@@ -20,8 +17,6 @@ import dcraft.util.TimeUtil;
 
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class FileUpdatesWork extends StateWork {
 	// list of paths relative to the `tenants` folder of a deployment
