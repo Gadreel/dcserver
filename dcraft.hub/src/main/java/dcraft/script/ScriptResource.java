@@ -2,22 +2,24 @@ package dcraft.script;
 
 import dcraft.filestore.CommonPath;
 import dcraft.hub.ResourceHub;
+import dcraft.hub.resource.IFileResolvingResource;
 import dcraft.hub.resource.ResourceBase;
+import dcraft.hub.resource.ResourceFileInfo;
 import dcraft.hub.resource.ResourceTier;
 import dcraft.log.Logger;
 import dcraft.script.mutator.Substring;
 import dcraft.struct.format.IFormatter;
+import dcraft.util.FileUtil;
+import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.*;
 
-public class ScriptResource extends ResourceBase {
+public class ScriptResource extends ResourceBase implements IFileResolvingResource {
 	protected Map<String, Class<? extends XElement>> tagmap = new HashMap<>();
 
 	// operator is type specific - [Type][Name] = mutator
@@ -76,19 +78,170 @@ public class ScriptResource extends ResourceBase {
 	}
 
 	public Path findScript(CommonPath path) {
+		ResourceFileInfo info = this.findFile(path);
+
+		return  (info != null) ? info.getActualPath() : null;
+	}
+
+	@Override
+	public ResourceFileInfo findFile(CommonPath path) {
 		for (int i = this.paths.size() - 1; i >= 0; i--) {
 			Path path1 = this.paths.get(i).resolve(path.toString().substring(1));
 
 			if (Files.exists(path1))
-				return path1;
+				return ResourceFileInfo.of(path, path1);
 		}
 
 		ScriptResource parent = this.getParentResource();
 
 		if (parent != null)
-			return parent.findScript(path);
+			return parent.findFile(path);
 
 		return null;
+	}
+
+	@Override
+	public boolean hasPath(CommonPath path) {
+		for (int i = this.paths.size() - 1; i >= 0; i--) {
+			Path path1 = this.paths.get(i).resolve(path.toString().substring(1));
+
+			if (Files.exists(path1))
+				return true;
+		}
+
+		ScriptResource parent = this.getParentResource();
+
+		if (parent != null)
+			return parent.hasPath(path);
+
+		return false;
+	}
+
+	@Override
+	public List<ResourceFileInfo> findFiles(CommonPath path, List<String> filenames) {
+		List<ResourceFileInfo> results = new ArrayList<>();
+
+		this.findFiles(path, filenames, results);
+
+		return results;
+	}
+
+	// resolve only once per file per tier
+	protected List<ResourceFileInfo> findFiles(CommonPath path, List<String> filenames, List<ResourceFileInfo> results) {
+		boolean tierfnd = false;
+
+		for (int i = this.paths.size() - 1; i >= 0; i--) {
+			Path path1 = this.paths.get(i).resolve(path.toString().substring(1));
+
+			if (Files.exists(path1)) {
+				for (String filename : filenames) {
+					Path fpath = path1.resolve(filename);
+
+					if (Files.exists(fpath) && Files.isRegularFile(fpath)) {
+						results.add(ResourceFileInfo.of(path.resolve(filename), fpath));
+						tierfnd = true;
+						break;
+					}
+				}
+			}
+
+			if (tierfnd)
+				break;
+		}
+
+		ScriptResource parent = this.getParentResource();
+
+		// collect deep
+		if (parent != null)
+			parent.findFiles(path, filenames, results);
+
+		return results;
+	}
+
+	@Override
+	public List<ResourceFileInfo> findSubFolders(CommonPath path) {
+		List<ResourceFileInfo> results = new ArrayList<>();
+
+		this.findSubFolders(path, results);
+
+		return results;
+	}
+
+	protected List<ResourceFileInfo> findSubFolders(CommonPath path, List<ResourceFileInfo> results) {
+		for (int i = this.paths.size() - 1; i >= 0; i--) {
+			Path path1 = this.paths.get(i).resolve(path.toString().substring(1));
+
+			if (Files.exists(path1) && Files.isDirectory(path1)) {
+				try {
+					Files.walkFileTree(path1, EnumSet.of(FileVisitOption.FOLLOW_LINKS), 1,
+							new SimpleFileVisitor<Path>() {
+								@Override
+								public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+										throws IOException
+								{
+									if (Files.isDirectory(file))
+										results.add(ResourceFileInfo.of(path.resolve(file.getFileName().toString()), file));
+
+									return FileVisitResult.CONTINUE;
+								}
+							});
+				}
+				catch (IOException x) {
+					Logger.error("Error finding : " + x);
+				}
+			}
+		}
+
+		ScriptResource parent = this.getParentResource();
+
+		// collect deep
+		if (parent != null)
+			parent.findSubFolders(path, results);
+
+		return results;
+	}
+
+	@Override
+	public List<ResourceFileInfo> listFiles(CommonPath path) {
+		List<ResourceFileInfo> results = new ArrayList<>();
+
+		this.listFiles(path, results);
+
+		return results;
+	}
+
+	protected List<ResourceFileInfo> listFiles(CommonPath path, List<ResourceFileInfo> results) {
+		for (int i = this.paths.size() - 1; i >= 0; i--) {
+			Path path1 = this.paths.get(i).resolve(path.toString().substring(1));
+
+			if (Files.exists(path1) && Files.isDirectory(path1)) {
+				try {
+					Files.walkFileTree(path1, EnumSet.of(FileVisitOption.FOLLOW_LINKS), 1,
+							new SimpleFileVisitor<Path>() {
+								@Override
+								public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+										throws IOException
+								{
+									if (Files.isRegularFile(file))
+										results.add(ResourceFileInfo.of(path.resolve(file.getFileName().toString()), file));
+
+									return FileVisitResult.CONTINUE;
+								}
+							});
+				}
+				catch (IOException x) {
+					Logger.error("Error finding : " + x);
+				}
+			}
+		}
+
+		ScriptResource parent = this.getParentResource();
+
+		// collect deep
+		if (parent != null)
+			parent.listFiles(path, results);
+
+		return results;
 	}
 
 	// this means we require a server restart when a new instruction is added

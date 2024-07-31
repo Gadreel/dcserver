@@ -7,26 +7,17 @@ import dcraft.hub.ResourceHub;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.hub.op.OperationContext;
-import dcraft.log.Logger;
-import dcraft.mail.sender.AwsSimpleMailServiceHttpWork;
-import dcraft.mail.sender.AwsSimpleMailServiceSmtpWork;
 import dcraft.mail.sender.AwsUtil;
-import dcraft.mail.sender.SmtpWork;
-import dcraft.schema.SchemaResource;
 import dcraft.script.Script;
 import dcraft.script.StackUtil;
-import dcraft.service.ServiceRequest;
 import dcraft.struct.*;
 import dcraft.task.IParentAwareWork;
 import dcraft.task.IWork;
-import dcraft.tenant.Site;
-import dcraft.tenant.WebFindResult;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.web.md.MarkdownUtil;
 import dcraft.web.ui.inst.Html;
 import dcraft.xml.XElement;
-import dcraft.xml.XmlReader;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
@@ -46,10 +37,13 @@ public class MailUtil {
         return path;
     }
 
+    /*
     static public IWork buildSendEmailWork(RecordStruct params) throws OperatingContextException {
         // TODO configure email services someday, right we assume AWS
         return AwsUtil.buildSendEmailWork(params);
     }
+
+     */
 
     // full path support only
     // include sections like so:  /dcc/skeletons/tx.v/code-email-[section].[locale].html
@@ -93,9 +87,7 @@ public class MailUtil {
         return content;
     }
 
-    static public MDParseResult mdToDynamic(IParentAwareWork scope, Path file) {
-        CharSequence md = IOUtil.readEntireFile(file);
-
+    static public MDParseResult mdToDynamic(IParentAwareWork scope, CharSequence md) {
         if (md.length() == 0)
             return null;
 

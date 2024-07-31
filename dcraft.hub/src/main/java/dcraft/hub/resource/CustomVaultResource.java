@@ -13,6 +13,7 @@ import dcraft.struct.*;
 import dcraft.struct.scalar.BooleanStruct;
 import dcraft.struct.scalar.NullStruct;
 import dcraft.tenant.Site;
+import dcraft.tenant.Tenant;
 import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
@@ -57,7 +58,7 @@ public class CustomVaultResource extends ResourceBase {
     public void rebuildConfigLayer() throws OperatingContextException {
         this.configlayer.clearChildren();
 
-        OperationContext.getOrThrow().getSite().flushVaults();
+        OperationContext.getOrThrow().getTenant().flushVaults();
 
         this.buildConfigLayer();
     }
@@ -430,9 +431,9 @@ public class CustomVaultResource extends ResourceBase {
                     .with("Vault", alias)
                     .with("Path", path);
 
-            Site site = OperationContext.getOrThrow().getUserContext().getSite();
+            Tenant tenant = OperationContext.getOrThrow().getUserContext().getTenant();
 
-            Vault vault = site.getVault(req.getFieldAsString("Vault"));
+            Vault vault = tenant.getVault(req.getFieldAsString("Vault"));
 
             Vaults.deleteFile(vault, req, false, new OperationOutcomeStruct() {
                 @Override

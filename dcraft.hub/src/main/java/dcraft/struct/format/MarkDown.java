@@ -13,8 +13,13 @@ public class MarkDown implements IFormatter {
 		
 		if (val == null)
 			return FormatResult.result(val);
-		
-		XElement root = MarkdownUtil.process(val, true);
+
+		boolean safe = true;
+
+		if ("unsafe".equals(format))
+			safe = false;
+
+		XElement root = MarkdownUtil.process(val, safe);
 		
 		return FormatResult.result(root);
 	}

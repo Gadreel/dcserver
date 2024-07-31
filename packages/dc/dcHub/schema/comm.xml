@@ -72,7 +72,9 @@
 			<!-- keyed by stamp -->
 			<Field Name="dccHistoryStamp" Group="dccHistory" List="True" Type="DateTime" />
 			<Field Name="dccHistoryStatus" Group="dccHistory" List="True" Type="dccContactStatusEnum" />
+			<!-- who was the user that added this report - useful only for manual reports -->
 			<Field Name="dccHistoryUser" Group="dccHistory" List="True" ForeignKey="dcUser" />
+			<!-- note made by the manual report user - or other wise  -->
 			<Field Name="dccHistoryNote" Group="dccHistory" List="True" Type="dcString" />
 			<!-- optional, for those occassions when there is a report involved -->
 			<Field Name="dccHistoryReportId" Group="dccHistory" List="True" Type="dcMetaString" />
@@ -90,10 +92,9 @@
 			<Field Name="dccTrackerId" ForeignKey="dccCommTracker" List="True" Group="dccTracker" />
 			<Field Name="dccTrackerStatus" Type="dccSendActivityStatusEnum" List="True" Group="dccTracker" />
 			<Field Name="dccTrackerLatestActivity" Type="DateTime" List="True" Group="dccTracker" Audit="False" />
+			<Field Name="dccTrackerDisplayName" Type="dcSmallString" List="True" Group="dccTracker" />
 
 			<Field Name="dccQueuedAt" Type="DateTime" />
-
-			<Field Name="dccDisplayName" Type="dcSmallString" />
 
 			<!-- address returned by provider / service
 			<0100018442c32ad3-a4405d3a-f7ec-4133-b30f-7c00ca6794c6-000000@email.amazonses.com>
@@ -107,7 +108,7 @@
 			<Field Name="dccSendIndex" Type="dcMetaString" Indexed="True" />
 
 			<Field Name="dccPath" Type="dcMetaString" />
-			<Field Name="dccArgs" Type="Any" />
+			<Field Name="dccArgs" Type="AnyRecord" />
 
 			<!-- keyed by self -->
 			<Field Name="dccTag" Type="dcMetaString" List="True" Indexed="True" />

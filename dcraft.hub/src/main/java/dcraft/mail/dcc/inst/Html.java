@@ -24,13 +24,9 @@ import dcraft.script.StackUtil;
 import dcraft.script.inst.Instruction;
 import dcraft.script.inst.doc.Base;
 import dcraft.script.work.*;
-import dcraft.struct.BaseStruct;
-import dcraft.struct.FieldStruct;
 import dcraft.struct.RecordStruct;
-import dcraft.struct.scalar.StringStruct;
 import dcraft.task.IParentAwareWork;
 import dcraft.util.StringUtil;
-import dcraft.web.ui.inst.IncludeFragmentInline;
 import dcraft.web.ui.inst.W3;
 import dcraft.web.ui.inst.W3Closed;
 import dcraft.xml.XElement;
@@ -178,12 +174,57 @@ public class Html extends Base {
 						.withAttribute("name", "supported-color-schemes")
 						.withAttribute("content", "light dark")
 				)
-				.with(W3.tag("title").withText("{$_Process.Config.Subject}"));
+				.with(W3.tag("title").withText("{$_Process.Config.Subject}"))
+				// Cerberus: What it does: Makes background images in 72ppi Outlook render at correct size.
+				.with(EmailComment.of("<!--[if gte mso 9]>\r\n" +
+						"    <xml>\r\n" +
+						"        <o:OfficeDocumentSettings>\r\n" +
+						"            <o:PixelsPerInch>96</o:PixelsPerInch>\r\n" +
+						"        </o:OfficeDocumentSettings>\r\n" +
+						"    </xml>\r\n" +
+						"    <![endif]"))
+				// Cerberus: Desktop Outlook chokes on web font references and defaults to Times New Roman, so we force a safe fallback font.
+				.with(EmailComment.of("[if mso]>\r\n" +
+						"        <style>\r\n" +
+						"            * {\r\n" +
+						"                font-family: sans-serif !important;\r\n" +
+						"            }\r\n" +
+						"        </style>\r\n" +
+						"    <![endif]"))
+
+				// Cerberus: All other clients get the webfont reference; some will render the font and others will silently fail to the fallbacks.
+				//.with(EmailComment.tag("[if !mso]><!-->\r\n" +
+				//		"    <!-- insert web font reference, eg: <link href='https://fonts.googleapis.com/css?family=Roboto:400,700' rel='stylesheet' type='text/css'> -->\r\n" +
+				//		"    <!--<![endif]"))
+				.with(W3.tag("style")
+						.with(
+								InjectContent.tag()
+										.withAttribute("Path", "/dc/assets/reset.css")
+						)
+				)
+				.with(W3.tag("style")
+						.with(
+								InjectContent.tag()
+										.withAttribute("Path", "/dc/assets/progressive.css")
+						)
+				)
+				// Cerberus:
+				//.with(EmailComment.tag(""))
+				// Cerberus:
+				//.with(EmailComment.tag(""))
+			;
 
 		for (XNode rel : this.hiddenChildren) {
-			if ((rel instanceof XElement) && ((XElement) rel).getName().equals("style"))
+			if ((rel instanceof XElement) && ((XElement) rel).getName().equals("Style"))
 				head.with(rel);
 		}
+
+		/*
+		for (XElement el : this.selectAll("Style")) {
+			head.with(el);
+			this.remove(el);
+		}
+		 */
 
 		// put head at top
 		this.add(0, head);

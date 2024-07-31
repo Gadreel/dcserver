@@ -1,6 +1,7 @@
 package dcraft.core.work.admin;
 
 import dcraft.core.util.AdminUtil;
+import dcraft.custom.tool.cms.FeedAutomationWork;
 import dcraft.filestore.CommonPath;
 import dcraft.filevault.IndexTransaction;
 import dcraft.filevault.TransactionFile;

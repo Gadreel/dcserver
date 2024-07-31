@@ -1,0 +1,9 @@
+<Op>
+	<RecordRequest>
+		<Field Name="Title" Type="dcTinyString" Required="true" />
+		<Field Name="Secret" Type="dcPath" Required="true" />
+	</RecordRequest>
+	<RecordResponse>
+		<Field Name="Uuid" Type="dcMetaString" />
+	</RecordResponse>
+</Op>

@@ -22,6 +22,7 @@ import dcraft.task.TaskContext;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
 import org.mindrot.BCrypt;
+import z.resco.db.eusco.partners.List;
 
 import java.io.IOException;
 
@@ -108,21 +109,22 @@ public class CommAdapter extends RecordStruct {
 
 		if ("BuildContent".equals(code.getName())) {
 			String channel = Struct.objectToString(StackUtil.refFromElement(stack, code, "Channel", true));
-			BaseStruct args = StackUtil.refFromElement(stack, code, "Args", true);
-			String path = Struct.objectToString(StackUtil.refFromElement(stack, code, "Path"));
+			RecordStruct request = Struct.objectToRecord(StackUtil.refFromElement(stack, code, "Request", true));
 			String handle = Struct.objectToString(StackUtil.stringFromElement(stack, code, "Result"));
 
 			if (StringUtil.isEmpty(channel)) {
 				Logger.error("Missing comm track send channel");
 			}
-			else if (StringUtil.isEmpty(path)) {
+			else if (request == null) {
+				Logger.error("Missing comm request");
+			}
+			else if (request.isFieldEmpty("Path")) {
 				Logger.error("Missing comm path");
 			}
+			else if (request.isFieldEmpty("SendId")) {
+				Logger.error("Missing comm send id");
+			}
 			else {
-				RecordStruct request = RecordStruct.record()
-						.with("Path", path)
-						.with("Args", args);
-
 				CommUtil.buildContent(channel, request, new OperationOutcomeRecord() {
 					@Override
 					public void callback(RecordStruct result) throws OperatingContextException {
@@ -143,17 +145,23 @@ public class CommAdapter extends RecordStruct {
 
 		if ("Deliver".equals(code.getName())) {
 			String channel = Struct.objectToString(StackUtil.refFromElement(stack, code, "Channel", true));
-			RecordStruct args = Struct.objectToRecord(StackUtil.refFromElement(stack, code, "Args", true));
+			RecordStruct request = Struct.objectToRecord(StackUtil.refFromElement(stack, code, "Request", true));
 			String handle = Struct.objectToString(StackUtil.stringFromElement(stack, code, "Result"));
 
 			if (StringUtil.isEmpty(channel)) {
 				Logger.error("Missing comm track deliver channel");
 			}
-			else if ((args == null) || args.isEmpty()) {
-				Logger.error("Missing comm deliver args");
+			else if (request == null) {
+				Logger.error("Missing comm deliver request");
+			}
+			else if (request.isFieldEmpty("Path")) {
+				Logger.error("Missing comm path");
+			}
+			else if (request.isFieldEmpty("SendId")) {
+				Logger.error("Missing comm deliver send id");
 			}
 			else {
-				CommUtil.deliver(channel, args, new OperationOutcomeRecord() {
+				CommUtil.deliver(channel, request, new OperationOutcomeRecord() {
 					@Override
 					public void callback(RecordStruct result) throws OperatingContextException {
 						stack.setState(ExecuteState.DONE);

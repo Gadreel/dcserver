@@ -11,12 +11,14 @@
 
 		<dcs.Var Name="FinalTo" Type="List" />
 
-		<dcs.ForEach Name="To" In="$_Param.To">
-			<!-- make this configurable -->
+		<dcs.CatalogSettings Id="Email-Send" Result="EmailSettings" />
 
+		<dcs.Console>skip to: {$EmailSettings.@SkipToAddress}</dcs.Console>
+
+		<dcs.ForEach Name="To" In="$_Param.To">
 			<!-- TODO link in sender Policy scripts for the Tenant -->
 
-			<dcs.If Target="$To.Address" EndsWith="awww.com">
+			<dcs.If Target="$To.Address" EndsWith="{$EmailSettings.@SkipToAddress}">
 				<dcs.With Target="$To">
 					<SetField Name="PlanType" Value="Sent" />
 					<SetField Name="PlanNote" Value="this address is fake, automatically marked as sent" />

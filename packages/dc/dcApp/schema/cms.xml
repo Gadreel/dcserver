@@ -76,6 +76,8 @@
 		<Record Id="dcmAwsVideoStore" Class="dcraft.cms.cdn.aws.AwsVideoStore" />
 
 		<Record Id="dcmAwsVideoStoreFile" Inherits="dcmCDNVideoFileDescriptor" Class="dcraft.cms.cdn.aws.AwsVideoFile" />
+
+		<Record Id="dcmDocAdapter" Class="dcraft.core.doc.DocAdapter" />
 	</Shared>
 
 	<Database>

@@ -15,6 +15,7 @@
 #
 ************************************************************************ */
 
+// TODO test all callPageFunc for try / catch and async functioning
 
 dc.pui = {
 };
@@ -44,8 +45,6 @@ dc.pui.layer.Base.prototype = {
 			ContentShell: contentshell,
 			Content: content,
 		}, options);
-
-		// TODO add layer Timers	- try to work with Velocity instead of making our own timers
 	},
 
 	// TODO define use of observer - more than just "onload"
@@ -81,41 +80,80 @@ dc.pui.layer.Base.prototype = {
 				options.TargetElement = hpage[1];
 		}
 
+		// async, but we don't care at this point
 		this.loadPageAdv(options);
 	},
-	loadPageAdv: function(options) {
+	// call with separate args or with a single "options" record
+	loadPageAsync: async function(page, params, replaceState, urlparams) {
+		return new Promise(async function(resolve, reject) {
+			var options = {};
+
+			if (dc.util.Struct.isRecord(page)) {
+				options = page;
+			}
+			else {
+				var hpage = page.split('#');
+
+				options.Name = hpage[0];
+				options.Params = params;
+				options.UrlParams = urlparams;
+				options.ReplaceState = replaceState;
+				options.Callback = function() {
+					resolve();
+				};
+
+				if (hpage.length)
+					options.TargetElement = hpage[1];
+			}
+
+			await this.loadPageAdv(options);
+		});
+	},
+	loadPageAdv: async function(options) {
+		const currLayer = this;
+
 		if (! options || ! options.Name)
 			return;
 
+		const loader = dc.pui.Loader;
+
 		// layer history
-		var oldentry = this.Current;
+		const oldentry = currLayer.Current;
 
 		if (oldentry) {
-			oldentry.freeze();
-			this.History.push(oldentry);
+			const oldpage = loader.Pages[oldentry.Name];
+
+			if (oldpage.Async)
+				await oldentry.freezeAsync();
+			else
+				oldentry.freeze();
+
+			currLayer.History.push(oldentry);
 		}
 
-		options.Layer = this;
+		options.Layer = currLayer;
 
-		var entry = new dc.pui.PageEntry(options);
-		var loader = dc.pui.Loader;
-
+		const entry = new dc.pui.PageEntry(options);
 		loader.LoadPageId = entry.Id;
 
 		// if page is already loaded then show it
 		if (loader.Pages[options.Name] && ! loader.Pages[options.Name].NoCache && ! loader.StalePages[options.Name]) {
-			loader.resumePageLoad();
+			loader.resumePageLoad();	// async, but no followup needed
 			return;
 		}
 
 		delete loader.StalePages[options.Name];		// no longer stale
 
-		var ssrc = options.Name + '?_dcui=dyn';
+		let ssrc = options.Name + '?_dcui=dyn';
 
 		if (options.UrlParams)
 			ssrc += '&' + options.UrlParams;
 
-		var script = document.createElement('script');
+		const script = document.createElement('script');
+
+		if (options.Name.endsWith('_mjs'))
+			script.type = 'module';
+
 		script.src = ssrc + '&nocache=' + dc.util.Crypto.makeSimpleKey();
 
 		script.id = 'page' + options.Name.replace(/\//g,'.');
@@ -160,7 +198,6 @@ dc.pui.layer.Base.prototype = {
 
 			layer.enhancePage(false);
 
-			//if (! frompop) { TODO if this ever worked (back arrow history) it doesn't any longer
 			if (this == dc.pui.Loader.MainLayer) {
 				// use window.location.pathname so that a Refresh loads the current page, not the dialog/app
 				if (entry.ReplaceState)
@@ -184,10 +221,9 @@ dc.pui.layer.Base.prototype = {
 	enhancePage: function(firstload) {
 		var layer = this;
 		var loader = dc.pui.Loader;
+		var page = loader.Pages[layer.Current.Name];
 
 		if (firstload) {
-			var page = loader.Pages[layer.Current.Name];
-
 			var lclass = page.PageClass + ' dcuiContentLayer';
 
 			$(layer.Content).attr('class', lclass);
@@ -205,25 +241,15 @@ dc.pui.layer.Base.prototype = {
 			dc.pui.Tags[tag](layer.Current, this);
 		});
 
-		layer.Current.onLoad(function() {
+		const pageLoadedCallback = function() {
 			if (layer.Current.Callback)
 				layer.Current.Callback.call(layer.Current);
-		});
+		};
 
-		layer.updateFocusable();
-	},
-
-	updateFocusable: function() {
-		// if (this != dc.pui.Loader.MainLayer) {
-		// 	var focusableElements = 'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-		//
-		// 	var focusableContent = $(this.ContentShell).find(focusableElements).filter(function() {
-		// 		return (! $(this).is(':hidden') && ! $(this).is(':disabled') );
-		// 	});
-		//
-		// 	dc.pui.Loader.FirstFocusable = focusableContent[0];
-		// 	dc.pui.Loader.LastFocusable = focusableContent[focusableContent.length - 1];
-		// }
+		if (page.Async)
+			layer.Current.onLoadAsync().then(pageLoadedCallback);
+		else
+			layer.Current.onLoad(pageLoadedCallback);
 	},
 
 	refreshPage: function(clean) {
@@ -311,9 +337,6 @@ dc.pui.layer.Base.prototype = {
 	},
 
 	open: function() {
-		// dc.pui.Loader.FirstFocusable = null;
-		// dc.pui.Loader.LastFocusable = null;
-
 		if (this != dc.pui.Loader.MainLayer) {
 			var need = true;
 
@@ -323,7 +346,6 @@ dc.pui.layer.Base.prototype = {
 				}
 				else if (! dc.pui.Loader.Layers[i].ManualVisibility) {
 					$(dc.pui.Loader.Layers[i].ContentShell).attr('aria-hidden', 'true');
-					// TODO remove 1 below after testing
 					$(dc.pui.Loader.Layers[i].ContentShell).attr('inert', 'true');
 				}
 			}
@@ -335,7 +357,6 @@ dc.pui.layer.Base.prototype = {
 				$(this.ContentShell).attr('aria-hidden', 'false');
 				$(dc.pui.Loader.MainLayer.Content).attr('aria-hidden', 'true');
 
-				// TODO remove 2 below after testing
 				$(this.ContentShell).removeAttr('inert');
 				$(dc.pui.Loader.MainLayer.Content).attr('inert', 'true');
 
@@ -345,7 +366,6 @@ dc.pui.layer.Base.prototype = {
 		}
 		else {
 			if (! this.ManualVisibility) {
-				// TODO remove 1 below after testing
 				$(this.Content).removeAttr('inert');
 
 				$(this.Content).attr('aria-hidden', 'false');
@@ -360,18 +380,10 @@ dc.pui.layer.Base.prototype = {
 	close: function() {
 		this.clearHistory();
 
-		/* TODO some sort of event
-		if (!dmode)
-			dc.pui.Loader.currentPageEntry().callPageFunc('dcwDialogEvent', { Name: 'Close', Target: 'DialogPane' });
-		*/
-
 		if (this != dc.pui.Loader.MainLayer) {
 			if (! this.ManualVisibility) {
 				$(this.ContentShell).attr('aria-hidden', 'true');
-
-				// TODO remove 1 below after testing
 				$(this.ContentShell).attr('inert', 'true');
-
 				$(this.ContentShell).hide();
 			}
 
@@ -434,7 +446,7 @@ dc.pui.layer.Main.prototype.back = function() {
 	window.history.back();
 };
 
-dc.pui.layer.Main.prototype.loadPageAdv = function(options) {
+dc.pui.layer.Main.prototype.loadPageAdv = async function(options) {
 	if (! options || ! options.Name)
 		return;
 
@@ -459,7 +471,7 @@ dc.pui.layer.Main.prototype.loadPageAdv = function(options) {
 		window.location.assign(options.Name + (options.TargetElement ? '#' + options.TargetElement : ''));
 };
 
-dc.pui.layer.Main.prototype.initPage = function() {
+dc.pui.layer.Main.prototype.initPage = async function() {
 	var entry = new dc.pui.PageEntry({
 		Name: decodeURI(window.location.pathname),
 		Href: decodeURI(window.location.href),
@@ -467,7 +479,7 @@ dc.pui.layer.Main.prototype.initPage = function() {
 	});
 
 	dc.pui.Loader.LoadPageId = entry.Id;
-	dc.pui.Loader.resumePageLoad();
+	await dc.pui.Loader.resumePageLoad();
 },
 
 dc.pui.layer.Main.prototype.manifestPage = function(entry, frompop) {
@@ -645,25 +657,25 @@ dc.pui.layer.App.prototype.open = function() {
 			);
 
 		$('body').append(dbox);
-
-		/* TODO ??
-		pane.setObserver('CMSPane', function() {
-			dc.cms.ui.Loader.loadMenu();
-		});
-		*/
 	}
 
 	dc.pui.layer.Base.prototype.open.call(this);
 };
 
-dc.pui.layer.App.prototype.loadTab = function(tabalias, params) {
+dc.pui.layer.App.prototype.loadTab = async function(tabalias, params) {
 	var tinfo = this.getTabInfo(tabalias);
 
 	if (! tinfo)
 		return;
 
 	if (this.Current) {
-		this.Current.freeze();
+		const oldpage = dc.pui.Loader.Pages[this.Current.Name];
+
+		if (oldpage.Async)
+			await this.Current.freezeAsync();
+		else
+			this.Current.freeze();
+
 		this.History.push(this.Current);
 		this.Current = null;
 	}
@@ -904,10 +916,8 @@ dc.pui.Loader = {
 	MainLayer: null,
 	Layers: [],
 	TextSize: 'default',
-	// FirstFocusable: null,
-	// LastFocusable: null,
 
-	init: function() {
+	init: async function() {
 		var loader = this;
 
 		// stop with Googlebot.  Googlebot may load page and run script, but no further than this so indexing is correct (index this page)
@@ -945,30 +955,12 @@ dc.pui.Loader = {
 		}
 
 		document.addEventListener('keydown', function(e) {
-		    if (e.key === 'Escape' || e.keyCode === 27) {
-					var layer = loader.currentLayer();
+	    if (e.key === 'Escape' || e.keyCode === 27) {
+				var layer = loader.currentLayer();
 
-					if (layer)
-						layer.close();
-		    }
-
-				// let isTabPressed = e.key === 'Tab' || e.keyCode === 9;
-				//
-				// if (isTabPressed) {
-				// 	if (e.shiftKey) { // if shift key pressed for shift + tab combination
-				// 		if (document.activeElement === dc.pui.Loader.FirstFocusable) {
-				// 			dc.pui.Loader.LastFocusable.focus(); // add focus for the last focusable element
-				// 			e.preventDefault();
-				// 		}
-				// 	}
-				// 	else { // if tab key is pressed
-				// 		if (document.activeElement === dc.pui.Loader.LastFocusable) { // if focused has reached to last focusable element then focus first focusable element after pressing tab
-				// 			dc.pui.Loader.FirstFocusable.focus(); // add focus for the first focusable element
-				// 			e.preventDefault();
-				// 		}
-				// 	}
-				// }
-
+				if (layer)
+					layer.close();
+	    }
 
 			// TODO support layer key events
 		});
@@ -982,34 +974,38 @@ dc.pui.Loader = {
 		if (dc.handler && dc.handler.settings && dc.handler.settings.fbpixel)
 			loadFBPixel();
 
-		dc.comm.init().then(function() {
-			if (dc.handler && dc.handler.init)
-				dc.handler.init();
+		await dc.comm.init();
 
-			if (dc.util.Web.isTouchDevice())
-				$('html > head').append('<style>#dcuiDialogPane { margin-top: 36px; }</style>');
+		if (dc.handler && dc.handler.init)
+			dc.handler.init();
 
-			if (dc.user.isVerified()) {
-				dc.pui.Loader.MainLayer.initPage();
-				return;
-			}
+		if (dc.handler && dc.handler.initAsync)
+			await dc.handler.initAsync();
 
-			var creds = dc.user.loadRemembered();
+		if (dc.util.Web.isTouchDevice())
+			$('html > head').append('<style>#dcuiDialogPane { margin-top: 36px; }</style>');
 
-			if (! creds) {
-				dc.pui.Loader.MainLayer.initPage();
- 				return;
-			}
+		if (dc.user.isVerified()) {
+			await dc.pui.Loader.MainLayer.initPage();
+			return;
+		}
 
-			dc.user.signin(creds.Username, creds.Password, true, function(msg) {
-				if (dc.user.isVerified()) {
-					window.location.reload(true);
-				}
-				else {
-					dc.pui.Loader.MainLayer.initPage();
-				}
-			});
-		});
+		var creds = dc.user.loadRemembered();
+
+		if (! creds) {
+			await dc.pui.Loader.MainLayer.initPage();
+			return;
+		}
+
+		// TODO figure out how this works with sign in handler - probably need to move the reload below into the default handler and make it go after initPage
+		await dc.user.signinAsync( { Username: creds.Username, Password: creds.Password }, true);
+
+		if (dc.user.isVerified()) {
+			window.location.reload(true);
+			return;
+		}
+
+		await dc.pui.Loader.MainLayer.initPage();
 	},
 	signout: function() {
 		dc.user.signout(function() {
@@ -1024,7 +1020,7 @@ dc.pui.Loader = {
 
 		loader.Pages[name] = def;
 	},
-	resumePageLoad: function(pagename) {
+	resumePageLoad: async function(pagename) {
 		var loader = this;
 
 		var entry = loader.Ids[loader.LoadPageId];
@@ -1375,16 +1371,40 @@ dc.pui.Popup = {
 		dc.pui.Alert.loadPage('/dcw/alert', { Message: msg, Callback: callback, Title: title })
 	},
 
+	alertAsync: async function(msg, title) {
+		return new Promise((resolve, reject) => {
+			dc.pui.Alert.loadPage('/dcw/alert', { Message: msg, Callback: function() { resolve(); }, Title: title })
+		});
+	},
+
 	await: function(msg, callback, title, task) {
 		dc.pui.Alert.loadPage('/dcw/await', { Message: msg, Callback: callback, Title: title, Task: task })
+	},
+
+	awaitAsync: async function(msg, title, task) {
+		return new Promise((resolve, reject) => {
+			dc.pui.Alert.loadPage('/dcw/await', { Message: msg, Callback: function(ctask) { resolve(ctask); }, Title: title, Task: task })
+		});
 	},
 
 	confirm: function(msg, callback, title) {
 		dc.pui.Alert.loadPage('/dcw/confirm', { Message: msg, Callback: callback, Title: title })
 	},
 
+	confirmAsync: async function(msg, title) {
+		return new Promise((resolve, reject) => {
+			dc.pui.Alert.loadPage('/dcw/confirm', { Message: msg, Callback: function(confirm) { resolve(confirm); }, Title: title })
+		});
+	},
+
 	input: function(msg, callback, title, label, value) {
 		dc.pui.Alert.loadPage('/dcw/input', { Message: msg, Callback: callback, Title: title, Label: label, Value: value })
+	},
+
+	inputAsync: async function(msg, title, label, value) {
+		return new Promise((resolve, reject) => {
+			dc.pui.Alert.loadPage('/dcw/input', { Message: msg, Callback: function(value) { resolve(value); }, Title: title, Label: label, Value: value })
+		});
 	},
 
 	menu: function(menu) {
@@ -1527,8 +1547,94 @@ dc.pui.PageEntry.prototype = {
 		loadtask.run();
 	},
 
+	onLoadAsync: async function() {
+		console.log('using async page loader');
+
+		try {
+			const page = dc.pui.Loader.Pages[this.Name];
+			const entry = this;
+
+			// PRE-LOADS
+
+			const loadFuncs = [ ];
+
+			for (let i = 0; i < page.LoadFunctions.length; i++) {
+				const func = page.LoadFunctions[i];
+
+				if (dc.util.String.isString(func))
+					loadFuncs.push(entry.callPageFunc(func));
+				else
+					loadFuncs.push(func.call(entry, event));
+			}
+
+			// the first fail will cease all the promises and throw an Exception
+			await Promise.all(loadFuncs);
+
+			// LOAD
+
+			/*
+			entry.LastFocus = code can see and change the focus
+			*/
+
+			await entry.callPageFunc(entry.Loaded ? 'Thaw' : 'Load');
+
+			//await entry.callPageFunc('LoadTest');
+
+			// FOCUS
+
+			try {
+				const cs = $(entry.Layer.ContentShell).get(0);
+				const x = cs.scrollLeft;
+				const y = cs.scrollTop;
+
+				if (entry.LastFocus)
+					entry.LastFocus.focus();
+				else if (entry.Layer.Content != '#dcuiMain')
+					entry.query('main').focus();
+
+				$(cs).scrollTop(y);
+			}
+			catch (x) {
+				// do nothing if focus fails
+			}
+
+			// LOAD FORMS
+
+			const loadFormFuncs = [ ];
+
+			for (let formname of Object.keys(entry.Forms)) {
+				loadFormFuncs.push(entry.Forms[formname][entry.Loaded ? 'thawAsync' : 'loadAsync']());
+			}
+
+			// the first fail will cease all the promises and throw an Exception
+			await Promise.all(loadFormFuncs);
+
+			// DONE page load
+
+			entry.Loaded = true;
+			entry.Frozen = false;
+
+			console.log('async page loader success');
+		}
+		catch(x) {
+			console.log('async page loader failure: ' + x);
+
+			if (x.stack)
+				console.log(x.stack);
+
+			await dc.pui.Popup.alertAsync(x.message);
+		}
+	},
+
 	reload: function() {
 		this.Loaded = false;
+
+		var page = dc.pui.Loader.Pages[this.Name];
+
+		// return the promise if asnyc
+		if (page.Async)
+			return this.onLoadAsync();
+
 		this.onLoad();
 	},
 
@@ -1538,12 +1644,31 @@ dc.pui.PageEntry.prototype = {
 	},
 
 	callPageFunc: function(method) {
-		var page = dc.pui.Loader.Pages[this.Name];
+		const page = dc.pui.Loader.Pages[this.Name];
 
+		// if this is an async function, then you are returning a promise
+		// if not then you are returning a value from the function (if any)
+		// note that 'on*' functions are always coded as sync and should never return anything
 		if (page && page.Functions[method])
 			return page.Functions[method].apply(this, Array.prototype.slice.call(arguments, 1));
 
-		return null;
+		return page.Async ? Promise.resolve(undefined) : null;		// for sync should have been return undefined;
+	},
+
+	allocatePageFuncTimeout: function() {
+		const entry = this;
+		const loadtracker = new dc.lang.promise.TimeoutPromise();
+
+		loadtracker.TimeoutAllocAdapter = function(period, code) {
+			this.Tid = entry.allocateTimeout({
+				Op: code,
+				Period: period
+			});
+
+			return this.Tid;
+		};
+
+		return loadtracker;
 	},
 
 	callTagFunc: function(selector, method) {
@@ -1574,7 +1699,7 @@ dc.pui.PageEntry.prototype = {
 			return this.Forms[name];
 
 		// if no name then return the first we find
-		var fnames = Object.getOwnPropertyNames(this.Forms);
+		const fnames = Object.getOwnPropertyNames(this.Forms);
 
 		if (fnames)
 			return this.Forms[fnames[0]];
@@ -1583,7 +1708,7 @@ dc.pui.PageEntry.prototype = {
 	},
 
 	formQuery: function(name) {
-		var frm = this.form(name);
+		const frm = this.form(name);
 
 		if (frm)
 			return $('#' + frm.Id);
@@ -1599,9 +1724,24 @@ dc.pui.PageEntry.prototype = {
 
 		entry.callPageFunc('Freeze');
 
-		Object.getOwnPropertyNames(entry.Forms).forEach(function(name) {
-			entry.Forms[name].freeze();
-		});
+		for (let formname of Object.keys(entry.Forms)) {
+			entry.Forms[formname].freeze();
+		}
+
+		entry.Frozen = true;
+	},
+
+	freezeAsync: async function() {
+		const entry = this;
+		const page = dc.pui.Loader.Pages[entry.Name];
+
+		entry.FreezeTop = $(entry.Layer.ContentShell).scrollTop();
+
+		await entry.callPageFunc('Freeze');
+
+		for (let formname of Object.keys(entry.Forms)) {
+			entry.Forms[formname].freeze();
+		}
 
 		entry.Frozen = true;
 	},
@@ -1652,12 +1792,16 @@ dc.pui.PageEntry.prototype = {
 	onDestroy: function(e) {
 		var page = dc.pui.Loader.Pages[this.Name];
 
+		console.log('destroy: ' + this.Name);
+
 		// clear the old timers
 		for (var x = 0; x < this.Timers.length; x++) {
 			var tim = this.Timers[x];
 
 			if (!tim)
 				continue;
+
+			console.log('timeout cleared on destroy in dc.app: ' + tim.Tid);
 
 			if (tim.Tid)
 				window.clearTimeout(tim.Tid);
@@ -1690,11 +1834,15 @@ dc.pui.PageEntry.prototype = {
 				window.clearTimeout(options.Tid);		// no longer need to clear this later, it is called
 				entry.Timers[pos] = null;
 
+				console.log('timeout cleared and called in dc.app: ' + options.Tid);
+
 				options.Op.call(this, options.Data);
 			},
 			options.Period);
 
 		this.Timers.push(options);
+
+		console.log('timeout allocated in dc.app: ' + options.Tid);
 
 		return options.Tid;
 	},
@@ -1713,29 +1861,25 @@ dc.pui.PageEntry.prototype = {
 	},
 
 	formForInput: function(el) {
-		var entry = this;
-		var res = null;
-		var fel = $(el).closest('form');
-		var id = $(fel).attr('id');
+		const entry = this;
+		const id = $(el).closest('form').attr('id');
 
-		Object.getOwnPropertyNames(entry.Forms).forEach(function(name) {
-			var f = entry.Forms[name];
+		for (let formname of Object.keys(entry.Forms)) {
+			if (entry.Forms[formname]?.Id == id)
+				return entry.Forms[formname];
+		}
 
-			if (f.Id == id)
-				res = f;
-		});
-
-		return res;
+		return null;
 	},
 
 	// list of results from validateForm
 	validate: function() {
-		var entry = this;
-		var res = [ ];
+		const entry = this;
+		const res = [ ];
 
-		Object.getOwnPropertyNames(entry.Forms).forEach(function(name) {
-			res.push(entry.Forms[name].validate());
-		});
+		for (let formname of Object.keys(entry.Forms)) {
+			res.push(entry.Forms[formname].validate());
+		}
 
 		return res;
 	}
@@ -1916,8 +2060,6 @@ dc.pui.Form.prototype = {
 			}
 		} );
 
-		// TODO add before load controls
-
 		for (var i = 0 ; i < form.RecordOrder.length; i++) {
 			var rec = form.RecordOrder[i];
 
@@ -2068,8 +2210,6 @@ dc.pui.Form.prototype = {
 			} );
 		}
 
-		// TODO AfterLoadCtrls
-
 		steps.push( {
 			Alias: 'AfterLoad',
 			Title: 'After Load',
@@ -2133,6 +2273,46 @@ dc.pui.Form.prototype = {
 		loadtask.run();
 	},
 
+	loadAsync: async function() {
+		const form = this;
+
+		if (! form.RecordOrder)
+			return;
+
+		// ALL LOADS - collect data phase
+
+		const loadPromises = [ ];
+
+		for (let i = 0; i < form.RecordOrder.length; i++) {
+			const rec = form.RecordOrder[i];
+
+			form.initChanges(rec);
+
+			loadPromises.push(form.raiseEvent('LoadRecord', { Form: form, Record: rec }));
+		}
+
+		const values = await Promise.all(loadPromises);
+
+		// ALL LOADS - present data phase
+
+		for (let i = 0; i < form.RecordOrder.length; i++) {
+			const rec = form.RecordOrder[i];
+			const data = values[i];		// should be object
+
+			if (data != undefined) {
+				form.loadRecord({
+					Record: rec,
+					Data: data,
+					AsNew: form.AsNew[rec]
+				});
+			}
+		}
+
+		// AFTER LOAD
+
+		await form.raiseEvent('AfterLoad');
+	},
+
 	loadDefaultRecord: function(data, asNew) {
 		return this.loadRecord( {
 			Record: 'Default',
@@ -2142,22 +2322,22 @@ dc.pui.Form.prototype = {
 	},
 
 	loadRecord: function(info) {
-		var form = this;
+		const form = this;
 
 		if (info.AsNew)
 			form.AsNew[info.Record] = true;
 
-		if (!info.Data)
+		if (! info.Data)
 			return;
 
-		Object.getOwnPropertyNames(form.Inputs).forEach(function(name) {
-			var iinfo = form.Inputs[name];
+		for (let inputname of Object.keys(form.Inputs)) {
+			const iinfo = form.Inputs[inputname];
 
 			if ((iinfo.Record == info.Record) && info.Data.hasOwnProperty(iinfo.Field)) {
 				iinfo.setValue(info.Data[iinfo.Field]);
 				iinfo.OriginalValue = info.Data[iinfo.Field];
 			}
-		});
+		}
 	},
 
 	thaw: function(callback) {
@@ -2192,8 +2372,6 @@ dc.pui.Form.prototype = {
 					task.resume();
 			}
 		} );
-
-		// TODO add before thaw controls
 
 		for (var i = 0 ; i < form.RecordOrder.length; i++) {
 			var rec = form.RecordOrder[i];
@@ -2262,8 +2440,6 @@ dc.pui.Form.prototype = {
 			} );
 		}
 
-		// TODO AfterThawCtrls
-
 		steps.push( {
 			Alias: 'AfterThaw',
 			Title: 'After Thaw',
@@ -2329,14 +2505,56 @@ dc.pui.Form.prototype = {
 		thawtask.run();
 	},
 
-	thawRecord: function(info) {
-		var form = this;
+	thawAsync: async function(callback) {
+		const form = this;
 
-		if (!info.Data)
+		if (! form.RecordOrder)
 			return;
 
-		Object.getOwnPropertyNames(form.Inputs).forEach(function(name) {
-			var iinfo = form.Inputs[name];
+		// ALL THAWS - collect data phase
+
+		const thawPromises = [ ];
+
+		for (let i = 0; i < form.RecordOrder.length; i++) {
+			const rec = form.RecordOrder[i];
+
+			const event = {
+				Record: rec,
+				Data: form.FreezeInfo[rec].Values,
+				Originals: form.FreezeInfo[rec].Originals
+			};
+
+			thawPromises.push(form.raiseEvent('ThawRecord', event));
+		}
+
+		const values = await Promise.all(thawPromises);
+
+		// ALL THAWS - present data phase
+
+		for (let i = 0; i < form.RecordOrder.length; i++) {
+			const rec = form.RecordOrder[i];
+			const data = values[i] || form.FreezeInfo[rec].Values;		// should be object
+
+			if (data != undefined) {
+				form.thawRecord({
+					Record: rec,
+					Data: data,
+					Originals: form.FreezeInfo[rec].Originals
+				});
+			}
+		}
+
+		await form.raiseEvent('AfterThaw');
+	},
+
+	thawRecord: function(info) {
+		const form = this;
+
+		if (! info.Data)
+			return;
+
+		for (let inputname of Object.keys(form.Inputs)) {
+			const iinfo = form.Inputs[inputname];
 
 			if ((iinfo.Record == info.Record) && info.Data.hasOwnProperty(iinfo.Field)) {
 				if (iinfo.thawValue)
@@ -2346,15 +2564,15 @@ dc.pui.Form.prototype = {
 
 				iinfo.OriginalValue = info.Originals[iinfo.Field];
 			}
-		});
+		}
 	},
 
 	freeze: function() {
-		var form = this;
+		const form = this;
 
 		form.FreezeInfo = { };
 
-		if(!form.RecordOrder)
+		if (! form.RecordOrder)
 			return;
 
 		for (var i = 0; i < form.RecordOrder.length; i++)
@@ -2362,15 +2580,15 @@ dc.pui.Form.prototype = {
 	},
 
 	freezeRecord: function(recname) {
-		var form = this;
+		const form = this;
 
 		form.FreezeInfo[recname] = {
 				Originals: { },
 				Values: { }
 		};
 
-		Object.getOwnPropertyNames(form.Inputs).forEach(function(name) {
-			var iinfo = form.Inputs[name];
+		for (let inputname of Object.keys(form.Inputs)) {
+			const iinfo = form.Inputs[inputname];
 
 			if (iinfo.Record == recname) {
 				form.FreezeInfo[recname].Originals[iinfo.Field] = iinfo.OriginalValue
@@ -2380,7 +2598,7 @@ dc.pui.Form.prototype = {
 				else
 					form.FreezeInfo[recname].Values[iinfo.Field] = iinfo.getValue();
 			}
-		});
+		}
 	},
 
 	loadInSession: function() {
@@ -2459,8 +2677,6 @@ dc.pui.Form.prototype = {
 				}
 			}
 		} );
-
-		// TODO add before save controls
 
 		for (var i = 0 ; i < form.RecordOrder.length; i++) {
 			var rec = form.RecordOrder[i];
@@ -2820,18 +3036,208 @@ dc.pui.Form.prototype = {
 
 		savetask.run();
 	},
+	saveAsync: async function() {
+		const form = this;
+
+		if (! form.RecordOrder)
+			return;
+
+		let anyChanged = await form.raiseEvent('BeforeSave') || false;
+
+		// ALL SAVES - send data phase
+
+		const savePromises = [ ];
+		const saveRecords = [ ];
+
+		for (let i = 0; i < form.RecordOrder.length; i++) {
+			const rec = form.RecordOrder[i];
+
+			if (! await form.isChanged(rec))
+				continue;
+
+			saveRecords.push(rec);
+			anyChanged = true;
+
+			const event = {
+				Form: form,
+				Record: rec,
+				Data: form.getChanges(rec)
+			};
+
+			if (form.Managed) {
+				event.Title = '';
+
+				for (let n = 0; n < form.TitleFields.length; n++) {
+					const fname = form.TitleFields[n];
+
+					if (event.Data[fname]) {
+						if (event.Title.length != 0)
+							event.Title += ' - ';
+
+						event.Title += event.Data[fname];
+					}
+				}
+
+				// this will block, but should not generally be used for long calls
+				await form.raiseEvent('SaveRecordManaged', event);
+
+				// TODO figure out the task.Store.Captcha equivalent
+				let captcha = undefined;  // task.Store.Captcha ? task.Store.Captcha : 'xyz';
+
+				if (! captcha && form.Captcha)
+					captcha = form.Captcha.Token;
+
+				savePromises.push(dc.comm.tryRemote('dcCoreServices.ManagedForm.Submit', {
+					Form: form.Name,
+					Captcha: captcha,
+					Title: event.Title,
+					Data: event.Data
+				}));
+			}
+			else {
+				savePromises.push(form.raiseEvent('SaveRecord', event));
+			}
+		}
+
+		/* each should return object - containing data returned from SaveRecord
+			Data: data
+		*/
+		const afterDataValues = await Promise.all(savePromises);
+
+		// ALL SAVES - protect data phase
+
+		for (let i = 0; i < saveRecords.length; i++) {
+			const rec = saveRecords[i];
+
+			form.clearChanges(rec);
+		}
+
+		// AFTER SAVE RECORDS
+
+		const afterSavePromises = [ ];
+
+		for (let i = 0; i < saveRecords.length; i++) {
+			const rec = saveRecords[i];
+			const data = afterDataValues[i] || { };		// should be object
+
+			if (data != undefined) {
+				var event = {
+					Form: form,
+					Record: rec,
+					Data: data
+				};
+
+				// do before save record event
+				afterSavePromises.push(form.raiseEvent('AfterSaveRecord', event));
+			}
+		}
+
+		await Promise.all(afterSavePromises);
+
+		// AFTER SAVE CONTROLS
+
+		const afterSaveCtrlsPromises = [ ];
+
+		for (let i = 0; i < saveRecords.length; i++) {
+			const rec = saveRecords[i];
+			const data = afterDataValues[i] || { };		// should be object
+
+			for (let inputname of Object.keys(form.Inputs)) {
+				const iinfo = form.Inputs[inputname];
+
+				if ((iinfo.Record == rec) && iinfo.onAfterSaveAsync) {
+					var event = {
+						Form: form,
+						Record: rec,
+						Data: data
+					};
+
+					// control has to be async - return a promise
+					afterSaveCtrlsPromises.push(iinfo.onAfterSaveAsync(event));
+				}
+			}
+		}
+
+		await Promise.all(afterSaveCtrlsPromises);
+
+		// RECORDS COMPLETED
+
+		const completePromises = [ ];
+
+		for (let i = 0; i < saveRecords.length; i++) {
+			const rec = saveRecords[i];
+			const data = afterDataValues[i] || { };		// should be object
+
+			if (data != undefined) {
+				var event = {
+					Form: form,
+					Record: rec,
+					Data: data
+				};
+
+				if (form.Managed) {
+					// this will block, but should not generally be used for long calls
+					await form.raiseEvent('AfterCompleteRecordManaged', event);
+
+					if (event.Data.Token && event.Data.Uuid) {
+						savePromises.push(dc.comm.tryRemote('dcCoreServices.ManagedForm.Complete', {
+							Form: form.Name,
+							Token: event.Data.Token,
+							Uuid: event.Data.Uuid
+						}));
+					}
+				}
+				else {
+					completePromises.push(form.raiseEvent('AfterCompleteRecord', event));
+				}
+			}
+		}
+
+		await Promise.all(completePromises);
+
+		// AFTER SAVE
+
+		var event = {
+			Changed: anyChanged,
+			DefaultSaved: false
+		};
+
+		if (form.Managed) {
+			form.query('a[data-dc-tag="dcf.SubmitButton"],a[data-dc-tag="dcf.SubmitCaptchaButton"]').addClass('pure-button-disabled');
+			event.DefaultSavedMessage = 'Form successfully submitted.';
+			event.DefaultSaved = true;
+
+			gtag('event', 'Submit', {
+				'event_category': 'Form',
+				'event_label': form.Name
+			});
+		}
+
+		await form.raiseEvent('AfterSave', event);
+
+		if (event.DefaultSaved) {
+			dc.pui.Apps.Busy = false;
+
+			var msg = anyChanged ? 'Saved' : 'No changes, nothing to save.';
+
+			if (event.DefaultSavedMessage)
+				msg = event.DefaultSavedMessage;
+
+			await dc.pui.Popup.alertAsync(msg);
+		}
+	},
 
 	initChanges: function(recname) {
-		var form = this;
+		const form = this;
 
-		Object.getOwnPropertyNames(form.Inputs).forEach(function(name) {
-			var iinfo = form.Inputs[name];
+		for (let inputname of Object.keys(form.Inputs)) {
+			const iinfo = form.Inputs[inputname];
 
 			if (iinfo.Record == recname) {
 				iinfo.setValue(iinfo.DefaultValue);
 				iinfo.OriginalValue = iinfo.DefaultValue;
 			}
-		});
+		}
 	},
 
 	isDefaultChanged: function() {
@@ -2839,28 +3245,30 @@ dc.pui.Form.prototype = {
 	},
 
 	isChanged: function(recname) {
-		var form = this;
+		const form = this;
 
 		if (form.AsNew[recname] || form.AlwaysNew)
 			return true;
 
-		var changed = false;
-
-		Object.getOwnPropertyNames(form.Inputs).forEach(function(name) {
-			var iinfo = form.Inputs[name];
+		for (let inputname of Object.keys(form.Inputs)) {
+			const iinfo = form.Inputs[inputname];
 
 			if ((iinfo.Record == recname) && iinfo.isChanged())
-				changed = true;
-		});
+				return true;
+		}
 
-		if (changed)
-			return true;
+		var page = dc.pui.Loader.Pages[form.PageEntry.Name];
 
 		var event = {
-			Changed: false,
-			Record: recname
+			Record: recname,
+			Changed: false
 		};
 
+		// return a promise if async
+		if (page.Async)
+			return form.raiseEvent('IsRecordChanged', event);
+
+		// sync approach - set a flag in event
 		form.raiseEvent('IsRecordChanged', event);
 
 		return event.Changed;
@@ -2871,50 +3279,52 @@ dc.pui.Form.prototype = {
 	},
 
 	getChanges: function(recname) {
-		var form = this;
-		var changes = { };
+		const form = this;
+		const changes = { };
+		const asNew = (form.AsNew[recname] || form.AlwaysNew);
 
-		var asNew = (form.AsNew[recname] || form.AlwaysNew);
-
-		Object.getOwnPropertyNames(form.Inputs).forEach(function(name) {
-			var iinfo = form.Inputs[name];
+		for (let inputname of Object.keys(form.Inputs)) {
+			const iinfo = form.Inputs[inputname];
 
 			if (iinfo.Record != recname)
-				return;
+				continue;
 
 			if (asNew || iinfo.isChanged())
 				changes[iinfo.Field] = iinfo.getValue();
-		});
+		}
 
 		return changes;
 	},
 
 	clearDefaultChanges: function() {
-		return this.clearChanges('Default');
+		this.clearChanges('Default');
 	},
 
 	clearChanges: function(recname) {
-		var form = this;
+		const form = this;
 
 		form.AsNew[recname] = false;
 		form.FreezeInfo = null;
 
-		Object.getOwnPropertyNames(form.Inputs).forEach(function(name) {
-			var iinfo = form.Inputs[name];
+		for (let inputname of Object.keys(form.Inputs)) {
+			const iinfo = form.Inputs[inputname];
 
 			if (iinfo.Record == recname)
 				iinfo.OriginalValue = iinfo.getValue();
-		});
+		}
 	},
 
 	raiseEvent: function(name, event) {
-		if (event && event.Record && (event.Record != 'Default'))
-			this.PageEntry.callPageFunc(this.Prefix ? this.Prefix + '-' + name + '-' + event.Record : name + '-' + event.Record, event);
+		// return promise if Async page, otherwise return undefined because sync events don't return values
+		if (event?.Record && (event?.Record != 'Default'))
+			return this.PageEntry.callPageFunc(this.Prefix ? this.Prefix + '-' + name + '-' + event.Record : name + '-' + event.Record, event);
 		else
-			this.PageEntry.callPageFunc(this.Prefix ? this.Prefix + '-' + name : name, event);
+			return this.PageEntry.callPageFunc(this.Prefix ? this.Prefix + '-' + name : name, event);
 	},
 
 	/*
+	this cannot be async - it happens often and needs to happen fast
+
 	// return results on all controls
 
 	{
@@ -3059,14 +3469,14 @@ dc.pui.TagFuncs = {
 			if (! fimg || fimg.length == 0)
 				return;
 
-			$(fimg).css({
-			     marginLeft: '0'
-			 });
-
 	 		var centerEnable = $(node).attr('data-dcm-centering');
 
 	 		if (! centerEnable || (centerEnable.toLowerCase() != 'true'))
 	 			return;
+
+			$(fimg).css({
+				marginLeft: '0'
+			});
 
 			fimg = fimg.get(0);
 
@@ -3151,18 +3561,28 @@ dc.pui.Tags = {
 			// TODO we need to hide the <li> not just the <a> for the sake of screen readers
 
 			if ($(this).hasClass('dcui-pagepanel-close')) {
-				if (entry.hasPageFunc('onClose'))
-					entry.callPageFunc('onClose', e);
-				else
-					entry.Layer.close();
+				try {
+					if (entry.hasPageFunc('onClose'))
+						entry.callPageFunc('onClose', e);
+					else
+						entry.Layer.close();
+				}
+				catch (x) {
+					// ???
+				}
 
 				processed = true;
 			}
 			else if ($(this).hasClass('dcui-pagepanel-back')) {
-				if (entry.hasPageFunc('onBack'))
-					entry.callPageFunc('onBack', e);
-				else
-					entry.Layer.back();
+				try {
+					if (entry.hasPageFunc('onBack'))
+						entry.callPageFunc('onBack', e);
+					else
+						entry.Layer.back();
+				}
+				catch (x) {
+					// ???
+				}
 
 				processed = true;
 			}
@@ -3191,6 +3611,12 @@ dc.pui.Tags = {
 			return ! processed;
 		});
 	},
+	'dcm.Button': function(entry, node) {
+		dc.pui.Tags['dc.Link'](entry, node);
+	},
+	'dcm.Link': function(entry, node) {
+		dc.pui.Tags['dc.Link'](entry, node);
+	},
 	'dc.Button': function(entry, node) {
 		dc.pui.Tags['dc.Link'](entry, node);
 	},
@@ -3203,15 +3629,43 @@ dc.pui.Tags = {
 		if (link && ! $(node).attr('target') && (dc.util.String.startsWith(link, 'http:') || dc.util.String.startsWith(link, 'https:') || dc.util.String.startsWith(link, 'mailto:') || dc.util.String.endsWith(link, '.pdf')))
 			$(node).attr('target', '_blank');
 
+		const cmsfunc = async function() {
+			if ($(node).hasClass('dcm-cms-edit-mode')) {
+				const confirm = await dc.pui.Popup.confirmAsync('Do you want to edit the button properties?');
+
+				if (confirm) {
+					entry.callTagFunc(node, 'edit');
+					return true;
+				}
+			}
+
+			return false;
+		};
+
 		if (click || page) {
-			var clickfunc = function(e, ctrl) {
+			var clickfunc = async function(e, ctrl) {
 				if (! $(node).hasClass('pure-button-disabled') && ! dc.pui.Apps.busyCheck()) {
 					entry.LastFocus = $(node);
 
-					if (click)
-						entry.callPageFunc(click, e, ctrl);
-					else if (page)
+					if (await cmsfunc()) {
+						// no op
+					}
+					else if (click) {
+						const pagedef = dc.pui.Loader.Pages[entry.Name];
+
+						try {
+							if (pagedef.Async)
+								await entry.callPageFunc(click, e, ctrl);
+							else
+								entry.callPageFunc(click, e, ctrl);
+						}
+						catch (x) {
+							dc.pui.Popup.alert(x.message);
+						}
+					}
+					else if (page) {
 						entry.Layer.loadPage(page);
+					}
 				}
 			};
 
@@ -3248,6 +3702,21 @@ dc.pui.Tags = {
 				var ext = (dpos == -1) ? '' : link.substr(dpos);
 				var hasext = false;
 
+				var clickfunc = async function(e, ctrl) {
+					if (await cmsfunc()) {
+						// no op
+					}
+					else if ($(e.currentTarget).attr('target') == '_blank') {
+						window.open(e.data, '_blank').focus();
+					}
+					else if (linkto) {
+						window.location = e.data;		// want to reload
+					}
+					else {
+						entry.Layer.loadPage(e.data);
+					}
+				};
+
 				if (ext && ext.indexOf('/') == -1)
 					hasext = true;
 
@@ -3255,15 +3724,7 @@ dc.pui.Tags = {
 					$(node).click(link, function(e) {
 						entry.LastFocus = $(node);
 
-						if ($(e.currentTarget).attr('target') == '_blank') {
-							window.open(e.data, '_blank').focus();
-						}
-						else if (linkto) {
-							window.location = e.data;		// want to reload
-						}
-						else {
-							entry.Layer.loadPage(e.data);
-						}
+						clickfunc(e, this);
 
 						e.preventDefault();
 						return false;
@@ -3271,6 +3732,19 @@ dc.pui.Tags = {
 				}
 				else if (! $(node).attr('target')) {
 					$(node).attr('target', '_blank');
+
+					// we really only need to intercept if in edit mode, otherwise a normal click will do
+
+					if ($(node).hasClass('dcm-cms-edit-mode')) {
+						$(node).click(link, function(e) {
+							entry.LastFocus = $(node);
+
+							clickfunc(e, this);
+
+							e.preventDefault();
+							return false;
+						});
+					}
 				}
 			}
 		}
@@ -3282,12 +3756,37 @@ dc.pui.Tags = {
 				$(node).click(link, function(e) {
 					entry.LastFocus = $(node);
 
-					dc.handler.Protocols[proto].call(e);		// custom handler
+					//if (await cmsfunc()) {
+						// no op
+					//}
+					//else {
+						dc.handler.Protocols[proto].call(e);		// custom handler
+					//}
 
 					e.preventDefault();
 					return false;
 				});
 			}
+		}
+		// we really only need to intercept if in edit mode, otherwise a normal click will do
+		else if ($(node).hasClass('dcm-cms-edit-mode')) {
+			var clickfunc = async function(e, ctrl) {
+				if (await cmsfunc()) {
+					// no op
+				}
+				else if ($(e.currentTarget).attr('target') == '_blank') {
+					window.open(e.data, '_blank').focus();
+				}
+			};
+
+			$(node).click(link, function(e) {
+				entry.LastFocus = $(node);
+
+				clickfunc(e, this);
+
+				e.preventDefault();
+				return false;
+			});
 		}
 	},
 	'dc.CaptchaButton': function(entry, node) {
@@ -3303,6 +3802,7 @@ dc.pui.Tags = {
 					var clickprep = $(node).attr('data-dc-click-prep');
 
 					if (clickprep) {
+						// handle async and try / catch
 						var flagok = entry.callPageFunc(clickprep, e, ctrl);
 
 						if (! flagok) {
@@ -3315,6 +3815,7 @@ dc.pui.Tags = {
 						grecaptcha
 							.execute(skey, { action: action })
 							.then(function(token) {
+								// handle async and try / catch
 								entry.callPageFunc(click, e, token, ctrl);
 							});
 					});
@@ -3372,7 +3873,8 @@ dc.pui.Tags = {
 		dc.pui.Tags['dcf.Form'](entry, node);
 	},
 	'dcf.Form': function(entry, node) {
-		var fname = $(node).attr('data-dcf-name');
+		const fname = $(node).attr('data-dcf-name');
+		const page = dc.pui.Loader.Pages[entry.Name];
 
 		$(node).attr('novalidate', 'novalidate'); 	// for HTML5
 
@@ -3403,6 +3905,7 @@ dc.pui.Tags = {
 				if (inp.Code != 0) {
 					dc.pui.Popup.alert(inp.Message, function() {
 						if (form.OnFocus) {
+							// handle async and try / catch
 							form.PageEntry.callPageFunc(form.OnFocus, inp.Input);
 						}
 						else {
@@ -3416,10 +3919,26 @@ dc.pui.Tags = {
 				}
 			}
 
+			const clearBusy = function(task) {
+				dc.pui.Apps.Busy = false;
+			};
+
 			if (vpass) {
-				form.save(function() {
-					dc.pui.Apps.Busy = false;
-				});
+				if (page.Async)
+					form.saveAsync()
+						.then(clearBusy)
+						.catch(function(x) {
+							clearBusy();
+
+							console.log('page save failure: ' + x);
+
+							if (x.stack)
+								console.log(x.stack);
+
+							dc.pui.Popup.alert(x.message);
+						});
+				else
+					form.save(clearBusy);
 			}
 			else {
 				dc.pui.Apps.Busy = false;
@@ -3526,8 +4045,9 @@ dc.pui.Tags = {
 		});
 	},
 	'dcf.SubmitCaptchaButton': function(entry, node) {
-		var skey = $(node).attr('data-dc-sitekey');
-		var action = $(node).attr('data-dc-action');
+		const skey = $(node).attr('data-dc-sitekey');
+		const action = $(node).attr('data-dc-action');
+		const page = dc.pui.Loader.Pages[entry.Name];
 
 		var clickfunc = function(e, ctrl) {
 			var fnode = $(node).closest('form');
@@ -3548,6 +4068,7 @@ dc.pui.Tags = {
 					if (inp.Code != 0) {
 						dc.pui.Popup.alert(inp.Message, function() {
 							if (form.OnFocus) {
+								// handle async and try / catch
 								form.PageEntry.callPageFunc(form.OnFocus, inp.Input);
 							}
 							else {
@@ -3560,6 +4081,34 @@ dc.pui.Tags = {
 					}
 				}
 
+				const clearBusy = function(task) {
+					if (task && task.hasErrors())
+						$(node).removeClass('pure-button-disabled');
+
+					dc.pui.Apps.Busy = false;
+				};
+
+				const setTokenSave = function(token) {
+					form.Captcha = {
+						Token: token,
+						Action: action
+					};
+
+					if (page.Async)
+						form.saveAsync()
+							.then(clearBusy)
+							.catch(function(x) {
+								console.log('page save failure: ' + x);
+
+								if (x.stack)
+									console.log(x.stack);
+
+								dc.pui.Popup.alert(x.message);
+							});
+					else
+						form.save(clearBusy);
+				};
+
 				if (vres.Pass) {
 					$(node).addClass('pure-button-disabled');
 
@@ -3567,33 +4116,11 @@ dc.pui.Tags = {
 						grecaptcha.ready(function() {
 							grecaptcha
 								.execute(skey, { action: action })
-								.then(function(token) {
-									form.Captcha = {
-										Token: token,
-										Action: action
-									};
-
-									form.save(function(task) {
-										if (task && task.hasErrors())
-											$(node).removeClass('pure-button-disabled');
-
-										dc.pui.Apps.Busy = false;
-									});
-								});
+								.then(setTokenSave);
 						});
 					}
 					else {
-						form.Captcha = {
-							Token: '0123456789',
-							Action: action
-						};
-
-						form.save(function(task) {
-							if (task && task.hasErrors())
-								$(node).removeClass('pure-button-disabled');
-
-							dc.pui.Apps.Busy = false;
-						});
+						setTokenSave('0123456789');
 					}
 				}
 				else {
@@ -3651,6 +4178,7 @@ dc.pui.Tags = {
 			var rfunc = $(node).attr('data-ready-func');
 
 			if (rfunc) {
+				// handle async and try / catch
 				entry.callPageFunc(rfunc);
 			}
 
@@ -3663,6 +4191,7 @@ dc.pui.Tags = {
 					var func = $(node).attr('data-func');
 
 					if (func) {
+						// handle async and try / catch
 						entry.callPageFunc(func, response);
 					}
 					else {
@@ -4752,6 +5281,37 @@ dc.pui.controls.Uploader.prototype.init = function(entry, node) {
 	var uparea = upctrl.find('.dc-uploader-list-area');
 
 	uparea
+		.on('contextmenu', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+
+			navigator.clipboard.read()
+				.then(async function(clipboardItems) {
+					let t = moment.utc();
+					let selectPastedFiles = [ ];
+
+					for (let clipboardItem of clipboardItems) {
+						const imageType = clipboardItem.types.find(type => type.startsWith('image/png'));
+
+						if (imageType) {
+							const blob = await clipboardItem.getType(imageType);
+
+							blob.name = t.format('YYYYMMDDTHHmmssSSS') + 'Z.png';
+
+							console.log('name: ' + blob.name);
+
+							selectPastedFiles.push(blob);
+						}
+					}
+
+					ctrl.addFiles(selectPastedFiles);
+				})
+				.catch(function(x) {
+					console.error(x.name, x.message);
+				});
+
+			return false;
+		})
 		.on('dragstart dragover dragend', function(e) {
 			e.preventDefault();
 			e.stopPropagation();
@@ -4880,6 +5440,30 @@ dc.pui.controls.Uploader.prototype.onAfterSave = function(e) {
 
 };
 
+dc.pui.controls.Uploader.prototype.onAfterSaveAsync = async function(e) {
+	return new Promise((resolve, reject) => {
+		if (! e.Form.Managed) {
+			resolve();
+			return;
+		}
+
+		var files = [ ];
+
+		for (var i = 0; i < this.Files.length; i++) {
+			files.push({
+				File: this.Files[i],
+				Name: this.Values[i]
+			});
+		}
+
+		var uploadtask = dc.transfer.Util.uploadFiles(files, 'ManagedForms', e.Token);
+
+		dc.pui.Popup.await(dc.lang.Dict.tr('_code_900'), function() {
+			resolve();
+		}, dc.lang.Dict.tr('_code_901'), uploadtask);
+	});
+};
+
 dc.pui.controls.Uploader.prototype.addFiles = function(values) {
 	var ctrl = this;
 
@@ -4899,6 +5483,23 @@ dc.pui.controls.Uploader.prototype.addFiles = function(values) {
 		if (calcsize > maxsize) {
 			dc.pui.Popup.alert(dc.lang.Dict.tr('_code_902'));
 			return;
+		}
+	}
+
+	var accepts = $('#fld' + this.Id + ' input').attr('accept');
+
+	if (accepts) {
+		var acceptlist = accepts.split(',');
+
+		for (var i = 0; i < acceptlist.length; i++) {
+			acceptlist[i] = acceptlist[i].trim();
+		}
+
+		for (var i = 0; i < values.length; i++) {
+			if (! acceptlist.includes(values[i].type)) {
+				dc.pui.Popup.alert('One or more of the files selected is not a valid type.');
+				return;
+			}
 		}
 	}
 

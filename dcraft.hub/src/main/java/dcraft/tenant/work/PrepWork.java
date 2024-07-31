@@ -382,6 +382,11 @@ public class PrepWork extends StateWork {
 			if (Files.exists(commpath))
 				resources.getOrCreateTierComm().withPath(commpath);
 
+			Path docspath = this.tenant.resolvePath("docs");
+
+			if (Files.exists(docspath))
+				resources.getOrCreateTierDoc().withPath(docspath);
+
 			/*
 			spath = pkg.getPath().resolve("node-modules");
 
@@ -412,6 +417,11 @@ public class PrepWork extends StateWork {
 
 		if (Files.exists(commpath))
 			resources.getOrCreateTierComm().withPath(commpath);
+
+		Path docspath = this.tenant.resolvePath("docs");
+
+		if (Files.exists(docspath))
+			resources.getOrCreateTierDoc().withPath(docspath);
 
 		/*
 		spath = this.tenant.resolvePath("node-modules");
@@ -1068,6 +1078,10 @@ public class PrepWork extends StateWork {
 
 		for (XElement handler : sconfig.getTagListDeepFirst("Comm.Handler")) {
 			site.getResourcesOrCreate(resources).getOrCreateTierComm().addEmailHandler(handler);
+		}
+
+		for (XElement handler : sconfig.getTagListDeepFirst("Doc.Handler")) {
+			site.getResourcesOrCreate(resources).getOrCreateTierDoc().addDocHandler(handler);
 		}
 
 		// TODO enable the web cache Work

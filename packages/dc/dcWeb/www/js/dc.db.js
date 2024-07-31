@@ -136,6 +136,21 @@ dc.db.database = {
 				{
 					Field: 'dcAuthorizationTag',
 					Name: 'Badges'
+				},
+				{
+					Field: 'dcAuthMethodUuid'.
+					As: 'AuthMethods',
+					Key: 'Uuid',
+					Select: [
+						{
+							Field: 'dcAuthMethodType',
+							Name: 'Type'
+						},
+						{
+							Field: 'dcAuthMethodActive',
+							Name: 'Active'
+						}
+					]
 				}
 			],
 			Where: {

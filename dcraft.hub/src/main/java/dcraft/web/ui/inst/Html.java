@@ -538,8 +538,13 @@ $(document).ready(function() {
 						}
 					}
 
-					ps.append("globalThis.dcReadyScript = async function() {\n");
-					
+					if (mjsmode) {
+						ps.append("globalThis.dcReadyAsync = async function() {\n");
+					}
+					else {
+						ps.append("globalThis.dcReadyScript = async function() {\n");
+					}
+
 					ps.append("if (! dc.handler)\n\tdc.handler = { };\n\n");
 					
 					ps.append("if (! dc.handler.settings)\n\tdc.handler.settings = { };\n\n");
@@ -598,14 +603,11 @@ $(document).ready(function() {
 
 					ps.append("\n\n");
 
-					/*
 					if (mjsmode) {
 						ps.append("$(document).ready(function() {\n");
-						ps.append("\tdcReadyScript();\n");
+						ps.append("\tglobalThis.dcReadyAsync();\n");
 						ps.append("});\n");
 					}
-
-					 */
 				}
 			}
 			catch (IOException x ) {

@@ -1,0 +1,38 @@
+<dcs.Script>
+	<dcs.Console>allocate totp: {$Data}</dcs.Console>
+
+	<dcs.Var Name="Now" Type="DateTime">
+		<Now />
+	</dcs.Var>
+
+	<dcs.Var Name="dcsa" Type="dcSecurityAdapter">
+		<GenerateTotpSecret Result="NewSecret" />
+		<EncryptString Value="$NewSecret" Result="FinalSecret" />
+	</dcs.Var>
+
+	<dcs.Var Name="Uuid" Type="String">
+		<GenerateUuid />
+	</dcs.Var>
+
+	<dcdb.UpdateRecord Table="dcUser" Id="$_User.UserId">
+		<!-- method  -->
+		<Update Field="dcAuthMethodUuid" SubId="{$Uuid}" Value="$Uuid" />
+		<Update Field="dcAuthMethodActive" SubId="{$Uuid}" Value="true" />
+		<Update Field="dcAuthMethodType" SubId="{$Uuid}" Value="TOTP" />
+		<Update Field="dcAuthMethodTitle" SubId="{$Uuid}" Value="$Data.Title" />
+		<Update Field="dcAuthMethodTOTPSecret" SubId="{$Uuid}" Value="$FinalSecret" />
+
+		<!-- audit  -->
+		<Update Field="dcAuthMethodAuditAt" SubId="{$Now}" Value="$Now" />
+		<Update Field="dcAuthMethodAuditUuid" SubId="{$Now}" Value="$Uuid" />
+		<Update Field="dcAuthMethodAuditAction" SubId="{$Now}" Value="Added" />
+	</dcdb.UpdateRecord>
+
+	<!-- return the new id -->
+
+	<dcs.Var Name="Result" Type="Record">
+		<SetField Name="Uuid" Value="$Uuid" />
+	</dcs.Var>
+
+	<dcs.Exit Scope="Task" Result="$Result" />
+</dcs.Script>

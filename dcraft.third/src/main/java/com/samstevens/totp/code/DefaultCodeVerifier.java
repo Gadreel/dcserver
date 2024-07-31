@@ -55,6 +55,9 @@ public class DefaultCodeVerifier implements CodeVerifier {
      * Compare two strings for equality without leaking timing information.
      */
     private boolean timeSafeStringComparison(String a, String b) {
+        if ((a == null) || (b == null))
+            return false;
+
         byte[] aBytes = a.getBytes();
         byte[] bBytes = b.getBytes();
 

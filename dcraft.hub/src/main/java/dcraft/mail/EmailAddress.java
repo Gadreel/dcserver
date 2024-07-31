@@ -108,6 +108,11 @@ public class EmailAddress {
 
         // TODO enhance to encode local part for different email providers in transport
 
+        // TODO all sorts of escaping could happen for personal and local
+
+        if (StringUtil.isNotEmpty(this.mailaddress.getPersonal()))
+            return this.mailaddress.getPersonal() + " <" + local + "@" + WebUtil.normalizeDomainName(domain) + ">";
+
         return local + "@" + WebUtil.normalizeDomainName(domain);
     }
 

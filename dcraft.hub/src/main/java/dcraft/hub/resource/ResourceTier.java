@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import dcraft.core.doc.DocResource;
 import dcraft.db.DatabaseResource;
 import dcraft.hub.op.OperatingContextException;
 import dcraft.locale.LocaleResource;
@@ -301,6 +302,23 @@ public class ResourceTier extends CompositeStruct {
 			return r;
 
 		r = new CommResource();
+
+		this.with(r);
+
+		return r;
+	}
+
+	public DocResource getDoc() {
+		return (DocResource) this.get("Doc");
+	}
+
+	synchronized public DocResource getOrCreateTierDoc() {
+		DocResource r = (DocResource) this.getTier("Doc");
+
+		if (r != null)
+			return r;
+
+		r = new DocResource();
 
 		this.with(r);
 

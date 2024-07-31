@@ -280,6 +280,7 @@
 		<Composer Name="dcTranslate" Execute="dcraft.db.proc.comp.Translate" />
 		<Composer Name="dcMoneyFormat" Execute="dcraft.db.proc.comp.MoneyFormat" />
 		<Composer Name="dcTermScore" Execute="dcraft.db.proc.comp.TermScore" />
+		<Composer Name="dcSubId" Execute="dcraft.db.proc.comp.SubId" />
 
 		<Collector Name="dcCollectorGeneral" Execute="dcraft.db.proc.collect.General" />
 
@@ -298,6 +299,7 @@
 		 <Expression Name="GreaterThanOrEqual" Execute="dcraft.db.proc.expression.GreaterThanOrEqual" />
 		 <Expression Name="Is" Execute="dcraft.db.proc.expression.Is" />
 		 <Expression Name="IsNot" Execute="dcraft.db.proc.expression.IsNot" />
+		 <Expression Name="IsEmpty" Execute="dcraft.db.proc.expression.IsEmpty" />
 		 <Expression Name="LessThan" Execute="dcraft.db.proc.expression.LessThan" />
 		 <Expression Name="LessThanOrEqual" Execute="dcraft.db.proc.expression.LessThanOrEqual" />
 		 <Expression Name="Not" Execute="dcraft.db.proc.expression.Not" />

@@ -224,7 +224,7 @@ public class CommUtil {
                         .withTable("dccCommSend")
                         .withUpdateField("dccUuid", uuid)
                         .withUpdateField("dccTrackerId", address.getFieldAsString("TrackerId"), address.getField("TrackerId"))
-                        .withUpdateField("dccDisplayName", address.getField("Name"))
+                        .withUpdateField("dccTrackerDisplayName", address.getFieldAsString("TrackerId"), address.getField("Name"))
                         .withUpdateField("dccQueuedAt", now)
                         .withUpdateField("dccTrackerStatus", address.getFieldAsString("TrackerId"), activitytype)
                         .withUpdateField("dccPath", path)
@@ -294,9 +294,7 @@ public class CommUtil {
         // TODO future - make build content configurable
 
         if ("email".equals(channel)) {
-            RecordStruct request = params.getFieldAsRecord("Request");
-
-            IWork sender = AwsUtil.buildSendEmailWork(request);
+            IWork sender = AwsUtil.buildSendEmailWork(params);
 
             if (sender != null) {
                 TaskHub.submit(

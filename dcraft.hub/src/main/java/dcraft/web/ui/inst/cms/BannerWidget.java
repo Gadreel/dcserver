@@ -99,6 +99,7 @@ public class BannerWidget extends Base implements ICMSAware {
 		int apos = path.lastIndexOf('/') + 1;
 
 		String lpath = path + ".v/" + vari + "." + ext;
+		String seopath = path + "." + ext;
 
 		Path imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
 				OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
@@ -107,10 +108,12 @@ public class BannerWidget extends Base implements ICMSAware {
 			FileTime fileTime = Files.getLastModifiedTime(imgpath);
 
 			img.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
+			img.with("SEOPath", "/galleries" + seopath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))) + "&dc-variant=" + vari);
 		}
 		catch (IOException | NullPointerException x) {
 			Logger.warn("Problem finding image file: " + lpath);
 			img.with("Path", "/galleries" + lpath);
+			img.with("SEOPath", "/galleries" + seopath);
 		}
 
 		//img.with("Path", "/galleries" + path + ".v/" + vari + "." + ext);
@@ -156,12 +159,14 @@ public class BannerWidget extends Base implements ICMSAware {
 		XElement template = this.selectFirst("Template");
 
 		if (template == null) {
+			boolean useseopath = "true".equals(this.getAttribute("SEOPath", "false").toLowerCase());
+
 			// set default
 			this.with(Base.tag("Template").with(
 					W3.tag("img")
 							.withClass("dcm-widget-banner-img")
 							.withAttribute("alt", "{$Image.Description}")
-							.withAttribute("src", "{$Image.Path}")
+							.withAttribute("src", useseopath ? "{$Image.SEOPath}" : "{$Image.Path}")
 							//.withAttribute("srcset", usesrcset ? "{$Image.SourceSet}" : null)
 			));
 		}

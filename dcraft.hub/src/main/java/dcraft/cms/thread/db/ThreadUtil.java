@@ -148,6 +148,13 @@ public class ThreadUtil {
 			db.updateList("dcmThread", id, "dcmPartyLabels", ident,"|" + StringUtil.join(labels.toStringList(), "|") + "|");
 	}
 
+	// use if msg has already been delivered once to add new people
+	public static void addPartyDeliver(TablesAdapter db, String id, String ident, String folder, ListStruct labels) throws OperatingContextException {
+		ThreadUtil.addParty(db, id, ident, folder, labels);
+
+		ThreadUtil.deliverNewParty(db, id, ident, folder, false);
+	}
+
 	// does not change dcmModified, do so manually
 	public static String addContent(TablesAdapter db, String id, String content) throws OperatingContextException {
 		return ThreadUtil.addContent(db, id, content, null, null, null, null);
@@ -435,6 +442,9 @@ public class ThreadUtil {
 		if ("users".equals(chandef.attr("Alias")) && party.endsWith(originator))
 			return;
 
+		// this is the old way to send a notice
+		String scriptPath = typedef.getAttribute("NotifyWork", "/dcm/threads/message-notify");
+
 		// TODO should be Queued but fix Channel and Type params if so
 		TaskHub.submit(Task.ofSubtask("Thread notice sender", "THREAD")
 				.withTopic("Batch")
@@ -447,110 +457,7 @@ public class ThreadUtil {
 						.with("Channel", chandef)
 						.with("Type", typedef)
 				)
-				.withScript("/dcm/threads/message-notify"));
-
-
-		/*
-
-		boolean usetext = false;
-
-		// TODO handle other message content types someday
-		String content = Struct.objectToString(db.getStaticList("dcmThread", id, "dcmContent", beststamp));
-
-		Instruction sendNotice = SendEmail.tag();
-
-		if (party.startsWith("/Usr/")) {
-			String uid = party.substring(5);
-
-			String origin = Struct.objectToString(db.getStaticList("dcmThread", id, "dcmContentOriginator", beststamp));
-
-			// don't notify the sender
-			if (uid.equals(origin))
-				return;
-
-			String notices = Struct.objectToString(db.getStaticScalar("dcUser", uid, "dcNotices"));
-
-			if ("text".equals(notices)) {
-				usetext = true;
-				sendNotice = SendText.tag();
-
-				String phone = Struct.objectToString(db.getStaticScalar("dcUser", uid, "dcPhone"));
-
-				if (StringUtil.isEmpty(phone))
-					return;
-
-				sendNotice.attr("To", phone);
-			}
-			else {
-				String email = Struct.objectToString(db.getStaticScalar("dcUser", uid, "dcEmail"));
-
-				if (StringUtil.isEmpty(email))
-					return;
-
-				sendNotice.attr("To", email);
-			}
-		}
-		else if (chandef.hasNotEmptyAttribute("EmailList")) {
-			sendNotice.attr("ToList", chandef.getAttribute("EmailList"));
-		}
-		else if (chandef.hasNotEmptyAttribute("SMS")) {
-			usetext = true;
-			sendNotice = SendText.tag();
-
-			sendNotice.attr("To", chandef.getAttribute("SMS"));
-		}
-		else {
-			// no other method currently supported
-			return;
-		}
-
-		XElement catalog = ApplicationHub.getCatalogSettings("Thread-Notice-" + typedef.getAttribute("Name"));
-
-		if (catalog == null)
-			catalog = ApplicationHub.getCatalogSettings("Thread-Notice-Default");
-
-		if (catalog == null)
-			return;
-
-		sendNotice.attr("Subject", Struct.objectToString(db.getStaticScalar("dcmThread", id, "dcmTitle")));
-
-		String defloc = OperationContext.getOrThrow().getSite().getResources().getLocale().getDefaultLocale();
-
-		// TODO try to take the recipient's preferred locale into consideration
-		XElement wrapper = null;
-
-		if (usetext)
-			wrapper = FeedUtil.bestMatch(catalog.selectFirst("TextMessage"), defloc, defloc);
-
-		if (wrapper == null)
-			wrapper = FeedUtil.bestMatch(catalog.selectFirst("EmailMessage"), defloc, defloc);
-
-		if (wrapper == null)
-			return;
-
-		// we don't want to run this if server is not configured with a wrapper/script
-		// by default (in packages) /Usr and /NoticesPool will send notices, except they don't have a wrapper
-		// so that is all that turns off notices by default - don't enable unless server/tenant expects it
-
-		main.with(
-				Var.tag()
-						.attr("Name", "Message")
-						.attr("SetTo", content),
-				Base.tag("text")
-						.attr("Name", "TextEmail")
-						.withText(wrapper.getValue()),
-				sendNotice
-						.attr("TextMessage", "$TextEmail")
-		);
-
-		TaskHub.submit(Task.ofSubtask("Thread notice trigger", "THREAD")
-				.withParams(RecordStruct.record()
-						.with("Id", id)
-						.with("Party", party)
-				)
-				.withWork(StackUtil.of(main))
-		);
-		*/
+				.withScript(scriptPath));
 	}
 
 	
@@ -622,6 +529,57 @@ public class ThreadUtil {
 		}
 	}
 
+
+	public static void deliverNewParty(TablesAdapter db, String id, String party, String folder, boolean isread) throws OperatingContextException {
+		if (! db.isPresent("dcmThread", id)) {
+			Logger.error("Thread not found: " + id);
+			return;
+		}
+
+		if (StringUtil.isEmpty(party)) {
+			Logger.error("Thread missing party: " + id);
+			return;
+		}
+
+		if (StringUtil.isEmpty(folder)) {
+			Logger.error("Thread missing folder: " + id);
+			return;
+		}
+
+		CommonPath invpath = CommonPath.from("/dc/dcm/threads/" + id);
+
+		String claimid = ApplicationHub.makeLocalClaim(invpath, 5);
+
+		if (StringUtil.isEmpty(claimid)) {
+			Logger.warn("Unable to claim thread: " + id);
+			return;
+		}
+
+		try {
+			String tenant = OperationContext.getOrThrow().getTenant().getAlias();
+
+			ZonedDateTime deliver = Struct.objectToDateTime(db.getScalar("dcmThread", id, "dcmModified"));
+
+			BigDecimal revmod = ByteUtil.dateTimeToReverse(deliver);
+
+			String oldfolder = Struct.objectToString(db.getList("dcmThread", id, "dcmFolder", party));
+
+			if (StringUtil.isNotEmpty(oldfolder))
+				db.getRequest().getInterface().kill(tenant, "dcmThreadA", party, oldfolder, revmod, id);
+
+			db.getRequest().getInterface().set(tenant, "dcmThreadA", party, folder, revmod, id, isread);
+
+			// TODO reconsider
+			//ThreadUtil.deliveryNotice(db, id);
+		}
+		catch (DatabaseException x) {
+			Logger.error("Unable to deliver thread: " + x);
+		}
+		finally {
+			ApplicationHub.releaseLocalClaim(invpath, claimid);
+		}
+	}
+
 	public static void updateFolder(TablesAdapter db, String id, String party, String folder, Boolean isRead) throws OperatingContextException {
 		try {
 			String tenant = OperationContext.getOrThrow().getTenant().getAlias();
@@ -638,7 +596,7 @@ public class ThreadUtil {
 				isRead = Struct.objectToBooleanOrFalse(db.getList("dcmThread", id, "dcmRead", party));
 			}
 			else {
-				db.updateList("dcmThread", id, "dcmRead", party,isRead);
+				db.updateList("dcmThread", id, "dcmRead", party, isRead);
 			}
 			
 			db.getRequest().getInterface().kill(tenant, "dcmThreadA", party, oldfolder, oldrevmod, id);

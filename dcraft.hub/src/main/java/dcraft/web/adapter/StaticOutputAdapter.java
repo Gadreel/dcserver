@@ -47,15 +47,15 @@ public class StaticOutputAdapter implements IOutputWork {
 	@Override
 	public void run(TaskContext ctx) throws OperatingContextException {
 		WebController wctrl = (WebController) ctx.getController();
-		
+
 		try {
-			long when = Files.getLastModifiedTime(this.file).toMillis();
-			
 			CountHub.countObjects("dcWebOutStaticCount-" + OperationContext.getOrThrow().getTenant().getAlias(), this);
 			
 			Response resp = wctrl.getResponse();
 			RecordStruct request = wctrl.getFieldAsRecord("Request");
-			
+
+			long when = Files.getLastModifiedTime(this.file).toMillis();
+
 			String mtype = this.mime.getMimeType();
 			
 			resp.setHeader("Content-Type", mtype);

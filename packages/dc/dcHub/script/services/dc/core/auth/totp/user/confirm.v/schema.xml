@@ -1,0 +1,5 @@
+<Op>
+	<RecordRequest>
+		<Field Name="AuthCode" Type="dcMetaString" Required="true" />
+	</RecordRequest>
+</Op>

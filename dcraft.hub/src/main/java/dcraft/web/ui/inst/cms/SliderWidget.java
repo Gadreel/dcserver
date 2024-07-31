@@ -16,6 +16,7 @@ import dcraft.struct.FieldStruct;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
+import dcraft.struct.scalar.DecimalStruct;
 import dcraft.util.*;
 import dcraft.web.ui.UIUtil;
 import dcraft.web.ui.inst.*;
@@ -24,6 +25,8 @@ import dcraft.xml.XNode;
 import dcraft.xml.XmlToJson;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -61,6 +64,7 @@ public class SliderWidget extends Base implements ICMSAware {
         }
 
         String gallery = StackUtil.stringFromSource(state,"Path");
+        boolean useseopath = StackUtil.boolFromSource(state,"SEOPath", false);
 
         if (this.hasNotEmptyAttribute("Centering"))
             this.withAttribute("data-dcm-centering", StackUtil.stringFromSource(state, "Centering"));
@@ -164,6 +168,8 @@ public class SliderWidget extends Base implements ICMSAware {
         StackUtil.addVariable(state, "_Gallery", meta);
         StackUtil.addVariable(state, "_Variant", vdata);
 
+        state.getStore().with("SourceVariant", vdata);
+
         GalleryImageConsumer galleryImageConsumer = new GalleryImageConsumer() {
             @Override
             public void accept(RecordStruct meta, RecordStruct showrec, RecordStruct img) throws OperatingContextException {
@@ -178,6 +184,7 @@ public class SliderWidget extends Base implements ICMSAware {
                 // TODO support alt ext (from the gallery meta.json)
 
                 String lpath = cpath + ".v/" + vari + "." + ext;
+                String seopath = cpath + "." + ext;
 
                 Path imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
                         OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
@@ -188,15 +195,18 @@ public class SliderWidget extends Base implements ICMSAware {
                             FileTime fileTime = Files.getLastModifiedTime(imgpath);
 
                             img.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
+                            img.with("SEOPath", "/galleries" + seopath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))) + "&dc-variant=" + vari);
                         }
                         else {
                             img.with("Path", "/galleries" + lpath);
+                            img.with("SEOPath", "/galleries" + seopath);
                         }
                     }
                 }
                 catch (IOException | NullPointerException x) {
                     Logger.warn("Problem finding image file: " + lpath);
                     img.with("Path", "/galleries" + lpath);
+                    img.with("SEOPath", "/galleries" + seopath);
                 }
 
                 img.with("Position", cidx);
@@ -210,6 +220,11 @@ public class SliderWidget extends Base implements ICMSAware {
 
                     if (StringUtil.isNotEmpty(centerhint))
                         data.with("CenterHint", centerhint);
+
+                    String centerAlign = img.selectAsString("Element.attributes.CenterAlign");
+
+                    if (StringUtil.isNotEmpty(centerAlign))
+                        data.with("CenterAlign", centerAlign);
                 }
 
                 img.with("Data", data);
@@ -218,6 +233,8 @@ public class SliderWidget extends Base implements ICMSAware {
                 // such as checkered logos in background
 
                 if (cidx == 1) {
+                    state.getStore().with("FirstImageData", data);
+
                     if (preloadenabled) {
                         Path preload = OperationContext.getOrThrow().getSite().findSectionFile("galleries", cpath + ".v/preload.jpg",
                                 OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
@@ -231,7 +248,7 @@ public class SliderWidget extends Base implements ICMSAware {
                         }
                     }
                     else {
-                        viewer.withAttribute("src", img.getFieldAsString("Path"));
+                        viewer.withAttribute("src", useseopath ? img.getFieldAsString("SEOPath") : img.getFieldAsString("Path"));
                     }
 
                     fader.attr("src", viewer.attr("src"));
@@ -243,13 +260,14 @@ public class SliderWidget extends Base implements ICMSAware {
 
                 iel
                         .withAttribute("role", "listitem")
-                        .withAttribute("src", img.getFieldAsString("Path"))
+                        .withAttribute("src", useseopath ? img.getFieldAsString("SEOPath") : img.getFieldAsString("Path"))
                         .withAttribute("alt", data.selectAsString("Description"))
                         .withAttribute("data-dc-image-alias", img.getFieldAsString("Alias"))
                         .withAttribute("data-dc-image-pos", img.getFieldAsString("Position"))
                         .withAttribute("data-dc-image-base-path", img.getFieldAsString("BasePath"))
                         .withAttribute("data-dc-image-element", img.isNotFieldEmpty("Element") ? img.getFieldAsString("Element").toString() : "")
                         .withAttribute("data-dc-center-hint", data.getFieldAsString("CenterHint"))
+                        .withAttribute("data-dc-center-align", data.getFieldAsString("CenterAlign"))
                         .withAttribute("data-dc-image-data", data.toString());
 
                 list.with(iel);
@@ -335,6 +353,135 @@ public class SliderWidget extends Base implements ICMSAware {
 
         if (display.contains("banner")) {
             this.withClass("dcm-widget-slider-banner");
+
+            // if using css centering
+            if (this.hasNotEmptyAttribute("Centering") && "css".equals(StackUtil.stringFromSource(state, "Centering").toLowerCase())) {
+                String heightv = StackUtil.stringFromSource(state, "BannerHeight");      // in VW units
+                String maxheightv = StackUtil.stringFromSource(state, "BannerMaxHeight");
+                String minheightv = StackUtil.stringFromSource(state, "BannerMinHeight");
+                String defAlign = StackUtil.stringFromSource(state, "CenterAlign");
+                Long defHint = StackUtil.intFromSource(state, "CenterHint");
+
+                BigDecimal height = Struct.objectToDecimal(heightv);
+                Long maxheight = Struct.objectToInteger(maxheightv);
+                Long minheight = Struct.objectToInteger(minheightv);
+
+                if ((height != null) && (maxheight != null) && (minheight != null)) {
+                    RecordStruct variant = state.getStore().getFieldAsRecord("SourceVariant");
+
+                    if (variant != null) {
+                        Long exactWidth = variant.getFieldAsInteger("ExactWidth");
+
+                        if (exactWidth != null) {
+                            BigDecimal centerConst = new BigDecimal(minheight)
+                                .divide(new BigDecimal(maxheight), 6, RoundingMode.HALF_UP)
+                                .multiply(new BigDecimal(exactWidth));
+
+                            RecordStruct firstdata = state.getStore().getFieldAsRecord("FirstImageData");
+
+                            String centerAlign = firstdata.getFieldAsString("CenterAlign");
+
+                            Long centerHint = firstdata.getFieldAsInteger("CenterHint");
+
+                            String currAlign = null;
+                            Long currHint = null;
+
+                            // defaults only apply if NO local set
+                            if (StringUtil.isNotEmpty(centerAlign)) {
+                                currAlign = centerAlign;
+                                currHint = centerHint;
+                            }
+                            else {
+                                currAlign = defAlign;
+                                currHint = defHint;
+                            }
+
+                            StringBuilder customVars = new StringBuilder();
+
+                            customVars.append("--bannerHeight: " + heightv + "vw; --bannerMaxHeight: " + maxheightv
+                                    + "px; --bannerMinHeight: " + minheightv + "px; --centerConst: " + Struct.objectToInteger(centerConst) + "px; "
+                                    + "height: var(--bannerHeight); max-height: var(--bannerMaxHeight); min-height: var(--bannerMinHeight); ");
+
+                            // align: Left = dc-center-left
+                            // align: Left w/ Hint = dc-center-left-hint
+                            // align: Center = dc-center-default
+                            // align: Right w/ Hint = dc-center-right-hint
+                            // align: Right = dc-center-right
+
+                            if (currHint != null)
+                                customVars.append("--centerHint: " + currHint + "px; ");
+
+                            if (StringUtil.isNotEmpty(currAlign)) {
+                                customVars.append("--centerAlign: '" + currAlign + "'; ");
+
+                                customVars.append("--centerLeftHintCalc: calc(min((var(--centerConst) - 100vw) / 2, var(--centerHint))); ");
+                                customVars.append("--centerLeftCalc: calc((var(--centerConst) - 100vw) / 2); ");
+                                customVars.append("--centerRightHintCalc: calc(0px - min((var(--centerConst) - 100vw) / 2, var(--centerHint))); ");
+                                customVars.append("--centerRightCalc: calc(0px - ((var(--centerConst) - 100vw) / 2)); ");
+
+                                if ("Left".equals(currAlign) && (currHint != null)) {
+                                    this.withClass("dc-center-left-hint");
+                                }
+                                else if ("Left".equals(currAlign)) {
+                                    this.withClass("dc-center-left");
+                                }
+                                else if ("Right".equals(currAlign) && (currHint != null)) {
+                                    this.withClass("dc-center-right-hint");
+                                }
+                                else if ("Right".equals(currAlign)) {
+                                    this.withClass("dc-center-right");
+                                }
+                                else {
+                                    this.withClass("dc-center-default");
+                                }
+                            }
+                            else {
+                                this.withClass("dc-center-default");
+                            }
+
+                            /* example CSS  - original
+                            @media all and (max-width: 1081px) {
+                                #dcuiMain.general #bannerTop.dc-center-left {
+                                    margin-left: calc((1081px - 100vw) / 2);
+                                }
+                                #dcuiMain.general #bannerTop.dc-center-left-hint {
+                                    margin-left: calc(min((1081px - 100vw) / 2, 250px * .54));
+                                }
+                                #dcuiMain.general #bannerTop.dc-center-right-hint {
+                                 margin-left: calc(0px - min((1081px - 100vw) / 2, 250px * .54));
+                                }
+                                #dcuiMain.general #bannerTop.dc-center-right {
+                                    margin-left: calc(0px - (1081px - 100vw) / 2);
+                                }
+                            }
+                             */
+
+                            /* example CSS  - vars
+                            @media all and (max-width: 1081px) {
+                                #dcuiMain.general #bannerTop.dc-center-left {
+                                    margin-left: var(--centerLeftCalc);
+                                }
+                                #dcuiMain.general #bannerTop.dc-center-left-hint {
+                                    margin-left: var(--centerLeftHintCalc);
+                                }
+                                #dcuiMain.general #bannerTop.dc-center-right-hint {
+                                    margin-left: var(--centerRightHintCalc);
+                                }
+                                #dcuiMain.general #bannerTop.dc-center-right {
+                                    margin-left: var(--centerRightCalc);
+                                }
+                            }
+
+                            test with
+                            window.getComputedStyle(temp1).getPropertyValue('--bannerHeight');
+                             */
+
+
+                            this.attr("style", customVars.toString());
+                        }
+                    }
+                }
+            }
         }
         else {
             this.withClass("dcm-widget-slider-inline");

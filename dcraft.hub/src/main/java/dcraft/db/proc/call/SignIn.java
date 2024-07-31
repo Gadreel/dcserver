@@ -2,6 +2,7 @@ package dcraft.db.proc.call;
 
 import java.time.ZonedDateTime;
 
+import dcraft.core.activity.ActivityUtil;
 import dcraft.db.Constants;
 import dcraft.db.DatabaseException;
 import dcraft.db.DatabaseAdapter;
@@ -322,7 +323,9 @@ public class SignIn extends LoadRecord implements IUpdatingStoredProc {
 			uc.withAuthToken(token);
 			
 			SignIn.updateContext(db, uid);
-			
+
+			ActivityUtil.recordUserActivity("email", uc.getEmail(), uid, "/dc/user", "SignIn", null, null);
+
 			db.executeTrigger("dcUser", uid, "AfterSignIn", null);
 			
 			return token;

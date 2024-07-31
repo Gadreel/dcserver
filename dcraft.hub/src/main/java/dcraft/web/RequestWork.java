@@ -469,7 +469,20 @@ public class RequestWork extends ChainWork {
 				Logger.error(150001, "Web page is not available.");
 				return null;
 			}
-			
+
+			if ("galleries".equals(path.getName(0)) && req.getFieldAsRecord("Parameters").isNotFieldEmpty("dc-variant")) {
+				String variant = req.selectAsString("Parameters.dc-variant.0");
+				String fname = path.getFileName();
+
+				int expos = fname.lastIndexOf('.');
+
+				if (expos > 0) {
+					path = path.getParent().resolve(fname.substring(0, expos) + ".v").resolve(variant + fname.substring(expos));
+
+					System.out.println("rewrite: " + path);
+				}
+			}
+
 			// try with path case as is (should be lowercase anyway)
 			IOutputWork output = webSite.webFindFile(path, wctrl.getFieldAsRecord("Request").getFieldAsString("View"));
 			

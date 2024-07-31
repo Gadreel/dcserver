@@ -1,0 +1,8 @@
+<Op>
+	<ListResponse>
+		<Record>
+			<Field Name="Uuid" Type="dcMetaString" />
+			<Field Name="Title" Type="dcTinyString" />
+		</Record>
+	</ListResponse>
+</Op>

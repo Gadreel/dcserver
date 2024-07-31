@@ -7,6 +7,9 @@ import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationMarker;
 import dcraft.log.Logger;
 import dcraft.log.count.CountHub;
+import dcraft.mail.adapter.BaseAdapter;
+import dcraft.mail.dcc.HtmlPrinter;
+import dcraft.mail.dcc.UIUtil;
 import dcraft.schema.DataType;
 import dcraft.script.StackUtil;
 import dcraft.struct.BaseStruct;
@@ -17,6 +20,11 @@ import dcraft.task.TaskContext;
 import dcraft.tenant.Site;
 import dcraft.util.StringUtil;
 import dcraft.xml.XElement;
+import dcraft.xml.XmlPrinter;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 
 public class EmailRequestWork extends ChainWork {
 	@Override
@@ -44,6 +52,8 @@ public class EmailRequestWork extends ChainWork {
 				taskctx.returnEmpty();
 				return;
 			}
+
+			commInfo.locale = "eng";			// TODO resolve the user's preferred locale somehow
 
 			// validate the argument data
 
@@ -94,6 +104,7 @@ public class EmailRequestWork extends ChainWork {
 
 			RecordStruct comm = RecordStruct.record()
 					.with("Target", "Email")
+					.with("Locale", commInfo.locale)
 					.with("Request", req)
 					.with("Response", resp)
 					.with("Data", RecordStruct.record())
@@ -206,7 +217,26 @@ public class EmailRequestWork extends ChainWork {
 				}
 			}
 
-			System.out.println("add reply");
+			System.out.println("add email builder reply");
+
+			this.then(new IWork() {
+				@Override
+				public void run(TaskContext taskctx) throws OperatingContextException {
+					// not null only if it is a document
+					BaseStruct textroot = resp.getField("Text");
+
+					if (textroot instanceof XElement)
+						resp.with("Text", UIUtil.formatText(comm, (XElement) textroot));
+
+					// not null only if it is a document
+					BaseStruct htmlroot = resp.getField("Html");
+
+					if (htmlroot instanceof XElement)
+						resp.with("Html", UIUtil.formatHtml(comm, (XElement) htmlroot));
+
+					taskctx.returnValue(finalarg);
+				}
+			});
 
 			this.then(new IWork() {
 				@Override

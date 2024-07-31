@@ -60,17 +60,16 @@ public class Band extends Base {
 		XElement emailContainer = W3.tag("div")
 				.withClass("email-container", "dcc-band-wrapper")
 				.attr("align", "center")
-				.attr("style", "max-width: " + width + "px; margin: 0 auto;");
-
+				.attr("style", "max-width: " + width + "px; margin: 0 auto; " + style);
 
 		StringBuilder sbTableStart = new StringBuilder()
 				.append("[if mso | IE]>\r\n")
 				.append("<table role=\"presentation\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"" + width + "\" align=\"center\">\r\n")
-				.append("<tr>")
-				.append("<td>")
+				.append("<tr>\r\n")
+				.append("<td>\r\n")
 				.append("<![endif]");
 
-		XComment bandTableStart = XComment.of(sbTableStart.toString());
+		EmailComment bandTableStart = EmailComment.of(sbTableStart.toString());
 
 		emailContainer.with(bandTableStart);
 
@@ -94,12 +93,13 @@ public class Band extends Base {
 
 		StringBuilder sbTableEnd = new StringBuilder()
 				.append("[if mso | IE]>\r\n")
-				.append("</td>")
-				.append("</tr>")
-				.append("</table>")
+				.append("</td>\r\n")
+				.append("</tr>\r\n")
+				.append("</table>\r\n")
 				.append("<![endif]");
 
-		XComment bandTableEnd = XComment.of(sbTableEnd.toString());
+		//XComment bandTableEnd = XComment.of(sbTableEnd.toString());
+		EmailComment bandTableEnd = EmailComment.of(sbTableEnd.toString());
 
 		emailContainer.with(bandTableEnd);
 

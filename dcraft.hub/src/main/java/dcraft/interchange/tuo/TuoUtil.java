@@ -19,58 +19,6 @@ import java.net.URL;
 public class TuoUtil {
 	
 	static public void loadOrderDetail(String orderid, String token, OperationOutcomeList callback) {
-		/*
-		callback.returnValue(ListStruct.list()
-				.with(
-						RecordStruct.record()
-							.with("line_items", ListStruct.list()
-									.with(
-											RecordStruct.record()
-												.with("product_name", "red singlet")
-												.with("product_sku", "1001")
-												.with("product_upc", "1")
-												.with("size", "L")
-												.with("quantity", 5)
-													.with("unit_price", 22.14)
-												.with("name_text", "HENRY,MICH,BAKER")
-									)
-									.with(
-											RecordStruct.record()
-												.with("product_name", "red singlet")
-												.with("product_sku", "1001")
-												.with("product_upc", "1")
-												.with("size", "M")
-												.with("quantity", 2)
-													.with("unit_price", 23.14)
-												.with("name_text", "JIM")
-									)
-									.with(
-											RecordStruct.record()
-												.with("product_name", "blue singlet")
-												.with("product_sku", "1001")
-												.with("product_upc", "2")
-												.with("size", "M")
-												.with("quantity", 4)
-													.with("unit_price", 24.14)
-												.with("name_text", "PERRY,DAN")
-									)
-									.with(
-											RecordStruct.record()
-												.with("product_name", "blue jacket")
-												.with("product_sku", "1002")
-												.with("product_upc", "1")
-												.with("size", "XL")
-												.with("quantity", 1)
-												.with("unit_price", 29.14)
-												.with("name_text", "BILL")
-									)
-							)
-				)
-		);
-
-		return;
-		*/
-
 		try {
 			OperationContext.getOrThrow().touch();
 			
@@ -110,55 +58,156 @@ public class TuoUtil {
 	
 	static public void loadStoreOrdersDetail(String storeid, String token, OperationOutcomeList callback) {
 		/*
-		callback.returnValue(ListStruct.list()
-				.with(
-						RecordStruct.record()
-							.with("line_items", ListStruct.list()
-									.with(
-											RecordStruct.record()
-												.with("product_name", "red singlet")
-												.with("product_sku", "1001")
-												.with("product_upc", "1")
-												.with("size", "L")
-												.with("quantity", 5)
-													.with("unit_price", 22.14)
-												.with("name_text", "HENRY,MICH,BAKER")
-									)
-									.with(
-											RecordStruct.record()
-												.with("product_name", "red singlet")
-												.with("product_sku", "1001")
-												.with("product_upc", "1")
-												.with("size", "M")
-												.with("quantity", 2)
-													.with("unit_price", 23.14)
-												.with("name_text", "JIM")
-									)
-									.with(
-											RecordStruct.record()
-												.with("product_name", "blue singlet")
-												.with("product_sku", "1001")
-												.with("product_upc", "2")
-												.with("size", "M")
-												.with("quantity", 4)
-													.with("unit_price", 24.14)
-												.with("name_text", "PERRY,DAN")
-									)
-									.with(
-											RecordStruct.record()
-												.with("product_name", "blue jacket")
-												.with("product_sku", "1002")
-												.with("product_upc", "1")
-												.with("size", "XL")
-												.with("quantity", 1)
-												.with("unit_price", 29.14)
-												.with("name_text", "BILL")
-									)
-							)
-				)
-		);
-
-		return;
+		[
+		  {
+			"store_id": 2104824,
+			"fulfillment_status": "Payment Received",
+			"shipping_cost": "0.0",
+			"discount_amount": "0.0",
+			"payment_option": "credit_card",
+			"country_currency": "USD",
+			"line_items": [
+			  {
+				"quantity": 1,
+				"product_upc": "",
+				"color": "No color,NA,NA",
+				"size_category": "Standard Youth",
+				"unit_price": "0.01",
+				"product_name": "Shirts SS - Printed (Cotton)",
+				"free_quantity": 0,
+				"tags": [],
+				"product_sku": "1000015",
+				"size": "YS",
+				"product_id": 2470893,
+				"pp_group": 0,
+				"id": 23356847
+			  },
+			  {
+				"quantity": 1,
+				"product_upc": "",
+				"color": "No color,NA,NA",
+				"size_category": "Standard Youth",
+				"unit_price": "0.01",
+				"product_name": "Shirts SS - Printed (Cotton)",
+				"free_quantity": 0,
+				"tags": [],
+				"product_sku": "1000015",
+				"size": "YL",
+				"product_id": 2470893,
+				"pp_group": 0,
+				"id": 23356854
+			  },
+			  {
+				"quantity": 1,
+				"product_upc": "",
+				"color": "No color,NA,NA",
+				"name_text": "SMITH",
+				"size_category": "Standard Adult",
+				"unit_price": "0.01",
+				"product_name": "Shirts SS - Printed (Cotton)",
+				"free_quantity": 0,
+				"tags": [],
+				"product_sku": "1000015",
+				"size": "AXL",
+				"product_id": 2470893,
+				"pp_group": 0,
+				"id": 23356857
+			  },
+			  {
+				"quantity": 2,
+				"product_upc": "",
+				"color": "No color,NA,NA",
+				"size_category": "Standard Adult",
+				"unit_price": "0.01",
+				"product_name": "Shirts SS - Printed (Cotton)",
+				"free_quantity": 0,
+				"tags": [],
+				"product_sku": "1000015",
+				"size": "AS",
+				"product_id": 2470894,
+				"pp_group": 0,
+				"id": 23356859
+			  },
+			  {
+				"quantity": 1,
+				"product_upc": "",
+				"color": "No color,NA,NA",
+				"name_text": "STEVENS",
+				"size_category": "Standard Adult",
+				"unit_price": "0.01",
+				"product_name": "Shirts SS - Printed (Cotton)",
+				"free_quantity": 0,
+				"tags": [],
+				"product_sku": "1000015",
+				"size": "AL",
+				"product_id": 2470894,
+				"pp_group": 0,
+				"id": 23356871
+			  },
+			  {
+				"quantity": 1,
+				"product_upc": "",
+				"color": "No color,NA,NA",
+				"size_category": "Standard Youth",
+				"unit_price": "0.01",
+				"product_name": "Shirts SS - Printed (Cotton)",
+				"free_quantity": 0,
+				"tags": [],
+				"product_sku": "1000015",
+				"size": "YS",
+				"product_id": 2470896,
+				"pp_group": 0,
+				"id": 23356873
+			  },
+			  {
+				"quantity": 1,
+				"product_upc": "",
+				"color": "No color,NA,NA",
+				"size_category": "Standard Adult",
+				"unit_price": "0.01",
+				"product_name": "Shirts SS - Printed (Cotton)",
+				"free_quantity": 0,
+				"tags": [],
+				"product_sku": "1000015",
+				"size": "AM",
+				"product_id": 2470896,
+				"pp_group": 0,
+				"id": 23356875
+			  },
+			  {
+				"quantity": 1,
+				"product_upc": "",
+				"color": "No color,NA,NA",
+				"name_text": "REDD",
+				"size_category": "Standard Adult",
+				"unit_price": "0.01",
+				"product_name": "Shirts SS - Printed (Cotton)",
+				"free_quantity": 0,
+				"tags": [],
+				"product_sku": "1000015",
+				"size": "AXL",
+				"product_id": 2470896,
+				"pp_group": 0,
+				"id": 23356888
+			  }
+			],
+			"club_name": "",
+			"placed_at": "2024-05-28T11:10:52.000-04:00",
+			"team_name": "",
+			"total": 0.09,
+			"sales_tax": 0,
+			"updated_at": "2024-05-28T11:10:52.000-04:00",
+			"phone": "(815) 914-3220",
+			"delivery_method": "bulk",
+			"paid_amount": "0.09",
+			"name": "Ben Lampe",
+			"store_name": "Rockford Stars - 05-2024",
+			"corporate_name": "",
+			"id": 38672187,
+			"handling_fee": "0.0",
+			"email": "ben@goearnit.com"
+		  }
+		]
 		*/
 
 		try {
@@ -200,45 +249,103 @@ public class TuoUtil {
 
 	static public void loadStoreProducts(String storeid, String token, OperationOutcomeList callback) {
 		/*
-		   {
-				"id": 1021573,
-				"name": "Uniform 2p - Fight Shorts (Bottom)",
-				"storefront_name": "Uniform 2p - Fight Shorts (Bottom)",
-				"brand": "GO EARN IT",
-				"type": "Compression",
+			[
+			  {
+				"storefront_name": "Stars - Cotton Shirt - Gray",
+				"store_id": 2104824,
+				"images": [
+				  {
+					"position": 1,
+					"filesize": 64518,
+					"url": "https://s3.amazonaws.com/tuo-p-public/product_images/48048a5ec87ca93ba062377346bd82d81d617ae4.jpg?1716908268"
+				  },
+				  ...
+				],
 				"description": "",
-				"sku": "1000031",
 				"upc": null,
 				"active": true,
-				"catalog_id": 74474,
-				"store_id": 1159841,
-				"images": [
-					{
-						"url": "https://s3.amazonaws.com/tuo-p-public/product_images/756a4ecef52975020b320aee3ca25db7365443bd.png?1548013622",
-						"position": 1,
-						"filesize": 57396
-					}
-				],
+				"type": "Shirt",
 				"colors": {
-					"No color": [
-						"NA",
-						"NA"
-					]
+				  "No color": [
+					"NA",
+					"NA"
+				  ]
 				},
+				"catalog_id": 139675,
 				"sizes": [
-					{
-						"category_name": "Standard Youth",
-						"code": "YXS",
-						"price": "99.95"
-					},
-					{
-						"category_name": "Standard Youth",
-						"code": "YS",
-						"price": "99.95"
-					},
+				  {
+					"category_name": "Standard Youth",
+					"code": "YS",
+					"price": "0.01"
+				  },
+				  {
+					"category_name": "Standard Youth",
+					"code": "YM",
+					"price": "0.01"
+				  },
+				  {
+					"category_name": "Standard Youth",
+					"code": "YL",
+					"price": "0.01"
+				  },
+				  ...
+				],
+				"name": "Shirts SS - Printed (Cotton)",
+				"id": 2470893,
+				"sku": "1000015",
+				"brand": "GO EARN IT"
+			  },
+			  {
+				"storefront_name": "Stars - Cotton Shirt - Navy",
+				"store_id": 2104824,
+				"images": [
 					...
-				]
-			},
+				],
+				"description": "",
+				"upc": null,
+				"active": true,
+				"type": "Shirt",
+				"colors": {
+				  "No color": [
+					"NA",
+					"NA"
+				  ]
+				},
+				"catalog_id": 139675,
+				"sizes": [
+					...
+				],
+				"name": "Shirts SS - Printed (Cotton)",
+				"id": 2470894,
+				"sku": "1000015",
+				"brand": "GO EARN IT"
+			  },
+			  {
+				"storefront_name": "Stars - Cotton Shirt - Red",
+				"store_id": 2104824,
+				"images": [
+					...
+				],
+				"description": "",
+				"upc": null,
+				"active": true,
+				"type": "Shirt",
+				"colors": {
+				  "No color": [
+					"NA",
+					"NA"
+				  ]
+				},
+				"catalog_id": 139675,
+				"sizes": [
+					...
+				],
+				"name": "Shirts SS - Printed (Cotton)",
+				"id": 2470896,
+				"sku": "1000015",
+				"brand": "GO EARN IT"
+			  }
+			]
 		*/
 
 		try {

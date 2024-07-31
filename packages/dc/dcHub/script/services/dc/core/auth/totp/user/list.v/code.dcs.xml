@@ -1,0 +1,36 @@
+<dcs.Script>
+	<dcs.Console>list my totp auth: {$Data}</dcs.Console>
+
+	<dcs.Include Path="/lib/dc/core/auth/util" />
+
+	<dcs.CallFunc Name="dc_core_auth_util_LookupAuthMethod" Result="ActiveTOTPs">
+		<Field Name="UserId" Value="$_User.UserId" />
+		<Field Name="Type" Value="TOTP" />
+	</dcs.CallFunc>
+
+	<dcs.Console>list 2: {$ActiveTOTPs}</dcs.Console>
+
+	<dcs.Var Name="Matches" Type="List" />
+
+	<dcdb.LoadRecord Table="dcUser" Id="$_User.UserId" Result="AuthData">
+		<SelectGroup Field="dcAuthMethodUuid" Key="Uuid" As="AuthMethods">
+			<Select Field="dcAuthMethodTitle" As="Title" />
+		</SelectGroup>
+	</dcdb.LoadRecord>
+
+	<!-- <dcs.Console>list 2: {$AuthData.AuthMethods}</dcs.Console> -->
+
+	<dcs.ForEach Name="TOTP" In="$AuthData.AuthMethods">
+		<dcs.Console>list 4: {$TOTP.Uuid}</dcs.Console>
+
+		<dcs.If Target="$ActiveTOTPs.Matches" Contains="$TOTP.Uuid">
+			<dcs.Console>list 5: {$TOTP.Uuid}</dcs.Console>
+
+			<dcs.With Target="$Matches">
+				<AddItem Value="$TOTP" />
+			</dcs.With>
+		</dcs.If>
+	</dcs.ForEach>
+
+	<dcs.Exit Scope="Task" Result="$Matches" />
+</dcs.Script>

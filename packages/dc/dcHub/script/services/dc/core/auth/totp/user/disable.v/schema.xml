@@ -1,0 +1,5 @@
+<Op>
+	<RecordRequest>
+		<Field Name="Uuid" Type="dcMetaString" Required="true" />
+	</RecordRequest>
+</Op>

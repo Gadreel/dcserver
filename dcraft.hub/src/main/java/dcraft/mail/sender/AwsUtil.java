@@ -42,7 +42,7 @@ public class AwsUtil {
 	}
 
 	/*
-		From:
+		From:  [defaults]
 		ReplyTo:  [optional]
 		To:
 		Cc:  [optional]
@@ -50,6 +50,7 @@ public class AwsUtil {
 		Subject:
 		Html:  [optional]
 		Text:
+		SendId:
 	 */
 	static public RecordStruct createSimpleMailServiceHttpParams(RecordStruct standardParams) throws OperatingContextException {
 		XElement settings = ApplicationHub.getCatalogSettings("Email-Send");
@@ -58,9 +59,6 @@ public class AwsUtil {
 			Logger.error("Missing email settings");
 			return null;
 		}
-
-		// supports only 1 domain/address
-		String skipto = settings.getAttribute("SkipToAddress", "");
 
 		String from = standardParams.getFieldAsString("From");
 		String reply = standardParams.getFieldAsString("ReplyTo");
@@ -78,38 +76,24 @@ public class AwsUtil {
 		String body = standardParams.getFieldAsString("Html");
 		String textbody = standardParams.getFieldAsString("Text");
 
-		/* assume we already processed
-		if (StringUtil.isEmpty(body) && StringUtil.isNotEmpty(textbody)) {
-			XElement root = MarkdownUtil.process(textbody, true);
-
-			if (root == null) {
-				Logger.error("inline md error: ");
-				return null;
-			}
-
-			body = root.toPrettyString();
-		}
-		 */
-
 		Logger.info("Sending email from: " + from);
 		Logger.info("Sending email to: " + to);
 
-		String fromfinal = MailUtil.normalizeEmailAddress(from);
-
-		if (StringUtil.isEmpty(fromfinal) && settings.hasNotEmptyAttribute("DefaultFrom")) {
-			from = settings.getAttribute("DefaultFrom");
-			fromfinal = MailUtil.normalizeEmailAddress(from);
+		if (StringUtil.isEmpty(from)) {
+			Logger.error("Missing From field for email");
+			return null;
 		}
 
-		if (StringUtil.isEmpty(fromfinal)) {
-			Logger.error("Missing or invalid from field for email");
+		EmailAddress fromparsed = EmailAddress.parseSingle(from);
+
+		if (fromparsed == null) {
+			Logger.error("Invalid From field for email");
 			return null;
 		}
 
 		ListStruct tolist = ListStruct.list();
 		ListStruct cclist = ListStruct.list();
 		ListStruct bcclist = ListStruct.list();
-		ListStruct actuallist = ListStruct.list();
 		ListStruct replylist = ListStruct.list();
 
 		if (StringUtil.isNotEmpty(to)) {
@@ -117,10 +101,7 @@ public class AwsUtil {
 
 			if (parsed != null) {
 				for (EmailAddress address : parsed) {
-					if (! address.containsDomain(skipto)) {
-						tolist.with(address.toStringForTransport("aws"));       // TODO don't hard code, configure
-						actuallist.with(address.toStringNormalized());
-					}
+					tolist.with(address.toStringForTransport("aws"));       // TODO don't hard code, configure
 				}
 			}
 		}
@@ -135,10 +116,7 @@ public class AwsUtil {
 
 			if (parsed != null) {
 				for (EmailAddress address : parsed) {
-					if (!address.containsDomain(skipto)) {
-						cclist.with(address.toStringForTransport("aws"));       // TODO don't hard code, configure
-						actuallist.with(address.toStringNormalized());
-					}
+					cclist.with(address.toStringForTransport("aws"));       // TODO don't hard code, configure
 				}
 			}
 		}
@@ -148,10 +126,7 @@ public class AwsUtil {
 
 			if (parsed != null) {
 				for (EmailAddress address : parsed) {
-					if (!address.containsDomain(skipto)) {
-						bcclist.with(address.toStringForTransport("aws"));       // TODO don't hard code, configure
-						actuallist.with(address.toStringNormalized());
-					}
+					bcclist.with(address.toStringForTransport("aws"));       // TODO don't hard code, configure
 				}
 			}
 		}
@@ -159,26 +134,16 @@ public class AwsUtil {
 		if (StringUtil.isNotEmpty(reply)) {
 			List<EmailAddress> parsed = EmailAddress.parseList(reply);
 
-			if ((parsed == null) || (parsed.size() == 0)) {
-				if (settings.hasNotEmptyAttribute("DefaultReplyTo")) {
-					reply = settings.getAttribute("DefaultReplyTo");
-					parsed = EmailAddress.parseList(reply);
-				}
-			}
-
 			if (parsed != null) {
 				for (EmailAddress address : parsed) {
-					if (!address.containsDomain(skipto)) {
-						replylist.with(address.toStringForTransport("aws"));       // TODO don't hard code, configure
-					}
+					replylist.with(address.toStringForTransport("aws"));       // TODO don't hard code, configure
 				}
 			}
 		}
 
 		return RecordStruct.record()
-				.with("ActualAddresses", actuallist)
 				.with("AwsMailHttp", RecordStruct.record()
-						.with("FromEmailAddress", fromfinal)
+						.with("FromEmailAddress", fromparsed.toStringForTransport("aws"))    // TODO don't hard code, configure
 						.with("Destination", RecordStruct.record()
 								.with("ToAddresses", tolist)
 								.withConditional("CcAddresses", cclist)

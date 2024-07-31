@@ -10,6 +10,7 @@ public class ToSlug implements IFormatter {
 
 	@Override
 	public FormatResult format(Object value, String op, String format) {
+		// TODO this list handling does not correct, review
 		if (value instanceof ListStruct) {
 			ListStruct list = (ListStruct) value;
 

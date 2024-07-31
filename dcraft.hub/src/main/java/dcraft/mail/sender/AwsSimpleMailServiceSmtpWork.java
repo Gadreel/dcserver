@@ -53,6 +53,7 @@ import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+// TODO not used currently - revise per HttpWork
 public class AwsSimpleMailServiceSmtpWork extends StateWork {
 	public StateWorkStep prepStep = null;
 	public StateWorkStep attachStep = null;

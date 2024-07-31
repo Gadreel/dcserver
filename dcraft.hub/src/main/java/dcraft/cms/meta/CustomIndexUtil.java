@@ -40,6 +40,20 @@ public class CustomIndexUtil {
 
         indexkeys.add(site.getTenant().getAlias());
         indexkeys.add("dcMetaIndex");
+        //indexkeys.add(site.getAlias());
+        indexkeys.add(indexName);
+
+        return indexkeys;
+    }
+
+    // TODO this can be removed as soon as mseed and cfac are cleared and rebuilt
+    static public List<Object> pathToIndexOld(String indexName) throws OperatingContextException {
+        List<Object> indexkeys = new ArrayList<>();
+
+        Site site = OperationContext.getOrThrow().getSite();
+
+        indexkeys.add(site.getTenant().getAlias());
+        indexkeys.add("dcMetaIndex");
         indexkeys.add(site.getAlias());
         indexkeys.add(indexName);
 

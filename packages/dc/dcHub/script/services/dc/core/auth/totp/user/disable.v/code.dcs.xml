@@ -1,0 +1,19 @@
+<dcs.Script>
+	<dcs.Console>remove totp: {$Data}</dcs.Console>
+
+	<dcs.Var Name="Now" Type="DateTime">
+		<Now />
+	</dcs.Var>
+
+	<dcdb.UpdateRecord Table="dcUser" Id="$_User.UserId">
+		<!-- method  -->
+		<Update Field="dcAuthMethodActive" SubId="{$Data.Uuid}" Value="false" />
+
+		<!-- audit  -->
+		<Update Field="dcAuthMethodAuditAt" SubId="{$Now}" Value="$Now" />
+		<Update Field="dcAuthMethodAuditUuid" SubId="{$Now}" Value="$Uuid" />
+		<Update Field="dcAuthMethodAuditAction" SubId="{$Now}" Value="Disabled" />
+	</dcdb.UpdateRecord>
+
+	<dcs.Exit Scope="Task" />
+</dcs.Script>

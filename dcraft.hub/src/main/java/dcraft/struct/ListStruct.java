@@ -121,18 +121,32 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 			return this;
 		
 		PathPart part = path[0];
-		
 		String fld = part.getField();
-		
-		if ("Length".equals(fld))
-			return IntegerStruct.of((long)this.items.size());
-		
-		if ("Last".equals(fld))
-			return IntegerStruct.of((long)this.items.size() - 1);
-		
-		if (fld != null) {
-			Logger.warnTr(501, this);
-			return null;
+
+		boolean indexFound = StringUtil.isEmpty(fld);
+
+		if (! indexFound) {
+
+			if ("Length".equals(fld))
+				return IntegerStruct.of((long) this.items.size());
+
+			if ("Last".equals(fld))
+				return IntegerStruct.of((long) this.items.size() - 1);
+
+			if ("LastItem".equals(fld)) {
+				part.index = this.items.size() - 1;
+				indexFound = true;
+			}
+
+			if ("FirstItem".equals(fld)) {
+				part.index = 0;
+				indexFound = true;
+			}
+
+			if (! indexFound) {
+				Logger.warnTr(501, this);
+				return null;
+			}
 		}
 		
 		int idx = part.getIndex();
@@ -793,6 +807,37 @@ public class ListStruct extends CompositeStruct implements Iterable<Object> {
 				StackUtil.addVariable(stack, result, res);
 			}
 			
+			return ReturnOption.CONTINUE;
+		}
+		else if ("JoinRange".equals(code.getName())) {
+			Long from = StackUtil.intFromElement(stack, code, "From", 0);
+			Long to = StackUtil.intFromElement(stack, code, "To");
+			String delim = StackUtil.stringFromElement(stack, code, "Delim", ",");
+			String result = StackUtil.stringFromElement(stack, code, "Result");
+
+			if (StringUtil.isNotEmpty(result)) {
+				StringStruct res = StringStruct.ofEmpty();
+
+				if (to == null)
+					to = Long.valueOf(this.items.size());
+
+				boolean first = true;
+
+				for (int i = Math.toIntExact(from); (i < this.items.size()) && (i < to); i++) {
+					BaseStruct o = this.items.get(i);
+
+					if (first)
+						first = false;
+					else
+						res.append(delim);
+
+					if (o != null)
+						res.append(Struct.objectToString(o));
+				}
+
+				StackUtil.addVariable(stack, result, res);
+			}
+
 			return ReturnOption.CONTINUE;
 		}
 		else if ("FieldToList".equals(code.getName())) {

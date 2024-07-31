@@ -36,6 +36,14 @@
 			<StringRestriction Enum="Waiting,Ready,InProgress,Failed,Passed" />
 		</StringType>
 
+		<StringType Id="dcAuthMethodTypeEnum">
+			<StringRestriction Enum="PW,TOTP,OTP,FedCM,Passkey,Leapcode,RecoveryCode" />
+		</StringType>
+
+		<StringType Id="dcAuthMethodAuditActionEnum">
+			<StringRestriction Enum="Added,Disabled,Expired,Consumed,Note" />
+		</StringType>
+
 		<Record Id="dcAltAddressDef">
 			<Field Name="Stamp" Type="DateTime" Required="True" />
 			<Field Name="Label" Type="dcSmallString" Required="True" />
@@ -122,6 +130,8 @@
 				<List Type="dcTaskListAddDef" />
 			</Field>
 		</Record>
+
+		<Record Id="dcActivityAdapter" Class="dcraft.core.activity.ActivityAdapter" />
 	</Shared>
 
 	<Database>
@@ -203,7 +213,7 @@
 			<Field Name="dcEmail" Type="dcEmailBasic" Indexed="True" />
 			<!-- dcEmail should be email within the Tenant, backup applies if within Tenant is bad, missing or user account is disabled TODO -->
 			<Field Name="dcBackupEmail" Type="dcEmailBasic" Indexed="True" />
-			<Field Name="dcPassword" Type="dcMetaString" />
+			<Field Name="dcCreated" Type="DateTime" />
 			<Field Name="dcLocale" Type="dcMetaString" List="True" />
 			<Field Name="dcChronology" Type="dcMetaString" List="True" />
 			<Field Name="dcDescription" Type="dcLargeString" />
@@ -218,13 +228,6 @@
 			<Field Name="dcNotices" Type="dcUserNoticeEnum" />
 			<!-- geocoded address -->
 			<Field Name="dcLocation" Type="dcMetaString" />
-			<Field Name="dcFacebookId" Type="dcString" Unique="True" />
-			<Field Name="dcExternalId" Type="dcSmallString" List="True" />
-			<Field Name="dcCreated" Type="DateTime" />
-			<Field Name="dcLastLogin" Type="DateTime" Audit="False" />
-			<Field Name="dcConfirmed" Type="Boolean" />
-			<Field Name="dcConfirmCode" Type="dcSmallString" />
-			<Field Name="dcRecoverAt" Type="DateTime" />
 			<Field Name="dcBadges" Type="dcMetaString" List="True" Indexed="True" />
 			<Field Name="dcBadgesRetired" Type="AnyList" Audit="False" />
 
@@ -262,6 +265,78 @@
 
 			<!-- keyed by Stamp field, timestamp entered -->
 			<Field Name="dcReference" Type="dcReferenceDef" List="True" />
+
+			<!-- AUTHENTICATION  -->
+			<!-- TODO track lost / dead / compromised devices and disable 2FA for these - devices may be personal or shared -->
+
+			<!-- 1FA Password or Text / Email code -->
+
+			<Field Name="dcPassword" Type="dcMetaString" />
+
+			<Field Name="dcConfirmed" Type="Boolean" />
+			<Field Name="dcConfirmCode" Type="dcMetaString" />
+			<Field Name="dcRecoverAt" Type="DateTime" />
+
+			<Field Name="dcLastLogin" Type="DateTime" Audit="False" />
+
+			<!-- AUTHENTICATION METHODS -->
+
+			<!-- Auth Method fields, keyed by uuid  (can include temp or alt passwords)  -->
+			<Field Name="dcAuthMethodUuid" Type="dcMetaString" Group="dcAuthMethod" List="True" Indexed="True" />
+			<Field Name="dcAuthMethodActive" Type="Boolean" Group="dcAuthMethod" List="True" />
+			<Field Name="dcAuthMethodType" Type="dcAuthMethodTypeEnum" Group="dcAuthMethod" List="True" />
+			<!-- if auth checker finds and expired, mark as Active = false automatically. expire can apply to any auth method -->
+			<Field Name="dcAuthMethodExpiresAt" Type="DateTime" Group="dcAuthMethod" List="True" />
+			<Field Name="dcAuthMethodTitle" Type="dcTinyString" Group="dcAuthMethod" List="True" />
+
+			<!-- Alt or Temp passwords, keyed by uuid (linked to expires). uses bcrypted  -->
+
+			<Field Name="dcAuthMethodPassword" Type="dcMetaString" Group="dcAuthMethod" List="True" />
+
+			<!-- Short Term OTP, emailed or texted, keyed by uuid (linked to expires). obscured  -->
+
+			<Field Name="dcAuthMethodOTPCode" Type="dcMetaString" Group="dcAuthMethod" List="True" />
+
+			<!-- TOTP fields, keyed by uuid. obscured  -->
+
+			<Field Name="dcAuthMethodTOTPSecret" Type="dcPath" Group="dcAuthMethod" List="True" />
+
+			<!-- REOVERY CODES - Long Term OTP, keyed by uuid. bcrypted  -->
+
+			<Field Name="dcAuthMethodRecoveryCode" Type="dcMetaString" Group="dcAuthMethod" List="True" />
+
+			<!-- TODO FedCM / Federated Credential Management -->
+
+			<!-- TODO webauth / FIDO2 / Passkeys / passwordless -->
+
+			<!-- TODO SSO -->
+
+			<!-- <Field Name="dcSSOIdentitySystemAlias" Type="dcMetaString" Group="dcSSOIdentity" List="True" />
+			<Field Name="dcSSOIdentitySystemId" Type="dcMetaString" Group="dcSSOIdentity" List="True" />
+			<Field Name="dcSSOIdentitySystemCode" Type="dcMetaString" Group="dcSSOIdentity" List="True" /> -->
+
+			<!-- TODO which device is this on? -->
+
+			<!-- TODO 2FA Location -->
+			<!-- this would probably be in a special "dcSecureLocations" table  -->
+
+			<!-- TODO 2FA Code Stored on Device (preferably paired with Location) -->
+			<!-- this would probably be in a special "dcSharedDevices" table  -->
+
+			<!-- TODO leap codes - leap from one domain / site /tenant / deployment to another -->
+			<!-- Code, AllocatedAt (have 90 seconds to live), Dest (see short code / redirect management) -->
+
+			<!-- TODO  How to "extend" access to special areas with another round of access checks? -->
+
+
+			<!-- AUTHENTICATION METHOD AUDITING -->
+
+			<!-- keyed by stamp -->
+			<Field Name="dcAuthMethodAuditAt" Type="DateTime" Group="dcAuthMethodAudit" List="True" />
+			<!-- uuid 0000 for main password (dcPassword) -->
+			<Field Name="dcAuthMethodAuditUuid" Type="dcMetaString" Group="dcAuthMethodAudit" List="True" />
+			<Field Name="dcAuthMethodAuditAction" Type="dcAuthMethodAuditActionEnum" Group="dcAuthMethodAudit" List="True" />
+			<Field Name="dcAuthMethodAuditNote" Type="dcString" Group="dcAuthMethodAudit" List="True" />
 		</Table>
 
 		<Trigger Table="dcUser" Operation="AfterCreate" Execute="dcraft.db.proc.trigger.AfterUserCreate" />
@@ -338,6 +413,18 @@
 
 			<!-- keyed by sequence number formatted as 0000 - 9999, max 10000 steps-->
 			<Field Name="dcStepTask" ForeignKey="dcTaskList" List="True" />
+		</Table>
+
+		<Table Id="dcUserActivity">
+			<Field Name="dcTracking" ForeignKey="dccCommTracker" Required="True" />
+			<Field Name="dcBy" ForeignKey="dcUser" Required="True" />
+			<Field Name="dcAt" Type="DateTime" Indexed="True" Required="True" />
+			<Field Name="dcTarget" Type="dcMetaString" Indexed="True" Required="True" />
+			<Field Name="dcContext" Type="dcMetaString" Required="True" />
+			<Field Name="dcContextData" Type="AnyRecord" />
+			<Field Name="dcNote" Type="dcString" />
+			<Field Name="dcOrigin" Type="dcMetaString" />
+			<Field Name="dcOpId" Type="dcMetaString" />
 		</Table>
 
 		<Procedure Name="dcCoreServices.Users.LoadSelf" Execute="dcraft.core.db.user.LoadSelf" />

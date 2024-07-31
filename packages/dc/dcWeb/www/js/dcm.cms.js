@@ -606,6 +606,12 @@ dc.pui.Apps.Menus.dcmGeneral = {
 			Title: 'Announcements',
 			Auth: [ 'Admin', 'Editor' ],
 			Path: '/dcm/dashboard/announcements'
+		},
+		{
+			Alias: 'Docs',
+			Title: 'Documentation',
+			Auth: [ 'Developer' ],
+			Path: '/dcm/dc-docs/main/cms'
 		}
 	],
 	Options: [

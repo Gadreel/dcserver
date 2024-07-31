@@ -14,6 +14,7 @@ import dcraft.hub.op.OperationContext;
 import dcraft.hub.op.OperationOutcomeStruct;
 import dcraft.log.Logger;
 import dcraft.script.StackUtil;
+import dcraft.script.inst.doc.Base;
 import dcraft.script.work.ReturnOption;
 import dcraft.script.work.StackWork;
 import dcraft.service.ServiceHub;
@@ -23,6 +24,7 @@ import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.struct.Struct;
 import dcraft.struct.scalar.NullStruct;
+import dcraft.struct.scalar.StringStruct;
 import dcraft.util.StringUtil;
 import dcraft.util.TimeUtil;
 import dcraft.xml.XElement;
@@ -81,6 +83,30 @@ public class ThreadObject extends RecordStruct {
 			return ReturnOption.AWAIT;
 		}
 
+		if ("ChangeFolder".equals(code.getName())) {
+			RecordStruct data = RecordStruct.record();
+
+			data.copyFields(this);
+			data.with("Party", StackUtil.refFromElement(state, code, "Party", true));
+			data.with("Folder", StackUtil.refFromElement(state, code, "Folder", true));
+			data.with("Read", StackUtil.refFromElement(state, code, "Read", true));
+
+			ServiceHub.call(ServiceRequest.of("dcmServices", "Thread", "ChangeFolder")
+					.withData(data)
+					.withOutcome(
+							new OperationOutcomeStruct() {
+								@Override
+								public void callback(BaseStruct result) throws OperatingContextException {
+									state.withContinueFlag();
+
+									OperationContext.getAsTaskOrThrow().resume();
+								}
+							})
+			);
+
+			return ReturnOption.AWAIT;
+		}
+
 		if ("SetTitle".equals(code.getName())) {
 			String title = StackUtil.resolveValueToString(state, code.getValue(), true);
 
@@ -104,7 +130,19 @@ public class ThreadObject extends RecordStruct {
 		}
 
 		if ("AddContent".equals(code.getName())) {
-			String content = StackUtil.resolveValueToString(state, code.getValue(), true);
+			BaseStruct contentStruct = StackUtil.resolveReference(state, code.getValue(), true);
+
+			String content = null;
+
+			if (contentStruct instanceof XElement) {
+				Base.cleanReferencesDeep((Base) contentStruct, state);
+
+				content = ((XElement)contentStruct).getText();
+			}
+			else {
+				content = Struct.objectToString(contentStruct);
+			}
+
 			String contenttype = StackUtil.stringFromElementClean(state, code, "Type");
 			String originator = StackUtil.stringFromElementClean(state, code, "Originator");
 
@@ -224,6 +262,32 @@ public class ThreadObject extends RecordStruct {
 			}
 
 			ThreadUtil.updateDeliver(adapter, tid, TimeUtil.now());
+
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("UpdateDeliver".equals(code.getName())) {
+			String tid = this.getFieldAsString("Id");
+
+			// TODO support variable for delivery time
+
+			IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
+			TablesAdapter adapter = TablesAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
+
+			ThreadUtil.updateDeliver(adapter, tid, TimeUtil.now());
+
+			return ReturnOption.CONTINUE;
+		}
+
+		if ("Retire".equals(code.getName())) {
+			String tid = this.getFieldAsString("Id");
+
+			// TODO support variable for delivery time
+
+			IConnectionManager connectionManager = ResourceHub.getResources().getDatabases().getDatabase();
+			TablesAdapter adapter = TablesAdapter.of(BasicRequestContext.of(connectionManager.allocateAdapter()));
+
+			ThreadUtil.retireThread(adapter, tid);
 
 			return ReturnOption.CONTINUE;
 		}

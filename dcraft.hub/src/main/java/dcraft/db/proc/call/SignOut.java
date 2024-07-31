@@ -1,5 +1,6 @@
 package dcraft.db.proc.call;
 
+import dcraft.core.activity.ActivityUtil;
 import dcraft.db.proc.IUpdatingStoredProc;
 import dcraft.db.ICallContext;
 import dcraft.hub.op.OperatingContextException;
@@ -33,7 +34,10 @@ public class SignOut implements IUpdatingStoredProc {
 		catch (Exception x) {
 			Logger.error("SignOut: Unable to remove session global: " + x);
 		}
-		
+
+		if (! uc.looksLikeGuest())
+			ActivityUtil.recordUserActivity("email", uc.getEmail(), uc.getUserId(), "/dc/user", "SignOut", null, null);
+
 		uc.clearToGuestKeepSite();
 		
 		Session sess = ctx.getSession();

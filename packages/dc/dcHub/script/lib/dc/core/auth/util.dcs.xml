@@ -1,0 +1,58 @@
+<dcs.Script>
+	<!--
+		LookupAuthMethod - find active auth methods for method type
+	-->
+	<dcs.Function Name="dc_core_auth_util_LookupAuthMethod">
+		<dcs.Console>lam: {$_Param}</dcs.Console>
+
+		<dcs.Var Name="Now" Type="DateTime">
+			<Now />
+		</dcs.Var>
+
+		<dcs.Var Name="Result" Type="Record">
+			<SetField Name="Matches" Type="List" />
+		</dcs.Var>
+
+		<dcdb.LoadRecord Table="dcUser" Id="$_Param.UserId" Result="UserData">
+			<SelectGroup Field="dcAuthMethodUuid" Key="Uuid" As="Methods">
+				<Select Field="dcAuthMethodActive" As="Active" />
+				<Select Field="dcAuthMethodType" As="Type" />
+				<Select Field="dcAuthMethodExpiresAt" As="ExpiresAt" />
+			</SelectGroup>
+		</dcs.LoadRecord>
+
+		<dcs.ForEach Name="Method" In="$UserData.Methods">
+			<!-- <dcs.Console>lam 2: {$Method}</dcs.Console> -->
+
+			<dcs.If Target="$Method.Type" Equal="$_Param.Type">
+				<dcs.If>
+					<Is Target="$Method.Active" />
+					<Is Target="$Method.ExpiresAt" IsEmpty="false" />
+					<Is Target="$Method.ExpiresAt" LessThan="$Now" />
+
+					<!-- <dcs.Console>lam 3: {$Method}</dcs.Console> -->
+
+					<dcdb.UpdateRecord Table="dcUser" Id="$_Param.UserId">
+						<!-- method  -->
+						<Update Field="dcAuthMethodActive" SubId="{$Method.Uuid}" Value="false" />
+
+						<!-- audit  -->
+						<Update Field="dcAuthMethodAuditAt" SubId="{$Now}" Value="$Now" />
+						<Update Field="dcAuthMethodAuditUuid" SubId="{$Now}" Value="$Method.Uuid" />
+						<Update Field="dcAuthMethodAuditAction" SubId="{$Now}" Value="Disabled" />
+						<Update Field="dcAuthMethodAuditNote" SubId="{$Now}" Value="automatic disable due to expiration" />
+					</dcdb.UpdateRecord>
+				</dcs.If>
+				<dcs.ElseIf Target="$Method.Active">
+					<!-- <dcs.Console>lam 4: {$Method}</dcs.Console> -->
+
+					<dcs.With Target="$Result.Matches">
+						<AddItem Value="$Method.Uuid" />
+					</dcs.With>
+				</dcs.ElseIf>
+			</dcs.If>
+		</dcs.ForEach>
+
+		<dcs.Return Result="$Result" />
+	</dcs.Function>
+</dcs.Script>

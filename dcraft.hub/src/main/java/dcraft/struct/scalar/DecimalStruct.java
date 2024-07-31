@@ -122,7 +122,8 @@ public class DecimalStruct extends ScalarStruct {
 					: StackUtil.resolveReference(stack, code.getText(), true);
 
 			try {
-				this.value = this.value.add(Struct.objectToDecimal(sref));			
+				if ((sref != null) && (this.value != null))
+					this.value = this.value.add(Struct.objectToDecimal(sref));
 			}
 			catch (Exception x) {
 				Logger.error("Error doing " + code.getName() + ": " + x);
@@ -136,7 +137,8 @@ public class DecimalStruct extends ScalarStruct {
 					: StackUtil.resolveReference(stack, code.getText(), true);
 
 			try {
-				this.value = this.value.subtract(Struct.objectToDecimal(sref));			
+				if ((sref != null) && (this.value != null))
+					this.value = this.value.subtract(Struct.objectToDecimal(sref));
 			}
 			catch (Exception x) {
 				Logger.error("Error doing " + code.getName() + ": " + x);
@@ -150,7 +152,8 @@ public class DecimalStruct extends ScalarStruct {
 					: StackUtil.resolveReference(stack, code.getText(), true);
 
 			try {
-				this.value = this.value.multiply(Struct.objectToDecimal(sref));			
+				if ((sref != null) && (this.value != null))
+					this.value = this.value.multiply(Struct.objectToDecimal(sref));
 			}
 			catch (Exception x) {
 				Logger.error("Error doing " + code.getName() + ": " + x);
@@ -166,7 +169,8 @@ public class DecimalStruct extends ScalarStruct {
 			// TODO support other rounding modes and scales - see integer
 
 			try {
-				this.value = this.value.divide(Struct.objectToDecimal(sref), 6, RoundingMode.HALF_UP);
+				if ((sref != null) && (this.value != null))
+					this.value = this.value.divide(Struct.objectToDecimal(sref), 6, RoundingMode.HALF_UP);
 			}
 			catch (Exception x) {
 				Logger.error("Error doing " + code.getName() + ": " + x);
@@ -175,8 +179,10 @@ public class DecimalStruct extends ScalarStruct {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Scale".equals(code.getName())) {
-			int size = (int) StackUtil.intFromElement(stack, code, "Size", 2);
-			this.value = this.value.setScale(size, RoundingMode.HALF_UP);
+			if (this.value != null) {
+				int size = (int) StackUtil.intFromElement(stack, code, "Size", 2);
+				this.value = this.value.setScale(size, RoundingMode.HALF_UP);
+			}
 
 			// TODO support other rounding modes
 
@@ -190,7 +196,8 @@ public class DecimalStruct extends ScalarStruct {
 			// TODO support other rounding modes and scales - see integer
 
 			try {
-				this.value = this.value.remainder(Struct.objectToDecimal(sref));
+				if ((sref != null) && (this.value != null))
+					this.value = this.value.remainder(Struct.objectToDecimal(sref));
 			}
 			catch (Exception x) {
 				Logger.error("Error doing " + code.getName() + ": " + x);
@@ -204,7 +211,8 @@ public class DecimalStruct extends ScalarStruct {
 					: StackUtil.resolveReference(stack, code.getText(), true);
 
 			try {
-				this.value = this.value.min(Struct.objectToDecimal(sref));
+				if ((sref != null) && (this.value != null))
+					this.value = this.value.min(Struct.objectToDecimal(sref));
 			}
 			catch (Exception x) {
 				Logger.error("Error doing " + code.getName() + ": " + x);
@@ -218,7 +226,8 @@ public class DecimalStruct extends ScalarStruct {
 					: StackUtil.resolveReference(stack, code.getText(), true);
 		
 			try {
-				this.value = this.value.max(Struct.objectToDecimal(sref));			
+				if ((sref != null) && (this.value != null))
+					this.value = this.value.max(Struct.objectToDecimal(sref));
 			}
 			catch (Exception x) {
 				Logger.error("Error doing " + code.getName() + ": " + x);
@@ -227,7 +236,8 @@ public class DecimalStruct extends ScalarStruct {
 			return ReturnOption.CONTINUE;
 		}
 		else if ("Abs".equals(code.getName())) {
-			this.value = this.value.abs();			
+			if (this.value != null)
+				this.value = this.value.abs();
 			
 			return ReturnOption.CONTINUE;
 		}

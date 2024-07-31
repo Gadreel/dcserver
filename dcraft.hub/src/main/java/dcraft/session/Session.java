@@ -21,6 +21,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
+import dcraft.db.BasicRequestContext;
+import dcraft.db.proc.call.SignIn;
+import dcraft.db.tables.TablesAdapter;
 import dcraft.filestore.CommonPath;
 import dcraft.hub.app.ApplicationHub;
 import dcraft.hub.op.*;
@@ -292,6 +295,10 @@ public class Session extends RecordStruct implements IVariableProvider {
 			return true;
 		}
 		else if ("LoadMe".equals(request.getOp())) {
+			TablesAdapter db = TablesAdapter.of(BasicRequestContext.ofDefaultDatabase());
+
+			SignIn.updateContext(db, this.user.getUserId());
+
 			callback.returnValue(Session.this.user.deepCopyExclude("AuthToken"));
 			return true;
 		}

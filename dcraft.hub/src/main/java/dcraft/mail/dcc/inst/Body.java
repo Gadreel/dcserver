@@ -67,22 +67,30 @@ public class Body extends Base {
 		StringBuilder sbTableStart = new StringBuilder()
 				.append("[if mso | IE]>\r\n")
 				.append("<table role=\"presentation\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%\" style=\"background-color: " + background + ";\" class=\"email-bg\">\r\n")
-				.append("<tr>")
-				.append("<td>")
+				.append("<tr>\r\n")
+				.append("<td>\r\n")
 				.append("<![endif]");
 
-		XComment bodyTableStart = XComment.of(sbTableStart.toString());
+		//XComment bodyTableStart = XComment.of(sbTableStart.toString());
+		EmailComment bodyTableStart = EmailComment.of(sbTableStart.toString());
 
 		bodyCenter.with(bodyTableStart);
 
 		// find and expand preview text
 
-		if (hiddenchildren != null) {
-			for (XNode n : hiddenchildren) {
-				if ((n instanceof XElement) && "PreviewText".equals(((XElement) n).getName())) {
+		XElement root = this.getRoot(state);
+
+		if (root != null) {
+			XElement preview = root.selectFirst("PreviewText");
+
+			//for (XNode n : hiddenchildren) {
+			//	if ((n instanceof XElement) && "PreviewText".equals(((XElement) n).getName())) {
+
+			if (preview != null) {
 					StringBuilder previewText = new StringBuilder();
 
-					((XElement) n).gatherText(previewText);
+					//((XElement) n).gatherText(previewText);
+					preview.gatherText(previewText);
 
 					XElement previewSect = W3.tag("div")
 							.attr("style", "max-height:0; overflow:hidden; mso-hide:all;")
@@ -98,7 +106,7 @@ public class Body extends Base {
 
 					bodyCenter.with(spacingSect);
 				}
-			}
+			//}
 		}
 
 		// add non-preview children
@@ -111,12 +119,13 @@ public class Body extends Base {
 
 		StringBuilder sbTableEnd = new StringBuilder()
 				.append("[if mso | IE]>\r\n")
-				.append("</td>")
-				.append("</tr>")
-				.append("</table>")
+				.append("</td>\r\n")
+				.append("</tr>\r\n")
+				.append("</table>\r\n")
 				.append("<![endif]");
 
-		XComment bodyTableEnd = XComment.of(sbTableEnd.toString());
+		//XComment bodyTableEnd = XComment.of(sbTableEnd.toString());
+		EmailComment bodyTableEnd = EmailComment.of(sbTableEnd.toString());
 
 		bodyCenter.with(bodyTableEnd);
 	}

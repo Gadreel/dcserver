@@ -279,9 +279,11 @@
 			<Tag Name="dcc.Body" Class="dcraft.mail.dcc.inst.Body" />
 			<Tag Name="dcc.MixIn" Class="dcraft.mail.dcc.inst.MixIn" />
 			<Tag Name="dcc.Fragment" Class="dcraft.mail.dcc.inst.Fragment" />
-			<!-- TODO  -->
-			<!-- <Tag Name="dcc.Param" Class="dcraft.mail.dcc.inst.Param" />
-			<Tag Name="dcc.IncludeParam" Class="dcraft.mail.dcc.inst.IncludeParam" /> -->
+			<Tag Name="dcc.EmailComment" Class="dcraft.mail.dcc.inst.EmailComment" />
+			<Tag Name="dcc.InjectContent" Class="dcraft.mail.dcc.inst.InjectContent" />
+			<Tag Name="dcc.Param" Class="dcraft.mail.dcc.inst.Param" />
+			<Tag Name="dcc.IncludeParam" Class="dcraft.mail.dcc.inst.IncludeParam" />
+			<Tag Name="dcc.IncludeFragmentInline" Class="dcraft.mail.dcc.inst.IncludeFragmentInline" />
 
 			<Tag Name="dcc.Band" Class="dcraft.mail.dcc.inst.Band" />
 		</Instructions>
@@ -322,6 +324,13 @@
 		<Comm.Handler Name="email-html-basic" Adapter="dcraft.mail.adapter.HtmlBasicAdapter" />
 		<Comm.Handler Name="email-text-basic" Adapter="dcraft.mail.adapter.EmailTextAdapter" />
 
+		<Doc.Handler Name="main" Adapter="dcraft.core.doc.adapter.MainAdapter" />
+		<Doc.Handler Name="lib" Adapter="dcraft.core.doc.adapter.LibAdapter" />
+		<Doc.Handler Name="work" Adapter="dcraft.core.doc.adapter.WorkAdapter" />
+		<Doc.Handler Name="service" Adapter="dcraft.core.doc.adapter.ServiceAdapter" />
+		<Doc.Handler Name="comm" Adapter="dcraft.core.doc.adapter.CommAdapter" />
+		<Doc.Handler Name="class" Adapter="dcraft.core.doc.adapter.ClassAdapter" />
+
 		<Threads>
 			<!--
 			<Type Alias="nnn" Notices="yes|no|default for distribution" />
@@ -341,8 +350,8 @@
 			<Site Id="Files" VaultClass="dcraft.filevault.FileStoreVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/files" CmsSync="true"  />
 			<Site Id="Communicate" VaultClass="dcraft.filevault.CommunicateStoreVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/communicate" CmsSync="true"  />
 			<Site Id="Feeds" VaultClass="dcraft.filevault.FeedVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/feeds" CmsSync="true"  />
-			<Site Id="Meta" VaultClass="dcraft.filevault.MetaVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/meta" CmsSync="true"  />
 			<Site Id="SiteFiles" VaultClass="dcraft.filevault.SiteVault" ReadBadges="Developer" WriteBadges="Developer" RootFolder="/" CmsSync="true"  />
+			<Tenant Id="Meta" VaultClass="dcraft.filevault.MetaVault" ReadBadges="Editor,Admin" WriteBadges="Editor,Admin" RootFolder="/meta" CmsSync="true"  />
 			<Tenant Id="StoreOrders" VaultClass="dcraft.filevault.FileStoreVault" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />
 			<Tenant Id="ManagedForms" VaultClass="dcraft.filevault.ManagedFormVault" ReadBadges="Admin,Clerk" WriteBadges="Admin" UploadToken="true" />
 			<RootMap Id="TenantGalleries" Alias="Galleries" />

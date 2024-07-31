@@ -1,0 +1,48 @@
+<dc.Html Badges="User" NoCache="Server">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="DC Docs" />
+	</Meta>
+
+	<dcs.Var Name="DocDomain" Type="String" SetTo="Main" />
+	<dcs.Var Name="DocPath" Type="String" SetTo="/" />
+
+	<dcs.If Target="$Page.OriginalPathParts.2" IsEmpty="false">
+		<dcs.With Target="$DocDomain" Value="{$Page.OriginalPathParts.2}" />
+	</dcs.If>
+
+	<dcs.If Target="$Page.OriginalPathParts.3" IsEmpty="false">
+		<dcs.With Target="$Page.OriginalPathParts">
+			<JoinRange  From="3" Result="PathFragment" Delim="/" />
+		</dcs.With>
+
+		<dcs.With Target="$DocPath" Value="$PathFragment" />
+	</dcs.If>
+
+	<dcs.Var Name="tempDoc" Type="dcmDocAdapter">
+		<RenderDoc Domain="$DocDomain" Path="/{$DocPath}" Result="DocContent" />
+	</dcs.Var>
+
+	<dcs.With Target="$Page.Title" Value="$DocContent.Title" />
+
+	<dc.Body>
+		<dc.PagePanel>
+			<dc.SimpleLayout id="sectDcDocRendered" Pad="Large">
+				<dc.Markdown Value="{$DocContent.Text}" />
+			</dc.SimpleLayout>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load"><![CDATA[
+			$('#sectDcDocRendered a').click(function(e) {
+				if ($(e.currentTarget).attr('href')?.startsWith('dc-docs:')) {
+					page.Layer.loadPage('/dcm/dc-docs_mjs' + $(e.currentTarget).attr('href').substr(9));
+
+					e.preventDefault();
+					return false;
+				}
+			});
+	]]></Function>
+	<Function Name="Thaw"><![CDATA[
+			page.callPageFunc('Load');
+	]]></Function>
+</dc.Html>

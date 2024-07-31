@@ -185,7 +185,11 @@ public class JsonPrinter extends XmlToJsonPrinterOld {
 				
 				StringBuilder sb = new StringBuilder();
 
-				if (isPageAsync && ! funcName.startsWith("on")) {
+				if (isPageAsync && funcName.startsWith("on")) {
+					sb.append(" function(" + func.getAttribute("Params", "") + ") { ");
+					sb.append("\n\t\t\t\tconst page = this; ");
+				}
+				else if (isPageAsync) {
 					sb.append(" async function(" + func.getAttribute("Params", "") + ") { ");
 					sb.append("\n\t\t\t\tconst page = this; ");
 				}

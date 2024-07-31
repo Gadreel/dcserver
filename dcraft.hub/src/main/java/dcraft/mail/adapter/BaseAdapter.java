@@ -2,14 +2,23 @@ package dcraft.mail.adapter;
 
 import dcraft.filestore.CommonPath;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.log.Logger;
 import dcraft.log.count.CountHub;
 import dcraft.mail.CommInfo;
 import dcraft.mail.IEmailOutputWork;
+import dcraft.mail.dcc.HtmlPrinter;
 import dcraft.struct.ListStruct;
 import dcraft.struct.RecordStruct;
 import dcraft.task.ChainWork;
 import dcraft.task.TaskContext;
+import dcraft.util.Memory;
+import dcraft.util.StringUtil;
+import dcraft.util.io.OutputWrapper;
+import dcraft.xml.XElement;
+import dcraft.xml.XmlPrinter;
 
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 
 // create a Result record with "html" (String), "text" (String) and possibly "attachments" (List)

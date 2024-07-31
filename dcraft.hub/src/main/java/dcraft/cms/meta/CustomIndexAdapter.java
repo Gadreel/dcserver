@@ -31,6 +31,10 @@ public class CustomIndexAdapter {
             List<Object> indexkeys = CustomIndexUtil.pathToIndex(this.indexName);
 
             this.request.getInterface().kill(indexkeys.toArray());
+
+            List<Object> indexkeysold = CustomIndexUtil.pathToIndexOld(this.indexName);
+
+            this.request.getInterface().kill(indexkeysold.toArray());
         }
         catch (DatabaseException x) {
             Logger.error("Unable to clea custom index in db: " + x);

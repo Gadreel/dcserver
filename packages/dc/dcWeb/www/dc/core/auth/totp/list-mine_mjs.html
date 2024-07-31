@@ -1,0 +1,91 @@
+<dc.Html Public="false" Badges="User">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="My Authenticator Secrets" />
+	</Meta>
+
+	<dc.Body class="dcuiWide">
+		<dc.PagePanel>
+			<dc.RowLayout>
+				<dc.Column Size="2-3" Pad="Large">
+					<h2>Secrets</h2>
+
+					<table id="lstRecents" class="dc-table-break-wide dc-table dc-table-reflow dc-table-stripe">
+						<thead>
+							<tr>
+								<th scope="col">Label</th>
+								<th scope="col">Actions</th>
+							</tr>
+						</thead>
+						<tbody id="lstRecentsBody" />
+					</table>
+				</dc.Column>
+				<dc.Column Size="1-3" Pad="Large">
+					<dc.Button Label="Add Secret" Click="DoAddSecret" />
+					<dc.Button Label="Test a Code" Click="DoTestAuth" />
+				</dc.Column>
+			</dc.RowLayout>
+		</dc.PagePanel>
+	</dc.Body>
+
+	<Function Name="Load" Params="e"><![CDATA[
+			var list = $('#lstRecentsBody');
+
+			list.empty();
+
+			const remfunc = function(e) {
+				const uuid = $(e.currentTarget).closest('tr').attr('data-uuid');
+
+				dc.comm.remote('/dc/core/auth/totp/user/disable', { Uuid: uuid }).then(function(resp) {
+					if (resp.Code != 0) {
+						dc.pui.Popup.alert('Error: ' + resp.Message);
+						return;
+					}
+
+					page.reload();
+				});
+			};
+
+			const viewfunc = function(e) {
+				const uuid = $(e.currentTarget).closest('tr').attr('data-uuid');
+
+				dc.pui.Dialog.loadPage('/dc/core/auth/totp/view-my-qr_mjs?uuid=' + uuid);
+			};
+
+			const result = await dc.comm.tryRemote('/dc/core/auth/totp/user/list');
+
+			for (var i = 0; i < result.length; i++) {
+				var rec = result[i];
+
+				list.dcappend(
+					$('<tr>').attr('data-uuid', rec.Uuid).dcappend(
+						$('<td>').text(rec.Title),
+						$('<td>').dcappend(
+							$('<a>').attr('href', '#').click(viewfunc).text('view QR Code'),
+							' - ',
+							$('<a>').attr('href', '#').click(remfunc).text('remove secret')
+						)
+					)
+				);
+			}
+	]]></Function>
+	<Function Name="DoAddSecret" Params="school"><![CDATA[
+			const value = await dc.pui.Popup.inputAsync('Enter a label or title your secret.', 'Secret Label', 'Label',
+				'dcmCms on ' + moment().format('M/D/yyyy')
+			);
+
+			if (value) {
+				await dc.comm.tryRemote('/dc/core/auth/totp/user/allocate', { Title: value });
+
+				page.Layer.refreshPage();
+			}
+	]]></Function>
+	<Function Name="DoTestAuth" Params="school"><![CDATA[
+			const value = await dc.pui.Popup.inputAsync('Enter the Authenticator Code.', 'Test Code', 'Auth Code');
+
+			if (value) {
+				await dc.comm.tryRemote('/tws/auth/user/confirm-my-auth', { AuthCode: value });
+
+				dc.pui.Popup.alert('Passed!');
+			}
+	]]></Function>
+</dc.Html>

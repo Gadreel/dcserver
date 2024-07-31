@@ -244,7 +244,7 @@ public class TagResource extends ResourceBase {
 
         this.trees.put(alias, tree);
 
-        Vault metavault = OperationContext.getOrThrow().getSite().getVault("Meta");
+        Vault metavault = OperationContext.getOrThrow().getTenant().getVault("Meta");
 
         if (metavault == null) {
             Logger.error("Meta vault missing.");
@@ -269,7 +269,7 @@ public class TagResource extends ResourceBase {
         if (this.trees.containsKey(alias))
             this.trees.remove(alias);
 
-        Vault metavault = OperationContext.getOrThrow().getSite().getVault("Meta");
+        Vault metavault = OperationContext.getOrThrow().getTenant().getVault("Meta");
 
         if (metavault == null) {
             Logger.error("Meta vault missing.");

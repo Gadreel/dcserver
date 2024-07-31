@@ -17,18 +17,19 @@ import dcraft.task.Task;
 import dcraft.task.TaskContext;
 import dcraft.tenant.Site;
 import dcraft.util.IOUtil;
+import dcraft.util.Memory;
 import dcraft.util.StringUtil;
+import dcraft.util.io.OutputWrapper;
 import dcraft.util.web.DateParser;
 import dcraft.web.WebController;
 import dcraft.web.md.MarkdownUtil;
 import dcraft.web.ui.inst.*;
-import dcraft.xml.XComment;
-import dcraft.xml.XElement;
-import dcraft.xml.XNode;
-import dcraft.xml.XText;
+import dcraft.xml.*;
 
 import java.io.BufferedReader;
+import java.io.PrintStream;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
@@ -86,6 +87,52 @@ public class UIUtil {
 		wctrl.addVariable("_Page", script.getXml());
 
 		return script.toWork();
+	}
+
+	static public String formatText(RecordStruct proc, XElement body) {
+		if (body != null) {
+			return StringUtil.stripWhitespace(body.getText());
+		}
+
+		return null;
+	}
+
+	static public String formatHtml(RecordStruct proc, XElement body) {
+		if (body != null) {
+			body.setName("body");
+			body.attr("style", "font-size: 14pt;");
+
+			XElement root = XElement.tag("html")
+					.with(XElement.tag("head")
+							.with(XElement.tag("meta")
+									.attr("name", "viewport")
+									.attr("content", "width=device-width")
+							)
+							.with(XElement.tag("meta")
+									.attr("http-equiv", "Content-Type")
+									.attr("content", "text/html; charset=UTF-8")
+							)
+							.with(XElement.tag("title").withText(proc.selectAsString("Config.Subject").trim()))
+					)
+					.with(body);
+
+			Memory content = new Memory();
+
+			try (PrintStream ps = new PrintStream(new OutputWrapper(content), true, "UTF-8")) {
+				XmlPrinter prt = new HtmlPrinter();
+
+				prt.setFormatted(true);
+				prt.setOut(ps);
+				prt.print(root);
+
+				return content.toString();
+			}
+			catch (OperatingContextException | UnsupportedEncodingException x) {
+				Logger.warn("output restricted: " + x);
+			}
+		}
+
+		return null;
 	}
 
 }

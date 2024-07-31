@@ -94,6 +94,7 @@ public class GalleryWidget extends Base implements ICMSAware {
 				String ext = (meta != null) ? meta.getFieldAsString("Extension", "jpg") : "jpg";
 
 				String lpath = cpath + ".v/" + vari + "." + ext;
+				String seopath = cpath + "." + ext;
 
 				Path imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
 						OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
@@ -105,6 +106,7 @@ public class GalleryWidget extends Base implements ICMSAware {
 						cpath = path + "/" + missing;
 
 						lpath = cpath + ".v/" + vari + "." + ext;
+						seopath = cpath + "." + ext;
 
 						imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
 								OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
@@ -123,15 +125,18 @@ public class GalleryWidget extends Base implements ICMSAware {
 						FileTime fileTime = Files.getLastModifiedTime(imgpath);
 
 						img.with("Path", "/galleries" + lpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
+						img.with("SEOPath", "/galleries" + seopath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))) + "&dc-variant=" + vari);
 					}
 					catch (IOException | NullPointerException x) {
 						Logger.warn("Problem finding image file: " + lpath);
 						img.with("Path", "/galleries" + lpath);
+						img.with("SEOPath", "/galleries" + seopath);
 					}
 				}
 				else {
 					Logger.warn("Problem finding image file: " + lpath);
 					img.with("Path", "/galleries" + lpath);
+					img.with("SEOPath", "/galleries" + seopath);
 				}
 
 				img.with("Position", cidx);

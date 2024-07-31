@@ -70,4 +70,5 @@ public class CommInfo {
 	public RecordStruct config = null;
 	public Script initalize = null;
 	public CommonPath folder = null;
+	public String locale = null;
 }

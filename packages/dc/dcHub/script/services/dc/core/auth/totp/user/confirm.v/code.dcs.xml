@@ -1,0 +1,34 @@
+<dcs.Script>
+	<dcs.Console>confirm totp code: {$Data}</dcs.Console>
+
+	<dcs.Include Path="/lib/dc/core/auth/util" />
+
+	<dcs.CallFunc Name="dc_core_auth_util_LookupAuthMethod" Result="ActiveTOTPs">
+		<Field Name="UserId" Value="$_User.UserId" />
+		<Field Name="Type" Value="TOTP" />
+	</dcs.CallFunc>
+
+	<dcs.Var Name="dcsa" Type="dcSecurityAdapter" />
+
+	<dcs.ForEach Name="TOTP" In="$ActiveTOTPs.Matches">
+		<dcdb.LoadRecord Table="dcUser" Id="$_User.UserId" Result="AuthData">
+			<Select Field="dcAuthMethodTOTPSecret" SubId="{$TOTP}" As="Secret" />
+		</dcdb.LoadRecord>
+
+		<dcs.With Target="$dcsa">
+			<DecryptString Value="$AuthData.Secret" Result="RawSecret" />
+			<ValidateTotpAuthCode Secret="$RawSecret" AuthCode="$Data.AuthCode" Result="IsValid" />
+		</dcs.With>
+
+		<dcs.Console>Checked: {$TOTP} - {$RawSecret} - {$Data.AuthCode} - {$IsValid}</dcs.Console>
+
+		<dcs.If Target="$IsValid">
+			<!-- exit without error  -->
+			<dcs.Exit Scope="Task" />
+		</dcs.If>
+	</dcs.ForEach>
+
+	<dcs.Error Code="1">Auth Code did not match.</dcs.Error>
+
+	<dcs.Exit Scope="Task" />
+</dcs.Script>

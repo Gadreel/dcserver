@@ -1,0 +1,8 @@
+<Op>
+	<RecordRequest>
+		<Field Name="Title" Type="dcTinyString" Required="true" />
+	</RecordRequest>
+	<RecordResponse>
+		<Field Name="Uuid" Type="dcMetaString" />
+	</RecordResponse>
+</Op>

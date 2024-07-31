@@ -206,34 +206,34 @@ public class DateStruct extends ScalarStruct {
 				if (StringUtil.isNotEmpty(result)) {
 					BaseStruct sref = StackUtil.refFromElement(stack, code, "Value", true);
 
-					if (sref instanceof DateStruct) {
-						DateStruct ref = (DateStruct) sref;
+					LocalDate source = Struct.objectToDate(sref);
 
+					if (source != null) {
 						String unit = StackUtil.stringFromElement(stack, code, "Unit");
 
 						if ("Days".equals(unit)) {
-							long days = ChronoUnit.DAYS.between(ref.value, this.value);
+							long days = ChronoUnit.DAYS.between(source, this.value);
 
 							StackUtil.addVariable(stack, result, IntegerStruct.of(days));
 
 							return ReturnOption.CONTINUE;
 						}
 						else if ("Months".equals(unit)) {
-							long months = ChronoUnit.MONTHS.between(ref.value, this.value);
+							long months = ChronoUnit.MONTHS.between(source, this.value);
 
 							StackUtil.addVariable(stack, result, IntegerStruct.of(months));
 
 							return ReturnOption.CONTINUE;
 						}
 						else if ("Years".equals(unit)) {
-							long years = ChronoUnit.YEARS.between(ref.value, this.value);
+							long years = ChronoUnit.YEARS.between(source, this.value);
 
 							StackUtil.addVariable(stack, result, IntegerStruct.of(years));
 
 							return ReturnOption.CONTINUE;
 						}
 						else {
-							PeriodDuration period = PeriodDuration.between(ref.value, this.value);
+							PeriodDuration period = PeriodDuration.between(source, this.value);
 
 							RecordStruct res = RecordStruct.record();
 

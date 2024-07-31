@@ -115,6 +115,7 @@ public class ImageWidget extends Base implements ICMSAware {
 
 		String lpath = path + ".v/" + vari + "." + ext;
 		String fpath = "/galleries" + lpath;
+		String seopath = path + "." + ext;
 
 		Path imgpath = OperationContext.getOrThrow().getSite().findSectionFile("galleries", lpath,
 				OperationContext.getOrThrow().getController().getFieldAsRecord("Request").getFieldAsString("View"));
@@ -130,10 +131,12 @@ public class ImageWidget extends Base implements ICMSAware {
 			FileTime fileTime = Files.getLastModifiedTime(imgpath);
 
 			img.with("Path", fpath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))));
+			img.with("SEOPath", "/galleries" + seopath + "?dc-cache=" + TimeUtil.stampFmt.format(LocalDateTime.ofInstant(fileTime.toInstant(), ZoneId.of("UTC"))) + "&dc-variant=" + vari);
 		}
 		catch (IOException | NullPointerException x) {
 			Logger.warn("Problem finding image file: " + lpath);
 			img.with("Path", "/galleries" + lpath);
+			img.with("SEOPath", "/galleries" + seopath);
 		}
 
 		img.with("Alias", path.substring(apos));
@@ -200,6 +203,7 @@ public class ImageWidget extends Base implements ICMSAware {
 
 		if (template == null) {
 			String display = this.getAttribute("Display", "None").toLowerCase();
+			boolean useseopath = "true".equals(this.getAttribute("SEOPath", "false").toLowerCase());
 
 			// set default
 			this.with(Base.tag("Template").with(
@@ -207,7 +211,7 @@ public class ImageWidget extends Base implements ICMSAware {
 							.withClass(display.contains("banner") ? "dcm-widget-banner-img" : "pure-img-inline")
 							.withAttribute("alt", "{$Image.Element.@Description|ifempty:}")
 							.withAttribute("loading", "lazy")
-							.withAttribute("src", "{$Image.Path}")
+							.withAttribute("src",  useseopath ? "{$Image.SEOPath}" : "{$Image.Path}")
 							.withAttribute("srcset", "{$Image.SourceSet|ifempty:}")
 							.withAttribute("sizes", "{$Image.Sizes|ifempty:}")
 			));

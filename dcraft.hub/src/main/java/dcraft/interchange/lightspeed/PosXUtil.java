@@ -63,7 +63,8 @@ public class PosXUtil {
 	}
 
 	static public HttpRequest.Builder buildRequest(String subdomain, String accesstoken, String path, String method, CompositeStruct post) {
-		String endpoint = "https://" + subdomain + ".vendhq.com/api/" + path;
+//		String endpoint = "https://" + subdomain + ".vendhq.com/api/" + path;
+		String endpoint = "https://" + subdomain + ".retail.lightspeed.app/api/" + path;
 
 		HttpRequest.Builder builder = HttpRequest.newBuilder()
 				.uri(URI.create(endpoint))

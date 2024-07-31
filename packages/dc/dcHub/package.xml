@@ -317,6 +317,7 @@
 			<Definition Code="cleanlist" Class="dcraft.struct.format.CleanList" />
 			<Definition Code="trim" Class="dcraft.struct.format.Trim" />
 			<Definition Code="lower" Class="dcraft.struct.format.Lower" />
+			<Definition Code="linkifymd" Class="dcraft.struct.format.LinkifyMarkdown" />
 			<Definition Code="notempty" Class="dcraft.struct.format.NotEmptyFormatter" />
 			<Definition Code="empty" Class="dcraft.struct.format.EmptyFormatter" />
 			<Definition Code="ifempty" Class="dcraft.struct.format.IfEmptyFormatter" />

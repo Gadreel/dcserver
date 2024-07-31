@@ -1,0 +1,66 @@
+<dc.Html Public="false" Badges="User">
+	<Meta Name="Title">
+		<Tr Locale="eng" Value="My Authenticator QR Code" />
+	</Meta>
+
+	<dcs.Var Name="SecretUuid" Type="String" Value="$_Controller.Request.Parameters.uuid.0" />
+	<dcs.Var Name="SecretIssuer" Type="String" Value="TODO" />
+
+	<dcs.Include Path="/lib/dc/core/auth/util" />
+
+	<dcs.CallFunc Name="dc_core_auth_util_LookupAuthMethod" Result="ActiveTOTPs">
+		<Field Name="UserId" Value="$_User.UserId" />
+		<Field Name="Type" Value="TOTP" />
+	</dcs.CallFunc>
+
+	<dcs.Console>list 2: {$ActiveTOTPs}</dcs.Console>
+
+	<dcs.Var Name="Match" Type="Record" />
+
+	<dcs.If Target="$ActiveTOTPs.Matches" Contains="$SecretUuid">
+		<dcdb.LoadRecord Table="dcUser" Id="$_User.UserId" Result="AuthData">
+			<SelectGroup Field="dcAuthMethodUuid" Key="Uuid" As="AuthMethods">
+				<Select Field="dcAuthMethodTitle" As="Title" />
+				<Select Field="dcAuthMethodTOTPSecret" As="Secret" />
+			</SelectGroup>
+		</dcdb.LoadRecord>
+
+		<!-- <dcs.Console>list 2: {$AuthData.AuthMethods}</dcs.Console> -->
+
+		<dcs.ForEach Name="TOTP" In="$AuthData.AuthMethods">
+			<dcs.Console>list 4: {$TOTP.Uuid}</dcs.Console>
+
+			<dcs.If Target="$ActiveTOTPs.Matches" Contains="$TOTP.Uuid">
+				<dcs.Console>list 5: {$TOTP.Uuid}</dcs.Console>
+
+				<dcs.With Target="$Match">
+					<Merge Value="$TOTP" />
+				</dcs.With>
+			</dcs.If>
+		</dcs.ForEach>
+	</dcs.If>
+
+	<dcs.Console>list 3: {$Match}</dcs.Console>
+
+	<dcs.Var Name="dcsa" Type="dcSecurityAdapter">
+		<DecryptString Value="$Match.Secret" Result="RawSecret" />
+		<GenerateTotpQRCode Label="$Match.Title" Issuer="{$SecretIssuer}" Secret="$RawSecret" Result="RawSVG" />
+	</dcs.Var>
+
+	<dc.Body class="dcuiWide">
+		<dc.PagePanel>
+			<dc.SimpleLayout>
+				<h2>QR Code</h2>
+
+				<br />
+
+				<p>Title: {$Match.Title}</p>
+				<p>Issuer: {$SecretIssuer}</p>
+
+				<br />
+				<br />
+				{$RawSVG}
+			</dc.SimpleLayout>
+		</dc.PagePanel>
+	</dc.Body>
+</dc.Html>

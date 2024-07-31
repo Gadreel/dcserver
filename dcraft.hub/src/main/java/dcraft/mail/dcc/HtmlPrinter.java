@@ -1,8 +1,14 @@
 package dcraft.mail.dcc;
 
+import dcraft.filestore.CommonPath;
+import dcraft.hub.ResourceHub;
 import dcraft.hub.op.OperatingContextException;
+import dcraft.hub.resource.ResourceFileInfo;
+import dcraft.mail.dcc.inst.EmailComment;
+import dcraft.mail.dcc.inst.InjectContent;
 import dcraft.script.StackUtil;
 import dcraft.script.inst.doc.Base;
+import dcraft.util.IOUtil;
 import dcraft.util.StringUtil;
 import dcraft.web.ui.inst.W3Closed;
 import dcraft.xml.*;
@@ -63,6 +69,67 @@ public class HtmlPrinter extends XmlPrinter {
 				this.printFormatLead(level);
 				this.out.append(val); 
 			}
+		}
+		else if (node instanceof EmailComment) {
+			this.printFormatLead(level);
+
+			String comment = ((EmailComment) node).getText();
+
+			this.out.append("<!--" + comment + "-->");
+
+			//System.out.println("include the comment: " + ((XComment) node).getValue());
+
+			// ((XComment) node).toBuilder(this.out);
+		}
+		else if (node instanceof InjectContent) {
+			this.printFormatLead(level);
+
+			String path = ((InjectContent) node).attr("Path");
+
+			ResourceFileInfo fileInfo = ResourceHub.getResources().getComm().findFile(CommonPath.from(path));
+
+			if (fileInfo != null) {
+				CharSequence content = IOUtil.readEntireFile(fileInfo.getActualPath());
+
+				if (StringUtil.isNotEmpty(content))
+					this.out.append(content);
+			}
+
+			//System.out.println("include the comment: " + ((XComment) node).getValue());
+
+			// ((XComment) node).toBuilder(this.out);
+		}
+		else if ((node instanceof XElement) && "Style".equals(((XElement)node).getName()) && "head".equals(parent.getName())) {
+			this.printFormatLead(level);
+
+			String path = ((XElement) node).attr("Path");
+
+			if (StringUtil.isNotEmpty(path)) {
+				ResourceFileInfo fileInfo = ResourceHub.getResources().getComm().findFile(CommonPath.from(path));
+
+				if (fileInfo != null) {
+					CharSequence content = IOUtil.readEntireFile(fileInfo.getActualPath());
+
+					if (StringUtil.isNotEmpty(content)) {
+						this.out.append("<style>\n");
+						this.out.append(content);
+						this.out.append("\n</style>\n");
+					}
+				}
+			}
+			else {
+				CharSequence content = ((XElement)node).getText();
+
+				if (StringUtil.isNotEmpty(content)) {
+					this.out.append("<style>\n");
+					this.out.append(content);
+					this.out.append("\n</style>\n");
+				}
+			}
+
+			//System.out.println("include the comment: " + ((XComment) node).getValue());
+
+			// ((XComment) node).toBuilder(this.out);
 		}
 		else if (node instanceof XElement) {
 			if ((node instanceof Base) && ((Base)node).isExclude())
@@ -152,11 +219,6 @@ public class HtmlPrinter extends XmlPrinter {
 				// Now put the closing tag out
 				this.out.append("</" + name + "> ");
 			}
-		}
-		else if (node instanceof XComment) {
-			System.out.println("include the comment: " + ((XComment) node).getValue());
-
-			// ((XComment) node).toBuilder(this.out);
 		}
 	}
 }
